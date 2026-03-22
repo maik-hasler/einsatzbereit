@@ -2,9 +2,6 @@
 include::src/config.adoc[]
 
 = image:arc42-logo.png[arc42] Template
-:revnumber: {revnumber}
-:revdate: {revdate}
-:revremark: {revremark}
 // toc-title definition MUST follow document title without blank line!
 :toc-title: Inhaltsverzeichnis
 

@@ -29,6 +29,10 @@ jobs:
           program: |
             asciidoctor \
               -r asciidoctor-diagram \
+              -a imagesdir=images \
+              -a revnumber="$(git describe --tags --always)" \
+              -a revdate="$(date +%d.%m.%Y)" \
+              -a revremark="$(git log -1 --format=%s)" \
               -b html5 \
               -D build \
               docs/Architektur/Architektur.adoc
