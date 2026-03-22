@@ -1,0 +1,33 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-introduction-and-goals]]
+==	Einführung und Ziele
+
+
+
+
+
+=== Aufgabenstellung
+
+
+
+
+
+=== Qualitätsziele
+
+
+
+
+
+=== Stakeholder
+
+
+
+
+
+[cols="1,1,2" options="header"]
+|===
+|Rolle |Kontakt |Erwartungshaltung
+| _<Rolle-1>_ | _<Kontakt-1>_ | _<Erwartung-1>_
+| _<Rolle-2>_ | _<Kontakt-2>_ | _<Erwartung-2>_ 
+|===
