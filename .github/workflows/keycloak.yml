@@ -1,0 +1,58 @@
+name: Publish Keycloak
+
+on:
+  push:
+    tags:
+      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])'
+      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])-rc.+([0-9])'
+      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])-preview.+([0-9])'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-keycloak
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/keycloak/v}"
+          echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+
+          if echo "$TAG" | grep -qE '-(rc|preview)\.'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: keycloak
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
