@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get revision info
+        id: revision
+        run: |
+          echo "revnumber=$(git describe --tags --always)" >> "$GITHUB_OUTPUT"
+          echo "revremark=$(git log -1 --format=%s)" >> "$GITHUB_OUTPUT"
+          echo "revdate=$(date +%d.%m.%Y)" >> "$GITHUB_OUTPUT"
+
       - name: Build AsciiDoc
         uses: tonynv/asciidoctor-action@v2
         with:
@@ -30,15 +37,13 @@ jobs:
             asciidoctor \
               -r asciidoctor-diagram \
               -a imagesdir=images \
-              -a revnumber="$(git describe --tags --always)" \
-              -a revdate="$(date +%d.%m.%Y)" \
-              -a revremark="$(git log -1 --format=%s)" \
+              -a revnumber="${{ steps.revision.outputs.revnumber }}" \
+              -a revdate="${{ steps.revision.outputs.revdate }}" \
+              -a revremark="${{ steps.revision.outputs.revremark }}" \
               -b html5 \
               -D build \
               docs/Architektur/Architektur.adoc
-
-      - name: Copy images
-        run: cp -r docs/Architektur/images build/images 2>/dev/null || true
+            cp -r docs/Architektur/images build/images
 
       - uses: actions/upload-pages-artifact@v3
         with:
