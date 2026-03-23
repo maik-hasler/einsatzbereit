@@ -44,6 +44,10 @@ jobs:
               -D build \
               docs/Architektur/Architektur.adoc
             cp -r docs/Architektur/images build/images
+            asciidoctor \
+              -b html5 \
+              -D build/ADRs \
+              docs/ADRs/*.adoc
 
       - uses: actions/upload-pages-artifact@v3
         with:
