@@ -1,0 +1,70 @@
+== 1. Monorepository
+
+=== Status
+Akzeptiert
+
+=== Datum
+23.03.2026
+
+=== Kontext
+Das Projekt ist ein Open-Source Projekt.
+Es besteht aus mehreren Komponenten.
+Der Wartungsaufwand soll so gering wie möglich gehalten werden.
+Dafür muss eine Repository-Strategie festgelegt werden, die diesem Ziel gerecht wird.
+
+=== Entscheidung
+Wir nutzen ein Monorepository. Das bedeutet, alle Komponenten des Systems sind in einem Repository.
+
+=== Struktur des Monorepository
+
+----
+.github/
+└── workflows/
+docs/
+├── Architektur/
+└── ADRs/
+keycloak/
+├── Dockerfile
+└── realms/
+frontend/
+backend/
+CONTRIBUTING.md
+VERSIONING.md
+README.md
+----
+
+=== Begründung
+* Kleines Team: Ein einzelnes Repository reduziert den Koordinationsaufwand und vermeidet das Pflegen mehrerer Repositories
+* Minimaler Wartungsaufwand: CI/CD Workflows, Linting und Abhängigkeiten werden zentral an einer Stelle verwaltet
+* Open Source: Contributors finden alles an einem Ort, was die Einstiegshürde senkt
+* Komponentenübergreifende Änderungen lassen sich in einem einzigen Commit und Pull Request umsetzen
+
+=== Betrachtete Alternativen
+
+==== Multi-Repository
+Jede Komponente in einem eigenen Repository.
+
+* Vorteile
+** Klare Trennung
+** Unabhängige Entwicklung
+* Nachteile
+** Wartbarkeit
+** Aufwändige Koordination bei komponentenübergreifenden Änderungen
+** Mehrere Pull Requests für eine logische Änderung
+** Manuelles Anpassen von Versionen in den Repositories
+
+==== Hybrid
+Frontend und Backend in einem Repository, Keycloak separat.
+
+* Vorteile
+** Flexibilität
+* Nachteile
+** Wartbarkeit
+** Uneinheitliche Prozesse
+** Zusätzliche Komplexität
+
+=== Konsequenzen
+* Einheitliche Toolchain und Entwicklungsumgebung
+* Einfacheres Refactoring über Komponentengrenzen hinweg
+* Zentrale Dokumentation
+* Bedingte CI/CD-Pipelines nötig, um unnötige Builds zu vermeiden
