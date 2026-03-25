@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+dist
+.astro
+.env*
+*.env
+.git
+.vscode
+Dockerfile*
+docker-compose*
+README.md
