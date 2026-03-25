@@ -3,25 +3,30 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-context-and-scope]]
 == Kontextabgrenzung
 
-
-
-
-
 === Fachlicher Kontext
 
+.Fachliche Kontextsicht
+[plantuml, "business-context", png]
+....
+include::../images/business-context.puml[]
+....
 
+.Beschreibung der Elemente
+[cols="1,3", options="header"]
+|===
+|Element |Beschreibung
 
+|Helferin Hannah
+|Sucht nach Möglichkeiten regional ehrenamtilich tätig zu werden
 
+|Organisator Olaf
+|Erstellt Bedürfnisse für sein derzeitiges Event / sucht nach ehrentamtlicher Untersützung
 
-**<Diagramm und/oder Tabelle>**
-
-**<optional: Erläuterung der externen fachlichen Schnittstellen>**
+|Einsatzbereit
+|Ermöglicht das Verwalten von regionalen Bedürfnissen und dem Anmelden helfen zu wollen
+|===
 
 === Technischer Kontext
-
-
-
-
 
 **<Diagramm oder Tabelle>**
 

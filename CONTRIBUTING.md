@@ -1,7 +1,7 @@
 # Mitwirken bei Einsatzbereit
 
 Schön, dass du Interesse hast, an Einsatzbereit mitzuwirken!
-Jeder Beitrag zählt — ob Bug-Report, Idee, Dokumentation oder Code.
+Jeder Beitrag zählt - ob Bug-Report, Idee, Dokumentation oder Code.
 
 ## Sprache
 
@@ -30,19 +30,19 @@ chore: update dependencies
 
 ### Ideen und Vorschläge
 
-Feature-Requests sind willkommen — ebenfalls als Issue.
+Feature-Requests sind willkommen - ebenfalls als Issue.
 Beschreibe das Problem, das du lösen möchtest, nicht nur die gewünschte Lösung.
 
 ### Code beitragen
 
-1. **Issue suchen oder erstellen** — Kläre vorher, ob die Änderung gewünscht ist.
+1. **Issue suchen oder erstellen** - Kläre vorher, ob die Änderung gewünscht ist.
 2. **Fork erstellen** und einen Feature-Branch anlegen:
    ```
    git checkout -b feat/short-description
    ```
-3. **Änderungen committen** — kleine, fokussierte Commits bevorzugt.
-4. **Pull Request öffnen** — beschreibe was und warum. Verlinke das zugehörige Issue.
-5. **Review abwarten** — Feedback ist Teil des Prozesses, nicht Kritik an dir.
+3. **Änderungen committen** - kleine, fokussierte Commits bevorzugt.
+4. **Pull Request öffnen** - beschreibe was und warum. Verlinke das zugehörige Issue.
+5. **Review abwarten** - Feedback ist Teil des Prozesses, nicht Kritik an dir.
 
 ### Branch-Benennung
 
@@ -64,5 +64,5 @@ Mit deiner Teilnahme erklärst du dich bereit, diesen einzuhalten.
 
 ## Fragen?
 
-Wenn du unsicher bist, wo du anfangen kannst — einfach ein Issue öffnen und fragen.
+Wenn du unsicher bist, wo du anfangen kannst - einfach ein Issue öffnen und fragen.
 Wir helfen gerne.

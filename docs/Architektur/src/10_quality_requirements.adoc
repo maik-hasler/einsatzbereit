@@ -3,19 +3,110 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-quality-scenarios]]
 == Qualitätsanforderungen
 
+=== Qualitätsziele im Überblick
 
+Die folgende Tabelle gibt einen Überblick über alle Qualitätsziele des Systems, sortiert nach ihrer Gewichtung.
+Die Ziele und Szenarien dienen als Leitfaden für architektonische Entscheidungen.
 
+.Vollständige Liste der Qualitätsziele
+[cols="1,3,1" options="header"]
+|===
+|Qualitätsmerkmal |Beschreibung |Gewichtung
 
+// tag::quality_requirements[]
+|*Zweckmäßigkeit*
+|Jede Funktion dient direkt dem Ehrenamt. Kein Feature-Bloat, kein Overengineering - nur das, was den Nutzen für Helfer:innen oder Organisationen konkret steigert.
+|Sehr hoch
 
+|*Einfachheit*
+|Code und Architektur sind so gestaltet, dass neue Contributor sie ohne tiefes Vorwissen verstehen können. Neue Funktionen lassen sich umsetzen, ohne das Gesamtsystem verstehen zu müssen. Einfachheit hat Vorrang vor Flexibilität.
+|Hoch
 
-=== Übersicht der Qualitätsanforderungen
+|*Wartbarkeit*
+|Die Plattform kann mit minimalem Aufwand betrieben und weiterentwickelt werden. Abhängigkeiten und Build-Prozesse funktionieren mit Standardwerkzeugen. Pflege soll keine Last sein, sondern selbstverständlich.
+|Hoch
 
+|*Benutzbarkeit*
+|Die Plattform ist intuitiv bedienbar. Helfer:innen und Organisationen können ihre Aufgaben ohne Einarbeitung oder technisches Vorwissen erledigen.
+|Hoch
+// end::quality_requirements[]
 
+|===
 
+=== Qualitätsbaum
 
+.Qualitätsbaum
+[plantuml, "quality-tree", png]
+....
+include::../images/quality-tree.puml[]
+....
 
 === Qualitätsszenarien
 
+==== Zweckmäßigkeit
 
+[cols="1,2,3" options="header"]
+|===
+|ID |Szenario |Erläuterung
 
+|QS-1.1
+|Ein neues Feature wird vorgeschlagen.
+|Vor der Umsetzung wird geprüft, ob es den Nutzen für Helfer:innen oder Organisationen konkret steigert. Features ohne klaren Bezug zum Ehrenamt werden abgelehnt.
 
+|QS-1.2
+|Die Architektur soll um eine neue Abstraktionsebene erweitert werden.
+|Die Erweiterung wird nur umgesetzt, wenn sie einen konkreten, aktuellen Bedarf adressiert - nicht für hypothetische zukünftige Anforderungen.
+|===
+
+==== Einfachheit
+
+[cols="1,2,3" options="header"]
+|===
+|ID |Szenario |Erläuterung
+
+|QS-2.1
+|Ein neuer Contributor möchte zum ersten Mal Code beitragen.
+|Die Person kann den Code ohne tiefes Vorwissen verstehen und innerhalb eines Tages einen ersten Beitrag leisten. Die CONTRIBUTING.md und die Projektstruktur sind selbsterklärend.
+
+|QS-2.2
+|Eine neue Funktion soll implementiert werden.
+|Die Änderung lässt sich umsetzen, ohne das Gesamtsystem verstehen zu müssen. Die betroffene Komponente ist klar abgegrenzt.
+
+|QS-2.3
+|Ein Contributor liest zum ersten Mal den Quellcode einer Komponente.
+|Durch flache Hierarchien, wenige Abstraktionsebenen und klare Benennung ist der Code ohne zusätzliche Dokumentation verständlich.
+|===
+
+==== Wartbarkeit
+
+[cols="1,2,3" options="header"]
+|===
+|ID |Szenario |Erläuterung
+
+|QS-3.1
+|Ein Versionsupdate einer Abhängigkeit steht an.
+|Durch zentrales Dependency-Management (Directory.Packages.props) muss die Version nur an einer Stelle geändert werden.
+
+|QS-3.2
+|Ein CI-Build schlägt fehl.
+|Die Fehlermeldung ist klar und ohne Kontextwissen nachvollziehbar. Die Ursache lässt sich schnell eingrenzen.
+
+|QS-3.3
+|Eine neue Person übernimmt die Pflege des Projekts.
+|Durch Standardwerkzeuge, automatisierte Pipelines und die Monorepository-Struktur ist der Einstieg in die Wartung ohne aufwendige Einarbeitung möglich.
+|===
+
+==== Benutzbarkeit
+
+[cols="1,2,3" options="header"]
+|===
+|ID |Szenario |Erläuterung
+
+|QS-4.1
+|Eine Organisation möchte zum ersten Mal einen Hilfsbedarf eintragen.
+|Der Vorgang ist ohne Schulung oder Handbuch möglich und innerhalb weniger Minuten abgeschlossen.
+
+|QS-4.2
+|Eine helfende Person sucht nach Einsätzen in ihrer Nähe.
+|Die Suche liefert relevante Ergebnisse mit klarer Darstellung von Was, Wo und Wann - ohne überladene Oberfläche.
+|===

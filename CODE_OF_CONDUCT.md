@@ -4,7 +4,7 @@
 
 Wir als Mitglieder, Mitwirkende und Verantwortliche unserer Gemeinschaft
 verpflichten uns, die Teilnahme an unserer Gemeinschaft zu einer
-belästigungsfreien Erfahrung für alle zu machen — unabhängig von Alter,
+belästigungsfreien Erfahrung für alle zu machen - unabhängig von Alter,
 Körpergröße, sichtbarer oder unsichtbarer Behinderung, ethnischer Zugehörigkeit,
 Geschlechtsmerkmalen, Geschlechtsidentität und -ausdruck, Erfahrungsniveau,
 Bildung, sozioökonomischem Status, Nationalität, persönlichem Aussehen,

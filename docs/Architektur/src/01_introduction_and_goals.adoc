@@ -1,33 +1,89 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-introduction-and-goals]]
-==	Einführung und Ziele
+== Einführung und Ziele
 
+Einsatzbereit ist eine Open-Source Plattform, die engagierte Helfer:innen mit regionalen Bedarfen zusammenbringt.
+Das Ehrenamt und der konkrete Nutzen für die Gesellschaft stehen dabei immer im Vordergrund.
 
+Die Plattform verfolgt drei Leitprinzipien:
 
-
+* *Ehrenamt zuerst:* Jede Entscheidung, ob Feature, Architektur oder Prozess, dient dem Ziel, ehrenamtliches Engagement zu erleichtern.
+* *Einfacher Code:* Der Quellcode soll so simpel sein, dass jede und jeder mitarbeiten kann, auch ohne tiefe Vorkenntnisse.
+* *Kein Ballast:* Die Plattform zu pflegen soll keine Last sein, sondern sie soll ein leichtgewichtiger Helfer bleiben.
 
 === Aufgabenstellung
 
+Wer helfen will, muss sich nicht langfristig binden.
+Manchmal passt ein Nachmittag, manchmal eine Woche.
+Aber einen Überblick zu bekommen, wo gerade Hilfe gebraucht wird, ist oft schwer - egal ob bei großen NGOs oder beim Sportturnier um die Ecke.
+Bestehende Plattformen sind häufig zu kompliziert, zu allgemein oder werden kaum genutzt.
 
+Einsatzbereit löst dieses Problem, indem es konkrete Bedarfe sichtbar macht: *was* wird gebraucht, *wo* und *wann*.
 
+Wesentliche funktionale Anforderungen:
 
+* Organisationen und Vereine können Hilfsbedarfe mit Ort, Zeitraum und benötigten Fähigkeiten eintragen.
+* Helfer:innen können nach passenden Einsätzen in ihrer Region suchen und sich melden.
+* Die Nutzung ist ohne langfristige Verpflichtung möglich.
+
+.Geschäftsziele
+[cols="1,3" options="header"]
+|===
+|Ziel |Beschreibung
+
+|Ehrenamt stärken
+|Freiwilliges Engagement sichtbar und zugänglich machen - ohne bürokratische Hürden oder langfristige Bindung.
+
+|Offen und nachhaltig
+|Das Projekt ist unter der GNU AGPL v3.0 lizenziert. Kein Profit, kein Closed Source, kein verlorenes Wissen. Es ist zweitrangig, wer das Projekt weiterentwickelt - der Nutzen soll im Vordergrund stehen.
+
+|Niedrige Einstiegshürde
+|Sowohl für Nutzende als auch für Contributor soll der Einstieg so einfach wie möglich sein.
+|===
 
 === Qualitätsziele
 
+Die folgenden Qualitätsziele definieren die wesentlichen Qualitätsanforderungen an Einsatzbereit und dienen als Leitfaden für architektonische Entscheidungen.
 
+.Primäre Qualitätsziele
+[cols="1,3,1" options="header"]
+|===
+|Qualitätsmerkmal |Beschreibung |Gewichtung
 
+include::10_quality_requirements.adoc[tag=quality_requirements]
 
+|===
+
+_Eine vollständige Liste aller Qualitätsziele mit detaillierten Szenarien findet sich in Kapitel 10 <<section-quality-scenarios, Qualitätsanforderungen>>._
 
 === Stakeholder
-
-
-
-
 
 [cols="1,1,2" options="header"]
 |===
 |Rolle |Kontakt |Erwartungshaltung
-| _<Rolle-1>_ | _<Kontakt-1>_ | _<Erwartung-1>_
-| _<Rolle-2>_ | _<Kontakt-2>_ | _<Erwartung-2>_ 
+
+|Ehrenamtliche Helfer:innen
+|Endnutzer:innen
+|_„Ich hab Samstagnachmittag frei und will was Sinnvolles tun, aber bitte ohne mich erst durch drei Formulare zu kämpfen."_
+
+*Helferin Hannah* erwartet eine intuitive Oberfläche, über die sie schnell passende Einsätze findet, ohne Registrierungshürden oder Verpflichtung.
+
+|Organisationen und Vereine
+|Endnutzer:innen
+|_„Wir brauchen am Wochenende zehn Leute für den Aufbau. Ich will das in fünf Minuten eingetragen haben, nicht in fünfzig."_
+
+*Organisator Olaf* erwartet einen einfachen Weg, Hilfsbedarfe einzutragen und Helfer:innen zu erreichen, ohne technisches Vorwissen.
+
+|Contributor
+|GitHub Issues und Pull Requests
+|_„Ich will an einem Wochenende ein Feature beisteuern, nicht erst zwei Tage das Projekt verstehen müssen."_
+
+*Contributerin Caro* erwartet simplen, gut strukturierten Code, klare Contribution-Guidelines und Dokumentation, die den Einstieg erleichtert.
+
+|Maintainer
+|GitHub Repository
+|_„Je weniger ich nachts um zwei fixen muss, desto besser. Einfach halten, automatisieren, fertig."_
+
+*Maintainer Milo* erwartet geringen Pflegeaufwand durch einfache Architektur, automatisierte CI/CD-Pipelines und wenige externe Abhängigkeiten.
 |===

@@ -1,0 +1,21 @@
+﻿@startmindmap
+* Qualität
+** Zweckmäßigkeit (Sehr hoch)
+*** Fokus auf Ehrenamt
+*** Kein Feature-Bloat
+*** Schlanke Prozesse
+** Einfachheit (Hoch)
+*** Verständlicher Code
+*** Niedrige Einstiegshürde für Contributor
+*** Wenige Abhängigkeiten
+*** Flache Architektur
+** Wartbarkeit (Hoch)
+*** Standardwerkzeuge
+*** Automatisierte CI/CD-Pipelines
+*** Zentrales Dependency-Management
+*** Monorepository
+** Benutzbarkeit (Hoch)
+*** Intuitive Oberfläche
+*** Keine Einarbeitung nötig
+*** Responsive Design
+@endmindmap

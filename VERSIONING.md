@@ -23,11 +23,11 @@ Die ersten drei Stellen entsprechen der verwendeten Keycloak-Upstream-Version.
 Die vierte Stelle ist die eigene Patch-Version für Änderungen an Konfiguration, Realm-Exports oder Dockerfile.
 
 Beispiele:
-- `keycloak/v26.5.6.1` — Erster eigener Build auf Basis von Keycloak 26.5.6
-- `keycloak/v26.5.6.2` — Zweite Änderung (z.B. neue Realm-Config)
-- `keycloak/v26.5.6.2-rc.1` — Release Candidate für Patch 2
-- `keycloak/v26.5.6.2-preview.1` — Preview für Patch 2
-- `keycloak/v27.0.0.1` — Upgrade auf Keycloak 27.0.0
+- `keycloak/v26.5.6.1` - Erster eigener Build auf Basis von Keycloak 26.5.6
+- `keycloak/v26.5.6.2` - Zweite Änderung (z.B. neue Realm-Config)
+- `keycloak/v26.5.6.2-rc.1` - Release Candidate für Patch 2
+- `keycloak/v26.5.6.2-preview.1` - Preview für Patch 2
+- `keycloak/v27.0.0.1` - Upgrade auf Keycloak 27.0.0
 
 ### Frontend & Backend
 
@@ -40,8 +40,8 @@ Standard [SemVer](https://semver.org/):
 
 Keycloak unterstützt folgende Prerelease-Suffixe:
 
-- `-rc.N` — Release Candidate
-- `-preview.N` — Preview
+- `-rc.N` - Release Candidate
+- `-preview.N` - Preview
 
 Frontend und Backend unterstützen Standard-SemVer-Prerelease-Suffixe (`-rc.N`, `-beta.N`, `-alpha.N`).
 
