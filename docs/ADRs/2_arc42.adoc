@@ -1,0 +1,62 @@
+== 2. arc42 als Architekturdokumentationsvorlage
+
+=== Status
+Akzeptiert
+
+=== Datum
+25.03.2026
+
+=== Kontext
+Das Projekt benötigt eine Architekturdokumentation, die sowohl für neue und bestehende Contributor verständlich und rückwirkend nachvollziehbar ist.
+Die Dokumentation soll iterativ gepflegt werden können, ohne dass bei jeder Änderung die gesamte Struktur überarbeitet werden muss.
+
+=== Entscheidung
+Wir verwenden arc42 als Vorlage für die Architekturdokumentation.
+Innerhalb der arc42-Struktur setzen wir ergänzend C4-Diagramme ein.
+
+=== Begründung
+* arc42 ist im deutschsprachigen Raum ein etablierter Standard und vielen Entwicklern bereits bekannt
+* Die Vorlage gibt eine klare Kapitelstruktur vor, die sich iterativ befüllen lässt
+* C4-Diagramme lassen sich gut in arc42 integrieren
+* arc42 ist werkzeugunabhängig und funktioniert mit AsciiDoc und GitHub Pages ohne zusätzliche Abhängigkeiten
+* Die Struktur unterstützt unterschiedliche Zielgruppen und deren Sichtweisen
+** Überblick für Stakeholder
+** Details für Entwickler:innen
+
+=== Betrachtete Alternativen
+
+==== Nur C4-Modell
+Ausschließlich C4-Diagramme als Dokumentation.
+
+* Vorteile
+** Visuell und schnell erfassbar
+** Klare Abstraktionsebenen
+* Nachteile
+** Kein Platz für Qualitätsanforderungen, Risiken oder Entscheidungen
+** Textuelle Erläuterungen fehlen
+** Für sich allein nicht ausreichend als vollständige Architekturdokumentation
+
+==== Freie Struktur
+Keine vorgegebene Vorlage, Dokumentation nach eigenem Ermessen.
+
+* Vorteile
+** Maximale Flexibilität
+* Nachteile
+** Kein einheitlicher Aufbau, schwer navigierbar für neue Contributor
+** Gefahr von Lücken, da keine Checkliste existiert
+
+==== Keine Dokumentation
+Bewusster Verzicht auf Architekturdokumentation.
+
+* Vorteile
+** Kein initialer Aufwand
+* Nachteile
+** Wissen bleibt implizit und geht verloren
+** Neue Contributor haben einen erschwerten Einstieg
+** Architekturentscheidungen sind nicht nachvollziehbar
+
+=== Konsequenzen
+* Die arc42 Dokumentation liegt unter `docs/Architektur/`
+* Architekturentscheidungen werden separat als ADRs geführt und in der arc42 referenziert
+* C4-Diagramme werden als ergänzende Darstellungen eingebettet
+* Neue Contributor finden eine bekannte Struktur vor und können gezielt zu relevanten Kapiteln navigieren
