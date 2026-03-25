@@ -1,0 +1,62 @@
+== 3. Keycloak als Identity- und Access-Management-Lösung
+
+=== Status
+Akzeptiert
+
+=== Datum
+25.03.2026
+
+=== Kontext
+Das Projekt benötigt eine Lösung für Authentifizierung und Autorisierung.
+Als Open-Source-Projekt soll die IAM-Lösung selbst gehostet werden können, keine Abhängigkeit von US-Cloud-Anbietern erzeugen und keine laufenden Lizenzkosten verursachen.
+Alle anderen Services des Projekts werden ebenfalls self-hosted betrieben.
+
+=== Entscheidung
+Wir setzen Keycloak als zentrale IAM-Lösung ein.
+
+=== Begründung
+* Open Source und kostenlos
+* Self-Hosting gewährleistet volle Datensouveränität ohne Abhängigkeit von US-Cloud-Anbietern
+* Passt zur Self-Hosting-Strategie der übrigen Services im Projekt
+* Breite Community, umfangreiche Dokumentation und standardisierte Protokolle (OIDC, SAML)
+* Das Organisations-Feature ermöglicht es, dass Benutzer mehreren Organisationen angehören können
+
+=== Betrachtete Alternativen
+
+==== Auth0
+Managed Identity-Plattform.
+
+* Vorteile
+** Geringer Betriebsaufwand
+** Schnelle Integration
+* Nachteile
+** US-Anbieter - Datenschutzanforderungen schwer umsetzbar
+** Kein Self-Hosting möglich
+** Kosten steigen mit Nutzerzahl
+
+==== Azure AD / Entra ID
+Microsofts Cloud-basierte Identity-Lösung.
+
+* Vorteile
+** Tiefe Integration in das Microsoft-Ökosystem
+** Managed Service mit hoher Verfügbarkeit
+* Nachteile
+** US-Anbieter - gleiche Datenschutzproblematik wie Auth0
+** Kein Self-Hosting möglich
+** Lizenzkosten, nicht kompatibel mit dem Open-Source-Ansatz des Projekts
+
+==== Eigene Lösung
+Eigenentwicklung einer Authentifizierungs- und Autorisierungsschicht.
+
+* Vorteile
+** Maximale Kontrolle über Funktionsumfang und Architektur
+* Nachteile
+** Enormer Entwicklungs- und Wartungsaufwand
+** Hohes Sicherheitsrisiko durch fehlende Expertise im IAM-Bereich
+** Kein Community-Support
+
+=== Konsequenzen
+* Eigenverantwortung für Betrieb, Updates und Sicherheitspatches - Hardening und zeitnahes Einspielen von Security-Updates sind zwingend erforderlich
+* Realm-Konfiguration wird als JSON-Export versioniert und über das Custom Docker Image ausgeliefert
+* Integration über OIDC: Frontend nutzt einen Public Client, Backend validiert JWT Bearer Tokens
+* Benutzer- und Rollenverwaltung erfolgt zentral in Keycloak

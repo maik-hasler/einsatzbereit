@@ -15,6 +15,20 @@ In folgender Tabelle werden die relevanten Architekturentscheidungen aufgelistet
 |Alle Komponenten in einem Repository verwalten.
 |Akzeptiert
 |23.03.2026
-|link:ADRs/1_monorepository.html[Monorepo]
+|link:ADRs/1_monorepository.html[Monorepository]
+
+|2
+|arc42
+|arc42 als Vorlage für die Architekturdokumentation verwenden.
+|Akzeptiert
+|25.03.2026
+|link:ADRs/2_arc42.html[arc42]
+
+|3
+|Keycloak
+|Keycloak als Identity- und Access-Management-Lösung einsetzen.
+|Akzeptiert
+|25.03.2026
+|link:ADRs/3_keycloak.html[Keycloak]
 
 |===
