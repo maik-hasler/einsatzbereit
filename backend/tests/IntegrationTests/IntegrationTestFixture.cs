@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.Keycloak;
+using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace IntegrationTests;
@@ -12,7 +13,8 @@ public sealed class IntegrationTestFixture
     : IAsyncLifetime
 {
     private KeycloakContainer _keycloak = null!;
-    
+    private PostgreSqlContainer _postgres = null!;
+
     private WebApplicationFactory<Program> _factory = null!;
 
     public HttpClient CreateClient() => _factory.CreateClient();
@@ -23,12 +25,18 @@ public sealed class IntegrationTestFixture
             AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..",
             "keycloak", "realms", "einsatzbereit-realm.json"));
 
+        _postgres = new PostgreSqlBuilder()
+            .WithDatabase("einsatzbereit")
+            .WithUsername("einsatzbereit")
+            .WithPassword("einsatzbereit")
+            .Build();
+
         _keycloak = new KeycloakBuilder()
             .WithResourceMapping(realmPath, "/opt/keycloak/data/import")
             .WithCommand("--import-realm")
             .Build();
 
-        await _keycloak.StartAsync();
+        await Task.WhenAll(_postgres.StartAsync(), _keycloak.StartAsync());
 
         var authority = $"{_keycloak.GetBaseAddress()}realms/einsatzbereit";
 
@@ -39,7 +47,8 @@ public sealed class IntegrationTestFixture
                 {
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
-                        ["Authentication:Authority"] = authority
+                        ["Authentication:Authority"] = authority,
+                        ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
                     });
                 });
                 builder.UseEnvironment("Development");
@@ -70,5 +79,6 @@ public sealed class IntegrationTestFixture
     {
         await _factory.DisposeAsync();
         await _keycloak.DisposeAsync();
+        await _postgres.DisposeAsync();
     }
 }

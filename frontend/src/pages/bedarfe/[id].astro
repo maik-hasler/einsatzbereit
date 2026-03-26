@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { fetchBedarf } from '../../lib/api';
+
+const { id } = Astro.params;
+const bedarf = id ? await fetchBedarf(id) : null;
+
+if (!bedarf) {
+  return Astro.redirect('/bedarfe');
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('de-DE', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+---
+
+<BaseLayout title={`${bedarf.titel} — Einsatzbereit`} description={bedarf.beschreibung}>
+  <main class="mx-auto max-w-2xl px-4 py-8">
+    <a href="/bedarfe" class="mb-6 inline-block text-blue-600 hover:underline">
+      ← Alle Bedarfe
+    </a>
+
+    <h1 class="mb-2 text-3xl font-bold">{bedarf.titel}</h1>
+    <p class="mb-6 text-gray-500">{bedarf.organisation}</p>
+
+    <div class="mb-6 flex flex-col gap-2 text-gray-700">
+      <span>📍 {bedarf.ort}</span>
+      <span>
+        🕐 {formatDate(bedarf.startzeitUtc)}
+        {bedarf.endzeitUtc && ` — ${formatDate(bedarf.endzeitUtc)}`}
+      </span>
+    </div>
+
+    <div class="prose max-w-none">
+      <p>{bedarf.beschreibung}</p>
+    </div>
+  </main>
+</BaseLayout>

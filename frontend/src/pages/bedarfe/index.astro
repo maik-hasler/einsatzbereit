@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { fetchBedarfe } from '../../lib/api';
+
+const bedarfe = await fetchBedarfe();
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+---
+
+<BaseLayout
+  title="Bedarfe — Einsatzbereit"
+  description="Aktuelle Ehrenamt-Bedarfe in deiner Nähe. Finde heraus, wo du helfen kannst."
+>
+  <main class="mx-auto max-w-4xl px-4 py-8">
+    <h1 class="mb-2 text-3xl font-bold">Aktuelle Bedarfe</h1>
+    <p class="mb-8 text-gray-600">
+      Finde heraus, wo gerade Hilfe gebraucht wird.
+    </p>
+
+    {bedarfe.length === 0 && (
+      <p class="text-gray-500">Aktuell sind keine Bedarfe eingetragen.</p>
+    )}
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      {bedarfe.map((bedarf) => (
+        <a
+          href={`/bedarfe/${bedarf.id}`}
+          class="block rounded-lg border border-gray-200 p-5 transition hover:border-blue-400 hover:shadow-md"
+        >
+          <h2 class="mb-1 text-lg font-semibold">{bedarf.titel}</h2>
+          <p class="mb-2 text-sm text-gray-500">{bedarf.organisation}</p>
+          <div class="flex flex-col gap-1 text-sm text-gray-700">
+            <span>📍 {bedarf.ort}</span>
+            <span>
+              🕐 {formatDate(bedarf.startzeitUtc)}
+              {bedarf.endzeitUtc && ` — ${formatDate(bedarf.endzeitUtc)}`}
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-8">
+      <a href="/" class="text-blue-600 hover:underline">← Zurück zur Startseite</a>
+    </div>
+  </main>
+</BaseLayout>
