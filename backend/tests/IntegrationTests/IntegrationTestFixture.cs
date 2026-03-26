@@ -3,6 +3,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
+using Respawn;
 using Testcontainers.Keycloak;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -14,8 +16,11 @@ public sealed class IntegrationTestFixture
 {
     private KeycloakContainer _keycloak = null!;
     private PostgreSqlContainer _postgres = null!;
+    private Respawner _respawner = null!;
 
     private WebApplicationFactory<Program> _factory = null!;
+
+    public WebApplicationFactory<Program> Factory => _factory;
 
     public HttpClient CreateClient() => _factory.CreateClient();
 
@@ -40,6 +45,9 @@ public sealed class IntegrationTestFixture
 
         var authority = $"{_keycloak.GetBaseAddress()}realms/einsatzbereit";
 
+        // Force-load DatabaseMigrations assembly so EF can discover migrations at host startup
+        _ = typeof(DatabaseMigrations.Migrations.Initial);
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -48,11 +56,39 @@ public sealed class IntegrationTestFixture
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["Authentication:Authority"] = authority,
-                        ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString()
+                        ["ConnectionStrings:Database"] = _postgres.GetConnectionString()
                     });
                 });
                 builder.UseEnvironment("Development");
             });
+
+        // Trigger host startup — Program.cs runs MigrateAsync in Development
+        _ = _factory.Services;
+
+        _respawner = await CreateRespawnerAsync();
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await _respawner.ResetAsync(connection);
+    }
+
+    private async Task<Respawner> CreateRespawnerAsync()
+    {
+        await using var connection = await OpenConnectionAsync();
+        return await Respawner.CreateAsync(connection, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            SchemasToInclude = ["public"]
+        });
+    }
+
+    private async Task<NpgsqlConnection> OpenConnectionAsync()
+    {
+        var connection = new NpgsqlConnection(_postgres.GetConnectionString());
+        await connection.OpenAsync();
+        return connection;
     }
 
     public async Task<string> GetAccessTokenAsync(string username, string password)

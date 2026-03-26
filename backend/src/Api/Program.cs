@@ -1,12 +1,29 @@
-using System.Security.Claims;
 using Api.Authentication;
-using Api.Data;
-using Api.Endpoints;
+using Api.Extensions;
+using Application;
+using Asp.Versioning;
+using Infrastructure;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructureServices();
+
+builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1);
+        options.ReportApiVersions = true;
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'V";
+        options.SubstituteApiVersionInUrl = true;
+    });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -29,15 +46,13 @@ builder.Services.AddAuthorizationBuilder()
         policy.RequireClaim(AuthorizationPolicies.RealmClaim, AuthorizationPolicies.EinsatzbereitRealm)
             .RequireRole(AuthorizationPolicies.DefaultUser));
 
-builder.Services.AddDbContext<EinsatzbereitDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
         policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4321"])
             .AllowAnyHeader()
             .AllowAnyMethod()));
 
+builder.Services.AddEndpoints();
 
 builder.Services.AddOpenApi("v1", options =>
 {
@@ -58,23 +73,19 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    var scope = app.Services.CreateScope();
 
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<EinsatzbereitDbContext>();
-    await db.Database.MigrateAsync();
+    var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
+    
+    await initializer.MigrateAsync();
+    
+    app.MapOpenApi();
 }
 
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/me", (ClaimsPrincipal user) => new { Name = user.FindFirstValue("preferred_username") })
-    .RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy);
-
-app.MapGet("/admin", () => new { Message = "Admin access granted" })
-    .RequireAuthorization(AuthorizationPolicies.EinsatzbereitAdminPolicy);
-
-app.MapBedarfeEndpoints();
+app.MapEndpoints();
 
 await app.RunAsync();
