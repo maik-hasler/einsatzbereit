@@ -1,32 +1,69 @@
 services:
+  
   postgres:
-    image: postgres:17
+    container_name: postgres
+    image: postgres:18
     environment:
-      POSTGRES_DB: einsatzbereit
-      POSTGRES_USER: einsatzbereit
-      POSTGRES_PASSWORD: einsatzbereit
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-
+      - postgres_data:/var/lib/postgresql
+      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    ports:
+      - 5432:5432
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      
+  pgadmin:
+    image: dpage/pgadmin4
+    pull_policy: always
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_DISABLE_POSTFIX: 'True'
+    entrypoint: /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
+    user: root
+    ports:
+      - 5050:80
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+      - source: pgpass
+        target: /pgpass
+        
   keycloak:
     build: ./keycloak
+    container_name: keycloak
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/einsatzbereit
-      KC_DB_USERNAME: einsatzbereit
-      KC_DB_PASSWORD: einsatzbereit
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
       KC_HOSTNAME: localhost
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
-    command: ["start", "--optimized", "--import-realm"]
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    command: [ "--import-realm" ]
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   backend:
     build:
@@ -34,13 +71,13 @@ services:
       dockerfile: src/Api/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      Authentication__Authority: http://keycloak:8080/realms/einsatzbereit
-      ConnectionStrings__DefaultConnection: Host=postgres;Database=einsatzbereit;Username=einsatzbereit;Password=einsatzbereit
     ports:
       - "5000:8080"
     depends_on:
-      - postgres
-      - keycloak
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
 
   frontend:
     build: ./frontend
@@ -52,4 +89,26 @@ services:
       - backend
 
 volumes:
-  postgres-data:
+  postgres_data:
+  pgadmin_data:
+
+configs:
+  pgpass:
+    content: |
+      postgres:5432:*:postgres:postgres
+  servers.json:
+    content: |
+      {
+        "Servers":{
+            "1":{
+              "Group":"Servers",
+              "Name":"Local",
+              "Host":"postgres",
+              "Port":5432,
+              "MaintenanceDB":"postgres",
+              "Username":"postgres",
+              "PassFile":"/pgpass",
+              "SSLMode":"prefer"
+            }
+        }
+      }

@@ -1,6 +1,6 @@
 FROM node:22-slim AS base
-WORKDIR /app
 RUN corepack enable
+WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
