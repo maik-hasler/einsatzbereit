@@ -51,7 +51,7 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
-      KC_HOSTNAME: localhost
+      KC_HOSTNAME: host.docker.internal
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -83,10 +83,13 @@ services:
     build: ./frontend
     environment:
       API_URL: http://backend:8080
+      KEYCLOAK_AUTHORITY_URL: http://host.docker.internal:8080/realms/einsatzbereit
+      REDIRECT_URI: http://localhost:4321/api/callback
     ports:
       - "4321:4321"
     depends_on:
       - backend
+      - keycloak
 
 volumes:
   postgres_data:

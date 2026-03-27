@@ -4,9 +4,10 @@ import CreateBedarfModal from "./CreateBedarfModal";
 
 interface Props {
   isLoggedIn: boolean;
+  canCreateBedarf: boolean;
 }
 
-export default function BedarfeListe({ isLoggedIn }: Props) {
+export default function BedarfeListe({ isLoggedIn, canCreateBedarf }: Props) {
   const [data, setData] = useState<PagedListOfBedarf | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export default function BedarfeListe({ isLoggedIn }: Props) {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Aktuelle Bedarfe</h2>
-        {isLoggedIn && (
+        {canCreateBedarf && (
           <button
             onClick={() => setShowModal(true)}
             className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"

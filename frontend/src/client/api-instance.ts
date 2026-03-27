@@ -11,6 +11,13 @@ export function createApiClient(cookies: AstroCookies): EinsatzbereitApi {
   const { access_token } = JSON.parse(session.value);
 
   return new EinsatzbereitApi(API_URL, {
-    Authorization: `Bearer ${access_token}`,
+    fetch: (url: RequestInfo, init?: RequestInit) =>
+      globalThis.fetch(url, {
+        ...init,
+        headers: {
+          ...init?.headers,
+          Authorization: `Bearer ${access_token}`,
+        },
+      }),
   });
 }

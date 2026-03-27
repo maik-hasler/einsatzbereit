@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { discovery, authorizationCodeGrant } from "openid-client";
+import { discovery, allowInsecureRequests, authorizationCodeGrant } from "openid-client";
 import { KEYCLOAK_AUTHORITY_URL } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, cookies, redirect }) => {
@@ -12,7 +12,10 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
   try {
     const config = await discovery(
       new URL(KEYCLOAK_AUTHORITY_URL),
-      "frontend"
+      "frontend",
+      undefined,
+      undefined,
+      { execute: [allowInsecureRequests] },
     );
 
     const tokenSet = await authorizationCodeGrant(

@@ -7,7 +7,7 @@ export const GET: APIRoute = async ({ url }) => {
   const pageNumber = Number(url.searchParams.get("page") ?? "1");
   const pageSize = Number(url.searchParams.get("size") ?? "10");
 
-  const api = new EinsatzbereitApi(API_URL);
+  const api = new EinsatzbereitApi(API_URL, { fetch: globalThis.fetch });
   const bedarfe = await api.getBedarfe(pageNumber, pageSize);
   return Response.json(bedarfe);
 };

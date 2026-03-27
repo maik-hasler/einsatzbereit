@@ -169,9 +169,32 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         items[2].Id.Value.Should().Be(first.Id.Value);
     }
 
+    [Fact]
+    public async Task CreateBedarf_ShouldReturn403_WhenUserIsNotOrganisator()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var token = await fixture.GetAccessTokenAsync("hannah", "hannah123");
+        var httpClient = fixture.Factory.CreateDefaultClient();
+        httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+        var client = new EinsatzbereitApi(httpClient);
+
+        // Act
+        var act = () => client.CreateBedarfAsync(new CreateBedarfRequest
+        {
+            Title = "Nicht erlaubt",
+            Description = "Hannah darf keine Bedarfe erstellen"
+        }, ct);
+
+        // Assert
+        var exception = await act.Should().ThrowAsync<ApiException>();
+        exception.Which.StatusCode.Should().Be(403);
+    }
+
     private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
     {
-        var token = await fixture.GetAccessTokenAsync("testuser", "testpassword");
+        var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
         var httpClient = fixture.Factory.CreateDefaultClient();
         httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);

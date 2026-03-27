@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import {
   discovery,
+  allowInsecureRequests,
   buildAuthorizationUrl,
   randomPKCECodeVerifier,
   calculatePKCECodeChallenge
@@ -10,7 +11,10 @@ import { KEYCLOAK_AUTHORITY_URL, REDIRECT_URI } from "astro:env/server";
 export const GET: APIRoute = async ({ cookies, redirect }) => {
   const config = await discovery(
     new URL(KEYCLOAK_AUTHORITY_URL),
-    "frontend"
+    "frontend",
+    undefined,
+    undefined,
+    { execute: [allowInsecureRequests] },
   );
 
   const codeVerifier = randomPKCECodeVerifier();

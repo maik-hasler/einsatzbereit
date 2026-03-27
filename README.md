@@ -45,6 +45,14 @@ docker compose restart <service>   # Einzelnen Service neustarten
 | pgAdmin    | http://localhost:5050      | `admin@admin.com` / `admin`              |
 | PostgreSQL | `localhost:5432`           | `postgres` / `postgres`                  |
 
+### Testbenutzer
+
+| Benutzer | Passwort     | Rollen              | Persona              | Kann                          |
+|----------|--------------|---------------------|----------------------|-------------------------------|
+| `hannah` | `hannah123`  | `user`              | Helferin Hannah      | Bedarfe ansehen               |
+| `olaf`   | `olaf123`    | `user`, `organisator` | Organisator Olaf   | Bedarfe ansehen und erstellen |
+| `admin`  | `admin123`   | `admin`             | Administrator        | Administration                |
+
 ### Datenbanken
 
 | Datenbank       | Zweck              |

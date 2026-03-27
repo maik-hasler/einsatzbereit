@@ -3,18 +3,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BedarfeListe from '../components/BedarfeListe';
 
 const isLoggedIn = !!Astro.locals.user;
+const roles: string[] = Array.isArray(Astro.locals.user?.roles) ? Astro.locals.user.roles as string[] : [];
+const isOrganisator = roles.includes('organisator');
 ---
 
 <BaseLayout
   title="Einsatzbereit — Spontanes Ehrenamt in deiner Nähe"
   description="Entdecke kurzfristige Ehrenamt-Einsätze bei gemeinnützigen Organisationen in deiner Nähe. Melde dich spontan an und hilf dort, wo du gerade gebraucht wirst."
 >
+  <header class="border-b">
+    <div class="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+      <span class="font-semibold">Einsatzbereit</span>
+      {isLoggedIn ? (
+        <a href="/api/logout" class="text-sm text-gray-600 hover:text-black">Abmelden</a>
+      ) : (
+        <a href="/api/login" class="rounded bg-black px-4 py-1.5 text-sm text-white hover:bg-gray-800">Anmelden</a>
+      )}
+    </div>
+  </header>
+
   <main class="mx-auto max-w-2xl px-4 py-16">
     <h1 class="mb-4 text-4xl font-bold">Einsatzbereit</h1>
     <p class="mb-8 text-lg text-gray-600">
       Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.
     </p>
 
-    <BedarfeListe isLoggedIn={isLoggedIn} client:load />
+    <BedarfeListe isLoggedIn={isLoggedIn} canCreateBedarf={isOrganisator} client:load />
   </main>
 </BaseLayout>
