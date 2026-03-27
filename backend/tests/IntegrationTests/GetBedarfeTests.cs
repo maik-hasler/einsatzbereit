@@ -24,7 +24,7 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var ct = TestContext.Current.CancellationToken;
 
         // Act
-        var result = await sut.V1BedarfeGetAsync(1, 10, ct);
+        var result = await sut.GetBedarfeAsync(1, 10, ct);
 
         // Assert
         result.TotalItems.Should().Be(0);
@@ -39,12 +39,12 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 1",
             Description = "Beschreibung 1"
         }, ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 2",
             Description = "Beschreibung 2"
@@ -54,7 +54,7 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.V1BedarfeGetAsync(1, 10, ct);
+        var result = await sut.GetBedarfeAsync(1, 10, ct);
 
         // Assert
         result.TotalItems.Should().Be(2);
@@ -67,17 +67,17 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 1",
             Description = "Beschreibung 1"
         }, ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 2",
             Description = "Beschreibung 2"
         }, ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 3",
             Description = "Beschreibung 3"
@@ -87,7 +87,7 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.V1BedarfeGetAsync(1, 2, ct);
+        var result = await sut.GetBedarfeAsync(1, 2, ct);
 
         // Assert
         result.TotalItems.Should().Be(3);
@@ -102,17 +102,17 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 1",
             Description = "Beschreibung 1"
         }, ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 2",
             Description = "Beschreibung 2"
         }, ct);
-        await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 3",
             Description = "Beschreibung 3"
@@ -122,7 +122,7 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.V1BedarfeGetAsync(2, 2, ct);
+        var result = await sut.GetBedarfeAsync(2, 2, ct);
 
         // Assert
         result.TotalItems.Should().Be(3);
@@ -137,19 +137,19 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
 
-        var first = await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        var first = await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Erster Bedarf",
             Description = "Wurde zuerst erstellt"
         }, ct);
 
-        var second = await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        var second = await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Zweiter Bedarf",
             Description = "Wurde als zweites erstellt"
         }, ct);
 
-        var third = await authenticatedClient.V1BedarfePostAsync(new CreateBedarfRequest
+        var third = await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Dritter Bedarf",
             Description = "Wurde zuletzt erstellt"
@@ -159,7 +159,7 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.V1BedarfeGetAsync(1, 10, ct);
+        var result = await sut.GetBedarfeAsync(1, 10, ct);
 
         // Assert
         var items = result.Items.ToList();

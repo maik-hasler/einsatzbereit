@@ -29,23 +29,16 @@ namespace IntegrationTests
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial interface IEinsatzbereitApi
     {
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfBedarf> V1BedarfeGetAsync(int pageNumber, int pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfBedarf> V1BedarfeGetAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken);
-
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<Bedarf> V1BedarfePostAsync(CreateBedarfRequest body);
+        System.Threading.Tasks.Task<PagedListOfBedarf> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<Bedarf> V1BedarfePostAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<Bedarf> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -81,17 +74,10 @@ namespace IntegrationTests
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
         partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
 
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedListOfBedarf> V1BedarfeGetAsync(int pageNumber, int pageSize)
-        {
-            return V1BedarfeGetAsync(pageNumber, pageSize, System.Threading.CancellationToken.None);
-        }
-
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfBedarf> V1BedarfeGetAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedListOfBedarf> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -189,17 +175,10 @@ namespace IntegrationTests
             }
         }
 
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Bedarf> V1BedarfePostAsync(CreateBedarfRequest body)
-        {
-            return V1BedarfePostAsync(body, System.Threading.CancellationToken.None);
-        }
-
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Bedarf> V1BedarfePostAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<Bedarf> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -454,10 +433,10 @@ namespace IntegrationTests
         public string Description { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
-        public System.DateTime CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTime? ModifiedOn { get; set; }
+        public System.DateTimeOffset? ModifiedOn { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         public BedarfId Id { get; set; }
@@ -533,7 +512,7 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IEnumerable<Bedarf> Items { get; set; } = new System.Collections.Generic.List<Bedarf>();
+        public System.Collections.Generic.ICollection<Bedarf> Items { get; set; } = new System.Collections.ObjectModel.Collection<Bedarf>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

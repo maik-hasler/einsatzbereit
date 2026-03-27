@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@astrojs/node": "^10.0.3",
-    "astro": "^6.0.8"
+    "astro": "^6.0.8",
+    "axios": "^1.13.6"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",

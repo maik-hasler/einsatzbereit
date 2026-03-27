@@ -10,14 +10,7 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, CancelToken } from 'axios';
 
-export interface IEinsatzbereitApi {
-    /**
-     * @return OK
-     */
-    getBedarfe(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfBedarf>;
-}
-
-export class EinsatzbereitApi implements IEinsatzbereitApi {
+export class EinsatzbereitApi {
     protected instance: AxiosInstance;
     protected baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -79,21 +72,21 @@ export class EinsatzbereitApi implements IEinsatzbereitApi {
             const _responseText = response.data;
             let result200: any = null;
             let resultData200  = _responseText;
-            result200 = PagedListOfBedarf.fromJS(resultData200);
+            result200 = JSON.parse(resultData200);
             return Promise.resolve<PagedListOfBedarf>(result200);
 
         } else if (status === 400) {
             const _responseText = response.data;
             let result400: any = null;
             let resultData400  = _responseText;
-            result400 = ProblemDetails.fromJS(resultData400);
+            result400 = JSON.parse(resultData400);
             return throwException("Bad Request", status, _responseText, _headers, result400);
 
         } else if (status === 500) {
             const _responseText = response.data;
             let result500: any = null;
             let resultData500  = _responseText;
-            result500 = ProblemDetails.fromJS(resultData500);
+            result500 = JSON.parse(resultData500);
             return throwException("Internal Server Error", status, _responseText, _headers, result500);
 
         } else if (status !== 200 && status !== 204) {
@@ -101,27 +94,6 @@ export class EinsatzbereitApi implements IEinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
         }
         return Promise.resolve<PagedListOfBedarf>(null as any);
-    }
-}
-
-export interface IEinsatzbereitApi {
-    /**
-     * @return OK
-     */
-    createBedarf(body: CreateBedarfRequest, signal?: AbortSignal): Promise<Bedarf>;
-}
-
-export class EinsatzbereitApi implements IEinsatzbereitApi {
-    protected instance: AxiosInstance;
-    protected baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, instance?: AxiosInstance) {
-
-        this.instance = instance || axios.create();
-
-        this.baseUrl = baseUrl ?? "";
-
     }
 
     /**
@@ -169,35 +141,35 @@ export class EinsatzbereitApi implements IEinsatzbereitApi {
             const _responseText = response.data;
             let result200: any = null;
             let resultData200  = _responseText;
-            result200 = Bedarf.fromJS(resultData200);
+            result200 = JSON.parse(resultData200);
             return Promise.resolve<Bedarf>(result200);
 
         } else if (status === 400) {
             const _responseText = response.data;
             let result400: any = null;
             let resultData400  = _responseText;
-            result400 = ProblemDetails.fromJS(resultData400);
+            result400 = JSON.parse(resultData400);
             return throwException("Bad Request", status, _responseText, _headers, result400);
 
         } else if (status === 401) {
             const _responseText = response.data;
             let result401: any = null;
             let resultData401  = _responseText;
-            result401 = ProblemDetails.fromJS(resultData401);
+            result401 = JSON.parse(resultData401);
             return throwException("Unauthorized", status, _responseText, _headers, result401);
 
         } else if (status === 403) {
             const _responseText = response.data;
             let result403: any = null;
             let resultData403  = _responseText;
-            result403 = ProblemDetails.fromJS(resultData403);
+            result403 = JSON.parse(resultData403);
             return throwException("Forbidden", status, _responseText, _headers, result403);
 
         } else if (status === 500) {
             const _responseText = response.data;
             let result500: any = null;
             let resultData500  = _responseText;
-            result500 = ProblemDetails.fromJS(resultData500);
+            result500 = JSON.parse(resultData500);
             return throwException("Internal Server Error", status, _responseText, _headers, result500);
 
         } else if (status !== 200 && status !== 204) {
@@ -208,61 +180,7 @@ export class EinsatzbereitApi implements IEinsatzbereitApi {
     }
 }
 
-export class Bedarf implements IBedarf {
-    title?: string;
-    description?: string;
-    createdOn?: Date;
-    modifiedOn?: Date | undefined;
-    id?: BedarfId;
-
-    [key: string]: any;
-
-    constructor(data?: IBedarf) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.title = _data["title"];
-            this.description = _data["description"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
-            this.modifiedOn = _data["modifiedOn"] ? new Date(_data["modifiedOn"].toString()) : undefined as any;
-            this.id = _data["id"] ? BedarfId.fromJS(_data["id"]) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): Bedarf {
-        data = typeof data === 'object' ? data : {};
-        let result = new Bedarf();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["title"] = this.title;
-        data["description"] = this.description;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["modifiedOn"] = this.modifiedOn ? this.modifiedOn.toISOString() : undefined as any;
-        data["id"] = this.id ? this.id.toJSON() : undefined as any;
-        return data;
-    }
-}
-
-export interface IBedarf {
+export interface Bedarf {
     title?: string;
     description?: string;
     createdOn?: Date;
@@ -272,169 +190,20 @@ export interface IBedarf {
     [key: string]: any;
 }
 
-export class BedarfId implements IBedarfId {
-    value?: string;
-
-    [key: string]: any;
-
-    constructor(data?: IBedarfId) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.value = _data["value"];
-        }
-    }
-
-    static fromJS(data: any): BedarfId {
-        data = typeof data === 'object' ? data : {};
-        let result = new BedarfId();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["value"] = this.value;
-        return data;
-    }
-}
-
-export interface IBedarfId {
+export interface BedarfId {
     value?: string;
 
     [key: string]: any;
 }
 
-export class CreateBedarfRequest implements ICreateBedarfRequest {
-    title!: string;
-    description!: string;
-
-    [key: string]: any;
-
-    constructor(data?: ICreateBedarfRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.title = _data["title"];
-            this.description = _data["description"];
-        }
-    }
-
-    static fromJS(data: any): CreateBedarfRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateBedarfRequest();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["title"] = this.title;
-        data["description"] = this.description;
-        return data;
-    }
-}
-
-export interface ICreateBedarfRequest {
+export interface CreateBedarfRequest {
     title: string;
     description: string;
 
     [key: string]: any;
 }
 
-export class PagedListOfBedarf implements IPagedListOfBedarf {
-    totalItems?: number;
-    currentPage!: number;
-    pageCount?: number;
-    items!: Bedarf[];
-
-    [key: string]: any;
-
-    constructor(data?: IPagedListOfBedarf) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-        if (!data) {
-            this.items = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.totalItems = _data["totalItems"];
-            this.currentPage = _data["currentPage"];
-            this.pageCount = _data["pageCount"];
-            if (Array.isArray(_data["items"])) {
-                this.items = [] as any;
-                for (let item of _data["items"])
-                    this.items!.push(Bedarf.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): PagedListOfBedarf {
-        data = typeof data === 'object' ? data : {};
-        let result = new PagedListOfBedarf();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["totalItems"] = this.totalItems;
-        data["currentPage"] = this.currentPage;
-        data["pageCount"] = this.pageCount;
-        if (Array.isArray(this.items)) {
-            data["items"] = [];
-            for (let item of this.items)
-                data["items"].push(item ? item.toJSON() : undefined as any);
-        }
-        return data;
-    }
-}
-
-export interface IPagedListOfBedarf {
+export interface PagedListOfBedarf {
     totalItems?: number;
     currentPage: number;
     pageCount?: number;
@@ -443,61 +212,7 @@ export interface IPagedListOfBedarf {
     [key: string]: any;
 }
 
-export class ProblemDetails implements IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
-
-    [key: string]: any;
-
-    constructor(data?: IProblemDetails) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.type = _data["type"];
-            this.title = _data["title"];
-            this.status = _data["status"];
-            this.detail = _data["detail"];
-            this.instance = _data["instance"];
-        }
-    }
-
-    static fromJS(data: any): ProblemDetails {
-        data = typeof data === 'object' ? data : {};
-        let result = new ProblemDetails();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["type"] = this.type;
-        data["title"] = this.title;
-        data["status"] = this.status;
-        data["detail"] = this.detail;
-        data["instance"] = this.instance;
-        return data;
-    }
-}
-
-export interface IProblemDetails {
+export interface ProblemDetails {
     type?: string | undefined;
     title?: string | undefined;
     status?: number | undefined;
@@ -507,7 +222,7 @@ export interface IProblemDetails {
     [key: string]: any;
 }
 
-export class SwaggerException extends Error {
+export class ApiException extends Error {
     override message: string;
     status: number;
     response: string;
@@ -524,10 +239,10 @@ export class SwaggerException extends Error {
         this.result = result;
     }
 
-    protected isSwaggerException = true;
+    protected isApiException = true;
 
-    static isSwaggerException(obj: any): obj is SwaggerException {
-        return obj.isSwaggerException === true;
+    static isApiException(obj: any): obj is ApiException {
+        return obj.isApiException === true;
     }
 }
 
@@ -535,7 +250,7 @@ function throwException(message: string, status: number, response: string, heade
     if (result !== null && result !== undefined)
         throw result;
     else
-        throw new SwaggerException(message, status, response, headers, null);
+        throw new ApiException(message, status, response, headers, null);
 }
 
 function isAxiosError(obj: any): obj is AxiosError {
