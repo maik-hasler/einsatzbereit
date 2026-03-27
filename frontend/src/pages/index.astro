@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BedarfeListe from '../components/BedarfeListe';
+import Footer from '../components/Footer';
 
 const isLoggedIn = !!Astro.locals.user;
 const roles: string[] = Array.isArray(Astro.locals.user?.roles) ? Astro.locals.user.roles as string[] : [];
@@ -30,4 +31,5 @@ const isOrganisator = roles.includes('organisator');
 
     <BedarfeListe canCreateBedarf={isOrganisator} client:load />
   </main>
+  <Footer />
 </BaseLayout>
