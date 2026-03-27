@@ -1,0 +1,66 @@
+name: Feature Request
+description: Schlage ein neues Feature vor
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+
+body:
+
+* type: dropdown
+  id: prioritaet
+  attributes:
+  label: Priorität
+  options:
+  - Niedrig
+  - Mittel
+  - Hoch
+  validations:
+  required: true
+
+* type: textarea
+  id: user_story
+  attributes:
+  label: User Story
+  description: Beschreibe die Anforderung als User Story
+  placeholder: |
+  Als <Rolle>
+  möchte ich <Ziel / Wunsch>
+  damit <Nutzen / Mehrwert>
+  validations:
+  required: true
+
+* type: checkboxes
+  id: akzeptanzkriterien
+  attributes:
+  label: Akzeptanzkriterien
+  options:
+  - label: Kriterium 1
+  - label: Kriterium 2
+  - label: Kriterium 3
+
+* type: textarea
+  id: beschreibung
+  attributes:
+  label: Beschreibung
+  description: Beschreibe das Feature in wenigen Sätzen. Vermeide Marketing-Sprache.
+  placeholder: Beschreibe das Feature kurz und konkret.
+  validations:
+  required: true
+
+* type: textarea
+  id: umsetzung
+  attributes:
+  label: Vorschlag zur Umsetzung
+  placeholder: |
+  - Ansatz / Lösungsidee
+  - Alternativen (falls vorhanden)
+
+* type: textarea
+  id: zusaetzliche_infos
+  attributes:
+  label: Zusätzliche Informationen
+  placeholder: |
+  - Screenshots
+  - Links
+  - Kontext
+  - Abhängigkeiten
