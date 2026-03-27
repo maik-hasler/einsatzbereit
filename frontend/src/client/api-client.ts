@@ -7,20 +7,14 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
-import axios, { AxiosError } from 'axios';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, CancelToken } from 'axios';
-
 export class EinsatzbereitApi {
-    protected instance: AxiosInstance;
-    protected baseUrl: string;
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(baseUrl?: string, instance?: AxiosInstance) {
-
-        this.instance = instance || axios.create();
-
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
         this.baseUrl = baseUrl ?? "";
-
     }
 
     /**
@@ -38,60 +32,44 @@ export class EinsatzbereitApi {
             url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
-        let options_: AxiosRequestConfig = {
+        let options_: RequestInit = {
             method: "GET",
-            url: url_,
+            signal,
             headers: {
                 "Accept": "application/json"
-            },
-            signal
+            }
         };
 
-        return this.instance.request(options_).catch((_error: any) => {
-            if (isAxiosError(_error) && _error.response) {
-                return _error.response;
-            } else {
-                throw _error;
-            }
-        }).then((_response: AxiosResponse) => {
+        return this.http.fetch(url_, options_).then((_response: Response) => {
             return this.processGetBedarfe(_response);
         });
     }
 
-    protected processGetBedarfe(response: AxiosResponse): Promise<PagedListOfBedarf> {
+    protected processGetBedarfe(response: Response): Promise<PagedListOfBedarf> {
         const status = response.status;
-        let _headers: any = {};
-        if (response.headers && typeof response.headers === "object") {
-            for (const k in response.headers) {
-                if (response.headers.hasOwnProperty(k)) {
-                    _headers[k] = response.headers[k];
-                }
-            }
-        }
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result200: any = null;
-            let resultData200  = _responseText;
-            result200 = JSON.parse(resultData200);
-            return Promise.resolve<PagedListOfBedarf>(result200);
-
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfBedarf;
+            return result200;
+            });
         } else if (status === 400) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result400: any = null;
-            let resultData400  = _responseText;
-            result400 = JSON.parse(resultData400);
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Bad Request", status, _responseText, _headers, result400);
-
+            });
         } else if (status === 500) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result500: any = null;
-            let resultData500  = _responseText;
-            result500 = JSON.parse(resultData500);
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Internal Server Error", status, _responseText, _headers, result500);
-
+            });
         } else if (status !== 200 && status !== 204) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
         }
         return Promise.resolve<PagedListOfBedarf>(null as any);
     }
@@ -105,76 +83,58 @@ export class EinsatzbereitApi {
 
         const content_ = JSON.stringify(body);
 
-        let options_: AxiosRequestConfig = {
-            data: content_,
+        let options_: RequestInit = {
+            body: content_,
             method: "POST",
-            url: url_,
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
-            },
-            signal
+            }
         };
 
-        return this.instance.request(options_).catch((_error: any) => {
-            if (isAxiosError(_error) && _error.response) {
-                return _error.response;
-            } else {
-                throw _error;
-            }
-        }).then((_response: AxiosResponse) => {
+        return this.http.fetch(url_, options_).then((_response: Response) => {
             return this.processCreateBedarf(_response);
         });
     }
 
-    protected processCreateBedarf(response: AxiosResponse): Promise<Bedarf> {
+    protected processCreateBedarf(response: Response): Promise<Bedarf> {
         const status = response.status;
-        let _headers: any = {};
-        if (response.headers && typeof response.headers === "object") {
-            for (const k in response.headers) {
-                if (response.headers.hasOwnProperty(k)) {
-                    _headers[k] = response.headers[k];
-                }
-            }
-        }
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result200: any = null;
-            let resultData200  = _responseText;
-            result200 = JSON.parse(resultData200);
-            return Promise.resolve<Bedarf>(result200);
-
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Bedarf;
+            return result200;
+            });
         } else if (status === 400) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result400: any = null;
-            let resultData400  = _responseText;
-            result400 = JSON.parse(resultData400);
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Bad Request", status, _responseText, _headers, result400);
-
+            });
         } else if (status === 401) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result401: any = null;
-            let resultData401  = _responseText;
-            result401 = JSON.parse(resultData401);
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Unauthorized", status, _responseText, _headers, result401);
-
+            });
         } else if (status === 403) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result403: any = null;
-            let resultData403  = _responseText;
-            result403 = JSON.parse(resultData403);
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Forbidden", status, _responseText, _headers, result403);
-
+            });
         } else if (status === 500) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             let result500: any = null;
-            let resultData500  = _responseText;
-            result500 = JSON.parse(resultData500);
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Internal Server Error", status, _responseText, _headers, result500);
-
+            });
         } else if (status !== 200 && status !== 204) {
-            const _responseText = response.data;
+            return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
         }
         return Promise.resolve<Bedarf>(null as any);
     }
@@ -251,8 +211,4 @@ function throwException(message: string, status: number, response: string, heade
         throw result;
     else
         throw new ApiException(message, status, response, headers, null);
-}
-
-function isAxiosError(obj: any): obj is AxiosError {
-    return obj && obj.isAxiosError === true;
 }

@@ -28,7 +28,7 @@
     "openApiToTypeScriptClient": {
       "output": "../../../frontend/src/client/api-client.ts",
       "className": "EinsatzbereitApi",
-      "template": "Axios",
+      "template": "fetch",
       "operationGenerationMode": "SingleClientFromOperationId",
       "typeStyle": "Interface",
       "markOptionalProperties": true,

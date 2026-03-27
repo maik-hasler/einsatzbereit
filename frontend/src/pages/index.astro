@@ -1,15 +1,20 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BedarfeListe from '../components/BedarfeListe';
+
+const isLoggedIn = !!Astro.locals.user;
 ---
 
 <BaseLayout
   title="Einsatzbereit — Spontanes Ehrenamt in deiner Nähe"
   description="Entdecke kurzfristige Ehrenamt-Einsätze bei gemeinnützigen Organisationen in deiner Nähe. Melde dich spontan an und hilf dort, wo du gerade gebraucht wirst."
 >
-  <main class="mx-auto max-w-2xl px-4 py-16 text-center">
+  <main class="mx-auto max-w-2xl px-4 py-16">
     <h1 class="mb-4 text-4xl font-bold">Einsatzbereit</h1>
     <p class="mb-8 text-lg text-gray-600">
       Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.
     </p>
+
+    <BedarfeListe isLoggedIn={isLoggedIn} client:load />
   </main>
 </BaseLayout>
