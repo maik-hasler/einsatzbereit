@@ -3,11 +3,10 @@ import type { PagedListOfBedarf, Bedarf } from "../client/api-client";
 import CreateBedarfModal from "./CreateBedarfModal";
 
 interface Props {
-  isLoggedIn: boolean;
   canCreateBedarf: boolean;
 }
 
-export default function BedarfeListe({ isLoggedIn, canCreateBedarf }: Props) {
+export default function BedarfeListe({ canCreateBedarf }: Props) {
   const [data, setData] = useState<PagedListOfBedarf | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

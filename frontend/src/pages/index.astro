@@ -28,6 +28,6 @@ const isOrganisator = roles.includes('organisator');
       Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.
     </p>
 
-    <BedarfeListe isLoggedIn={isLoggedIn} canCreateBedarf={isOrganisator} client:load />
+    <BedarfeListe canCreateBedarf={isOrganisator} client:load />
   </main>
 </BaseLayout>
