@@ -1,0 +1,45 @@
+name: Bug Report
+description: Melde einen Fehler
+title: "[Bug]: "
+labels: ["bug"]
+assignees: []
+
+body:
+
+* type: dropdown
+  id: prioritaet
+  attributes:
+  label: Priorität
+  options:
+  - Niedrig
+  - Mittel
+  - Hoch
+  validations:
+  required: true
+
+* type: textarea
+  id: beschreibung
+  attributes:
+  label: Beschreibung
+  description: Was passiert und was sollte stattdessen passieren?
+  placeholder: Beschreibe den Fehler in wenigen Sätzen.
+  validations:
+  required: true
+
+* type: textarea
+  id: reproduktion
+  attributes:
+  label: Schritte zur Reproduktion
+  description: So lässt sich der Fehler nachstellen
+  placeholder: |
+  1. Schritt 1
+  2. Schritt 2
+  3. Schritt 3
+  validations:
+  required: true
+
+* type: textarea
+  id: extra
+  attributes:
+  label: Zusätzliche Informationen
+  placeholder: Screenshots, Logs, Links, Kontext
