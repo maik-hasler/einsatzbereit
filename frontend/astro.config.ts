@@ -1,4 +1,4 @@
-import { defineConfig } from 'astro/config';
+import { defineConfig, envField } from 'astro/config';
 import node from '@astrojs/node';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -8,4 +8,9 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  env: {
+    schema: {
+      AUTHORITY_URL: envField.string({ context: "client", access: "public" })
+    }
+  }
 });
