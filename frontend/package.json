@@ -1,7 +1,7 @@
 {
   "name": "einsatzbereit",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22.12.0"
@@ -16,8 +16,12 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.3",
-    "astro": "^6.0.8"
+    "@astrojs/node": "^10.0.4",
+    "@astrojs/react": "^5.0.2",
+    "astro": "^6.1.1",
+    "openid-client": "^6.8.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
@@ -25,10 +29,17 @@
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "eslint": "^10.1.0",
     "eslint-plugin-astro": "^1.6.0",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "yaml": ">=2.8.3"
+    }
   }
 }

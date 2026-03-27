@@ -1,0 +1,42 @@
+{
+  "runtime": "Net100",
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "wwwroot/openapi-$(ApiVersion).json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "output": "../../tests/IntegrationTests/ApiClient.cs",
+      "namespace": "IntegrationTests",
+      "className": "EinsatzbereitApi",
+      "injectHttpClient": true,
+      "disposeHttpClient": false,
+      "generateClientInterfaces": true,
+      "jsonLibrary": "SystemTextJson",
+      "useBaseUrl": false,
+      "generateBaseUrlProperty": false,
+      "operationGenerationMode": "SingleClientFromOperationId",
+      "generateOptionalParameters": true,
+      "dateType": "System.DateTimeOffset",
+      "dateTimeType": "System.DateTimeOffset",
+      "classStyle": "Poco",
+      "additionalNamespaceUsages": [
+        "System.Collections.Generic"
+      ]
+    },
+    "openApiToTypeScriptClient": {
+      "output": "../../../frontend/src/client/api-client.ts",
+      "className": "EinsatzbereitApi",
+      "template": "fetch",
+      "operationGenerationMode": "SingleClientFromOperationId",
+      "typeStyle": "Interface",
+      "markOptionalProperties": true,
+      "generateDefaultValues": false,
+      "generateClientInterfaces": false,
+      "generateConstructorInterface": false,
+      "useAbortSignal": true,
+      "newLineBehavior": "Auto"
+    }
+  }
+}

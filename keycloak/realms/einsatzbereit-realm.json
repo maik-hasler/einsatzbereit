@@ -10,6 +10,10 @@
       {
         "name": "user",
         "description": "Default user"
+      },
+      {
+        "name": "organisator",
+        "description": "Organisator – kann Bedarfe erstellen und verwalten"
       }
     ]
   },
@@ -22,6 +26,9 @@
       "directAccessGrantsEnabled": true,
       "redirectUris": ["http://localhost:*"],
       "webOrigins": ["http://localhost:*"],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:*"
+      },
       "protocol": "openid-connect",
       "protocolMappers": [
         {
@@ -65,30 +72,49 @@
   ],
   "users": [
     {
-      "username": "testuser",
+      "username": "hannah",
       "enabled": true,
-      "email": "testuser@example.com",
+      "email": "hannah@example.com",
+      "firstName": "Hannah",
+      "lastName": "Helferin",
       "realmRoles": ["user"],
       "credentials": [
         {
           "type": "password",
-          "value": "testpassword",
+          "value": "hannah123",
           "temporary": false
         }
       ]
     },
     {
-      "username": "adminuser",
+      "username": "olaf",
       "enabled": true,
-      "email": "adminuser@example.com",
+      "email": "olaf@example.com",
+      "firstName": "Olaf",
+      "lastName": "Organisator",
+      "realmRoles": ["user", "organisator"],
       "credentials": [
         {
           "type": "password",
-          "value": "adminpassword",
+          "value": "olaf123",
           "temporary": false
         }
-      ],
-      "realmRoles": ["admin"]
+      ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "Admin",
+      "realmRoles": ["admin"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ]
     }
   ]
 }

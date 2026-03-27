@@ -1,9 +1,29 @@
-using System.Security.Claims;
 using Api.Authentication;
+using Api.Extensions;
+using Application;
+using Asp.Versioning;
+using Infrastructure;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructureServices();
+
+builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1);
+        options.ReportApiVersions = true;
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'V";
+        options.SubstituteApiVersionInUrl = true;
+    });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -24,17 +44,51 @@ builder.Services.AddAuthorizationBuilder()
             .RequireRole(AuthorizationPolicies.AdminRole))
     .AddDefaultPolicy(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy, policy =>
         policy.RequireClaim(AuthorizationPolicies.RealmClaim, AuthorizationPolicies.EinsatzbereitRealm)
-            .RequireRole(AuthorizationPolicies.DefaultUser));
+            .RequireRole(AuthorizationPolicies.DefaultUser))
+    .AddPolicy(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy, policy =>
+        policy.RequireClaim(AuthorizationPolicies.RealmClaim, AuthorizationPolicies.EinsatzbereitRealm)
+            .RequireRole(AuthorizationPolicies.OrganisatorRole));
+
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4321"])
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
+
+builder.Services.AddEndpoints();
+
+builder.Services.AddOpenApi("v1", options =>
+{
+    options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
+    options.AddDocumentTransformer((document, context, ct) =>
+    {
+        document.Info = new()
+        {
+            Title = "Einsatzbereit API",
+            Version = "v1",
+            Description = "API für die Einsatzbereit-Anwendung"
+        };
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    var scope = app.Services.CreateScope();
+
+    var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
+    
+    await initializer.MigrateAsync();
+    
+    app.MapOpenApi();
+}
+
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/me", (ClaimsPrincipal user) => new { Name = user.FindFirstValue("preferred_username") })
-    .RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy);
-
-app.MapGet("/admin", () => new { Message = "Admin access granted" })
-    .RequireAuthorization(AuthorizationPolicies.EinsatzbereitAdminPolicy);
+app.MapEndpoints();
 
 await app.RunAsync();
