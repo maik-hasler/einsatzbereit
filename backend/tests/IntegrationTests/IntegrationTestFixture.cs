@@ -30,13 +30,13 @@ public sealed class IntegrationTestFixture
             AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..",
             "keycloak", "realms", "einsatzbereit-realm.json"));
 
-        _postgres = new PostgreSqlBuilder()
+        _postgres = new PostgreSqlBuilder("postgres:18")
             .WithDatabase("einsatzbereit")
             .WithUsername("einsatzbereit")
             .WithPassword("einsatzbereit")
             .Build();
 
-        _keycloak = new KeycloakBuilder()
+        _keycloak = new KeycloakBuilder("quay.io/keycloak/keycloak:26.5.6")
             .WithResourceMapping(realmPath, "/opt/keycloak/data/import")
             .WithCommand("--import-realm")
             .Build();
