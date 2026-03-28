@@ -1,7 +1,7 @@
-FROM node:24.14.1-slim AS base
-RUN corepack enable
+FROM node:25.8.2-slim AS base
 WORKDIR /app
 
+RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
 FROM base AS prod-deps
