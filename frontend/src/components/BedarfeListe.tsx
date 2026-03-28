@@ -4,9 +4,10 @@ import CreateBedarfModal from "./CreateBedarfModal";
 
 interface Props {
   canCreateBedarf: boolean;
+  activeOrgId: string | null;
 }
 
-export default function BedarfeListe({ canCreateBedarf }: Props) {
+export default function BedarfeListe({ canCreateBedarf, activeOrgId }: Props) {
   const [data, setData] = useState<PagedListOfBedarf | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +83,9 @@ export default function BedarfeListe({ canCreateBedarf }: Props) {
         </>
       )}
 
-      {showModal && (
+      {showModal && activeOrgId && (
         <CreateBedarfModal
+          organisationId={activeOrgId}
           onClose={() => setShowModal(false)}
           onSuccess={() => setRefreshKey((k) => k + 1)}
         />

@@ -2,12 +2,13 @@ import { useState } from "react";
 import type { CreateBedarfRequest } from "../client/api-client";
 
 interface Props {
+  organisationId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function CreateBedarfModal({ onClose, onSuccess }: Props) {
-  const [form, setForm] = useState<CreateBedarfRequest>({ title: "", description: "" });
+export default function CreateBedarfModal({ organisationId, onClose, onSuccess }: Props) {
+  const [form, setForm] = useState<CreateBedarfRequest>({ title: "", description: "", organisationId });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

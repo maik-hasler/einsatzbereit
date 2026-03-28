@@ -635,6 +635,9 @@ namespace IntegrationTests
     public partial class Bedarf
     {
 
+        [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
+        public OrganisationId OrganisationId { get; set; }
+
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         public string Title { get; set; }
 
@@ -646,6 +649,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
         public System.DateTimeOffset? ModifiedOn { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("events")]
+        public System.Collections.Generic.ICollection<DomainEvent> Events { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         public BedarfId Id { get; set; }
@@ -691,6 +697,10 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Description { get; set; }
 
+        [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid OrganisationId { get; set; }
+
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -709,6 +719,21 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Name { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class DomainEvent
+    {
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

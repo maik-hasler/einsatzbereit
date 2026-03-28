@@ -13,7 +13,7 @@ internal sealed class CreateBedarfCommandHandler(
         CreateBedarfCommand request,
         CancellationToken cancellationToken = default)
     {
-        var bedarf = Bedarf.Create(request.Title, request.Description);
+        var bedarf = Bedarf.Create(request.Title, request.Description, request.OrganisationId);
         
         await bedarfRepository.AddAsync(bedarf, cancellationToken);
 

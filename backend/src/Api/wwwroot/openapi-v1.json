@@ -249,6 +249,9 @@
       "Bedarf": {
         "type": "object",
         "properties": {
+          "organisationId": {
+            "$ref": "#/components/schemas/OrganisationId"
+          },
           "title": {
             "type": "string"
           },
@@ -265,6 +268,15 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DomainEvent"
+            }
           },
           "id": {
             "$ref": "#/components/schemas/BedarfId"
@@ -283,7 +295,8 @@
       "CreateBedarfRequest": {
         "required": [
           "title",
-          "description"
+          "description",
+          "organisationId"
         ],
         "type": "object",
         "properties": {
@@ -292,6 +305,10 @@
           },
           "description": {
             "type": "string"
+          },
+          "organisationId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -305,6 +322,9 @@
             "type": "string"
           }
         }
+      },
+      "DomainEvent": {
+        "type": "object"
       },
       "KeycloakOrganisation": {
         "required": [

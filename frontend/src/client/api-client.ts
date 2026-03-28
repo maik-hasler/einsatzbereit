@@ -249,10 +249,12 @@ export class EinsatzbereitApi {
 }
 
 export interface Bedarf {
+    organisationId?: OrganisationId;
     title?: string;
     description?: string;
     createdOn?: Date;
     modifiedOn?: Date | undefined;
+    events?: DomainEvent[] | undefined;
     id?: BedarfId;
 
     [key: string]: any;
@@ -267,12 +269,18 @@ export interface BedarfId {
 export interface CreateBedarfRequest {
     title: string;
     description: string;
+    organisationId: string;
 
     [key: string]: any;
 }
 
 export interface CreateOrganisationRequest {
     name: string;
+
+    [key: string]: any;
+}
+
+export interface DomainEvent {
 
     [key: string]: any;
 }

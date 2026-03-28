@@ -1,6 +1,7 @@
 using Application.Bedarfe.GetBedarfe.v1;
 using AwesomeAssertions;
 using Domain.Bedarfe;
+using Domain.Organisationen;
 using Domain.Primitives;
 using NSubstitute;
 using Xunit;
@@ -9,6 +10,7 @@ namespace Application.UnitTests.Bedarfe.GetBedarfe;
 
 public class GetBedarfeQueryHandlerTests
 {
+    private static readonly OrganisationId TestOrganisationId = new(Guid.NewGuid());
     private readonly IBedarfRepository _bedarfRepository = Substitute.For<IBedarfRepository>();
     private readonly GetBedarfeQueryHandler _sut;
 
@@ -23,8 +25,8 @@ public class GetBedarfeQueryHandlerTests
         // Arrange
         var bedarfe = new List<Bedarf>
         {
-            Bedarf.Create("Bedarf 1", "Beschreibung 1"),
-            Bedarf.Create("Bedarf 2", "Beschreibung 2")
+            Bedarf.Create("Bedarf 1", "Beschreibung 1", TestOrganisationId),
+            Bedarf.Create("Bedarf 2", "Beschreibung 2", TestOrganisationId)
         };
         var pagedList = new PagedList<Bedarf>(bedarfe, 2, 1, 10);
         var query = new GetBedarfeQuery(1, 10);

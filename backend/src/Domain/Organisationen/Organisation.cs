@@ -10,9 +10,9 @@ public sealed class Organisation
 
     public Guid KeycloakId { get; private set; }
 
-    public DateTimeOffset CreatedOn { get; }
+    public DateTimeOffset CreatedOn { get; private set; }
 
-    public DateTimeOffset? ModifiedOn { get; }
+    public DateTimeOffset? ModifiedOn { get; private set; }
 
     private Organisation(
         OrganisationId id,

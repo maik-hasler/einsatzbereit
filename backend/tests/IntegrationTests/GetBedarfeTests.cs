@@ -39,15 +39,19 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
+        var orgId = await CreateOrganisationAsync(authenticatedClient, ct);
+
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 1",
-            Description = "Beschreibung 1"
+            Description = "Beschreibung 1",
+            OrganisationId = orgId
         }, ct);
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 2",
-            Description = "Beschreibung 2"
+            Description = "Beschreibung 2",
+            OrganisationId = orgId
         }, ct);
 
         var httpClient = fixture.Factory.CreateDefaultClient();
@@ -67,20 +71,25 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
+        var orgId = await CreateOrganisationAsync(authenticatedClient, ct);
+
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 1",
-            Description = "Beschreibung 1"
+            Description = "Beschreibung 1",
+            OrganisationId = orgId
         }, ct);
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 2",
-            Description = "Beschreibung 2"
+            Description = "Beschreibung 2",
+            OrganisationId = orgId
         }, ct);
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 3",
-            Description = "Beschreibung 3"
+            Description = "Beschreibung 3",
+            OrganisationId = orgId
         }, ct);
 
         var httpClient = fixture.Factory.CreateDefaultClient();
@@ -102,20 +111,25 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
+        var orgId = await CreateOrganisationAsync(authenticatedClient, ct);
+
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 1",
-            Description = "Beschreibung 1"
+            Description = "Beschreibung 1",
+            OrganisationId = orgId
         }, ct);
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 2",
-            Description = "Beschreibung 2"
+            Description = "Beschreibung 2",
+            OrganisationId = orgId
         }, ct);
         await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Bedarf 3",
-            Description = "Beschreibung 3"
+            Description = "Beschreibung 3",
+            OrganisationId = orgId
         }, ct);
 
         var httpClient = fixture.Factory.CreateDefaultClient();
@@ -136,23 +150,27 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
+        var orgId = await CreateOrganisationAsync(authenticatedClient, ct);
 
         var first = await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Erster Bedarf",
-            Description = "Wurde zuerst erstellt"
+            Description = "Wurde zuerst erstellt",
+            OrganisationId = orgId
         }, ct);
 
         var second = await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Zweiter Bedarf",
-            Description = "Wurde als zweites erstellt"
+            Description = "Wurde als zweites erstellt",
+            OrganisationId = orgId
         }, ct);
 
         var third = await authenticatedClient.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Dritter Bedarf",
-            Description = "Wurde zuletzt erstellt"
+            Description = "Wurde zuletzt erstellt",
+            OrganisationId = orgId
         }, ct);
 
         var httpClient = fixture.Factory.CreateDefaultClient();
@@ -184,7 +202,8 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         var act = () => client.CreateBedarfAsync(new CreateBedarfRequest
         {
             Title = "Nicht erlaubt",
-            Description = "Hannah darf keine Bedarfe erstellen"
+            Description = "Hannah darf keine Bedarfe erstellen",
+            OrganisationId = Guid.NewGuid()
         }, ct);
 
         // Assert
@@ -199,5 +218,13 @@ public class GetBedarfeTests(IntegrationTestFixture fixture)
         httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
         return new EinsatzbereitApi(httpClient);
+    }
+
+    private static async Task<Guid> CreateOrganisationAsync(
+        EinsatzbereitApi client, CancellationToken cancellationToken)
+    {
+        var organisation = await client.CreateOrganisationAsync(
+            new CreateOrganisationRequest { Name = "Testorganisation" }, cancellationToken);
+        return organisation.Id.Value;
     }
 }

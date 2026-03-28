@@ -2,4 +2,5 @@
 
 public sealed record CreateBedarfRequest(
     string Title,
-    string Description);
+    string Description,
+    Guid OrganisationId);

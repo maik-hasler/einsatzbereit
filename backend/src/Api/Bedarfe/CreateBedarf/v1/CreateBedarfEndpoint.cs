@@ -3,6 +3,7 @@ using Api.Authentication;
 using Application.Bedarfe.CreateBedarf.v1;
 using Application.Messaging;
 using Domain.Bedarfe;
+using Domain.Organisationen;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Bedarfe.CreateBedarf.v1;
@@ -22,16 +23,19 @@ internal sealed class CreateBedarfEndpoint
             .RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
             .MapToApiVersion(1);
     }
-    
+
     private static async Task<IResult> CreateBedarfAsync(
         [FromBody] CreateBedarfRequest request,
         [FromServices] ISender sender,
         CancellationToken cancellationToken)
     {
-        var query = new CreateBedarfCommand(request.Title, request.Description);
-        
-        var result = await sender.Send(query, cancellationToken);
-        
+        var command = new CreateBedarfCommand(
+            request.Title,
+            request.Description,
+            new OrganisationId(request.OrganisationId));
+
+        var result = await sender.Send(command, cancellationToken);
+
         return Results.Ok(result);
     }
 }

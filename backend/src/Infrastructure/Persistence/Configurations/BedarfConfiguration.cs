@@ -1,4 +1,5 @@
 ﻿using Domain.Bedarfe;
+using Domain.Organisationen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,6 +18,12 @@ internal sealed class BedarfConfiguration
                 id => id.Value,
                 guid => new BedarfId(guid))
             .ValueGeneratedNever();
+
+        builder.Property(bedarf => bedarf.OrganisationId)
+            .HasConversion(
+                id => id.Value,
+                guid => new OrganisationId(guid))
+            .IsRequired();
 
         builder.Property(bedarf => bedarf.CreatedOn);
 
