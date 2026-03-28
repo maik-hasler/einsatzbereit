@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "v25.8.2"
   },
   "scripts": {
     "dev": "astro dev",
@@ -16,30 +16,30 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.4",
-    "@astrojs/react": "^5.0.2",
-    "astro": "^6.1.1",
-    "openid-client": "^6.8.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "@astrojs/node": "10.0.4",
+    "@astrojs/react": "5.0.2",
+    "astro": "6.1.1",
+    "openid-client": "6.8.2",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.8",
-    "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.58.2",
-    "@tailwindcss/vite": "^4.2.2",
-    "@types/node": "^25.5.0",
+    "@astrojs/check": "0.9.8",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.58.2",
+    "@tailwindcss/vite": "4.2.2",
+    "@types/node": "25.5.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "eslint": "^10.1.0",
-    "eslint-plugin-astro": "^1.6.0",
-    "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.0",
-    "typescript-eslint": "^8.57.2"
+    "eslint": "10.1.0",
+    "eslint-plugin-astro": "1.6.0",
+    "tailwindcss": "4.2.2",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.57.2"
   },
   "pnpm": {
     "overrides": {
-      "yaml": ">=2.8.3"
+      "yaml": "2.8.3"
     }
   }
 }
