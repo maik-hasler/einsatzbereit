@@ -5,7 +5,6 @@ on:
     tags:
       - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])'
       - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])-rc.+([0-9])'
-      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])-preview.+([0-9])'
 
 env:
   REGISTRY: ghcr.io
@@ -34,7 +33,7 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/keycloak/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
 
-          if echo "$TAG" | grep -qE '-(rc|preview)\.'; then
+          if echo "$TAG" | grep -qE '-rc\.'; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"

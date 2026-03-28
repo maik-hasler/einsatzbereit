@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+/*
+ * Brand-Farbpalette — hier ändern, um die gesamte App umzufärben.
+ * Aktuell: Helles Grün (Tailwind green). Tausche die Hex-Werte
+ * gegen eine andere Palette und alles passt sich an.
+ */
+@theme {
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-700: #15803d;
+  --color-brand-800: #166534;
+  --color-accent-400: #34d399;
+}

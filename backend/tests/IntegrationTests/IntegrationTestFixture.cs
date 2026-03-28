@@ -24,6 +24,8 @@ public sealed class IntegrationTestFixture
 
     public HttpClient CreateClient() => _factory.CreateClient();
 
+    public string KeycloakBaseAddress => _keycloak.GetBaseAddress();
+
     public async ValueTask InitializeAsync()
     {
         var realmPath = Path.GetFullPath(Path.Combine(
@@ -56,7 +58,11 @@ public sealed class IntegrationTestFixture
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["Authentication:Authority"] = authority,
-                        ["ConnectionStrings:Database"] = _postgres.GetConnectionString()
+                        ["ConnectionStrings:Database"] = _postgres.GetConnectionString(),
+                        ["Keycloak:BaseUrl"] = _keycloak.GetBaseAddress().TrimEnd('/'),
+                        ["Keycloak:Realm"] = "einsatzbereit",
+                        ["Keycloak:ClientId"] = "backend",
+                        ["Keycloak:ClientSecret"] = "backend-secret"
                     });
                 });
                 builder.UseEnvironment("Development");

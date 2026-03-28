@@ -1,0 +1,4 @@
+* text=auto
+
+# Shell scripts must always use LF — otherwise they break in Linux containers
+*.sh text eol=lf
