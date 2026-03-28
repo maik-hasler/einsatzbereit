@@ -49,7 +49,7 @@ jobs:
               -D build/ADRs \
               docs/ADRs/*.adoc
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: build
 
