@@ -1,5 +1,7 @@
 ﻿using Application.Abstractions;
 using Domain.Bedarfe;
+using Domain.Organisationen;
+using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
@@ -17,7 +19,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services)
     {
         services.ConfigureOptions<ConnectionStringOptionsSetup>();
-        
+
         services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -33,11 +35,21 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<IApplicationDbContextInitializer, ApplicationDbContextInitializer>();
-        
+
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IBedarfRepository, BedarfRepository>();
-        
+        services.AddScoped<IOrganisationRepository, OrganisationRepository>();
+
+        services.ConfigureOptions<KeycloakOptionsSetup>();
+
+        services.AddHttpClient<IKeycloakOrganisationService, KeycloakOrganisationService>(
+            (sp, client) =>
+            {
+                var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
+                client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+            });
+
         return services;
     }
 }

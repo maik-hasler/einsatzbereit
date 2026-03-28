@@ -51,6 +51,39 @@ namespace DatabaseMigrations.Migrations
 
                     b.ToTable("bedarfe", (string)null);
                 });
+
+            modelBuilder.Entity("Domain.Organisationen.Organisation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_on");
+
+                    b.Property<Guid>("KeycloakId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("keycloak_id");
+
+                    b.Property<DateTimeOffset?>("ModifiedOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_on");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_organisationen");
+
+                    b.HasIndex("KeycloakId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_organisationen_keycloak_id");
+
+                    b.ToTable("organisationen", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }

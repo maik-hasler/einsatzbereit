@@ -3,5 +3,6 @@
 declare namespace App {
   interface Locals {
     user: Record<string, unknown> | null;
+    activeOrgId: string | null;
   }
 }

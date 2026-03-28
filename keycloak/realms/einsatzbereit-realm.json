@@ -1,6 +1,7 @@
 {
   "realm": "einsatzbereit",
   "enabled": true,
+  "organizationsEnabled": true,
   "roles": {
     "realm": [
       {
@@ -115,6 +116,14 @@
           "temporary": false
         }
       ]
+    },
+    {
+      "username": "service-account-backend",
+      "enabled": true,
+      "serviceAccountClientId": "backend",
+      "clientRoles": {
+        "realm-management": ["manage-realm", "manage-users", "manage-organizations"]
+      }
     }
   ]
 }

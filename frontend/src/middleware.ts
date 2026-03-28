@@ -5,6 +5,7 @@ export const onRequest: MiddlewareHandler = async ({ cookies, locals }, next) =>
 
   if (!session) {
     locals.user = null;
+    locals.activeOrgId = null;
     return next();
   }
 
@@ -22,6 +23,8 @@ export const onRequest: MiddlewareHandler = async ({ cookies, locals }, next) =>
   } catch {
     locals.user = null;
   }
+
+  locals.activeOrgId = cookies.get("active-org")?.value ?? null;
 
   return next();
 };
