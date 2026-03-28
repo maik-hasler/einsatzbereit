@@ -53,11 +53,9 @@ internal sealed class KeycloakOrganisationService(
     {
         await EnsureAuthenticatedAsync(cancellationToken);
 
-        var request = new { id = userId.ToString() };
-
         var response = await httpClient.PostAsJsonAsync(
             $"/admin/realms/{_options.Realm}/organizations/{organisationId}/members",
-            request,
+            userId.ToString(),
             JsonOptions,
             cancellationToken);
 
@@ -95,7 +93,7 @@ internal sealed class KeycloakOrganisationService(
         await EnsureAuthenticatedAsync(cancellationToken);
 
         var response = await httpClient.GetAsync(
-            $"/admin/realms/{_options.Realm}/organizations?memberUserId={userId}",
+            $"/admin/realms/{_options.Realm}/organizations/members/{userId}/organizations",
             cancellationToken);
 
         await EnsureSuccessAsync(response, cancellationToken);

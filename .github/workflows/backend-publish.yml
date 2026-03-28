@@ -1,22 +1,45 @@
-name: Publish Keycloak
+name: Publish Backend
 
 on:
   push:
     tags:
-      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])'
-      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])-rc.+([0-9])'
+      - 'backend/v+([0-9]).+([0-9]).+([0-9])'
+      - 'backend/v+([0-9]).+([0-9]).+([0-9])-rc.+([0-9])'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-keycloak
+  IMAGE_NAME: ${{ github.repository }}-backend
 
 permissions:
   contents: read
   packages: write
 
 jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: backend/global.json
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Test
+        run: dotnet test --no-build
+
   publish:
     runs-on: ubuntu-latest
+    needs: build-and-test
     steps:
       - uses: actions/checkout@v6
 
@@ -30,7 +53,7 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          TAG="${GITHUB_REF#refs/tags/keycloak/v}"
+          TAG="${GITHUB_REF#refs/tags/backend/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
 
           if echo "$TAG" | grep -qE '-rc\.'; then
@@ -51,7 +74,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
-          context: keycloak
+          context: backend
+          file: backend/src/Api/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

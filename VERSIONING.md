@@ -26,7 +26,6 @@ Beispiele:
 - `keycloak/v26.5.6.1` - Erster eigener Build auf Basis von Keycloak 26.5.6
 - `keycloak/v26.5.6.2` - Zweite Änderung (z.B. neue Realm-Config)
 - `keycloak/v26.5.6.2-rc.1` - Release Candidate für Patch 2
-- `keycloak/v26.5.6.2-preview.1` - Preview für Patch 2
 - `keycloak/v27.0.0.1` - Upgrade auf Keycloak 27.0.0
 
 ### Frontend & Backend
@@ -38,12 +37,11 @@ Standard [SemVer](https://semver.org/):
 
 ## Prerelease-Tags
 
-Keycloak unterstützt folgende Prerelease-Suffixe:
+Alle Komponenten unterstützen `-rc.N` als einziges Prerelease-Suffix:
 
-- `-rc.N` - Release Candidate
-- `-preview.N` - Preview
-
-Frontend und Backend unterstützen Standard-SemVer-Prerelease-Suffixe (`-rc.N`, `-beta.N`, `-alpha.N`).
+- `keycloak/v26.5.6.2-rc.1`
+- `frontend/v1.0.0-rc.1`
+- `backend/v0.1.0-rc.1`
 
 Prerelease-Tags erzeugen Docker Images, die **nicht** als `latest` getaggt werden.
 

@@ -72,6 +72,31 @@ export default function OrganisationSwitcher({ activeOrgId }: Props) {
     );
   }
 
+  // No orgs — show direct "create" button instead of dropdown
+  if (orgs.length === 0) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-100 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Organisation erstellen
+        </button>
+
+        {showModal && (
+          <CreateOrganisationModal
+            onClose={() => setShowModal(false)}
+            onSuccess={handleOrgCreated}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <div className="relative" ref={containerRef}>
@@ -100,34 +125,32 @@ export default function OrganisationSwitcher({ activeOrgId }: Props) {
         {/* Dropdown */}
         {open && (
           <div className="absolute left-0 top-full mt-2 w-64 rounded-lg bg-white border border-gray-200 shadow-lg z-50">
-            {orgs.length > 0 && (
-              <div className="py-1 max-h-60 overflow-y-auto">
-                {orgs.map((org) => (
-                  <button
-                    key={org.id}
-                    type="button"
-                    onClick={() => handleSwitch(org)}
-                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                      org.id === activeOrgId
-                        ? "bg-brand-50 text-brand-700 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-600">
-                      {org.name.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="truncate">{org.name}</span>
-                    {org.id === activeOrgId && (
-                      <svg className="ml-auto w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="py-1 max-h-60 overflow-y-auto">
+              {orgs.map((org) => (
+                <button
+                  key={org.id}
+                  type="button"
+                  onClick={() => handleSwitch(org)}
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                    org.id === activeOrgId
+                      ? "bg-brand-50 text-brand-700 font-medium"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-600">
+                    {org.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate">{org.name}</span>
+                  {org.id === activeOrgId && (
+                    <svg className="ml-auto w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
 
-            <div className={orgs.length > 0 ? "border-t border-gray-100" : ""}>
+            <div className="border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => {
