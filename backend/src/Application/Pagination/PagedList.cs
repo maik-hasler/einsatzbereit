@@ -1,4 +1,4 @@
-﻿namespace Domain.Primitives;
+﻿namespace Application.Pagination;
 
 public sealed class PagedList<T>(
     IReadOnlyCollection<T> items,

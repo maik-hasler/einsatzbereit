@@ -1,6 +1,7 @@
 namespace Api.Bedarfe.CreateBedarf.v1;
 
-public sealed record CreateBedarfRequest(
+public sealed record CreateBedarfResponse(
+    Guid Id,
     string Title,
     string Description,
     Guid OrganisationId,
@@ -8,4 +9,6 @@ public sealed record CreateBedarfRequest(
     string Hausnummer,
     string Plz,
     string Ort,
-    string Frequenz);
+    string Frequenz,
+    string Status,
+    DateTimeOffset CreatedOn);

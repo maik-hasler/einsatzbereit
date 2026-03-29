@@ -21,14 +21,10 @@ internal sealed class OrganisationConfiguration
         builder.Property(organisation => organisation.Name)
             .IsRequired();
 
-        builder.Property(organisation => organisation.KeycloakId)
-            .IsRequired();
-
-        builder.HasIndex(organisation => organisation.KeycloakId)
-            .IsUnique();
-
         builder.Property(organisation => organisation.CreatedOn);
 
         builder.Property(organisation => organisation.ModifiedOn);
+        
+        builder.Ignore(bedarf => bedarf.Events);
     }
 }

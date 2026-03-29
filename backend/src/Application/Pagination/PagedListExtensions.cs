@@ -1,7 +1,6 @@
-﻿using Domain.Primitives;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Persistence.Extensions;
+namespace Application.Pagination;
 
 internal static class PagedListExtensions
 {

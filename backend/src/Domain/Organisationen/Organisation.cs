@@ -3,12 +3,10 @@ using Domain.Primitives;
 namespace Domain.Organisationen;
 
 public sealed class Organisation
-    : Entity<OrganisationId>,
+    : AggregateRoot<OrganisationId>,
     IAuditableEntity
 {
     public string Name { get; private set; }
-
-    public Guid KeycloakId { get; private set; }
 
     public DateTimeOffset CreatedOn { get; private set; }
 
@@ -16,21 +14,18 @@ public sealed class Organisation
 
     private Organisation(
         OrganisationId id,
-        string name,
-        Guid keycloakId)
+        string name)
         : base(id)
     {
         Name = name;
-        KeycloakId = keycloakId;
     }
 
     public static Organisation Create(
-        string name,
-        Guid keycloakId)
+        OrganisationId id,
+        string name)
     {
         return new Organisation(
-            new OrganisationId(Guid.CreateVersion7()),
-            name,
-            keycloakId);
+            id,
+            name);
     }
 }

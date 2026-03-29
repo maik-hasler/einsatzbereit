@@ -147,7 +147,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedListOfBedarf"
+                  "$ref": "#/components/schemas/PagedListOfBedarfSummary"
                 }
               }
             }
@@ -195,7 +195,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Bedarf"
+                  "$ref": "#/components/schemas/CreateBedarfResponse"
                 }
               }
             }
@@ -246,11 +246,46 @@
   },
   "components": {
     "schemas": {
-      "Bedarf": {
+      "Adresse": {
+        "required": [
+          "strasse",
+          "hausnummer",
+          "plz",
+          "ort"
+        ],
         "type": "object",
         "properties": {
-          "organisationId": {
-            "$ref": "#/components/schemas/OrganisationId"
+          "strasse": {
+            "type": "string"
+          },
+          "hausnummer": {
+            "type": "string"
+          },
+          "plz": {
+            "type": "string"
+          },
+          "ort": {
+            "type": "string"
+          }
+        }
+      },
+      "BedarfSummary": {
+        "required": [
+          "id",
+          "title",
+          "description",
+          "organisationName",
+          "adresse",
+          "frequenz",
+          "status",
+          "publishedOn",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "title": {
             "type": "string"
@@ -258,37 +293,28 @@
           "description": {
             "type": "string"
           },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
+          "organisationName": {
+            "type": "string"
           },
-          "modifiedOn": {
+          "adresse": {
+            "$ref": "#/components/schemas/Adresse"
+          },
+          "frequenz": {
+            "$ref": "#/components/schemas/Frequenz"
+          },
+          "status": {
+            "type": "string"
+          },
+          "publishedOn": {
             "type": [
               "null",
               "string"
             ],
             "format": "date-time"
           },
-          "events": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/DomainEvent"
-            }
-          },
-          "id": {
-            "$ref": "#/components/schemas/BedarfId"
-          }
-        }
-      },
-      "BedarfId": {
-        "type": "object",
-        "properties": {
-          "value": {
+          "createdOn": {
             "type": "string",
-            "format": "uuid"
+            "format": "date-time"
           }
         }
       },
@@ -296,7 +322,12 @@
         "required": [
           "title",
           "description",
-          "organisationId"
+          "organisationId",
+          "strasse",
+          "hausnummer",
+          "plz",
+          "ort",
+          "frequenz"
         ],
         "type": "object",
         "properties": {
@@ -309,6 +340,75 @@
           "organisationId": {
             "type": "string",
             "format": "uuid"
+          },
+          "strasse": {
+            "type": "string"
+          },
+          "hausnummer": {
+            "type": "string"
+          },
+          "plz": {
+            "type": "string"
+          },
+          "ort": {
+            "type": "string"
+          },
+          "frequenz": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateBedarfResponse": {
+        "required": [
+          "id",
+          "title",
+          "description",
+          "organisationId",
+          "strasse",
+          "hausnummer",
+          "plz",
+          "ort",
+          "frequenz",
+          "status",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "organisationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "strasse": {
+            "type": "string"
+          },
+          "hausnummer": {
+            "type": "string"
+          },
+          "plz": {
+            "type": "string"
+          },
+          "ort": {
+            "type": "string"
+          },
+          "frequenz": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -325,6 +425,9 @@
       },
       "DomainEvent": {
         "type": "object"
+      },
+      "Frequenz": {
+        "type": "integer"
       },
       "KeycloakOrganisation": {
         "required": [
@@ -348,10 +451,6 @@
           "name": {
             "type": "string"
           },
-          "keycloakId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -362,6 +461,15 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DomainEvent"
+            }
           },
           "id": {
             "$ref": "#/components/schemas/OrganisationId"
@@ -377,7 +485,7 @@
           }
         }
       },
-      "PagedListOfBedarf": {
+      "PagedListOfBedarfSummary": {
         "required": [
           "currentPage",
           "items"
@@ -411,7 +519,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Bedarf"
+              "$ref": "#/components/schemas/BedarfSummary"
             }
           }
         }

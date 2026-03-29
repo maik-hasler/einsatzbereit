@@ -15,7 +15,7 @@ internal sealed class CreateBedarfEndpoint
     {
         app.MapPost("/bedarfe", CreateBedarfAsync)
             .WithName("CreateBedarf")
-            .Produces<Bedarf>()
+            .Produces<CreateBedarfResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -29,13 +29,41 @@ internal sealed class CreateBedarfEndpoint
         [FromServices] ISender sender,
         CancellationToken cancellationToken)
     {
+        if (!Enum.TryParse<Frequenz>(request.Frequenz, ignoreCase: true, out var frequenz))
+        {
+            return Results.Problem(
+                "Ungültige Frequenz. Erlaubte Werte: Einmalig, Regelmaessig.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var adresse = new Adresse(
+            request.Strasse,
+            request.Hausnummer,
+            request.Plz,
+            request.Ort);
+
         var command = new CreateBedarfCommand(
             request.Title,
             request.Description,
-            new OrganisationId(request.OrganisationId));
+            new OrganisationId(request.OrganisationId),
+            adresse,
+            frequenz);
 
-        var result = await sender.Send(command, cancellationToken);
+        var bedarf = await sender.Send(command, cancellationToken);
 
-        return Results.Ok(result);
+        var response = new CreateBedarfResponse(
+            bedarf.Id.Value,
+            bedarf.Title,
+            bedarf.Description,
+            bedarf.OrganisationId.Value,
+            bedarf.Adresse.Strasse,
+            bedarf.Adresse.Hausnummer,
+            bedarf.Adresse.Plz,
+            bedarf.Adresse.Ort,
+            bedarf.Frequenz.ToString(),
+            bedarf.PublishedOn.HasValue ? "Veröffentlicht" : "Entwurf",
+            bedarf.CreatedOn);
+
+        return Results.Ok(response);
     }
 }

@@ -8,7 +8,16 @@ interface Props {
 }
 
 export default function CreateBedarfModal({ organisationId, onClose, onSuccess }: Props) {
-  const [form, setForm] = useState<CreateBedarfRequest>({ title: "", description: "", organisationId });
+  const [form, setForm] = useState<CreateBedarfRequest>({
+    title: "",
+    description: "",
+    organisationId,
+    strasse: "",
+    hausnummer: "",
+    plz: "",
+    ort: "",
+    frequenz: "Einmalig",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +34,6 @@ export default function CreateBedarfModal({ organisationId, onClose, onSuccess }
       });
 
       if (res.status === 401) {
-        // Session expired — redirect to login
         window.location.href = "/api/login";
         return;
       }
@@ -41,22 +49,21 @@ export default function CreateBedarfModal({ organisationId, onClose, onSuccess }
   };
 
   return (
-    // Backdrop
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
-      {/* Modal card — stop click propagation so backdrop click doesn't close from inside */}
       <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-xl font-semibold">Bedarf erstellen</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Titel</label>
+            <label htmlFor="bedarf-title" className="mb-1 block text-sm font-medium">Titel</label>
             <input
+              id="bedarf-title"
               type="text"
               required
               value={form.title}
@@ -66,14 +73,97 @@ export default function CreateBedarfModal({ organisationId, onClose, onSuccess }
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Beschreibung</label>
+            <label htmlFor="bedarf-description" className="mb-1 block text-sm font-medium">Beschreibung</label>
             <textarea
+              id="bedarf-description"
               required
-              rows={4}
+              rows={3}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
+          </div>
+
+          <fieldset className="space-y-3 rounded border p-3">
+            <legend className="px-1 text-sm font-medium">Adresse</legend>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="mb-1 block text-sm text-gray-600">Straße</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Musterstraße"
+                  value={form.strasse}
+                  onChange={(e) => setForm((f) => ({ ...f, strasse: e.target.value }))}
+                  className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+              <div className="w-24">
+                <label className="mb-1 block text-sm text-gray-600">Nr.</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="1a"
+                  value={form.hausnummer}
+                  onChange={(e) => setForm((f) => ({ ...f, hausnummer: e.target.value }))}
+                  className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-28">
+                <label className="mb-1 block text-sm text-gray-600">PLZ</label>
+                <input
+                  type="text"
+                  required
+                  pattern="\d{5}"
+                  maxLength={5}
+                  placeholder="12345"
+                  value={form.plz}
+                  onChange={(e) => setForm((f) => ({ ...f, plz: e.target.value }))}
+                  className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-sm text-gray-600">Ort</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Berlin"
+                  value={form.ort}
+                  onChange={(e) => setForm((f) => ({ ...f, ort: e.target.value }))}
+                  className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Frequenz</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="frequenz"
+                  value="Einmalig"
+                  checked={form.frequenz === "Einmalig"}
+                  onChange={(e) => setForm((f) => ({ ...f, frequenz: e.target.value }))}
+                  className="accent-black"
+                />
+                Einmalig
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="frequenz"
+                  value="Regelmaessig"
+                  checked={form.frequenz === "Regelmaessig"}
+                  onChange={(e) => setForm((f) => ({ ...f, frequenz: e.target.value }))}
+                  className="accent-black"
+                />
+                Regelmäßig
+              </label>
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

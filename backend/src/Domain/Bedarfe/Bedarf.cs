@@ -1,4 +1,4 @@
-﻿using Domain.Organisationen;
+using Domain.Organisationen;
 using Domain.Primitives;
 
 namespace Domain.Bedarfe;
@@ -8,76 +8,75 @@ public sealed class Bedarf
     IAuditableEntity
 {
     public OrganisationId OrganisationId { get; }
-    
+
     public string Title { get; private set; }
-    
+
     public string Description { get; private set; }
-    
+
+    public Adresse Adresse { get; private set; }
+
+    public Frequenz Frequenz { get; private set; }
+
+    public DateTimeOffset? PublishedOn { get; private set; }
+
+    public Status Status => PublishedOn.HasValue
+        ? new Published(PublishedOn.Value)
+        : new Draft();
+
     public DateTimeOffset CreatedOn { get; private set; }
-    
+
     public DateTimeOffset? ModifiedOn { get; private set; }
-    
-    public Status Status { get; }
-    
+        
+    #pragma warning disable CS8618 // EF Core constructor
+    private Bedarf()
+        : base(default) { }
+    #pragma warning restore CS8618 // EF Core constructor
+
     private Bedarf(
         BedarfId id,
         OrganisationId organisationId,
         string title,
         string description,
-        Status status)
+        Adresse adresse,
+        Frequenz frequenz)
         : base(id)
     {
         OrganisationId = organisationId;
         Title = title;
         Description = description;
-        Status = status;
+        Adresse = adresse;
+        Frequenz = frequenz;
     }
 
     public static Bedarf Create(
         string title,
         string description,
         OrganisationId organisationId,
-        Status status)
+        Adresse adresse,
+        Frequenz frequenz)
     {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new DomainException("Titel darf nicht leer sein.");
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new DomainException("Beschreibung darf nicht leer sein.");
+
+        ArgumentNullException.ThrowIfNull(adresse);
+
         return new Bedarf(
             new BedarfId(Guid.CreateVersion7()),
             organisationId,
             title,
             description,
-            status);
+            adresse,
+            frequenz);
     }
-    
-    public Bedarf Publish(DateTimeOffset publishedOn)
+
+    public void Publish(DateTimeOffset publishedOn)
         => Status.Publish(this, publishedOn);
 
-    public Bedarf WithStatus(Status status)
-        => new Bedarf(Id, OrganisationId, Title, Description, status);
-}
-
-public abstract class Status
-{
-    public abstract Bedarf Publish(Bedarf bedarf, DateTimeOffset publishedOn);
-}
-
-public sealed class Draft : Status
-{
-    public override Bedarf Publish(Bedarf bedarf, DateTimeOffset publishedOn)
-    {
-        return bedarf.WithStatus(new Published(publishedOn));
-    }
-}
-
-public sealed class Published : Status
-{
-    public DateTimeOffset PublishedOn { get; }
-
-    public Published(DateTimeOffset publishedOn)
+    internal void ApplyPublished(DateTimeOffset publishedOn)
     {
         PublishedOn = publishedOn;
-    }
-
-    public override Bedarf Publish(Bedarf bedarf, DateTimeOffset publishedOn)
-    {
-        throw new DomainException("Bereits veröffentlicht");
     }
 }

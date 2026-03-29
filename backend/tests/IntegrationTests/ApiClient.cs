@@ -43,12 +43,12 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfBedarf> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfBedarfSummary> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<Bedarf> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<CreateBedarfResponse> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -286,7 +286,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfBedarf> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfBedarfSummary> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -337,7 +337,7 @@ namespace IntegrationTests
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<PagedListOfBedarf>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<PagedListOfBedarfSummary>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -387,7 +387,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Bedarf> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<CreateBedarfResponse> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -435,7 +435,7 @@ namespace IntegrationTests
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Bedarf>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<CreateBedarfResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -632,29 +632,24 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Bedarf
+    public partial class Adresse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
-        public OrganisationId OrganisationId { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("strasse")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Strasse { get; set; }
 
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        public string Title { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("hausnummer")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Hausnummer { get; set; }
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string Description { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("plz")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Plz { get; set; }
 
-        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
-        public System.DateTimeOffset CreatedOn { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTimeOffset? ModifiedOn { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("events")]
-        public System.Collections.Generic.ICollection<DomainEvent> Events { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public BedarfId Id { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("ort")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Ort { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -668,11 +663,42 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class BedarfId
+    public partial class BedarfSummary
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("value")]
-        public System.Guid Value { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid Id { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Title { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Description { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("organisationName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OrganisationName { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("adresse")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public Adresse Adresse { get; set; } = new Adresse();
+
+        [System.Text.Json.Serialization.JsonPropertyName("frequenz")]
+        public int Frequenz { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Status { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("publishedOn")]
+        public System.DateTimeOffset? PublishedOn { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset CreatedOn { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -700,6 +726,85 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid OrganisationId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("strasse")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Strasse { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("hausnummer")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Hausnummer { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("plz")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Plz { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("ort")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Ort { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("frequenz")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Frequenz { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateBedarfResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid Id { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Title { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Description { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid OrganisationId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("strasse")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Strasse { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("hausnummer")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Hausnummer { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("plz")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Plz { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("ort")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Ort { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("frequenz")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Frequenz { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Status { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset CreatedOn { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -776,14 +881,14 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [System.Text.Json.Serialization.JsonPropertyName("keycloakId")]
-        public System.Guid KeycloakId { get; set; }
-
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         public System.DateTimeOffset CreatedOn { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
         public System.DateTimeOffset? ModifiedOn { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("events")]
+        public System.Collections.Generic.ICollection<DomainEvent> Events { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         public OrganisationId Id { get; set; }
@@ -818,7 +923,7 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PagedListOfBedarf
+    public partial class PagedListOfBedarfSummary
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("totalItems")]
@@ -836,7 +941,7 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<Bedarf> Items { get; set; } = new System.Collections.ObjectModel.Collection<Bedarf>();
+        public System.Collections.Generic.ICollection<BedarfSummary> Items { get; set; } = new System.Collections.ObjectModel.Collection<BedarfSummary>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

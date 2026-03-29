@@ -25,8 +25,33 @@ internal sealed class BedarfConfiguration
                 guid => new OrganisationId(guid))
             .IsRequired();
 
+        builder.Property(bedarf => bedarf.Title)
+            .IsRequired();
+
+        builder.Property(bedarf => bedarf.Description)
+            .IsRequired();
+
+        builder.OwnsOne(bedarf => bedarf.Adresse, adresse =>
+        {
+            adresse.Property(a => a.Strasse).IsRequired();
+            adresse.Property(a => a.Hausnummer).IsRequired();
+            adresse.Property(a => a.Plz).IsRequired();
+            adresse.Property(a => a.Ort).IsRequired();
+        });
+
+        builder.Property(bedarf => bedarf.Frequenz)
+            .HasConversion<string>()
+            .IsRequired();
+
+        builder.Property(bedarf => bedarf.PublishedOn);
+
         builder.Property(bedarf => bedarf.CreatedOn);
 
         builder.Property(bedarf => bedarf.ModifiedOn);
+
+        // Status is derived from PublishedOn — not persisted
+        builder.Ignore(bedarf => bedarf.Status);
+        
+        builder.Ignore(bedarf => bedarf.Events);
     }
 }

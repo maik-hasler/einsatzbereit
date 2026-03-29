@@ -128,7 +128,7 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getBedarfe(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfBedarf> {
+    getBedarfe(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfBedarfSummary> {
         let url_ = this.baseUrl + "/v1/bedarfe?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -153,13 +153,13 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetBedarfe(response: Response): Promise<PagedListOfBedarf> {
+    protected processGetBedarfe(response: Response): Promise<PagedListOfBedarfSummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfBedarf;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfBedarfSummary;
             return result200;
             });
         } else if (status === 400) {
@@ -179,13 +179,13 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<PagedListOfBedarf>(null as any);
+        return Promise.resolve<PagedListOfBedarfSummary>(null as any);
     }
 
     /**
      * @return OK
      */
-    createBedarf(body: CreateBedarfRequest, signal?: AbortSignal): Promise<Bedarf> {
+    createBedarf(body: CreateBedarfRequest, signal?: AbortSignal): Promise<CreateBedarfResponse> {
         let url_ = this.baseUrl + "/v1/bedarfe";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -206,13 +206,13 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processCreateBedarf(response: Response): Promise<Bedarf> {
+    protected processCreateBedarf(response: Response): Promise<CreateBedarfResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Bedarf;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateBedarfResponse;
             return result200;
             });
         } else if (status === 400) {
@@ -244,24 +244,29 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<Bedarf>(null as any);
+        return Promise.resolve<CreateBedarfResponse>(null as any);
     }
 }
 
-export interface Bedarf {
-    organisationId?: OrganisationId;
-    title?: string;
-    description?: string;
-    createdOn?: Date;
-    modifiedOn?: Date | undefined;
-    events?: DomainEvent[] | undefined;
-    id?: BedarfId;
+export interface Adresse {
+    strasse: string;
+    hausnummer: string;
+    plz: string;
+    ort: string;
 
     [key: string]: any;
 }
 
-export interface BedarfId {
-    value?: string;
+export interface BedarfSummary {
+    id: string;
+    title: string;
+    description: string;
+    organisationName: string;
+    adresse: Adresse;
+    frequenz: number;
+    status: string;
+    publishedOn: Date | undefined;
+    createdOn: Date;
 
     [key: string]: any;
 }
@@ -270,6 +275,27 @@ export interface CreateBedarfRequest {
     title: string;
     description: string;
     organisationId: string;
+    strasse: string;
+    hausnummer: string;
+    plz: string;
+    ort: string;
+    frequenz: string;
+
+    [key: string]: any;
+}
+
+export interface CreateBedarfResponse {
+    id: string;
+    title: string;
+    description: string;
+    organisationId: string;
+    strasse: string;
+    hausnummer: string;
+    plz: string;
+    ort: string;
+    frequenz: string;
+    status: string;
+    createdOn: Date;
 
     [key: string]: any;
 }
@@ -294,9 +320,9 @@ export interface KeycloakOrganisation {
 
 export interface Organisation {
     name?: string;
-    keycloakId?: string;
     createdOn?: Date;
     modifiedOn?: Date | undefined;
+    events?: DomainEvent[] | undefined;
     id?: OrganisationId;
 
     [key: string]: any;
@@ -308,11 +334,11 @@ export interface OrganisationId {
     [key: string]: any;
 }
 
-export interface PagedListOfBedarf {
+export interface PagedListOfBedarfSummary {
     totalItems?: number;
     currentPage: number;
     pageCount?: number;
-    items: Bedarf[];
+    items: BedarfSummary[];
 
     [key: string]: any;
 }

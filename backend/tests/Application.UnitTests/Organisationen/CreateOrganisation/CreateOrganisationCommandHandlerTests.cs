@@ -11,7 +11,7 @@ namespace Application.UnitTests.Organisationen.CreateOrganisation;
 public class CreateOrganisationCommandHandlerTests
 {
     private readonly IKeycloakOrganisationService _keycloakService = Substitute.For<IKeycloakOrganisationService>();
-    private readonly IOrganisationRepository _organisationRepository = Substitute.For<IOrganisationRepository>();
+    private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateOrganisationCommandHandler _sut;
 
@@ -19,7 +19,7 @@ public class CreateOrganisationCommandHandlerTests
     {
         _sut = new CreateOrganisationCommandHandler(
             _keycloakService,
-            _organisationRepository,
+            _dbContext,
             _unitOfWork);
     }
 
@@ -41,7 +41,6 @@ public class CreateOrganisationCommandHandlerTests
 
         // Assert
         result.Name.Should().Be("Feuerwehr Musterstadt");
-        result.KeycloakId.Should().Be(keycloakId);
     }
 
     [Fact]
@@ -101,8 +100,8 @@ public class CreateOrganisationCommandHandlerTests
         await _sut.Handle(command, ct);
 
         // Assert
-        await _organisationRepository.Received(1).AddAsync(
-            Arg.Is<Organisation>(o => o.Name == "Test Org" && o.KeycloakId == keycloakId),
+        await _dbContext.Organisationen.Received(1).AddAsync(
+            Arg.Is<Organisation>(o => o.Name == "Test Org"),
             ct);
         await _unitOfWork.Received(1).SaveChangesAsync(ct);
     }
@@ -162,7 +161,7 @@ public class CreateOrganisationCommandHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<HttpRequestException>();
-        await _organisationRepository.DidNotReceive().AddAsync(
+        await _dbContext.Organisationen.DidNotReceive().AddAsync(
             Arg.Any<Organisation>(), Arg.Any<CancellationToken>());
     }
 

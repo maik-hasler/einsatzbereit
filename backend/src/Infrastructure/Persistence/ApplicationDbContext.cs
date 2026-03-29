@@ -2,7 +2,7 @@
 using Application.Abstractions;
 using Domain.Bedarfe;
 using Domain.Organisationen;
-using Domain.Primitives;
+using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
@@ -10,17 +10,27 @@ namespace Infrastructure.Persistence;
 internal sealed class ApplicationDbContext(
     DbContextOptions<ApplicationDbContext> options)
     : DbContext(options),
-    IUnitOfWork
+    IUnitOfWork,
+    IApplicationDbContext
 {
-    public DbSet<Bedarf> Bedarfe => Set<Bedarf>();
+    public IAggregateRepository<Bedarf, BedarfId> Bedarfe
+        => new AggregateRepository<Bedarf, BedarfId>(
+            Set<Bedarf>(),
+            Set<Bedarf>(),
+            bedarf => bedarf.Id);
+    
+    public IQueryable<Bedarf> BedarfeQuery => Set<Bedarf>().AsNoTracking();
 
-    public DbSet<Organisation> Organisationen => Set<Organisation>();
+    public IAggregateRepository<Organisation, OrganisationId> Organisationen
+        => new AggregateRepository<Organisation, OrganisationId>(
+            Set<Organisation>(),
+            Set<Organisation>(),
+            organisation => organisation.Id);
+    
+    public IQueryable<Organisation> OrganisationenQuery => Set<Organisation>().AsNoTracking();
 
     protected override void OnModelCreating(
-        ModelBuilder modelBuilder)
-    {
-        modelBuilder.Ignore<DomainEvent>();
-        modelBuilder.ApplyConfigurationsFromAssembly(
-            Assembly.GetExecutingAssembly());
-    }
+        ModelBuilder modelBuilder) =>
+            modelBuilder.ApplyConfigurationsFromAssembly(
+                Assembly.GetExecutingAssembly());
 }

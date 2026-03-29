@@ -6,7 +6,7 @@ namespace Application.Organisationen.CreateOrganisation.v1;
 
 internal sealed class CreateOrganisationCommandHandler(
     IKeycloakOrganisationService keycloakOrganisationService,
-    IOrganisationRepository organisationRepository,
+    IApplicationDbContext dbContext,
     IUnitOfWork unitOfWork)
     : IRequestHandler<CreateOrganisationCommand, Organisation>
 {
@@ -23,9 +23,9 @@ internal sealed class CreateOrganisationCommandHandler(
         await keycloakOrganisationService.AssignOrganisatorRoleAsync(
             request.UserId, cancellationToken);
 
-        var organisation = Organisation.Create(request.Name, keycloakId);
+        var organisation = Organisation.Create(new OrganisationId(keycloakId), request.Name);
 
-        await organisationRepository.AddAsync(organisation, cancellationToken);
+        await dbContext.Organisationen.AddAsync(organisation, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

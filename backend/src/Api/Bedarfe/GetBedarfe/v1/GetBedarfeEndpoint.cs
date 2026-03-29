@@ -1,8 +1,7 @@
-﻿using Api.Abstractions;
+using Api.Abstractions;
 using Application.Bedarfe.GetBedarfe.v1;
 using Application.Messaging;
-using Domain.Bedarfe;
-using Domain.Primitives;
+using Application.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Bedarfe.GetBedarfe.v1;
@@ -15,7 +14,7 @@ internal sealed class GetBedarfeEndpoint
     {
         app.MapGet("/bedarfe", GetBedarfeAsync)
             .WithName("GetBedarfe")
-            .Produces<PagedList<Bedarf>>()
+            .Produces<PagedList<BedarfSummary>>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .AllowAnonymous()
@@ -28,9 +27,9 @@ internal sealed class GetBedarfeEndpoint
         CancellationToken cancellationToken)
     {
         var query = new GetBedarfeQuery(request.PageNumber, request.PageSize);
-        
+
         var result = await sender.Send(query, cancellationToken);
-        
+
         return Results.Ok(result);
     }
 }

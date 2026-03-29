@@ -28,7 +28,6 @@ public class CreateOrganisationTests(IntegrationTestFixture fixture)
 
         // Assert
         result.Name.Should().Be("Feuerwehr Musterstadt");
-        result.KeycloakId.Should().NotBeEmpty();
     }
 
     [Fact]

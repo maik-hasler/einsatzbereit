@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DatabaseMigrations.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329070815_EnhanceBedarfModel")]
+    partial class EnhanceBedarfModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,9 +63,9 @@ namespace DatabaseMigrations.Migrations
                         .HasColumnName("title");
 
                     b.HasKey("Id")
-                        .HasName("pk_bedarf");
+                        .HasName("pk_bedarfe");
 
-                    b.ToTable("bedarf", (string)null);
+                    b.ToTable("bedarfe", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Organisationen.Organisation", b =>
@@ -75,6 +78,10 @@ namespace DatabaseMigrations.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_on");
 
+                    b.Property<Guid>("KeycloakId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("keycloak_id");
+
                     b.Property<DateTimeOffset?>("ModifiedOn")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("modified_on");
@@ -85,9 +92,13 @@ namespace DatabaseMigrations.Migrations
                         .HasColumnName("name");
 
                     b.HasKey("Id")
-                        .HasName("pk_organisation");
+                        .HasName("pk_organisationen");
 
-                    b.ToTable("organisation", (string)null);
+                    b.HasIndex("KeycloakId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_organisationen_keycloak_id");
+
+                    b.ToTable("organisationen", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Bedarfe.Bedarf", b =>
@@ -120,11 +131,11 @@ namespace DatabaseMigrations.Migrations
 
                             b1.HasKey("BedarfId");
 
-                            b1.ToTable("bedarf");
+                            b1.ToTable("bedarfe");
 
                             b1.WithOwner()
                                 .HasForeignKey("BedarfId")
-                                .HasConstraintName("fk_bedarf_bedarf_id");
+                                .HasConstraintName("fk_bedarfe_bedarfe_id");
                         });
 
                     b.Navigation("Adresse")
