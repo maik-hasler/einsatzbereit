@@ -17,19 +17,12 @@ public sealed class Bedarf
 
     public Frequenz Frequenz { get; private set; }
 
-    public DateTimeOffset? PublishedOn { get; private set; }
-
-    public Status Status => PublishedOn.HasValue
-        ? new Published(PublishedOn.Value)
-        : new Draft();
-
     public DateTimeOffset CreatedOn { get; private set; }
 
     public DateTimeOffset? ModifiedOn { get; private set; }
         
     #pragma warning disable CS8618 // EF Core constructor
-    private Bedarf()
-        : base(default) { }
+    private Bedarf() : base(default) { }
     #pragma warning restore CS8618 // EF Core constructor
 
     private Bedarf(
@@ -70,13 +63,5 @@ public sealed class Bedarf
             description,
             adresse,
             frequenz);
-    }
-
-    public void Publish(DateTimeOffset publishedOn)
-        => Status.Publish(this, publishedOn);
-
-    internal void ApplyPublished(DateTimeOffset publishedOn)
-    {
-        PublishedOn = publishedOn;
     }
 }

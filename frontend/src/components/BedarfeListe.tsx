@@ -63,14 +63,9 @@ export default function BedarfeListe({ canCreateBedarf, activeOrgId }: Props) {
                       <strong className="block text-sm font-medium">{bedarf.title}</strong>
                       <p className="mt-1 text-sm text-gray-600">{bedarf.description}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-                        {bedarf.status}
-                      </span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-                        {formatFrequenz(bedarf.frequenz)}
-                      </span>
-                    </div>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                      {formatFrequenz(bedarf.frequenz)}
+                    </span>
                   </div>
                   <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
                     <span>{bedarf.organisationName}</span>

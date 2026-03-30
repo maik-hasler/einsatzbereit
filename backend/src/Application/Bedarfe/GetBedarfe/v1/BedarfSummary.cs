@@ -9,6 +9,4 @@ public sealed record BedarfSummary(
     string OrganisationName,
     Adresse Adresse,
     Frequenz Frequenz,
-    string Status,
-    DateTimeOffset? PublishedOn,
     DateTimeOffset CreatedOn);

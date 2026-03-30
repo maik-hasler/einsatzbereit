@@ -28,8 +28,6 @@ public class BedarfTests
         bedarf.OrganisationId.Should().Be(TestOrganisationId);
         bedarf.Adresse.Should().Be(TestAdresse);
         bedarf.Frequenz.Should().Be(Frequenz.Einmalig);
-        bedarf.Status.Should().BeOfType<Draft>();
-        bedarf.PublishedOn.Should().BeNull();
     }
 
     [Theory]
@@ -98,45 +96,5 @@ public class BedarfTests
 
         // Assert
         bedarf.Frequenz.Should().Be(Frequenz.Regelmaessig);
-    }
-
-    [Fact]
-    public void Publish_ShouldSetPublishedStatus_WhenDraft()
-    {
-        // Arrange
-        var bedarf = Bedarf.Create(
-            "Titel",
-            "Beschreibung",
-            TestOrganisationId,
-            TestAdresse,
-            Frequenz.Einmalig);
-        var publishedOn = DateTimeOffset.UtcNow;
-
-        // Act
-        bedarf.Publish(publishedOn);
-
-        // Assert
-        bedarf.Status.Should().BeOfType<Published>();
-        bedarf.PublishedOn.Should().Be(publishedOn);
-    }
-
-    [Fact]
-    public void Publish_ShouldThrowDomainException_WhenAlreadyPublished()
-    {
-        // Arrange
-        var bedarf = Bedarf.Create(
-            "Titel",
-            "Beschreibung",
-            TestOrganisationId,
-            TestAdresse,
-            Frequenz.Einmalig);
-        bedarf.Publish(DateTimeOffset.UtcNow);
-
-        // Act
-        var act = () => bedarf.Publish(DateTimeOffset.UtcNow);
-
-        // Assert
-        act.Should().Throw<DomainException>()
-            .WithMessage("Bereits veröffentlicht.");
     }
 }

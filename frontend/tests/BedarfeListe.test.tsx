@@ -20,8 +20,6 @@ const mockBedarfe = {
         ort: "Berlin",
       },
       frequenz: 0,
-      status: "Entwurf",
-      publishedOn: undefined,
       createdOn: "2026-03-29T10:00:00Z",
     },
     {
@@ -36,8 +34,6 @@ const mockBedarfe = {
         ort: "München",
       },
       frequenz: 1,
-      status: "Veröffentlicht",
-      publishedOn: "2026-03-28T10:00:00Z",
       createdOn: "2026-03-28T08:00:00Z",
     },
   ],

@@ -25,8 +25,6 @@ internal sealed class GetBedarfeQueryHandler(
                     organisation.Name,
                     bedarf.Adresse,
                     bedarf.Frequenz,
-                    bedarf.PublishedOn.HasValue ? "Veröffentlicht" : "Entwurf",
-                    bedarf.PublishedOn,
                     bedarf.CreatedOn))
             .ToPagedListAsync(request.PageNumber, request.PageSize, cancellationToken);
     }

@@ -10,5 +10,4 @@ public sealed record CreateBedarfResponse(
     string Plz,
     string Ort,
     string Frequenz,
-    string Status,
     DateTimeOffset CreatedOn);

@@ -42,7 +42,6 @@ public class CreateBedarfCommandHandlerTests
         result.OrganisationId.Should().Be(TestOrganisationId);
         result.Adresse.Should().Be(TestAdresse);
         result.Frequenz.Should().Be(Frequenz.Einmalig);
-        result.Status.Should().BeOfType<Draft>();
     }
 
     [Fact]

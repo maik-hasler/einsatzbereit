@@ -277,8 +277,6 @@
           "organisationName",
           "adresse",
           "frequenz",
-          "status",
-          "publishedOn",
           "createdOn"
         ],
         "type": "object",
@@ -301,16 +299,6 @@
           },
           "frequenz": {
             "$ref": "#/components/schemas/Frequenz"
-          },
-          "status": {
-            "type": "string"
-          },
-          "publishedOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
           },
           "createdOn": {
             "type": "string",
@@ -369,7 +357,6 @@
           "plz",
           "ort",
           "frequenz",
-          "status",
           "createdOn"
         ],
         "type": "object",
@@ -401,9 +388,6 @@
             "type": "string"
           },
           "frequenz": {
-            "type": "string"
-          },
-          "status": {
             "type": "string"
           },
           "createdOn": {

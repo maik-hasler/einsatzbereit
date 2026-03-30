@@ -61,7 +61,6 @@ internal sealed class CreateBedarfEndpoint
             bedarf.Adresse.Plz,
             bedarf.Adresse.Ort,
             bedarf.Frequenz.ToString(),
-            bedarf.PublishedOn.HasValue ? "Veröffentlicht" : "Entwurf",
             bedarf.CreatedOn);
 
         return Results.Ok(response);

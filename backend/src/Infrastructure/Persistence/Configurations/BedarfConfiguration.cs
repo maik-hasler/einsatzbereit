@@ -43,14 +43,9 @@ internal sealed class BedarfConfiguration
             .HasConversion<string>()
             .IsRequired();
 
-        builder.Property(bedarf => bedarf.PublishedOn);
-
         builder.Property(bedarf => bedarf.CreatedOn);
 
         builder.Property(bedarf => bedarf.ModifiedOn);
-
-        // Status is derived from PublishedOn — not persisted
-        builder.Ignore(bedarf => bedarf.Status);
         
         builder.Ignore(bedarf => bedarf.Events);
     }
