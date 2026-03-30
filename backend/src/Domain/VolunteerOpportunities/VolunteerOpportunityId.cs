@@ -1,4 +1,3 @@
-﻿namespace Domain.VolunteerOpportunities;
+namespace Domain.VolunteerOpportunities;
 
-public readonly record struct VolunteerOpportunityId(
-    Guid Value);
+public readonly record struct VolunteerOpportunityId(Guid Value);

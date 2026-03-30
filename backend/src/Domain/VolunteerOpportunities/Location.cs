@@ -1,3 +1,3 @@
-﻿namespace Domain.VolunteerOpportunities;
+namespace Domain.VolunteerOpportunities;
 
 public abstract record Location;
