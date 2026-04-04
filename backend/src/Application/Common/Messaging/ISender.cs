@@ -1,4 +1,4 @@
-﻿namespace Application.Messaging;
+﻿namespace Application.Common.Messaging;
 
 public interface ISender
 {

@@ -1,4 +1,4 @@
-﻿using Application.Messaging;
+﻿using Application.Common.Messaging;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -44,7 +44,7 @@ public class SenderTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*No service for type 'Application.Messaging.IRequestHandler*");
+            .WithMessage("*No service for type 'Application.Common.Messaging.IRequestHandler*");
     }
 
     [Fact]
@@ -104,9 +104,9 @@ public class SenderTests
             "A:After");
     }
 
-    private sealed record TestRequest(string Input) : IRequest<string>;
+    private sealed record TestRequest(string Input) : ICommand<string>;
 
-    private sealed class TestHandler : IRequestHandler<TestRequest, string>
+    private sealed class TestHandler : ICommandHandler<TestRequest, string>
     {
         public ValueTask<string> Handle(TestRequest request, CancellationToken ct)
         {

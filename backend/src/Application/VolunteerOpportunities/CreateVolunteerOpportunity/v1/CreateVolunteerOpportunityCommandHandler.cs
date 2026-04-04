@@ -1,13 +1,12 @@
-using Application.Abstractions;
-using Application.Messaging;
+using Application.Common.Messaging;
+using Application.Common.Persistence;
 using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 
 internal sealed class CreateVolunteerOpportunityCommandHandler(
-    IApplicationDbContext dbContext,
-    IUnitOfWork unitOfWork)
-    : IRequestHandler<CreateVolunteerOpportunityCommand, VolunteerOpportunity>
+    IApplicationDbContext dbContext)
+    : ICommandHandler<CreateVolunteerOpportunityCommand, VolunteerOpportunity>
 {
     public async ValueTask<VolunteerOpportunity> Handle(
         CreateVolunteerOpportunityCommand request,
@@ -22,8 +21,6 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
             request.ParticipationType);
 
         await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return opportunity;
     }

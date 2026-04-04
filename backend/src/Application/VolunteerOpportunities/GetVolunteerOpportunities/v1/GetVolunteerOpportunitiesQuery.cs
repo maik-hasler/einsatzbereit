@@ -1,9 +1,9 @@
-using Application.Messaging;
-using Application.Pagination;
+using Application.Common.Messaging;
+using Application.Common.Pagination;
 
 namespace Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 
 public sealed record GetVolunteerOpportunitiesQuery(
     int PageNumber,
     int PageSize)
-    : IRequest<PagedList<VolunteerOpportunitySummary>>;
+    : IQuery<PagedList<VolunteerOpportunitySummary>>;

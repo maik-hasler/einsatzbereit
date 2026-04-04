@@ -1,4 +1,4 @@
-namespace Application.Abstractions;
+namespace Application.Common.Keycloak;
 
 public record KeycloakOrganization(
     Guid Id,

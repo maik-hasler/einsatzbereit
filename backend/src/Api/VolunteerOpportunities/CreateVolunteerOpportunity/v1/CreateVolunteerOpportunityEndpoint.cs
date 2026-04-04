@@ -1,6 +1,6 @@
 ﻿using Api.Common.Authentication;
 using Api.Common.Endpoints;
-using Application.Messaging;
+using Application.Common.Messaging;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;

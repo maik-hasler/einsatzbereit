@@ -1,6 +1,6 @@
 ﻿using Domain.Primitives;
 
-namespace Application.Abstractions;
+namespace Application.Common.Persistence;
 
 public interface IAggregateRepository<T, in TKey>
     where T : AggregateRoot<TKey>

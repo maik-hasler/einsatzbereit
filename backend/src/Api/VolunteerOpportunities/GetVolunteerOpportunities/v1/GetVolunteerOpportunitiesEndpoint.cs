@@ -1,6 +1,6 @@
 using Api.Common.Endpoints;
-using Application.Messaging;
-using Application.Pagination;
+using Application.Common.Messaging;
+using Application.Common.Pagination;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Microsoft.AspNetCore.Mvc;
 

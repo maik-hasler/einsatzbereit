@@ -1,4 +1,4 @@
-using Application.Messaging;
+using Application.Common.Messaging;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 
@@ -11,4 +11,4 @@ public sealed record CreateVolunteerOpportunityCommand(
     Location Location,
     Occurrence Occurrence,
     ParticipationType ParticipationType)
-    : IRequest<VolunteerOpportunity>;
+    : ICommand<VolunteerOpportunity>;

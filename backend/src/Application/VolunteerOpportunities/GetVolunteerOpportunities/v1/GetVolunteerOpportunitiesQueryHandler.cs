@@ -1,13 +1,13 @@
-using Application.Abstractions;
-using Application.Messaging;
-using Application.Pagination;
+using Application.Common.Messaging;
+using Application.Common.Pagination;
+using Application.Common.Persistence;
 using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 
 internal sealed class GetVolunteerOpportunitiesQueryHandler(
     IApplicationDbContext dbContext)
-    : IRequestHandler<GetVolunteerOpportunitiesQuery, PagedList<VolunteerOpportunitySummary>>
+    : IQueryHandler<GetVolunteerOpportunitiesQuery, PagedList<VolunteerOpportunitySummary>>
 {
     public async ValueTask<PagedList<VolunteerOpportunitySummary>> Handle(
         GetVolunteerOpportunitiesQuery request,

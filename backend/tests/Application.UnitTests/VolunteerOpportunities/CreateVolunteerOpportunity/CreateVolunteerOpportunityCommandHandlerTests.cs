@@ -1,4 +1,4 @@
-using Application.Abstractions;
+using Application.Common.Persistence;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
@@ -14,12 +14,11 @@ public class CreateVolunteerOpportunityCommandHandlerTests
     private static readonly Location TestLocation = new PhysicalLocation(new Address("Musterstraße", "1", "12345", "Berlin"));
 
     private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateVolunteerOpportunityCommandHandler _sut;
 
     public CreateVolunteerOpportunityCommandHandlerTests()
     {
-        _sut = new CreateVolunteerOpportunityCommandHandler(_dbContext, _unitOfWork);
+        _sut = new CreateVolunteerOpportunityCommandHandler(_dbContext);
     }
 
     [Fact]
@@ -66,9 +65,5 @@ public class CreateVolunteerOpportunityCommandHandlerTests
             .VolunteerOpportunities
             .Received(1)
             .AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
-
-        await _unitOfWork
-            .Received(1)
-            .SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

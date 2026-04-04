@@ -1,7 +1,7 @@
-﻿using Domain.VolunteerOpportunities;
-using Domain.Organizations;
+﻿using Domain.Organizations;
+using Domain.VolunteerOpportunities;
 
-namespace Application.Abstractions;
+namespace Application.Common.Persistence;
 
 public interface IApplicationDbContext
 {

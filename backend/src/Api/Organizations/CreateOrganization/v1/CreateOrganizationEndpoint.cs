@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
-using Application.Messaging;
+using Application.Common.Messaging;
 using Application.Organizations.CreateOrganization.v1;
 using Domain.Organizations;
 using Microsoft.AspNetCore.Mvc;
