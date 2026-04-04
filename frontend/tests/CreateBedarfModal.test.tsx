@@ -61,7 +61,9 @@ describe("CreateBedarfModal", () => {
       />,
     );
 
-    await user.click(container.firstElementChild!);
+    const backdrop = container.firstElementChild;
+    expect(backdrop).toBeTruthy();
+    await user.click(backdrop as Element);
 
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -122,7 +124,7 @@ describe("CreateBedarfModal", () => {
   });
 
   it("should show loading state while submitting", async () => {
-    let resolveFetch: (value: unknown) => void;
+    let resolveFetch: (value: unknown) => void = () => {};
     const fetchMock = vi.fn().mockReturnValue(
       new Promise((resolve) => {
         resolveFetch = resolve;
@@ -149,7 +151,7 @@ describe("CreateBedarfModal", () => {
 
     expect(screen.getByText("Wird erstellt…")).toBeInTheDocument();
 
-    resolveFetch!({ ok: true, status: 201, json: () => Promise.resolve({}) });
+    resolveFetch({ ok: true, status: 201, json: () => Promise.resolve({}) });
   });
 
   it("should display error on failed request", async () => {
