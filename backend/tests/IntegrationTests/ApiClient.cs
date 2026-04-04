@@ -33,22 +33,22 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<KeycloakOrganisation>> GetOrganisationenAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<Organisation> CreateOrganisationAsync(CreateOrganisationRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<CreateVolunteerOpportunityResponse> CreateVolunteerOpportunityAsync(CreateVolunteerOpportunityRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfBedarfSummary> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<KeycloakOrganization>> GetOrganizationsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CreateBedarfResponse> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<Organization> CreateOrganizationAsync(CreateOrganizationRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -87,206 +87,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<KeycloakOrganisation>> GetOrganisationenAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "v1/organisationen"
-                    urlBuilder_.Append("v1/organisationen");
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<KeycloakOrganisation>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ProblemDetails>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Organisation> CreateOrganisationAsync(CreateOrganisationRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            if (body == null)
-                throw new System.ArgumentNullException("body");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
-                    var content_ = new System.Net.Http.ByteArrayContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
-                    request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "v1/organisationen"
-                    urlBuilder_.Append("v1/organisationen");
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<Organisation>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ProblemDetails>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfBedarfSummary> GetBedarfeAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -305,8 +106,8 @@ namespace IntegrationTests
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "v1/bedarfe"
-                    urlBuilder_.Append("v1/bedarfe");
+                    // Operation Path: "v1/volunteer-opportunities"
+                    urlBuilder_.Append("v1/volunteer-opportunities");
                     urlBuilder_.Append('?');
                     urlBuilder_.Append(System.Uri.EscapeDataString("PageNumber")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageNumber, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     urlBuilder_.Append(System.Uri.EscapeDataString("PageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
@@ -337,7 +138,7 @@ namespace IntegrationTests
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<PagedListOfBedarfSummary>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<PagedListOfVolunteerOpportunitySummary>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -387,7 +188,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CreateBedarfResponse> CreateBedarfAsync(CreateBedarfRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<CreateVolunteerOpportunityResponse> CreateVolunteerOpportunityAsync(CreateVolunteerOpportunityRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -407,8 +208,8 @@ namespace IntegrationTests
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "v1/bedarfe"
-                    urlBuilder_.Append("v1/bedarfe");
+                    // Operation Path: "v1/volunteer-opportunities"
+                    urlBuilder_.Append("v1/volunteer-opportunities");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -435,7 +236,7 @@ namespace IntegrationTests
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<CreateBedarfResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<CreateVolunteerOpportunityResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -471,6 +272,205 @@ namespace IntegrationTests
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<KeycloakOrganization>> GetOrganizationsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "v1/organizations"
+                    urlBuilder_.Append("v1/organizations");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<KeycloakOrganization>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<Organization> CreateOrganizationAsync(CreateOrganizationRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (body == null)
+                throw new System.ArgumentNullException("body");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "v1/organizations"
+                    urlBuilder_.Append("v1/organizations");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<Organization>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 500)
@@ -632,198 +632,121 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Adresse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("strasse")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Strasse { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("hausnummer")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Hausnummer { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("plz")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Plz { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("ort")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Ort { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class BedarfSummary
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("organisationName")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string OrganisationName { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("adresse")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public Adresse Adresse { get; set; } = new Adresse();
-
-        [System.Text.Json.Serialization.JsonPropertyName("frequenz")]
-        public int Frequenz { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("status")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Status { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("publishedOn")]
-        public System.DateTimeOffset? PublishedOn { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CreateBedarfRequest
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OrganisationId { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("strasse")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Strasse { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("hausnummer")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Hausnummer { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("plz")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Plz { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("ort")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Ort { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("frequenz")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Frequenz { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CreateBedarfResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("organisationId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OrganisationId { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("strasse")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Strasse { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("hausnummer")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Hausnummer { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("plz")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Plz { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("ort")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Ort { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("frequenz")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Frequenz { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("status")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Status { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CreateOrganisationRequest
+    public partial class CreateOrganizationRequest
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Name { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateVolunteerOpportunityRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Title { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Description { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid OrganizationId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("street")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Street { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string HouseNumber { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ZipCode { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("city")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string City { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Occurrence { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("participationType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ParticipationType { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateVolunteerOpportunityResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid Id { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Title { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Description { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid OrganizationId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("street")]
+        public string Street { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
+        public string HouseNumber { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
+        public string ZipCode { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("city")]
+        public string City { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
+        public bool IsRemote { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Occurrence { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("participationType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ParticipationType { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset CreatedOn { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -852,7 +775,7 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class KeycloakOrganisation
+    public partial class KeycloakOrganization
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
@@ -875,7 +798,7 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Organisation
+    public partial class Organization
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
@@ -891,7 +814,7 @@ namespace IntegrationTests
         public System.Collections.Generic.ICollection<DomainEvent> Events { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public OrganisationId Id { get; set; }
+        public OrganizationId Id { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -905,7 +828,7 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class OrganisationId
+    public partial class OrganizationId
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("value")]
@@ -923,7 +846,7 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PagedListOfBedarfSummary
+    public partial class PagedListOfVolunteerOpportunitySummary
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("totalItems")]
@@ -941,7 +864,7 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<BedarfSummary> Items { get; set; } = new System.Collections.ObjectModel.Collection<BedarfSummary>();
+        public System.Collections.Generic.ICollection<VolunteerOpportunitySummary> Items { get; set; } = new System.Collections.ObjectModel.Collection<VolunteerOpportunitySummary>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -973,6 +896,64 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("instance")]
         public string Instance { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class VolunteerOpportunitySummary
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.Guid Id { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Title { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Description { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string OrganizationName { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("street")]
+        public string Street { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
+        public string HouseNumber { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
+        public string ZipCode { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("city")]
+        public string City { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
+        public bool IsRemote { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Occurrence { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("participationType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ParticipationType { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset CreatedOn { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

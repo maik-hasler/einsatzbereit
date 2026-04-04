@@ -13,4 +13,7 @@ public sealed class PagedList<T>(
     public int PageCount { get; set; } = (int)Math.Ceiling(count / (double)pageSize);
 
     public IReadOnlyCollection<T> Items { get; set; } = items;
+
+    public PagedList<TResult> Map<TResult>(Func<T, TResult> selector) =>
+        new(Items.Select(selector).ToList(), TotalItems, CurrentPage, pageSize);
 }

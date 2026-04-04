@@ -1,0 +1,81 @@
+using AwesomeAssertions;
+using Domain.Primitives;
+using Domain.VolunteerOpportunities;
+using Xunit;
+
+namespace Application.UnitTests.VolunteerOpportunities;
+
+public class AddressTests
+{
+    [Fact]
+    public void Constructor_ShouldCreateAddress_WithValidData()
+    {
+        // Act
+        var address = new Address("Musterstraße", "42a", "12345", "Berlin");
+
+        // Assert
+        address.Street.Should().Be("Musterstraße");
+        address.HouseNumber.Should().Be("42a");
+        address.ZipCode.Should().Be("12345");
+        address.City.Should().Be("Berlin");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Constructor_ShouldThrow_WhenStreetIsEmpty(string? street)
+    {
+        var act = () => new Address(street!, "1", "12345", "Berlin");
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("Street must not be empty.");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Constructor_ShouldThrow_WhenHouseNumberIsEmpty(string? houseNumber)
+    {
+        var act = () => new Address("Straße", houseNumber!, "12345", "Berlin");
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("House number must not be empty.");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    [InlineData("1234")]
+    [InlineData("123456")]
+    public void Constructor_ShouldThrow_WhenZipCodeIsInvalid(string? zipCode)
+    {
+        var act = () => new Address("Straße", "1", zipCode!, "Berlin");
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("Zip code must be exactly 5 characters.");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Constructor_ShouldThrow_WhenCityIsEmpty(string? city)
+    {
+        var act = () => new Address("Straße", "1", "12345", city!);
+
+        act.Should().Throw<DomainException>()
+            .WithMessage("City must not be empty.");
+    }
+
+    [Fact]
+    public void Equals_ShouldReturnTrue_ForSameValues()
+    {
+        var address1 = new Address("Straße", "1", "12345", "Berlin");
+        var address2 = new Address("Straße", "1", "12345", "Berlin");
+
+        address1.Should().Be(address2);
+    }
+}

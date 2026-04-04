@@ -47,8 +47,8 @@ public sealed class IntegrationTestFixture
 
         var authority = $"{_keycloak.GetBaseAddress()}realms/einsatzbereit";
 
-        // Force-load DatabaseMigrations assembly so EF can discover migrations at host startup
-        _ = typeof(DatabaseMigrations.Migrations.Initial);
+        // Force-load Infrastructure assembly so EF can discover migrations at host startup
+        _ = typeof(Infrastructure.Persistence.Migrations.Initial);
 
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>

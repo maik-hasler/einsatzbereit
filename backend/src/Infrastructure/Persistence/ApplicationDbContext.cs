@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using Application.Abstractions;
-using Domain.Bedarfe;
-using Domain.Organisationen;
+using Domain.VolunteerOpportunities;
+using Domain.Organizations;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,21 +13,21 @@ internal sealed class ApplicationDbContext(
     IUnitOfWork,
     IApplicationDbContext
 {
-    public IAggregateRepository<Bedarf, BedarfId> Bedarfe
-        => new AggregateRepository<Bedarf, BedarfId>(
-            Set<Bedarf>(),
-            Set<Bedarf>(),
-            bedarf => bedarf.Id);
-    
-    public IQueryable<Bedarf> BedarfeQuery => Set<Bedarf>().AsNoTracking();
+    public IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities
+        => new AggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>(
+            Set<VolunteerOpportunity>(),
+            Set<VolunteerOpportunity>(),
+            vo => vo.Id);
 
-    public IAggregateRepository<Organisation, OrganisationId> Organisationen
-        => new AggregateRepository<Organisation, OrganisationId>(
-            Set<Organisation>(),
-            Set<Organisation>(),
-            organisation => organisation.Id);
-    
-    public IQueryable<Organisation> OrganisationenQuery => Set<Organisation>().AsNoTracking();
+    public IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
+
+    public IAggregateRepository<Organization, OrganizationId> Organizations
+        => new AggregateRepository<Organization, OrganizationId>(
+            Set<Organization>(),
+            Set<Organization>(),
+            org => org.Id);
+
+    public IQueryable<Organization> OrganizationsQuery => Set<Organization>().AsNoTracking();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder) =>

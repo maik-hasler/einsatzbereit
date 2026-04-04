@@ -6,113 +6,12 @@
     "version": "v1"
   },
   "paths": {
-    "/v1/organisationen": {
+    "/v1/volunteer-opportunities": {
       "get": {
         "tags": [
-          "GetOrganisationenEndpoint"
+          "GetVolunteerOpportunitiesEndpoint"
         ],
-        "operationId": "GetOrganisationen",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/KeycloakOrganisation"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "CreateOrganisationEndpoint"
-        ],
-        "operationId": "CreateOrganisation",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrganisationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Organisation"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/bedarfe": {
-      "get": {
-        "tags": [
-          "GetBedarfeEndpoint"
-        ],
-        "operationId": "GetBedarfe",
+        "operationId": "GetVolunteerOpportunities",
         "parameters": [
           {
             "name": "PageNumber",
@@ -147,7 +46,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedListOfBedarfSummary"
+                  "$ref": "#/components/schemas/PagedListOfVolunteerOpportunitySummary"
                 }
               }
             }
@@ -176,14 +75,14 @@
       },
       "post": {
         "tags": [
-          "CreateBedarfEndpoint"
+          "CreateVolunteerOpportunityEndpoint"
         ],
-        "operationId": "CreateBedarf",
+        "operationId": "CreateVolunteerOpportunity",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateBedarfRequest"
+                "$ref": "#/components/schemas/CreateVolunteerOpportunityRequest"
               }
             }
           },
@@ -195,7 +94,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateBedarfResponse"
+                  "$ref": "#/components/schemas/CreateVolunteerOpportunityResponse"
                 }
               }
             }
@@ -242,161 +141,112 @@
           }
         }
       }
+    },
+    "/v1/organizations": {
+      "get": {
+        "tags": [
+          "GetOrganizationsEndpoint"
+        ],
+        "operationId": "GetOrganizations",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KeycloakOrganization"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CreateOrganizationEndpoint"
+        ],
+        "operationId": "CreateOrganization",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "Adresse": {
-        "required": [
-          "strasse",
-          "hausnummer",
-          "plz",
-          "ort"
-        ],
-        "type": "object",
-        "properties": {
-          "strasse": {
-            "type": "string"
-          },
-          "hausnummer": {
-            "type": "string"
-          },
-          "plz": {
-            "type": "string"
-          },
-          "ort": {
-            "type": "string"
-          }
-        }
-      },
-      "BedarfSummary": {
-        "required": [
-          "id",
-          "title",
-          "description",
-          "organisationName",
-          "adresse",
-          "frequenz",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organisationName": {
-            "type": "string"
-          },
-          "adresse": {
-            "$ref": "#/components/schemas/Adresse"
-          },
-          "frequenz": {
-            "$ref": "#/components/schemas/Frequenz"
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "CreateBedarfRequest": {
-        "required": [
-          "title",
-          "description",
-          "organisationId",
-          "strasse",
-          "hausnummer",
-          "plz",
-          "ort",
-          "frequenz"
-        ],
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organisationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "strasse": {
-            "type": "string"
-          },
-          "hausnummer": {
-            "type": "string"
-          },
-          "plz": {
-            "type": "string"
-          },
-          "ort": {
-            "type": "string"
-          },
-          "frequenz": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateBedarfResponse": {
-        "required": [
-          "id",
-          "title",
-          "description",
-          "organisationId",
-          "strasse",
-          "hausnummer",
-          "plz",
-          "ort",
-          "frequenz",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organisationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "strasse": {
-            "type": "string"
-          },
-          "hausnummer": {
-            "type": "string"
-          },
-          "plz": {
-            "type": "string"
-          },
-          "ort": {
-            "type": "string"
-          },
-          "frequenz": {
-            "type": "string"
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "CreateOrganisationRequest": {
+      "CreateOrganizationRequest": {
         "required": [
           "name"
         ],
@@ -404,16 +254,127 @@
         "properties": {
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "CreateVolunteerOpportunityRequest": {
+        "required": [
+          "title",
+          "description",
+          "organizationId",
+          "street",
+          "houseNumber",
+          "zipCode",
+          "city",
+          "occurrence",
+          "participationType"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "street": {
+            "type": "string"
+          },
+          "houseNumber": {
+            "type": "string"
+          },
+          "zipCode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "occurrence": {
+            "type": "string"
+          },
+          "participationType": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateVolunteerOpportunityResponse": {
+        "required": [
+          "id",
+          "title",
+          "description",
+          "organizationId",
+          "street",
+          "houseNumber",
+          "zipCode",
+          "city",
+          "isRemote",
+          "occurrence",
+          "participationType",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "street": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "houseNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "zipCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isRemote": {
+            "type": "boolean"
+          },
+          "occurrence": {
+            "type": "string"
+          },
+          "participationType": {
+            "type": "string"
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
       "DomainEvent": {
         "type": "object"
       },
-      "Frequenz": {
-        "type": "integer"
-      },
-      "KeycloakOrganisation": {
+      "KeycloakOrganization": {
         "required": [
           "id",
           "name"
@@ -429,7 +390,7 @@
           }
         }
       },
-      "Organisation": {
+      "Organization": {
         "type": "object",
         "properties": {
           "name": {
@@ -456,11 +417,11 @@
             }
           },
           "id": {
-            "$ref": "#/components/schemas/OrganisationId"
+            "$ref": "#/components/schemas/OrganizationId"
           }
         }
       },
-      "OrganisationId": {
+      "OrganizationId": {
         "type": "object",
         "properties": {
           "value": {
@@ -469,7 +430,7 @@
           }
         }
       },
-      "PagedListOfBedarfSummary": {
+      "PagedListOfVolunteerOpportunitySummary": {
         "required": [
           "currentPage",
           "items"
@@ -503,7 +464,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/BedarfSummary"
+              "$ref": "#/components/schemas/VolunteerOpportunitySummary"
             }
           }
         }
@@ -545,21 +506,90 @@
             ]
           }
         }
+      },
+      "VolunteerOpportunitySummary": {
+        "required": [
+          "id",
+          "title",
+          "description",
+          "organizationName",
+          "street",
+          "houseNumber",
+          "zipCode",
+          "city",
+          "isRemote",
+          "occurrence",
+          "participationType",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "street": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "houseNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "zipCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isRemote": {
+            "type": "boolean"
+          },
+          "occurrence": {
+            "type": "string"
+          },
+          "participationType": {
+            "type": "string"
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   },
   "tags": [
     {
-      "name": "GetOrganisationenEndpoint"
+      "name": "GetVolunteerOpportunitiesEndpoint"
     },
     {
-      "name": "CreateOrganisationEndpoint"
+      "name": "CreateVolunteerOpportunityEndpoint"
     },
     {
-      "name": "GetBedarfeEndpoint"
+      "name": "GetOrganizationsEndpoint"
     },
     {
-      "name": "CreateBedarfEndpoint"
+      "name": "CreateOrganizationEndpoint"
     }
   ]
 }

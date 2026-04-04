@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import BedarfeListe from '../components/BedarfeListe';
+import VolunteerOpportunitiesList from '../components/VolunteerOpportunitiesList';
 
 const roles: string[] = Array.isArray(Astro.locals.user?.roles) ? Astro.locals.user.roles as string[] : [];
 const isOrganisator = roles.includes('organisator');
@@ -15,5 +15,5 @@ const activeOrgId = Astro.locals.activeOrgId;
   <p class="mb-8 text-lg text-gray-600">
     Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.
   </p>
-  <BedarfeListe canCreateBedarf={isOrganisator} activeOrgId={activeOrgId} client:load />
+  <VolunteerOpportunitiesList canCreateOpportunity={isOrganisator} activeOrgId={activeOrgId} client:load />
 </BaseLayout>

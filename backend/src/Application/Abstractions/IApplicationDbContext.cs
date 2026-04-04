@@ -1,15 +1,15 @@
-﻿using Domain.Bedarfe;
-using Domain.Organisationen;
+﻿using Domain.VolunteerOpportunities;
+using Domain.Organizations;
 
 namespace Application.Abstractions;
 
 public interface IApplicationDbContext
 {
-    IAggregateRepository<Bedarf, BedarfId> Bedarfe { get; }
-    
-    IQueryable<Bedarf> BedarfeQuery { get; }
+    IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities { get; }
 
-    IAggregateRepository<Organisation, OrganisationId> Organisationen { get; }
-    
-    IQueryable<Organisation> OrganisationenQuery { get; }
+    IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery { get; }
+
+    IAggregateRepository<Organization, OrganizationId> Organizations { get; }
+
+    IQueryable<Organization> OrganizationsQuery { get; }
 }
