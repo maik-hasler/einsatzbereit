@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
-using Application.Abstractions;
-using Application.Messaging;
+using Application.Common.Keycloak;
+using Application.Common.Messaging;
 using Application.Organizations.GetOrganizations.v1;
 using Microsoft.AspNetCore.Mvc;
 

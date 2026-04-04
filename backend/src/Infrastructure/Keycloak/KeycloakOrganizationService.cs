@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Application.Abstractions;
+using Application.Common.Keycloak;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Keycloak;

@@ -1,4 +1,4 @@
-﻿namespace Application.Pagination;
+﻿namespace Application.Common.Pagination;
 
 public sealed class PagedList<T>(
     IReadOnlyCollection<T> items,

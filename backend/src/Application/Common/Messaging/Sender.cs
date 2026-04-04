@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Application.Messaging;
+namespace Application.Common.Messaging;
 
 internal sealed class Sender(
     IServiceProvider serviceProvider)

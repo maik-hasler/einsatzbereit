@@ -1,11 +1,11 @@
-using Application.Abstractions;
-using Application.Messaging;
+using Application.Common.Keycloak;
+using Application.Common.Messaging;
 
 namespace Application.Organizations.GetOrganizations.v1;
 
 internal sealed class GetOrganizationsQueryHandler(
     IKeycloakOrganizationService keycloakOrganizationService)
-    : IRequestHandler<GetOrganizationsQuery, IReadOnlyList<KeycloakOrganization>>
+    : IQueryHandler<GetOrganizationsQuery, IReadOnlyList<KeycloakOrganization>>
 {
     public async ValueTask<IReadOnlyList<KeycloakOrganization>> Handle(
         GetOrganizationsQuery request,

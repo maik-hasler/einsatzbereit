@@ -1,4 +1,5 @@
-using Application.Abstractions;
+using Application.Common.Keycloak;
+using Application.Common.Persistence;
 using Application.Organizations.CreateOrganization.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
@@ -12,15 +13,13 @@ public class CreateOrganizationCommandHandlerTests
 {
     private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
     private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateOrganizationCommandHandler _sut;
 
     public CreateOrganizationCommandHandlerTests()
     {
         _sut = new CreateOrganizationCommandHandler(
             _keycloakService,
-            _dbContext,
-            _unitOfWork);
+            _dbContext);
     }
 
     [Fact]
@@ -103,7 +102,6 @@ public class CreateOrganizationCommandHandlerTests
         await _dbContext.Organizations.Received(1).AddAsync(
             Arg.Is<Organization>(o => o.Name == "Test Org"),
             ct);
-        await _unitOfWork.Received(1).SaveChangesAsync(ct);
     }
 
     [Fact]
@@ -132,16 +130,12 @@ public class CreateOrganizationCommandHandlerTests
             .When(x => x.AssignOrganizerRoleAsync(Arg.Any<Guid>(), ct))
             .Do(_ => callOrder.Add("AssignRole"));
 
-        _unitOfWork
-            .When(x => x.SaveChangesAsync(ct))
-            .Do(_ => callOrder.Add("SaveChanges"));
-
         // Act
         await _sut.Handle(command, ct);
 
         // Assert
         callOrder.Should().Equal(
-            "CreateOrganization", "AddMember", "AssignRole", "SaveChanges");
+            "CreateOrganization", "AddMember", "AssignRole");
     }
 
     [Fact]
@@ -188,6 +182,5 @@ public class CreateOrganizationCommandHandlerTests
         // Assert
         await act.Should().ThrowAsync<HttpRequestException>()
             .WithMessage("*User does not exist*");
-        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

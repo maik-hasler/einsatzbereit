@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Application.Abstractions;
+using Application.Common.Persistence;
 using Domain.VolunteerOpportunities;
 using Domain.Organizations;
 using Infrastructure.Persistence.Repositories;
@@ -33,4 +33,30 @@ internal sealed class ApplicationDbContext(
         ModelBuilder modelBuilder) =>
             modelBuilder.ApplyConfigurationsFromAssembly(
                 Assembly.GetExecutingAssembly());
+
+    public async Task BeginTransactionAsync(
+        CancellationToken cancellationToken = default) =>
+            await Database.BeginTransactionAsync(cancellationToken);
+
+    public async Task CommitTransactionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var currentTransaction = Database.CurrentTransaction;
+
+        if (currentTransaction != null)
+        {
+            await currentTransaction.CommitAsync(cancellationToken);
+        }
+    }
+
+    public async Task RollbackTransactionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var currentTransaction = Database.CurrentTransaction;
+
+        if (currentTransaction != null)
+        {
+            await currentTransaction.RollbackAsync(cancellationToken);
+        }
+    }
 }

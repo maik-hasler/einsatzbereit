@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Application.Messaging;
+using Application.Common.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application;
@@ -43,13 +43,24 @@ public static class ServiceCollectionExtensions
 
         var behaviors = assembly.GetTypes()
             .Where(t => t is { IsAbstract: false, IsInterface: false })
-            .SelectMany(t => t.GetInterfaces()
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == behaviorType)
-                .Select(i => new { Service = i, Implementation = t }));
+            .Where(t => t.GetInterfaces()
+                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == behaviorType));
 
         foreach (var behavior in behaviors)
         {
-            services.AddTransient(behavior.Service, behavior.Implementation);
+            // Open generic types must be registered as their generic type definitions,
+            // not as constructed generic types with unresolved type parameters.
+            if (behavior.IsGenericTypeDefinition)
+            {
+                services.AddTransient(behaviorType, behavior);
+            }
+            else
+            {
+                var serviceType = behavior.GetInterfaces()
+                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == behaviorType);
+
+                services.AddTransient(serviceType, behavior);
+            }
         }
     }
 }
