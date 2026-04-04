@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CreateOrganisationModal from '../src/components/CreateOrganisationModal';
+import CreateOrganizationModal from '../src/components/CreateOrganizationModal';
 
 describe('CreateOrganisationModal', () => {
   const onClose = vi.fn();
@@ -14,7 +14,7 @@ describe('CreateOrganisationModal', () => {
   });
 
   it('should render the form with name input and submit button', () => {
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     expect(screen.getByText('Organisation erstellen')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('z.B. Freiwillige Feuerwehr Musterstadt')).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe('CreateOrganisationModal', () => {
 
   it('should call onClose when cancel button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     await user.click(screen.getByText('Abbrechen'));
 
@@ -34,7 +34,7 @@ describe('CreateOrganisationModal', () => {
   it('should call onClose when backdrop is clicked', async () => {
     const user = userEvent.setup();
     const { container } = render(
-      <CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />
+      <CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />
     );
 
     // Click the backdrop (outermost div)
@@ -53,7 +53,7 @@ describe('CreateOrganisationModal', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     await user.type(
       screen.getByPlaceholderText('z.B. Freiwillige Feuerwehr Musterstadt'),
@@ -81,7 +81,7 @@ describe('CreateOrganisationModal', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     await user.type(
       screen.getByPlaceholderText('z.B. Freiwillige Feuerwehr Musterstadt'),
@@ -106,7 +106,7 @@ describe('CreateOrganisationModal', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     await user.type(
       screen.getByPlaceholderText('z.B. Freiwillige Feuerwehr Musterstadt'),
@@ -135,7 +135,7 @@ describe('CreateOrganisationModal', () => {
       writable: true,
     });
 
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     await user.type(
       screen.getByPlaceholderText('z.B. Freiwillige Feuerwehr Musterstadt'),
@@ -157,7 +157,7 @@ describe('CreateOrganisationModal', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<CreateOrganisationModal onClose={onClose} onSuccess={onSuccess} />);
+    render(<CreateOrganizationModal onClose={onClose} onSuccess={onSuccess} />);
 
     await user.type(
       screen.getByPlaceholderText('z.B. Freiwillige Feuerwehr Musterstadt'),

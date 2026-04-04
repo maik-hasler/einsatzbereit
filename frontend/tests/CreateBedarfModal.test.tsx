@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import CreateBedarfModal from "../src/components/CreateBedarfModal";
+import CreateVolunteerOpportunityModal from "../src/components/CreateVolunteerOpportunityModal";
 
 describe("CreateBedarfModal", () => {
   const onClose = vi.fn();
   const onSuccess = vi.fn();
-  const organisationId = "org-123";
+  const organizationId = "org-123";
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -16,8 +16,8 @@ describe("CreateBedarfModal", () => {
 
   it("should render all form fields", () => {
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -39,8 +39,8 @@ describe("CreateBedarfModal", () => {
   it("should call onClose when cancel button is clicked", async () => {
     const user = userEvent.setup();
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -54,8 +54,8 @@ describe("CreateBedarfModal", () => {
   it("should call onClose when backdrop is clicked", async () => {
     const user = userEvent.setup();
     const { container } = render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -78,8 +78,8 @@ describe("CreateBedarfModal", () => {
 
     const user = userEvent.setup();
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -102,7 +102,7 @@ describe("CreateBedarfModal", () => {
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body.title).toBe("Helfer gesucht");
     expect(body.description).toBe("Für den Umzug");
-    expect(body.organisationId).toBe(organisationId);
+    expect(body.organizationId).toBe(organizationId);
     expect(body.strasse).toBe("Hauptstraße");
     expect(body.hausnummer).toBe("42");
     expect(body.plz).toBe("54321");
@@ -112,8 +112,8 @@ describe("CreateBedarfModal", () => {
 
   it("should default frequenz to Einmalig", () => {
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -134,8 +134,8 @@ describe("CreateBedarfModal", () => {
 
     const user = userEvent.setup();
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -162,8 +162,8 @@ describe("CreateBedarfModal", () => {
 
     const user = userEvent.setup();
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,
@@ -196,8 +196,8 @@ describe("CreateBedarfModal", () => {
 
     const user = userEvent.setup();
     render(
-      <CreateBedarfModal
-        organisationId={organisationId}
+      <CreateVolunteerOpportunityModal
+        organizationId={organizationId}
         onClose={onClose}
         onSuccess={onSuccess}
       />,

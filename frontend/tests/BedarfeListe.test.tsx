@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import BedarfeListe from "../src/components/BedarfeListe";
+import VolunteerOpportunitiesList from "../src/components/VolunteerOpportunitiesList";
 
 const mockBedarfe = {
   totalItems: 2,
@@ -54,7 +54,7 @@ describe("BedarfeListe", () => {
   it("should display bedarfe with all details", async () => {
     vi.stubGlobal("fetch", mockFetch());
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText("Helfer gesucht")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("BedarfeListe", () => {
   it("should display regelmaessig frequenz correctly", async () => {
     vi.stubGlobal("fetch", mockFetch());
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText("Regelmäßige Unterstützung")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("BedarfeListe", () => {
       mockFetch({ totalItems: 0, currentPage: 1, pageCount: 0, items: [] }),
     );
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText("Keine Bedarfe gefunden.")).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe("BedarfeListe", () => {
   it("should show loading state", () => {
     vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     expect(screen.getByText("Wird geladen…")).toBeInTheDocument();
   });
@@ -109,25 +109,25 @@ describe("BedarfeListe", () => {
       vi.fn().mockResolvedValue({ ok: false, status: 500 }),
     );
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText("Fehler: Fehler 500")).toBeInTheDocument();
     });
   });
 
-  it("should show create button when canCreateBedarf is true", () => {
+  it("should show create button when canCreateOpportunity is true", () => {
     vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
 
-    render(<BedarfeListe canCreateBedarf={true} activeOrgId="org-1" />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={true} activeOrgId="org-1" />);
 
     expect(screen.getByText("+ Bedarf erstellen")).toBeInTheDocument();
   });
 
-  it("should not show create button when canCreateBedarf is false", () => {
+  it("should not show create button when canCreateOpportunity is false", () => {
     vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     expect(screen.queryByText("+ Bedarf erstellen")).not.toBeInTheDocument();
   });
@@ -143,7 +143,7 @@ describe("BedarfeListe", () => {
       }),
     );
 
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText("1 / 2")).toBeInTheDocument();
@@ -163,7 +163,7 @@ describe("BedarfeListe", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const user = userEvent.setup();
-    render(<BedarfeListe canCreateBedarf={false} activeOrgId={null} />);
+    render(<VolunteerOpportunitiesList canCreateOpportunity={false} activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText("Weiter →")).toBeInTheDocument();
