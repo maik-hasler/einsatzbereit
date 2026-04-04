@@ -1,11 +1,12 @@
-using Api.Authentication;
-using Api.Extensions;
+using Api.Common.Authentication;
+using Api.Common.Endpoints;
 using Application;
 using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,10 +60,10 @@ builder.Services.AddEndpoints();
 
 builder.Services.AddOpenApi("v1", options =>
 {
-    options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
-    options.AddDocumentTransformer((document, context, ct) =>
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+    options.AddDocumentTransformer((document, _, _) =>
     {
-        document.Info = new()
+        document.Info = new OpenApiInfo
         {
             Title = "Einsatzbereit API",
             Version = "v1",

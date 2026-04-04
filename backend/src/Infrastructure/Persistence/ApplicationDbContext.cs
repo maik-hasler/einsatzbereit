@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
 using Application.Abstractions;
-using Domain.Bedarfe;
-using Domain.Organisationen;
+using Domain.VolunteerOpportunities;
+using Domain.Organizations;
+using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
@@ -9,11 +10,24 @@ namespace Infrastructure.Persistence;
 internal sealed class ApplicationDbContext(
     DbContextOptions<ApplicationDbContext> options)
     : DbContext(options),
-    IUnitOfWork
+    IUnitOfWork,
+    IApplicationDbContext
 {
-    public DbSet<Bedarf> Bedarfe => Set<Bedarf>();
+    public IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities
+        => new AggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>(
+            Set<VolunteerOpportunity>(),
+            Set<VolunteerOpportunity>(),
+            vo => vo.Id);
 
-    public DbSet<Organisation> Organisationen => Set<Organisation>();
+    public IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
+
+    public IAggregateRepository<Organization, OrganizationId> Organizations
+        => new AggregateRepository<Organization, OrganizationId>(
+            Set<Organization>(),
+            Set<Organization>(),
+            org => org.Id);
+
+    public IQueryable<Organization> OrganizationsQuery => Set<Organization>().AsNoTracking();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder) =>

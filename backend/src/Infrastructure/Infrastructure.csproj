@@ -2,6 +2,8 @@
   
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
@@ -12,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="DatabaseMigrations" />
     <InternalsVisibleTo Include="IntegrationTests" />
   </ItemGroup>
 

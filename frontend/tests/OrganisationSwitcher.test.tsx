@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import OrganisationSwitcher from '../src/components/OrganisationSwitcher';
+import OrganizationSwitcher from '../src/components/OrganizationSwitcher';
 
 const mockOrgs = [
   { id: 'org-1', name: 'Feuerwehr Musterstadt' },
@@ -32,7 +32,7 @@ describe('OrganisationSwitcher', () => {
     // Don't resolve fetch immediately
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
 
-    render(<OrganisationSwitcher activeOrgId={null} />);
+    render(<OrganizationSwitcher activeOrgId={null} />);
 
     // Loading skeleton has animate-pulse class
     const skeleton = document.querySelector('.animate-pulse');
@@ -48,7 +48,7 @@ describe('OrganisationSwitcher', () => {
       writable: true,
     });
 
-    render(<OrganisationSwitcher activeOrgId="org-1" />);
+    render(<OrganizationSwitcher activeOrgId="org-1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Feuerwehr Musterstadt')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('OrganisationSwitcher', () => {
       writable: true,
     });
 
-    render(<OrganisationSwitcher activeOrgId="org-1" />);
+    render(<OrganizationSwitcher activeOrgId="org-1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Feuerwehr Musterstadt')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('OrganisationSwitcher', () => {
       writable: true,
     });
 
-    render(<OrganisationSwitcher activeOrgId="org-1" />);
+    render(<OrganizationSwitcher activeOrgId="org-1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Feuerwehr Musterstadt')).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('OrganisationSwitcher', () => {
   it('should show "Organisation wählen" when no active org', async () => {
     mockFetch([]);
 
-    render(<OrganisationSwitcher activeOrgId={null} />);
+    render(<OrganizationSwitcher activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText('Organisation wählen')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('OrganisationSwitcher', () => {
       writable: true,
     });
 
-    render(<OrganisationSwitcher activeOrgId="org-1" />);
+    render(<OrganizationSwitcher activeOrgId="org-1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Feuerwehr Musterstadt')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('OrganisationSwitcher', () => {
   it('should handle fetch error gracefully', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-    render(<OrganisationSwitcher activeOrgId={null} />);
+    render(<OrganizationSwitcher activeOrgId={null} />);
 
     await waitFor(() => {
       expect(screen.getByText('Organisation wählen')).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe('OrganisationSwitcher', () => {
     render(
       <div>
         <span data-testid="outside">Outside</span>
-        <OrganisationSwitcher activeOrgId="org-1" />
+        <OrganizationSwitcher activeOrgId="org-1" />
       </div>
     );
 

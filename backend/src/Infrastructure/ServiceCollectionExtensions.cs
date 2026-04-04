@@ -1,11 +1,8 @@
 ﻿using Application.Abstractions;
-using Domain.Bedarfe;
-using Domain.Organisationen;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
-using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +26,7 @@ public static class ServiceCollectionExtensions
 
             options.UseNpgsql(
                 sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.Database,
-                mig => mig.MigrationsAssembly("DatabaseMigrations"));
+                mig => mig.MigrationsAssembly("Infrastructure"));
 
             options.UseSnakeCaseNamingConvention();
         });
@@ -37,13 +34,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationDbContextInitializer, ApplicationDbContextInitializer>();
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
-
-        services.AddScoped<IBedarfRepository, BedarfRepository>();
-        services.AddScoped<IOrganisationRepository, OrganisationRepository>();
+        
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.ConfigureOptions<KeycloakOptionsSetup>();
 
-        services.AddHttpClient<IKeycloakOrganisationService, KeycloakOrganisationService>(
+        services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
             (sp, client) =>
             {
                 var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;

@@ -12,7 +12,7 @@ public class GenerateAliasTests
     [InlineData("simple", "simple")]
     public void GenerateAlias_ShouldLowercaseAndReplaceSpaces(string name, string expected)
     {
-        KeycloakOrganisationService.GenerateAlias(name).Should().Be(expected);
+        KeycloakOrganizationService.GenerateAlias(name).Should().Be(expected);
     }
 
     [Theory]
@@ -23,7 +23,7 @@ public class GenerateAliasTests
     [InlineData("Österreichisches Rotes Kreuz", "oesterreichisches-rotes-kreuz")]
     public void GenerateAlias_ShouldTransliterateGermanCharacters(string name, string expected)
     {
-        KeycloakOrganisationService.GenerateAlias(name).Should().Be(expected);
+        KeycloakOrganizationService.GenerateAlias(name).Should().Be(expected);
     }
 
     [Theory]
@@ -34,7 +34,7 @@ public class GenerateAliasTests
     [InlineData("  spaced  out  ", "spaced-out")]
     public void GenerateAlias_ShouldStripSpecialCharsAndCollapseHyphens(string name, string expected)
     {
-        KeycloakOrganisationService.GenerateAlias(name).Should().Be(expected);
+        KeycloakOrganizationService.GenerateAlias(name).Should().Be(expected);
     }
 
     [Theory]
@@ -42,18 +42,18 @@ public class GenerateAliasTests
     [InlineData("naïve exposé", "naive-expose")]
     public void GenerateAlias_ShouldStripDiacriticsFromNonGermanChars(string name, string expected)
     {
-        KeycloakOrganisationService.GenerateAlias(name).Should().Be(expected);
+        KeycloakOrganizationService.GenerateAlias(name).Should().Be(expected);
     }
 
     [Fact]
     public void GenerateAlias_ShouldReturnEmpty_WhenNameIsOnlySpecialChars()
     {
-        KeycloakOrganisationService.GenerateAlias("@#$%").Should().BeEmpty();
+        KeycloakOrganizationService.GenerateAlias("@#$%").Should().BeEmpty();
     }
 
     [Fact]
     public void GenerateAlias_ShouldHandleEmptyString()
     {
-        KeycloakOrganisationService.GenerateAlias("").Should().BeEmpty();
+        KeycloakOrganizationService.GenerateAlias("").Should().BeEmpty();
     }
 }
