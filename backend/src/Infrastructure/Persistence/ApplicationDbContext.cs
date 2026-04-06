@@ -19,7 +19,7 @@ internal sealed class ApplicationDbContext(
             Set<VolunteerOpportunity>(),
             vo => vo.Id);
 
-    public IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
+    internal IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
 
     public IAggregateRepository<Organization, OrganizationId> Organizations
         => new AggregateRepository<Organization, OrganizationId>(
@@ -27,7 +27,7 @@ internal sealed class ApplicationDbContext(
             Set<Organization>(),
             org => org.Id);
 
-    public IQueryable<Organization> OrganizationsQuery => Set<Organization>().AsNoTracking();
+    internal IQueryable<Organization> OrganizationsQuery => Set<Organization>().AsNoTracking();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder) =>

@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Application.Common.Pagination;
+using Microsoft.EntityFrameworkCore;
 
-namespace Application.Common.Pagination;
+namespace Infrastructure.Persistence.Extensions;
 
 internal static class PagedListExtensions
 {
@@ -11,12 +12,12 @@ internal static class PagedListExtensions
         CancellationToken cancellationToken = default)
     {
         var count = await source.CountAsync(cancellationToken);
-        
+
         var items = await source
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
-        
+
         return new PagedList<T>(items, count, pageNumber, pageSize);
     }
 }

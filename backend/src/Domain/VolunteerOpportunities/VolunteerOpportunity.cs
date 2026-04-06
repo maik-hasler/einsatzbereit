@@ -15,7 +15,9 @@ public sealed class VolunteerOpportunity
 
     public string Description { get; private set; }
 
-    public Location Location { get; private set; }
+    public bool IsRemote { get; private set; }
+
+    public Address? Address { get; private set; }
 
     public Occurrence Occurrence { get; private set; }
 
@@ -36,7 +38,8 @@ public sealed class VolunteerOpportunity
         OrganizationId organizationId,
         string title,
         string description,
-        Location location,
+        bool isRemote,
+        Address? address,
         Occurrence occurrence,
         ParticipationType participationType)
         : base(id)
@@ -44,7 +47,8 @@ public sealed class VolunteerOpportunity
         OrganizationId = organizationId;
         Title = title;
         Description = description;
-        Location = location;
+        IsRemote = isRemote;
+        Address = address;
         Occurrence = occurrence;
         ParticipationType = participationType;
     }
@@ -53,7 +57,8 @@ public sealed class VolunteerOpportunity
         OrganizationId organizationId,
         string title,
         string description,
-        Location location,
+        bool isRemote,
+        Address? address,
         Occurrence occurrence,
         ParticipationType participationType)
     {
@@ -63,14 +68,16 @@ public sealed class VolunteerOpportunity
         if (string.IsNullOrWhiteSpace(description))
             throw new DomainException("Description must not be empty.");
 
-        ArgumentNullException.ThrowIfNull(location);
+        if (!isRemote && address is null)
+            throw new DomainException("Address is required for non-remote opportunities.");
 
         return new VolunteerOpportunity(
             new VolunteerOpportunityId(Guid.CreateVersion7()),
             organizationId,
             title,
             description,
-            location,
+            isRemote,
+            address,
             occurrence,
             participationType);
     }

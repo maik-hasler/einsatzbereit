@@ -8,7 +8,8 @@ public sealed record CreateVolunteerOpportunityCommand(
     string Title,
     string Description,
     OrganizationId OrganizationId,
-    Location Location,
+    bool IsRemote,
+    Address? Address,
     Occurrence Occurrence,
     ParticipationType ParticipationType)
     : ICommand<VolunteerOpportunity>;

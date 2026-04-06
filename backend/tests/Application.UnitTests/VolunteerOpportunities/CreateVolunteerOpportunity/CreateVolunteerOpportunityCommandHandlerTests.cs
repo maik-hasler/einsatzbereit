@@ -11,7 +11,7 @@ namespace Application.UnitTests.VolunteerOpportunities.CreateVolunteerOpportunit
 public class CreateVolunteerOpportunityCommandHandlerTests
 {
     private static readonly OrganizationId TestOrganizationId = new(Guid.NewGuid());
-    private static readonly Location TestLocation = new PhysicalLocation(new Address("Musterstraße", "1", "12345", "Berlin"));
+    private static readonly Address TestAddress = new("Musterstraße", "1", "12345", "Berlin");
 
     private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
     private readonly CreateVolunteerOpportunityCommandHandler _sut;
@@ -29,7 +29,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
             "Helpers needed",
             "For moving",
             TestOrganizationId,
-            TestLocation,
+            false,
+            TestAddress,
             Occurrence.OneTime,
             ParticipationType.Waitlist);
 
@@ -40,7 +41,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
         result.Title.Should().Be("Helpers needed");
         result.Description.Should().Be("For moving");
         result.OrganizationId.Should().Be(TestOrganizationId);
-        result.Location.Should().Be(TestLocation);
+        result.IsRemote.Should().BeFalse();
+        result.Address.Should().Be(TestAddress);
         result.Occurrence.Should().Be(Occurrence.OneTime);
         result.ParticipationType.Should().Be(ParticipationType.Waitlist);
     }
@@ -53,7 +55,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
             "Title",
             "Description",
             TestOrganizationId,
-            TestLocation,
+            false,
+            TestAddress,
             Occurrence.Recurring,
             ParticipationType.IndividualContact);
 

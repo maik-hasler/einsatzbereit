@@ -9,7 +9,7 @@ namespace Application.UnitTests.VolunteerOpportunities;
 public class VolunteerOpportunityTests
 {
     private static readonly OrganizationId TestOrganizationId = new(Guid.NewGuid());
-    private static readonly Location TestLocation = new PhysicalLocation(new Address("Musterstraße", "1", "12345", "Berlin"));
+    private static readonly Address TestAddress = new("Musterstraße", "1", "12345", "Berlin");
 
     [Fact]
     public void Create_ShouldCreateVolunteerOpportunity_WithValidData()
@@ -19,7 +19,8 @@ public class VolunteerOpportunityTests
             TestOrganizationId,
             "Helpers needed",
             "We need helpers for moving",
-            TestLocation,
+            false,
+            TestAddress,
             Occurrence.OneTime,
             ParticipationType.Waitlist);
 
@@ -27,9 +28,28 @@ public class VolunteerOpportunityTests
         opportunity.Title.Should().Be("Helpers needed");
         opportunity.Description.Should().Be("We need helpers for moving");
         opportunity.OrganizationId.Should().Be(TestOrganizationId);
-        opportunity.Location.Should().Be(TestLocation);
+        opportunity.IsRemote.Should().BeFalse();
+        opportunity.Address.Should().Be(TestAddress);
         opportunity.Occurrence.Should().Be(Occurrence.OneTime);
         opportunity.ParticipationType.Should().Be(ParticipationType.Waitlist);
+    }
+
+    [Fact]
+    public void Create_ShouldCreateRemoteOpportunity()
+    {
+        // Act
+        var opportunity = VolunteerOpportunity.Create(
+            TestOrganizationId,
+            "Remote help",
+            "Online volunteering",
+            true,
+            null,
+            Occurrence.Recurring,
+            ParticipationType.IndividualContact);
+
+        // Assert
+        opportunity.IsRemote.Should().BeTrue();
+        opportunity.Address.Should().BeNull();
     }
 
     [Theory]
@@ -43,7 +63,8 @@ public class VolunteerOpportunityTests
             TestOrganizationId,
             title!,
             "Description",
-            TestLocation,
+            false,
+            TestAddress,
             Occurrence.OneTime,
             ParticipationType.Waitlist);
 
@@ -63,7 +84,8 @@ public class VolunteerOpportunityTests
             TestOrganizationId,
             "Title",
             description!,
-            TestLocation,
+            false,
+            TestAddress,
             Occurrence.OneTime,
             ParticipationType.Waitlist);
 
@@ -73,19 +95,21 @@ public class VolunteerOpportunityTests
     }
 
     [Fact]
-    public void Create_ShouldThrow_WhenLocationIsNull()
+    public void Create_ShouldThrow_WhenNotRemoteAndAddressIsNull()
     {
         // Act
         var act = () => VolunteerOpportunity.Create(
             TestOrganizationId,
             "Title",
             "Description",
-            null!,
+            false,
+            null,
             Occurrence.OneTime,
             ParticipationType.Waitlist);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DomainException>()
+            .WithMessage("Address is required for non-remote opportunities.");
     }
 
     [Fact]
@@ -96,7 +120,8 @@ public class VolunteerOpportunityTests
             TestOrganizationId,
             "Regular help",
             "Every Saturday",
-            TestLocation,
+            false,
+            TestAddress,
             Occurrence.Recurring,
             ParticipationType.IndividualContact);
 

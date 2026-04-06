@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Domain.VolunteerOpportunities;
+﻿using Domain.VolunteerOpportunities;
 using Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -32,12 +31,16 @@ internal sealed class VolunteerOpportunityConfiguration
         builder.Property(vo => vo.Description)
             .IsRequired();
 
-        builder.Property(vo => vo.Location)
-            .HasColumnType("jsonb")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<Location>(v, (JsonSerializerOptions?)null)!)
+        builder.Property(vo => vo.IsRemote)
             .IsRequired();
+
+        builder.OwnsOne(vo => vo.Address, address =>
+        {
+            address.Property(a => a.Street).IsRequired();
+            address.Property(a => a.HouseNumber).IsRequired();
+            address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
+            address.Property(a => a.City).IsRequired();
+        });
 
         builder.Property(vo => vo.Occurrence)
             .HasConversion<string>()

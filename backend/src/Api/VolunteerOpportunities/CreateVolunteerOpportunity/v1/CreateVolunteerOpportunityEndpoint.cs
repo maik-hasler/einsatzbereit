@@ -1,4 +1,4 @@
-﻿using Api.Common.Authentication;
+using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
@@ -41,34 +41,33 @@ internal sealed class CreateVolunteerOpportunityEndpoint
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var location = (Location)new PhysicalLocation(new Address(
+        var address = new Address(
             request.Street,
             request.HouseNumber,
             request.ZipCode,
-            request.City));
+            request.City);
 
         var command = new CreateVolunteerOpportunityCommand(
             request.Title,
             request.Description,
             new OrganizationId(request.OrganizationId),
-            location,
+            false,
+            address,
             occurrence,
             participationType);
 
         var opportunity = await sender.Send(command, cancellationToken);
-
-        var address = opportunity.Location is PhysicalLocation pl ? pl.Address : null;
 
         var response = new CreateVolunteerOpportunityResponse(
             opportunity.Id.Value,
             opportunity.Title,
             opportunity.Description,
             opportunity.OrganizationId.Value,
-            address?.Street,
-            address?.HouseNumber,
-            address?.ZipCode,
-            address?.City,
-            opportunity.Location is RemoteLocation,
+            opportunity.Address?.Street,
+            opportunity.Address?.HouseNumber,
+            opportunity.Address?.ZipCode,
+            opportunity.Address?.City,
+            opportunity.IsRemote,
             opportunity.Occurrence.ToString(),
             opportunity.ParticipationType.ToString(),
             opportunity.CreatedOn);

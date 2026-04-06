@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260404084344_Initial")]
+    [Migration("20260406074452_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -65,10 +65,9 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("location");
+                    b.Property<bool>("IsRemote")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_remote");
 
                     b.Property<DateTimeOffset?>("ModifiedOn")
                         .HasColumnType("timestamp with time zone")
@@ -97,6 +96,47 @@ namespace Infrastructure.Persistence.Migrations
                         .HasName("pk_volunteer_opportunity");
 
                     b.ToTable("volunteer_opportunity", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
+                {
+                    b.OwnsOne("Domain.VolunteerOpportunities.Address", "Address", b1 =>
+                        {
+                            b1.Property<Guid>("VolunteerOpportunityId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("address_city");
+
+                            b1.Property<string>("HouseNumber")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("address_house_number");
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("address_street");
+
+                            b1.Property<string>("ZipCode")
+                                .IsRequired()
+                                .HasMaxLength(5)
+                                .HasColumnType("character varying(5)")
+                                .HasColumnName("address_zip_code");
+
+                            b1.HasKey("VolunteerOpportunityId");
+
+                            b1.ToTable("volunteer_opportunity");
+
+                            b1.WithOwner()
+                                .HasForeignKey("VolunteerOpportunityId")
+                                .HasConstraintName("fk_volunteer_opportunity_volunteer_opportunity_id");
+                        });
+
+                    b.Navigation("Address");
                 });
 #pragma warning restore 612, 618
         }

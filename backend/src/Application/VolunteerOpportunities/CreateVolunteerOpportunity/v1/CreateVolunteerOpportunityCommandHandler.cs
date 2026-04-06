@@ -16,7 +16,8 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
             request.OrganizationId,
             request.Title,
             request.Description,
-            request.Location,
+            request.IsRemote,
+            request.Address,
             request.Occurrence,
             request.ParticipationType);
 
