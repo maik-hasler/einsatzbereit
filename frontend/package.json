@@ -19,7 +19,7 @@
   "dependencies": {
     "@astrojs/node": "10.0.4",
     "@astrojs/react": "5.0.3",
-    "@iconify-json/simple-icons": "1.2.76",
+    "@iconify-json/simple-icons": "1.2.77",
     "astro": "6.1.4",
     "astro-icon": "1.1.5",
     "openid-client": "6.8.2",
