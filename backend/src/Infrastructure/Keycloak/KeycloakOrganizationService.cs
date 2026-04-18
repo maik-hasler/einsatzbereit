@@ -106,6 +106,57 @@ internal sealed class KeycloakOrganizationService(
             .ToList();
     }
 
+    public async Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureAuthenticatedAsync(cancellationToken);
+
+        var membersResponse = await httpClient.GetAsync(
+            $"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
+            cancellationToken);
+
+        await EnsureSuccessAsync(membersResponse, cancellationToken);
+
+        var members = await membersResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+            JsonOptions, cancellationToken) ?? [];
+
+        var organisatorsResponse = await httpClient.GetAsync(
+            $"/admin/realms/{_options.Realm}/roles/organisator/users",
+            cancellationToken);
+
+        await EnsureSuccessAsync(organisatorsResponse, cancellationToken);
+
+        var organisators = await organisatorsResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+            JsonOptions, cancellationToken) ?? [];
+
+        var organisatorIds = organisators.Select(u => u.Id).ToHashSet();
+
+        return members
+            .Select(u => new KeycloakOrganizationMember(
+                Guid.Parse(u.Id),
+                u.Username,
+                u.FirstName,
+                u.LastName,
+                u.Email ?? string.Empty,
+                organisatorIds.Contains(u.Id)))
+            .ToList();
+    }
+
+    public async Task RemoveMemberAsync(
+        Guid organizationId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureAuthenticatedAsync(cancellationToken);
+
+        var response = await httpClient.DeleteAsync(
+            $"/admin/realms/{_options.Realm}/organizations/{organizationId}/members/{userId}",
+            cancellationToken);
+
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
     private async Task EnsureAuthenticatedAsync(
         CancellationToken cancellationToken)
     {
@@ -221,4 +272,11 @@ internal sealed class KeycloakOrganizationService(
     private sealed record KeycloakOrganizationResponse(
         string Id,
         string Name);
+
+    private sealed record KeycloakUserResponse(
+        string Id,
+        string Username,
+        string? FirstName,
+        string? LastName,
+        string? Email);
 }

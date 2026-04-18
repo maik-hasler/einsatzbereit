@@ -1,3 +1,4 @@
+using Domain.Common;
 using Domain.Primitives;
 
 namespace Domain.Organizations;
@@ -7,6 +8,16 @@ public sealed class Organization
       IAuditableEntity
 {
     public string Name { get; private set; }
+
+    public string? Description { get; private set; }
+
+    public string? ContactEmail { get; private set; }
+
+    public string? ContactPhone { get; private set; }
+
+    public string? Website { get; private set; }
+
+    public Address? Address { get; private set; }
 
     public DateTimeOffset CreatedOn { get; private set; }
 
@@ -32,5 +43,24 @@ public sealed class Organization
             throw new DomainException("Name must not be empty.");
 
         return new Organization(id, name);
+    }
+
+    public void Update(
+        string name,
+        string? description,
+        string? contactEmail,
+        string? contactPhone,
+        string? website,
+        Address? address)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("Name must not be empty.");
+
+        Name = name;
+        Description = description;
+        ContactEmail = contactEmail;
+        ContactPhone = contactPhone;
+        Website = website;
+        Address = address;
     }
 }

@@ -10,21 +10,37 @@ internal sealed class OrganizationConfiguration
     public void Configure(
         EntityTypeBuilder<Organization> builder)
     {
-        builder.HasKey(organisation => organisation.Id);
+        builder.HasKey(org => org.Id);
 
-        builder.Property(organisation => organisation.Id)
+        builder.Property(org => org.Id)
             .HasConversion(
                 id => id.Value,
                 guid => new OrganizationId(guid))
             .ValueGeneratedNever();
 
-        builder.Property(organisation => organisation.Name)
+        builder.Property(org => org.Name)
             .IsRequired();
 
-        builder.Property(organisation => organisation.CreatedOn);
+        builder.Property(org => org.Description);
 
-        builder.Property(organisation => organisation.ModifiedOn);
-        
+        builder.Property(org => org.ContactEmail);
+
+        builder.Property(org => org.ContactPhone);
+
+        builder.Property(org => org.Website);
+
+        builder.OwnsOne(org => org.Address, address =>
+        {
+            address.Property(a => a.Street).IsRequired();
+            address.Property(a => a.HouseNumber).IsRequired();
+            address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
+            address.Property(a => a.City).IsRequired();
+        });
+
+        builder.Property(org => org.CreatedOn);
+
+        builder.Property(org => org.ModifiedOn);
+
         builder.Ignore(org => org.Events);
     }
 }

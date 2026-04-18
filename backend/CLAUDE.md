@@ -35,6 +35,7 @@ src/
 │
 ├── Domain/                     Zero external dependencies
 │   ├── Primitives/             AggregateRoot<TId>, Entity<TId>, DomainEvent, DomainException
+│   ├── Common/                 Address (shared value object)
 │   ├── Organizations/          Organization (aggregate), OrganizationId (value object)
 │   ├── VolunteerOpportunities/ VolunteerOpportunity (aggregate), Address, Occurrence, ParticipationType
 │   ├── Engagements/            Engagement (aggregate), EngagementStatus
@@ -58,29 +59,25 @@ tests/
 
 ## Adding a Feature (canonical pattern)
 
-**Example: `RemoveMember` from an organization**
-
 ```
 1. Domain (if domain logic involved)
-   └── Domain/Organizations/Organization.cs  — add RemoveMember() method
+   └── Domain/Organizations/Organization.cs  — add method
 
 2. Application
-   └── Application/Organizations/RemoveMember/v1/
-       ├── RemoveMemberCommand.cs
-       │   record RemoveMemberCommand(Guid OrganizationId, Guid UserId) : ICommand<bool>;
-       └── RemoveMemberCommandHandler.cs
-           class RemoveMemberCommandHandler : ICommandHandler<RemoveMemberCommand, bool>
+   └── Application/Organizations/{UseCase}/v1/
+       ├── {UseCase}Command.cs / {UseCase}Query.cs
+       └── {UseCase}CommandHandler.cs / {UseCase}QueryHandler.cs
 
 3. Api
-   └── Api/Organizations/RemoveMember/v1/
-       ├── RemoveMemberRequest.cs    — record with Guid UserId
-       └── RemoveMemberEndpoint.cs  — implements IEndpoint, maps DELETE route, calls ISender
+   └── Api/Organizations/{UseCase}/v1/
+       ├── {UseCase}Request.cs    — request body record (omit if no body)
+       └── {UseCase}Endpoint.cs  — implements IEndpoint, maps route, calls ISender
 
 4. OpenAPI regenerates automatically on dotnet build (NSwag in Api.csproj)
 5. Frontend api-client.ts regenerates with it — do not hand-edit
 ```
 
-Reference implementation: `Organizations/AddMember/` (newest).
+Reference implementations (newest first): `Organizations/RemoveMember/`, `Organizations/GetOrganizationDetails/`, `Organizations/AddMember/`.
 
 ## Key Patterns
 
@@ -116,6 +113,23 @@ Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's pic
 | `EinsatzbereitAdminPolicy` | `admin` |
 | `EinsatzbereitDefaultUserPolicy` | `user` |
 | `EinsatzbereitOrganisatorPolicy` | `organisator` |
+
+## Organization domain model
+
+`Organization` aggregate fields: `Id`, `Name`, `Description?`, `ContactEmail?`, `ContactPhone?`, `Website?`, `Address?` (`Domain.Common.Address`), `CreatedOn`, `ModifiedOn`.
+
+`IKeycloakOrganizationService` methods: `CreateOrganizationAsync`, `AddMemberAsync`, `RemoveMemberAsync`, `AssignOrganizerRoleAsync`, `GetUserOrganizationsAsync`, `GetMembersAsync`.
+
+## Implemented endpoints (Organizations)
+
+| Method | Route | Auth | Handler |
+|---|---|---|---|
+| GET | `/v1/organizations` | DefaultUser | `GetOrganizations` |
+| POST | `/v1/organizations` | DefaultUser | `CreateOrganization` |
+| GET | `/v1/organizations/{id}` | Organisator | `GetOrganizationDetails` |
+| PUT | `/v1/organizations/{id}` | Organisator | `UpdateOrganization` |
+| POST | `/v1/organizations/{id}/members` | DefaultUser | `AddMember` |
+| DELETE | `/v1/organizations/{id}/members/{userId}` | Organisator | `RemoveMember` |
 
 ## Database
 

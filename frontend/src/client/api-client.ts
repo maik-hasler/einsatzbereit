@@ -140,6 +140,187 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return No Content
+     */
+    updateOrganization(organizationId: string, body: UpdateOrganizationRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateOrganization(_response);
+        });
+    }
+
+    protected processUpdateOrganization(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrganizationDetails(organizationId: string, signal?: AbortSignal): Promise<OrganizationDetailsResponse> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOrganizationDetails(_response);
+        });
+    }
+
+    protected processGetOrganizationDetails(response: Response): Promise<OrganizationDetailsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OrganizationDetailsResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OrganizationDetailsResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    removeMember(organizationId: string, userId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/members/{userId}";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRemoveMember(_response);
+        });
+    }
+
+    protected processRemoveMember(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @return OK
      */
     getOrganizations(signal?: AbortSignal): Promise<KeycloakOrganization[]> {
@@ -313,6 +494,24 @@ export interface AddMemberRequest {
     [key: string]: any;
 }
 
+export interface Address {
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
+
+    [key: string]: any;
+}
+
+export interface AddressDto {
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
+
+    [key: string]: any;
+}
+
 export interface CreateOrganizationRequest {
     name: string;
 
@@ -364,6 +563,11 @@ export interface KeycloakOrganization {
 
 export interface Organization {
     name?: string;
+    description?: string | undefined;
+    contactEmail?: string | undefined;
+    contactPhone?: string | undefined;
+    website?: string | undefined;
+    address?: Address | undefined;
     createdOn?: Date;
     modifiedOn?: Date | undefined;
     events?: DomainEvent[] | undefined;
@@ -372,8 +576,34 @@ export interface Organization {
     [key: string]: any;
 }
 
+export interface OrganizationDetailsResponse {
+    id: string;
+    name: string;
+    description: string | undefined;
+    contactEmail: string | undefined;
+    contactPhone: string | undefined;
+    website: string | undefined;
+    address: AddressDto | undefined;
+    createdOn: Date;
+    modifiedOn: Date | undefined;
+    members: OrganizationMemberDto[];
+
+    [key: string]: any;
+}
+
 export interface OrganizationId {
     value?: string;
+
+    [key: string]: any;
+}
+
+export interface OrganizationMemberDto {
+    userId: string;
+    username: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string;
+    isOrganisator: boolean;
 
     [key: string]: any;
 }
@@ -393,6 +623,26 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface UpdateAddressRequest {
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
+
+    [key: string]: any;
+}
+
+export interface UpdateOrganizationRequest {
+    name: string;
+    description: string | undefined;
+    contactEmail: string | undefined;
+    contactPhone: string | undefined;
+    website: string | undefined;
+    address: UpdateAddressRequest | undefined;
 
     [key: string]: any;
 }

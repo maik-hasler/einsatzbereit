@@ -22,9 +22,10 @@ src/
 │   ├── AppLayout.tsx       Header + <Outlet /> + Footer
 │   └── ProtectedRoute.tsx  Redirects to Keycloak if not authenticated
 ├── pages/
-│   ├── HomePage.tsx        Main page with VolunteerOpportunitiesList
-│   ├── DatenschutzPage.tsx Privacy policy (static)
-│   └── ImpressumPage.tsx   Legal notice (static)
+│   ├── HomePage.tsx                    Main page with VolunteerOpportunitiesList
+│   ├── OrganizationSettingsPage.tsx    Org settings: general info + member management
+│   ├── DatenschutzPage.tsx             Privacy policy (static)
+│   └── ImpressumPage.tsx               Legal notice (static)
 ├── styles/global.css       Tailwind directives + custom brand theme
 ├── main.tsx                Entry point: AuthProvider + BrowserRouter + App
 ├── App.tsx                 React Router route declarations
@@ -95,6 +96,11 @@ Routes declared in `src/App.tsx`. Add new routes there.
 // Protected page (requires login)
 <Route path="/secure" element={<ProtectedRoute><SecurePage /></ProtectedRoute>} />
 ```
+
+Current protected routes:
+- `/organizations/:organizationId/settings` → `OrganizationSettingsPage` (requires `organisator`)
+
+**Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
 
 ## Scripts
 

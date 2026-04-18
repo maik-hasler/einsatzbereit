@@ -1,9 +1,11 @@
 import { Routes, Route } from 'react-router'
 import { useAuth } from 'react-oidc-context'
 import AppLayout from './layouts/AppLayout'
+import ProtectedRoute from './layouts/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import DatenschutzPage from './pages/DatenschutzPage'
 import ImpressumPage from './pages/ImpressumPage'
+import OrganizationSettingsPage from './pages/OrganizationSettingsPage'
 
 function CallbackPage() {
   const auth = useAuth()
@@ -29,6 +31,14 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/datenschutz" element={<DatenschutzPage />} />
         <Route path="/impressum" element={<ImpressumPage />} />
+        <Route
+          path="/organizations/:organizationId/settings"
+          element={
+            <ProtectedRoute>
+              <OrganizationSettingsPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
     </Routes>
   )
