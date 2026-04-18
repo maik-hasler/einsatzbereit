@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
 import type { PagedListOfVolunteerOpportunitySummary, VolunteerOpportunitySummary } from "../client/api-client";
+import { useApiClient } from "../hooks/useApiClient";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 
 interface Props {
   canCreateOpportunity: boolean;
-  activeOrgId: string | null;
+}
+
+function getActiveOrgId(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)active-org=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : null
 }
 
 function formatOccurrence(occurrence: string): string {
   return occurrence === "Recurring" ? "Regelmäßig" : "Einmalig";
 }
 
-export default function VolunteerOpportunitiesList({ canCreateOpportunity, activeOrgId }: Props) {
+export default function VolunteerOpportunitiesList({ canCreateOpportunity }: Props) {
+  const api = useApiClient();
   const [data, setData] = useState<PagedListOfVolunteerOpportunitySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,15 +29,14 @@ export default function VolunteerOpportunitiesList({ canCreateOpportunity, activ
     setLoading(true);
     setError(null);
 
-    fetch(`/api/volunteer-opportunities?page=${page}&size=10`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Fehler ${res.status}`);
-        return res.json();
-      })
+    api.getVolunteerOpportunities(page, 10)
       .then((json: PagedListOfVolunteerOpportunitySummary) => setData(json))
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, refreshKey]);
+
+  const activeOrgId = getActiveOrgId();
 
   return (
     <div>
@@ -40,6 +45,7 @@ export default function VolunteerOpportunitiesList({ canCreateOpportunity, activ
         {canCreateOpportunity && (
           <button
             onClick={() => setShowModal(true)}
+            data-testid="create-opportunity-btn"
             className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
           >
             + Bedarf erstellen

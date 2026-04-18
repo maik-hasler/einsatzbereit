@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { CreateVolunteerOpportunityRequest } from "../client/api-client";
+import { useApiClient } from "../hooks/useApiClient";
 
 interface Props {
   organizationId: string;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function CreateVolunteerOpportunityModal({ organizationId, onClose, onSuccess }: Props) {
+  const api = useApiClient();
   const [form, setForm] = useState<CreateVolunteerOpportunityRequest>({
     title: "",
     description: "",
@@ -28,18 +30,7 @@ export default function CreateVolunteerOpportunityModal({ organizationId, onClos
     setError(null);
 
     try {
-      const res = await fetch("/api/volunteer-opportunities", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (res.status === 401) {
-        window.location.href = "/api/login";
-        return;
-      }
-      if (!res.ok) throw new Error(`Fehler ${res.status}`);
-
+      await api.createVolunteerOpportunity(form);
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -201,6 +192,7 @@ export default function CreateVolunteerOpportunityModal({ organizationId, onClos
             <button
               type="button"
               onClick={onClose}
+              data-testid="modal-cancel"
               className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
             >
               Abbrechen
@@ -208,6 +200,7 @@ export default function CreateVolunteerOpportunityModal({ organizationId, onClos
             <button
               type="submit"
               disabled={loading}
+              data-testid="modal-submit"
               className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {loading ? "Wird erstellt…" : "Erstellen"}

@@ -26,7 +26,7 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": ["http://localhost:*"],
-      "webOrigins": ["http://localhost:*"],
+      "webOrigins": ["*"],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:*"
       },

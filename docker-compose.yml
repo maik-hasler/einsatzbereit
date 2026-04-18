@@ -44,14 +44,16 @@ services:
         target: /pgpass
         
   keycloak:
-    build: ./keycloak
+    build:
+      context: ./keycloak
+      dockerfile: Dockerfile.integration
     container_name: keycloak
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
-      KC_HOSTNAME: host.docker.internal
+      KC_HOSTNAME: http://localhost:8080
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -63,7 +65,7 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
 
   backend:
     build:
@@ -75,21 +77,24 @@ services:
       - "5000:8080"
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
       keycloak:
         condition: service_started
 
   frontend:
     build: ./frontend
-    environment:
-      API_URL: http://backend:8080
-      KEYCLOAK_AUTHORITY_URL: http://host.docker.internal:8080/realms/einsatzbereit
-      REDIRECT_URI: http://localhost:4321/api/callback
     ports:
-      - "4321:4321"
+      - "4321:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
     depends_on:
-      - backend
-      - keycloak
+      backend:
+        condition: service_started
+      keycloak:
+        condition: service_started
 
 volumes:
   postgres_data:

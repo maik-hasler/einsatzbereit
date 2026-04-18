@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeycloakOrganization } from "../client/api-client";
+import { useApiClient } from "../hooks/useApiClient";
 import CreateOrganizationModal from "./CreateOrganizationModal";
 
-interface Props {
-  activeOrgId: string | null;
+function getActiveOrgId(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)active-org=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : null
 }
 
 function setActiveOrgCookie(orgId: string) {
   document.cookie = `active-org=${orgId};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
 }
 
-export default function OrganizationSwitcher({ activeOrgId }: Props) {
+export default function OrganizationSwitcher() {
+  const api = useApiClient();
   const [orgs, setOrgs] = useState<KeycloakOrganization[]>([]);
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(getActiveOrgId);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -21,18 +25,13 @@ export default function OrganizationSwitcher({ activeOrgId }: Props) {
 
   const fetchOrgs = () => {
     setLoading(true);
-    fetch("/api/organizations")
-      .then((res) => {
-        if (!res.ok) throw new Error(`Fehler ${res.status}`);
-        return res.json();
-      })
+    api.getOrganizations()
       .then((data: KeycloakOrganization[]) => {
         setOrgs(data);
-
         // Auto-select first org if none is active
-        if (!activeOrgId && data.length > 0) {
+        if (!getActiveOrgId() && data.length > 0) {
           setActiveOrgCookie(data[0].id);
-          window.location.reload();
+          setActiveOrgId(data[0].id);
         }
       })
       .catch(() => setOrgs([]))
@@ -41,6 +40,7 @@ export default function OrganizationSwitcher({ activeOrgId }: Props) {
 
   useEffect(() => {
     fetchOrgs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Close dropdown on outside click
@@ -56,14 +56,12 @@ export default function OrganizationSwitcher({ activeOrgId }: Props) {
 
   const handleSwitch = (org: KeycloakOrganization) => {
     setActiveOrgCookie(org.id);
+    setActiveOrgId(org.id);
     setOpen(false);
-    window.location.reload();
   };
 
   const handleOrgCreated = () => {
     fetchOrgs();
-    // Reload to pick up the new org and potentially new role
-    setTimeout(() => window.location.reload(), 300);
   };
 
   if (loading) {
@@ -79,6 +77,7 @@ export default function OrganizationSwitcher({ activeOrgId }: Props) {
         <button
           type="button"
           onClick={() => setShowModal(true)}
+          data-testid="create-org-btn"
           className="flex items-center gap-2 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-100 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

@@ -91,5 +91,5 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
-      - name: Run Playwright tests
-        run: pnpm test:tests
+      - name: Run E2E tests
+        run: pnpm test:e2e

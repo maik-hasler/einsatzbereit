@@ -7,7 +7,7 @@ Volunteer coordination platform matching helpers with regional needs. German-lan
 ```
 einsatzbereit/
 ├── backend/        .NET 10 Clean Architecture API        → backend/CLAUDE.md
-├── frontend/       Astro 6 + React 19 + Tailwind CSS 4  → frontend/CLAUDE.md
+├── frontend/       Vite SPA + React 19 + Tailwind CSS 4  → frontend/CLAUDE.md
 ├── keycloak/       Custom Keycloak image + realm config  → keycloak/CLAUDE.md
 ├── postgres/       DB init script                        → postgres/CLAUDE.md
 ├── docs/           arc42 architecture docs + ADRs        → docs/CLAUDE.md
@@ -20,10 +20,10 @@ einsatzbereit/
 |---|---|
 | Backend | .NET 10, EF Core 9, PostgreSQL 18 |
 | Auth | Keycloak 26.5 (OIDC, JWT) |
-| Frontend | Astro 6 SSR, React 19 islands, Tailwind CSS 4 |
+| Frontend | Vite SPA, React 19, React Router v7, Tailwind CSS 4 |
 | API client | NSwag-generated — **never hand-edit** `api-client.ts` |
 | Tests (BE) | xUnit 3, Testcontainers, Respawn, NetArchTest |
-| Tests (FE) | Vitest, Playwright |
+| Tests (FE) | Playwright (E2E only — Vitest unit tests removed post-migration) |
 | CI/CD | GitHub Actions → GHCR |
 
 ## Development Setup

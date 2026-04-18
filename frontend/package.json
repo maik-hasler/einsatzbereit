@@ -7,44 +7,36 @@
     "node": "v25.8.2"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "check": "astro check",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test:unit": "vitest run",
-    "test:tests": "playwright test",
-    "astro": "astro"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@astrojs/node": "10.0.5",
-    "@astrojs/react": "5.0.3",
-    "@iconify-json/simple-icons": "1.2.77",
-    "astro": "6.1.7",
-    "astro-icon": "1.1.5",
-    "openid-client": "6.8.2",
+    "oidc-client-ts": "3.1.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-oidc-context": "3.3.0",
+    "react-router": "7.6.0"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.8",
     "@eslint/js": "10.0.1",
-    "@playwright/test": "1.58.2",
+    "@playwright/test": "1.53.1",
     "@tailwindcss/vite": "4.2.2",
-    "@testing-library/jest-dom": "6.9.1",
-    "@testing-library/react": "16.3.2",
-    "@testing-library/user-event": "14.6.1",
     "@types/node": "25.5.0",
+    "@types/pg": "8.15.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "4.7.0",
     "eslint": "10.1.0",
-    "eslint-plugin-astro": "1.6.0",
-    "jsdom": "29.0.2",
+    "pg": "8.16.0",
     "tailwindcss": "4.2.2",
     "typescript": "6.0.2",
     "typescript-eslint": "8.57.2",
-    "vitest": "4.1.4"
+    "vite": "6.3.5"
   },
   "pnpm": {
     "overrides": {

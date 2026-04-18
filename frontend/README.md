@@ -1,14 +1,26 @@
 # Frontend
 
+Vite SPA — React 19, React Router v7, Tailwind CSS 4, react-oidc-context (Keycloak PKCE).
+
 ## Commands
 
-All commands are run from the root of the project, from a terminal:
+Run from `frontend/`:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+| Command        | Action                                      |
+| :------------- | :------------------------------------------ |
+| `pnpm install` | Install dependencies                        |
+| `pnpm dev`     | Dev server at `http://localhost:4321`       |
+| `pnpm build`   | Production build to `./dist/`               |
+| `pnpm preview` | Preview production build locally            |
+| `pnpm check`   | TypeScript type check (`tsc --noEmit`)      |
+| `pnpm lint`    | ESLint — zero warnings allowed              |
+
+## E2E Tests
+
+```bash
+pnpm exec playwright test
+```
+
+Requires all services running (`docker compose up -d` from repo root). Global setup starts Docker automatically if not already running.
+
+See [`tests/`](tests/) for spec files and helpers.

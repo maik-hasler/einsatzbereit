@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useApiClient } from "../hooks/useApiClient";
 
 interface Props {
   onClose: () => void;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
+  const api = useApiClient();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,18 +18,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
     setError(null);
 
     try {
-      const res = await fetch("/api/organizations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-
-      if (res.status === 401) {
-        window.location.href = "/api/login";
-        return;
-      }
-      if (!res.ok) throw new Error(`Fehler ${res.status}`);
-
+      await api.createOrganization({ name });
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -67,6 +58,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
             <button
               type="button"
               onClick={onClose}
+              data-testid="modal-cancel"
               className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
             >
               Abbrechen
@@ -74,6 +66,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
             <button
               type="submit"
               disabled={loading}
+              data-testid="modal-submit"
               className="rounded bg-brand-500 px-4 py-2 text-sm text-white hover:bg-brand-600 disabled:opacity-50"
             >
               {loading ? "Wird erstellt…" : "Erstellen"}

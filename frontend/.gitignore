@@ -1,7 +1,5 @@
 # build output
 dist/
-# generated types
-.astro/
 
 # dependencies
 node_modules/
@@ -29,3 +27,4 @@ pnpm-debug.log*
 # playwright
 test-results/
 playwright-report/
+tests/.auth/
