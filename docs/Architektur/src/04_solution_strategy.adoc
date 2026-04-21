@@ -67,7 +67,7 @@ The following table summarizes the key architectural decisions and how they addr
 |MediatR
 
 |Authentication / Authorization
-|Keycloak 26.5, OIDC, JWT Bearer
+|Keycloak 26.5.6, OIDC, JWT Bearer
 
 |Database
 |PostgreSQL 18

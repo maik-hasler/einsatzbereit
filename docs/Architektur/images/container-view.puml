@@ -11,7 +11,7 @@ System_Boundary(einsatzbereit, "Einsatzbereit") {
     Container(frontend, "Single Page Application", "React 19, Vite, TypeScript, Tailwind CSS 4", "Provides the web UI for volunteers and organizers. Handles OIDC login and token management.")
     Container(backend, "Backend API", ".NET 10, ASP.NET Core Minimal API", "Implements business logic. Exposes versioned REST API. Validates JWT tokens. Manages data via EF Core.")
     ContainerDb(db, "Application Database", "PostgreSQL 18", "Stores volunteer opportunities, organizations, engagements, and user associations.")
-    Container(keycloak, "Identity Provider", "Keycloak 26.5", "Handles authentication via OIDC. Manages users, roles, and organizations. Issues signed JWT access tokens.")
+    Container(keycloak, "Identity Provider", "Keycloak 26.5.6", "Handles authentication via OIDC. Manages users, roles, and organizations. Issues signed JWT access tokens.")
 }
 
 Rel(volunteer, frontend, "Uses", "HTTPS")
