@@ -13,6 +13,7 @@
     {
       "customType": "regex",
       "fileMatch": [
+        "^CLAUDE\\.md$",
         "^keycloak/CLAUDE\\.md$",
         "^docs/Architektur/src/.*\\.adoc$",
         "^docs/Architektur/images/.*\\.puml$"
