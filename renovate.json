@@ -8,5 +8,21 @@
   "dependencyDashboard": true,
   "automerge": false,
   "labels": ["dependencies", "renovate"],
-  "rangeStrategy": "pin"
+  "rangeStrategy": "pin",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^keycloak/CLAUDE\\.md$",
+        "^docs/Architektur/src/.*\\.adoc$",
+        "^docs/Architektur/images/.*\\.puml$"
+      ],
+      "matchStrings": [
+        "Keycloak (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",
+        "quay\\.io/keycloak/keycloak:(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "quay.io/keycloak/keycloak"
+    }
+  ]
 }
