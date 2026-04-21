@@ -53,19 +53,6 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: estimation
-    attributes:
-      label: Estimation (Story Points)
-      options:
-        - "1"
-        - "2"
-        - "3"
-        - "5"
-        - "8"
-        - "13"
-        - Too large – split up
-
   - type: textarea
     id: additional_info
     attributes:
