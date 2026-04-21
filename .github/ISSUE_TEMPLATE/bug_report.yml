@@ -1,5 +1,5 @@
 name: Bug Report
-description: Melde einen Fehler
+description: Report a bug
 title: "[Bug]: "
 labels: ["bug"]
 assignees: []
@@ -8,63 +8,63 @@ body:
   - type: dropdown
     id: persona
     attributes:
-      label: Betroffene Persona
-      description: Wer ist von diesem Fehler betroffen?
+      label: Affected Persona
+      description: Who is affected by this bug?
       options:
         - Volunteer Vera
         - Organizer Olaf
         - Contributor Caro
         - Maintainer Milo
-        - Alle
+        - All
     validations:
       required: true
 
   - type: dropdown
-    id: prioritaet
+    id: priority
     attributes:
-      label: Priorität
+      label: Priority
       options:
-        - Niedrig
-        - Mittel
-        - Hoch
+        - Low
+        - Medium
+        - High
     validations:
       required: true
 
   - type: textarea
-    id: beschreibung
+    id: description
     attributes:
-      label: Beschreibung
-      description: Was passiert und was sollte stattdessen passieren?
+      label: Description
+      description: What happens and what should happen instead?
       placeholder: |
-        **Tatsächliches Verhalten:** Was passiert gerade?
-        **Erwartetes Verhalten:** Was sollte stattdessen passieren?
+        **Actual behaviour:** What is currently happening?
+        **Expected behaviour:** What should happen instead?
     validations:
       required: true
 
   - type: textarea
-    id: reproduktion
+    id: reproduction
     attributes:
-      label: Schritte zur Reproduktion
-      description: So lässt sich der Fehler nachstellen
+      label: Steps to Reproduce
+      description: How can the bug be reproduced?
       placeholder: |
-        1. Schritt 1
-        2. Schritt 2
-        3. Schritt 3
+        1. Step 1
+        2. Step 2
+        3. Step 3
     validations:
       required: true
 
   - type: textarea
-    id: umgebung
+    id: environment
     attributes:
-      label: Umgebung
-      description: In welcher Umgebung tritt der Fehler auf?
+      label: Environment
+      description: In which environment does the bug occur?
       placeholder: |
         - Browser / Version:
-        - Betriebssystem:
-        - Einsatzbereit-Version / Branch:
+        - Operating System:
+        - Einsatzbereit Version / Branch:
 
   - type: textarea
     id: extra
     attributes:
-      label: Zusätzliche Informationen
-      placeholder: Screenshots, Logs, Links, Kontext
+      label: Additional Information
+      placeholder: Screenshots, logs, links, context

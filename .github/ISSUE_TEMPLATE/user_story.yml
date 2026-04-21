@@ -1,5 +1,5 @@
 name: User Story
-description: Beschreibe eine Anforderung aus Nutzerperspektive
+description: Describe a requirement from a user's perspective
 title: "[Story]: "
 labels: ["user-story"]
 assignees: []
@@ -9,7 +9,7 @@ body:
     id: persona
     attributes:
       label: Persona
-      description: Welche Persona steht im Mittelpunkt dieser Story?
+      description: Which persona does this story focus on?
       options:
         - Volunteer Vera
         - Organizer Olaf
@@ -22,41 +22,41 @@ body:
     id: user_story
     attributes:
       label: User Story
-      description: Beschreibe die Anforderung im Standard-Format
+      description: Describe the requirement in the standard format
       placeholder: |
-        Als <Persona>
-        möchte ich <Aktion / Ziel>
-        damit <Nutzen / Mehrwert>
+        As a <persona>
+        I want to <action / goal>
+        so that <benefit / value>
     validations:
       required: true
 
   - type: textarea
-    id: akzeptanzkriterien
+    id: acceptance_criteria
     attributes:
-      label: Akzeptanzkriterien
-      description: Wann gilt diese Story als abgeschlossen? (Given/When/Then)
+      label: Acceptance Criteria
+      description: When is this story done? (Given/When/Then)
       placeholder: |
-        - Gegeben: <Ausgangssituation>
-          Wenn: <Aktion>
-          Dann: <erwartetes Ergebnis>
+        - Given: <initial context>
+          When: <action>
+          Then: <expected outcome>
     validations:
       required: true
 
   - type: dropdown
-    id: prioritaet
+    id: priority
     attributes:
-      label: Priorität
+      label: Priority
       options:
-        - Niedrig
-        - Mittel
-        - Hoch
+        - Low
+        - Medium
+        - High
     validations:
       required: true
 
   - type: dropdown
-    id: schaetzung
+    id: estimation
     attributes:
-      label: Schätzung (Story Points)
+      label: Estimation (Story Points)
       options:
         - "1"
         - "2"
@@ -64,14 +64,14 @@ body:
         - "5"
         - "8"
         - "13"
-        - Zu groß – aufteilen
+        - Too large – split up
 
   - type: textarea
-    id: zusaetzliche_infos
+    id: additional_info
     attributes:
-      label: Zusätzliche Informationen
+      label: Additional Information
       placeholder: |
         - Screenshots
         - Links
-        - Kontext
-        - Abhängigkeiten
+        - Context
+        - Dependencies
