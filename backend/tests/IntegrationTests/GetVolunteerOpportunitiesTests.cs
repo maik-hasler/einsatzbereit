@@ -24,7 +24,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var ct = TestContext.Current.CancellationToken;
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
         // Assert
         result.TotalItems.Should().Be(0);
@@ -48,7 +48,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
         // Assert
         result.TotalItems.Should().Be(2);
@@ -71,7 +71,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 2, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 2, null, null, null, null, ct);
 
         // Assert
         result.TotalItems.Should().Be(3);
@@ -96,7 +96,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, null, null, null, null, ct);
 
         // Assert
         result.TotalItems.Should().Be(3);
@@ -120,7 +120,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
         // Assert
         var items = result.Items.ToList();
@@ -144,7 +144,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
         // Assert
         var item = result.Items.Single();
@@ -165,7 +165,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var sut = new EinsatzbereitApi(httpClient);
 
         // Act
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
         // Assert
         var item = result.Items.Single();
