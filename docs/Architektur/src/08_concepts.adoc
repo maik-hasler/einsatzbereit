@@ -1,22 +1,95 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-concepts]]
-== Querschnittliche Konzepte
+== Cross-cutting Concepts
 
+=== Authentication and Authorization
 
+Authentication and authorization are fully delegated to Keycloak. The application itself does not implement login, password management, or session handling.
 
+*Authentication flow (OIDC Authorization Code Flow with PKCE):*
 
+1. The frontend redirects the browser to Keycloak's authorization endpoint with a `code_challenge`.
+2. The user authenticates at Keycloak (username/password or SSO).
+3. Keycloak redirects back to the frontend with an authorization `code`.
+4. The frontend exchanges the `code` + `code_verifier` for an access token and refresh token.
+5. All subsequent API requests include the access token as a JWT Bearer token.
 
-=== _<Konzept 1>_
+*Authorization:*
 
-_<Erklärung>_
+Role-based access control is enforced at the API endpoint level using ASP.NET Core authorization policies. Roles are embedded in the JWT as claims and originate from Keycloak.
 
-=== _<Konzept 2>_
+[cols="1,2" options="header"]
+|===
+|Role |Permissions
 
-_<Erklärung>_
+|`user`
+|Browse volunteer opportunities, register for opportunities
 
-...
+|`organisator`
+|All `user` permissions + create, update, and delete own organization's opportunities
 
-=== _<Konzept n>_
+|`admin`
+|Full administrative access
+|===
 
-_<Erklärung>_
+*Token handling in the frontend:*
+
+Access tokens are stored in memory (React state / context), not in `localStorage` or `sessionStorage`, to reduce XSS attack surface. The refresh token is used to obtain new access tokens silently when the access token expires.
+
+=== CQRS (Command Query Responsibility Segregation)
+
+All use cases in the application layer follow the CQRS pattern via MediatR.
+
+* *Queries* are read-only operations. They return data and do not modify state. Queries use dedicated read repository interfaces (`IVolunteerOpportunityReadRepository`) and may use optimized read paths (e.g., projections) without loading full aggregate state.
+* *Commands* are state-changing operations. They return only what is needed (e.g., the created entity's ID) and enforce business rules before writing.
+
+Each use case lives in its own folder under `{Layer}/{Domain}/{Feature}/v1/` and consists of the request record, the handler, and the response record. This makes every use case self-contained and easy to locate.
+
+=== Error Handling
+
+Error handling follows a consistent pattern across the stack:
+
+*Backend:*
+
+* Domain validation errors are returned as `400 Bad Request` with a structured error body.
+* Authorization failures result in `401 Unauthorized` or `403 Forbidden`.
+* Not-found cases return `404 Not Found`.
+* Unhandled exceptions are caught by global exception middleware and returned as `500 Internal Server Error` with a correlation ID for log tracing — no stack traces leak to clients.
+
+*Frontend:*
+
+* API errors are surfaced to the user via inline error messages, not generic alerts.
+* Network errors (offline, timeout) are handled gracefully with retry options where appropriate.
+* The NSwag-generated client throws typed exceptions matching the backend's HTTP status codes.
+
+=== Database Migrations
+
+Database schema changes are managed via EF Core migrations.
+
+* Migrations are stored under `backend/src/Infrastructure/Persistence/Migrations/`.
+* On application startup, pending migrations are applied automatically (`database.MigrateAsync()`).
+* Migration files are committed to the repository alongside the code changes that require them.
+* There is no separate migration deployment step — the application handles its own schema.
+
+=== API Versioning
+
+All API routes include the version in the URL path: `/v{version}/...`.
+
+* The current version is `v1`.
+* Breaking changes (removed fields, changed semantics, renamed endpoints) require a new version.
+* Non-breaking additions (new optional fields, new endpoints) can be added to the existing version.
+* The NSwag-generated client is regenerated after any API change to keep the frontend in sync.
+
+=== Logging and Observability
+
+The backend uses the .NET built-in `ILogger<T>` abstraction. Structured logging is configured to output JSON in production environments and human-readable format during local development.
+
+Key logged events:
+
+* All unhandled exceptions (with correlation ID)
+* Authentication failures
+* Database migration execution
+* Startup configuration summary
+
+No external observability service (Datadog, Grafana, etc.) is currently integrated — this is a deliberate trade-off to keep operational complexity minimal.

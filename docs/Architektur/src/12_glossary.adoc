@@ -1,19 +1,66 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-glossary]]
-== Glossar
+== Glossary
 
-
-
-
-
-[cols="e,2e" options="header"]
+[cols="1,3" options="header"]
 |===
-|Begriff |Definition
+|Term |Definition
 
-|<Begriff-1>
-|<Definition-1>
+|ADR
+|Architecture Decision Record. A document that captures a significant architectural decision including its context, the decision itself, the rationale, considered alternatives, and consequences. ADRs are stored under `docs/ADRs/`.
 
-|<Begriff-2
-|<Definition-2>
+|AGPL
+|GNU Affero General Public License. The open-source license under which Einsatzbereit is released. Derivative works — including those deployed as network services — must be released under the same license.
+
+|arc42
+|A template for documenting software and system architectures, structured into 12 chapters. Widely used in German-speaking countries. See https://arc42.org.
+
+|CQRS
+|Command Query Responsibility Segregation. An architectural pattern that separates read operations (queries) from write operations (commands). In Einsatzbereit, implemented via MediatR in the Application layer.
+
+|EF Core
+|Entity Framework Core. The ORM (Object-Relational Mapper) used in the backend to interact with PostgreSQL. Manages the database schema via migrations.
+
+|Engagement
+|(German: Einsatz) The act of a volunteer signing up to help with a specific volunteer opportunity. Modeled as an `Engagement` entity in the domain.
+
+|GHCR
+|GitHub Container Registry. The Docker image registry used to publish the frontend, backend, and Keycloak images on version releases.
+
+|IAM
+|Identity and Access Management. The discipline of managing who users are (authentication) and what they are allowed to do (authorization). Handled by Keycloak in Einsatzbereit.
+
+|JWT
+|JSON Web Token. A signed, compact token format used to carry authentication and authorization claims. The backend validates the JWT's signature against Keycloak's public JWKS keys on every request.
+
+|JWKS
+|JSON Web Key Set. A published set of public keys from Keycloak used by the backend to verify JWT signatures without contacting Keycloak on every request.
+
+|Keycloak
+|An open-source Identity and Access Management server. Used in Einsatzbereit for user authentication (OIDC), user management, and role-based access control.
+
+|MediatR
+|A .NET library implementing the Mediator pattern. Used in the Application layer to dispatch commands and queries to their respective handlers, decoupling the API layer from use case implementation.
+
+|NSwag
+|A .NET toolchain for generating API clients from OpenAPI specifications. The frontend TypeScript client (`api-client.ts`) is generated via NSwag and must never be hand-edited.
+
+|OIDC
+|OpenID Connect. An identity layer built on top of OAuth 2.0. Used for the authentication flow between the frontend, Keycloak, and the backend.
+
+|Organizer
+|(German: Organisator) A user with the `organisator` role. Represents a person who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
+
+|Organization
+|(German: Organisation) A club, NGO, or other entity that posts volunteer opportunities on the platform.
+
+|PKCE
+|Proof Key for Code Exchange. An extension to the OAuth 2.0 Authorization Code Flow that prevents authorization code interception attacks. Required for public clients (SPAs) where a client secret cannot be kept confidential.
+
+|Volunteer
+|(German: Ehrenamtliche, Helferin) A user who searches for and signs up for volunteer opportunities. Test persona: Hannah (`hannah` / `hannah123`).
+
+|Volunteer Opportunity
+|(German: Hilfsbedarf, Einsatzmöglichkeit) A concrete request for help posted by an organization. Describes what is needed, where, when, and what skills are required. Core entity of the domain.
 |===

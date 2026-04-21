@@ -1,17 +1,15 @@
-﻿@startuml Fachliche Kontextsicht
+@startuml Business Context
 
 !include <C4/C4_Context>
-'LAYOUT_WITH_LEGEND()
 
-title Fachliche Kontextsicht
+title Business Context View
 
-Person(helferin, "Helferin Hannah", "Sucht nach Möglichkeiten regional ehrenamtilich tätig zu werden")
+Person(volunteer, "Volunteer Hannah", "Searches for regional volunteer opportunities")
+Person(organizer, "Organizer Olaf", "Creates volunteer opportunities for their organization")
 
-Person(organisator, "Organisator Olaf", "Erstellt Bedürfnisse für sein derzeitiges Event / sucht nach ehrentamtlicher Untersützung")
+System(einsatzbereit, "Einsatzbereit", "Manages regional volunteer opportunities and volunteer registrations")
 
-System(einsatzbereit, "Einsatzbereit", "Ermöglicht das Verwalten von regionalen Bedürfnissen und dem Anmelden helfen zu wollen")
-
-Rel(helferin, einsatzbereit, "Suchanfrage und Anmeldung zu helfen")
-Rel(organisator, einsatzbereit, "Pflegt die Bedürfnisse einer Organisation")
+Rel(volunteer, einsatzbereit, "Search and sign up for opportunities")
+Rel(organizer, einsatzbereit, "Manages organization's volunteer opportunities")
 
 @enduml

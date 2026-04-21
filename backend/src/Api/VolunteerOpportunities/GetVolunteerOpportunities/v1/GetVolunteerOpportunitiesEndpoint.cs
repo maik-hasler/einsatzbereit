@@ -26,7 +26,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
         [FromServices] ISender sender,
         CancellationToken cancellationToken)
     {
-        var query = new GetVolunteerOpportunitiesQuery(request.PageNumber, request.PageSize);
+        var query = new GetVolunteerOpportunitiesQuery(request.PageNumber, request.PageSize, request.Search, request.City, request.Occurrence, request.ParticipationType);
 
         var result = await sender.Send(query, cancellationToken);
 

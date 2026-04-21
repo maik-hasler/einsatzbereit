@@ -6,6 +6,9 @@ import HomePage from './pages/HomePage'
 import DatenschutzPage from './pages/DatenschutzPage'
 import ImpressumPage from './pages/ImpressumPage'
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage'
+import VolunteerOpportunityDetailPage from './pages/VolunteerOpportunityDetailPage'
+import MyEngagementsPage from './pages/MyEngagementsPage'
+import EngagementManagementPage from './pages/EngagementManagementPage'
 
 function CallbackPage() {
   const auth = useAuth()
@@ -31,6 +34,23 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/datenschutz" element={<DatenschutzPage />} />
         <Route path="/impressum" element={<ImpressumPage />} />
+        <Route path="/volunteer-opportunities/:opportunityId" element={<VolunteerOpportunityDetailPage />} />
+        <Route
+          path="/my-engagements"
+          element={
+            <ProtectedRoute>
+              <MyEngagementsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/volunteer-opportunities/:opportunityId/engagements"
+          element={
+            <ProtectedRoute>
+              <EngagementManagementPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/organizations/:organizationId/settings"
           element={

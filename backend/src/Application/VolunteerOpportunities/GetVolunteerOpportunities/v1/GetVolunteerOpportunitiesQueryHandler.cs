@@ -10,5 +10,12 @@ internal sealed class GetVolunteerOpportunitiesQueryHandler(
     public async ValueTask<PagedList<VolunteerOpportunitySummary>> Handle(
         GetVolunteerOpportunitiesQuery request,
         CancellationToken cancellationToken = default) =>
-            await readRepository.GetPagedSummariesAsync(request.PageNumber, request.PageSize, cancellationToken);
+            await readRepository.GetPagedSummariesAsync(
+                request.PageNumber,
+                request.PageSize,
+                request.Search,
+                request.City,
+                request.Occurrence,
+                request.ParticipationType,
+                cancellationToken);
 }

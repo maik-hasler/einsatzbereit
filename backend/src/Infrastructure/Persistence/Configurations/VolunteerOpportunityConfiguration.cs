@@ -54,7 +54,10 @@ internal sealed class VolunteerOpportunityConfiguration
 
         builder.Property(vo => vo.ModifiedOn);
 
-        builder.Ignore(vo => vo.TimeSlots);
+        builder.HasMany(vo => vo.TimeSlots)
+            .WithOne()
+            .HasForeignKey("volunteer_opportunity_id")
+            .IsRequired();
 
         builder.Ignore(vo => vo.Events);
     }

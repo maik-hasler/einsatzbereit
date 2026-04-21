@@ -1,9 +1,9 @@
-// configure DE settings for asciidoc
+// configure EN settings for asciidoc
 include::src/config.adoc[]
 
-= Einsatzbereit - Architekturdokumentation
+= Einsatzbereit - Architecture Documentation
 // toc-title definition MUST follow document title without blank line!
-:toc-title: Inhaltsverzeichnis
+:toc-title: Table of Contents
 
 include::src/about-arc42.adoc[]
 
@@ -13,54 +13,53 @@ include::src/about-arc42.adoc[]
 
 
 
-
 // numbering from here on
 :numbered:
 
 <<<<
-// 1. Anforderungen und Ziele
+// 1. Introduction and Goals
 include::src/01_introduction_and_goals.adoc[]
 
 <<<<
-// 2. Randbedingungen
+// 2. Architecture Constraints
 include::src/02_architecture_constraints.adoc[]
 
 <<<<
-// 3. Kontextabgrenzung
+// 3. Context and Scope
 include::src/03_context_and_scope.adoc[]
 
 <<<<
-// 4. Lösungsstrategie
+// 4. Solution Strategy
 include::src/04_solution_strategy.adoc[]
 
 <<<<
-// 5. Bausteinsicht
+// 5. Building Block View
 include::src/05_building_block_view.adoc[]
 
 <<<<
-// 6. Laufzeitsicht
+// 6. Runtime View
 include::src/06_runtime_view.adoc[]
 
 <<<<
-// 7. Verteilungssicht
+// 7. Deployment View
 include::src/07_deployment_view.adoc[]
 
 <<<<
-// 8. Querschnittliche Konzepte
+// 8. Cross-cutting Concepts
 include::src/08_concepts.adoc[]
 
 <<<<
-// 9. Entscheidungen
+// 9. Architecture Decisions
 include::src/09_architecture_decisions.adoc[]
 
 <<<<
-// 10. Qualitätsanforderungen
+// 10. Quality Requirements
 include::src/10_quality_requirements.adoc[]
 
 <<<<
-// 11. Risiken
+// 11. Risks and Technical Debt
 include::src/11_technical_risks.adoc[]
 
 <<<<
-// 12. Glossar
+// 12. Glossary
 include::src/12_glossary.adoc[]

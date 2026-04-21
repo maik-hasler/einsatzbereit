@@ -1,112 +1,112 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-quality-scenarios]]
-== Qualitätsanforderungen
+== Quality Requirements
 
-=== Qualitätsziele im Überblick
+=== Quality Goals Overview
 
-Die folgende Tabelle gibt einen Überblick über alle Qualitätsziele des Systems, sortiert nach ihrer Gewichtung.
-Die Ziele und Szenarien dienen als Leitfaden für architektonische Entscheidungen.
+The following table lists all quality goals for the system, sorted by weight.
+These goals and their scenarios serve as a guide for architectural decisions.
 
-.Vollständige Liste der Qualitätsziele
+.Complete List of Quality Goals
 [cols="1,3,1" options="header"]
 |===
-|Qualitätsmerkmal |Beschreibung |Gewichtung
+|Quality Attribute |Description |Weight
 
 // tag::quality_requirements[]
-|*Zweckmäßigkeit*
-|Jede Funktion dient direkt dem Ehrenamt. Kein Feature-Bloat, kein Overengineering - nur das, was den Nutzen für Helfer:innen oder Organisationen konkret steigert.
-|Sehr hoch
+|*Appropriateness*
+|Every feature directly serves volunteering. No feature-bloat, no over-engineering — only what concretely increases value for volunteers or organizations.
+|Very High
 
-|*Einfachheit*
-|Code und Architektur sind so gestaltet, dass neue Contributor sie ohne tiefes Vorwissen verstehen können. Neue Funktionen lassen sich umsetzen, ohne das Gesamtsystem verstehen zu müssen. Einfachheit hat Vorrang vor Flexibilität.
-|Hoch
+|*Simplicity*
+|Code and architecture are designed so that new contributors can understand them without deep prior knowledge. New features can be implemented without understanding the whole system. Simplicity takes precedence over flexibility.
+|High
 
-|*Wartbarkeit*
-|Die Plattform kann mit minimalem Aufwand betrieben und weiterentwickelt werden. Abhängigkeiten und Build-Prozesse funktionieren mit Standardwerkzeugen. Pflege soll keine Last sein, sondern selbstverständlich.
-|Hoch
+|*Maintainability*
+|The platform can be operated and evolved with minimal effort. Dependencies and build processes work with standard tooling. Maintenance should be a matter of course, not a burden.
+|High
 
-|*Benutzbarkeit*
-|Die Plattform ist intuitiv bedienbar. Helfer:innen und Organisationen können ihre Aufgaben ohne Einarbeitung oder technisches Vorwissen erledigen.
-|Hoch
+|*Usability*
+|The platform is intuitively usable. Volunteers and organizations can complete their tasks without onboarding or technical knowledge.
+|High
 // end::quality_requirements[]
 
 |===
 
-=== Qualitätsbaum
+=== Quality Tree
 
-.Qualitätsbaum
+.Quality Tree
 [plantuml, "quality-tree", png]
 ....
 include::../images/quality-tree.puml[]
 ....
 
-=== Qualitätsszenarien
+=== Quality Scenarios
 
-==== Zweckmäßigkeit
+==== Appropriateness
 
 [cols="1,2,3" options="header"]
 |===
-|ID |Szenario |Erläuterung
+|ID |Scenario |Notes
 
 |QS-1.1
-|Ein neues Feature wird vorgeschlagen.
-|Vor der Umsetzung wird geprüft, ob es den Nutzen für Helfer:innen oder Organisationen konkret steigert. Features ohne klaren Bezug zum Ehrenamt werden abgelehnt.
+|A new feature is proposed.
+|Before implementation, it is evaluated whether the feature concretely increases value for volunteers or organizations. Features without a clear connection to volunteering are rejected.
 
 |QS-1.2
-|Die Architektur soll um eine neue Abstraktionsebene erweitert werden.
-|Die Erweiterung wird nur umgesetzt, wenn sie einen konkreten, aktuellen Bedarf adressiert - nicht für hypothetische zukünftige Anforderungen.
+|The architecture is to be extended with a new abstraction layer.
+|The extension is only implemented if it addresses a concrete, current need — not for hypothetical future requirements.
 |===
 
-==== Einfachheit
+==== Simplicity
 
 [cols="1,2,3" options="header"]
 |===
-|ID |Szenario |Erläuterung
+|ID |Scenario |Notes
 
 |QS-2.1
-|Ein neuer Contributor möchte zum ersten Mal Code beitragen.
-|Die Person kann den Code ohne tiefes Vorwissen verstehen und innerhalb eines Tages einen ersten Beitrag leisten. Die CONTRIBUTING.md und die Projektstruktur sind selbsterklärend.
+|A new contributor wants to make their first code contribution.
+|The person can understand the code without deep prior knowledge and make a first contribution within a day. The `CONTRIBUTING.md` and project structure are self-explanatory.
 
 |QS-2.2
-|Eine neue Funktion soll implementiert werden.
-|Die Änderung lässt sich umsetzen, ohne das Gesamtsystem verstehen zu müssen. Die betroffene Komponente ist klar abgegrenzt.
+|A new feature is to be implemented.
+|The change can be made without understanding the entire system. The affected component is clearly bounded.
 
 |QS-2.3
-|Ein Contributor liest zum ersten Mal den Quellcode einer Komponente.
-|Durch flache Hierarchien, wenige Abstraktionsebenen und klare Benennung ist der Code ohne zusätzliche Dokumentation verständlich.
+|A contributor reads the source code of a component for the first time.
+|Through flat hierarchies, few abstraction levels, and clear naming, the code is understandable without additional documentation.
 |===
 
-==== Wartbarkeit
+==== Maintainability
 
 [cols="1,2,3" options="header"]
 |===
-|ID |Szenario |Erläuterung
+|ID |Scenario |Notes
 
 |QS-3.1
-|Ein Versionsupdate einer Abhängigkeit steht an.
-|Durch zentrales Dependency-Management (Directory.Packages.props) muss die Version nur an einer Stelle geändert werden.
+|A dependency version update is due.
+|Through centralized dependency management (`Directory.Packages.props`), the version only needs to be changed in one place.
 
 |QS-3.2
-|Ein CI-Build schlägt fehl.
-|Die Fehlermeldung ist klar und ohne Kontextwissen nachvollziehbar. Die Ursache lässt sich schnell eingrenzen.
+|A CI build fails.
+|The error message is clear and understandable without contextual knowledge. The root cause can be narrowed down quickly.
 
 |QS-3.3
-|Eine neue Person übernimmt die Pflege des Projekts.
-|Durch Standardwerkzeuge, automatisierte Pipelines und die Monorepository-Struktur ist der Einstieg in die Wartung ohne aufwendige Einarbeitung möglich.
+|A new person takes over maintenance of the project.
+|Through standard tooling, automated pipelines, and the monorepo structure, onboarding into maintenance is possible without extensive training.
 |===
 
-==== Benutzbarkeit
+==== Usability
 
 [cols="1,2,3" options="header"]
 |===
-|ID |Szenario |Erläuterung
+|ID |Scenario |Notes
 
 |QS-4.1
-|Eine Organisation möchte zum ersten Mal einen Hilfsbedarf eintragen.
-|Der Vorgang ist ohne Schulung oder Handbuch möglich und innerhalb weniger Minuten abgeschlossen.
+|An organization wants to post a volunteer opportunity for the first time.
+|The process is possible without training or a manual and is completed within a few minutes.
 
 |QS-4.2
-|Eine helfende Person sucht nach Einsätzen in ihrer Nähe.
-|Die Suche liefert relevante Ergebnisse mit klarer Darstellung von Was, Wo und Wann - ohne überladene Oberfläche.
+|A volunteer searches for opportunities in their area.
+|The search returns relevant results with a clear presentation of What, Where, and When — without an overloaded interface.
 |===

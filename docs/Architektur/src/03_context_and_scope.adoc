@@ -1,35 +1,83 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-context-and-scope]]
-== Kontextabgrenzung
+== Context and Scope
 
-=== Fachlicher Kontext
+=== Business Context
 
-.Fachliche Kontextsicht
+.Business Context View
 [plantuml, "business-context", png]
 ....
 include::../images/business-context.puml[]
 ....
 
-.Beschreibung der Elemente
+.Element Descriptions
 [cols="1,3", options="header"]
 |===
-|Element |Beschreibung
+|Element |Description
 
-|Helferin Hannah
-|Sucht nach Möglichkeiten regional ehrenamtilich tätig zu werden
+|Volunteer Hannah
+|Searches for opportunities to volunteer regionally. Wants to find concrete needs quickly without long-term commitment.
 
-|Organisator Olaf
-|Erstellt Bedürfnisse für sein derzeitiges Event / sucht nach ehrentamtlicher Untersützung
+|Organizer Olaf
+|Creates and manages volunteer opportunities for their organization or club. Posts what help is needed, where, and when.
 
 |Einsatzbereit
-|Ermöglicht das Verwalten von regionalen Bedürfnissen und dem Anmelden helfen zu wollen
+|Connects volunteers with organizations by managing regional volunteer opportunities and registrations.
 |===
 
-=== Technischer Kontext
+=== Technical Context
 
-**<Diagramm oder Tabelle>**
+.Technical Context View
+[plantuml, "technical-context", png]
+....
+include::../images/technical-context.puml[]
+....
 
-**<optional: Erläuterung der externen technischen Schnittstellen>**
+.External Interfaces
+[cols="1,2,2", options="header"]
+|===
+|Interface |Direction |Description
 
-**<Mapping fachliche auf technische Schnittstellen>**
+|Browser → Frontend
+|Inbound
+|Users access the platform via a modern web browser. The frontend is a React SPA served as static assets.
+
+|Frontend → Backend API
+|Outbound
+|The SPA communicates with the backend via a versioned REST API over HTTPS. All requests carry a JWT Bearer token for authentication.
+
+|Frontend → Keycloak
+|Outbound
+|Authentication is handled via OIDC Authorization Code Flow with PKCE. The frontend redirects to Keycloak for login and receives tokens upon success.
+
+|Backend → Keycloak
+|Outbound
+|The backend validates incoming JWT tokens by checking signatures against Keycloak's public JWKS endpoint.
+
+|Backend → PostgreSQL
+|Outbound
+|The backend persists all application data (volunteer opportunities, organizations, engagements) in PostgreSQL via EF Core.
+
+|GitHub Actions → GHCR
+|Outbound
+|CI/CD pipelines build Docker images on push to `main` and publish them to GitHub Container Registry.
+|===
+
+.Mapping: Business Interface → Technical Interface
+[cols="1,2" options="header"]
+|===
+|Business Interaction |Technical Realization
+
+|Volunteer searches for opportunities
+|`GET /v1/volunteer-opportunities` with optional filter parameters, authenticated via JWT
+
+|Volunteer signs up for an opportunity
+|`POST /v1/engagements` with opportunity ID, authenticated via JWT
+
+|Organizer creates a volunteer opportunity
+|`POST /v1/volunteer-opportunities` with opportunity data, requires `organisator` role in JWT
+
+|Organizer manages their opportunities
+|`GET`, `PUT`, `DELETE /v1/volunteer-opportunities/{id}`, requires `organisator` role
+|===

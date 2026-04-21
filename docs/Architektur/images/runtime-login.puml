@@ -1,0 +1,26 @@
+@startuml Login Flow
+
+title Runtime View — User Login (OIDC Authorization Code Flow with PKCE)
+
+actor "Volunteer / Organizer" as user
+participant "Frontend\n(React SPA)" as frontend
+participant "Keycloak\n(Identity Provider)" as keycloak
+
+user -> frontend: Opens application
+frontend -> frontend: Generate code_verifier + code_challenge (PKCE)
+frontend -> keycloak: Redirect to /authorize\n(client_id, redirect_uri, code_challenge)
+keycloak -> user: Display login page
+user -> keycloak: Submit credentials
+keycloak -> keycloak: Validate credentials, issue authorization code
+keycloak -> frontend: Redirect to redirect_uri\nwith authorization code
+frontend -> keycloak: POST /token\n(code, code_verifier, client_id)
+keycloak -> frontend: Access token (JWT) + Refresh token
+frontend -> frontend: Store access token in memory\n(NOT in localStorage)
+frontend -> user: Render authenticated UI
+
+note over frontend,keycloak
+  Access token lifetime: short (e.g., 5 minutes)
+  Refresh token is used silently to obtain new access tokens
+end note
+
+@enduml

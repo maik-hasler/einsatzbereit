@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Application.Common.Persistence;
+using Domain.Engagements;
 using Domain.VolunteerOpportunities;
 using Domain.Organizations;
 using Infrastructure.Persistence.Repositories;
@@ -21,6 +22,8 @@ internal sealed class ApplicationDbContext(
 
     internal IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
 
+    internal IQueryable<TimeSlot> TimeSlotsQuery => Set<TimeSlot>().AsNoTracking();
+
     public IAggregateRepository<Organization, OrganizationId> Organizations
         => new AggregateRepository<Organization, OrganizationId>(
             Set<Organization>(),
@@ -28,6 +31,14 @@ internal sealed class ApplicationDbContext(
             org => org.Id);
 
     internal IQueryable<Organization> OrganizationsQuery => Set<Organization>().AsNoTracking();
+
+    public IAggregateRepository<Engagement, EngagementId> Engagements
+        => new AggregateRepository<Engagement, EngagementId>(
+            Set<Engagement>(),
+            Set<Engagement>(),
+            e => e.Id);
+
+    internal IQueryable<Engagement> EngagementsQuery => Set<Engagement>().AsNoTracking();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder) =>

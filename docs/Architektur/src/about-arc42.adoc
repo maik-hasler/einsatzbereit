@@ -2,10 +2,10 @@
 
 :numbered!:
 
-**Danksagung**
+**Acknowledgements**
 
-Diese Architekturdokumentation basiert auf {homepage}[arc42] - einem großartigen, frei verfügbaren Template zur Dokumentation von Software- und Systemarchitekturen.
+This architecture documentation is based on {homepage}[arc42] — a great, freely available template for documenting software and system architectures.
 
-Erstellt, verwaltet und (C) von Dr. Peter Hruschka, Dr. Gernot Starke und Mitwirkenden.
+Created, maintained and (C) by Dr. Peter Hruschka, Dr. Gernot Starke and contributors.
 
 image:arc42-logo.png[arc42 Logo]

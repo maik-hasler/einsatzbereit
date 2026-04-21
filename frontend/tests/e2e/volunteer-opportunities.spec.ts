@@ -23,7 +23,7 @@ async function createOpportunityViaApi(
   organizationId: string,
   request: APIRequestContext,
   title: string,
-): Promise<void> {
+): Promise<string> {
   const res = await request.post(`${API}/v1/volunteer-opportunities`, {
     headers: { Authorization: `Bearer ${token}` },
     data: {
@@ -39,6 +39,8 @@ async function createOpportunityViaApi(
     },
   });
   expect(res.status()).toBe(200);
+  const opp = await res.json() as { id: string };
+  return opp.id;
 }
 
 test('GET /v1/volunteer-opportunities without auth returns empty list', async ({ request }) => {
@@ -76,8 +78,9 @@ test.describe('as organisator (olaf)', () => {
     const data = await response.json() as { items: Array<{ title: string; occurrence: string; organizationName: string }> };
     const created = data.items.find((i) => i.title === 'Katastrophenschutz Helfer');
     expect(created).toBeDefined();
-    expect(created!.occurrence).toBe('OneTime');
-    expect(created!.organizationName).toBe('E2E Test Organisation');
+    if (!created) return;
+    expect(created.occurrence).toBe('OneTime');
+    expect(created.organizationName).toBe('E2E Test Organisation');
   });
 });
 

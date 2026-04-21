@@ -1,0 +1,32 @@
+@startuml CI/CD Pipeline
+
+title Deployment View — CI/CD (GitHub Actions → GHCR)
+
+actor "Developer" as dev
+participant "GitHub\n(main branch / tag)" as github
+participant "GitHub Actions" as ci
+participant "GitHub Container\nRegistry (GHCR)" as ghcr
+
+== Quality Gate (every push to main / PR) ==
+
+dev -> github: Push commit or open PR
+github -> ci: Trigger workflow
+ci -> ci: Backend: dotnet build + dotnet test\n(Testcontainers, PostgreSQL)
+ci -> ci: Frontend: npx playwright test\n(full Docker Compose stack)
+ci -> ci: Docs: asciidoctor build\n(arc42 → HTML5)
+ci -> github: Deploy docs to GitHub Pages
+
+== Image Publishing (version tag push) ==
+
+dev -> github: Push tag (e.g. frontend/v1.0.0)
+github -> ci: Trigger release workflow
+ci -> ci: Build Docker image for tagged component
+ci -> ghcr: Push image\nghcr.io/maik-hasler/einsatzbereit/<component>:v1.0.0
+
+note over ci,ghcr
+  Each component is versioned independently.
+  Tags: frontend/v*, backend/v*, keycloak/v*
+  See VERSIONING.md for the full strategy.
+end note
+
+@enduml

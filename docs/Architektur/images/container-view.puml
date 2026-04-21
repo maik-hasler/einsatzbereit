@@ -1,0 +1,25 @@
+@startuml Container View
+
+!include <C4/C4_Container>
+
+title Container View — Einsatzbereit
+
+Person(volunteer, "Volunteer", "Searches for and registers to volunteer opportunities")
+Person(organizer, "Organizer", "Creates and manages volunteer opportunities")
+
+System_Boundary(einsatzbereit, "Einsatzbereit") {
+    Container(frontend, "Single Page Application", "React 19, Vite, TypeScript, Tailwind CSS 4", "Provides the web UI for volunteers and organizers. Handles OIDC login and token management.")
+    Container(backend, "Backend API", ".NET 10, ASP.NET Core Minimal API", "Implements business logic. Exposes versioned REST API. Validates JWT tokens. Manages data via EF Core.")
+    ContainerDb(db, "Application Database", "PostgreSQL 18", "Stores volunteer opportunities, organizations, engagements, and user associations.")
+    Container(keycloak, "Identity Provider", "Keycloak 26.5", "Handles authentication via OIDC. Manages users, roles, and organizations. Issues signed JWT access tokens.")
+}
+
+Rel(volunteer, frontend, "Uses", "HTTPS")
+Rel(organizer, frontend, "Uses", "HTTPS")
+Rel(frontend, backend, "REST API calls", "HTTPS / JSON, JWT Bearer")
+Rel(frontend, keycloak, "Authenticates via", "OIDC Authorization Code Flow + PKCE")
+Rel(backend, db, "Reads and writes", "TCP / SQL (EF Core)")
+Rel(backend, keycloak, "Validates JWT via JWKS", "HTTPS")
+Rel(keycloak, db, "Stores realm data", "TCP / SQL")
+
+@enduml

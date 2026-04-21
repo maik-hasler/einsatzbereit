@@ -52,9 +52,9 @@ test.describe('organization settings', () => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       data: { name: 'Einstellungen Org' },
     });
-    const org = await res.json() as { id: string };
+    const org = await res.json() as { id: { value: string } };
 
-    await page.goto(`/organizations/${org.id}/settings`);
+    await page.goto(`/organizations/${org.id.value}/settings`);
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByRole('button', { name: 'Allgemein' })).toBeVisible();
@@ -67,9 +67,9 @@ test.describe('organization settings', () => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       data: { name: 'Alter Name' },
     });
-    const org = await res.json() as { id: string };
+    const org = await res.json() as { id: { value: string } };
 
-    await page.goto(`/organizations/${org.id}/settings`);
+    await page.goto(`/organizations/${org.id.value}/settings`);
     await page.waitForLoadState('networkidle');
 
     // Update name
@@ -86,7 +86,7 @@ test.describe('organization settings', () => {
     await expect(page.getByText('Änderungen gespeichert.')).toBeVisible();
 
     // Verify via API
-    const details = await request.get(`${API}/v1/organizations/${org.id}`, {
+    const details = await request.get(`${API}/v1/organizations/${org.id.value}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await details.json() as { name: string; description: string };
@@ -100,9 +100,9 @@ test.describe('organization settings', () => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       data: { name: 'Mitglieder Test' },
     });
-    const org = await res.json() as { id: string };
+    const org = await res.json() as { id: { value: string } };
 
-    await page.goto(`/organizations/${org.id}/settings`);
+    await page.goto(`/organizations/${org.id.value}/settings`);
     await page.waitForLoadState('networkidle');
 
     await page.getByRole('button', { name: /Mitglieder/ }).click();

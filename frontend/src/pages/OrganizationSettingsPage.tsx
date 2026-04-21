@@ -1,43 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { useApiClient } from '../hooks/useApiClient'
-
-// These types mirror the NSwag-generated types produced after backend build
-interface AddressDto {
-  street: string
-  houseNumber: string
-  zipCode: string
-  city: string
-}
-
-interface OrganizationMemberDto {
-  userId: string
-  username: string
-  firstName?: string | null
-  lastName?: string | null
-  email: string
-  isOrganisator: boolean
-}
-
-interface OrganizationDetailsResponse {
-  id: string
-  name: string
-  description?: string | null
-  contactEmail?: string | null
-  contactPhone?: string | null
-  website?: string | null
-  address?: AddressDto | null
-  createdOn: string
-  modifiedOn?: string | null
-  members: OrganizationMemberDto[]
-}
+import type { OrganizationDetailsResponse } from '../client/api-client'
 
 type Tab = 'general' | 'members'
 
 export default function OrganizationSettingsPage() {
   const { organizationId } = useParams<{ organizationId: string }>()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const api = useApiClient() as any
+  const api = useApiClient()
   const [activeTab, setActiveTab] = useState<Tab>('general')
   const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,7 +31,7 @@ export default function OrganizationSettingsPage() {
     if (!organizationId) return
     setLoading(true)
     api.getOrganizationDetails(organizationId)
-      .then((data: OrganizationDetailsResponse) => {
+      .then((data) => {
         setOrg(data)
         setForm({
           name: data.name,
@@ -77,6 +47,7 @@ export default function OrganizationSettingsPage() {
       })
       .catch(() => setError('Organisation konnte nicht geladen werden.'))
       .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId])
 
   const hasAddress =
@@ -91,10 +62,10 @@ export default function OrganizationSettingsPage() {
     try {
       await api.updateOrganization(organizationId, {
         name: form.name,
-        description: form.description || null,
-        contactEmail: form.contactEmail || null,
-        contactPhone: form.contactPhone || null,
-        website: form.website || null,
+        description: form.description || undefined,
+        contactEmail: form.contactEmail || undefined,
+        contactPhone: form.contactPhone || undefined,
+        website: form.website || undefined,
         address: hasAddress
           ? {
               street: form.street,
@@ -102,7 +73,7 @@ export default function OrganizationSettingsPage() {
               zipCode: form.zipCode,
               city: form.city,
             }
-          : null,
+          : undefined,
       })
       setSuccessMessage('Änderungen gespeichert.')
       setOrg(prev =>
@@ -110,10 +81,10 @@ export default function OrganizationSettingsPage() {
           ? {
               ...prev,
               name: form.name,
-              description: form.description || null,
-              contactEmail: form.contactEmail || null,
-              contactPhone: form.contactPhone || null,
-              website: form.website || null,
+              description: form.description || undefined,
+              contactEmail: form.contactEmail || undefined,
+              contactPhone: form.contactPhone || undefined,
+              website: form.website || undefined,
               address: hasAddress
                 ? {
                     street: form.street,
@@ -121,7 +92,7 @@ export default function OrganizationSettingsPage() {
                     zipCode: form.zipCode,
                     city: form.city,
                   }
-                : null,
+                : undefined,
             }
           : prev,
       )

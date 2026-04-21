@@ -1,21 +1,20 @@
-== 1. Monorepository
+== 1. Monorepo
 
 === Status
-Akzeptiert
+Accepted
 
-=== Datum
-23.03.2026
+=== Date
+2026-03-23
 
-=== Kontext
-Das Projekt ist ein Open-Source Projekt.
-Es besteht aus mehreren Komponenten.
-Der Wartungsaufwand soll so gering wie möglich gehalten werden.
-Dafür muss eine Repository-Strategie festgelegt werden, die diesem Ziel gerecht wird.
+=== Context
+The project is an open-source project consisting of multiple components.
+The maintenance overhead should be kept as low as possible.
+A repository strategy that serves this goal needs to be established.
 
-=== Entscheidung
-Wir nutzen ein Monorepository. Das bedeutet, alle Komponenten des Systems sind in einem Repository.
+=== Decision
+We use a monorepo. All components of the system live in a single repository.
 
-=== Struktur des Monorepository
+=== Monorepo Structure
 
 ----
 .github/
@@ -33,38 +32,38 @@ VERSIONING.md
 README.md
 ----
 
-=== Begründung
-* Kleines Team: Ein einzelnes Repository reduziert den Koordinationsaufwand und vermeidet das Pflegen mehrerer Repositories
-* Minimaler Wartungsaufwand: CI/CD Workflows, Linting und Abhängigkeiten werden zentral an einer Stelle verwaltet
-* Open Source: Contributors finden alles an einem Ort, was die Einstiegshürde senkt
-* Komponentenübergreifende Änderungen lassen sich in einem einzigen Commit und Pull Request umsetzen
+=== Rationale
+* Small team: A single repository reduces coordination overhead and avoids maintaining multiple repositories.
+* Minimal maintenance: CI/CD workflows, linting, and dependencies are managed centrally in one place.
+* Open source: Contributors find everything in one place, which lowers the barrier to entry.
+* Cross-component changes can be implemented in a single commit and pull request.
 
-=== Betrachtete Alternativen
+=== Considered Alternatives
 
 ==== Multi-Repository
-Jede Komponente in einem eigenen Repository.
+Each component in its own repository.
 
-* Vorteile
-** Klare Trennung
-** Unabhängige Entwicklung
-* Nachteile
-** Wartbarkeit
-** Aufwändige Koordination bei komponentenübergreifenden Änderungen
-** Mehrere Pull Requests für eine logische Änderung
-** Manuelles Anpassen von Versionen in den Repositories
+* Pros
+** Clear separation
+** Independent development cycles
+* Cons
+** High maintenance overhead
+** Complex coordination for cross-component changes
+** Multiple pull requests for a single logical change
+** Manual version pinning across repositories
 
 ==== Hybrid
-Frontend und Backend in einem Repository, Keycloak separat.
+Frontend and backend in one repository, Keycloak separate.
 
-* Vorteile
-** Flexibilität
-* Nachteile
-** Wartbarkeit
-** Uneinheitliche Prozesse
-** Zusätzliche Komplexität
+* Pros
+** Flexibility
+* Cons
+** Higher maintenance overhead than monorepo
+** Inconsistent processes across repositories
+** Additional complexity without a clear benefit
 
-=== Konsequenzen
-* Einheitliche Toolchain und Entwicklungsumgebung
-* Einfacheres Refactoring über Komponentengrenzen hinweg
-* Zentrale Dokumentation
-* Bedingte CI/CD-Pipelines nötig, um unnötige Builds zu vermeiden
+=== Consequences
+* Unified toolchain and development environment for all components
+* Simpler refactoring across component boundaries
+* Centralized documentation
+* Conditional CI/CD pipelines required to avoid unnecessary builds when only one component changes

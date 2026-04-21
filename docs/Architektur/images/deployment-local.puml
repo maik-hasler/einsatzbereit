@@ -1,0 +1,38 @@
+@startuml Local Development Deployment
+
+!include <C4/C4_Deployment>
+
+title Deployment View — Local Development (Docker Compose)
+
+Deployment_Node(machine, "Developer Machine", "Windows / macOS / Linux") {
+    Deployment_Node(docker, "Docker Desktop", "Docker Compose") {
+
+        Deployment_Node(frontend_node, "frontend") {
+            Container(frontend, "Single Page Application", "Vite Dev Server", ":4321")
+        }
+
+        Deployment_Node(backend_node, "backend") {
+            Container(backend, "Backend API", "ASP.NET Core (.NET 10)", ":5000")
+        }
+
+        Deployment_Node(keycloak_node, "keycloak") {
+            Container(keycloak, "Identity Provider", "Keycloak 26.5", ":8080")
+        }
+
+        Deployment_Node(postgres_node, "postgres") {
+            ContainerDb(postgres, "PostgreSQL", "PostgreSQL 18", ":5432")
+        }
+
+        Deployment_Node(pgadmin_node, "pgadmin") {
+            Container(pgadmin, "DB Management UI", "pgAdmin 4", ":5050")
+        }
+    }
+}
+
+Rel(frontend, backend, "REST API", "HTTP :5000")
+Rel(frontend, keycloak, "OIDC", "HTTP :8080")
+Rel(backend, postgres, "SQL / EF Core", "TCP :5432")
+Rel(keycloak, postgres, "Realm data", "TCP :5432")
+Rel(pgadmin, postgres, "DB management", "TCP :5432")
+
+@enduml

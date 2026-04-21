@@ -3,8 +3,8 @@ import VolunteerOpportunitiesList from '../components/VolunteerOpportunitiesList
 
 export default function HomePage() {
   const auth = useAuth()
-  const roles = (Array.isArray(auth.user?.profile?.roles) ? auth.user!.profile.roles : []) as string[]
-  const isOrganisator = roles.includes('organisator')
+  const roles = (Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []) as string[]
+  const canCreateOpportunity = auth.isAuthenticated && roles.includes('organisator')
 
   return (
     <>
@@ -12,7 +12,7 @@ export default function HomePage() {
       <p className="mb-8 text-lg text-gray-600">
         Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.
       </p>
-      <VolunteerOpportunitiesList canCreateOpportunity={isOrganisator} />
+      <VolunteerOpportunitiesList canCreateOpportunity={canCreateOpportunity} />
     </>
   )
 }

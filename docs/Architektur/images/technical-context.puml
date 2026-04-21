@@ -1,0 +1,22 @@
+@startuml Technical Context
+
+!include <C4/C4_Context>
+
+title Technical Context View
+
+Person(volunteer, "Volunteer", "Uses browser to access the platform")
+Person(organizer, "Organizer", "Uses browser to manage opportunities")
+
+System(einsatzbereit, "Einsatzbereit", "Volunteer coordination platform")
+
+System_Ext(browser, "Web Browser", "Any modern browser (Chrome, Firefox, Safari, Edge)")
+System_Ext(ghcr, "GitHub Container Registry", "Stores Docker images for all components")
+System_Ext(github_actions, "GitHub Actions", "CI/CD: builds, tests, and publishes images")
+
+Rel(volunteer, browser, "Opens")
+Rel(organizer, browser, "Opens")
+Rel(browser, einsatzbereit, "HTTPS", "React SPA, REST API, OIDC")
+Rel(github_actions, einsatzbereit, "Deploys via", "Docker images")
+Rel(github_actions, ghcr, "Publishes images to")
+
+@enduml

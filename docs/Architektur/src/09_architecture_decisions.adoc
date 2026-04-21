@@ -1,34 +1,34 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-design-decisions]]
-== Architekturentscheidungen
+== Architecture Decisions
 
-In folgender Tabelle werden die relevanten Architekturentscheidungen aufgelistet.
+The following table lists the relevant architecture decisions. Each decision links to the corresponding ADR with full context, rationale, and considered alternatives.
 
-.Architekturentscheidungen
+.Architecture Decisions
 [cols="1,4,8,3,3,3" options="header"]
 |===
-|Nr. |Kontext |Beschreibung |Status |Datum |ADR
+|No. |Context |Description |Status |Date |ADR
 
 |1
-|Monorepository
-|Alle Komponenten in einem Repository verwalten.
-|Akzeptiert
-|23.03.2026
-|link:ADRs/1_monorepository.html[Monorepository]
+|Monorepo
+|Manage all components in a single repository.
+|Accepted
+|2026-03-23
+|link:ADRs/1_monorepository.html[Monorepo]
 
 |2
 |arc42
-|arc42 als Vorlage für die Architekturdokumentation verwenden.
-|Akzeptiert
-|25.03.2026
+|Use arc42 as the template for architecture documentation.
+|Accepted
+|2026-03-25
 |link:ADRs/2_arc42.html[arc42]
 
 |3
 |Keycloak
-|Keycloak als Identity- und Access-Management-Lösung einsetzen.
-|Akzeptiert
-|25.03.2026
+|Use Keycloak as the Identity and Access Management solution.
+|Accepted
+|2026-03-25
 |link:ADRs/3_keycloak.html[Keycloak]
 
 |===

@@ -1,0 +1,53 @@
+using Api.Common.Authentication;
+using Api.Common.Endpoints;
+using Application.Common.Messaging;
+using Application.Engagements.WithdrawEngagement.v1;
+using Domain.Engagements;
+using Domain.Primitives;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Api.Engagements.WithdrawEngagement.v1;
+
+internal sealed class WithdrawEngagementEndpoint
+    : IEndpoint
+{
+    public void MapEndpoint(IEndpointRouteBuilder app) =>
+        app.MapPut("/engagements/{engagementId:guid}/withdraw", WithdrawEngagementAsync)
+            .WithName("WithdrawEngagement")
+            .WithTags("Engagements")
+            .Produces<EngagementStatusResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
+            .MapToApiVersion(1);
+
+    private static async Task<IResult> WithdrawEngagementAsync(
+        [FromRoute] Guid engagementId,
+        [FromServices] ISender sender,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var subClaim = httpContext.User.FindFirst("sub")?.Value;
+        if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
+        {
+            return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
+        }
+
+        try
+        {
+            var command = new WithdrawEngagementCommand(new EngagementId(engagementId), userId);
+            var engagement = await sender.Send(command, cancellationToken);
+            return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
+        }
+        catch (DomainException ex) when (ex.Message.Contains("not found"))
+        {
+            return Results.NotFound();
+        }
+        catch (DomainException ex)
+        {
+            return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+    }
+}

@@ -22,6 +22,47 @@ namespace Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Domain.Engagements.Engagement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_on");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<DateTimeOffset?>("ModifiedOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_on");
+
+                    b.Property<Guid>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TimeSlotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("time_slot_id");
+
+                    b.Property<Guid>("VolunteerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("volunteer_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_engagement");
+
+                    b.ToTable("engagement", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Organizations.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -61,6 +102,37 @@ namespace Infrastructure.Persistence.Migrations
                         .HasName("pk_organization");
 
                     b.ToTable("organization", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.VolunteerOpportunities.TimeSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("EndDateTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_date_time");
+
+                    b.Property<int>("MaxParticipants")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_participants");
+
+                    b.Property<DateTimeOffset>("StartDateTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_date_time");
+
+                    b.Property<Guid>("volunteer_opportunity_id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("volunteer_opportunity_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_time_slot");
+
+                    b.HasIndex("volunteer_opportunity_id")
+                        .HasDatabaseName("ix_time_slot_volunteer_opportunity_id");
+
+                    b.ToTable("time_slot", (string)null);
                 });
 
             modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
@@ -152,6 +224,16 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Address");
                 });
 
+            modelBuilder.Entity("Domain.VolunteerOpportunities.TimeSlot", b =>
+                {
+                    b.HasOne("Domain.VolunteerOpportunities.VolunteerOpportunity", null)
+                        .WithMany("TimeSlots")
+                        .HasForeignKey("volunteer_opportunity_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_time_slot_volunteer_opportunity_volunteer_opportunity_id");
+                });
+
             modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
                 {
                     b.OwnsOne("Domain.VolunteerOpportunities.Address", "Address", b1 =>
@@ -191,6 +273,11 @@ namespace Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
+                {
+                    b.Navigation("TimeSlots");
                 });
 #pragma warning restore 612, 618
         }

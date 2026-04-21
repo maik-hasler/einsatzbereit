@@ -1,0 +1,28 @@
+@startuml Create Volunteer Opportunity
+
+title Runtime View — Create Volunteer Opportunity
+
+actor "Organizer" as organizer
+participant "Frontend\n(React SPA)" as frontend
+participant "Backend API\n(.NET 10)" as backend
+database "PostgreSQL" as db
+
+organizer -> frontend: Fill out opportunity form
+organizer -> frontend: Submit form
+frontend -> backend: POST /v1/volunteer-opportunities\n[Authorization: Bearer <access_token>]\n{title, description, location, date, ...}
+backend -> backend: Validate JWT signature
+backend -> backend: Check 'organisator' role claim
+backend -> backend: Dispatch CreateVolunteerOpportunityCommand\nvia MediatR
+backend -> backend: Validate request payload
+backend -> db: INSERT INTO volunteer_opportunities
+db -> backend: Created record (with generated ID)
+backend -> frontend: 201 Created\n{id, title, ...}
+frontend -> organizer: Show success notification\nRedirect to opportunity detail page
+
+note over backend
+  If JWT is invalid: 401 Unauthorized
+  If role check fails: 403 Forbidden
+  If validation fails: 400 Bad Request
+end note
+
+@enduml

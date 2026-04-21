@@ -1,105 +1,116 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-building-block-view]]
-== Bausteinsicht
+== Building Block View
 
+=== Level 1: System Overview (Whitebox)
 
+.Container View — Einsatzbereit
+[plantuml, "container-view", png]
+....
+include::../images/container-view.puml[]
+....
 
+Motivation::
+The system consists of four main containers: a React SPA for the UI, an ASP.NET Core API for business logic, Keycloak for identity management, and PostgreSQL for persistence.
+Authentication is centralized in Keycloak — neither the frontend nor the backend implements login logic directly.
 
+Contained Building Blocks::
 
-=== Whitebox Gesamtsystem
+[cols="1,2,2" options="header"]
+|===
+|Container |Technology |Responsibility
 
+|Single Page Application
+|React 19, Vite, TypeScript, Tailwind CSS 4
+|Provides the web UI for volunteers and organizers. Handles OIDC login redirect and token storage. Communicates with the backend API using a NSwag-generated client.
 
+|Backend API
+|.NET 10, ASP.NET Core, Clean Architecture
+|Exposes the versioned REST API. Implements all business logic via CQRS handlers. Validates JWT tokens, enforces role-based authorization, persists data via EF Core.
 
+|Identity Provider
+|Keycloak 26.5
+|Handles user authentication via OIDC Authorization Code Flow. Manages users, roles (`user`, `organisator`, `admin`), and organizations. Issues and signs JWT access tokens.
 
+|Application Database
+|PostgreSQL 18
+|Stores all application data: volunteer opportunities, organizations, engagements, and user associations.
+|===
 
-_**<Übersichtsdiagramm>**_
+Important Interfaces::
 
-Begründung:: _<Erläuternder Text>_
+[cols="1,3" options="header"]
+|===
+|Interface |Description
 
-Enthaltene Bausteine:: _<Beschreibung der enthaltenen Bausteine (Blackboxen)>_
+|Frontend ↔ Backend API
+|REST over HTTPS, versioned (`/v1/...`). All requests carry a JWT Bearer token. Response format is JSON. The TypeScript client is generated from the OpenAPI spec.
 
-Wichtige Schnittstellen:: _<Beschreibung wichtiger Schnittstellen>_
+|Frontend ↔ Keycloak
+|OIDC Authorization Code Flow with PKCE. Frontend redirects to Keycloak for login; receives access and refresh tokens on success.
 
+|Backend ↔ Keycloak
+|Backend fetches Keycloak's JWKS endpoint to validate JWT signatures. No direct Keycloak admin API calls in the application path.
 
+|Backend ↔ PostgreSQL
+|EF Core 9 over TCP. Migrations are applied on startup.
+|===
 
+=== Level 2: Backend API (Whitebox)
 
+.Backend Component View — Clean Architecture
+[plantuml, "component-backend", png]
+....
+include::../images/component-backend.puml[]
+....
 
-==== <Name Blackbox 1>
+The backend follows Clean Architecture with four layers. Dependencies flow inward only: API → Application → Domain. Infrastructure implements interfaces defined in Application.
 
+==== API Layer
 
+Responsibility:: Routes HTTP requests to the Application layer. Applies authentication middleware. Handles versioning and request/response serialization.
 
+Interfaces:: Exposes versioned ASP.NET Core Minimal API endpoints. Registers MediatR and reads JWT Bearer tokens via ASP.NET Core middleware.
 
+Location:: `backend/src/Api/`
 
-_<Zweck/Verantwortung>_
+==== Application Layer
 
-_<Schnittstelle(n)>_
+Responsibility:: Implements all use cases as CQRS command and query handlers. Defines repository interfaces used for data access.
 
-_<(Optional) Qualitäts-/Leistungsmerkmale>_
+Interfaces:: MediatR `IRequest`/`IRequestHandler` contracts. Repository interfaces (`IVolunteerOpportunityReadRepository`, etc.).
 
-_<(Optional) Ablageort/Datei(en)>_
+Location:: `backend/src/Application/`
 
-_<(Optional) Erfüllte Anforderungen>_
+==== Domain Layer
 
-_<(optional) Offene Punkte/Probleme/Risiken>_
+Responsibility:: Contains core business entities as plain C# classes/records. No framework dependencies. Defines business rules as domain logic.
 
-==== <Name Blackbox 2>
+Location:: `backend/src/Domain/`
 
-_<Blackbox-Template>_
+==== Infrastructure Layer
 
-==== <Name Blackbox n>
+Responsibility:: Implements repository interfaces using EF Core. Manages database schema via migrations. Wires up all services in `ServiceCollectionExtensions`.
 
-_<Blackbox-Template>_
+Location:: `backend/src/Infrastructure/`
 
+=== Level 2: Frontend SPA (Whitebox)
 
-==== <Name Schnittstelle 1>
+==== Pages
 
-...
+Responsibility:: Top-level route components. Each page corresponds to a route and composes components.
 
-==== <Name Schnittstelle m>
+Location:: `frontend/src/pages/`
 
-=== Ebene 2
+==== Components
 
+Responsibility:: Reusable UI building blocks. Stateless or locally stateful React components styled with Tailwind CSS.
 
+Location:: `frontend/src/components/`
 
+==== API Client
 
+Responsibility:: NSwag-generated TypeScript client. Provides typed methods for all backend endpoints. Never hand-edited.
 
-==== Whitebox _<Baustein 1>_
-
-
-
-
-
-_<Whitebox-Template>_
-
-==== Whitebox _<Baustein 2>_
-
-_<Whitebox-Template>_
-
-...
-
-==== Whitebox _<Baustein m>_
-
-_<Whitebox-Template>_
-
-=== Ebene 3
-
-
-
-
-
-==== Whitebox <_Baustein x.1_>
-
-
-
-
-
-_<Whitebox-Template>_
-
-==== Whitebox <_Baustein x.2_>
-
-_<Whitebox-Template>_
-
-==== Whitebox <_Baustein y.1_>
-
-_<Whitebox-Template>_
+Location:: `frontend/src/client/api-client.ts`

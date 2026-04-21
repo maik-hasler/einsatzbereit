@@ -1,21 +1,53 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-runtime-view]]
-== Laufzeitsicht
+== Runtime View
 
+=== User Login (OIDC Authorization Code Flow)
 
+A volunteer or organizer opens the application and authenticates via Keycloak using the OIDC Authorization Code Flow with PKCE.
 
+.Runtime: User Login
+[plantuml, "runtime-login", png]
+....
+include::../images/runtime-login.puml[]
+....
 
+Key aspects of this flow:
 
-=== _<Bezeichnung Laufzeitszenario 1>_
+* The frontend never handles passwords — authentication is fully delegated to Keycloak.
+* PKCE prevents authorization code interception attacks in the public client (SPA).
+* Tokens are stored in memory (not `localStorage`) to reduce XSS risk.
+* The access token is a short-lived JWT; the refresh token is used to obtain new access tokens silently.
 
-*  <hier Laufzeitdiagramm oder Ablaufbeschreibung einfügen>
-*  <hier Besonderheiten bei dem Zusammenspiel der Bausteine in diesem Szenario erläutern>
+=== Browse Volunteer Opportunities
 
-=== _<Bezeichnung Laufzeitszenario 2>_
+A volunteer opens the opportunities page. The frontend fetches the list from the backend API, which validates the JWT and queries PostgreSQL.
 
-...
+.Runtime: Browse Volunteer Opportunities
+[plantuml, "runtime-browse", png]
+....
+include::../images/runtime-browse.puml[]
+....
 
-=== _<Bezeichnung Laufzeitszenario n>_
+Key aspects:
 
-...
+* Every API request carries the JWT Bearer token in the `Authorization` header.
+* The backend validates the token signature using Keycloak's public JWKS keys (cached locally).
+* No session state is held server-side — the backend is stateless.
+
+=== Create Volunteer Opportunity
+
+An organizer fills out the opportunity form and submits it. The backend validates the JWT, checks the `organisator` role, and persists the new opportunity.
+
+.Runtime: Create Volunteer Opportunity
+[plantuml, "runtime-create", png]
+....
+include::../images/runtime-create.puml[]
+....
+
+Key aspects:
+
+* Role authorization (`organisator`) is enforced at the endpoint level via ASP.NET Core authorization policies.
+* The MediatR command handler performs input validation before writing to the database.
+* The response includes the created opportunity's ID so the frontend can redirect to the detail page.

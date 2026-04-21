@@ -63,7 +63,22 @@ export default function OrganizationSwitcher() {
   };
 
   const handleOrgCreated = () => {
-    fetchOrgs();
+    const prevIds = new Set(orgs.map((o) => o.id));
+    setLoading(true);
+    api.getOrganizations()
+      .then((data: KeycloakOrganization[]) => {
+        setOrgs(data);
+        const newOrg = data.find((o) => !prevIds.has(o.id));
+        if (newOrg) {
+          setActiveOrgCookie(newOrg.id);
+          setActiveOrgId(newOrg.id);
+        } else if (!getActiveOrgId() && data.length > 0) {
+          setActiveOrgCookie(data[0].id);
+          setActiveOrgId(data[0].id);
+        }
+      })
+      .catch(() => setOrgs([]))
+      .finally(() => setLoading(false));
   };
 
   if (loading) {

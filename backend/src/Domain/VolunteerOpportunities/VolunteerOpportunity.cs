@@ -82,6 +82,27 @@ public sealed class VolunteerOpportunity
             participationType);
     }
 
+    public void Update(
+        string title,
+        string description,
+        bool isRemote,
+        Address? address)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new DomainException("Title must not be empty.");
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new DomainException("Description must not be empty.");
+
+        if (!isRemote && address is null)
+            throw new DomainException("Address is required for non-remote opportunities.");
+
+        Title = title;
+        Description = description;
+        IsRemote = isRemote;
+        Address = address;
+    }
+
     public void AddTimeSlot(
         DateTimeOffset startDateTime,
         DateTimeOffset endDateTime,

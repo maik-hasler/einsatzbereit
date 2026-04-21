@@ -123,6 +123,19 @@ pnpm lint     # eslint, zero warnings allowed
 | `oidc-client-ts` | PKCE flow, token management |
 | `@tailwindcss/vite` | Tailwind CSS 4 via Vite |
 
+## Linting
+
+Run lint before every commit. All errors must be fixed — zero warnings allowed (`--max-warnings 0`).
+
+```bash
+pnpm lint
+```
+
+Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`.
+
+- No non-null assertions (`!`). Use `as Type` or type narrowing (`if (!x) return`).
+- If `api` is intentionally excluded from `exhaustive-deps`, suppress with `// eslint-disable-next-line react-hooks/exhaustive-deps` and keep it consistent with the existing pattern.
+
 ## Production
 
 Static files in `dist/` served by nginx. `nginx.conf` handles SPA routing via `try_files $uri /index.html`.

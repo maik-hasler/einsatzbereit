@@ -3,8 +3,8 @@ name: Publish Keycloak
 on:
   push:
     tags:
-      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])'
-      - 'keycloak/v+([0-9]).+([0-9]).+([0-9]).+([0-9])-rc.+([0-9])'
+      - 'keycloak/v[0-9]*.[0-9]*.[0-9]*.[0-9]*'
+      - 'keycloak/v[0-9]*.[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*'
 
 env:
   REGISTRY: ghcr.io

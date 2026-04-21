@@ -1,0 +1,20 @@
+@startuml Browse Volunteer Opportunities
+
+title Runtime View — Browse Volunteer Opportunities
+
+actor "Volunteer" as user
+participant "Frontend\n(React SPA)" as frontend
+participant "Backend API\n(.NET 10)" as backend
+database "PostgreSQL" as db
+
+user -> frontend: Opens opportunities page
+frontend -> backend: GET /v1/volunteer-opportunities\n[Authorization: Bearer <access_token>]
+backend -> backend: Validate JWT signature\n(Keycloak JWKS, cached)
+backend -> backend: Dispatch GetVolunteerOpportunitiesQuery\nvia MediatR
+backend -> db: SELECT * FROM volunteer_opportunities\nWHERE is_active = true
+db -> backend: Result set
+backend -> backend: Map to response DTOs
+backend -> frontend: 200 OK — List<VolunteerOpportunityDto> (JSON)
+frontend -> user: Render opportunity cards
+
+@enduml

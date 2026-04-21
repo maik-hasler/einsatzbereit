@@ -1,62 +1,62 @@
-== 2. arc42 als Architekturdokumentationsvorlage
+== 2. arc42 as Architecture Documentation Template
 
 === Status
-Akzeptiert
+Accepted
 
-=== Datum
-25.03.2026
+=== Date
+2026-03-25
 
-=== Kontext
-Das Projekt benötigt eine Architekturdokumentation, die sowohl für neue und bestehende Contributor verständlich und rückwirkend nachvollziehbar ist.
-Die Dokumentation soll iterativ gepflegt werden können, ohne dass bei jeder Änderung die gesamte Struktur überarbeitet werden muss.
+=== Context
+The project requires architecture documentation that is understandable for both new and existing contributors and traceable in retrospect.
+The documentation must be maintainable iteratively without requiring a full restructuring on every change.
 
-=== Entscheidung
-Wir verwenden arc42 als Vorlage für die Architekturdokumentation.
-Innerhalb der arc42-Struktur setzen wir ergänzend C4-Diagramme ein.
+=== Decision
+We use arc42 as the template for architecture documentation.
+Within the arc42 structure, we additionally use C4 diagrams rendered from PlantUML source files.
 
-=== Begründung
-* arc42 ist im deutschsprachigen Raum ein etablierter Standard und vielen Entwicklern bereits bekannt
-* Die Vorlage gibt eine klare Kapitelstruktur vor, die sich iterativ befüllen lässt
-* C4-Diagramme lassen sich gut in arc42 integrieren
-* arc42 ist werkzeugunabhängig und funktioniert mit AsciiDoc und GitHub Pages ohne zusätzliche Abhängigkeiten
-* Die Struktur unterstützt unterschiedliche Zielgruppen und deren Sichtweisen
-** Überblick für Stakeholder
-** Details für Entwickler:innen
+=== Rationale
+* arc42 is an established standard, familiar to many developers
+* The template provides a clear chapter structure that can be filled iteratively
+* C4 diagrams integrate well into arc42 and provide consistent levels of abstraction
+* arc42 is tool-independent and works with AsciiDoc and GitHub Pages without additional dependencies
+* The structure supports multiple audiences and their perspectives:
+** High-level overview for stakeholders
+** Technical detail for developers
 
-=== Betrachtete Alternativen
+=== Considered Alternatives
 
-==== Nur C4-Modell
-Ausschließlich C4-Diagramme als Dokumentation.
+==== C4 Model Only
+Exclusively C4 diagrams as documentation.
 
-* Vorteile
-** Visuell und schnell erfassbar
-** Klare Abstraktionsebenen
-* Nachteile
-** Kein Platz für Qualitätsanforderungen, Risiken oder Entscheidungen
-** Textuelle Erläuterungen fehlen
-** Für sich allein nicht ausreichend als vollständige Architekturdokumentation
+* Pros
+** Visually accessible and quick to grasp
+** Clear abstraction levels (Context → Container → Component → Code)
+* Cons
+** No place for quality requirements, risks, or decisions
+** Textual explanations are missing
+** Not sufficient as complete architecture documentation on its own
 
-==== Freie Struktur
-Keine vorgegebene Vorlage, Dokumentation nach eigenem Ermessen.
+==== Free Structure
+No prescribed template; documentation at discretion.
 
-* Vorteile
-** Maximale Flexibilität
-* Nachteile
-** Kein einheitlicher Aufbau, schwer navigierbar für neue Contributor
-** Gefahr von Lücken, da keine Checkliste existiert
+* Pros
+** Maximum flexibility
+* Cons
+** No consistent structure; hard to navigate for new contributors
+** Risk of gaps because no checklist exists
 
-==== Keine Dokumentation
-Bewusster Verzicht auf Architekturdokumentation.
+==== No Documentation
+Deliberate omission of architecture documentation.
 
-* Vorteile
-** Kein initialer Aufwand
-* Nachteile
-** Wissen bleibt implizit und geht verloren
-** Neue Contributor haben einen erschwerten Einstieg
-** Architekturentscheidungen sind nicht nachvollziehbar
+* Pros
+** No initial effort
+* Cons
+** Knowledge remains implicit and is lost when contributors leave
+** New contributors face a much higher barrier to entry
+** Architecture decisions are not traceable
 
-=== Konsequenzen
-* Die arc42 Dokumentation liegt unter `docs/Architektur/`
-* Architekturentscheidungen werden separat als ADRs geführt und in der arc42 referenziert
-* C4-Diagramme werden als ergänzende Darstellungen eingebettet
-* Neue Contributor finden eine bekannte Struktur vor und können gezielt zu relevanten Kapiteln navigieren
+=== Consequences
+* Architecture documentation lives under `docs/Architektur/`
+* Architecture decisions are maintained separately as ADRs and referenced from arc42 chapter 9
+* C4 diagrams written as PlantUML source files are embedded as supplementary visuals
+* New contributors encounter a familiar structure and can navigate directly to relevant chapters

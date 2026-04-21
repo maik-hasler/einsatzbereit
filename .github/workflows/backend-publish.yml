@@ -3,8 +3,8 @@ name: Publish Backend
 on:
   push:
     tags:
-      - 'backend/v+([0-9]).+([0-9]).+([0-9])'
-      - 'backend/v+([0-9]).+([0-9]).+([0-9])-rc.+([0-9])'
+      - 'backend/v[0-9]*.[0-9]*.[0-9]*'
+      - 'backend/v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*'
 
 env:
   REGISTRY: ghcr.io

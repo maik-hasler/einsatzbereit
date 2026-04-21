@@ -1,89 +1,89 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-introduction-and-goals]]
-== Einführung und Ziele
+== Introduction and Goals
 
-Einsatzbereit ist eine Open-Source Plattform, die engagierte Helfer:innen mit regionalen Bedarfen zusammenbringt.
-Das Ehrenamt und der konkrete Nutzen für die Gesellschaft stehen dabei immer im Vordergrund.
+Einsatzbereit is an open-source platform that connects engaged volunteers with regional needs.
+Volunteering and concrete societal benefit are always at the forefront.
 
-Die Plattform verfolgt drei Leitprinzipien:
+The platform follows three guiding principles:
 
-* *Ehrenamt zuerst:* Jede Entscheidung, ob Feature, Architektur oder Prozess, dient dem Ziel, ehrenamtliches Engagement zu erleichtern.
-* *Einfacher Code:* Der Quellcode soll so simpel sein, dass jede und jeder mitarbeiten kann, auch ohne tiefe Vorkenntnisse.
-* *Kein Ballast:* Die Plattform zu pflegen soll keine Last sein, sondern sie soll ein leichtgewichtiger Helfer bleiben.
+* *Volunteering first:* Every decision — whether a feature, an architectural choice, or a process — serves the goal of making voluntary engagement easier.
+* *Simple code:* The source code should be simple enough that anyone can contribute, even without deep prior knowledge.
+* *No baggage:* Maintaining the platform should not be a burden; it should remain a lightweight helper.
 
-=== Aufgabenstellung
+=== Requirements Overview
 
-Wer helfen will, muss sich nicht langfristig binden.
-Manchmal passt ein Nachmittag, manchmal eine Woche.
-Aber einen Überblick zu bekommen, wo gerade Hilfe gebraucht wird, ist oft schwer - egal ob bei großen NGOs oder beim Sportturnier um die Ecke.
-Bestehende Plattformen sind häufig zu kompliziert, zu allgemein oder werden kaum genutzt.
+Volunteering doesn't require a long-term commitment.
+Sometimes an afternoon is enough, sometimes a week.
+But finding out where help is currently needed is often difficult — whether at large NGOs or a local sports tournament.
+Existing platforms are too complex, too generic, or barely used.
 
-Einsatzbereit löst dieses Problem, indem es konkrete Bedarfe sichtbar macht: *was* wird gebraucht, *wo* und *wann*.
+Einsatzbereit solves this by making concrete needs visible: *what* is needed, *where*, and *when*.
 
-Wesentliche funktionale Anforderungen:
+Key functional requirements:
 
-* Organisationen und Vereine können Hilfsbedarfe mit Ort, Zeitraum und benötigten Fähigkeiten eintragen.
-* Helfer:innen können nach passenden Einsätzen in ihrer Region suchen und sich melden.
-* Die Nutzung ist ohne langfristige Verpflichtung möglich.
+* Organizations and clubs can post volunteer opportunities with location, timeframe, and required skills.
+* Volunteers can search for matching opportunities in their region and sign up.
+* Usage is possible without any long-term commitment.
 
-.Geschäftsziele
+.Business Goals
 [cols="1,3" options="header"]
 |===
-|Ziel |Beschreibung
+|Goal |Description
 
-|Ehrenamt stärken
-|Freiwilliges Engagement sichtbar und zugänglich machen - ohne bürokratische Hürden oder langfristige Bindung.
+|Strengthen volunteering
+|Make voluntary engagement visible and accessible — without bureaucratic hurdles or long-term obligations.
 
-|Offen und nachhaltig
-|Das Projekt ist unter der GNU AGPL v3.0 lizenziert. Kein Profit, kein Closed Source, kein verlorenes Wissen. Es ist zweitrangig, wer das Projekt weiterentwickelt - der Nutzen soll im Vordergrund stehen.
+|Open and sustainable
+|The project is licensed under GNU AGPL v3.0. No profit, no closed source, no lost knowledge. It is secondary who develops the project further — the benefit to society comes first.
 
-|Niedrige Einstiegshürde
-|Sowohl für Nutzende als auch für Contributor soll der Einstieg so einfach wie möglich sein.
+|Low entry barrier
+|The entry barrier should be as low as possible for both users and contributors.
 |===
 
-=== Qualitätsziele
+=== Quality Goals
 
-Die folgenden Qualitätsziele definieren die wesentlichen Qualitätsanforderungen an Einsatzbereit und dienen als Leitfaden für architektonische Entscheidungen.
+The following quality goals define the essential quality requirements for Einsatzbereit and serve as a guide for architectural decisions.
 
-.Primäre Qualitätsziele
+.Primary Quality Goals
 [cols="1,3,1" options="header"]
 |===
-|Qualitätsmerkmal |Beschreibung |Gewichtung
+|Quality Attribute |Description |Weight
 
 include::10_quality_requirements.adoc[tag=quality_requirements]
 
 |===
 
-_Eine vollständige Liste aller Qualitätsziele mit detaillierten Szenarien findet sich in Kapitel 10 <<section-quality-scenarios, Qualitätsanforderungen>>._
+_A complete list of all quality goals with detailed scenarios can be found in Chapter 10 <<section-quality-scenarios, Quality Requirements>>._
 
-=== Stakeholder
+=== Stakeholders
 
 [cols="1,1,2" options="header"]
 |===
-|Rolle |Kontakt |Erwartungshaltung
+|Role |Contact |Expectations
 
-|Ehrenamtliche Helfer:innen
-|Endnutzer:innen
-|_„Ich hab Samstagnachmittag frei und will was Sinnvolles tun, aber bitte ohne mich erst durch drei Formulare zu kämpfen."_
+|Volunteers
+|End users
+|_"I have a free Saturday afternoon and want to do something meaningful — but please without fighting through three forms first."_
 
-*Helferin Hannah* erwartet eine intuitive Oberfläche, über die sie schnell passende Einsätze findet, ohne Registrierungshürden oder Verpflichtung.
+*Volunteer Hannah* expects an intuitive interface where she can quickly find suitable opportunities without registration hurdles or obligations.
 
-|Organisationen und Vereine
-|Endnutzer:innen
-|_„Wir brauchen am Wochenende zehn Leute für den Aufbau. Ich will das in fünf Minuten eingetragen haben, nicht in fünfzig."_
+|Organizations and clubs
+|End users
+|_"We need ten people for setup this weekend. I want to post that in five minutes, not fifty."_
 
-*Organisator Olaf* erwartet einen einfachen Weg, Hilfsbedarfe einzutragen und Helfer:innen zu erreichen, ohne technisches Vorwissen.
+*Organizer Olaf* expects a simple way to post volunteer opportunities and reach volunteers without any technical knowledge.
 
-|Contributor
-|GitHub Issues und Pull Requests
-|_„Ich will an einem Wochenende ein Feature beisteuern, nicht erst zwei Tage das Projekt verstehen müssen."_
+|Contributors
+|GitHub Issues and Pull Requests
+|_"I want to contribute a feature over a weekend, not spend two days just understanding the project."_
 
-*Contributerin Caro* erwartet simplen, gut strukturierten Code, klare Contribution-Guidelines und Dokumentation, die den Einstieg erleichtert.
+*Contributor Caro* expects simple, well-structured code, clear contribution guidelines, and documentation that makes getting started easy.
 
-|Maintainer
+|Maintainers
 |GitHub Repository
-|_„Je weniger ich nachts um zwei fixen muss, desto besser. Einfach halten, automatisieren, fertig."_
+|_"The less I have to fix at 2am, the better. Keep it simple, automate it, done."_
 
-*Maintainer Milo* erwartet geringen Pflegeaufwand durch einfache Architektur, automatisierte CI/CD-Pipelines und wenige externe Abhängigkeiten.
+*Maintainer Milo* expects low maintenance overhead through simple architecture, automated CI/CD pipelines, and few external dependencies.
 |===

@@ -1,8 +1,92 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-solution-strategy]]
-== Lösungsstrategie
+== Solution Strategy
 
+The following table summarizes the key architectural decisions and how they address the project's quality goals.
 
+.Solution Strategy Overview
+[cols="1,2,2" options="header"]
+|===
+|Quality Goal |Architectural Decision |Rationale
 
+|Simplicity
+|Clean Architecture with flat layer hierarchy (Domain → Application → Infrastructure → API)
+|Clear separation of concerns without deep nesting. Each layer has a single, well-defined responsibility. New contributors can navigate the codebase without understanding the whole system.
 
+|Simplicity
+|CQRS via MediatR (commands and queries as C# records)
+|Each use case is encapsulated in one handler class. Finding the code for a feature means finding one file. No large service classes accumulating unrelated logic.
+
+|Appropriateness
+|Feature folder structure in both backend and frontend
+|Code is organized by domain feature, not by technical layer. Adding a new feature means adding a new folder — not modifying multiple existing ones.
+
+|Maintainability
+|NSwag-generated API client for the frontend
+|The frontend API client is always in sync with the backend OpenAPI spec. Manual drift between API definition and client is impossible.
+
+|Maintainability
+|Monorepo with centralized dependency management (`Directory.Packages.props`)
+|All NuGet package versions are managed in a single file. Version updates require one change, not many.
+
+|Maintainability
+|Docker Compose for local development
+|One command (`docker compose up --build`) starts the entire stack. No manual setup of databases, Keycloak realms, or service dependencies.
+
+|Maintainability
+|GitHub Actions CI/CD → GHCR
+|Automated builds, tests, and image publishing on every push to `main`. No manual release steps.
+
+|Usability
+|Keycloak for authentication and authorization
+|Volunteers and organizers get a polished login experience without the platform needing to implement authentication itself. Role-based access control (`user`, `organisator`, `admin`) is managed centrally.
+
+|Usability
+|React 19 SPA with Tailwind CSS 4
+|Modern, responsive single-page application. Fast navigation without full page reloads. Tailwind enables consistent styling without large CSS frameworks.
+
+|Openness
+|GNU AGPL v3.0 license
+|Ensures all derivative works remain open source. Prevents the platform from being forked into a closed-source product.
+|===
+
+=== Technology Decisions at a Glance
+
+[cols="1,2" options="header"]
+|===
+|Component |Technology
+
+|Backend framework
+|.NET 10, ASP.NET Core Minimal API
+
+|ORM
+|EF Core 9 with PostgreSQL provider
+
+|CQRS / Mediator
+|MediatR
+
+|Authentication / Authorization
+|Keycloak 26.5, OIDC, JWT Bearer
+
+|Database
+|PostgreSQL 18
+
+|Frontend framework
+|React 19, Vite, TypeScript
+
+|Styling
+|Tailwind CSS 4
+
+|API client generation
+|NSwag (OpenAPI → TypeScript)
+
+|Container runtime
+|Docker, Docker Compose
+
+|CI/CD
+|GitHub Actions → GitHub Container Registry (GHCR)
+
+|Architecture documentation
+|arc42, AsciiDoc, PlantUML
+|===

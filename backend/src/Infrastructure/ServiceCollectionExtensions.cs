@@ -1,5 +1,6 @@
 ﻿using Application.Common.Keycloak;
 using Application.Common.Persistence;
+using Application.Engagements;
 using Application.VolunteerOpportunities;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
@@ -41,6 +42,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IVolunteerOpportunityReadRepository, VolunteerOpportunityReadRepository>();
+
+        services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
 
         services.ConfigureOptions<KeycloakOptionsSetup>();
 

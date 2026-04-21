@@ -1,42 +1,89 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-deployment-view]]
-== Verteilungssicht
+== Deployment View
 
+=== Infrastructure Level 1: Local Development (Docker Compose)
 
+.Deployment View — Local Development
+[plantuml, "deployment-local", png]
+....
+include::../images/deployment-local.puml[]
+....
 
+Motivation::
+The entire stack runs locally in Docker using a single `docker compose up --build` command. This ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
 
+Quality and Performance Characteristics::
+Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak realm configuration is imported automatically on first start from a versioned JSON file.
 
-=== Infrastruktur Ebene 1
+.Service Allocation
+[cols="2,1,1,2" options="header"]
+|===
+|Service |Image |Port |Notes
 
+|Frontend
+|`ghcr.io/maik-hasler/einsatzbereit/frontend`
+|4321
+|Vite dev server with hot module replacement
 
+|Backend API
+|`ghcr.io/maik-hasler/einsatzbereit/backend`
+|5000
+|ASP.NET Core, runs EF Core migrations on startup
 
+|Keycloak
+|`ghcr.io/maik-hasler/einsatzbereit/keycloak`
+|8080
+|Custom image with pre-imported `einsatzbereit` realm
 
+|PostgreSQL
+|`postgres:18`
+|5432
+|Two databases: `einsatzbereit` (app data) and `keycloak` (realm data)
 
-_**<Übersichtsdiagramm>**_
+|pgAdmin
+|`dpage/pgadmin4`
+|5050
+|Pre-configured server connection to PostgreSQL
+|===
 
-Begründung:: _<Erläuternder Text>_
+=== Infrastructure Level 2: CI/CD Pipeline
 
-Qualitäts- und/oder Leistungsmerkmale:: _<Erläuternder Text>_
+.Deployment View — CI/CD (GitHub Actions)
+[plantuml, "deployment-cicd", png]
+....
+include::../images/deployment-cicd.puml[]
+....
 
-Zuordnung von Bausteinen zu Infrastruktur:: _<Beschreibung der Zuordnung>_
+The CI/CD pipeline runs on GitHub Actions and covers two concerns: quality gates and image publishing.
 
-=== Infrastruktur Ebene 2
+==== Quality Gate (on every push / PR)
 
+* Backend: `dotnet build` + `dotnet test` (integration tests via Testcontainers)
+* Frontend: `npx playwright test` (E2E tests against the full Docker Compose stack)
+* Architecture docs: Asciidoctor build → GitHub Pages deployment
 
+==== Image Publishing (on tag push)
 
+Images are published to GitHub Container Registry (GHCR) on version tag pushes.
+Each component is tagged independently using its own prefix:
 
+[cols="1,2,2" options="header"]
+|===
+|Component |Tag format |Example
 
-==== _<Infrastrukturelement 1>_
+|Frontend
+|`frontend/v{semver}`
+|`frontend/v1.0.0`
 
-_<Diagramm + Erläuterungen>_
+|Backend
+|`backend/v{semver}`
+|`backend/v1.0.0`
 
-==== _<Infrastrukturelement 2>_
+|Keycloak
+|`keycloak/v{upstream}.{patch}`
+|`keycloak/v26.5.6.1`
+|===
 
-_<Diagramm + Erläuterungen>_
-
-...
-
-==== _<Infrastrukturelement n>_
-
-_<Diagramm + Erläuterungen>_
+See [VERSIONING.md](../../VERSIONING.md) for the full versioning and publishing strategy.

@@ -1,8 +1,70 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-architecture-constraints]]
-== Randbedingungen
+== Architecture Constraints
 
+=== Technical Constraints
 
+.Technical Constraints
+[cols="1,3" options="header"]
+|===
+|Constraint |Rationale
 
+|Docker and Docker Compose required for local development
+|All services (frontend, backend, Keycloak, PostgreSQL, pgAdmin) run in containers. This ensures a consistent development environment across all contributor machines.
 
+|GNU AGPL v3.0 license
+|All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any deployment of the platform — including modifications — must be released under the same license.
+
+|Self-hosted only — no US cloud dependencies
+|Keycloak, PostgreSQL, and all supporting infrastructure run self-hosted. No dependency on US-based cloud providers (AWS, Azure, Google Cloud) to ensure data sovereignty and GDPR compliance.
+
+|PlantUML for architecture diagrams
+|All architecture diagrams are written as PlantUML source files and rendered via `asciidoctor-diagram`. No binary diagram files are committed to the repository.
+
+|NSwag-generated API client — never hand-edited
+|The frontend API client (`api-client.ts`) is generated from the OpenAPI spec. Manual edits to this file are prohibited; changes must go through the backend OpenAPI definition.
+
+|AsciiDoc for documentation
+|Architecture documentation follows the arc42 template written in AsciiDoc. Markdown is not used for structured documentation.
+|===
+
+=== Organizational Constraints
+
+.Organizational Constraints
+[cols="1,3" options="header"]
+|===
+|Constraint |Rationale
+
+|Open-source, volunteer-driven project
+|All contributors are volunteers. Processes and tooling must respect that contributors have limited time. Complexity that requires hours of setup is unacceptable.
+
+|Single maintainer (currently)
+|The project is currently maintained by one person. Architectural decisions must minimize the operational and maintenance burden. Automation is preferred over manual processes.
+
+|Minimal external service dependencies
+|Every external service dependency is an operational responsibility. Dependencies are added only when they provide significant value that cannot be achieved with reasonable effort otherwise.
+
+|Conventional Commits for all commits
+|All commits follow the Conventional Commits specification (`feat:`, `fix:`, `docs:`, etc.) to enable automated changelog generation and clear history.
+|===
+
+=== Conventions
+
+.Conventions
+[cols="1,3" options="header"]
+|===
+|Convention |Description
+
+|Feature folder structure
+|Both backend and frontend organize code by feature: `{Layer}/{Domain}/{Feature}/v1/`. This keeps related code co-located and makes finding things predictable.
+
+|API versioning via URL path
+|All API routes include the version in the path (`/v1/...`). Breaking changes require a new version namespace.
+
+|Async all the way
+|No `.Result` or `.Wait()` calls in the backend. All I/O operations use `async`/`await` throughout the call stack.
+
+|German UI, English code
+|The user interface and end-user documentation are in German (target audience). All code, commits, issues, and pull requests are in English.
+|===
