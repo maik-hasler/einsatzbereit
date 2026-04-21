@@ -2,7 +2,7 @@
 
 ## Overview
 
-Custom Keycloak 26.5.6 image with the `einsatzbereit` realm pre-baked. Built and published to GHCR via `.github/workflows/keycloak.yml`.
+Custom Keycloak 26.6.1 image with the `einsatzbereit` realm pre-baked. Built and published to GHCR via `.github/workflows/keycloak.yml`.
 
 ```
 keycloak/
@@ -56,7 +56,7 @@ Keycloak organizations are enabled (`"organizationsEnabled": true`). The backend
 ## Docker Image
 
 Multi-stage Dockerfile:
-1. **Builder stage**: `quay.io/keycloak/keycloak:26.5.6` — runs `kc.sh build` with PostgreSQL provider
+1. **Builder stage**: `quay.io/keycloak/keycloak:26.6.1` — runs `kc.sh build` with PostgreSQL provider
 2. **Runtime stage**: Copies optimized build, runs with `--optimized` flag
 
 Required environment variables at runtime (see `README.md`):
