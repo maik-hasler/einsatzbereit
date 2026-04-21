@@ -30,7 +30,7 @@ Contained Building Blocks::
 |Exposes the versioned REST API. Implements all business logic via CQRS handlers. Validates JWT tokens, enforces role-based authorization, persists data via EF Core.
 
 |Identity Provider
-|Keycloak 26.5.6
+|Keycloak 26.6.1
 |Handles user authentication via OIDC Authorization Code Flow. Manages users, roles (`user`, `organisator`, `admin`), and organizations. Issues and signs JWT access tokens.
 
 |Application Database
