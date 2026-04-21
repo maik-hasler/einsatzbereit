@@ -1,0 +1,77 @@
+name: User Story
+description: Beschreibe eine Anforderung aus Nutzerperspektive
+title: "[Story]: "
+labels: ["user-story"]
+assignees: []
+
+body:
+  - type: dropdown
+    id: persona
+    attributes:
+      label: Persona
+      description: Welche Persona steht im Mittelpunkt dieser Story?
+      options:
+        - Volunteer Vera
+        - Organizer Olaf
+        - Contributor Caro
+        - Maintainer Milo
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User Story
+      description: Beschreibe die Anforderung im Standard-Format
+      placeholder: |
+        Als <Persona>
+        möchte ich <Aktion / Ziel>
+        damit <Nutzen / Mehrwert>
+    validations:
+      required: true
+
+  - type: textarea
+    id: akzeptanzkriterien
+    attributes:
+      label: Akzeptanzkriterien
+      description: Wann gilt diese Story als abgeschlossen? (Given/When/Then)
+      placeholder: |
+        - Gegeben: <Ausgangssituation>
+          Wenn: <Aktion>
+          Dann: <erwartetes Ergebnis>
+    validations:
+      required: true
+
+  - type: dropdown
+    id: prioritaet
+    attributes:
+      label: Priorität
+      options:
+        - Niedrig
+        - Mittel
+        - Hoch
+    validations:
+      required: true
+
+  - type: dropdown
+    id: schaetzung
+    attributes:
+      label: Schätzung (Story Points)
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+        - Zu groß – aufteilen
+
+  - type: textarea
+    id: zusaetzliche_infos
+    attributes:
+      label: Zusätzliche Informationen
+      placeholder: |
+        - Screenshots
+        - Links
+        - Kontext
+        - Abhängigkeiten
