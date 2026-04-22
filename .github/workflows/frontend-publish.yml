@@ -69,7 +69,7 @@ jobs:
         run: pnpm exec playwright install chromium --with-deps
 
       - name: Run Playwright tests
-        run: pnpm test:tests
+        run: pnpm test:e2e
 
   publish:
     runs-on: ubuntu-latest
