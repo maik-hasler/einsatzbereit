@@ -7,7 +7,8 @@ const ROOT = resolve(process.cwd(), '..');
 const AUTH_DIR = resolve(process.cwd(), 'tests/.auth');
 
 export default async function globalSetup() {
-  execSync('docker compose up -d --build', { cwd: ROOT, stdio: 'inherit' });
+  const upCmd = process.env.CI ? 'docker compose up -d' : 'docker compose up -d --build';
+  execSync(upCmd, { cwd: ROOT, stdio: 'inherit' });
   await Promise.all([
     waitFor('http://localhost:8080/realms/einsatzbereit/.well-known/openid-configuration', 'Keycloak'),
     waitFor('http://localhost:4321', 'Frontend'),
