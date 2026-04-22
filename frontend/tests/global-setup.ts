@@ -7,21 +7,24 @@ const ROOT = resolve(process.cwd(), '..');
 const AUTH_DIR = resolve(process.cwd(), 'tests/.auth');
 
 export default async function globalSetup() {
+  // CI starts the compose stack explicitly so image builds can be cached.
+  // Locally we boot the same stack here. `--wait` blocks on healthchecks for
+  // postgres/keycloak/frontend; backend has no healthcheck so we poll it below.
   if (!process.env.CI) {
-    execSync('docker compose up -d --build', { cwd: ROOT, stdio: 'inherit' });
+    execSync('docker compose up -d --wait', { cwd: ROOT, stdio: 'inherit' });
   }
-  await Promise.all([
-    waitFor('http://localhost:8080/realms/einsatzbereit/.well-known/openid-configuration', 'Keycloak'),
-    waitFor('http://localhost:4321', 'Frontend'),
-    waitFor('http://localhost:5000/v1/volunteer-opportunities?pageNumber=1&pageSize=1', 'Backend'),
-  ]);
 
-  await ensureKeycloakCors();
+  await waitFor(
+    'http://localhost:5000/v1/volunteer-opportunities?pageNumber=1&pageSize=1',
+    'Backend',
+  );
 
   mkdirSync(AUTH_DIR, { recursive: true });
   const browser = await chromium.launch();
-  await saveAuthState(browser, 'olaf', 'olaf123', `${AUTH_DIR}/olaf.json`);
-  await saveAuthState(browser, 'hannah', 'hannah123', `${AUTH_DIR}/hannah.json`);
+  await Promise.all([
+    saveAuthState(browser, 'olaf', 'olaf123', `${AUTH_DIR}/olaf.json`),
+    saveAuthState(browser, 'hannah', 'hannah123', `${AUTH_DIR}/hannah.json`),
+  ]);
   await browser.close();
 }
 
@@ -46,38 +49,6 @@ async function saveAuthState(
   await context.close();
 }
 
-async function ensureKeycloakCors(): Promise<void> {
-  const MASTER_TOKEN_URL = 'http://localhost:8080/realms/master/protocol/openid-connect/token';
-  const ADMIN_CLIENTS_URL = 'http://localhost:8080/admin/realms/einsatzbereit/clients';
-
-  const tokenRes = await fetch(MASTER_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'password',
-      client_id: 'admin-cli',
-      username: 'admin',
-      password: 'admin',
-    }),
-  });
-  const { access_token } = await tokenRes.json() as { access_token: string };
-
-  const clientsRes = await fetch(`${ADMIN_CLIENTS_URL}?clientId=frontend`, {
-    headers: { Authorization: `Bearer ${access_token}` },
-  });
-  const clients = await clientsRes.json() as Array<Record<string, unknown>>;
-  const client = clients[0];
-
-  // Patch webOrigins — realm JSON has "http://localhost:*" which Keycloak ignores for CORS.
-  // Must use "*" (allow all) or explicit origins; the postgres volume may cache the old realm.
-  const updated = { ...client, webOrigins: ['*'] };
-  await fetch(`${ADMIN_CLIENTS_URL}/${client.id as string}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${access_token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(updated),
-  });
-}
-
 async function waitFor(url: string, name: string, timeoutMs = 120_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -87,7 +58,7 @@ async function waitFor(url: string, name: string, timeoutMs = 120_000): Promise<
     } catch {
       // not ready yet
     }
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`${name} did not become ready within timeout`);
 }

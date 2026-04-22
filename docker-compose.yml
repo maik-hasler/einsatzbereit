@@ -44,6 +44,7 @@ services:
         target: /pgpass
         
   keycloak:
+    image: einsatzbereit-keycloak
     build:
       context: ./keycloak
       dockerfile: Dockerfile.integration
@@ -75,6 +76,7 @@ services:
         condition: service_healthy
 
   backend:
+    image: einsatzbereit-backend
     build:
       context: ./backend
       dockerfile: src/Api/Dockerfile
@@ -89,6 +91,7 @@ services:
         condition: service_started
 
   frontend:
+    image: einsatzbereit-frontend
     build: ./frontend
     ports:
       - "4321:80"
