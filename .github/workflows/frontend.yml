@@ -152,7 +152,9 @@ jobs:
         run: pnpm exec playwright install-deps chromium
 
       - name: Start backend
-        run: dotnet run --project src/Api --no-build --configuration Release &
+        run: |
+          nohup dotnet run --project src/Api --no-build --configuration Release > /tmp/backend.log 2>&1 &
+          disown
         working-directory: backend
         env:
           ASPNETCORE_ENVIRONMENT: Development
@@ -164,7 +166,21 @@ jobs:
           Keycloak__BaseUrl: http://localhost:8080
 
       - name: Start frontend dev server
-        run: pnpm dev &
+        run: |
+          nohup pnpm dev > /tmp/frontend.log 2>&1 &
+          disown
 
       - name: Run Playwright tests
         run: pnpm test:e2e
+
+      - name: Dump backend log
+        if: failure()
+        run: cat /tmp/backend.log || true
+
+      - name: Dump frontend log
+        if: failure()
+        run: cat /tmp/frontend.log || true
+
+      - name: Dump keycloak log
+        if: failure()
+        run: docker logs keycloak || true
