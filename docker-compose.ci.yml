@@ -1,5 +1,6 @@
 services:
   keycloak:
+    entrypoint: ["/opt/keycloak/bin/kc.sh"]
     command: ["start-dev", "--import-realm"]
     environment:
       KC_DB: dev-mem

@@ -199,3 +199,71 @@ Tests are isolated by storage state + `resetState()`. Two workers is safe.
 - **Postgres caching**: Already well-implemented. Left as-is.
 - **GHA layer cache (bake scopes)**: Already correct. Left as-is.
 - **`retries`/`timeout` on Keycloak health check**: Reduced slightly because H2 is fast; base values remain reasonable as fallback.
+
+---
+
+## Post-implementation bug: Keycloak still fails with `Error` state
+
+_Discovered 2026-04-23 after the fixes above were committed._
+
+### Symptom
+
+```
+Container keycloak  Starting
+Container keycloak  Started
+Container keycloak  Waiting
+Container keycloak  Error
+```
+
+### Root cause — ENTRYPOINT + command conflict
+
+`Dockerfile.integration` embeds the subcommand inside ENTRYPOINT:
+
+```dockerfile
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized"]
+```
+
+Docker Compose `command:` overrides Docker's **CMD**, not ENTRYPOINT. Because there is no CMD in the Dockerfile, `start --optimized` lives entirely inside ENTRYPOINT. The `docker-compose.ci.yml` override:
+
+```yaml
+command: ["start-dev", "--import-realm"]
+```
+
+appends to ENTRYPOINT, making Docker run:
+
+```
+/opt/keycloak/bin/kc.sh start --optimized start-dev --import-realm
+```
+
+`start-dev` is not a valid argument to the `start` subcommand → Keycloak exits immediately → container goes to `Error` state.
+
+### Fix — add `entrypoint` override to `docker-compose.ci.yml`
+
+```yaml
+services:
+  keycloak:
+    entrypoint: ["/opt/keycloak/bin/kc.sh"]   # reset; strips "start --optimized" from ENTRYPOINT
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: dev-mem
+    healthcheck:
+      start_period: 30s
+      retries: 12
+```
+
+Result: Docker runs `/opt/keycloak/bin/kc.sh start-dev --import-realm` ✓
+
+---
+
+## Should Playwright run as a Docker image in CI?
+
+**No.** The current approach — install Chromium directly on the runner and cache it with `actions/cache` — is the industry standard for E2E tests against a local Docker Compose stack.
+
+The `mcr.microsoft.com/playwright` Docker image approach has two concrete downsides in this setup:
+
+1. **Networking complexity.** The services (backend, keycloak, frontend) run in Docker Compose on the runner host. A Playwright container needs `--network host` or explicit hostname overrides to reach them. This is extra wiring with no benefit.
+2. **Slower cold runs.** The image is ~500 MB. Without a separate image cache step it pulls on every cold run.
+
+The main argument for the Docker image — consistent browser environment across platforms — does not apply here since CI always runs on `ubuntu-latest`.
+
+Keep the current host-installed + cached approach.
