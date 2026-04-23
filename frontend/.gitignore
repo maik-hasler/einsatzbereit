@@ -1,6 +1,9 @@
 # build output
 dist/
 
+# astro generated types (leftover from astro→react migration)
+.astro/
+
 # dependencies
 node_modules/
 
