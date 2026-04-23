@@ -66,7 +66,7 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9000/health/ready || exit 1"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -84,6 +84,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
     ports:
       - "5000:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,8 +107,10 @@ services:
       timeout: 10s
       retries: 10
     depends_on:
-      - backend
-      - keycloak
+      backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
 
 volumes:
   postgres_data:

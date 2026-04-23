@@ -45,7 +45,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: lint
     defaults:
       run:
         working-directory: frontend
@@ -69,7 +68,7 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [lint, build]
     # Pin the compose project name so `docker buildx bake` and `docker compose up`
     # agree on image tags (both default to <project-name>-<service>).
     env:
@@ -121,7 +120,8 @@ jobs:
 
       - name: Start services
         # Skip pgadmin (pull_policy: always, not used by tests).
-        run: docker compose up -d --no-build --wait postgres keycloak backend frontend
+        # docker-compose.ci.yml overrides Keycloak to use H2 in-memory (no postgres dep, ~30s startup).
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --no-build --wait postgres keycloak backend frontend
 
       - uses: pnpm/action-setup@v5
         with:
@@ -159,7 +159,7 @@ jobs:
 
       - name: Dump container logs on failure
         if: failure()
-        run: docker compose logs --no-color
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color
 
       - name: Upload Playwright report on failure
         if: failure()

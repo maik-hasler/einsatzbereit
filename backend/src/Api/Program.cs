@@ -64,6 +64,8 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod()));
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddEndpoints();
 
 builder.Services.AddOpenApi("v1", options =>
@@ -98,6 +100,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapEndpoints();
 
 await app.RunAsync();
