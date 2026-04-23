@@ -120,7 +120,7 @@ jobs:
 
       - name: Start services
         # Skip pgadmin (pull_policy: always, not used by tests).
-        # docker-compose.ci.yml overrides Keycloak to use H2 in-memory (no postgres dep, ~30s startup).
+        # docker-compose.ci.yml overrides Keycloak to KC_DB=dev-mem (no postgres dep).
         run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --no-build --wait postgres keycloak backend frontend
 
       - uses: pnpm/action-setup@v5

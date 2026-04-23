@@ -15,6 +15,11 @@ export default async function globalSetup() {
   }
 
   await waitFor(
+    'http://localhost:8080/realms/einsatzbereit/.well-known/openid-configuration',
+    'Keycloak',
+  );
+
+  await waitFor(
     'http://localhost:5000/v1/volunteer-opportunities?pageNumber=1&pageSize=1',
     'Backend',
   );

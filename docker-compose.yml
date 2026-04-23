@@ -60,17 +60,10 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-    command: [ "--import-realm" ]
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import
     ports:
       - "8080:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 60s
     depends_on:
       postgres:
         condition: service_healthy
@@ -110,7 +103,7 @@ services:
       backend:
         condition: service_healthy
       keycloak:
-        condition: service_healthy
+        condition: service_started
 
 volumes:
   postgres_data:
