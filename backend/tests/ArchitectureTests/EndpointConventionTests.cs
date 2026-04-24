@@ -1,12 +1,11 @@
 using AwesomeAssertions;
-using Xunit;
 
 namespace ArchitectureTests;
 
 public sealed class EndpointConventionTests
 {
-    [Theory]
-    [MemberData(nameof(TestData.EndpointNamingSuffix), MemberType = typeof(TestData))]
+    [Test]
+    [MethodDataSource(typeof(TestData), nameof(TestData.EndpointNamingSuffix))]
     public void EndpointImplementations_ShouldHaveNameEndingWith_Endpoint(
         Type type,
         string expectedSuffix)

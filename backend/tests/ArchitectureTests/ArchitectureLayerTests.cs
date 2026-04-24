@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using NetArchTest.Rules;
-using Xunit;
 
 namespace ArchitectureTests;
 
 public sealed class ArchitectureLayerTests
 {
-    [Fact]
+    [Test]
     public void DomainLayer_ShouldNotDependOn_ApplicationLayer()
     {
         var result = Types
@@ -18,7 +17,7 @@ public sealed class ArchitectureLayerTests
         result.IsSuccessful.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void DomainLayer_ShouldNotDependOn_InfrastructureLayer()
     {
         var result = Types
@@ -30,7 +29,7 @@ public sealed class ArchitectureLayerTests
         result.IsSuccessful.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void DomainLayer_ShouldNotDependOn_PresentationLayer()
     {
         var result = Types
@@ -42,7 +41,7 @@ public sealed class ArchitectureLayerTests
         result.IsSuccessful.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ApplicationLayer_ShouldNotDependOn_InfrastructureLayer()
     {
         var result = Types
@@ -54,7 +53,7 @@ public sealed class ArchitectureLayerTests
         result.IsSuccessful.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ApplicationLayer_ShouldNotDependOn_PresentationLayer()
     {
         var result = Types
@@ -66,7 +65,7 @@ public sealed class ArchitectureLayerTests
         result.IsSuccessful.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void InfrastructureLayer_ShouldNotDependOn_PresentationLayer()
     {
         var result = Types

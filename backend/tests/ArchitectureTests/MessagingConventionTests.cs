@@ -1,14 +1,13 @@
 using Application.Common.Messaging;
 using AwesomeAssertions;
 using NetArchTest.Rules;
-using Xunit;
 
 namespace ArchitectureTests;
 
 public sealed class MessagingConventionTests
 {
-    [Theory]
-    [MemberData(nameof(TestData.CommandNamingSuffix), MemberType = typeof(TestData))]
+    [Test]
+    [MethodDataSource(typeof(TestData), nameof(TestData.CommandNamingSuffix))]
     public void CommandImplementations_ShouldHaveNameEndingWith_Command(
         Type type,
         string expectedSuffix)
@@ -16,9 +15,9 @@ public sealed class MessagingConventionTests
         type.Name.Should().EndWith(expectedSuffix,
             $"{type.Name} should end with '{expectedSuffix}'");
     }
-    
-    [Theory]
-    [MemberData(nameof(TestData.CommandHandlerNamingSuffix), MemberType = typeof(TestData))]
+
+    [Test]
+    [MethodDataSource(typeof(TestData), nameof(TestData.CommandHandlerNamingSuffix))]
     public void CommandHandlerImplementations_ShouldHaveNameEndingWith_CommandHandler(
         Type type,
         string expectedSuffix)
@@ -26,9 +25,9 @@ public sealed class MessagingConventionTests
         type.Name.Should().EndWith(expectedSuffix,
             $"{type.Name} should end with '{expectedSuffix}'");
     }
-    
-    [Theory]
-    [MemberData(nameof(TestData.QueryNamingSuffix), MemberType = typeof(TestData))]
+
+    [Test]
+    [MethodDataSource(typeof(TestData), nameof(TestData.QueryNamingSuffix))]
     public void QueryImplementations_ShouldHaveNameEndingWith_Query(
         Type type,
         string expectedSuffix)
@@ -36,9 +35,9 @@ public sealed class MessagingConventionTests
         type.Name.Should().EndWith(expectedSuffix,
             $"{type.Name} should end with '{expectedSuffix}'");
     }
-    
-    [Theory]
-    [MemberData(nameof(TestData.QueryHandlerNamingSuffix), MemberType = typeof(TestData))]
+
+    [Test]
+    [MethodDataSource(typeof(TestData), nameof(TestData.QueryHandlerNamingSuffix))]
     public void QueryHandlerImplementations_ShouldHaveNameEndingWith_QueryHandler(
         Type type,
         string expectedSuffix)
@@ -46,9 +45,9 @@ public sealed class MessagingConventionTests
         type.Name.Should().EndWith(expectedSuffix,
             $"{type.Name} should end with '{expectedSuffix}'");
     }
-    
-    [Theory]
-    [MemberData(nameof(TestData.HandlerAndCommandOrQueryPairs), MemberType = typeof(TestData))]
+
+    [Test]
+    [MethodDataSource(typeof(TestData), nameof(TestData.HandlerAndCommandOrQueryPairs))]
     public void Handlers_ShouldResideInSameNamespace_AsTheirCommandOrQuery(
         Type handlerType,
         Type commandOrQueryType)
@@ -58,7 +57,7 @@ public sealed class MessagingConventionTests
             $"{handlerType.Name} should be in the same namespace as {commandOrQueryType.Name}");
     }
 
-    [Fact]
+    [Test]
     public void NoType_ShouldDirectlyImplement_IRequest()
     {
         var types = Types
@@ -81,7 +80,7 @@ public sealed class MessagingConventionTests
             "all types should implement ICommand<T> or IQuery<T> instead of IRequest<T> directly");
     }
 
-    [Fact]
+    [Test]
     public void NoType_ShouldDirectlyImplement_IRequestHandler()
     {
         var types = Types
