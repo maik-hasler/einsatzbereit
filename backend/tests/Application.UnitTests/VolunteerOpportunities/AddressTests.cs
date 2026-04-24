@@ -1,13 +1,13 @@
 using AwesomeAssertions;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
-using Xunit;
+
 
 namespace Application.UnitTests.VolunteerOpportunities;
 
 public class AddressTests
 {
-    [Fact]
+    [Test]
     public void Constructor_ShouldCreateAddress_WithValidData()
     {
         // Act
@@ -70,7 +70,7 @@ public class AddressTests
             .WithMessage("City must not be empty.");
     }
 
-    [Fact]
+    [Test]
     public void Equals_ShouldReturnTrue_ForSameValues()
     {
         var address1 = new Address("Straße", "1", "12345", "Berlin");

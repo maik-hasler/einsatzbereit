@@ -6,7 +6,7 @@ using Domain.Organizations;
 using Domain.Primitives;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using Xunit;
+
 
 namespace Application.UnitTests.Organizations.UpdateOrganization;
 
@@ -23,7 +23,7 @@ public class UpdateOrganizationCommandHandlerTests
         _sut = new UpdateOrganizationCommandHandler(_dbContext);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldUpdateOrganization_WithAllFields()
     {
         // Arrange
@@ -57,7 +57,7 @@ public class UpdateOrganizationCommandHandlerTests
         org.Address.City.Should().Be("Berlin");
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldClearOptionalFields_WhenNullProvided()
     {
         // Arrange
@@ -79,7 +79,7 @@ public class UpdateOrganizationCommandHandlerTests
         org.Address.Should().BeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldThrow_WhenOrganizationNotFound()
     {
         // Arrange
@@ -98,7 +98,7 @@ public class UpdateOrganizationCommandHandlerTests
         await act.Should().ThrowAsync<DomainException>();
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldThrow_WhenNameIsEmpty()
     {
         // Arrange

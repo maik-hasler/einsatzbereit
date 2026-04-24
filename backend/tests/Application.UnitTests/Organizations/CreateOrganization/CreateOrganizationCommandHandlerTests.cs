@@ -5,7 +5,7 @@ using AwesomeAssertions;
 using Domain.Organizations;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using Xunit;
+
 
 namespace Application.UnitTests.Organizations.CreateOrganization;
 
@@ -22,7 +22,7 @@ public class CreateOrganizationCommandHandlerTests
             _dbContext);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldCreateOrganizationInKeycloakAndDatabase()
     {
         // Arrange
@@ -42,7 +42,7 @@ public class CreateOrganizationCommandHandlerTests
         result.Name.Should().Be("Feuerwehr Musterstadt");
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldAddCreatorAsMemberInKeycloak()
     {
         // Arrange
@@ -62,7 +62,7 @@ public class CreateOrganizationCommandHandlerTests
         await _keycloakService.Received(1).AddMemberAsync(keycloakId, userId, ct);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldAssignOrganizerRoleToCreator()
     {
         // Arrange
@@ -82,7 +82,7 @@ public class CreateOrganizationCommandHandlerTests
         await _keycloakService.Received(1).AssignOrganizerRoleAsync(userId, ct);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldPersistOrganizationToRepository()
     {
         // Arrange
@@ -104,7 +104,7 @@ public class CreateOrganizationCommandHandlerTests
             ct);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldCallKeycloakOperationsInCorrectOrder()
     {
         // Arrange
@@ -138,7 +138,7 @@ public class CreateOrganizationCommandHandlerTests
             "CreateOrganization", "AddMember", "AssignRole");
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldPropagateException_WhenKeycloakCreateFails()
     {
         // Arrange
@@ -159,7 +159,7 @@ public class CreateOrganizationCommandHandlerTests
             Arg.Any<Organization>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldPropagateException_WhenAddMemberFails()
     {
         // Arrange

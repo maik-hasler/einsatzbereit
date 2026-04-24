@@ -5,7 +5,7 @@ using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
 using NSubstitute;
-using Xunit;
+
 
 namespace Application.UnitTests.Organizations.GetOrganizationDetails;
 
@@ -23,7 +23,7 @@ public class GetOrganizationDetailsQueryHandlerTests
         _sut = new GetOrganizationDetailsQueryHandler(_dbContext, _keycloakService);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldReturnNull_WhenOrganizationNotFound()
     {
         // Arrange
@@ -40,7 +40,7 @@ public class GetOrganizationDetailsQueryHandlerTests
         await _keycloakService.DidNotReceive().GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldReturnOrganizationDetails_WithMembers()
     {
         // Arrange
@@ -66,7 +66,7 @@ public class GetOrganizationDetailsQueryHandlerTests
         result.Members[0].IsOrganisator.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldMapAddress_WhenAddressIsPresent()
     {
         // Arrange
@@ -88,7 +88,7 @@ public class GetOrganizationDetailsQueryHandlerTests
         result.Address.City.Should().Be("Berlin");
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldReturnNullAddress_WhenNoAddressSet()
     {
         // Arrange

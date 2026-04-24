@@ -1,13 +1,13 @@
 ﻿using Application.Common.Messaging;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
+
 
 namespace Application.UnitTests.Messaging;
 
 public class SenderTests
 {
-    [Fact]
+    [Test]
     public async Task Send_ShouldReturnResponse_WhenHandlerExists()
     {
         // Arrange
@@ -27,7 +27,7 @@ public class SenderTests
         result.Should().Be("Handled: Hello");
     }
 
-    [Fact]
+    [Test]
     public async Task Send_ShouldThrowException_WhenHandlerIsMissing()
     {
         // Arrange
@@ -47,7 +47,7 @@ public class SenderTests
             .WithMessage("*No service for type 'Application.Common.Messaging.IRequestHandler*");
     }
 
-    [Fact]
+    [Test]
     public async Task Send_ShouldExecutePipelineBehavior_WhenBehaviorIsRegistered()
     {
         // Arrange
@@ -72,7 +72,7 @@ public class SenderTests
         log.Should().ContainInOrder("Before", "After");
     }
 
-    [Fact]
+    [Test]
     public async Task Send_ShouldRespectPipelineOrder_WhenMultipleBehaviorsAreRegistered()
     {
         // Arrange

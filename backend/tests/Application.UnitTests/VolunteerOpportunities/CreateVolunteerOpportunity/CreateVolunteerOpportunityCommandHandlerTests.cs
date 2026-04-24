@@ -4,7 +4,7 @@ using AwesomeAssertions;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
-using Xunit;
+
 
 namespace Application.UnitTests.VolunteerOpportunities.CreateVolunteerOpportunity;
 
@@ -21,7 +21,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
         _sut = new CreateVolunteerOpportunityCommandHandler(_dbContext);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldCreateAndPersistOpportunity_WithCorrectData()
     {
         // Arrange
@@ -47,7 +47,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
         result.ParticipationType.Should().Be(ParticipationType.Waitlist);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldCallRepositoryAndUnitOfWork()
     {
         // Arrange

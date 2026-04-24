@@ -2,7 +2,7 @@ using AwesomeAssertions;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
-using Xunit;
+
 
 namespace Application.UnitTests.VolunteerOpportunities;
 
@@ -11,7 +11,7 @@ public class VolunteerOpportunityTests
     private static readonly OrganizationId TestOrganizationId = new(Guid.NewGuid());
     private static readonly Address TestAddress = new("Musterstraße", "1", "12345", "Berlin");
 
-    [Fact]
+    [Test]
     public void Create_ShouldCreateVolunteerOpportunity_WithValidData()
     {
         // Act
@@ -34,7 +34,7 @@ public class VolunteerOpportunityTests
         opportunity.ParticipationType.Should().Be(ParticipationType.Waitlist);
     }
 
-    [Fact]
+    [Test]
     public void Create_ShouldCreateRemoteOpportunity()
     {
         // Act
@@ -94,7 +94,7 @@ public class VolunteerOpportunityTests
             .WithMessage("Description must not be empty.");
     }
 
-    [Fact]
+    [Test]
     public void Create_ShouldThrow_WhenNotRemoteAndAddressIsNull()
     {
         // Act
@@ -112,7 +112,7 @@ public class VolunteerOpportunityTests
             .WithMessage("Address is required for non-remote opportunities.");
     }
 
-    [Fact]
+    [Test]
     public void Create_ShouldSetOccurrenceRecurring()
     {
         // Act

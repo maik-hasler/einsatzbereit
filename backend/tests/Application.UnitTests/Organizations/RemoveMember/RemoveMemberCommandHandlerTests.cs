@@ -3,7 +3,7 @@ using Application.Organizations.RemoveMember.v1;
 using AwesomeAssertions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using Xunit;
+
 
 namespace Application.UnitTests.Organizations.RemoveMember;
 
@@ -17,7 +17,7 @@ public class RemoveMemberCommandHandlerTests
         _sut = new RemoveMemberCommandHandler(_keycloakService);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldCallRemoveMemberOnKeycloak()
     {
         // Arrange
@@ -33,7 +33,7 @@ public class RemoveMemberCommandHandlerTests
         await _keycloakService.Received(1).RemoveMemberAsync(orgId, userId, ct);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldReturnTrue_OnSuccess()
     {
         // Arrange
@@ -47,7 +47,7 @@ public class RemoveMemberCommandHandlerTests
         result.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldPropagateException_WhenKeycloakFails()
     {
         // Arrange
