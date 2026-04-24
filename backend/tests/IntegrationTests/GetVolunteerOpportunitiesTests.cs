@@ -1,42 +1,30 @@
 using System.Net.Http.Headers;
 using AwesomeAssertions;
-using Xunit;
 
 namespace IntegrationTests;
 
-[Collection("IntegrationTests")]
-public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
-    : IAsyncLifetime
+[ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IAsyncInitializer
 {
-    public async ValueTask InitializeAsync()
-    {
-        await fixture.ResetDatabaseAsync();
-    }
+    public async Task InitializeAsync() => await fixture.ResetDatabaseAsync();
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist()
     {
-        // Arrange
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
         var ct = TestContext.Current.CancellationToken;
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
-        // Assert
         result.TotalItems.Should().Be(0);
         result.Items.Should().BeEmpty();
         result.CurrentPage.Should().Be(1);
         result.PageCount.Should().Be(0);
     }
 
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnAll_WhenOpportunitiesExist()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
@@ -44,21 +32,17 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", ct);
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2", ct);
 
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
-        // Assert
         result.TotalItems.Should().Be(2);
         result.Items.Should().HaveCount(2);
     }
 
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnCorrectPageSize_WhenPaginationIsApplied()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
@@ -67,23 +51,19 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2", ct);
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 3", "Description 3", ct);
 
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(1, 2, null, null, null, null, ct);
 
-        // Assert
         result.TotalItems.Should().Be(3);
         result.Items.Should().HaveCount(2);
         result.PageCount.Should().Be(2);
         result.CurrentPage.Should().Be(1);
     }
 
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnRemainingItems_WhenRequestingLastPage()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
@@ -92,22 +72,18 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2", ct);
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 3", "Description 3", ct);
 
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, null, null, null, null, ct);
 
-        // Assert
         result.TotalItems.Should().Be(3);
         result.Items.Should().HaveCount(1);
         result.CurrentPage.Should().Be(2);
     }
 
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnOrderedByCreatedOnDescending()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
@@ -116,13 +92,10 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         var second = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Second", "Created second", ct);
         var third = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Third", "Created last", ct);
 
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
-        // Assert
         var items = result.Items.ToList();
         items.Should().HaveCount(3);
         items[0].Id.Should().Be(third.Id);
@@ -130,44 +103,36 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         items[2].Id.Should().Be(first.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnOrganizationName()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
 
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", ct);
 
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
-        // Assert
         var item = result.Items.Single();
         item.OrganizationName.Should().Contain("Testorg_");
     }
 
-    [Fact]
+    [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnAddressAndOccurrence()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
 
         await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", ct);
 
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var sut = new EinsatzbereitApi(httpClient);
+        var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
 
-        // Assert
         var item = result.Items.Single();
         item.Street.Should().Be("Musterstraße");
         item.HouseNumber.Should().Be("1");
@@ -178,18 +143,16 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
         item.IsRemote.Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var token = await fixture.GetAccessTokenAsync("hannah", "hannah123");
-        var httpClient = fixture.Factory.CreateDefaultClient();
+        var httpClient = fixture.CreateHttpClient();
         httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
         var client = new EinsatzbereitApi(httpClient);
 
-        // Act
         var act = () => client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
         {
             Title = "Not allowed",
@@ -203,20 +166,17 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
             ParticipationType = "Waitlist"
         }, ct);
 
-        // Assert
         var exception = await act.Should().ThrowAsync<ApiException>();
         exception.Which.StatusCode.Should().Be(403);
     }
 
-    [Fact]
+    [Test]
     public async Task CreateVolunteerOpportunity_ShouldPersistAddressAndOccurrence()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
         var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
 
-        // Act
         var result = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
         {
             Title = "Opportunity with address",
@@ -230,7 +190,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
             ParticipationType = "IndividualContact"
         }, ct);
 
-        // Assert
         result.Street.Should().Be("Hauptstraße");
         result.HouseNumber.Should().Be("42a");
         result.ZipCode.Should().Be("54321");
@@ -242,7 +201,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
     private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
     {
         var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
-        var httpClient = fixture.Factory.CreateDefaultClient();
+        var httpClient = fixture.CreateHttpClient();
         httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
         return new EinsatzbereitApi(httpClient);

@@ -1,96 +1,75 @@
 using System.Net.Http.Headers;
 using AwesomeAssertions;
-using Xunit;
 
 namespace IntegrationTests;
 
-[Collection("IntegrationTests")]
-public class OrganizationSettingsTests(IntegrationTestFixture fixture)
-    : IAsyncLifetime
+[ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncInitializer
 {
-    public async ValueTask InitializeAsync()
-    {
-        await fixture.ResetDatabaseAsync();
-    }
-
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public async Task InitializeAsync() => await fixture.ResetDatabaseAsync();
 
     // ── GetOrganizationDetails ──────────────────────────────────────────────
 
-    [Fact]
+    [Test]
     public async Task GetOrganizationDetails_ShouldReturnDetails_AfterCreation()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123", ct);
+        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
         var created = await client.CreateOrganizationAsync(
             new CreateOrganizationRequest { Name = "Feuerwehr Details Test" }, ct);
 
-        // Act
         var result = await client.GetOrganizationDetailsAsync(created.Id.Value, ct);
 
-        // Assert
         result.Id.Should().Be(created.Id.Value);
         result.Name.Should().Be("Feuerwehr Details Test");
         result.Members.Should().NotBeEmpty();
         result.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
     }
 
-    [Fact]
+    [Test]
     public async Task GetOrganizationDetails_ShouldReturn401_WhenNotAuthenticated()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var client = new EinsatzbereitApi(httpClient);
+        var client = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), ct);
 
-        // Assert
         var ex = await act.Should().ThrowAsync<ApiException>();
         ex.Which.StatusCode.Should().Be(401);
     }
 
-    [Fact]
+    [Test]
     public async Task GetOrganizationDetails_ShouldReturn403_WhenUserLacksOrganisatorRole()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var client = await CreateAuthenticatedClientAsync("hannah", "hannah123", ct);
+        var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
 
-        // Act
         var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), ct);
 
-        // Assert
         var ex = await act.Should().ThrowAsync<ApiException>();
         ex.Which.StatusCode.Should().Be(403);
     }
 
-    [Fact]
+    [Test]
     public async Task GetOrganizationDetails_ShouldReturn404_WhenOrganizationDoesNotExist()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123", ct);
+        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
-        // Act
         var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), ct);
 
-        // Assert
         var ex = await act.Should().ThrowAsync<ApiException>();
         ex.Which.StatusCode.Should().Be(404);
     }
 
     // ── UpdateOrganization ──────────────────────────────────────────────────
 
-    [Fact]
+    [Test]
     public async Task UpdateOrganization_ShouldReturn204_WithValidData()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123", ct);
+        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
         var created = await client.CreateOrganizationAsync(
             new CreateOrganizationRequest { Name = "Vor Update" }, ct);
@@ -111,10 +90,8 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture)
             }
         };
 
-        // Act
         await client.UpdateOrganizationAsync(created.Id.Value, updateRequest, ct);
 
-        // Assert — verify via GET
         var result = await client.GetOrganizationDetailsAsync(created.Id.Value, ct);
         result.Name.Should().Be("Nach Update");
         result.Description.Should().Be("Neue Beschreibung");
@@ -123,31 +100,26 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture)
         result.Address!.City.Should().Be("Berlin");
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateOrganization_ShouldReturn401_WhenNotAuthenticated()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var client = new EinsatzbereitApi(httpClient);
+        var client = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var act = () => client.UpdateOrganizationAsync(
             Guid.NewGuid(),
             new UpdateOrganizationRequest { Name = "X" },
             ct);
 
-        // Assert
         var ex = await act.Should().ThrowAsync<ApiException>();
         ex.Which.StatusCode.Should().Be(401);
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateOrganization_ShouldClearAddress_WhenNullPassed()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123", ct);
+        var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
         var created = await client.CreateOrganizationAsync(
             new CreateOrganizationRequest { Name = "Org mit Adresse" }, ct);
@@ -161,41 +133,34 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture)
             }
         }, ct);
 
-        // Act — remove address
         await client.UpdateOrganizationAsync(created.Id.Value, new UpdateOrganizationRequest
         {
             Name = "Org mit Adresse",
             Address = null
         }, ct);
 
-        // Assert
         var result = await client.GetOrganizationDetailsAsync(created.Id.Value, ct);
         result.Address.Should().BeNull();
     }
 
     // ── RemoveMember ────────────────────────────────────────────────────────
 
-    [Fact]
+    [Test]
     public async Task RemoveMember_ShouldReturn401_WhenNotAuthenticated()
     {
-        // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var httpClient = fixture.Factory.CreateDefaultClient();
-        var client = new EinsatzbereitApi(httpClient);
+        var client = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        // Act
         var act = () => client.RemoveMemberAsync(Guid.NewGuid(), Guid.NewGuid(), ct);
 
-        // Assert
         var ex = await act.Should().ThrowAsync<ApiException>();
         ex.Which.StatusCode.Should().Be(401);
     }
 
-    private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
-        string username, string password, CancellationToken cancellationToken)
+    private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
     {
         var token = await fixture.GetAccessTokenAsync(username, password);
-        var httpClient = fixture.Factory.CreateDefaultClient();
+        var httpClient = fixture.CreateHttpClient();
         httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
         return new EinsatzbereitApi(httpClient);
