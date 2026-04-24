@@ -10,6 +10,8 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices();
 
@@ -32,17 +34,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = builder.Configuration["Authentication:Authority"];
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.MapInboundClaims = false;
-        // KC_HOSTNAME causes jwks_uri in the discovery document to use the external hostname
-        // (e.g. localhost:8080), which is unreachable from inside Docker. Rewrite to the
-        // internal Docker service name so JWKS can be fetched for token signature validation.
-        options.BackchannelHttpHandler = new DockerRewriteHandler(
-            from: builder.Configuration["Authentication:ExternalHost"],
-            to: builder.Configuration["Authentication:InternalHost"]);
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false,
             RoleClaimType = "roles",
-            // Accept tokens issued via the external hostname (browser) and internal hostname
             ValidIssuers = builder.Configuration.GetSection("Authentication:ValidIssuers").Get<string[]>(),
         };
     });
@@ -88,11 +83,13 @@ if (app.Environment.IsDevelopment())
     var scope = app.Services.CreateScope();
 
     var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
-    
+
     await initializer.MigrateAsync();
-    
+
     app.MapOpenApi();
 }
+
+app.MapDefaultEndpoints();
 
 app.UseCors();
 app.UseAuthentication();
@@ -101,22 +98,3 @@ app.UseAuthorization();
 app.MapEndpoints();
 
 await app.RunAsync();
-
-// Rewrites backchannel requests (OIDC metadata, JWKS) from an external hostname to an
-// internal one. Necessary when KC_HOSTNAME differs from the Docker-internal service name.
-internal sealed class DockerRewriteHandler(string? from, string? to) : HttpClientHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        if (from is not null && to is not null && request.RequestUri is not null)
-        {
-            var uri = request.RequestUri.ToString();
-            if (uri.Contains(from, StringComparison.OrdinalIgnoreCase))
-            {
-                request.RequestUri = new Uri(uri.Replace(from, to, StringComparison.OrdinalIgnoreCase));
-            }
-        }
-        return base.SendAsync(request, cancellationToken);
-    }
-}

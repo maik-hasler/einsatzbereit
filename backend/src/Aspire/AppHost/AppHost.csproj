@@ -1,0 +1,12 @@
+<Project Sdk="Aspire.AppHost.Sdk/9.3.0">
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Api\Api.csproj" />
+  </ItemGroup>
+
+</Project>
