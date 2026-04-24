@@ -12,9 +12,13 @@ var keycloakRealmPath = Path.GetFullPath(
 var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.6.1")
     .WithEnvironment("KC_DB", "dev-file")
     .WithBindMount(keycloakRealmPath, "/opt/keycloak/data/import", isReadOnly: true)
-    .WithArgs("start-dev", "--import-realm");
+    .WithArgs("start-dev", "--import-realm")
+    .WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);
 
 var keycloakEndpoint = keycloak.GetEndpoint("http");
+
+var frontend = builder.AddViteApp("frontend", "../../../../frontend")
+    .WithPnpm();
 
 var backend = builder.AddProject<Projects.Api>("backend")
     .WithReference(database)
@@ -26,10 +30,11 @@ var backend = builder.AddProject<Projects.Api>("backend")
         ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
     .WithEnvironment("Keycloak__BaseUrl",
         ReferenceExpression.Create($"{keycloakEndpoint}"))
-    .WithEnvironment("Cors__Origins__0", "http://localhost:4321");
+    .WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 
-builder.AddViteApp("frontend", "../../../../frontend")
+frontend
     .WithReference(backend)
-    .WaitFor(backend);
+    .WaitFor(backend)
+    .WithEnvironment("VITE_API_URL", backend.GetEndpoint("https"));
 
 builder.Build().Run();

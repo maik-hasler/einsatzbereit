@@ -22,6 +22,10 @@ public class IntegrationTestFixture
         var appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<AppHost>();
 
+        var frontend = appHost.Resources.FirstOrDefault(r => r.Name == "frontend");
+        if (frontend is not null)
+            appHost.Resources.Remove(frontend);
+
         appHost.Services.ConfigureHttpClientDefaults(http =>
             http.AddStandardResilienceHandler());
 

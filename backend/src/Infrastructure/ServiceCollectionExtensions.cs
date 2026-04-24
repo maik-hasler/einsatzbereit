@@ -29,7 +29,7 @@ public static class ServiceCollectionExtensions
                 sp.GetServices<ISaveChangesInterceptor>());
 
             options.UseNpgsql(
-                sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.Database,
+                sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.Einsatzbereit,
                 mig => mig.MigrationsAssembly("Infrastructure"));
 
             options.UseSnakeCaseNamingConvention();
