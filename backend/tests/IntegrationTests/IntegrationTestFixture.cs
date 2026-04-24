@@ -1,9 +1,11 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using Projects;
 using Respawn;
 using TUnit.Core.Interfaces;
 
@@ -14,12 +16,10 @@ public class IntegrationTestFixture
     IAsyncDisposable
 {
     private DistributedApplication _app = null!;
-    
-   // private Respawner _respawner = null!;
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
-        /*var appHost = await DistributedApplicationTestingBuilder
+        var appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<AppHost>();
 
         appHost.Services.ConfigureHttpClientDefaults(http =>
@@ -28,31 +28,18 @@ public class IntegrationTestFixture
         _app = await appHost.BuildAsync();
         await _app.StartAsync();
 
-        await _app.WaitForResourceAsync("backend",
-            targetState: "Running",
-            timeout: TimeSpan.FromSeconds(120));
-
-        _respawner = await CreateRespawnerAsync();*/
-        
-        return Task.CompletedTask;
+        await _app.Services
+            .GetRequiredService<ResourceNotificationService>()
+            .WaitForResourceAsync("backend", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(120));
     }
 
     public HttpClient CreateHttpClient()
         => _app.CreateHttpClient("backend");
 
     public Task<string> GetAccessTokenAsync(string username, string password) => Task.FromResult("");
-    
-    /*public HttpClient CreateHttpClient() => _app.CreateHttpClient("backend");
 
-    public async Task ResetDatabaseAsync()
-    {
-        var cs = await _app.GetConnectionStringAsync("einsatzbereit");
-        await using var connection = new NpgsqlConnection(cs);
-        await connection.OpenAsync();
-        await _respawner.ResetAsync(connection);
-    }
-
-    public async Task<string> GetAccessTokenAsync(string username, string password)
+    /*public async Task<string> GetAccessTokenAsync(string username, string password)
     {
         var keycloakBase = _app.GetEndpoint("keycloak", "http").ToString().TrimEnd('/');
         var tokenUrl = $"{keycloakBase}/realms/einsatzbereit/protocol/openid-connect/token";
@@ -71,19 +58,15 @@ public class IntegrationTestFixture
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
         return json.GetProperty("access_token").GetString()!;
     }
-
-    private async Task<Respawner> CreateRespawnerAsync()
-    {
-        var cs = await _app.GetConnectionStringAsync("einsatzbereit");
-        await using var connection = new NpgsqlConnection(cs);
-        await connection.OpenAsync();
-        return await Respawner.CreateAsync(connection, new RespawnerOptions
-        {
-            DbAdapter = DbAdapter.Postgres,
-            SchemasToInclude = ["public"]
-        });
-    }
     */
+
+    public Task WaitForResouceAsync(string resourceName)
+    {
+        return _app.Services
+            .GetRequiredService<ResourceNotificationService>()
+            .WaitForResourceAsync(resourceName, KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(60));
+    }
 
     public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 }
