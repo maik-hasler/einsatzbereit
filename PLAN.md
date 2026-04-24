@@ -21,10 +21,14 @@ Vollständige Migration von docker-compose → Aspire, xUnit → TUnit, TypeScri
 - [x] `Application.UnitTests/**/*.cs`: `[Fact]` → `[Test]`, `using Xunit` entfernen
 - [x] `ArchitectureTests.csproj`: xUnit → TUnit
 - [x] `ArchitectureTests/**/*.cs`: `[Fact]` → `[Test]`
-- [ ] `IntegrationTests.csproj`: xUnit + WAF + Testcontainers → TUnit + `Aspire.Hosting.Testing`
-- [ ] `IntegrationTestFixture.cs`: neu auf Basis von `DistributedApplicationTestingBuilder`
-- [ ] `IntegrationTestCollection.cs`: löschen (nicht mehr nötig)
-- [ ] `IntegrationTests/**/*.cs`: `[Collection]` → `[ClassDataSource<T>]`, `[Fact]` → `[Test]`, `IAsyncLifetime` → `IAsyncInitializer`
+- [x] `IntegrationTests.csproj`: xUnit + WAF + Testcontainers → TUnit + `Aspire.Hosting.Testing`
+- [x] `IntegrationTestFixture.cs`: neu auf Basis von `DistributedApplicationTestingBuilder`
+- [x] `IntegrationTestCollection.cs`: löschen (nicht mehr nötig)
+- [x] `IntegrationTests/**/*.cs`: `[Collection]` → `[ClassDataSource<T>]`, `[Fact]` → `[Test]`, `IAsyncLifetime` → `IAsyncInitializer`
+- [ ] `IntegrationTests`: ausführen und ergebnis auf korrekt prüfen andernfalls fixen
+  - [ ] Aspire setup fixen. frontend-instlaler funktioniert nicht: `npm error code EUNSUPPORTEDPROTOCOL
+ npm error Unsupported URL Type "workspace:": workspace:*
+ npm error A complete log of this run can be found in: C:\Users\maikh\AppData\Local\npm-cache\_logs\2026-04-24T19_34_51_608Z-debug-0.log`
 
 ## Phase 3 — VisualTests (neu)
 

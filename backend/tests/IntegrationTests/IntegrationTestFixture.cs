@@ -33,9 +33,12 @@ public class IntegrationTestFixture
             .WaitForResourceAsync("backend", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(120));
     }
+    
+    public async ValueTask DisposeAsync() =>
+        await _app.DisposeAsync();
 
-    public HttpClient CreateHttpClient()
-        => _app.CreateHttpClient("backend");
+    public HttpClient CreateHttpClient() =>
+        _app.CreateHttpClient("backend");
 
     public Task<string> GetAccessTokenAsync(string username, string password) => Task.FromResult("");
 
@@ -67,6 +70,4 @@ public class IntegrationTestFixture
             .WaitForResourceAsync(resourceName, KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(60));
     }
-
-    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 }
