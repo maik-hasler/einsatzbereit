@@ -1,21 +1,26 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Respawn;
+using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-public sealed class IntegrationTestFixture : IAsyncInitializer, IAsyncDisposable
+public class IntegrationTestFixture
+    : IAsyncInitializer,
+    IAsyncDisposable
 {
     private DistributedApplication _app = null!;
-    private Respawner _respawner = null!;
+    
+   // private Respawner _respawner = null!;
 
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
-        var appHost = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.AppHost>();
+        /*var appHost = await DistributedApplicationTestingBuilder
+            .CreateAsync<AppHost>();
 
         appHost.Services.ConfigureHttpClientDefaults(http =>
             http.AddStandardResilienceHandler());
@@ -27,10 +32,17 @@ public sealed class IntegrationTestFixture : IAsyncInitializer, IAsyncDisposable
             targetState: "Running",
             timeout: TimeSpan.FromSeconds(120));
 
-        _respawner = await CreateRespawnerAsync();
+        _respawner = await CreateRespawnerAsync();*/
+        
+        return Task.CompletedTask;
     }
 
-    public HttpClient CreateHttpClient() => _app.CreateHttpClient("backend");
+    public HttpClient CreateHttpClient()
+        => _app.CreateHttpClient("backend");
+
+    public Task<string> GetAccessTokenAsync(string username, string password) => Task.FromResult("");
+    
+    /*public HttpClient CreateHttpClient() => _app.CreateHttpClient("backend");
 
     public async Task ResetDatabaseAsync()
     {
@@ -71,6 +83,7 @@ public sealed class IntegrationTestFixture : IAsyncInitializer, IAsyncDisposable
             SchemasToInclude = ["public"]
         });
     }
+    */
 
     public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 }

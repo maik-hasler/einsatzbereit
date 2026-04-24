@@ -4,38 +4,38 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- API -->
-    <PackageVersion Include="Asp.Versioning.Http" Version="[8.1.1]" />
-    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="[8.1.1]" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="[10.0.6]" PrivateAssets="All" />
-    <PackageVersion Include="NSwag.MSBuild" Version="[14.6.3]" PrivateAssets="All" />
+    <PackageVersion Include="Asp.Versioning.Http" Version="[10.0.0]" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="[10.0.0]" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="[10.0.7]" PrivateAssets="All" />
+    <PackageVersion Include="NSwag.MSBuild" Version="[14.7.1]" PrivateAssets="All" />
 
     <!-- Infrastructure -->
     <PackageVersion Include="EFCore.NamingConventions" Version="[10.0.1]" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="[10.0.6]" PrivateAssets="All" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="[10.0.6]" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[10.0.6]" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="[10.0.7]" PrivateAssets="All" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="[10.0.7]" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[10.0.7]" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="[10.0.1]" />
 
     <!-- Aspire: ServiceDefaults -->
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="[9.3.0]" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="[9.3.0]" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="[1.11.2]" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="[1.11.2]" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.11.2]" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.11.2]" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.11.2]" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="[10.5.0]" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="[10.5.0]" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="[1.15.3]" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="[1.15.3]" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.15.2]" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.15.1]" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.15.1]" />
 
     <!-- Aspire: AppHost + Tests -->
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[9.3.0]" />
     <PackageVersion Include="Aspire.Hosting.NodeJs" Version="[9.3.0]" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="[9.3.0]" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="[13.2.3]" />
 
     <!-- Tests -->
     <PackageVersion Include="AwesomeAssertions" Version="[9.4.0]" />
@@ -43,7 +43,7 @@
     <PackageVersion Include="NSubstitute" Version="[5.3.0]" />
     <PackageVersion Include="Respawn" Version="[7.0.0]" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="[8.17.0]" />
-    <PackageVersion Include="TUnit" Version="[0.12.0]" />
+    <PackageVersion Include="TUnit" Version="[1.39.0]" />
     <PackageVersion Include="TUnit.Playwright" Version="[0.12.0]" />
   </ItemGroup>
 </Project>

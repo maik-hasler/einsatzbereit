@@ -20,10 +20,10 @@ public class AddressTests
         address.City.Should().Be("Berlin");
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public void Constructor_ShouldThrow_WhenStreetIsEmpty(string? street)
     {
         var act = () => new Address(street!, "1", "12345", "Berlin");
@@ -32,10 +32,10 @@ public class AddressTests
             .WithMessage("Street must not be empty.");
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public void Constructor_ShouldThrow_WhenHouseNumberIsEmpty(string? houseNumber)
     {
         var act = () => new Address("Straße", houseNumber!, "12345", "Berlin");
@@ -44,12 +44,12 @@ public class AddressTests
             .WithMessage("House number must not be empty.");
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
-    [InlineData("1234")]
-    [InlineData("123456")]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
+    [Arguments("1234")]
+    [Arguments("123456")]
     public void Constructor_ShouldThrow_WhenZipCodeIsInvalid(string? zipCode)
     {
         var act = () => new Address("Straße", "1", zipCode!, "Berlin");
@@ -58,10 +58,10 @@ public class AddressTests
             .WithMessage("Zip code must be exactly 5 characters.");
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public void Constructor_ShouldThrow_WhenCityIsEmpty(string? city)
     {
         var act = () => new Address("Straße", "1", "12345", city!);

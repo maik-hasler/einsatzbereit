@@ -17,10 +17,10 @@ Vollständige Migration von docker-compose → Aspire, xUnit → TUnit, TypeScri
 
 ## Phase 2 — TUnit Migration
 
-- [ ] `Application.UnitTests.csproj`: xUnit → TUnit
-- [ ] `Application.UnitTests/**/*.cs`: `[Fact]` → `[Test]`, `using Xunit` entfernen
-- [ ] `ArchitectureTests.csproj`: xUnit → TUnit
-- [ ] `ArchitectureTests/**/*.cs`: `[Fact]` → `[Test]`
+- [x] `Application.UnitTests.csproj`: xUnit → TUnit
+- [x] `Application.UnitTests/**/*.cs`: `[Fact]` → `[Test]`, `using Xunit` entfernen
+- [x] `ArchitectureTests.csproj`: xUnit → TUnit
+- [x] `ArchitectureTests/**/*.cs`: `[Fact]` → `[Test]`
 - [ ] `IntegrationTests.csproj`: xUnit + WAF + Testcontainers → TUnit + `Aspire.Hosting.Testing`
 - [ ] `IntegrationTestFixture.cs`: neu auf Basis von `DistributedApplicationTestingBuilder`
 - [ ] `IntegrationTestCollection.cs`: löschen (nicht mehr nötig)
@@ -38,6 +38,85 @@ Vollständige Migration von docker-compose → Aspire, xUnit → TUnit, TypeScri
 - [ ] `VolunteerOpportunityTests.cs` anlegen
 - [ ] `frontend/tests/` komplett löschen (global-setup.ts, e2e/**, helpers/, playwright.config.ts)
 - [ ] `frontend/package.json`: `@playwright/test` entfernen
+
+Install playwright browser
+```
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting.Testing" />
+		<PackageReference Include="TUnit" />
+		<PackageReference Include="TUnit.Playwright" />
+		<PackageReference Include="Verify.TUnit" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Aspire\AppHost\AppHost.csproj"/>
+		<ProjectReference Include="..\Backend\Backend.csproj"/>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="GetQuestionsTests.ShouldReturnQuestions.verified.txt">
+	    <DependentUpon>GetQuestionsTests.cs</DependentUpon>
+	  </None>
+	</ItemGroup>
+
+	<!-- Install Playwright browsers after build -->
+	<Target Name="InstallPlaywrightBrowsers" AfterTargets="Build">
+		<Exec Command="&quot;$(OutputPath).playwright/node/win32_x64/node.exe&quot; &quot;$(OutputPath).playwright/package/cli.js&quot; install --with-deps chromium"
+		      Condition="'$(OS)' == 'Windows_NT'" />
+		<Exec Command="&quot;$(OutputPath).playwright/node/linux-x64/node&quot; &quot;$(OutputPath).playwright/package/cli.js&quot; install --with-deps chromium"
+		      Condition="'$(OS)' != 'Windows_NT'" />
+	</Target>
+
+</Project>
+```
+
+Example source code for visual tests
+```
+[ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+public class QuestionnaireVisualTests(AspireFixture fixture) : PageTest, IAsyncInitializer
+{
+	public Task InitializeAsync()
+		=> fixture.WaitForResourceAsync("frontend");
+
+	[Test]
+	[Explicit]
+	public async Task QuestionnairePage()
+	{
+		await Page.GotoAsync(fixture.GetEndpoint("frontend").ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var screenshot = await Page.ScreenshotAsync();
+		await Verify(screenshot, "png");
+	}
+
+	[Test]
+	[Explicit]
+	public async Task ScorePage()
+	{
+		await Page.GotoAsync(fixture.GetEndpoint("frontend").ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		foreach (var fieldset in await Page.Locator("fieldset").AllAsync())
+			await fieldset.Locator("input[type='radio']").First.CheckAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Submit answers" }).ClickAsync();
+		await Page.WaitForURLAsync("**/score");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var screenshot = await Page.ScreenshotAsync();
+		await Verify(screenshot, "png");
+	}
+}
+```
 
 ## Phase 4 — CI/CD
 

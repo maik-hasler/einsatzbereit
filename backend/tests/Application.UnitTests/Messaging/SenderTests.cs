@@ -8,7 +8,8 @@ namespace Application.UnitTests.Messaging;
 public class SenderTests
 {
     [Test]
-    public async Task Send_ShouldReturnResponse_WhenHandlerExists()
+    public async Task Send_ShouldReturnResponse_WhenHandlerExists(
+        CancellationToken cancellationToken)
     {
         // Arrange
         var services = new ServiceCollection();
@@ -21,14 +22,15 @@ public class SenderTests
         var request = new TestRequest("Hello");
 
         // Act
-        var result = await sender.Send(request, TestContext.Current.CancellationToken);
+        var result = await sender.Send(request, cancellationToken);
 
         // Assert
         result.Should().Be("Handled: Hello");
     }
 
     [Test]
-    public async Task Send_ShouldThrowException_WhenHandlerIsMissing()
+    public async Task Send_ShouldThrowException_WhenHandlerIsMissing(
+        CancellationToken cancellationToken)
     {
         // Arrange
         var services = new ServiceCollection();
@@ -40,7 +42,7 @@ public class SenderTests
         var request = new TestRequest("Hello");
 
         // Act
-        Func<Task> act = async () => await sender.Send(request, TestContext.Current.CancellationToken);
+        Func<Task> act = async () => await sender.Send(request, cancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -48,7 +50,8 @@ public class SenderTests
     }
 
     [Test]
-    public async Task Send_ShouldExecutePipelineBehavior_WhenBehaviorIsRegistered()
+    public async Task Send_ShouldExecutePipelineBehavior_WhenBehaviorIsRegistered(
+        CancellationToken cancellationToken)
     {
         // Arrange
         var log = new List<string>();
@@ -59,21 +62,22 @@ public class SenderTests
         services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
 
         services.AddScoped<IPipelineBehavior<TestRequest, string>>(
-            sp => new TestBehavior(log));
+            _ => new TestBehavior(log));
 
         services.AddScoped<ISender, Sender>();
 
         var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
         // Act
-        await sender.Send(new TestRequest("Hello"), TestContext.Current.CancellationToken);
+        await sender.Send(new TestRequest("Hello"), cancellationToken);
 
         // Assert
         log.Should().ContainInOrder("Before", "After");
     }
 
     [Test]
-    public async Task Send_ShouldRespectPipelineOrder_WhenMultipleBehaviorsAreRegistered()
+    public async Task Send_ShouldRespectPipelineOrder_WhenMultipleBehaviorsAreRegistered(
+        CancellationToken cancellationToken)
     {
         // Arrange
         var log = new List<string>();
@@ -94,7 +98,7 @@ public class SenderTests
         var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
         // Act
-        await sender.Send(new TestRequest("Hello"), TestContext.Current.CancellationToken);
+        await sender.Send(new TestRequest("Hello"), cancellationToken);
 
         // Assert
         log.Should().Equal(

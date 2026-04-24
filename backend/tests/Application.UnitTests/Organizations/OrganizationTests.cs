@@ -41,10 +41,10 @@ public class OrganizationTests
         org.Address.Should().BeNull();
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public void Update_ShouldThrow_WhenNameIsEmpty(string? name)
     {
         // Arrange

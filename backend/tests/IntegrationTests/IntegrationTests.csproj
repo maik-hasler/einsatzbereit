@@ -9,9 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- For Aspire test infrastructure (starts the full AppHost) -->
     <ProjectReference Include="..\..\src\Aspire\AppHost\AppHost.csproj" />
-    <!-- Direct reference for GenerateAliasTests which tests Infrastructure logic -->
     <ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 

@@ -1,25 +1,23 @@
 using System.Net.Http.Headers;
 using AwesomeAssertions;
+using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
-public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncInitializer
+public class OrganizationSettingsTests(
+    IntegrationTestFixture fixture)
 {
-    public async Task InitializeAsync() => await fixture.ResetDatabaseAsync();
-
-    // ── GetOrganizationDetails ──────────────────────────────────────────────
-
     [Test]
-    public async Task GetOrganizationDetails_ShouldReturnDetails_AfterCreation()
+    public async Task GetOrganizationDetails_ShouldReturnDetails_AfterCreation(
+        CancellationToken cancellationToken)
     {
-        var ct = TestContext.Current.CancellationToken;
         var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
         var created = await client.CreateOrganizationAsync(
-            new CreateOrganizationRequest { Name = "Feuerwehr Details Test" }, ct);
+            new CreateOrganizationRequest { Name = "Feuerwehr Details Test" }, cancellationToken);
 
-        var result = await client.GetOrganizationDetailsAsync(created.Id.Value, ct);
+        var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
 
         result.Id.Should().Be(created.Id.Value);
         result.Name.Should().Be("Feuerwehr Details Test");
@@ -28,19 +26,20 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncI
     }
 
     [Test]
-    public async Task GetOrganizationDetails_ShouldReturn401_WhenNotAuthenticated()
+    public async Task GetOrganizationDetails_ShouldReturn401_WhenNotAuthenticated(
+        CancellationToken cancellationToken)
     {
-        var ct = TestContext.Current.CancellationToken;
         var client = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), ct);
+        var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
 
         var ex = await act.Should().ThrowAsync<ApiException>();
         ex.Which.StatusCode.Should().Be(401);
     }
 
     [Test]
-    public async Task GetOrganizationDetails_ShouldReturn403_WhenUserLacksOrganisatorRole()
+    public async Task GetOrganizationDetails_ShouldReturn403_WhenUserLacksOrganisatorRole(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
@@ -52,7 +51,8 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncI
     }
 
     [Test]
-    public async Task GetOrganizationDetails_ShouldReturn404_WhenOrganizationDoesNotExist()
+    public async Task GetOrganizationDetails_ShouldReturn404_WhenOrganizationDoesNotExist(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -66,7 +66,8 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncI
     // ── UpdateOrganization ──────────────────────────────────────────────────
 
     [Test]
-    public async Task UpdateOrganization_ShouldReturn204_WithValidData()
+    public async Task UpdateOrganization_ShouldReturn204_WithValidData(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -101,7 +102,8 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncI
     }
 
     [Test]
-    public async Task UpdateOrganization_ShouldReturn401_WhenNotAuthenticated()
+    public async Task UpdateOrganization_ShouldReturn401_WhenNotAuthenticated(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var client = new EinsatzbereitApi(fixture.CreateHttpClient());
@@ -116,7 +118,8 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncI
     }
 
     [Test]
-    public async Task UpdateOrganization_ShouldClearAddress_WhenNullPassed()
+    public async Task UpdateOrganization_ShouldClearAddress_WhenNullPassed(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
@@ -146,7 +149,8 @@ public class OrganizationSettingsTests(IntegrationTestFixture fixture) : IAsyncI
     // ── RemoveMember ────────────────────────────────────────────────────────
 
     [Test]
-    public async Task RemoveMember_ShouldReturn401_WhenNotAuthenticated()
+    public async Task RemoveMember_ShouldReturn401_WhenNotAuthenticated(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var client = new EinsatzbereitApi(fixture.CreateHttpClient());

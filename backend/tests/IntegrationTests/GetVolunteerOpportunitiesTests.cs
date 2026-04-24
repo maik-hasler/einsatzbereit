@@ -1,20 +1,19 @@
 using System.Net.Http.Headers;
 using AwesomeAssertions;
+using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
-public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IAsyncInitializer
+public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 {
-    public async Task InitializeAsync() => await fixture.ResetDatabaseAsync();
-
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist()
+    public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist(
+        CancellationToken cancellationToken)
     {
-        var ct = TestContext.Current.CancellationToken;
         var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
 
         result.TotalItems.Should().Be(0);
         result.Items.Should().BeEmpty();
@@ -23,25 +22,26 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnAll_WhenOpportunitiesExist()
+    public async Task GetVolunteerOpportunities_ShouldReturnAll_WhenOpportunitiesExist(
+        CancellationToken cancellationToken)
     {
-        var ct = TestContext.Current.CancellationToken;
-        var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
-        var orgId = await CreateOrganizationAsync(authenticatedClient, ct);
+        var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+        var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-        await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", ct);
-        await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2", ct);
+        await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", cancellationToken);
+        await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2", cancellationToken);
 
         var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, ct);
+        var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
 
         result.TotalItems.Should().Be(2);
         result.Items.Should().HaveCount(2);
     }
 
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnCorrectPageSize_WhenPaginationIsApplied()
+    public async Task GetVolunteerOpportunities_ShouldReturnCorrectPageSize_WhenPaginationIsApplied(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
@@ -62,7 +62,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnRemainingItems_WhenRequestingLastPage()
+    public async Task GetVolunteerOpportunities_ShouldReturnRemainingItems_WhenRequestingLastPage(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
@@ -82,7 +83,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnOrderedByCreatedOnDescending()
+    public async Task GetVolunteerOpportunities_ShouldReturnOrderedByCreatedOnDescending(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
@@ -104,7 +106,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnOrganizationName()
+    public async Task GetVolunteerOpportunities_ShouldReturnOrganizationName(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
@@ -121,7 +124,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task GetVolunteerOpportunities_ShouldReturnAddressAndOccurrence()
+    public async Task GetVolunteerOpportunities_ShouldReturnAddressAndOccurrence(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);
@@ -144,7 +148,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer()
+    public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var token = await fixture.GetAccessTokenAsync("hannah", "hannah123");
@@ -171,7 +176,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture) : IA
     }
 
     [Test]
-    public async Task CreateVolunteerOpportunity_ShouldPersistAddressAndOccurrence()
+    public async Task CreateVolunteerOpportunity_ShouldPersistAddressAndOccurrence(
+        CancellationToken cancellationToken)
     {
         var ct = TestContext.Current.CancellationToken;
         var authenticatedClient = await CreateAuthenticatedClientAsync(ct);

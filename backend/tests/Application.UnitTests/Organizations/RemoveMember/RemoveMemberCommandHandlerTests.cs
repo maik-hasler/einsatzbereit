@@ -18,50 +18,50 @@ public class RemoveMemberCommandHandlerTests
     }
 
     [Test]
-    public async Task Handle_ShouldCallRemoveMemberOnKeycloak()
+    public async Task Handle_ShouldCallRemoveMemberOnKeycloak(
+        CancellationToken cancellationToken)
     {
         // Arrange
-        var ct = TestContext.Current.CancellationToken;
         var orgId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var command = new RemoveMemberCommand(orgId, userId);
 
         // Act
-        await _sut.Handle(command, ct);
+        await _sut.Handle(command, cancellationToken);
 
         // Assert
-        await _keycloakService.Received(1).RemoveMemberAsync(orgId, userId, ct);
+        await _keycloakService.Received(1).RemoveMemberAsync(orgId, userId, cancellationToken);
     }
 
     [Test]
-    public async Task Handle_ShouldReturnTrue_OnSuccess()
+    public async Task Handle_ShouldReturnTrue_OnSuccess(
+        CancellationToken cancellationToken)
     {
         // Arrange
-        var ct = TestContext.Current.CancellationToken;
         var command = new RemoveMemberCommand(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var result = await _sut.Handle(command, ct);
+        var result = await _sut.Handle(command, cancellationToken);
 
         // Assert
         result.Should().BeTrue();
     }
 
     [Test]
-    public async Task Handle_ShouldPropagateException_WhenKeycloakFails()
+    public async Task Handle_ShouldPropagateException_WhenKeycloakFails(
+        CancellationToken cancellationToken)
     {
         // Arrange
-        var ct = TestContext.Current.CancellationToken;
         var orgId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var command = new RemoveMemberCommand(orgId, userId);
 
         _keycloakService
-            .RemoveMemberAsync(orgId, userId, ct)
+            .RemoveMemberAsync(orgId, userId, cancellationToken)
             .ThrowsAsync(new HttpRequestException("Keycloak responded with 404 NotFound"));
 
         // Act
-        Func<Task> act = async () => await _sut.Handle(command, ct);
+        Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
         // Assert
         await act.Should().ThrowAsync<HttpRequestException>()

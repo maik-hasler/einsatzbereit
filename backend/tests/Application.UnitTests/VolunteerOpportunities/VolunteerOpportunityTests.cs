@@ -52,10 +52,10 @@ public class VolunteerOpportunityTests
         opportunity.Address.Should().BeNull();
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public void Create_ShouldThrowDomainException_WhenTitleIsEmpty(string? title)
     {
         // Act
@@ -73,10 +73,10 @@ public class VolunteerOpportunityTests
             .WithMessage("Title must not be empty.");
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public void Create_ShouldThrowDomainException_WhenDescriptionIsEmpty(string? description)
     {
         // Act
