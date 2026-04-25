@@ -18,11 +18,5 @@ jobs:
 
       - name: Ban em/en dashes (U+2014, U+2013)
         run: |
-          if grep -rPn '[\x{2013}\x{2014}]' \
-               --include='*.ts' --include='*.tsx' \
-               --include='*.cs' --include='*.md' \
-               --include='*.json' --include='*.yml' --include='*.yaml' \
-               .; then
-            echo "::error::Em/en dashes found - use plain ASCII hyphens (-) instead"
-            exit 1
-          fi
+          grep -rPnI '[\x{2013}\x{2014}]' . && \
+          { echo "::error::Em/en dashes found - use plain ASCII hyphens (-) instead"; exit 1; }
