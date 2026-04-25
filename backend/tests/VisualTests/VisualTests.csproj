@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Aspire\AppHost\AppHost.csproj" />
+  </ItemGroup>
+
+  <Target Name="InstallPlaywrightBrowsers" AfterTargets="Build">
+    <Exec Command="&quot;$(OutputPath).playwright/node/win32_x64/node.exe&quot; &quot;$(OutputPath).playwright/package/cli.js&quot; install --with-deps chromium"
+          Condition="'$(OS)' == 'Windows_NT'" />
+    <Exec Command="&quot;$(OutputPath).playwright/node/linux-x64/node&quot; &quot;$(OutputPath).playwright/package/cli.js&quot; install --with-deps chromium"
+          Condition="'$(OS)' != 'Windows_NT'" />
+  </Target>
+
+</Project>

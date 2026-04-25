@@ -5,11 +5,15 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'keycloak/**'
       - '.github/workflows/dotnet.yml'
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'keycloak/**'
       - '.github/workflows/dotnet.yml'
   workflow_dispatch:
 
@@ -19,9 +23,6 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v6
 
@@ -30,11 +31,40 @@ jobs:
         with:
           global-json-file: backend/global.json
 
-      - name: Restore dependencies
+      - uses: pnpm/action-setup@v5
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/package.json
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore backend
+        working-directory: backend
         run: dotnet restore
 
-      - name: Build
+      - name: Build backend
+        working-directory: backend
         run: dotnet build --no-restore
 
-      - name: Test
-        run: dotnet test --no-build
+      - name: Test — Application.UnitTests
+        working-directory: backend
+        run: dotnet run --project tests/Application.UnitTests --no-build
+
+      - name: Test — ArchitectureTests
+        working-directory: backend
+        run: dotnet run --project tests/ArchitectureTests --no-build
+
+      - name: Test — IntegrationTests (Aspire + Docker)
+        working-directory: backend
+        run: dotnet run --project tests/IntegrationTests --no-build
+
+      - name: Test — VisualTests (Aspire + Docker + Playwright)
+        working-directory: backend
+        run: dotnet run --project tests/VisualTests --no-build

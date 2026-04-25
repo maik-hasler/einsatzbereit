@@ -15,16 +15,17 @@
 ## CI Workflows (run on push/PR to main)
 
 ### `dotnet.yml`
-- **Trigger:** `backend/**` path filter or manual
-- **Steps:** restore → build → test
-- **Working dir:** `backend/`
+- **Trigger:** `backend/**`, `frontend/**`, `keycloak/**` path filter or manual (frontend + keycloak included because VisualTests boots full stack via Aspire)
+- **Steps:** setup .NET + Node + pnpm → frontend `pnpm install` → `dotnet restore` → `dotnet build` → run each test project sequentially via `dotnet run --project ... --no-build`
+- **Test projects:** Application.UnitTests, ArchitectureTests, IntegrationTests, VisualTests
+- **Why `dotnet run` not `dotnet test`:** TUnit uses Microsoft.Testing.Platform; `dotnet test` on .NET 10 requires opt-in to new experience. `dotnet run` invokes the test runner directly.
 
 ### `frontend.yml`
 - **Trigger:** `frontend/**` path filter or manual
-- **Jobs (sequential):** lint → build → tests
+- **Jobs (sequential):** lint → build
   - `lint`: `pnpm lint` + `pnpm check` (type check)
   - `build`: `pnpm build`
-  - `tests`: Playwright (`pnpm test:tests`)
+- **No E2E job** — E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
 
 ### `docs.yml`
 - **Trigger:** `docs/**` path filter or manual

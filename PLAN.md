@@ -155,8 +155,11 @@ public class QuestionnaireVisualTests(AspireFixture fixture) : PageTest, IAsyncI
 
 ## Phase 4 — CI/CD
 
-- [ ] `.github/workflows/dotnet.yml`: auf Microsoft.Testing.Platform anpassen
-- [ ] `.github/workflows/frontend.yml`: E2E-Job entfernen
+- [x] `.github/workflows/dotnet.yml`: auf MTP via `dotnet run --project ...` umgestellt; Path-Filter um `frontend/**` und `keycloak/**` erweitert; Node + pnpm + frontend install hinzugefügt (für VisualTests Aspire-Stack)
+- [x] `.github/workflows/frontend.yml`: `tests`-Job entfernt
+- [x] `.github/workflows/backend-publish.yml`: gleiche Test-Anpassung wie dotnet.yml
+- [x] `.github/workflows/frontend-publish.yml`: Playwright-Steps entfernt
+- [x] `.github/CLAUDE.md`: Workflow-Beschreibung aktualisiert
 
 ## Dev-Workflow nach Migration
 
