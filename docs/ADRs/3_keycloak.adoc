@@ -30,7 +30,7 @@ Managed identity platform.
 ** Low operational overhead
 ** Fast integration
 * Cons
-** US-based provider — data protection requirements difficult to satisfy
+** US-based provider - data protection requirements difficult to satisfy
 ** No self-hosting option
 ** Costs scale with user count
 
@@ -41,7 +41,7 @@ Microsoft's cloud-based identity solution.
 ** Deep integration with the Microsoft ecosystem
 ** Managed service with high availability
 * Cons
-** US-based provider — same data protection issues as Auth0
+** US-based provider - same data protection issues as Auth0
 ** No self-hosting option
 ** License costs; not compatible with the project's open-source approach
 
@@ -56,7 +56,7 @@ Custom-built authentication and authorization layer.
 ** No community support
 
 === Consequences
-* Full operational responsibility for Keycloak: updates, security patches, backups — hardening and timely application of security patches are mandatory
+* Full operational responsibility for Keycloak: updates, security patches, backups - hardening and timely application of security patches are mandatory
 * Realm configuration is version-controlled as a JSON export and delivered via the custom Docker image
 * Integration via OIDC: frontend uses a public client; backend validates JWT Bearer tokens
 * User and role management is handled centrally in Keycloak

@@ -14,15 +14,15 @@ ifndef::imagesdir[:imagesdir: ../images]
 |All services (frontend, backend, Keycloak, PostgreSQL, pgAdmin) run in containers. This ensures a consistent development environment across all contributor machines.
 
 |GNU AGPL v3.0 license
-|All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any deployment of the platform — including modifications — must be released under the same license.
+|All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any deployment of the platform - including modifications - must be released under the same license.
 
-|Self-hosted only — no US cloud dependencies
+|Self-hosted only - no US cloud dependencies
 |Keycloak, PostgreSQL, and all supporting infrastructure run self-hosted. No dependency on US-based cloud providers (AWS, Azure, Google Cloud) to ensure data sovereignty and GDPR compliance.
 
 |PlantUML for architecture diagrams
 |All architecture diagrams are written as PlantUML source files and rendered via `asciidoctor-diagram`. No binary diagram files are committed to the repository.
 
-|NSwag-generated API client — never hand-edited
+|NSwag-generated API client - never hand-edited
 |The frontend API client (`api-client.ts`) is generated from the OpenAPI spec. Manual edits to this file are prohibited; changes must go through the backend OpenAPI definition.
 
 |AsciiDoc for documentation

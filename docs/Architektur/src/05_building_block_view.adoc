@@ -5,7 +5,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 === Level 1: System Overview (Whitebox)
 
-.Container View — Einsatzbereit
+.Container View - Einsatzbereit
 [plantuml, "container-view", png]
 ....
 include::../images/container-view.puml[]
@@ -13,7 +13,7 @@ include::../images/container-view.puml[]
 
 Motivation::
 The system consists of four main containers: a React SPA for the UI, an ASP.NET Core API for business logic, Keycloak for identity management, and PostgreSQL for persistence.
-Authentication is centralized in Keycloak — neither the frontend nor the backend implements login logic directly.
+Authentication is centralized in Keycloak - neither the frontend nor the backend implements login logic directly.
 
 Contained Building Blocks::
 
@@ -59,7 +59,7 @@ Important Interfaces::
 
 === Level 2: Backend API (Whitebox)
 
-.Backend Component View — Clean Architecture
+.Backend Component View - Clean Architecture
 [plantuml, "component-backend", png]
 ....
 include::../images/component-backend.puml[]

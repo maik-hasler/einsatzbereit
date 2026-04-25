@@ -2,7 +2,7 @@
 
 !include <C4/C4_Component>
 
-title Component View — Backend API (Clean Architecture)
+title Component View - Backend API (Clean Architecture)
 
 Container_Boundary(api, "API Layer  [backend/src/Api/]") {
     Component(endpoints, "Endpoints", "ASP.NET Core Minimal API", "Routes HTTP requests to Application layer via versioned endpoint classes. Handles request/response serialization.")

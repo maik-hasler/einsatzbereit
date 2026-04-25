@@ -113,7 +113,7 @@ export default function VolunteerOpportunityDetailPage() {
           <ul className="space-y-2">
             {opportunity.timeSlots.map(ts => (
               <li key={ts.id} className="rounded border px-3 py-2 text-sm text-gray-700">
-                {formatDateTime(ts.startDateTime as unknown as string)} – {formatDateTime(ts.endDateTime as unknown as string)}
+                {formatDateTime(ts.startDateTime as unknown as string)} - {formatDateTime(ts.endDateTime as unknown as string)}
                 <span className="ml-2 text-gray-400">(max. {ts.maxParticipants} Personen)</span>
               </li>
             ))}

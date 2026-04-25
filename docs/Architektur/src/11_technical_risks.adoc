@@ -14,35 +14,35 @@ ifndef::imagesdir[:imagesdir: ../images]
 |*Keycloak operational complexity*
 
 Self-hosting Keycloak requires timely security patching, backup management, and realm configuration maintenance.
-|High — a security vulnerability in an unpatched Keycloak instance could expose user credentials and sessions.
+|High - a security vulnerability in an unpatched Keycloak instance could expose user credentials and sessions.
 |Realm configuration is version-controlled as JSON. Custom Keycloak image pins the upstream version. Security patches must be applied promptly. Responsibility acknowledged in ADR-3.
 
 |R-2
 |*Single maintainer bottleneck*
 
 The project is currently maintained by one person. Bus factor is 1.
-|Medium — project work stalls if the maintainer is unavailable. Security patches may be delayed.
+|Medium - project work stalls if the maintainer is unavailable. Security patches may be delayed.
 |Architecture and processes are designed to minimize the knowledge required to maintain the project. Documentation (arc42, CONTRIBUTING.md) lowers the barrier for new maintainers. GNU AGPL ensures the project can be forked if needed.
 
 |R-3
 |*NSwag-generated client drift*
 
 If the backend OpenAPI spec changes without regenerating the frontend client, the two go out of sync silently.
-|Medium — runtime errors in the frontend for affected endpoints.
+|Medium - runtime errors in the frontend for affected endpoints.
 |CI pipeline validates that the generated client matches the current OpenAPI spec. The `api-client.ts` file is never hand-edited.
 
 |R-4
 |*EF Core migration conflicts*
 
 Concurrent development branches that each add database migrations can result in migration conflicts on merge.
-|Low — conflicts require manual resolution and temporary downtime during migration.
+|Low - conflicts require manual resolution and temporary downtime during migration.
 |Feature branches that modify the database schema should be short-lived and merged sequentially. Migration conflicts are resolved by renumbering and consolidating before merge.
 
 |R-5
 |*Keycloak major version upgrade*
 
 Major Keycloak upgrades may change realm configuration structure, OIDC behavior, or API contracts.
-|Medium — upgrade requires testing and possibly realm reconfiguration.
+|Medium - upgrade requires testing and possibly realm reconfiguration.
 |Custom versioning scheme (`keycloak/v{upstream}.{patch}`) makes the pinned upstream version explicit. Upgrades are tested against the full stack before deployment.
 |===
 
@@ -63,7 +63,7 @@ No distributed tracing, no metrics dashboard, no alerting is currently in place.
 |*No frontend unit tests*
 
 The frontend has no unit-test layer (Vitest or otherwise). Playwright E2E tests live in the backend (`backend/tests/VisualTests/`) and cover end-to-end flows.
-|Low currently — E2E tests cover the most important flows. Missing unit test coverage for utility functions and complex component logic.
+|Low currently - E2E tests cover the most important flows. Missing unit test coverage for utility functions and complex component logic.
 
 |TD-3
 |*No rate limiting on the API*

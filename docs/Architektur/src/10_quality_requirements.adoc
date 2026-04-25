@@ -15,7 +15,7 @@ These goals and their scenarios serve as a guide for architectural decisions.
 
 // tag::quality_requirements[]
 |*Appropriateness*
-|Every feature directly serves volunteering. No feature-bloat, no over-engineering — only what concretely increases value for volunteers or organizations.
+|Every feature directly serves volunteering. No feature-bloat, no over-engineering - only what concretely increases value for volunteers or organizations.
 |Very High
 
 |*Simplicity*
@@ -55,7 +55,7 @@ include::../images/quality-tree.puml[]
 
 |QS-1.2
 |The architecture is to be extended with a new abstraction layer.
-|The extension is only implemented if it addresses a concrete, current need — not for hypothetical future requirements.
+|The extension is only implemented if it addresses a concrete, current need - not for hypothetical future requirements.
 |===
 
 ==== Simplicity
@@ -108,5 +108,5 @@ include::../images/quality-tree.puml[]
 
 |QS-4.2
 |A volunteer searches for opportunities in their area.
-|The search returns relevant results with a clear presentation of What, Where, and When — without an overloaded interface.
+|The search returns relevant results with a clear presentation of What, Where, and When - without an overloaded interface.
 |===

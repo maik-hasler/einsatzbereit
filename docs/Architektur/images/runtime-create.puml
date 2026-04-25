@@ -1,6 +1,6 @@
 @startuml Create Volunteer Opportunity
 
-title Runtime View — Create Volunteer Opportunity
+title Runtime View - Create Volunteer Opportunity
 
 actor "Organizer" as organizer
 participant "Frontend\n(React SPA)" as frontend

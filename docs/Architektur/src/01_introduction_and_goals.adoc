@@ -8,7 +8,7 @@ Volunteering and concrete societal benefit are always at the forefront.
 
 The platform follows three guiding principles:
 
-* *Volunteering first:* Every decision — whether a feature, an architectural choice, or a process — serves the goal of making voluntary engagement easier.
+* *Volunteering first:* Every decision - whether a feature, an architectural choice, or a process - serves the goal of making voluntary engagement easier.
 * *Simple code:* The source code should be simple enough that anyone can contribute, even without deep prior knowledge.
 * *No baggage:* Maintaining the platform should not be a burden; it should remain a lightweight helper.
 
@@ -16,7 +16,7 @@ The platform follows three guiding principles:
 
 Volunteering doesn't require a long-term commitment.
 Sometimes an afternoon is enough, sometimes a week.
-But finding out where help is currently needed is often difficult — whether at large NGOs or a local sports tournament.
+But finding out where help is currently needed is often difficult - whether at large NGOs or a local sports tournament.
 Existing platforms are too complex, too generic, or barely used.
 
 Einsatzbereit solves this by making concrete needs visible: *what* is needed, *where*, and *when*.
@@ -33,10 +33,10 @@ Key functional requirements:
 |Goal |Description
 
 |Strengthen volunteering
-|Make voluntary engagement visible and accessible — without bureaucratic hurdles or long-term obligations.
+|Make voluntary engagement visible and accessible - without bureaucratic hurdles or long-term obligations.
 
 |Open and sustainable
-|The project is licensed under GNU AGPL v3.0. No profit, no closed source, no lost knowledge. It is secondary who develops the project further — the benefit to society comes first.
+|The project is licensed under GNU AGPL v3.0. No profit, no closed source, no lost knowledge. It is secondary who develops the project further - the benefit to society comes first.
 
 |Low entry barrier
 |The entry barrier should be as low as possible for both users and contributors.
@@ -65,7 +65,7 @@ _A complete list of all quality goals with detailed scenarios can be found in Ch
 
 |Volunteers
 |End users
-|_"I have a free Saturday afternoon and want to do something meaningful — but please without fighting through three forms first."_
+|_"I have a free Saturday afternoon and want to do something meaningful - but please without fighting through three forms first."_
 
 *Volunteer Hannah* expects an intuitive interface where she can quickly find suitable opportunities without registration hurdles or obligations.
 

@@ -1,6 +1,6 @@
 # Frontend
 
-Vite SPA — React 19, React Router v7, Tailwind CSS 4, react-oidc-context (Keycloak PKCE).
+Vite SPA - React 19, React Router v7, Tailwind CSS 4, react-oidc-context (Keycloak PKCE).
 
 ## Commands
 
@@ -13,7 +13,7 @@ Run from `frontend/`:
 | `pnpm build`   | Production build to `./dist/`               |
 | `pnpm preview` | Preview production build locally            |
 | `pnpm check`   | TypeScript type check (`tsc --noEmit`)      |
-| `pnpm lint`    | ESLint — zero warnings allowed              |
+| `pnpm lint`    | ESLint - zero warnings allowed              |
 
 ## E2E Tests
 
@@ -24,4 +24,4 @@ cd ../backend
 dotnet test tests/VisualTests
 ```
 
-The Aspire AppHost provisions the full stack — no need to start the frontend dev server separately.
+The Aspire AppHost provisions the full stack - no need to start the frontend dev server separately.

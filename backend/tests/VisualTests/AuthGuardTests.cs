@@ -12,7 +12,7 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
         var frontend = Fixture.GetEndpoint("frontend");
 
         // Navigation chain: /my-engagements -> ProtectedRoute triggers signinRedirect()
-        // -> Keycloak /protocol/openid-connect/auth. Don't wait on individual URL —
+        // -> Keycloak /protocol/openid-connect/auth. Don't wait on individual URL -
         // race-prone with frame detachment. Wait on Keycloak login form element instead.
         try
         {
@@ -21,7 +21,7 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
         catch (PlaywrightException)
         {
             // GotoAsync may abort if the JS-driven redirect kicks in before commit completes.
-            // The redirect itself is what we're testing for — ignore the abort and verify below.
+            // The redirect itself is what we're testing for - ignore the abort and verify below.
         }
 
         await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });

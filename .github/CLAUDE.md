@@ -9,7 +9,8 @@
 ├── docs.yml            Docs: AsciiDoc build → GitHub Pages deploy
 ├── backend-publish.yml Backend: build/test → push Docker image to GHCR
 ├── frontend-publish.yml Frontend: lint/build/test → push Docker image to GHCR
-└── keycloak.yml        Keycloak: push Docker image to GHCR
+├── keycloak.yml        Keycloak: push Docker image to GHCR
+└── lint.yml            Ban em/en dashes (U+2014, U+2013)
 ```
 
 ## CI Workflows (run on push/PR to main)

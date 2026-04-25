@@ -55,7 +55,7 @@ Error handling follows a consistent pattern across the stack:
 * Domain validation errors are returned as `400 Bad Request` with a structured error body.
 * Authorization failures result in `401 Unauthorized` or `403 Forbidden`.
 * Not-found cases return `404 Not Found`.
-* Unhandled exceptions are caught by global exception middleware and returned as `500 Internal Server Error` with a correlation ID for log tracing — no stack traces leak to clients.
+* Unhandled exceptions are caught by global exception middleware and returned as `500 Internal Server Error` with a correlation ID for log tracing - no stack traces leak to clients.
 
 *Frontend:*
 
@@ -70,7 +70,7 @@ Database schema changes are managed via EF Core migrations.
 * Migrations are stored under `backend/src/Infrastructure/Persistence/Migrations/`.
 * On application startup, pending migrations are applied automatically (`database.MigrateAsync()`).
 * Migration files are committed to the repository alongside the code changes that require them.
-* There is no separate migration deployment step — the application handles its own schema.
+* There is no separate migration deployment step - the application handles its own schema.
 
 === API Versioning
 
@@ -92,4 +92,4 @@ Key logged events:
 * Database migration execution
 * Startup configuration summary
 
-No external observability service (Datadog, Grafana, etc.) is currently integrated — this is a deliberate trade-off to keep operational complexity minimal.
+No external observability service (Datadog, Grafana, etc.) is currently integrated - this is a deliberate trade-off to keep operational complexity minimal.

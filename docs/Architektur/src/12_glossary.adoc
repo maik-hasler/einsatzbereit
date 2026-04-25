@@ -11,7 +11,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Architecture Decision Record. A document that captures a significant architectural decision including its context, the decision itself, the rationale, considered alternatives, and consequences. ADRs are stored under `docs/ADRs/`.
 
 |AGPL
-|GNU Affero General Public License. The open-source license under which Einsatzbereit is released. Derivative works — including those deployed as network services — must be released under the same license.
+|GNU Affero General Public License. The open-source license under which Einsatzbereit is released. Derivative works - including those deployed as network services - must be released under the same license.
 
 |arc42
 |A template for documenting software and system architectures, structured into 12 chapters. Widely used in German-speaking countries. See https://arc42.org.

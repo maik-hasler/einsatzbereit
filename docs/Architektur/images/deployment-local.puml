@@ -2,7 +2,7 @@
 
 !include <C4/C4_Deployment>
 
-title Deployment View — Local Development (Docker Compose)
+title Deployment View - Local Development (Docker Compose)
 
 Deployment_Node(machine, "Developer Machine", "Windows / macOS / Linux") {
     Deployment_Node(docker, "Docker Desktop", "Docker Compose") {

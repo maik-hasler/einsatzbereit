@@ -15,7 +15,7 @@ include::../images/runtime-login.puml[]
 
 Key aspects of this flow:
 
-* The frontend never handles passwords — authentication is fully delegated to Keycloak.
+* The frontend never handles passwords - authentication is fully delegated to Keycloak.
 * PKCE prevents authorization code interception attacks in the public client (SPA).
 * Tokens are stored in memory (not `localStorage`) to reduce XSS risk.
 * The access token is a short-lived JWT; the refresh token is used to obtain new access tokens silently.
@@ -34,7 +34,7 @@ Key aspects:
 
 * Every API request carries the JWT Bearer token in the `Authorization` header.
 * The backend validates the token signature using Keycloak's public JWKS keys (cached locally).
-* No session state is held server-side — the backend is stateless.
+* No session state is held server-side - the backend is stateless.
 
 === Create Volunteer Opportunity
 

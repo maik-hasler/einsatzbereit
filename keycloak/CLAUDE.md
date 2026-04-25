@@ -1,4 +1,4 @@
-# Keycloak — Identity & Access Management
+# Keycloak - Identity & Access Management
 
 ## Overview
 
@@ -9,19 +9,19 @@ keycloak/
 ├── Dockerfile              Multi-stage build (builder + optimized runtime)
 ├── README.md               Runtime env vars documentation
 └── realms/
-    └── einsatzbereit-realm.json    Realm config — source of truth for auth setup
+    └── einsatzbereit-realm.json    Realm config - source of truth for auth setup
 ```
 
 ## Realm Configuration
 
 **File:** `realms/einsatzbereit-realm.json`  
-Imported on container startup. This file IS the auth configuration — edit here, not in the Keycloak UI (UI changes don't persist across container restarts in dev).
+Imported on container startup. This file IS the auth configuration - edit here, not in the Keycloak UI (UI changes don't persist across container restarts in dev).
 
 ### Roles (realm-level)
 
 | Role | Purpose |
 |---|---|
-| `user` | Default — can browse opportunities |
+| `user` | Default - can browse opportunities |
 | `organisator` | Can create and manage volunteer opportunities |
 | `admin` | Full admin access |
 
@@ -32,12 +32,12 @@ Imported on container startup. This file IS the auth configuration — edit here
 - Direct access grants enabled (password flow for integration tests)
 - Redirect URIs: `http://localhost:*`
 - Protocol mappers:
-  - `realm-roles` — injects `roles: [...]` into id_token, access_token, userinfo
-  - `realm-name` — injects hardcoded claim `realm: "einsatzbereit"` (used by backend auth policies)
+  - `realm-roles` - injects `roles: [...]` into id_token, access_token, userinfo
+  - `realm-name` - injects hardcoded claim `realm: "einsatzbereit"` (used by backend auth policies)
 
 **`backend`** (confidential service account)
 - Client secret: `backend-secret`
-- No user login flows — server-to-server only
+- No user login flows - server-to-server only
 - Service account permissions: `manage-realm`, `manage-users`, `manage-organizations`
 - Used by `KeycloakOrganizationService` in the backend to manage org membership
 
@@ -51,20 +51,20 @@ Imported on container startup. This file IS the auth configuration — edit here
 
 ### Organizations Feature
 
-Keycloak organizations are enabled (`"organizationsEnabled": true`). The backend delegates all org membership management to Keycloak — organizations are **not** duplicated in the application database.
+Keycloak organizations are enabled (`"organizationsEnabled": true`). The backend delegates all org membership management to Keycloak - organizations are **not** duplicated in the application database.
 
 ## Docker Image
 
 Multi-stage Dockerfile:
-1. **Builder stage**: `quay.io/keycloak/keycloak:26.6.1` — runs `kc.sh build` with PostgreSQL provider
+1. **Builder stage**: `quay.io/keycloak/keycloak:26.6.1` - runs `kc.sh build` with PostgreSQL provider
 2. **Runtime stage**: Copies optimized build, runs with `--optimized` flag
 
 Required environment variables at runtime (see `README.md`):
-- `KC_HOSTNAME` — public hostname
-- `KC_DB_URL` — JDBC connection string for Keycloak's own DB
+- `KC_HOSTNAME` - public hostname
+- `KC_DB_URL` - JDBC connection string for Keycloak's own DB
 - `KC_DB_USERNAME` / `KC_DB_PASSWORD`
 
-The Aspire AppHost (`backend/src/Aspire/AppHost/AppHost.cs`) launches Keycloak with `KC_DB=dev-file` for local dev — Keycloak owns its own embedded H2 store there. The shared Postgres container hosts only the application `einsatzbereit` database.
+The Aspire AppHost (`backend/src/Aspire/AppHost/AppHost.cs`) launches Keycloak with `KC_DB=dev-file` for local dev - Keycloak owns its own embedded H2 store there. The shared Postgres container hosts only the application `einsatzbereit` database.
 
 ## Updating the Realm
 

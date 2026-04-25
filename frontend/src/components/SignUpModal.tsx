@@ -63,7 +63,7 @@ export default function SignUpModal({ opportunityId, participationType, timeSlot
                   <option value="">Bitte wählen…</option>
                   {timeSlots.map(ts => (
                     <option key={ts.id} value={ts.id}>
-                      {formatDateTime(ts.startDateTime as unknown as string)} – {formatDateTime(ts.endDateTime as unknown as string)} (max. {ts.maxParticipants})
+                      {formatDateTime(ts.startDateTime as unknown as string)} - {formatDateTime(ts.endDateTime as unknown as string)} (max. {ts.maxParticipants})
                     </option>
                   ))}
                 </select>
