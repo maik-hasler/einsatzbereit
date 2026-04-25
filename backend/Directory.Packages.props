@@ -10,7 +10,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="[10.0.7]" />
     <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="[10.0.7]" PrivateAssets="All" />
     <PackageVersion Include="NSwag.MSBuild" Version="[14.7.1]" PrivateAssets="All" />
-
     <!-- Infrastructure -->
     <PackageVersion Include="EFCore.NamingConventions" Version="[10.0.1]" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="[10.0.7]" />
@@ -22,7 +21,6 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="[10.0.7]" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[10.0.7]" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="[10.0.1]" />
-
     <!-- Aspire: ServiceDefaults -->
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="[10.5.0]" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="[10.5.0]" />
@@ -31,12 +29,10 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.15.2]" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.15.1]" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.15.1]" />
-
     <!-- Aspire: AppHost + Tests -->
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.2.3]" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.2.4" />
     <PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.2.3]" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="[13.2.3]" />
-
     <!-- Tests -->
     <PackageVersion Include="AwesomeAssertions" Version="[9.4.0]" />
     <PackageVersion Include="NetArchTest.Rules" Version="[1.3.2]" />

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -10,11 +11,22 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
     {
         var frontend = Fixture.GetEndpoint("frontend");
 
-        await Page.GotoAsync($"{frontend}my-engagements", new() { WaitUntil = WaitUntilState.Commit });
-        await Page.WaitForURLAsync("**/realms/einsatzbereit/protocol/openid-connect/auth*");
+        // Navigation chain: /my-engagements -> ProtectedRoute triggers signinRedirect()
+        // -> Keycloak /protocol/openid-connect/auth. Don't wait on individual URL —
+        // race-prone with frame detachment. Wait on Keycloak login form element instead.
+        try
+        {
+            await Page.GotoAsync($"{frontend}my-engagements", new() { WaitUntil = WaitUntilState.Commit });
+        }
+        catch (PlaywrightException)
+        {
+            // GotoAsync may abort if the JS-driven redirect kicks in before commit completes.
+            // The redirect itself is what we're testing for — ignore the abort and verify below.
+        }
 
-        await Expect(Page.Locator("#username")).ToBeVisibleAsync();
+        await Expect(Page.Locator("#username")).ToBeVisibleAsync(new() { Timeout = 30_000 });
         await Expect(Page.Locator("#password")).ToBeVisibleAsync();
+        await Expect(Page).ToHaveURLAsync(new Regex(@"/realms/einsatzbereit/protocol/openid-connect/auth"));
     }
 
     [Test]
