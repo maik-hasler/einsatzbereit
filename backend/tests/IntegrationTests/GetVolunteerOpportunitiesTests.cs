@@ -5,8 +5,12 @@ using TUnit.Core.Interfaces;
 namespace IntegrationTests;
 
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
 public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 {
+    [Before(Test)]
+    public Task ResetAsync() => fixture.ResetAsync();
+
     [Test]
     public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist(
         CancellationToken cancellationToken)

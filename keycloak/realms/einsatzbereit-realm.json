@@ -73,6 +73,7 @@
   ],
   "users": [
     {
+      "id": "00000000-0000-0000-0000-000000000002",
       "username": "hannah",
       "enabled": true,
       "email": "hannah@example.com",
@@ -88,6 +89,7 @@
       ]
     },
     {
+      "id": "00000000-0000-0000-0000-000000000001",
       "username": "olaf",
       "enabled": true,
       "email": "olaf@example.com",
@@ -103,6 +105,7 @@
       ]
     },
     {
+      "id": "00000000-0000-0000-0000-000000000003",
       "username": "admin",
       "enabled": true,
       "email": "admin@example.com",

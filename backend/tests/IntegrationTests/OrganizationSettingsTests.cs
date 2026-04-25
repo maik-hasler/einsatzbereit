@@ -5,9 +5,13 @@ using TUnit.Core.Interfaces;
 namespace IntegrationTests;
 
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
 public class OrganizationSettingsTests(
     IntegrationTestFixture fixture)
 {
+    [Before(Test)]
+    public Task ResetAsync() => fixture.ResetAsync();
+
     [Test]
     public async Task GetOrganizationDetails_ShouldReturnDetails_AfterCreation(
         CancellationToken cancellationToken)

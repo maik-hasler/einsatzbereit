@@ -31,14 +31,15 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
         options.Authority = builder.Configuration["Authentication:Authority"];
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false,
             RoleClaimType = "roles",
-            ValidIssuers = builder.Configuration.GetSection("Authentication:ValidIssuers").Get<string[]>(),
+            ValidIssuers = builder.Configuration
+                .GetSection("Authentication:ValidIssuers").Get<string[]>(),
         };
     });
 

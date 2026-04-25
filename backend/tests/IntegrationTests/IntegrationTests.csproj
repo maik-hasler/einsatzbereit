@@ -4,7 +4,6 @@
     <PackageReference Include="Aspire.Hosting.Testing" />
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="Respawn" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="TUnit" />
   </ItemGroup>
 

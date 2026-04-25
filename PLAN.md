@@ -26,9 +26,19 @@ Vollständige Migration von docker-compose → Aspire, xUnit → TUnit, TypeScri
 - [x] `IntegrationTestCollection.cs`: löschen (nicht mehr nötig)
 - [x] `IntegrationTests/**/*.cs`: `[Collection]` → `[ClassDataSource<T>]`, `[Fact]` → `[Test]`, `IAsyncLifetime` → `IAsyncInitializer`
 - [ ] `IntegrationTests`: ausführen und ergebnis auf korrekt prüfen andernfalls fixen
-  - [ ] Aspire setup fixen. frontend-instlaler funktioniert nicht: `npm error code EUNSUPPORTEDPROTOCOL
- npm error Unsupported URL Type "workspace:": workspace:*
- npm error A complete log of this run can be found in: C:\Users\maikh\AppData\Local\npm-cache\_logs\2026-04-24T19_34_51_608Z-debug-0.log`
+
+## Phase 2.1 — Echte Keycloak-Instanz für IntegrationTests
+
+- [x] `AppHost.cs`: `TestMode`-Branch entfernen, Keycloak immer starten
+- [x] `Api/Program.cs`: `TestSigningKey`-Auth-Branch entfernen
+- [x] `Infrastructure/ServiceCollectionExtensions.cs`: InMemory-Fallback entfernen
+- [x] `Infrastructure/Keycloak/InMemoryKeycloakOrganizationService.cs`: löschen
+- [x] `keycloak/realms/einsatzbereit-realm.json`: feste `id` für hannah/olaf/admin
+- [x] `IntegrationTestFixture`: Password-Grant gegen `frontend`-Client statt selbst-signierter JWTs
+- [x] `IntegrationTestFixture`: `ResetKeycloakOrganizationsAsync` via Backend-Service-Account
+- [x] Tests: `Before(Test)`-Hook ruft `fixture.ResetAsync()` (DB + Keycloak Orgs)
+- [x] Test-Klassen `[NotInParallel("IntegrationDb")]` — verhindern paralleles Schreiben auf gemeinsamen DB-/KC-State
+- [x] `dotnet test` IntegrationTests grün (40/40)
 
 ## Phase 3 — VisualTests (neu)
 

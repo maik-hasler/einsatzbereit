@@ -4,9 +4,13 @@ using AwesomeAssertions;
 namespace IntegrationTests;
 
 [ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
 public class CreateOrganizationTests(
     IntegrationTestFixture fixture)
 {
+    [Before(Test)]
+    public Task ResetAsync() => fixture.ResetAsync();
+
     [Test]
     public async Task CreateOrganization_ShouldReturnOrganization_WhenNameIsValid(
         CancellationToken cancellationToken)

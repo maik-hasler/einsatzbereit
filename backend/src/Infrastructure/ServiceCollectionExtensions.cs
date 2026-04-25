@@ -46,7 +46,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
 
         services.ConfigureOptions<KeycloakOptionsSetup>();
-
         services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
             (sp, client) =>
             {

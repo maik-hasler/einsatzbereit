@@ -17,9 +17,6 @@ var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26
 
 var keycloakEndpoint = keycloak.GetEndpoint("http");
 
-var frontend = builder.AddViteApp("frontend", "../../../../frontend")
-    .WithPnpm();
-
 var backend = builder.AddProject<Projects.Api>("backend")
     .WithReference(database)
     .WaitFor(database)
@@ -29,12 +26,14 @@ var backend = builder.AddProject<Projects.Api>("backend")
     .WithEnvironment("Authentication__ValidIssuers__0",
         ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
     .WithEnvironment("Keycloak__BaseUrl",
-        ReferenceExpression.Create($"{keycloakEndpoint}"))
-    .WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
+        ReferenceExpression.Create($"{keycloakEndpoint}"));
 
-frontend
+var frontend = builder.AddViteApp("frontend", "../../../../frontend")
+    .WithPnpm()
     .WithReference(backend)
     .WaitFor(backend)
     .WithEnvironment("VITE_API_URL", backend.GetEndpoint("https"));
+
+backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 
 builder.Build().Run();
