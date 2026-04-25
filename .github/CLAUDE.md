@@ -1,4 +1,4 @@
-# .github — CI/CD & Issue Templates
+# .github - CI/CD & Issue Templates
 
 ## Workflows
 
@@ -26,7 +26,7 @@
 - **Jobs (sequential):** lint → build
   - `lint`: `pnpm lint` + `pnpm check` (type check)
   - `build`: `pnpm build`
-- **No E2E job** — E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
+- **No E2E job** - E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
 
 ### `docs.yml`
 - **Trigger:** `docs/**` path filter or manual
