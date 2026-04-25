@@ -32,7 +32,9 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
     .WithPnpm()
     .WithReference(backend)
     .WaitFor(backend)
-    .WithEnvironment("VITE_API_URL", backend.GetEndpoint("https"));
+    .WithEnvironment("VITE_API_URL", backend.GetEndpoint("https"))
+    .WithEnvironment("VITE_KEYCLOAK_AUTHORITY_URL",
+        ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"));
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 

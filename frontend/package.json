@@ -11,9 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "oidc-client-ts": "3.1.0",
@@ -24,16 +22,13 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@playwright/test": "1.53.1",
     "@tailwindcss/vite": "4.2.2",
     "@types/node": "25.5.0",
-    "@types/pg": "8.15.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "4.7.0",
     "eslint": "10.1.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "pg": "8.16.0",
     "tailwindcss": "4.2.2",
     "typescript": "6.0.2",
     "typescript-eslint": "8.57.2",

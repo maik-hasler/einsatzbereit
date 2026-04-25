@@ -25,7 +25,7 @@ Vollständige Migration von docker-compose → Aspire, xUnit → TUnit, TypeScri
 - [x] `IntegrationTestFixture.cs`: neu auf Basis von `DistributedApplicationTestingBuilder`
 - [x] `IntegrationTestCollection.cs`: löschen (nicht mehr nötig)
 - [x] `IntegrationTests/**/*.cs`: `[Collection]` → `[ClassDataSource<T>]`, `[Fact]` → `[Test]`, `IAsyncLifetime` → `IAsyncInitializer`
-- [ ] `IntegrationTests`: ausführen und ergebnis auf korrekt prüfen andernfalls fixen
+- [x] `IntegrationTests`: ausführen und ergebnis auf korrekt prüfen andernfalls fixen
 
 ## Phase 2.1 — Echte Keycloak-Instanz für IntegrationTests
 
@@ -42,16 +42,37 @@ Vollständige Migration von docker-compose → Aspire, xUnit → TUnit, TypeScri
 
 ## Phase 3 — VisualTests (neu)
 
-- [ ] `backend/tests/VisualTests/VisualTests.csproj` anlegen (TUnit.Playwright + Aspire.Hosting.Testing)
-- [ ] `AspireFixture.cs` anlegen (startet Full-Stack via Aspire)
-- [ ] `AuthHelper.cs` anlegen (Login via Playwright, Keycloak-Flow)
-- [ ] `SmokeTests.cs` anlegen
-- [ ] `NavigationTests.cs` anlegen
-- [ ] `AuthGuardTests.cs` anlegen
-- [ ] `OrganizationTests.cs` anlegen
-- [ ] `VolunteerOpportunityTests.cs` anlegen
+- [x] `backend/tests/VisualTests/VisualTests.csproj` anlegen (TUnit.Playwright + Aspire.Hosting.Testing)
+- [x] `AspireFixture.cs` anlegen (startet Full-Stack via Aspire, wartet auf Keycloak-Realm)
+- [x] `AuthHelper.cs` anlegen (UI-Login: Anmelden → #username/#password/#kc-login)
+- [x] `SmokeTests.cs` anlegen
+- [x] `NavigationTests.cs` anlegen
+- [x] `AuthGuardTests.cs` anlegen
+- [x] `OrganizationTests.cs` anlegen
+- [x] `VolunteerOpportunityTests.cs` anlegen
+- [x] `Directory.Packages.props`: `TUnit.Playwright` 0.12.0 → 1.39.0 (Match TUnit-Version)
+- [x] `Einsatzbereit.slnx`: VisualTests-Projekt eingetragen
+- [x] `AppHost.cs`: `VITE_KEYCLOAK_AUTHORITY_URL` an Frontend übergeben (entkoppelt vom hardcoded Port)
+- [x] `VisualTestBase.cs`: `[Before(Test)]`-Hook strippt `traceparent`/`tracestate` via `Context.RouteAsync` (siehe Root-Cause unten)
+- [x] Test-Klassen erben von `VisualTestBase` statt direkt von `PageTest`
+- [x] `AuthGuardTests`: `GotoAsync(..., WaitUntil = Commit)` für `/my-engagements` (sonst aborted Redirect Initial-Load)
+- [x] **VisualTests 7/7 grün**
 - [ ] `frontend/tests/` komplett löschen (global-setup.ts, e2e/**, helpers/, playwright.config.ts)
 - [ ] `frontend/package.json`: `@playwright/test` entfernen
+
+### Root-Cause `traceparent`-CORS-Fail (korrigierte Analyse)
+
+Initiale Hypothese (Browser-OTel) **falsch**. `OTEL_SDK_DISABLED=true` hatte keinen Effekt, Frontend-HTML enthält keine OTel-Script-Injection, `node_modules` hat keine `@aspire`/`@microsoft`-Packages.
+
+Echte Ursache: **Microsoft.Playwright .NET propagiert `Activity.Current` als W3C `traceparent`-Header an Browser-Requests**. TUnit emittiert OTel-Spans pro Test → `Activity.Current` ist gesetzt, wenn Test `Page.GotoAsync` aufruft → Playwright injiziert `traceparent` in Page-Context → Browser-Fetches (inkl. oidc-client-ts Discovery) tragen Header → Keycloak CORS-Preflight reflektiert `traceparent` nicht in `Access-Control-Allow-Headers` → Browser blockt → `signinRedirect` failt still → Navigation-Timeout.
+
+Verifiziert via `Page.Request`-Listener: identische `traceparent`-Trace-ID über alle Discovery-Requests = Server-driven Propagation, nicht JS-driven.
+
+**Fix:** `Context.RouteAsync("**/*", route => continue with headers minus traceparent)` in `[Before(Test)]`-Hook (nach PageTest's Context-Init). `IAsyncInitializer.InitializeAsync` läuft zu früh — Context noch null.
+
+### Follow-up (separat, kein Blocker)
+
+- [ ] `frontend/.env`, `.env.development`: hardcoded `VITE_KEYCLOAK_AUTHORITY_URL` und `VITE_API_URL` entfernen — Vite priorisiert .env-Files über process.env, blockiert Aspire-Override. Heute funktioniert es nur, weil Keycloak fixed-port 8080 hat.
 
 Install playwright browser
 ```
