@@ -60,10 +60,10 @@ No distributed tracing, no metrics dashboard, no alerting is currently in place.
 |Low for a small project. As usage grows, diagnosing production issues becomes harder. Mitigation: structured JSON logging is in place; adding OpenTelemetry would be the natural next step.
 
 |TD-2
-|*Frontend unit tests removed post-migration*
+|*No frontend unit tests*
 
-Vitest unit tests were removed during the Astro → Vite + React migration and not yet rewritten.
-|Low currently — Playwright E2E tests cover the most important flows. Missing unit test coverage for utility functions and complex component logic.
+The frontend has no unit-test layer (Vitest or otherwise). Playwright E2E tests live in the backend (`backend/tests/VisualTests/`) and cover end-to-end flows.
+|Low currently — E2E tests cover the most important flows. Missing unit test coverage for utility functions and complex component logic.
 
 |TD-3
 |*No rate limiting on the API*

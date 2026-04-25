@@ -2,23 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import type { PagedListOfVolunteerOpportunitySummary, VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { getActiveOrgId } from "../lib/activeOrg";
+import { formatOccurrence, formatParticipationType } from "../lib/format";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 
 interface Props {
   canCreateOpportunity: boolean;
-}
-
-function getActiveOrgId(): string | null {
-  const match = document.cookie.match(/(?:^|;\s*)active-org=([^;]*)/)
-  return match ? decodeURIComponent(match[1]) : null
-}
-
-function formatOccurrence(occurrence: string): string {
-  return occurrence === "Recurring" ? "Regelmäßig" : "Einmalig";
-}
-
-function formatParticipationType(type: string): string {
-  return type === "Waitlist" ? "Warteliste" : "Einzelkontakt";
 }
 
 export default function VolunteerOpportunitiesList({ canCreateOpportunity }: Props) {

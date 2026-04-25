@@ -2,16 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import type { KeycloakOrganization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { getActiveOrgId, setActiveOrgCookie } from "../lib/activeOrg";
 import CreateOrganizationModal from "./CreateOrganizationModal";
-
-function getActiveOrgId(): string | null {
-  const match = document.cookie.match(/(?:^|;\s*)active-org=([^;]*)/)
-  return match ? decodeURIComponent(match[1]) : null
-}
-
-function setActiveOrgCookie(orgId: string) {
-  document.cookie = `active-org=${orgId};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
-}
 
 export default function OrganizationSwitcher() {
   const api = useApiClient();

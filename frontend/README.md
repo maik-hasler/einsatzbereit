@@ -17,10 +17,11 @@ Run from `frontend/`:
 
 ## E2E Tests
 
+E2E tests live in the backend under `backend/tests/VisualTests/` (TUnit.Playwright + Aspire). Run from the backend:
+
 ```bash
-pnpm exec playwright test
+cd ../backend
+dotnet test tests/VisualTests
 ```
 
-Requires all services running (`docker compose up -d` from repo root). Global setup starts Docker automatically if not already running.
-
-See [`tests/`](tests/) for spec files and helpers.
+The Aspire AppHost provisions the full stack — no need to start the frontend dev server separately.

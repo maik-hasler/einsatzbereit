@@ -3,7 +3,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-deployment-view]]
 == Deployment View
 
-=== Infrastructure Level 1: Local Development (Docker Compose)
+=== Infrastructure Level 1: Local Development (.NET Aspire)
 
 .Deployment View — Local Development
 [plantuml, "deployment-local", png]
@@ -12,7 +12,7 @@ include::../images/deployment-local.puml[]
 ....
 
 Motivation::
-The entire stack runs locally in Docker using a single `docker compose up --build` command. This ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
+The entire stack runs locally via the .NET Aspire AppHost: a single `dotnet run --project backend/src/Aspire/AppHost` command provisions Postgres, Keycloak, the backend API, and the Vite frontend. This ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
 
 Quality and Performance Characteristics::
 Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak realm configuration is imported automatically on first start from a versioned JSON file.
@@ -61,7 +61,7 @@ The CI/CD pipeline runs on GitHub Actions and covers two concerns: quality gates
 ==== Quality Gate (on every push / PR)
 
 * Backend: `dotnet build` + `dotnet test` (integration tests via Testcontainers)
-* Frontend: `npx playwright test` (E2E tests against the full Docker Compose stack)
+* E2E: `dotnet test backend/tests/VisualTests` (TUnit.Playwright against the full Aspire-provisioned stack)
 * Architecture docs: Asciidoctor build → GitHub Pages deployment
 
 ==== Image Publishing (on tag push)

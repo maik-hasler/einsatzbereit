@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { formatDateTime } from "../lib/format";
 
 interface Props {
   opportunityId: string;
@@ -8,13 +9,6 @@ interface Props {
   timeSlots: TimeSlotDetail[];
   onClose: () => void;
   onSuccess: () => void;
-}
-
-function formatDateTime(dt: string): string {
-  return new Date(dt).toLocaleString("de-DE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
 }
 
 export default function SignUpModal({ opportunityId, participationType, timeSlots, onClose, onSuccess }: Props) {

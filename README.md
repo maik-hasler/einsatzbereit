@@ -14,26 +14,17 @@ Einsatzbereit makes concrete needs visible: what, where, when.
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) with Docker Compose
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Docker](https://docs.docker.com/get-docker/) (Aspire spins up Postgres + Keycloak as containers)
+- [pnpm](https://pnpm.io/installation) (frontend package manager)
 
 ### Starting Up
 
 ```bash
-docker compose up --build
+dotnet run --project backend/src/Aspire/AppHost
 ```
 
-On first start, databases are created automatically and Keycloak realms are imported.
-
-### Useful Commands
-
-```bash
-docker compose up --build          # Start all services (with rebuild)
-docker compose up -d               # Start in background
-docker compose down                # Stop everything
-docker compose down -v             # Stop + delete volumes (full reset)
-docker compose logs -f <service>   # Follow logs of a service
-docker compose restart <service>   # Restart a single service
-```
+The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vite frontend. The Aspire dashboard prints service URLs on startup. On first start, databases are created automatically and the Keycloak realm is imported.
 
 ### Services
 

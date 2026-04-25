@@ -3,20 +3,9 @@ import { useParams, useNavigate } from "react-router";
 import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { formatDateTime, formatOccurrence, formatParticipationType } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
 import EditVolunteerOpportunityModal from "../components/EditVolunteerOpportunityModal";
-
-function formatDateTime(dt: string): string {
-  return new Date(dt).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
-}
-
-function formatOccurrence(o: string): string {
-  return o === "Recurring" ? "Regelmäßig" : "Einmalig";
-}
-
-function formatParticipationType(t: string): string {
-  return t === "Waitlist" ? "Warteliste" : "Einzelkontakt";
-}
 
 export default function VolunteerOpportunityDetailPage() {
   const { opportunityId } = useParams<{ opportunityId: string }>();

@@ -64,7 +64,7 @@ Required environment variables at runtime (see `README.md`):
 - `KC_DB_URL` — JDBC connection string for Keycloak's own DB
 - `KC_DB_USERNAME` / `KC_DB_PASSWORD`
 
-In `docker-compose.yml`, Keycloak connects to the `keycloak` database on the shared `postgres` container.
+The Aspire AppHost (`backend/src/Aspire/AppHost/AppHost.cs`) launches Keycloak with `KC_DB=dev-file` for local dev — Keycloak owns its own embedded H2 store there. The shared Postgres container hosts only the application `einsatzbereit` database.
 
 ## Updating the Realm
 

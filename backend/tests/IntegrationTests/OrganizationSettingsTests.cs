@@ -144,9 +144,7 @@ public class OrganizationSettingsTests(
         var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
         result.Address.Should().BeNull();
     }
-
-    // ── RemoveMember ────────────────────────────────────────────────────────
-
+    
     [Test]
     public async Task RemoveMember_ShouldReturn401_WhenNotAuthenticated(
         CancellationToken cancellationToken)

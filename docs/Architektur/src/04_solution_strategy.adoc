@@ -31,8 +31,8 @@ The following table summarizes the key architectural decisions and how they addr
 |All NuGet package versions are managed in a single file. Version updates require one change, not many.
 
 |Maintainability
-|Docker Compose for local development
-|One command (`docker compose up --build`) starts the entire stack. No manual setup of databases, Keycloak realms, or service dependencies.
+|.NET Aspire AppHost for local development
+|One command (`dotnet run --project backend/src/Aspire/AppHost`) starts the entire stack — Postgres, Keycloak, backend API, and the Vite frontend. No manual setup of databases, Keycloak realms, or service dependencies.
 
 |Maintainability
 |GitHub Actions CI/CD → GHCR
@@ -81,8 +81,8 @@ The following table summarizes the key architectural decisions and how they addr
 |API client generation
 |NSwag (OpenAPI → TypeScript)
 
-|Container runtime
-|Docker, Docker Compose
+|Local orchestration
+|.NET Aspire AppHost (Docker for service containers)
 
 |CI/CD
 |GitHub Actions → GitHub Container Registry (GHCR)

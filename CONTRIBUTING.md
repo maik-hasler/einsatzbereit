@@ -14,12 +14,12 @@ Every contribution counts — bug reports, ideas, documentation, or code.
 
 ### Development Environment
 
-Requirements: [Docker](https://docs.docker.com/get-docker/) with Docker Compose.
+Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download), [Docker](https://docs.docker.com/get-docker/), [pnpm](https://pnpm.io/installation).
 
 ```bash
 git clone https://github.com/maik-hasler/einsatzbereit.git
 cd einsatzbereit
-docker compose up --build
+dotnet run --project backend/src/Aspire/AppHost
 ```
 
 All services start automatically. See [README.md](README.md) for service URLs and test users.
@@ -111,13 +111,14 @@ dotnet test
 Integration tests use Testcontainers and require Docker.
 Do not mock the database — all integration tests run against a real PostgreSQL instance.
 
-### Frontend (E2E)
-```bash
-cd frontend
-npx playwright test
-```
+### E2E
 
-The dev server must be running (`docker compose up`) before running E2E tests.
+E2E tests live under `backend/tests/VisualTests/` (TUnit.Playwright + Aspire). They spin up the full stack via the Aspire AppHost — no separate dev server needed:
+
+```bash
+cd backend
+dotnet test tests/VisualTests
+```
 
 ### API Client
 
