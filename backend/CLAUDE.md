@@ -1,4 +1,4 @@
-# Backend — .NET 10 Clean Architecture API
+# Backend - .NET 10 Clean Architecture API
 
 ## Layer Overview
 
@@ -22,7 +22,7 @@ src/
 │   ├── Organizations/          Feature folders: {Feature}/{UseCase}/v1/
 │   └── VolunteerOpportunities/
 │
-├── Application/                Business logic only — no EF Core, no HTTP
+├── Application/                Business logic only - no EF Core, no HTTP
 │   ├── ServiceCollectionExtensions.cs   Reflection-based handler registration
 │   ├── Common/
 │   │   ├── Messaging/          ISender, ICommand<T>, IQuery<T>, IPipelineBehavior<T,R>
@@ -61,7 +61,7 @@ tests/
 
 ```
 1. Domain (if domain logic involved)
-   └── Domain/Organizations/Organization.cs  — add method
+   └── Domain/Organizations/Organization.cs  - add method
 
 2. Application
    └── Application/Organizations/{UseCase}/v1/
@@ -70,11 +70,11 @@ tests/
 
 3. Api
    └── Api/Organizations/{UseCase}/v1/
-       ├── {UseCase}Request.cs    — request body record (omit if no body)
-       └── {UseCase}Endpoint.cs  — implements IEndpoint, maps route, calls ISender
+       ├── {UseCase}Request.cs    - request body record (omit if no body)
+       └── {UseCase}Endpoint.cs  - implements IEndpoint, maps route, calls ISender
 
 4. OpenAPI regenerates automatically on dotnet build (NSwag in Api.csproj)
-5. Frontend api-client.ts regenerates with it — do not hand-edit
+5. Frontend api-client.ts regenerates with it - do not hand-edit
 ```
 
 Reference implementations (newest first): `Organizations/RemoveMember/`, `Organizations/GetOrganizationDetails/`, `Organizations/AddMember/`.
@@ -100,12 +100,12 @@ var result = await sender.SendAsync(new MyCommand(...), cancellationToken);
 ```
 
 ### Handler registration
-Auto-scanned from Application assembly — no manual DI registration needed.  
+Auto-scanned from Application assembly - no manual DI registration needed.  
 Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's picked up.
 
 ### Pipeline behaviors (run in this order)
-1. `TransactionPipelineBehavior` — wraps commands in a DB transaction
-2. `PerformancePipelineBehavior` — logs slow requests
+1. `TransactionPipelineBehavior` - wraps commands in a DB transaction
+2. `PerformancePipelineBehavior` - logs slow requests
 
 ### Authorization policies
 | Policy constant | Role |
@@ -143,18 +143,18 @@ Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's pic
 
 ### Unit tests (`Application.UnitTests`)
 - Mock with NSubstitute, assert with AwesomeAssertions
-- Test handlers in isolation — no DB, no HTTP
+- Test handlers in isolation - no DB, no HTTP
 
 ### Integration tests (`IntegrationTests`)
 - `IntegrationTestFixture` (IAsyncLifetime): spins up Postgres + Keycloak containers
 - `Respawn` resets database state between tests (not between runs)
-- `ApiClient.cs` is NSwag-generated — **do not hand-edit**
+- `ApiClient.cs` is NSwag-generated - **do not hand-edit**
 - Get auth tokens via `GetAccessTokenAsync(username, password)` in fixture
 
 ### Architecture tests (`ArchitectureTests`)
-- `ArchitectureLayerTests.cs` — layer dependency rules
-- `EndpointConventionTests.cs` — endpoint naming/structure rules
-- `MessagingConventionTests.cs` — handler/command/query naming rules
+- `ArchitectureLayerTests.cs` - layer dependency rules
+- `EndpointConventionTests.cs` - endpoint naming/structure rules
+- `MessagingConventionTests.cs` - handler/command/query naming rules
 - Run these if you rename namespaces or move files between layers
 
 ### Run all tests
@@ -168,13 +168,13 @@ All versions centrally managed in `Directory.Packages.props`.
 
 | Package | Used in |
 |---|---|
-| `Asp.Versioning.Http` | Api — URL-segment versioning |
-| `Microsoft.AspNetCore.Authentication.JwtBearer` | Api — JWT validation |
-| `NSwag.MSBuild` | Api — generates OpenAPI spec + TS client on build |
-| `EFCore.NamingConventions` | Infrastructure — snake_case |
-| `Npgsql.EntityFrameworkCore.PostgreSQL` | Infrastructure — Postgres provider |
+| `Asp.Versioning.Http` | Api - URL-segment versioning |
+| `Microsoft.AspNetCore.Authentication.JwtBearer` | Api - JWT validation |
+| `NSwag.MSBuild` | Api - generates OpenAPI spec + TS client on build |
+| `EFCore.NamingConventions` | Infrastructure - snake_case |
+| `Npgsql.EntityFrameworkCore.PostgreSQL` | Infrastructure - Postgres provider |
 | `Testcontainers.PostgreSql` + `.Keycloak` | IntegrationTests |
-| `Respawn` | IntegrationTests — DB reset |
+| `Respawn` | IntegrationTests - DB reset |
 | `NetArchTest.Rules` | ArchitectureTests |
 | `NSubstitute` | Application.UnitTests |
 | `AwesomeAssertions` | All test projects |

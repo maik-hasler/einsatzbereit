@@ -1,4 +1,4 @@
-# Frontend — Vite + React 19 + Tailwind CSS 4
+# Frontend - Vite + React 19 + Tailwind CSS 4
 
 ## Architecture
 
@@ -7,7 +7,7 @@ Vite SPA. React Router v7 for routing. Client-side OIDC via `react-oidc-context`
 ```
 src/
 ├── client/
-│   ├── api-client.ts       NSwag-generated TypeScript client — DO NOT HAND-EDIT
+│   ├── api-client.ts       NSwag-generated TypeScript client - DO NOT HAND-EDIT
 │   └── api-instance.ts     Creates EinsatzbereitApi with Bearer token (accepts optional token string)
 ├── hooks/
 │   └── useApiClient.ts     React hook: returns api-client instance with token from useAuth()
@@ -44,14 +44,14 @@ User clicks "Anmelden"
 → ProtectedRoute renders children
 ```
 
-- `auth.user?.profile` — decoded id_token claims (sub, email, name, preferred_username, roles)
-- `auth.user?.access_token` — Bearer token for API calls
-- `active-org` cookie — active organization id (set by OrganizationSwitcher)
-- Roles: `auth.user?.profile?.roles` — flat string array from Keycloak custom mapper
+- `auth.user?.profile` - decoded id_token claims (sub, email, name, preferred_username, roles)
+- `auth.user?.access_token` - Bearer token for API calls
+- `active-org` cookie - active organization id (set by OrganizationSwitcher)
+- Roles: `auth.user?.profile?.roles` - flat string array from Keycloak custom mapper
 
 ## API Client
 
-`src/client/api-client.ts` is auto-generated from `backend/src/Api/wwwroot/openapi-v1.json` by NSwag on every backend build. Never edit it manually — changes will be overwritten.
+`src/client/api-client.ts` is auto-generated from `backend/src/Api/wwwroot/openapi-v1.json` by NSwag on every backend build. Never edit it manually - changes will be overwritten.
 
 Use `useApiClient()` hook in all components:
 ```ts
@@ -125,7 +125,7 @@ pnpm lint     # eslint, zero warnings allowed
 
 ## Linting
 
-Run lint before every commit. All errors must be fixed — zero warnings allowed (`--max-warnings 0`).
+Run lint before every commit. All errors must be fixed - zero warnings allowed (`--max-warnings 0`).
 
 ```bash
 pnpm lint

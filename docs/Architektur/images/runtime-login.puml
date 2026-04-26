@@ -1,6 +1,6 @@
 @startuml Login Flow
 
-title Runtime View — User Login (OIDC Authorization Code Flow with PKCE)
+title Runtime View - User Login (OIDC Authorization Code Flow with PKCE)
 
 actor "Volunteer / Organizer" as user
 participant "Frontend\n(React SPA)" as frontend

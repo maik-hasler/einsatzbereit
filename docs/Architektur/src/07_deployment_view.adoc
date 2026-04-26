@@ -5,7 +5,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 === Infrastructure Level 1: Local Development (.NET Aspire)
 
-.Deployment View — Local Development
+.Deployment View - Local Development
 [plantuml, "deployment-local", png]
 ....
 include::../images/deployment-local.puml[]
@@ -50,7 +50,7 @@ Local development is optimized for fast iteration, not production performance. A
 
 === Infrastructure Level 2: CI/CD Pipeline
 
-.Deployment View — CI/CD (GitHub Actions)
+.Deployment View - CI/CD (GitHub Actions)
 [plantuml, "deployment-cicd", png]
 ....
 include::../images/deployment-cicd.puml[]

@@ -20,7 +20,7 @@ einsatzbereit/
 | Backend | .NET 10, EF Core 9, PostgreSQL 18 |
 | Auth | Keycloak 26.6.1 (OIDC, JWT) |
 | Frontend | Vite SPA, React 19, React Router v7, Tailwind CSS 4 |
-| API client | NSwag-generated — **never hand-edit** `api-client.ts` |
+| API client | NSwag-generated - **never hand-edit** `api-client.ts` |
 | Tests (BE) | TUnit, Aspire.Hosting.Testing, Respawn, NetArchTest |
 | Tests (FE) | E2E lives in backend `tests/VisualTests/` (TUnit.Playwright + Aspire) |
 | CI/CD | GitHub Actions → GHCR |
@@ -35,8 +35,8 @@ Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend
 
 | Service | URL | Credentials |
 |---|---|---|
-| Frontend | http://localhost:4321 | — |
-| Backend API | http://localhost:5000 | — |
+| Frontend | http://localhost:4321 | - |
+| Backend API | http://localhost:5000 | - |
 | Keycloak admin | http://localhost:8080 | admin / admin |
 | pgAdmin | http://localhost:5050 | admin@admin.com / admin |
 | PostgreSQL | localhost:5432 | postgres / postgres |
@@ -49,4 +49,4 @@ Test users: `hannah/hannah123` (user), `olaf/olaf123` (user + organisator), `adm
 - Routes: `/v{version:apiVersion}/...`, namespaces: `.v1`
 - Commands/queries/DTOs: C# records
 - Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)
-- No `.Result`/`.Wait()` — async all the way
+- No `.Result`/`.Wait()` - async all the way

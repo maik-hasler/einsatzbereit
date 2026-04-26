@@ -20,7 +20,7 @@ The following table summarizes the key architectural decisions and how they addr
 
 |Appropriateness
 |Feature folder structure in both backend and frontend
-|Code is organized by domain feature, not by technical layer. Adding a new feature means adding a new folder — not modifying multiple existing ones.
+|Code is organized by domain feature, not by technical layer. Adding a new feature means adding a new folder - not modifying multiple existing ones.
 
 |Maintainability
 |NSwag-generated API client for the frontend
@@ -32,7 +32,7 @@ The following table summarizes the key architectural decisions and how they addr
 
 |Maintainability
 |.NET Aspire AppHost for local development
-|One command (`dotnet run --project backend/src/Aspire/AppHost`) starts the entire stack — Postgres, Keycloak, backend API, and the Vite frontend. No manual setup of databases, Keycloak realms, or service dependencies.
+|One command (`dotnet run --project backend/src/Aspire/AppHost`) starts the entire stack - Postgres, Keycloak, backend API, and the Vite frontend. No manual setup of databases, Keycloak realms, or service dependencies.
 
 |Maintainability
 |GitHub Actions CI/CD → GHCR

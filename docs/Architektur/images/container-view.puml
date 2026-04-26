@@ -2,7 +2,7 @@
 
 !include <C4/C4_Container>
 
-title Container View — Einsatzbereit
+title Container View - Einsatzbereit
 
 Person(volunteer, "Volunteer", "Searches for and registers to volunteer opportunities")
 Person(organizer, "Organizer", "Creates and manages volunteer opportunities")

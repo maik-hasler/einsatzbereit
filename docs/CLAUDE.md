@@ -1,4 +1,4 @@
-# Docs — Architecture Documentation
+# Docs - Architecture Documentation
 
 ## Structure
 
@@ -31,7 +31,7 @@ docs/
 
 ## Format
 
-- **AsciiDoc** (`.adoc`) — not Markdown
+- **AsciiDoc** (`.adoc`) - not Markdown
 - **arc42** template (standard German architecture documentation format)
 - Diagrams in **PlantUML** (`.puml`) embedded via `asciidoctor-diagram`
 - Built to HTML5 via `asciidoctor-action` in CI, deployed to GitHub Pages

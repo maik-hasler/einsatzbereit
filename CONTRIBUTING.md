@@ -1,7 +1,7 @@
 # Contributing to Einsatzbereit
 
 Thank you for your interest in contributing to Einsatzbereit!
-Every contribution counts — bug reports, ideas, documentation, or code.
+Every contribution counts - bug reports, ideas, documentation, or code.
 
 ## Language Convention
 
@@ -50,20 +50,20 @@ Open an [Issue](../../issues/new) with:
 
 ### Feature Requests
 
-Feature requests are welcome — open an Issue.
+Feature requests are welcome - open an Issue.
 Describe the problem you want to solve, not just the desired solution.
 This helps evaluate whether it aligns with the project's goals.
 
 ### Contributing Code
 
-1. **Find or create an Issue** — confirm the change is wanted before writing code.
+1. **Find or create an Issue** - confirm the change is wanted before writing code.
 2. **Fork the repository** and create a feature branch:
    ```bash
    git checkout -b feat/short-description
    ```
-3. **Make focused commits** — small, atomic commits preferred.
-4. **Open a Pull Request** — describe what and why. Link the related Issue.
-5. **Address review feedback** — reviews are part of the process.
+3. **Make focused commits** - small, atomic commits preferred.
+4. **Open a Pull Request** - describe what and why. Link the related Issue.
+5. **Address review feedback** - reviews are part of the process.
 
 ### Branch Naming
 
@@ -94,7 +94,7 @@ Rules:
 
 ## Pull Request Process
 
-1. Keep PRs focused — one logical change per PR
+1. Keep PRs focused - one logical change per PR
 2. Update documentation if your change affects behavior
 3. Ensure CI passes before requesting review
 4. The PR description should explain *why* the change is needed
@@ -109,11 +109,11 @@ dotnet test
 ```
 
 Integration tests use Testcontainers and require Docker.
-Do not mock the database — all integration tests run against a real PostgreSQL instance.
+Do not mock the database - all integration tests run against a real PostgreSQL instance.
 
 ### E2E
 
-E2E tests live under `backend/tests/VisualTests/` (TUnit.Playwright + Aspire). They spin up the full stack via the Aspire AppHost — no separate dev server needed:
+E2E tests live under `backend/tests/VisualTests/` (TUnit.Playwright + Aspire). They spin up the full stack via the Aspire AppHost - no separate dev server needed:
 
 ```bash
 cd backend
@@ -136,7 +136,7 @@ dotnet tool run openapi
 - Follow Microsoft naming conventions (PascalCase for public members)
 - Feature folders: `{Layer}/{Domain}/{Feature}/v1/`
 - Commands/queries/DTOs as C# records
-- Async all the way — no `.Result` or `.Wait()`
+- Async all the way - no `.Result` or `.Wait()`
 
 ### Frontend (TypeScript)
 - Named exports preferred over default exports
@@ -145,7 +145,7 @@ dotnet tool run openapi
 
 ### General
 - Comments explain *why*, not *what*
-- No dead code — remove, don't comment out
+- No dead code - remove, don't comment out
 - Consistency within a module beats personal preference
 
 ## Architecture Decisions

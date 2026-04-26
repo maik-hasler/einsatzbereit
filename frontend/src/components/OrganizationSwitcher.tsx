@@ -79,7 +79,7 @@ export default function OrganizationSwitcher() {
     );
   }
 
-  // No orgs — show direct "create" button instead of dropdown
+  // No orgs - show direct "create" button instead of dropdown
   if (orgs.length === 0) {
     return (
       <>

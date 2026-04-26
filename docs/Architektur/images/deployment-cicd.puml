@@ -1,6 +1,6 @@
 @startuml CI/CD Pipeline
 
-title Deployment View — CI/CD (GitHub Actions → GHCR)
+title Deployment View - CI/CD (GitHub Actions → GHCR)
 
 actor "Developer" as dev
 participant "GitHub\n(main branch / tag)" as github

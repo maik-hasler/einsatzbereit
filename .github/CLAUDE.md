@@ -1,4 +1,4 @@
-# .github — CI/CD & Issue Templates
+# .github - CI/CD & Issue Templates
 
 ## Workflows
 
@@ -9,7 +9,8 @@
 ├── docs.yml            Docs: AsciiDoc build → GitHub Pages deploy
 ├── backend-publish.yml Backend: build/test → push Docker image to GHCR
 ├── frontend-publish.yml Frontend: lint/build/test → push Docker image to GHCR
-└── keycloak.yml        Keycloak: push Docker image to GHCR
+├── keycloak.yml        Keycloak: push Docker image to GHCR
+└── lint.yml            Ban em/en dashes (U+2014, U+2013)
 ```
 
 ## CI Workflows (run on push/PR to main)
@@ -25,7 +26,7 @@
 - **Jobs (sequential):** lint → build
   - `lint`: `pnpm lint` + `pnpm check` (type check)
   - `build`: `pnpm build`
-- **No E2E job** — E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
+- **No E2E job** - E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
 
 ### `docs.yml`
 - **Trigger:** `docs/**` path filter or manual

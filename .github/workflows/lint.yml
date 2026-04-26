@@ -1,0 +1,24 @@
+﻿name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ban-typographic-dashes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Ban em/en dashes (U+2014, U+2013)
+        run: |
+          if grep -rPnI '[\x{2013}\x{2014}]' .; then
+            echo "::error::Em/en dashes found - use plain ASCII hyphens (-) instead"
+            exit 1
+          fi

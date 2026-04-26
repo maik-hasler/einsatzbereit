@@ -5,7 +5,7 @@ Spontaneously, quickly, and effectively.
 ## Motivation
 Volunteering doesn't require a long-term commitment.
 Sometimes an afternoon is enough, sometimes a week.
-But finding out where help is currently needed is often difficult —
+But finding out where help is currently needed is often difficult -
 whether at large NGOs or a local sports tournament.
 Existing platforms are too complex, too generic, or barely used.
 Einsatzbereit makes concrete needs visible: what, where, when.
@@ -30,8 +30,8 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 
 | Service    | URL                        | Credentials                              |
 |------------|----------------------------|------------------------------------------|
-| Frontend   | http://localhost:4321      | –                                        |
-| Backend    | http://localhost:5000      | –                                        |
+| Frontend   | http://localhost:4321      | -                                        |
+| Backend    | http://localhost:5000      | -                                        |
 | Keycloak   | http://localhost:8080      | `admin` / `admin`                        |
 | pgAdmin    | http://localhost:5050      | `admin@admin.com` / `admin`              |
 | PostgreSQL | `localhost:5432`           | `postgres` / `postgres`                  |
