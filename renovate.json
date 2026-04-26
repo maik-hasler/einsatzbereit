@@ -9,6 +9,12 @@
   "automerge": false,
   "labels": ["dependencies", "renovate"],
   "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "matchManagers": ["msbuild-sdk"],
+      "rangeStrategy": "replace"
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",
