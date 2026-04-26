@@ -30,7 +30,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.15.1]" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.15.1]" />
     <!-- Aspire: AppHost + Tests -->
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.2.4" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.2.4]" />
     <PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.2.3]" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="[13.2.3]" />
     <!-- Tests -->
