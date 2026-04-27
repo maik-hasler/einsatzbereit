@@ -1,0 +1,100 @@
+:root {
+  --pf-v5-global--primary-color--100: #22c55e;
+  --pf-v5-global--primary-color--200: #16a34a;
+  --pf-v5-global--link--Color: #16a34a;
+  --pf-v5-global--link--Color--hover: #15803d;
+  --pf-v5-global--active-color--100: #16a34a;
+  --pf-v5-global--BackgroundColor--150: #f0fdf4;
+  --pf-v5-global--BorderRadius--sm: 0.375rem;
+  --pf-v5-global--BorderRadius--lg: 0.5rem;
+  --pf-v5-global--FontFamily--sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background: #ffffff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.login-pf-page .login-pf-header h1,
+#kc-header-wrapper {
+  font-size: 0;
+  color: transparent;
+}
+
+.login-pf-page .login-pf-header h1::after,
+#kc-header-wrapper::after {
+  content: "Einsatzbereit";
+  display: inline-block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.pf-v5-c-card,
+.card-pf {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.pf-v5-c-button.pf-m-primary,
+.pf-c-button.pf-m-primary,
+input[type="submit"].pf-c-button,
+#kc-login {
+  background-color: #22c55e;
+  border-color: #22c55e;
+  color: #ffffff;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: background-color 150ms ease;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-c-button.pf-m-primary:hover,
+input[type="submit"].pf-c-button:hover,
+#kc-login:hover {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.pf-v5-c-button.pf-m-primary:focus-visible,
+.pf-c-button.pf-m-primary:focus-visible,
+#kc-login:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, 0.25);
+}
+
+.pf-v5-c-button.pf-m-link,
+.pf-c-button.pf-m-link,
+a {
+  color: #16a34a;
+}
+
+.pf-v5-c-button.pf-m-link:hover,
+.pf-c-button.pf-m-link:hover,
+a:hover {
+  color: #15803d;
+}
+
+.pf-v5-c-form-control,
+.pf-c-form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  border-radius: 0.375rem;
+}
+
+.pf-v5-c-form-control:focus,
+.pf-c-form-control:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+}
+
+.pf-v5-c-check__input:checked,
+.pf-c-check__input:checked {
+  accent-color: #22c55e;
+}

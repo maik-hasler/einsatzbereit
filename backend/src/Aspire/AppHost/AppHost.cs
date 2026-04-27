@@ -9,9 +9,13 @@ var database = postgres.AddDatabase("einsatzbereit");
 var keycloakRealmPath = Path.GetFullPath(
     Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "realms"));
 
+var keycloakThemePath = Path.GetFullPath(
+    Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
+
 var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.6.1")
     .WithEnvironment("KC_DB", "dev-file")
     .WithBindMount(keycloakRealmPath, "/opt/keycloak/data/import", isReadOnly: true)
+    .WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
     .WithArgs("start-dev", "--import-realm")
     .WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);
 

@@ -2,6 +2,15 @@
   "realm": "einsatzbereit",
   "enabled": true,
   "organizationsEnabled": true,
+  "loginTheme": "einsatzbereit",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["de", "en"],
+  "defaultLocale": "de",
   "roles": {
     "realm": [
       {
