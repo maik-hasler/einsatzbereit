@@ -18,6 +18,12 @@
       "matchDepNames": ["Aspire.AppHost.Sdk"],
       "matchUpdateTypes": ["pin"],
       "enabled": false
+    },
+    {
+      "matchManagers": ["nuget"],
+      "matchPackageNames": ["TUnit{/,}**"],
+      "groupName": "TUnit",
+      "groupSlug": "tunit"
     }
   ],
   "customManagers": [
