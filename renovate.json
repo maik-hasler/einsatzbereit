@@ -8,8 +8,11 @@
   "dependencyDashboard": true,
   "automerge": false,
   "labels": ["dependencies", "renovate"],
-  "rangeStrategy": "pin",
   "packageRules": [
+    {
+      "matchManagers": ["nuget"],
+      "rangeStrategy": "pin"
+    },
     {
       "matchManagers": ["msbuild-sdk"],
       "rangeStrategy": "replace"

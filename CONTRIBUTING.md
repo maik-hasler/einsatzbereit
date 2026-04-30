@@ -148,6 +148,17 @@ dotnet tool run openapi
 - No dead code - remove, don't comment out
 - Consistency within a module beats personal preference
 
+## Dependency Management
+
+Dependencies are managed by [Renovate](https://docs.renovatebot.com/) (config: `renovate.json`).
+
+| Manager      | Range strategy | Notes                                                                 |
+|--------------|----------------|-----------------------------------------------------------------------|
+| `nuget`      | `pin`          | NuGet `PackageVersion` entries use exact-version brackets (e.g. `[10.0.7]`) via `Directory.Packages.props`. |
+| `msbuild-sdk`| `replace`      | MSBuild SDK references (e.g. `Aspire.AppHost.Sdk`) must stay floating - bracketed pins like `[13.2.4]` break SDK resolution. Pin update PRs are explicitly disabled for this manager. |
+
+When adding a new manager, set its `rangeStrategy` explicitly in a `packageRules` entry rather than relying on a global default.
+
 ## Architecture Decisions
 
 Significant architectural decisions are documented as ADRs under `docs/ADRs/`.
