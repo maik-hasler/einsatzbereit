@@ -24,40 +24,6 @@
       "matchPackageNames": ["TUnit{/,}**"],
       "groupName": "TUnit",
       "groupSlug": "tunit"
-    },
-    {
-      "matchManagers": ["nuget"],
-      "matchPackageNames": [
-        "Microsoft.EntityFrameworkCore{/,}**",
-        "Npgsql.EntityFrameworkCore.PostgreSQL",
-        "EFCore.NamingConventions"
-      ],
-      "groupName": "Entity Framework Core",
-      "groupSlug": "efcore"
-    },
-    {
-      "matchManagers": ["nuget"],
-      "matchPackageNames": ["OpenTelemetry{/,}**"],
-      "groupName": "OpenTelemetry",
-      "groupSlug": "opentelemetry"
-    },
-    {
-      "matchManagers": ["nuget"],
-      "matchPackageNames": ["Aspire.Hosting{/,}**"],
-      "groupName": "Aspire.Hosting",
-      "groupSlug": "aspire-hosting"
-    },
-    {
-      "matchManagers": ["nuget"],
-      "matchPackageNames": ["Asp.Versioning{/,}**"],
-      "groupName": "Asp.Versioning",
-      "groupSlug": "asp-versioning"
-    },
-    {
-      "matchManagers": ["nuget"],
-      "matchPackageNames": ["Microsoft.Extensions{/,}**"],
-      "groupName": "Microsoft.Extensions",
-      "groupSlug": "microsoft-extensions"
     }
   ],
   "customManagers": [
