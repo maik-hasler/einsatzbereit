@@ -9,11 +9,13 @@
   "rangeStrategy": "pin",
   "packageRules": [
     {
-      "matchManagers": ["msbuild-sdk"],
+      "matchManagers": ["msbuild"],
+      "matchDepNames": ["Aspire.AppHost.Sdk"],
       "rangeStrategy": "replace"
     },
     {
-      "matchManagers": ["msbuild-sdk"],
+      "matchManagers": ["msbuild"],
+      "matchDepNames": ["Aspire.AppHost.Sdk"],
       "matchUpdateTypes": ["pin"],
       "enabled": false
     }
