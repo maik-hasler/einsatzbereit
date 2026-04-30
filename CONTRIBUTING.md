@@ -152,15 +152,7 @@ dotnet tool run openapi
 
 Dependencies are managed by [Renovate](https://docs.renovatebot.com/) (config: `renovate.json`).
 
-| Manager      | Range strategy | Notes                                                                 |
-|--------------|----------------|-----------------------------------------------------------------------|
-| `nuget`      | `pin`          | NuGet `PackageVersion` entries use exact-version brackets (e.g. `[10.0.7]`) via `Directory.Packages.props`. |
-| `npm`        | `pin`          | `frontend/package.json` keeps exact versions (no `^`/`~`); Renovate auto-pins any new caret/tilde ranges. |
-| `msbuild-sdk`| `replace`      | MSBuild SDK references (e.g. `Aspire.AppHost.Sdk`) must stay floating - bracketed pins like `[13.2.4]` break SDK resolution. Pin update PRs are explicitly disabled for this manager. |
-| `dockerfile` / `docker-compose` | `replace` + `pinDigests` | Image tags get an immutable `@sha256:...` digest appended for supply-chain integrity. |
-| `github-actions` | `replace` + `pinDigests` | Action references (`uses: actions/checkout@v6`) get pinned to commit SHAs. |
-
-When adding a new manager, set its `rangeStrategy` explicitly in a `packageRules` entry rather than relying on a global default.
+The default `rangeStrategy` is `pin` - any new dependency range gets pinned to an exact version (e.g. NuGet `[10.0.7]`, npm `19.2.5`). The one exception is the `msbuild-sdk` manager: SDK references like `Aspire.AppHost.Sdk` must stay floating because bracketed pins (`[13.2.4]`) break SDK resolution. Two `packageRules` enforce this - one sets `rangeStrategy: replace` for all msbuild-sdk updates, the other disables `pin` update PRs entirely. Both rules must stay separate; merging them would only apply `replace` to pin updates and let the global `pin` strategy leak into regular version bumps.
 
 ## Architecture Decisions
 
