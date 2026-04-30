@@ -10,7 +10,7 @@
   "labels": ["dependencies", "renovate"],
   "packageRules": [
     {
-      "matchManagers": ["nuget"],
+      "matchManagers": ["nuget", "npm"],
       "rangeStrategy": "pin"
     },
     {

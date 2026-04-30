@@ -155,6 +155,7 @@ Dependencies are managed by [Renovate](https://docs.renovatebot.com/) (config: `
 | Manager      | Range strategy | Notes                                                                 |
 |--------------|----------------|-----------------------------------------------------------------------|
 | `nuget`      | `pin`          | NuGet `PackageVersion` entries use exact-version brackets (e.g. `[10.0.7]`) via `Directory.Packages.props`. |
+| `npm`        | `pin`          | `frontend/package.json` keeps exact versions (no `^`/`~`); Renovate auto-pins any new caret/tilde ranges. |
 | `msbuild-sdk`| `replace`      | MSBuild SDK references (e.g. `Aspire.AppHost.Sdk`) must stay floating - bracketed pins like `[13.2.4]` break SDK resolution. Pin update PRs are explicitly disabled for this manager. |
 
 When adding a new manager, set its `rangeStrategy` explicitly in a `packageRules` entry rather than relying on a global default.
