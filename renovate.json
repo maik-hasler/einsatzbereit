@@ -13,6 +13,11 @@
     {
       "matchManagers": ["msbuild-sdk"],
       "rangeStrategy": "replace"
+    },
+    {
+      "matchManagers": ["msbuild-sdk"],
+      "matchUpdateTypes": ["pin"],
+      "enabled": false
     }
   ],
   "customManagers": [
