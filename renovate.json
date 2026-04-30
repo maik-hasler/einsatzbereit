@@ -29,10 +29,10 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "^(keycloak/)?CLAUDE\\.md$",
-        "^docs/Architektur/src/.*\\.adoc$",
-        "^docs/Architektur/images/.*\\.puml$"
+      "managerFilePatterns": [
+        "/^(keycloak/)?CLAUDE\\.md$/",
+        "/^docs/Architektur/src/.*\\.adoc$/",
+        "/^docs/Architektur/images/.*\\.puml$/"
       ],
       "matchStrings": [
         "Keycloak (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",
