@@ -21,6 +21,14 @@
       "matchManagers": ["msbuild-sdk"],
       "matchUpdateTypes": ["pin"],
       "enabled": false
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
     }
   ],
   "customManagers": [
