@@ -1,18 +1,18 @@
 name: Feature Request
-description: Schlage ein neues Feature vor
+description: Suggest a new feature
 title: "[Feature]: "
 labels: ["enhancement"]
 assignees: []
 
 body:
   - type: dropdown
-    id: prioritaet
+    id: priority
     attributes:
-      label: Priorität
+      label: Priority
       options:
-        - Niedrig
-        - Mittel
-        - Hoch
+        - Low
+        - Medium
+        - High
     validations:
       required: true
 
@@ -20,46 +20,46 @@ body:
     id: user_story
     attributes:
       label: User Story
-      description: Beschreibe die Anforderung als User Story
+      description: Describe the requirement as a User Story
       placeholder: |
-        Als <Rolle>
-        möchte ich <Ziel / Wunsch>
-        damit <Nutzen / Mehrwert>
+        As <Role>
+        I want <Goal / Wish>
+        So that <Benefit / Added Value>
     validations:
       required: true
 
   - type: checkboxes
-    id: akzeptanzkriterien
+    id: acceptance_criteria
     attributes:
-      label: Akzeptanzkriterien
+      label: Acceptance Criteria
       options:
-        - label: Kriterium 1
-        - label: Kriterium 2
-        - label: Kriterium 3
+        - label: Criterion 1
+        - label: Criterion 2
+        - label: Criterion 3
 
   - type: textarea
-    id: beschreibung
+    id: description
     attributes:
-      label: Beschreibung
-      description: Beschreibe das Feature in wenigen Sätzen. Vermeide Marketing-Sprache.
-      placeholder: Beschreibe das Feature kurz und konkret.
+      label: Description
+      description: Describe the feature in a few sentences. Avoid marketing language.
+      placeholder: Describe the feature briefly and specifically.
     validations:
       required: true
 
   - type: textarea
-    id: umsetzung
+    id: implementation
     attributes:
-      label: Vorschlag zur Umsetzung
+      label: Implementation Proposal
       placeholder: |
-        - Ansatz / Lösungsidee
-        - Alternativen (falls vorhanden)
+        - Approach / Solution Idea
+        - Alternatives (if any)
 
   - type: textarea
-    id: zusaetzliche_infos
+    id: additional_info
     attributes:
-      label: Zusätzliche Informationen
+      label: Additional Information
       placeholder: |
         - Screenshots
         - Links
-        - Kontext
-        - Abhängigkeiten
+        - Context
+        - Dependencies
