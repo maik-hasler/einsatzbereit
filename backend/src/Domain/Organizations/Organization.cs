@@ -23,9 +23,9 @@ public sealed class Organization
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
 
-	#pragma warning disable CS8618
+#pragma warning disable CS8618
 	private Organization() : base(default) { }
-	#pragma warning restore CS8618
+#pragma warning restore CS8618
 
 	private Organization(
 		OrganizationId id,

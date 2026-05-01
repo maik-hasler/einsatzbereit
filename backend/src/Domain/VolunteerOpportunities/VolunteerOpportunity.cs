@@ -29,9 +29,9 @@ public sealed class VolunteerOpportunity
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
 
-	#pragma warning disable CS8618
+#pragma warning disable CS8618
 	private VolunteerOpportunity() : base(default) { }
-	#pragma warning restore CS8618
+#pragma warning restore CS8618
 
 	private VolunteerOpportunity(
 		VolunteerOpportunityId id,
