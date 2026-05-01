@@ -35,17 +35,16 @@ export default function VolunteerOpportunitiesList({
 		setLoading(true);
 		setError(null);
 
-		api.getVolunteerOpportunities(
-			page,
-			10,
-			search || undefined,
-			city || undefined,
-			occurrence || undefined,
-			participationType || undefined,
-		)
-			.then((json: PagedListOfVolunteerOpportunitySummary) =>
-				setData(json),
+		api
+			.getVolunteerOpportunities(
+				page,
+				10,
+				search || undefined,
+				city || undefined,
+				occurrence || undefined,
+				participationType || undefined,
 			)
+			.then((json: PagedListOfVolunteerOpportunitySummary) => setData(json))
 			.catch((err: Error) => setError(err.message))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,54 +127,45 @@ export default function VolunteerOpportunitiesList({
 						<p className="text-gray-500">Keine Bedarfe gefunden.</p>
 					) : (
 						<ul className="space-y-3">
-							{data.items.map(
-								(item: VolunteerOpportunitySummary) => (
-									<li
-										key={item.id}
-										className="cursor-pointer rounded border p-4 hover:bg-gray-50 transition-colors"
-										onClick={() =>
-											navigate(
-												`/volunteer-opportunities/${item.id}`,
-											)
-										}
-									>
-										<div className="flex items-start justify-between">
-											<div>
-												<strong className="block text-sm font-medium">
-													{item.title}
-												</strong>
-												<p className="mt-1 text-sm text-gray-600">
-													{item.description}
-												</p>
-											</div>
-											<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-												<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-													{formatOccurrence(
-														item.occurrence,
-													)}
-												</span>
-												<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-													{formatParticipationType(
-														item.participationType,
-													)}
-												</span>
-											</div>
+							{data.items.map((item: VolunteerOpportunitySummary) => (
+								<li
+									key={item.id}
+									className="cursor-pointer rounded border p-4 hover:bg-gray-50 transition-colors"
+									onClick={() =>
+										navigate(`/volunteer-opportunities/${item.id}`)
+									}
+								>
+									<div className="flex items-start justify-between">
+										<div>
+											<strong className="block text-sm font-medium">
+												{item.title}
+											</strong>
+											<p className="mt-1 text-sm text-gray-600">
+												{item.description}
+											</p>
 										</div>
-										<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-											<span>{item.organizationName}</span>
-											{item.isRemote ? (
-												<span>Remote</span>
-											) : (
-												<span>
-													{item.street}{" "}
-													{item.houseNumber},{" "}
-													{item.zipCode} {item.city}
-												</span>
-											)}
+										<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+											<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+												{formatOccurrence(item.occurrence)}
+											</span>
+											<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+												{formatParticipationType(item.participationType)}
+											</span>
 										</div>
-									</li>
-								),
-							)}
+									</div>
+									<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+										<span>{item.organizationName}</span>
+										{item.isRemote ? (
+											<span>Remote</span>
+										) : (
+											<span>
+												{item.street} {item.houseNumber}, {item.zipCode}{" "}
+												{item.city}
+											</span>
+										)}
+									</div>
+								</li>
+							))}
 						</ul>
 					)}
 

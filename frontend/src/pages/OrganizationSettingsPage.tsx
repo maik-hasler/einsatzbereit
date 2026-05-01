@@ -30,7 +30,8 @@ export default function OrganizationSettingsPage() {
 	useEffect(() => {
 		if (!organizationId) return;
 		setLoading(true);
-		api.getOrganizationDetails(organizationId)
+		api
+			.getOrganizationDetails(organizationId)
 			.then((data) => {
 				setOrg(data);
 				setForm({
@@ -111,9 +112,7 @@ export default function OrganizationSettingsPage() {
 				prev
 					? {
 							...prev,
-							members: prev.members.filter(
-								(m) => m.userId !== userId,
-							),
+							members: prev.members.filter((m) => m.userId !== userId),
 						}
 					: prev,
 			);
@@ -140,9 +139,7 @@ export default function OrganizationSettingsPage() {
 
 	return (
 		<div className="mx-auto max-w-2xl">
-			<h1 className="mb-1 text-2xl font-bold text-gray-900">
-				{org.name}
-			</h1>
+			<h1 className="mb-1 text-2xl font-bold text-gray-900">{org.name}</h1>
 			<p className="mb-6 text-sm text-gray-500">
 				Erstellt am{" "}
 				{new Date(org.createdOn).toLocaleDateString("de-DE", {
@@ -187,9 +184,7 @@ export default function OrganizationSettingsPage() {
 						<input
 							required
 							value={form.name}
-							onChange={(e) =>
-								setForm((f) => ({ ...f, name: e.target.value }))
-							}
+							onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
 							className={inputClass}
 						/>
 					</Field>
@@ -337,9 +332,7 @@ export default function OrganizationSettingsPage() {
 										? `${member.firstName} ${member.lastName}`
 										: member.username}
 								</p>
-								<p className="text-xs text-gray-500">
-									{member.email}
-								</p>
+								<p className="text-xs text-gray-500">{member.email}</p>
 								{member.isOrganisator && (
 									<span className="mt-0.5 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 										Organisator
@@ -347,9 +340,7 @@ export default function OrganizationSettingsPage() {
 								)}
 							</div>
 							<button
-								onClick={() =>
-									handleRemoveMember(member.userId)
-								}
+								onClick={() => handleRemoveMember(member.userId)}
 								className="text-xs text-red-500 hover:text-red-700"
 							>
 								Entfernen
@@ -376,9 +367,7 @@ function Field({
 }) {
 	return (
 		<div>
-			<label className="block text-sm font-medium text-gray-700">
-				{label}
-			</label>
+			<label className="block text-sm font-medium text-gray-700">{label}</label>
 			{children}
 		</div>
 	);

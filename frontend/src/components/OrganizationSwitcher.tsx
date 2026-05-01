@@ -9,9 +9,7 @@ export default function OrganizationSwitcher() {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const [orgs, setOrgs] = useState<KeycloakOrganization[]>([]);
-	const [activeOrgId, setActiveOrgId] = useState<string | null>(
-		getActiveOrgId,
-	);
+	const [activeOrgId, setActiveOrgId] = useState<string | null>(getActiveOrgId);
 	const [loading, setLoading] = useState(true);
 	const [open, setOpen] = useState(false);
 	const [showModal, setShowModal] = useState(false);
@@ -21,7 +19,8 @@ export default function OrganizationSwitcher() {
 
 	const fetchOrgs = () => {
 		setLoading(true);
-		api.getOrganizations()
+		api
+			.getOrganizations()
 			.then((data: KeycloakOrganization[]) => {
 				setOrgs(data);
 				// Auto-select first org if none is active
@@ -62,7 +61,8 @@ export default function OrganizationSwitcher() {
 	const handleOrgCreated = () => {
 		const prevIds = new Set(orgs.map((o) => o.id));
 		setLoading(true);
-		api.getOrganizations()
+		api
+			.getOrganizations()
 			.then((data: KeycloakOrganization[]) => {
 				setOrgs(data);
 				const newOrg = data.find((o) => !prevIds.has(o.id));
@@ -79,9 +79,7 @@ export default function OrganizationSwitcher() {
 	};
 
 	if (loading) {
-		return (
-			<div className="h-9 w-32 animate-pulse rounded-lg bg-gray-100" />
-		);
+		return <div className="h-9 w-32 animate-pulse rounded-lg bg-gray-100" />;
 	}
 
 	// No orgs - show direct "create" button instead of dropdown
@@ -210,9 +208,7 @@ export default function OrganizationSwitcher() {
 									data-testid="org-settings-link"
 									onClick={() => {
 										setOpen(false);
-										navigate(
-											`/organizations/${activeOrgId}/settings`,
-										);
+										navigate(`/organizations/${activeOrgId}/settings`);
 									}}
 									className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
 								>

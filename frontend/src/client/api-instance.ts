@@ -7,9 +7,7 @@ export function createApiClient(accessToken?: string): EinsatzbereitApi {
 				...init,
 				headers: {
 					...init?.headers,
-					...(accessToken
-						? { Authorization: `Bearer ${accessToken}` }
-						: {}),
+					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 				},
 			}),
 	});

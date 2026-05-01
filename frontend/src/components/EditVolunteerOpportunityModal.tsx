@@ -19,9 +19,7 @@ export default function EditVolunteerOpportunityModal({
 	const [description, setDescription] = useState(opportunity.description);
 	const [isRemote, setIsRemote] = useState(opportunity.isRemote);
 	const [street, setStreet] = useState(opportunity.street ?? "");
-	const [houseNumber, setHouseNumber] = useState(
-		opportunity.houseNumber ?? "",
-	);
+	const [houseNumber, setHouseNumber] = useState(opportunity.houseNumber ?? "");
 	const [zipCode, setZipCode] = useState(opportunity.zipCode ?? "");
 	const [city, setCity] = useState(opportunity.city ?? "");
 	const [submitting, setSubmitting] = useState(false);
@@ -54,9 +52,7 @@ export default function EditVolunteerOpportunityModal({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen">
-				<h2 className="mb-4 text-lg font-semibold">
-					Bedarf bearbeiten
-				</h2>
+				<h2 className="mb-4 text-lg font-semibold">Bedarf bearbeiten</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
@@ -92,10 +88,7 @@ export default function EditVolunteerOpportunityModal({
 							onChange={(e) => setIsRemote(e.target.checked)}
 							className="h-4 w-4"
 						/>
-						<label
-							htmlFor="isRemote"
-							className="text-sm text-gray-700"
-						>
+						<label htmlFor="isRemote" className="text-sm text-gray-700">
 							Remote (kein Standort erforderlich)
 						</label>
 					</div>
@@ -119,9 +112,7 @@ export default function EditVolunteerOpportunityModal({
 								</label>
 								<input
 									value={houseNumber}
-									onChange={(e) =>
-										setHouseNumber(e.target.value)
-									}
+									onChange={(e) => setHouseNumber(e.target.value)}
 									required
 									className="w-full rounded border px-3 py-2 text-sm"
 								/>

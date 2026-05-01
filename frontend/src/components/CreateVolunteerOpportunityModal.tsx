@@ -101,9 +101,7 @@ export default function CreateVolunteerOpportunityModal({
 					</div>
 
 					<fieldset className="space-y-3 rounded border p-3">
-						<legend className="px-1 text-sm font-medium">
-							Adresse
-						</legend>
+						<legend className="px-1 text-sm font-medium">Adresse</legend>
 						<div className="flex gap-3">
 							<div className="flex-1">
 								<label className="mb-1 block text-sm text-gray-600">
@@ -124,9 +122,7 @@ export default function CreateVolunteerOpportunityModal({
 								/>
 							</div>
 							<div className="w-24">
-								<label className="mb-1 block text-sm text-gray-600">
-									Nr.
-								</label>
+								<label className="mb-1 block text-sm text-gray-600">Nr.</label>
 								<input
 									type="text"
 									required
@@ -144,9 +140,7 @@ export default function CreateVolunteerOpportunityModal({
 						</div>
 						<div className="flex gap-3">
 							<div className="w-28">
-								<label className="mb-1 block text-sm text-gray-600">
-									PLZ
-								</label>
+								<label className="mb-1 block text-sm text-gray-600">PLZ</label>
 								<input
 									type="text"
 									required
@@ -164,9 +158,7 @@ export default function CreateVolunteerOpportunityModal({
 								/>
 							</div>
 							<div className="flex-1">
-								<label className="mb-1 block text-sm text-gray-600">
-									Ort
-								</label>
+								<label className="mb-1 block text-sm text-gray-600">Ort</label>
 								<input
 									type="text"
 									required
@@ -185,9 +177,7 @@ export default function CreateVolunteerOpportunityModal({
 					</fieldset>
 
 					<div>
-						<label className="mb-2 block text-sm font-medium">
-							Häufigkeit
-						</label>
+						<label className="mb-2 block text-sm font-medium">Häufigkeit</label>
 						<div className="flex gap-4">
 							<label className="flex items-center gap-2 text-sm">
 								<input
@@ -234,9 +224,7 @@ export default function CreateVolunteerOpportunityModal({
 									type="radio"
 									name="participationType"
 									value="Waitlist"
-									checked={
-										form.participationType === "Waitlist"
-									}
+									checked={form.participationType === "Waitlist"}
 									onChange={(e) =>
 										setForm((f) => ({
 											...f,
@@ -252,10 +240,7 @@ export default function CreateVolunteerOpportunityModal({
 									type="radio"
 									name="participationType"
 									value="IndividualContact"
-									checked={
-										form.participationType ===
-										"IndividualContact"
-									}
+									checked={form.participationType === "IndividualContact"}
 									onChange={(e) =>
 										setForm((f) => ({
 											...f,

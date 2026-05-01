@@ -26,7 +26,8 @@ export default function MyEngagementsPage() {
 	const [withdrawing, setWithdrawing] = useState<string | null>(null);
 
 	useEffect(() => {
-		api.getMyEngagements()
+		api
+			.getMyEngagements()
 			.then(setEngagements)
 			.catch((err) => setError(err.message))
 			.finally(() => setLoading(false));
@@ -39,15 +40,11 @@ export default function MyEngagementsPage() {
 			const updated = await api.withdrawEngagement(engagementId);
 			setEngagements((prev) =>
 				prev.map((e) =>
-					e.id === engagementId
-						? { ...e, status: updated.status }
-						: e,
+					e.id === engagementId ? { ...e, status: updated.status } : e,
 				),
 			);
 		} catch (err) {
-			alert(
-				err instanceof Error ? err.message : "Fehler beim Zurückziehen",
-			);
+			alert(err instanceof Error ? err.message : "Fehler beim Zurückziehen");
 		} finally {
 			setWithdrawing(null);
 		}
@@ -64,9 +61,7 @@ export default function MyEngagementsPage() {
 
 			{!loading && !error && engagements.length === 0 && (
 				<div className="text-center py-12">
-					<p className="text-gray-500 mb-4">
-						Noch keine Anmeldungen.
-					</p>
+					<p className="text-gray-500 mb-4">Noch keine Anmeldungen.</p>
 					<button
 						onClick={() => navigate("/")}
 						className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
@@ -84,9 +79,7 @@ export default function MyEngagementsPage() {
 								<div className="min-w-0">
 									<button
 										onClick={() =>
-											navigate(
-												`/volunteer-opportunities/${e.opportunityId}`,
-											)
+											navigate(`/volunteer-opportunities/${e.opportunityId}`)
 										}
 										className="text-sm font-medium text-gray-900 hover:underline text-left"
 									>
@@ -99,9 +92,7 @@ export default function MyEngagementsPage() {
 									)}
 									<p className="mt-1 text-xs text-gray-400">
 										Angemeldet:{" "}
-										{new Date(
-											e.createdOn,
-										).toLocaleDateString("de-DE")}
+										{new Date(e.createdOn).toLocaleDateString("de-DE")}
 									</p>
 								</div>
 								<div className="flex flex-col items-end gap-2 shrink-0">
@@ -110,16 +101,13 @@ export default function MyEngagementsPage() {
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>
-									{(e.status === "Pending" ||
-										e.status === "Confirmed") && (
+									{(e.status === "Pending" || e.status === "Confirmed") && (
 										<button
 											onClick={() => handleWithdraw(e.id)}
 											disabled={withdrawing === e.id}
 											className="text-xs text-red-600 hover:underline disabled:opacity-50"
 										>
-											{withdrawing === e.id
-												? "…"
-												: "Zurückziehen"}
+											{withdrawing === e.id ? "…" : "Zurückziehen"}
 										</button>
 									)}
 								</div>

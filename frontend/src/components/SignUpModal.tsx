@@ -35,9 +35,7 @@ export default function SignUpModal({
 			await api.createEngagement(opportunityId, {
 				type: isWaitlist ? "Waitlist" : "IndividualContact",
 				timeSlotId:
-					isWaitlist && selectedTimeSlotId
-						? selectedTimeSlotId
-						: undefined,
+					isWaitlist && selectedTimeSlotId ? selectedTimeSlotId : undefined,
 				message: !isWaitlist ? message : undefined,
 			});
 			onSuccess();
@@ -53,9 +51,7 @@ export default function SignUpModal({
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
 				<h2 className="mb-4 text-lg font-semibold">
-					{isWaitlist
-						? "Auf Warteliste eintragen"
-						: "Interesse bekunden"}
+					{isWaitlist ? "Auf Warteliste eintragen" : "Interesse bekunden"}
 				</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -71,22 +67,15 @@ export default function SignUpModal({
 							) : (
 								<select
 									value={selectedTimeSlotId}
-									onChange={(e) =>
-										setSelectedTimeSlotId(e.target.value)
-									}
+									onChange={(e) => setSelectedTimeSlotId(e.target.value)}
 									required
 									className="w-full rounded border px-3 py-2 text-sm"
 								>
 									<option value="">Bitte wählen…</option>
 									{timeSlots.map((ts) => (
 										<option key={ts.id} value={ts.id}>
-											{formatDateTime(
-												ts.startDateTime as unknown as string,
-											)}{" "}
-											-{" "}
-											{formatDateTime(
-												ts.endDateTime as unknown as string,
-											)}{" "}
+											{formatDateTime(ts.startDateTime as unknown as string)} -{" "}
+											{formatDateTime(ts.endDateTime as unknown as string)}{" "}
 											(max. {ts.maxParticipants})
 										</option>
 									))}
@@ -123,10 +112,7 @@ export default function SignUpModal({
 						</button>
 						<button
 							type="submit"
-							disabled={
-								submitting ||
-								(isWaitlist && timeSlots.length === 0)
-							}
+							disabled={submitting || (isWaitlist && timeSlots.length === 0)}
 							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
 						>
 							{submitting ? "Wird gesendet…" : "Anmelden"}

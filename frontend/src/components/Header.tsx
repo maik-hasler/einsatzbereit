@@ -58,9 +58,7 @@ export default function Header() {
 								<div className="relative" ref={dropdownRef}>
 									<button
 										type="button"
-										onClick={() =>
-											setDropdownOpen((o) => !o)
-										}
+										onClick={() => setDropdownOpen((o) => !o)}
 										className="flex items-center gap-1.5 rounded-full p-0.5 hover:ring-2 hover:ring-brand-200 transition-all cursor-pointer"
 										aria-label="Benutzermenü"
 										aria-expanded={dropdownOpen}
@@ -137,9 +135,7 @@ export default function Header() {
 												</a>
 												<button
 													type="button"
-													onClick={() =>
-														auth.signoutRedirect()
-													}
+													onClick={() => auth.signoutRedirect()}
 													className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
 												>
 													<svg

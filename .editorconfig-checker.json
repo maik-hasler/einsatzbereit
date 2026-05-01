@@ -1,5 +1,6 @@
 {
 	"Exclude": [
+		"\\.claude/",
 		"\\.ya?ml$",
 		"\\.md$"
 	]

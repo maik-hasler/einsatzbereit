@@ -16,9 +16,8 @@ export default function Footer() {
 							Einsatzbereit
 						</h2>
 						<p className="text-sm leading-relaxed max-w-xs">
-							Einsatzbereit bringt engagierte Helfer:innen mit
-							regionalen Bedarfen zusammen. Spontan, schnell und
-							wirksam.
+							Einsatzbereit bringt engagierte Helfer:innen mit regionalen
+							Bedarfen zusammen. Spontan, schnell und wirksam.
 						</p>
 					</div>
 
@@ -29,10 +28,7 @@ export default function Footer() {
 						</h3>
 						<ul className="space-y-2 text-sm">
 							<li>
-								<Link
-									to="/"
-									className="hover:text-white transition-colors"
-								>
+								<Link to="/" className="hover:text-white transition-colors">
 									Einsätze finden
 								</Link>
 							</li>
@@ -113,10 +109,7 @@ export default function Footer() {
 
 				{/* Bottom Bar */}
 				<div className="mt-12 pt-8 border-t border-brand-700 text-center text-xs">
-					<p>
-						&copy; {currentYear} Einsatzbereit. Alle Rechte
-						vorbehalten.
-					</p>
+					<p>&copy; {currentYear} Einsatzbereit. Alle Rechte vorbehalten.</p>
 				</div>
 			</div>
 		</footer>

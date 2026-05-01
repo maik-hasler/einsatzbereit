@@ -429,9 +429,7 @@ export class EinsatzbereitApi {
 			);
 		else url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
 		if (search === null)
-			throw new globalThis.Error(
-				"The parameter 'search' cannot be null.",
-			);
+			throw new globalThis.Error("The parameter 'search' cannot be null.");
 		else if (search !== undefined)
 			url_ += "Search=" + encodeURIComponent("" + search) + "&";
 		if (city === null)
@@ -439,9 +437,7 @@ export class EinsatzbereitApi {
 		else if (city !== undefined)
 			url_ += "City=" + encodeURIComponent("" + city) + "&";
 		if (occurrence === null)
-			throw new globalThis.Error(
-				"The parameter 'occurrence' cannot be null.",
-			);
+			throw new globalThis.Error("The parameter 'occurrence' cannot be null.");
 		else if (occurrence !== undefined)
 			url_ += "Occurrence=" + encodeURIComponent("" + occurrence) + "&";
 		if (participationType === null)
@@ -450,9 +446,7 @@ export class EinsatzbereitApi {
 			);
 		else if (participationType !== undefined)
 			url_ +=
-				"ParticipationType=" +
-				encodeURIComponent("" + participationType) +
-				"&";
+				"ParticipationType=" + encodeURIComponent("" + participationType) + "&";
 		url_ = url_.replace(/[?&]$/, "");
 
 		let options_: RequestInit = {
@@ -534,9 +528,7 @@ export class EinsatzbereitApi {
 				);
 			});
 		}
-		return Promise.resolve<PagedListOfVolunteerOpportunitySummary>(
-			null as any,
-		);
+		return Promise.resolve<PagedListOfVolunteerOpportunitySummary>(null as any);
 	}
 
 	/**
@@ -928,8 +920,7 @@ export class EinsatzbereitApi {
 		signal?: AbortSignal,
 	): Promise<void> {
 		let url_ =
-			this.baseUrl +
-			"/v1/organizations/{organizationId}/members/{userId}";
+			this.baseUrl + "/v1/organizations/{organizationId}/members/{userId}";
 		if (organizationId === undefined || organizationId === null)
 			throw new globalThis.Error(
 				"The parameter 'organizationId' must be defined.",
@@ -939,9 +930,7 @@ export class EinsatzbereitApi {
 			encodeURIComponent("" + organizationId),
 		);
 		if (userId === undefined || userId === null)
-			throw new globalThis.Error(
-				"The parameter 'userId' must be defined.",
-			);
+			throw new globalThis.Error("The parameter 'userId' must be defined.");
 		url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
 		url_ = url_.replace(/[?&]$/, "");
 
@@ -1581,8 +1570,7 @@ export class EinsatzbereitApi {
 		signal?: AbortSignal,
 	): Promise<EngagementSummary[]> {
 		let url_ =
-			this.baseUrl +
-			"/v1/volunteer-opportunities/{opportunityId}/engagements";
+			this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
 		if (opportunityId === undefined || opportunityId === null)
 			throw new globalThis.Error(
 				"The parameter 'opportunityId' must be defined.",
@@ -1702,8 +1690,7 @@ export class EinsatzbereitApi {
 		signal?: AbortSignal,
 	): Promise<CreateEngagementResponse> {
 		let url_ =
-			this.baseUrl +
-			"/v1/volunteer-opportunities/{opportunityId}/engagements";
+			this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
 		if (opportunityId === undefined || opportunityId === null)
 			throw new globalThis.Error(
 				"The parameter 'opportunityId' must be defined.",

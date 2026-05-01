@@ -29,7 +29,8 @@ export default function EngagementManagementPage() {
 
 	useEffect(() => {
 		if (!opportunityId) return;
-		api.getEngagements(opportunityId)
+		api
+			.getEngagements(opportunityId)
 			.then(setEngagements)
 			.catch((err) => setError(err.message))
 			.finally(() => setLoading(false));
@@ -42,15 +43,11 @@ export default function EngagementManagementPage() {
 			const updated = await api.confirmEngagement(engagementId);
 			setEngagements((prev) =>
 				prev.map((e) =>
-					e.id === engagementId
-						? { ...e, status: updated.status }
-						: e,
+					e.id === engagementId ? { ...e, status: updated.status } : e,
 				),
 			);
 		} catch (err) {
-			alert(
-				err instanceof Error ? err.message : "Fehler beim Bestätigen",
-			);
+			alert(err instanceof Error ? err.message : "Fehler beim Bestätigen");
 		} finally {
 			setProcessing(null);
 		}
@@ -62,9 +59,7 @@ export default function EngagementManagementPage() {
 			const updated = await api.cancelEngagement(engagementId);
 			setEngagements((prev) =>
 				prev.map((e) =>
-					e.id === engagementId
-						? { ...e, status: updated.status }
-						: e,
+					e.id === engagementId ? { ...e, status: updated.status } : e,
 				),
 			);
 		} catch (err) {
@@ -104,9 +99,7 @@ export default function EngagementManagementPage() {
 										Freiwilliger: {e.volunteerId}
 									</p>
 									{e.message && (
-										<p className="mt-1 text-sm text-gray-700">
-											"{e.message}"
-										</p>
+										<p className="mt-1 text-sm text-gray-700">"{e.message}"</p>
 									)}
 									{e.timeSlotId && (
 										<p className="mt-1 text-xs text-gray-400">
@@ -115,9 +108,7 @@ export default function EngagementManagementPage() {
 									)}
 									<p className="mt-1 text-xs text-gray-400">
 										Eingegangen:{" "}
-										{new Date(
-											e.createdOn,
-										).toLocaleDateString("de-DE")}
+										{new Date(e.createdOn).toLocaleDateString("de-DE")}
 									</p>
 								</div>
 								<div className="flex flex-col items-end gap-2 shrink-0">
@@ -129,47 +120,28 @@ export default function EngagementManagementPage() {
 									{e.status === "Pending" && (
 										<div className="flex gap-2">
 											<button
-												onClick={() =>
-													handleConfirm(e.id)
-												}
-												disabled={
-													processing ===
-													e.id + "-confirm"
-												}
+												onClick={() => handleConfirm(e.id)}
+												disabled={processing === e.id + "-confirm"}
 												className="text-xs rounded bg-green-600 px-2 py-1 text-white hover:bg-green-700 disabled:opacity-50"
 											>
-												{processing ===
-												e.id + "-confirm"
-													? "…"
-													: "Bestätigen"}
+												{processing === e.id + "-confirm" ? "…" : "Bestätigen"}
 											</button>
 											<button
-												onClick={() =>
-													handleCancel(e.id)
-												}
-												disabled={
-													processing ===
-													e.id + "-cancel"
-												}
+												onClick={() => handleCancel(e.id)}
+												disabled={processing === e.id + "-cancel"}
 												className="text-xs rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700 disabled:opacity-50"
 											>
-												{processing === e.id + "-cancel"
-													? "…"
-													: "Absagen"}
+												{processing === e.id + "-cancel" ? "…" : "Absagen"}
 											</button>
 										</div>
 									)}
 									{e.status === "Confirmed" && (
 										<button
 											onClick={() => handleCancel(e.id)}
-											disabled={
-												processing === e.id + "-cancel"
-											}
+											disabled={processing === e.id + "-cancel"}
 											className="text-xs text-red-600 hover:underline disabled:opacity-50"
 										>
-											{processing === e.id + "-cancel"
-												? "…"
-												: "Stornieren"}
+											{processing === e.id + "-cancel" ? "…" : "Stornieren"}
 										</button>
 									)}
 								</div>
