@@ -1,11 +1,10 @@
+# https://editorconfig.org
 root = true
 
 [*]
-indent_style = tab
-indent_size = 4
-tab_width = 4
-end_of_line = lf
 charset = utf-8
+end_of_line = lf
+indent_style = tab
 trim_trailing_whitespace = true
 insert_final_newline = true
 
@@ -13,27 +12,3 @@ insert_final_newline = true
 [*.md]
 indent_style = space
 trim_trailing_whitespace = false
-
-# Data/config formats that require or conventionally use spaces
-[*.{yml,yaml,json}]
-indent_style = space
-indent_size = 2
-
-# HTML and FreeMarker templates
-[*.{html,ftl}]
-indent_style = space
-indent_size = 2
-
-# Diagram sources
-[*.{puml,plantuml}]
-indent_style = space
-indent_size = 2
-
-# .NET solution file (tool-generated format)
-[*.{slnx,sln}]
-indent_style = space
-indent_size = 2
-
-# Standard legal files
-[LICENSE]
-indent_style = space

@@ -1,2070 +1,2070 @@
 {
-  "openapi": "3.1.1",
-  "info": {
-    "title": "Einsatzbereit API",
-    "description": "API für die Einsatzbereit-Anwendung",
-    "version": "v1"
-  },
-  "paths": {
-    "/v1/volunteer-opportunities/{opportunityId}": {
-      "put": {
-        "tags": [
-          "UpdateVolunteerOpportunityEndpoint"
-        ],
-        "operationId": "UpdateVolunteerOpportunity",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateVolunteerOpportunityRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "GetVolunteerOpportunityDetailsEndpoint"
-        ],
-        "operationId": "GetVolunteerOpportunityDetails",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VolunteerOpportunityDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "DeleteVolunteerOpportunityEndpoint"
-        ],
-        "operationId": "DeleteVolunteerOpportunity",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/volunteer-opportunities": {
-      "get": {
-        "tags": [
-          "GetVolunteerOpportunitiesEndpoint"
-        ],
-        "operationId": "GetVolunteerOpportunities",
-        "parameters": [
-          {
-            "name": "PageNumber",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "City",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Occurrence",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "ParticipationType",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PagedListOfVolunteerOpportunitySummary"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "CreateVolunteerOpportunityEndpoint"
-        ],
-        "operationId": "CreateVolunteerOpportunity",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateVolunteerOpportunityRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateVolunteerOpportunityResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/organizations/{organizationId}": {
-      "put": {
-        "tags": [
-          "UpdateOrganizationEndpoint"
-        ],
-        "operationId": "UpdateOrganization",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateOrganizationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "GetOrganizationDetailsEndpoint"
-        ],
-        "operationId": "GetOrganizationDetails",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrganizationDetailsResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/organizations/{organizationId}/members/{userId}": {
-      "delete": {
-        "tags": [
-          "RemoveMemberEndpoint"
-        ],
-        "operationId": "RemoveMember",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/organizations": {
-      "get": {
-        "tags": [
-          "GetOrganizationsEndpoint"
-        ],
-        "operationId": "GetOrganizations",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/KeycloakOrganization"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "CreateOrganizationEndpoint"
-        ],
-        "operationId": "CreateOrganization",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrganizationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Organization"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/organizations/{organizationId}/members": {
-      "post": {
-        "tags": [
-          "AddMemberEndpoint"
-        ],
-        "operationId": "AddMember",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddMemberRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/engagements/{engagementId}/withdraw": {
-      "put": {
-        "tags": [
-          "Engagements"
-        ],
-        "operationId": "WithdrawEngagement",
-        "parameters": [
-          {
-            "name": "engagementId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementStatusResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/me/engagements": {
-      "get": {
-        "tags": [
-          "Engagements"
-        ],
-        "operationId": "GetMyEngagements",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EngagementSummary"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/volunteer-opportunities/{opportunityId}/engagements": {
-      "get": {
-        "tags": [
-          "Engagements"
-        ],
-        "operationId": "GetEngagements",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EngagementSummary"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Engagements"
-        ],
-        "operationId": "CreateEngagement",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateEngagementRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateEngagementResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/engagements/{engagementId}/confirm": {
-      "put": {
-        "tags": [
-          "Engagements"
-        ],
-        "operationId": "ConfirmEngagement",
-        "parameters": [
-          {
-            "name": "engagementId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementStatusResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/engagements/{engagementId}/cancel": {
-      "put": {
-        "tags": [
-          "Engagements"
-        ],
-        "operationId": "CancelEngagement",
-        "parameters": [
-          {
-            "name": "engagementId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EngagementStatusResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "AddMemberRequest": {
-        "required": [
-          "userId"
-        ],
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "Address": {
-        "required": [
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city"
-        ],
-        "type": "object",
-        "properties": {
-          "street": {
-            "type": "string"
-          },
-          "houseNumber": {
-            "type": "string"
-          },
-          "zipCode": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          }
-        }
-      },
-      "AddressDto": {
-        "required": [
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city"
-        ],
-        "type": "object",
-        "properties": {
-          "street": {
-            "type": "string"
-          },
-          "houseNumber": {
-            "type": "string"
-          },
-          "zipCode": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateEngagementRequest": {
-        "required": [
-          "type",
-          "timeSlotId",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string"
-          },
-          "timeSlotId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
-          "message": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "CreateEngagementResponse": {
-        "required": [
-          "id",
-          "opportunityId",
-          "status",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "opportunityId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "status": {
-            "type": "string"
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "CreateOrganizationRequest": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateVolunteerOpportunityRequest": {
-        "required": [
-          "title",
-          "description",
-          "organizationId",
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city",
-          "occurrence",
-          "participationType"
-        ],
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "street": {
-            "type": "string"
-          },
-          "houseNumber": {
-            "type": "string"
-          },
-          "zipCode": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "occurrence": {
-            "type": "string"
-          },
-          "participationType": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateVolunteerOpportunityResponse": {
-        "required": [
-          "id",
-          "title",
-          "description",
-          "organizationId",
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city",
-          "isRemote",
-          "occurrence",
-          "participationType",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "houseNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "zipCode": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "isRemote": {
-            "type": "boolean"
-          },
-          "occurrence": {
-            "type": "string"
-          },
-          "participationType": {
-            "type": "string"
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "DomainEvent": {
-        "type": "object"
-      },
-      "EngagementStatusResponse": {
-        "required": [
-          "id",
-          "status",
-          "modifiedOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "status": {
-            "type": "string"
-          },
-          "modifiedOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          }
-        }
-      },
-      "EngagementSummary": {
-        "required": [
-          "id",
-          "opportunityId",
-          "volunteerId",
-          "timeSlotId",
-          "message",
-          "status",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "opportunityId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "volunteerId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "timeSlotId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
-          "message": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "status": {
-            "type": "string"
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "KeycloakOrganization": {
-        "required": [
-          "id",
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      },
-      "Organization": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactPhone": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "website": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "address": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Address"
-              }
-            ]
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "modifiedOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "events": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/DomainEvent"
-            }
-          },
-          "id": {
-            "$ref": "#/components/schemas/OrganizationId"
-          }
-        }
-      },
-      "OrganizationDetailsResponse": {
-        "required": [
-          "id",
-          "name",
-          "description",
-          "contactEmail",
-          "contactPhone",
-          "website",
-          "address",
-          "createdOn",
-          "modifiedOn",
-          "members"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactPhone": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "website": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "address": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/AddressDto"
-              }
-            ]
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "modifiedOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "members": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrganizationMemberDto"
-            }
-          }
-        }
-      },
-      "OrganizationId": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "type": "string",
-            "format": "uuid"
-          }
-        }
-      },
-      "OrganizationMemberDto": {
-        "required": [
-          "userId",
-          "username",
-          "firstName",
-          "lastName",
-          "email",
-          "isOrganisator"
-        ],
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "username": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lastName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "email": {
-            "type": "string"
-          },
-          "isOrganisator": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PagedListOfVolunteerOpportunitySummary": {
-        "required": [
-          "currentPage",
-          "items"
-        ],
-        "type": "object",
-        "properties": {
-          "totalItems": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "currentPage": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "pageCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/VolunteerOpportunitySummary"
-            }
-          }
-        }
-      },
-      "ProblemDetails": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "title": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "status": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "detail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "instance": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "TimeSlotDetail": {
-        "required": [
-          "id",
-          "startDateTime",
-          "endDateTime",
-          "maxParticipants"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "startDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "maxParticipants": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          }
-        }
-      },
-      "UpdateAddressRequest": {
-        "required": [
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city"
-        ],
-        "type": "object",
-        "properties": {
-          "street": {
-            "type": "string"
-          },
-          "houseNumber": {
-            "type": "string"
-          },
-          "zipCode": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateOrganizationRequest": {
-        "required": [
-          "name",
-          "description",
-          "contactEmail",
-          "contactPhone",
-          "website",
-          "address"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactEmail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "contactPhone": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "website": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "address": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/UpdateAddressRequest"
-              }
-            ]
-          }
-        }
-      },
-      "UpdateVolunteerOpportunityRequest": {
-        "required": [
-          "title",
-          "description",
-          "isRemote",
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city"
-        ],
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "isRemote": {
-            "type": "boolean"
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "houseNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "zipCode": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "VolunteerOpportunityDetails": {
-        "required": [
-          "id",
-          "title",
-          "description",
-          "organizationId",
-          "organizationName",
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city",
-          "isRemote",
-          "occurrence",
-          "participationType",
-          "timeSlots",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "organizationName": {
-            "type": "string"
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "houseNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "zipCode": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "isRemote": {
-            "type": "boolean"
-          },
-          "occurrence": {
-            "type": "string"
-          },
-          "participationType": {
-            "type": "string"
-          },
-          "timeSlots": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TimeSlotDetail"
-            }
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "VolunteerOpportunitySummary": {
-        "required": [
-          "id",
-          "title",
-          "description",
-          "organizationName",
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city",
-          "isRemote",
-          "occurrence",
-          "participationType",
-          "createdOn"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "organizationName": {
-            "type": "string"
-          },
-          "street": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "houseNumber": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "zipCode": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "city": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "isRemote": {
-            "type": "boolean"
-          },
-          "occurrence": {
-            "type": "string"
-          },
-          "participationType": {
-            "type": "string"
-          },
-          "createdOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      }
-    }
-  },
-  "tags": [
-    {
-      "name": "UpdateVolunteerOpportunityEndpoint"
-    },
-    {
-      "name": "GetVolunteerOpportunityDetailsEndpoint"
-    },
-    {
-      "name": "DeleteVolunteerOpportunityEndpoint"
-    },
-    {
-      "name": "GetVolunteerOpportunitiesEndpoint"
-    },
-    {
-      "name": "CreateVolunteerOpportunityEndpoint"
-    },
-    {
-      "name": "UpdateOrganizationEndpoint"
-    },
-    {
-      "name": "GetOrganizationDetailsEndpoint"
-    },
-    {
-      "name": "RemoveMemberEndpoint"
-    },
-    {
-      "name": "GetOrganizationsEndpoint"
-    },
-    {
-      "name": "CreateOrganizationEndpoint"
-    },
-    {
-      "name": "AddMemberEndpoint"
-    },
-    {
-      "name": "Engagements"
-    }
-  ]
+	"openapi": "3.1.1",
+	"info": {
+		"title": "Einsatzbereit API",
+		"description": "API für die Einsatzbereit-Anwendung",
+		"version": "v1"
+	},
+	"paths": {
+		"/v1/volunteer-opportunities/{opportunityId}": {
+			"put": {
+				"tags": [
+					"UpdateVolunteerOpportunityEndpoint"
+				],
+				"operationId": "UpdateVolunteerOpportunity",
+				"parameters": [
+					{
+						"name": "opportunityId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateVolunteerOpportunityRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"204": {
+						"description": "No Content"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"tags": [
+					"GetVolunteerOpportunityDetailsEndpoint"
+				],
+				"operationId": "GetVolunteerOpportunityDetails",
+				"parameters": [
+					{
+						"name": "opportunityId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VolunteerOpportunityDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"tags": [
+					"DeleteVolunteerOpportunityEndpoint"
+				],
+				"operationId": "DeleteVolunteerOpportunity",
+				"parameters": [
+					{
+						"name": "opportunityId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "No Content"
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/volunteer-opportunities": {
+			"get": {
+				"tags": [
+					"GetVolunteerOpportunitiesEndpoint"
+				],
+				"operationId": "GetVolunteerOpportunities",
+				"parameters": [
+					{
+						"name": "PageNumber",
+						"in": "query",
+						"required": true,
+						"schema": {
+							"pattern": "^-?(?:0|[1-9]\\d*)$",
+							"type": [
+								"integer",
+								"string"
+							],
+							"format": "int32"
+						}
+					},
+					{
+						"name": "PageSize",
+						"in": "query",
+						"required": true,
+						"schema": {
+							"pattern": "^-?(?:0|[1-9]\\d*)$",
+							"type": [
+								"integer",
+								"string"
+							],
+							"format": "int32"
+						}
+					},
+					{
+						"name": "Search",
+						"in": "query",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "City",
+						"in": "query",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "Occurrence",
+						"in": "query",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "ParticipationType",
+						"in": "query",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PagedListOfVolunteerOpportunitySummary"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": [
+					"CreateVolunteerOpportunityEndpoint"
+				],
+				"operationId": "CreateVolunteerOpportunity",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateVolunteerOpportunityRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreateVolunteerOpportunityResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/organizations/{organizationId}": {
+			"put": {
+				"tags": [
+					"UpdateOrganizationEndpoint"
+				],
+				"operationId": "UpdateOrganization",
+				"parameters": [
+					{
+						"name": "organizationId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateOrganizationRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"204": {
+						"description": "No Content"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"tags": [
+					"GetOrganizationDetailsEndpoint"
+				],
+				"operationId": "GetOrganizationDetails",
+				"parameters": [
+					{
+						"name": "organizationId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OrganizationDetailsResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/organizations/{organizationId}/members/{userId}": {
+			"delete": {
+				"tags": [
+					"RemoveMemberEndpoint"
+				],
+				"operationId": "RemoveMember",
+				"parameters": [
+					{
+						"name": "organizationId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					},
+					{
+						"name": "userId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "No Content"
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/organizations": {
+			"get": {
+				"tags": [
+					"GetOrganizationsEndpoint"
+				],
+				"operationId": "GetOrganizations",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/KeycloakOrganization"
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": [
+					"CreateOrganizationEndpoint"
+				],
+				"operationId": "CreateOrganization",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateOrganizationRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Organization"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/organizations/{organizationId}/members": {
+			"post": {
+				"tags": [
+					"AddMemberEndpoint"
+				],
+				"operationId": "AddMember",
+				"parameters": [
+					{
+						"name": "organizationId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddMemberRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"204": {
+						"description": "No Content"
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/engagements/{engagementId}/withdraw": {
+			"put": {
+				"tags": [
+					"Engagements"
+				],
+				"operationId": "WithdrawEngagement",
+				"parameters": [
+					{
+						"name": "engagementId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EngagementStatusResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/me/engagements": {
+			"get": {
+				"tags": [
+					"Engagements"
+				],
+				"operationId": "GetMyEngagements",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/EngagementSummary"
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/volunteer-opportunities/{opportunityId}/engagements": {
+			"get": {
+				"tags": [
+					"Engagements"
+				],
+				"operationId": "GetEngagements",
+				"parameters": [
+					{
+						"name": "opportunityId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/EngagementSummary"
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": [
+					"Engagements"
+				],
+				"operationId": "CreateEngagement",
+				"parameters": [
+					{
+						"name": "opportunityId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateEngagementRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CreateEngagementResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/engagements/{engagementId}/confirm": {
+			"put": {
+				"tags": [
+					"Engagements"
+				],
+				"operationId": "ConfirmEngagement",
+				"parameters": [
+					{
+						"name": "engagementId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EngagementStatusResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v1/engagements/{engagementId}/cancel": {
+			"put": {
+				"tags": [
+					"Engagements"
+				],
+				"operationId": "CancelEngagement",
+				"parameters": [
+					{
+						"name": "engagementId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EngagementStatusResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProblemDetails"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"AddMemberRequest": {
+				"required": [
+					"userId"
+				],
+				"type": "object",
+				"properties": {
+					"userId": {
+						"type": "string",
+						"format": "uuid"
+					}
+				}
+			},
+			"Address": {
+				"required": [
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city"
+				],
+				"type": "object",
+				"properties": {
+					"street": {
+						"type": "string"
+					},
+					"houseNumber": {
+						"type": "string"
+					},
+					"zipCode": {
+						"type": "string"
+					},
+					"city": {
+						"type": "string"
+					}
+				}
+			},
+			"AddressDto": {
+				"required": [
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city"
+				],
+				"type": "object",
+				"properties": {
+					"street": {
+						"type": "string"
+					},
+					"houseNumber": {
+						"type": "string"
+					},
+					"zipCode": {
+						"type": "string"
+					},
+					"city": {
+						"type": "string"
+					}
+				}
+			},
+			"CreateEngagementRequest": {
+				"required": [
+					"type",
+					"timeSlotId",
+					"message"
+				],
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string"
+					},
+					"timeSlotId": {
+						"type": [
+							"null",
+							"string"
+						],
+						"format": "uuid"
+					},
+					"message": {
+						"type": [
+							"null",
+							"string"
+						]
+					}
+				}
+			},
+			"CreateEngagementResponse": {
+				"required": [
+					"id",
+					"opportunityId",
+					"status",
+					"createdOn"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"opportunityId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"status": {
+						"type": "string"
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					}
+				}
+			},
+			"CreateOrganizationRequest": {
+				"required": [
+					"name"
+				],
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string"
+					}
+				}
+			},
+			"CreateVolunteerOpportunityRequest": {
+				"required": [
+					"title",
+					"description",
+					"organizationId",
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city",
+					"occurrence",
+					"participationType"
+				],
+				"type": "object",
+				"properties": {
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"organizationId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"street": {
+						"type": "string"
+					},
+					"houseNumber": {
+						"type": "string"
+					},
+					"zipCode": {
+						"type": "string"
+					},
+					"city": {
+						"type": "string"
+					},
+					"occurrence": {
+						"type": "string"
+					},
+					"participationType": {
+						"type": "string"
+					}
+				}
+			},
+			"CreateVolunteerOpportunityResponse": {
+				"required": [
+					"id",
+					"title",
+					"description",
+					"organizationId",
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city",
+					"isRemote",
+					"occurrence",
+					"participationType",
+					"createdOn"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"organizationId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"street": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"houseNumber": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"zipCode": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"city": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"isRemote": {
+						"type": "boolean"
+					},
+					"occurrence": {
+						"type": "string"
+					},
+					"participationType": {
+						"type": "string"
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					}
+				}
+			},
+			"DomainEvent": {
+				"type": "object"
+			},
+			"EngagementStatusResponse": {
+				"required": [
+					"id",
+					"status",
+					"modifiedOn"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"status": {
+						"type": "string"
+					},
+					"modifiedOn": {
+						"type": [
+							"null",
+							"string"
+						],
+						"format": "date-time"
+					}
+				}
+			},
+			"EngagementSummary": {
+				"required": [
+					"id",
+					"opportunityId",
+					"volunteerId",
+					"timeSlotId",
+					"message",
+					"status",
+					"createdOn"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"opportunityId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"volunteerId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"timeSlotId": {
+						"type": [
+							"null",
+							"string"
+						],
+						"format": "uuid"
+					},
+					"message": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"status": {
+						"type": "string"
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					}
+				}
+			},
+			"KeycloakOrganization": {
+				"required": [
+					"id",
+					"name"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					}
+				}
+			},
+			"Organization": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"contactEmail": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"contactPhone": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"website": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"address": {
+						"oneOf": [
+							{
+								"type": "null"
+							},
+							{
+								"$ref": "#/components/schemas/Address"
+							}
+						]
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"modifiedOn": {
+						"type": [
+							"null",
+							"string"
+						],
+						"format": "date-time"
+					},
+					"events": {
+						"type": [
+							"null",
+							"array"
+						],
+						"items": {
+							"$ref": "#/components/schemas/DomainEvent"
+						}
+					},
+					"id": {
+						"$ref": "#/components/schemas/OrganizationId"
+					}
+				}
+			},
+			"OrganizationDetailsResponse": {
+				"required": [
+					"id",
+					"name",
+					"description",
+					"contactEmail",
+					"contactPhone",
+					"website",
+					"address",
+					"createdOn",
+					"modifiedOn",
+					"members"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"contactEmail": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"contactPhone": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"website": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"address": {
+						"oneOf": [
+							{
+								"type": "null"
+							},
+							{
+								"$ref": "#/components/schemas/AddressDto"
+							}
+						]
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"modifiedOn": {
+						"type": [
+							"null",
+							"string"
+						],
+						"format": "date-time"
+					},
+					"members": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/OrganizationMemberDto"
+						}
+					}
+				}
+			},
+			"OrganizationId": {
+				"type": "object",
+				"properties": {
+					"value": {
+						"type": "string",
+						"format": "uuid"
+					}
+				}
+			},
+			"OrganizationMemberDto": {
+				"required": [
+					"userId",
+					"username",
+					"firstName",
+					"lastName",
+					"email",
+					"isOrganisator"
+				],
+				"type": "object",
+				"properties": {
+					"userId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"username": {
+						"type": "string"
+					},
+					"firstName": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"lastName": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"email": {
+						"type": "string"
+					},
+					"isOrganisator": {
+						"type": "boolean"
+					}
+				}
+			},
+			"PagedListOfVolunteerOpportunitySummary": {
+				"required": [
+					"currentPage",
+					"items"
+				],
+				"type": "object",
+				"properties": {
+					"totalItems": {
+						"pattern": "^-?(?:0|[1-9]\\d*)$",
+						"type": [
+							"integer",
+							"string"
+						],
+						"format": "int32"
+					},
+					"currentPage": {
+						"pattern": "^-?(?:0|[1-9]\\d*)$",
+						"type": [
+							"integer",
+							"string"
+						],
+						"format": "int32"
+					},
+					"pageCount": {
+						"pattern": "^-?(?:0|[1-9]\\d*)$",
+						"type": [
+							"integer",
+							"string"
+						],
+						"format": "int32"
+					},
+					"items": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/VolunteerOpportunitySummary"
+						}
+					}
+				}
+			},
+			"ProblemDetails": {
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"title": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"status": {
+						"pattern": "^-?(?:0|[1-9]\\d*)$",
+						"type": [
+							"null",
+							"integer",
+							"string"
+						],
+						"format": "int32"
+					},
+					"detail": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"instance": {
+						"type": [
+							"null",
+							"string"
+						]
+					}
+				}
+			},
+			"TimeSlotDetail": {
+				"required": [
+					"id",
+					"startDateTime",
+					"endDateTime",
+					"maxParticipants"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"startDateTime": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"endDateTime": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"maxParticipants": {
+						"pattern": "^-?(?:0|[1-9]\\d*)$",
+						"type": [
+							"integer",
+							"string"
+						],
+						"format": "int32"
+					}
+				}
+			},
+			"UpdateAddressRequest": {
+				"required": [
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city"
+				],
+				"type": "object",
+				"properties": {
+					"street": {
+						"type": "string"
+					},
+					"houseNumber": {
+						"type": "string"
+					},
+					"zipCode": {
+						"type": "string"
+					},
+					"city": {
+						"type": "string"
+					}
+				}
+			},
+			"UpdateOrganizationRequest": {
+				"required": [
+					"name",
+					"description",
+					"contactEmail",
+					"contactPhone",
+					"website",
+					"address"
+				],
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"contactEmail": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"contactPhone": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"website": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"address": {
+						"oneOf": [
+							{
+								"type": "null"
+							},
+							{
+								"$ref": "#/components/schemas/UpdateAddressRequest"
+							}
+						]
+					}
+				}
+			},
+			"UpdateVolunteerOpportunityRequest": {
+				"required": [
+					"title",
+					"description",
+					"isRemote",
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city"
+				],
+				"type": "object",
+				"properties": {
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"isRemote": {
+						"type": "boolean"
+					},
+					"street": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"houseNumber": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"zipCode": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"city": {
+						"type": [
+							"null",
+							"string"
+						]
+					}
+				}
+			},
+			"VolunteerOpportunityDetails": {
+				"required": [
+					"id",
+					"title",
+					"description",
+					"organizationId",
+					"organizationName",
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city",
+					"isRemote",
+					"occurrence",
+					"participationType",
+					"timeSlots",
+					"createdOn"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"organizationId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"organizationName": {
+						"type": "string"
+					},
+					"street": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"houseNumber": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"zipCode": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"city": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"isRemote": {
+						"type": "boolean"
+					},
+					"occurrence": {
+						"type": "string"
+					},
+					"participationType": {
+						"type": "string"
+					},
+					"timeSlots": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/TimeSlotDetail"
+						}
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					}
+				}
+			},
+			"VolunteerOpportunitySummary": {
+				"required": [
+					"id",
+					"title",
+					"description",
+					"organizationName",
+					"street",
+					"houseNumber",
+					"zipCode",
+					"city",
+					"isRemote",
+					"occurrence",
+					"participationType",
+					"createdOn"
+				],
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"organizationName": {
+						"type": "string"
+					},
+					"street": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"houseNumber": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"zipCode": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"city": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"isRemote": {
+						"type": "boolean"
+					},
+					"occurrence": {
+						"type": "string"
+					},
+					"participationType": {
+						"type": "string"
+					},
+					"createdOn": {
+						"type": "string",
+						"format": "date-time"
+					}
+				}
+			}
+		}
+	},
+	"tags": [
+		{
+			"name": "UpdateVolunteerOpportunityEndpoint"
+		},
+		{
+			"name": "GetVolunteerOpportunityDetailsEndpoint"
+		},
+		{
+			"name": "DeleteVolunteerOpportunityEndpoint"
+		},
+		{
+			"name": "GetVolunteerOpportunitiesEndpoint"
+		},
+		{
+			"name": "CreateVolunteerOpportunityEndpoint"
+		},
+		{
+			"name": "UpdateOrganizationEndpoint"
+		},
+		{
+			"name": "GetOrganizationDetailsEndpoint"
+		},
+		{
+			"name": "RemoveMemberEndpoint"
+		},
+		{
+			"name": "GetOrganizationsEndpoint"
+		},
+		{
+			"name": "CreateOrganizationEndpoint"
+		},
+		{
+			"name": "AddMemberEndpoint"
+		},
+		{
+			"name": "Engagements"
+		}
+	]
 }

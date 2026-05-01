@@ -1,154 +1,154 @@
 {
-  "realm": "einsatzbereit",
-  "enabled": true,
-  "organizationsEnabled": true,
-  "loginTheme": "einsatzbereit",
-  "registrationAllowed": true,
-  "registrationEmailAsUsername": false,
-  "resetPasswordAllowed": true,
-  "rememberMe": true,
-  "verifyEmail": false,
-  "internationalizationEnabled": true,
-  "supportedLocales": ["de", "en"],
-  "defaultLocale": "de",
-  "roles": {
-    "realm": [
-      {
-        "name": "admin",
-        "description": "Administrator"
-      },
-      {
-        "name": "user",
-        "description": "Default user"
-      },
-      {
-        "name": "organisator",
-        "description": "Organisator - kann Bedarfe erstellen und verwalten"
-      }
-    ]
-  },
-  "clients": [
-    {
-      "clientId": "frontend",
-      "enabled": true,
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
-      "redirectUris": ["http://localhost:*"],
-      "webOrigins": ["*"],
-      "attributes": {
-        "post.logout.redirect.uris": "http://localhost:*"
-      },
-      "protocol": "openid-connect",
-      "protocolMappers": [
-        {
-          "name": "realm-roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "config": {
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        },
-        {
-          "name": "realm-name",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-hardcoded-claim-mapper",
-          "config": {
-            "claim.name": "realm",
-            "claim.value": "einsatzbereit",
-            "jsonType.label": "String",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "backend",
-      "enabled": true,
-      "publicClient": false,
-      "serviceAccountsEnabled": true,
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "secret": "backend-secret",
-      "protocol": "openid-connect"
-    }
-  ],
-  "components": {
-    "org.keycloak.userprofile.UserProfileProvider": [
-      {
-        "providerId": "declarative-user-profile",
-        "subComponents": {},
-        "config": {
-          "kc.user.profile.config": [
-            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
-          ]
-        }
-      }
-    ]
-  },
-  "users": [
-    {
-      "id": "00000000-0000-0000-0000-000000000002",
-      "username": "hannah",
-      "enabled": true,
-      "email": "hannah@example.com",
-      "firstName": "Hannah",
-      "lastName": "Helferin",
-      "realmRoles": ["user"],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "hannah123",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "00000000-0000-0000-0000-000000000001",
-      "username": "olaf",
-      "enabled": true,
-      "email": "olaf@example.com",
-      "firstName": "Olaf",
-      "lastName": "Organisator",
-      "realmRoles": ["user", "organisator"],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "olaf123",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "00000000-0000-0000-0000-000000000003",
-      "username": "admin",
-      "enabled": true,
-      "email": "admin@example.com",
-      "firstName": "Admin",
-      "lastName": "Admin",
-      "realmRoles": ["admin"],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "admin123",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "username": "service-account-backend",
-      "enabled": true,
-      "serviceAccountClientId": "backend",
-      "clientRoles": {
-        "realm-management": ["manage-realm", "manage-users", "manage-organizations"]
-      }
-    }
-  ]
+	"realm": "einsatzbereit",
+	"enabled": true,
+	"organizationsEnabled": true,
+	"loginTheme": "einsatzbereit",
+	"registrationAllowed": true,
+	"registrationEmailAsUsername": false,
+	"resetPasswordAllowed": true,
+	"rememberMe": true,
+	"verifyEmail": false,
+	"internationalizationEnabled": true,
+	"supportedLocales": ["de", "en"],
+	"defaultLocale": "de",
+	"roles": {
+		"realm": [
+			{
+				"name": "admin",
+				"description": "Administrator"
+			},
+			{
+				"name": "user",
+				"description": "Default user"
+			},
+			{
+				"name": "organisator",
+				"description": "Organisator - kann Bedarfe erstellen und verwalten"
+			}
+		]
+	},
+	"clients": [
+		{
+			"clientId": "frontend",
+			"enabled": true,
+			"publicClient": true,
+			"standardFlowEnabled": true,
+			"directAccessGrantsEnabled": true,
+			"redirectUris": ["http://localhost:*"],
+			"webOrigins": ["*"],
+			"attributes": {
+				"post.logout.redirect.uris": "http://localhost:*"
+			},
+			"protocol": "openid-connect",
+			"protocolMappers": [
+				{
+					"name": "realm-roles",
+					"protocol": "openid-connect",
+					"protocolMapper": "oidc-usermodel-realm-role-mapper",
+					"config": {
+						"claim.name": "roles",
+						"jsonType.label": "String",
+						"multivalued": "true",
+						"id.token.claim": "true",
+						"access.token.claim": "true",
+						"userinfo.token.claim": "true"
+					}
+				},
+				{
+					"name": "realm-name",
+					"protocol": "openid-connect",
+					"protocolMapper": "oidc-hardcoded-claim-mapper",
+					"config": {
+						"claim.name": "realm",
+						"claim.value": "einsatzbereit",
+						"jsonType.label": "String",
+						"id.token.claim": "true",
+						"access.token.claim": "true",
+						"userinfo.token.claim": "true"
+					}
+				}
+			]
+		},
+		{
+			"clientId": "backend",
+			"enabled": true,
+			"publicClient": false,
+			"serviceAccountsEnabled": true,
+			"standardFlowEnabled": false,
+			"directAccessGrantsEnabled": false,
+			"secret": "backend-secret",
+			"protocol": "openid-connect"
+		}
+	],
+	"components": {
+		"org.keycloak.userprofile.UserProfileProvider": [
+			{
+				"providerId": "declarative-user-profile",
+				"subComponents": {},
+				"config": {
+					"kc.user.profile.config": [
+						"{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+					]
+				}
+			}
+		]
+	},
+	"users": [
+		{
+			"id": "00000000-0000-0000-0000-000000000002",
+			"username": "hannah",
+			"enabled": true,
+			"email": "hannah@example.com",
+			"firstName": "Hannah",
+			"lastName": "Helferin",
+			"realmRoles": ["user"],
+			"credentials": [
+				{
+					"type": "password",
+					"value": "hannah123",
+					"temporary": false
+				}
+			]
+		},
+		{
+			"id": "00000000-0000-0000-0000-000000000001",
+			"username": "olaf",
+			"enabled": true,
+			"email": "olaf@example.com",
+			"firstName": "Olaf",
+			"lastName": "Organisator",
+			"realmRoles": ["user", "organisator"],
+			"credentials": [
+				{
+					"type": "password",
+					"value": "olaf123",
+					"temporary": false
+				}
+			]
+		},
+		{
+			"id": "00000000-0000-0000-0000-000000000003",
+			"username": "admin",
+			"enabled": true,
+			"email": "admin@example.com",
+			"firstName": "Admin",
+			"lastName": "Admin",
+			"realmRoles": ["admin"],
+			"credentials": [
+				{
+					"type": "password",
+					"value": "admin123",
+					"temporary": false
+				}
+			]
+		},
+		{
+			"username": "service-account-backend",
+			"enabled": true,
+			"serviceAccountClientId": "backend",
+			"clientRoles": {
+				"realm-management": ["manage-realm", "manage-users", "manage-organizations"]
+			}
+		}
+	]
 }
