@@ -10,273 +10,273 @@ using Microsoft.Extensions.Options;
 namespace Infrastructure.Keycloak;
 
 internal sealed class KeycloakOrganizationService(
-    HttpClient httpClient,
-    IOptions<KeycloakOptions> options)
-    : IKeycloakOrganizationService
+	HttpClient httpClient,
+	IOptions<KeycloakOptions> options)
+	: IKeycloakOrganizationService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+	private static readonly JsonSerializerOptions JsonOptions = new()
+	{
+		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+	};
 
-    private readonly KeycloakOptions _options = options.Value;
+	private readonly KeycloakOptions _options = options.Value;
 
-    public async Task<Guid> CreateOrganizationAsync(
-        string name,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureAuthenticatedAsync(cancellationToken);
+	public async Task<Guid> CreateOrganizationAsync(
+		string name,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
 
-        var alias = GenerateAlias(name);
-        var request = new { name, alias };
+		var alias = GenerateAlias(name);
+		var request = new { name, alias };
 
-        var response = await httpClient.PostAsJsonAsync(
-            $"/admin/realms/{_options.Realm}/organizations",
-            request,
-            JsonOptions,
-            cancellationToken);
+		var response = await httpClient.PostAsJsonAsync(
+			$"/admin/realms/{_options.Realm}/organizations",
+			request,
+			JsonOptions,
+			cancellationToken);
 
-        await EnsureSuccessAsync(response, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-        var location = response.Headers.Location?.ToString()
-            ?? throw new InvalidOperationException("Keycloak did not return a Location header.");
+		var location = response.Headers.Location?.ToString()
+			?? throw new InvalidOperationException("Keycloak did not return a Location header.");
 
-        var idString = location.Split('/')[^1];
+		var idString = location.Split('/')[^1];
 
-        return Guid.Parse(idString);
-    }
+		return Guid.Parse(idString);
+	}
 
-    public async Task AddMemberAsync(
-        Guid organizationId,
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureAuthenticatedAsync(cancellationToken);
+	public async Task AddMemberAsync(
+		Guid organizationId,
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
 
-        var response = await httpClient.PostAsJsonAsync(
-            $"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
-            userId.ToString(),
-            JsonOptions,
-            cancellationToken);
+		var response = await httpClient.PostAsJsonAsync(
+			$"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
+			userId.ToString(),
+			JsonOptions,
+			cancellationToken);
 
-        await EnsureSuccessAsync(response, cancellationToken);
-    }
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
 
-    public async Task AssignOrganizerRoleAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureAuthenticatedAsync(cancellationToken);
+	public async Task AssignOrganizerRoleAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
 
-        var rolesResponse = await httpClient.GetAsync(
-            $"/admin/realms/{_options.Realm}/roles/organisator",
-            cancellationToken);
+		var rolesResponse = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/roles/organisator",
+			cancellationToken);
 
-        await EnsureSuccessAsync(rolesResponse, cancellationToken);
+		await EnsureSuccessAsync(rolesResponse, cancellationToken);
 
-        var role = await rolesResponse.Content.ReadFromJsonAsync<KeycloakRole>(
-            JsonOptions, cancellationToken);
+		var role = await rolesResponse.Content.ReadFromJsonAsync<KeycloakRole>(
+			JsonOptions, cancellationToken);
 
-        var response = await httpClient.PostAsJsonAsync(
-            $"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm",
-            new[] { role },
-            JsonOptions,
-            cancellationToken);
+		var response = await httpClient.PostAsJsonAsync(
+			$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm",
+			new[] { role },
+			JsonOptions,
+			cancellationToken);
 
-        await EnsureSuccessAsync(response, cancellationToken);
-    }
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
 
-    public async Task<IReadOnlyList<KeycloakOrganization>> GetUserOrganizationsAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureAuthenticatedAsync(cancellationToken);
+	public async Task<IReadOnlyList<KeycloakOrganization>> GetUserOrganizationsAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
 
-        var response = await httpClient.GetAsync(
-            $"/admin/realms/{_options.Realm}/organizations/members/{userId}/organizations",
-            cancellationToken);
+		var response = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/organizations/members/{userId}/organizations",
+			cancellationToken);
 
-        await EnsureSuccessAsync(response, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 
-        var organizations = await response.Content.ReadFromJsonAsync<List<KeycloakOrganizationResponse>>(
-            JsonOptions, cancellationToken) ?? [];
+		var organizations = await response.Content.ReadFromJsonAsync<List<KeycloakOrganizationResponse>>(
+			JsonOptions, cancellationToken) ?? [];
 
-        return organizations
-            .Select(o => new KeycloakOrganization(Guid.Parse(o.Id), o.Name))
-            .ToList();
-    }
+		return organizations
+			.Select(o => new KeycloakOrganization(Guid.Parse(o.Id), o.Name))
+			.ToList();
+	}
 
-    public async Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
-        Guid organizationId,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureAuthenticatedAsync(cancellationToken);
+	public async Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
+		Guid organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
 
-        var membersResponse = await httpClient.GetAsync(
-            $"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
-            cancellationToken);
+		var membersResponse = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/organizations/{organizationId}/members",
+			cancellationToken);
 
-        await EnsureSuccessAsync(membersResponse, cancellationToken);
+		await EnsureSuccessAsync(membersResponse, cancellationToken);
 
-        var members = await membersResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
-            JsonOptions, cancellationToken) ?? [];
+		var members = await membersResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+			JsonOptions, cancellationToken) ?? [];
 
-        var organisatorsResponse = await httpClient.GetAsync(
-            $"/admin/realms/{_options.Realm}/roles/organisator/users",
-            cancellationToken);
+		var organisatorsResponse = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/roles/organisator/users",
+			cancellationToken);
 
-        await EnsureSuccessAsync(organisatorsResponse, cancellationToken);
+		await EnsureSuccessAsync(organisatorsResponse, cancellationToken);
 
-        var organisators = await organisatorsResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
-            JsonOptions, cancellationToken) ?? [];
+		var organisators = await organisatorsResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+			JsonOptions, cancellationToken) ?? [];
 
-        var organisatorIds = organisators.Select(u => u.Id).ToHashSet();
+		var organisatorIds = organisators.Select(u => u.Id).ToHashSet();
 
-        return members
-            .Select(u => new KeycloakOrganizationMember(
-                Guid.Parse(u.Id),
-                u.Username,
-                u.FirstName,
-                u.LastName,
-                u.Email ?? string.Empty,
-                organisatorIds.Contains(u.Id)))
-            .ToList();
-    }
+		return members
+			.Select(u => new KeycloakOrganizationMember(
+				Guid.Parse(u.Id),
+				u.Username,
+				u.FirstName,
+				u.LastName,
+				u.Email ?? string.Empty,
+				organisatorIds.Contains(u.Id)))
+			.ToList();
+	}
 
-    public async Task RemoveMemberAsync(
-        Guid organizationId,
-        Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        await EnsureAuthenticatedAsync(cancellationToken);
+	public async Task RemoveMemberAsync(
+		Guid organizationId,
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
 
-        var response = await httpClient.DeleteAsync(
-            $"/admin/realms/{_options.Realm}/organizations/{organizationId}/members/{userId}",
-            cancellationToken);
+		var response = await httpClient.DeleteAsync(
+			$"/admin/realms/{_options.Realm}/organizations/{organizationId}/members/{userId}",
+			cancellationToken);
 
-        await EnsureSuccessAsync(response, cancellationToken);
-    }
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
 
-    private async Task EnsureAuthenticatedAsync(
-        CancellationToken cancellationToken)
-    {
-        if (httpClient.DefaultRequestHeaders.Authorization is not null)
-        {
-            return;
-        }
+	private async Task EnsureAuthenticatedAsync(
+		CancellationToken cancellationToken)
+	{
+		if (httpClient.DefaultRequestHeaders.Authorization is not null)
+		{
+			return;
+		}
 
-        var tokenRequest = new FormUrlEncodedContent([
-            new KeyValuePair<string, string>("grant_type", "client_credentials"),
-            new KeyValuePair<string, string>("client_id", _options.ClientId),
-            new KeyValuePair<string, string>("client_secret", _options.ClientSecret)
-        ]);
+		var tokenRequest = new FormUrlEncodedContent([
+			new KeyValuePair<string, string>("grant_type", "client_credentials"),
+			new KeyValuePair<string, string>("client_id", _options.ClientId),
+			new KeyValuePair<string, string>("client_secret", _options.ClientSecret)
+		]);
 
-        var tokenResponse = await httpClient.PostAsync(
-            $"/realms/{_options.Realm}/protocol/openid-connect/token",
-            tokenRequest,
-            cancellationToken);
+		var tokenResponse = await httpClient.PostAsync(
+			$"/realms/{_options.Realm}/protocol/openid-connect/token",
+			tokenRequest,
+			cancellationToken);
 
-        await EnsureSuccessAsync(tokenResponse, cancellationToken);
+		await EnsureSuccessAsync(tokenResponse, cancellationToken);
 
-        var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>(
-            JsonOptions, cancellationToken);
+		var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>(
+			JsonOptions, cancellationToken);
 
-        httpClient.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult!.AccessToken);
-    }
+		httpClient.DefaultRequestHeaders.Authorization =
+			new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult!.AccessToken);
+	}
 
-    internal static string GenerateAlias(string name)
-    {
-        // Normalize to decomposed form so we can strip diacritics,
-        // but first handle common German replacements explicitly.
-        var sb = new StringBuilder(name.Length);
+	internal static string GenerateAlias(string name)
+	{
+		// Normalize to decomposed form so we can strip diacritics,
+		// but first handle common German replacements explicitly.
+		var sb = new StringBuilder(name.Length);
 
-        foreach (var c in name)
-        {
-            var replacement = c switch
-            {
-                'ä' or 'Ä' => "ae",
-                'ö' or 'Ö' => "oe",
-                'ü' or 'Ü' => "ue",
-                'ß' => "ss",
-                _ => null
-            };
+		foreach (var c in name)
+		{
+			var replacement = c switch
+			{
+				'ä' or 'Ä' => "ae",
+				'ö' or 'Ö' => "oe",
+				'ü' or 'Ü' => "ue",
+				'ß' => "ss",
+				_ => null
+			};
 
-            if (replacement is not null)
-            {
-                sb.Append(replacement);
-                continue;
-            }
+			if (replacement is not null)
+			{
+				sb.Append(replacement);
+				continue;
+			}
 
-            // Decompose and strip combining marks for other accented chars
-            var normalized = c.ToString().Normalize(NormalizationForm.FormD);
-            foreach (var nc in normalized)
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(nc) != UnicodeCategory.NonSpacingMark)
-                {
-                    sb.Append(nc);
-                }
-            }
-        }
+			// Decompose and strip combining marks for other accented chars
+			var normalized = c.ToString().Normalize(NormalizationForm.FormD);
+			foreach (var nc in normalized)
+			{
+				if (CharUnicodeInfo.GetUnicodeCategory(nc) != UnicodeCategory.NonSpacingMark)
+				{
+					sb.Append(nc);
+				}
+			}
+		}
 
-        var alias = sb.ToString().ToLowerInvariant();
+		var alias = sb.ToString().ToLowerInvariant();
 
-        // Replace non-alphanumeric with hyphens, collapse, and trim
-        sb.Clear();
-        var prevHyphen = true; // treat start as hyphen to trim leading
-        foreach (var c in alias)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                sb.Append(c);
-                prevHyphen = false;
-            }
-            else if (!prevHyphen)
-            {
-                sb.Append('-');
-                prevHyphen = true;
-            }
-        }
+		// Replace non-alphanumeric with hyphens, collapse, and trim
+		sb.Clear();
+		var prevHyphen = true; // treat start as hyphen to trim leading
+		foreach (var c in alias)
+		{
+			if (char.IsLetterOrDigit(c))
+			{
+				sb.Append(c);
+				prevHyphen = false;
+			}
+			else if (!prevHyphen)
+			{
+				sb.Append('-');
+				prevHyphen = true;
+			}
+		}
 
-        // Trim trailing hyphen
-        return sb.Length > 0 && sb[^1] == '-'
-            ? sb.ToString(0, sb.Length - 1)
-            : sb.ToString();
-    }
+		// Trim trailing hyphen
+		return sb.Length > 0 && sb[^1] == '-'
+			? sb.ToString(0, sb.Length - 1)
+			: sb.ToString();
+	}
 
-    private static async Task EnsureSuccessAsync(
-        HttpResponseMessage response,
-        CancellationToken cancellationToken)
-    {
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
+	private static async Task EnsureSuccessAsync(
+		HttpResponseMessage response,
+		CancellationToken cancellationToken)
+	{
+		if (response.IsSuccessStatusCode)
+		{
+			return;
+		}
 
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+		var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        throw new HttpRequestException(
-            $"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} " +
-            $"for {response.RequestMessage?.Method} {response.RequestMessage?.RequestUri}: {body}",
-            inner: null,
-            response.StatusCode);
-    }
+		throw new HttpRequestException(
+			$"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} " +
+			$"for {response.RequestMessage?.Method} {response.RequestMessage?.RequestUri}: {body}",
+			inner: null,
+			response.StatusCode);
+	}
 
-    private sealed record TokenResponse(
-        [property: JsonPropertyName("access_token")] string AccessToken);
+	private sealed record TokenResponse(
+		[property: JsonPropertyName("access_token")] string AccessToken);
 
-    private sealed record KeycloakRole(
-        string Id,
-        string Name);
+	private sealed record KeycloakRole(
+		string Id,
+		string Name);
 
-    private sealed record KeycloakOrganizationResponse(
-        string Id,
-        string Name);
+	private sealed record KeycloakOrganizationResponse(
+		string Id,
+		string Name);
 
-    private sealed record KeycloakUserResponse(
-        string Id,
-        string Username,
-        string? FirstName,
-        string? LastName,
-        string? Email);
+	private sealed record KeycloakUserResponse(
+		string Id,
+		string Username,
+		string? FirstName,
+		string? LastName,
+		string? Email);
 }

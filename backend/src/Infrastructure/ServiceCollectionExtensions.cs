@@ -16,43 +16,43 @@ namespace Infrastructure;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddInfrastructureServices(
-        this IServiceCollection services)
-    {
-        services.ConfigureOptions<ConnectionStringOptionsSetup>();
+	public static IServiceCollection AddInfrastructureServices(
+		this IServiceCollection services)
+	{
+		services.ConfigureOptions<ConnectionStringOptionsSetup>();
 
-        services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+		services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
-        services.AddDbContext<ApplicationDbContext>((sp, options) =>
-        {
-            options.AddInterceptors(
-                sp.GetServices<ISaveChangesInterceptor>());
+		services.AddDbContext<ApplicationDbContext>((sp, options) =>
+		{
+			options.AddInterceptors(
+				sp.GetServices<ISaveChangesInterceptor>());
 
-            options.UseNpgsql(
-                sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.Einsatzbereit,
-                mig => mig.MigrationsAssembly("Infrastructure"));
+			options.UseNpgsql(
+				sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.Einsatzbereit,
+				mig => mig.MigrationsAssembly("Infrastructure"));
 
-            options.UseSnakeCaseNamingConvention();
-        });
+			options.UseSnakeCaseNamingConvention();
+		});
 
-        services.AddScoped<IApplicationDbContextInitializer, ApplicationDbContextInitializer>();
+		services.AddScoped<IApplicationDbContextInitializer, ApplicationDbContextInitializer>();
 
-        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
-        
-        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+		services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+		
+		services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
-        services.AddScoped<IVolunteerOpportunityReadRepository, VolunteerOpportunityReadRepository>();
+		services.AddScoped<IVolunteerOpportunityReadRepository, VolunteerOpportunityReadRepository>();
 
-        services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
+		services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
 
-        services.ConfigureOptions<KeycloakOptionsSetup>();
-        services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
-            (sp, client) =>
-            {
-                var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
-                client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
-            });
+		services.ConfigureOptions<KeycloakOptionsSetup>();
+		services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
+			(sp, client) =>
+			{
+				var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
+				client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+			});
 
-        return services;
-    }
+		return services;
+	}
 }

@@ -22,3 +22,9 @@ jobs:
             echo "::error::Em/en dashes found - use plain ASCII hyphens (-) instead"
             exit 1
           fi
+
+  editorconfig:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: editorconfig-checker/action-editorconfig-checker@v3

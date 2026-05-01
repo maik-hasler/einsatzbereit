@@ -7,29 +7,29 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 
 internal sealed class GetVolunteerOpportunitiesEndpoint
-    : IEndpoint
+	: IEndpoint
 {
-    public void MapEndpoint(
-        IEndpointRouteBuilder app)
-    {
-        app.MapGet("/volunteer-opportunities", GetVolunteerOpportunitiesAsync)
-            .WithName("GetVolunteerOpportunities")
-            .Produces<PagedList<VolunteerOpportunitySummary>>()
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .AllowAnonymous()
-            .MapToApiVersion(1);
-    }
+	public void MapEndpoint(
+		IEndpointRouteBuilder app)
+	{
+		app.MapGet("/volunteer-opportunities", GetVolunteerOpportunitiesAsync)
+			.WithName("GetVolunteerOpportunities")
+			.Produces<PagedList<VolunteerOpportunitySummary>>()
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.AllowAnonymous()
+			.MapToApiVersion(1);
+	}
 
-    private static async Task<IResult> GetVolunteerOpportunitiesAsync(
-        [AsParameters] GetVolunteerOpportunitiesRequest request,
-        [FromServices] ISender sender,
-        CancellationToken cancellationToken)
-    {
-        var query = new GetVolunteerOpportunitiesQuery(request.PageNumber, request.PageSize, request.Search, request.City, request.Occurrence, request.ParticipationType);
+	private static async Task<IResult> GetVolunteerOpportunitiesAsync(
+		[AsParameters] GetVolunteerOpportunitiesRequest request,
+		[FromServices] ISender sender,
+		CancellationToken cancellationToken)
+	{
+		var query = new GetVolunteerOpportunitiesQuery(request.PageNumber, request.PageSize, request.Search, request.City, request.Occurrence, request.ParticipationType);
 
-        var result = await sender.Send(query, cancellationToken);
+		var result = await sender.Send(query, cancellationToken);
 
-        return Results.Ok(result);
-    }
+		return Results.Ok(result);
+	}
 }

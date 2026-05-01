@@ -2,5 +2,5 @@
 
 public interface IApplicationDbContextInitializer
 {
-    ValueTask MigrateAsync(CancellationToken cancellationToken = default);
+	ValueTask MigrateAsync(CancellationToken cancellationToken = default);
 }

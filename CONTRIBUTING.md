@@ -132,6 +132,19 @@ dotnet tool run openapi
 
 ## Code Style
 
+### Indentation (Why Tabs)
+
+This project uses **tabs** for indentation in all source files (`.cs`, `.ts`, `.tsx`, `.css`, `.csproj`, `.props`).
+
+Tabs are an accessibility feature: each contributor can configure their editor to display a tab as the width that works best for them (e.g. 2, 4, or 8 columns). This directly benefits low-vision readers, dyslexic contributors, and anyone using a refreshable braille display or large-font setup. Spaces lock every reader into the author's preferred width.
+
+The `.editorconfig` at the root of the repository enforces this policy. Configure your editor to respect `.editorconfig` and you will get the correct style automatically.
+
+CI enforces the policy:
+- **EditorConfig checker** verifies all files on every push/PR (`lint.yml`)
+- **`pnpm format:check`** verifies frontend TypeScript/CSS formatting (`frontend.yml`)
+- **`dotnet format --verify-no-changes`** verifies backend C# formatting (`dotnet.yml`)
+
 ### Backend (C#)
 - Follow Microsoft naming conventions (PascalCase for public members)
 - Feature folders: `{Layer}/{Domain}/{Feature}/v1/`

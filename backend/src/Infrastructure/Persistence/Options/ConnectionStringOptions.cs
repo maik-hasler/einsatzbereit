@@ -2,5 +2,5 @@
 
 internal sealed class ConnectionStringOptions
 {
-    public required string Einsatzbereit { get; init; }
+	public required string Einsatzbereit { get; init; }
 }

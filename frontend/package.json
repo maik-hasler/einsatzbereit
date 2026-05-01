@@ -11,7 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\""
   },
   "dependencies": {
     "oidc-client-ts": "3.5.0",
@@ -28,7 +29,9 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",
     "eslint": "10.2.1",
+    "eslint-config-prettier": "10.1.5",
     "eslint-plugin-react-hooks": "7.1.1",
+    "prettier": "3.5.3",
     "tailwindcss": "4.2.4",
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.1",

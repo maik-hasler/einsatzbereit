@@ -1,17 +1,17 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.2.4">
-  
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <UserSecretsId>c987306e-e412-4c94-9750-c290dbe2ccdd</UserSecretsId>
-  </PropertyGroup>
+	
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<UserSecretsId>c987306e-e412-4c94-9750-c290dbe2ccdd</UserSecretsId>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.JavaScript" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting.JavaScript" />
+		<PackageReference Include="Aspire.Hosting.PostgreSQL" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Api\Api.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Api\Api.csproj" />
+	</ItemGroup>
 
 </Project>

@@ -11,134 +11,134 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Infrastructure.Persistence.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260406074452_Initial")]
-    partial class Initial
-    {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
-        {
+	[DbContext(typeof(ApplicationDbContext))]
+	[Migration("20260406074452_Initial")]
+	partial class Initial
+	{
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
+		{
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.5")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+			modelBuilder
+				.HasAnnotation("ProductVersion", "10.0.5")
+				.HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+			NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Organizations.Organization", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+			modelBuilder.Entity("Domain.Organizations.Organization", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
 
-                    b.Property<DateTimeOffset>("CreatedOn")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_on");
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
 
-                    b.Property<DateTimeOffset?>("ModifiedOn")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified_on");
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
+					b.Property<string>("Name")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("name");
 
-                    b.HasKey("Id")
-                        .HasName("pk_organization");
+					b.HasKey("Id")
+						.HasName("pk_organization");
 
-                    b.ToTable("organization", (string)null);
-                });
+					b.ToTable("organization", (string)null);
+				});
 
-            modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+			modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
 
-                    b.Property<DateTimeOffset>("CreatedOn")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_on");
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("description");
+					b.Property<string>("Description")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("description");
 
-                    b.Property<bool>("IsRemote")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_remote");
+					b.Property<bool>("IsRemote")
+						.HasColumnType("boolean")
+						.HasColumnName("is_remote");
 
-                    b.Property<DateTimeOffset?>("ModifiedOn")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified_on");
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
 
-                    b.Property<string>("Occurrence")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("occurrence");
+					b.Property<string>("Occurrence")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("occurrence");
 
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
+					b.Property<Guid>("OrganizationId")
+						.HasColumnType("uuid")
+						.HasColumnName("organization_id");
 
-                    b.Property<string>("ParticipationType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("participation_type");
+					b.Property<string>("ParticipationType")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("participation_type");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title");
+					b.Property<string>("Title")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("title");
 
-                    b.HasKey("Id")
-                        .HasName("pk_volunteer_opportunity");
+					b.HasKey("Id")
+						.HasName("pk_volunteer_opportunity");
 
-                    b.ToTable("volunteer_opportunity", (string)null);
-                });
+					b.ToTable("volunteer_opportunity", (string)null);
+				});
 
-            modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
-                {
-                    b.OwnsOne("Domain.VolunteerOpportunities.Address", "Address", b1 =>
-                        {
-                            b1.Property<Guid>("VolunteerOpportunityId")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id");
+			modelBuilder.Entity("Domain.VolunteerOpportunities.VolunteerOpportunity", b =>
+				{
+					b.OwnsOne("Domain.VolunteerOpportunities.Address", "Address", b1 =>
+						{
+							b1.Property<Guid>("VolunteerOpportunityId")
+								.HasColumnType("uuid")
+								.HasColumnName("id");
 
-                            b1.Property<string>("City")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("address_city");
+							b1.Property<string>("City")
+								.IsRequired()
+								.HasColumnType("text")
+								.HasColumnName("address_city");
 
-                            b1.Property<string>("HouseNumber")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("address_house_number");
+							b1.Property<string>("HouseNumber")
+								.IsRequired()
+								.HasColumnType("text")
+								.HasColumnName("address_house_number");
 
-                            b1.Property<string>("Street")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("address_street");
+							b1.Property<string>("Street")
+								.IsRequired()
+								.HasColumnType("text")
+								.HasColumnName("address_street");
 
-                            b1.Property<string>("ZipCode")
-                                .IsRequired()
-                                .HasMaxLength(5)
-                                .HasColumnType("character varying(5)")
-                                .HasColumnName("address_zip_code");
+							b1.Property<string>("ZipCode")
+								.IsRequired()
+								.HasMaxLength(5)
+								.HasColumnType("character varying(5)")
+								.HasColumnName("address_zip_code");
 
-                            b1.HasKey("VolunteerOpportunityId");
+							b1.HasKey("VolunteerOpportunityId");
 
-                            b1.ToTable("volunteer_opportunity");
+							b1.ToTable("volunteer_opportunity");
 
-                            b1.WithOwner()
-                                .HasForeignKey("VolunteerOpportunityId")
-                                .HasConstraintName("fk_volunteer_opportunity_volunteer_opportunity_id");
-                        });
+							b1.WithOwner()
+								.HasForeignKey("VolunteerOpportunityId")
+								.HasConstraintName("fk_volunteer_opportunity_volunteer_opportunity_id");
+						});
 
-                    b.Navigation("Address");
-                });
+					b.Navigation("Address");
+				});
 #pragma warning restore 612, 618
-        }
-    }
+		}
+	}
 }

@@ -1,44 +1,44 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume()
-    .WithPgAdmin();
+	.WithDataVolume()
+	.WithPgAdmin();
 
 var database = postgres.AddDatabase("einsatzbereit");
 
 var keycloakRealmPath = Path.GetFullPath(
-    Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "realms"));
+	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "realms"));
 
 var keycloakThemePath = Path.GetFullPath(
-    Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
+	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
 var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.6.1")
-    .WithEnvironment("KC_DB", "dev-file")
-    .WithBindMount(keycloakRealmPath, "/opt/keycloak/data/import", isReadOnly: true)
-    .WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
-    .WithArgs("start-dev", "--import-realm")
-    .WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);
+	.WithEnvironment("KC_DB", "dev-file")
+	.WithBindMount(keycloakRealmPath, "/opt/keycloak/data/import", isReadOnly: true)
+	.WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
+	.WithArgs("start-dev", "--import-realm")
+	.WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);
 
 var keycloakEndpoint = keycloak.GetEndpoint("http");
 
 var backend = builder.AddProject<Projects.Api>("backend")
-    .WithReference(database)
-    .WaitFor(database)
-    .WaitFor(keycloak)
-    .WithEnvironment("Authentication__Authority",
-        ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
-    .WithEnvironment("Authentication__ValidIssuers__0",
-        ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
-    .WithEnvironment("Keycloak__BaseUrl",
-        ReferenceExpression.Create($"{keycloakEndpoint}"));
+	.WithReference(database)
+	.WaitFor(database)
+	.WaitFor(keycloak)
+	.WithEnvironment("Authentication__Authority",
+		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
+	.WithEnvironment("Authentication__ValidIssuers__0",
+		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
+	.WithEnvironment("Keycloak__BaseUrl",
+		ReferenceExpression.Create($"{keycloakEndpoint}"));
 
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
-    .WithPnpm()
-    .WithReference(backend)
-    .WaitFor(backend)
-    .WithEnvironment("VITE_API_URL", backend.GetEndpoint("https"))
-    .WithEnvironment("VITE_KEYCLOAK_AUTHORITY_URL",
-        ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"));
+	.WithPnpm()
+	.WithReference(backend)
+	.WaitFor(backend)
+	.WithEnvironment("VITE_API_URL", backend.GetEndpoint("https"))
+	.WithEnvironment("VITE_KEYCLOAK_AUTHORITY_URL",
+		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"));
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 
