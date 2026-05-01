@@ -28,7 +28,7 @@ internal sealed class Sender(
 		Type requestType)
 	{
 		var requestInterface = requestType.GetInterfaces()
-		   .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
+			.FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
 			?? throw new InvalidOperationException($"Request type '{requestType.Name}' does not implement IRequest<TResponse>");
 
 		var responseType = requestInterface.GetGenericArguments()[0];

@@ -9,10 +9,31 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
+# Markdown: code blocks use space indentation; size varies (list continuation, trees)
 [*.md]
+indent_style = space
 trim_trailing_whitespace = false
 
-# YAML forbids tab indentation per spec; JSON conventionally uses spaces
+# Data/config formats that require or conventionally use spaces
 [*.{yml,yaml,json}]
 indent_style = space
 indent_size = 2
+
+# HTML and FreeMarker templates
+[*.{html,ftl}]
+indent_style = space
+indent_size = 2
+
+# Diagram sources
+[*.{puml,plantuml}]
+indent_style = space
+indent_size = 2
+
+# .NET solution file (tool-generated format)
+[*.{slnx,sln}]
+indent_style = space
+indent_size = 2
+
+# Standard legal files
+[LICENSE]
+indent_style = space

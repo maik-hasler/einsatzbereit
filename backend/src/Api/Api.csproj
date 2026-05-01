@@ -37,7 +37,7 @@
 		<ItemGroup>
 			<ApiVersions Include="v1" />
 		</ItemGroup>
-		<Exec 
+		<Exec
 			ContinueOnError="true"
 			WorkingDirectory="$(ProjectDir)"
 			EnvironmentVariables="ASPNETCORE_ENVIRONMENT=Development;"
@@ -49,5 +49,5 @@
 		<Message Text="$(NSwagOutput)" Condition="'$(NSwagExitCode)' == '0'" Importance="low" />
 		<Error Text="$(NSwagOutput)" Condition="'$(NSwagExitCode)' != '0'" />
 	</Target>
-	
+
 </Project>

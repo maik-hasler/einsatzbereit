@@ -1,0 +1,7 @@
+{
+  "Exclude": [
+    "\\.claude/",
+    "LICENSE$",
+    "\\.md$"
+  ]
+}

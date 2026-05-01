@@ -5,7 +5,7 @@ namespace Domain.Organizations;
 
 public sealed class Organization
 	: AggregateRoot<OrganizationId>,
-	  IAuditableEntity
+		IAuditableEntity
 {
 	public string Name { get; private set; }
 

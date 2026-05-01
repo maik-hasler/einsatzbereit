@@ -101,7 +101,7 @@ public class CreateOrganizationCommandHandlerTests
 		// Assert
 		await _dbContext.Organizations.Received(1).AddAsync(
 			Arg.Is<Organization>(o => o.Name == "Test Org"),
-		   cancellationToken);
+			cancellationToken);
 	}
 
 	[Test]

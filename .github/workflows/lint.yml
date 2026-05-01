@@ -1,4 +1,4 @@
-﻿name: Lint
+name: Lint
 
 on:
   push:
@@ -32,4 +32,4 @@ jobs:
         run: npm install -g editorconfig-checker
 
       - name: Check EditorConfig conformance
-        run: editorconfig-checker
+        run: editorconfig-checker -config .editorconfig-checker.json

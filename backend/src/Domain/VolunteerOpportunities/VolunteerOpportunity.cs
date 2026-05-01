@@ -5,7 +5,7 @@ namespace Domain.VolunteerOpportunities;
 
 public sealed class VolunteerOpportunity
 	: AggregateRoot<VolunteerOpportunityId>,
-	  IAuditableEntity
+		IAuditableEntity
 {
 	private readonly List<TimeSlot> _timeSlots = [];
 

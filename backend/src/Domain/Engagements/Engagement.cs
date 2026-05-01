@@ -6,7 +6,7 @@ namespace Domain.Engagements;
 
 public sealed class Engagement
 	: AggregateRoot<EngagementId>,
-	  IAuditableEntity
+		IAuditableEntity
 {
 	public VolunteerOpportunityId OpportunityId { get; private set; }
 
