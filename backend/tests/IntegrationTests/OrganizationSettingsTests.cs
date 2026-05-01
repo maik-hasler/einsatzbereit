@@ -131,7 +131,10 @@ public class OrganizationSettingsTests(
 			Name = "Org mit Adresse",
 			Address = new UpdateAddressRequest
 			{
-				Street = "Straße", HouseNumber = "1", ZipCode = "12345", City = "Stadt"
+				Street = "Straße",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Stadt"
 			}
 		}, cancellationToken);
 
@@ -144,7 +147,7 @@ public class OrganizationSettingsTests(
 		var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
 		result.Address.Should().BeNull();
 	}
-	
+
 	[Test]
 	public async Task RemoveMember_ShouldReturn401_WhenNotAuthenticated(
 		CancellationToken cancellationToken)

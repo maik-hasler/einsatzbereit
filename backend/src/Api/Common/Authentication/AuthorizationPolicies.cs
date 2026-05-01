@@ -1,11 +1,11 @@
-﻿namespace Api.Common.Authentication;
+namespace Api.Common.Authentication;
 
 internal static class AuthorizationPolicies
 {
 	public const string RealmClaim = "realm";
-	
+
 	public const string EinsatzbereitRealm = "einsatzbereit";
-	
+
 	public const string AdminRole = "admin";
 
 	public const string DefaultUser = "user";

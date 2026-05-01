@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Application.Common.Persistence;
 using Domain.Engagements;
 using Domain.VolunteerOpportunities;

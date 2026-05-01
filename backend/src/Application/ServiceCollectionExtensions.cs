@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Application.Common.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 

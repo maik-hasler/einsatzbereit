@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Persistence.Options;
+namespace Infrastructure.Persistence.Options;
 
 internal sealed class ConnectionStringOptions
 {

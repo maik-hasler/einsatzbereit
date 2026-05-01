@@ -1,4 +1,4 @@
-﻿using Domain.Primitives;
+using Domain.Primitives;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -14,9 +14,9 @@ internal sealed class AuditableEntityInterceptor(
 		CancellationToken cancellationToken = default)
 	{
 		if (eventData.Context is null) return base.SavingChangesAsync(eventData, result, cancellationToken);
-		
+
 		var utcNow = timeProvider.GetUtcNow();
-		
+
 		foreach (var entityEntry in eventData.Context.ChangeTracker.Entries<IAuditableEntity>())
 		{
 			if (entityEntry.State == EntityState.Added)
@@ -29,7 +29,7 @@ internal sealed class AuditableEntityInterceptor(
 				entityEntry.Property(nameof(IAuditableEntity.ModifiedOn)).CurrentValue = utcNow;
 			}
 		}
-		
+
 		return base.SavingChangesAsync(eventData, result, cancellationToken);
 	}
 }

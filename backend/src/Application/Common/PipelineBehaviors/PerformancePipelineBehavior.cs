@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Application.Common.Messaging;
 using Microsoft.Extensions.Logging;
 

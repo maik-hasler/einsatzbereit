@@ -1,4 +1,4 @@
-﻿using Domain.VolunteerOpportunities;
+using Domain.VolunteerOpportunities;
 using Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

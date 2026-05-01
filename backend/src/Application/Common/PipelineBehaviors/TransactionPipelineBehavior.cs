@@ -1,4 +1,4 @@
-﻿using Application.Common.Messaging;
+using Application.Common.Messaging;
 using Application.Common.Persistence;
 
 namespace Application.Common.PipelineBehaviors;
@@ -18,9 +18,9 @@ internal sealed class TransactionPipelineBehavior<TCommand, TResponse>(
 		try
 		{
 			var response = await next();
-			
+
 			await unitOfWork.SaveChangesAsync(cancellationToken);
-			
+
 			await unitOfWork.CommitTransactionAsync(cancellationToken);
 
 			return response;

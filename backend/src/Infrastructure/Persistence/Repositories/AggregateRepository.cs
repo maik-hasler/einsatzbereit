@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Application.Common.Persistence;
 using Domain.Primitives;
 using Microsoft.EntityFrameworkCore;
@@ -19,19 +19,19 @@ internal sealed class AggregateRepository<T, TKey>(
 			await aggregateQuery.FirstOrDefaultAsync(
 				BuildKeyPredicate(id),
 				cancellationToken);
-	
+
 	public async ValueTask AddAsync(
 		T entity,
 		CancellationToken cancellationToken = default) =>
 			await dbSet.AddAsync(entity, cancellationToken);
-	
+
 	public void Delete(T entity) =>
 		dbSet.Remove(entity);
-	
+
 	private Expression<Func<T, bool>> BuildKeyPredicate(TKey id)
 	{
 		var match = Expression.Equal(keySelector.Body, Expression.Constant(id));
-		
+
 		return Expression.Lambda<Func<T, bool>>(match, keySelector.Parameters);
 	}
 }

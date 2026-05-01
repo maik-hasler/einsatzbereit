@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Asp.Versioning;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -14,9 +14,9 @@ internal static class EndpointExtensions
 						   type.IsAssignableTo(typeof(IEndpoint)))
 			.Select(type => ServiceDescriptor.Transient(typeof(IEndpoint), type))
 			.ToArray();
-		
+
 		services.TryAddEnumerable(serviceDescriptors);
-		
+
 		return services;
 	}
 
@@ -32,7 +32,7 @@ internal static class EndpointExtensions
 		var group = app
 			.MapGroup("v{version:apiVersion}")
 			.WithApiVersionSet(apiVersionSet);
-		
+
 		foreach (var endpoint in app.Services.GetRequiredService<IEnumerable<IEndpoint>>())
 		{
 			endpoint.MapEndpoint(group);

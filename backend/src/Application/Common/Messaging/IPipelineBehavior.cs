@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Messaging;
+namespace Application.Common.Messaging;
 
 public interface IPipelineBehavior<TRequest, TResponse>
 {

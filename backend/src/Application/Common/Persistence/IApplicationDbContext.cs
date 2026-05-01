@@ -1,4 +1,4 @@
-﻿using Domain.Engagements;
+using Domain.Engagements;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 

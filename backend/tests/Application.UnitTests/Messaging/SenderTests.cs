@@ -1,4 +1,4 @@
-﻿using Application.Common.Messaging;
+using Application.Common.Messaging;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 

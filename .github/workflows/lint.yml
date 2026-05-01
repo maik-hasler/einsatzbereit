@@ -27,4 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: editorconfig-checker/action-editorconfig-checker@v3
+
+      - name: Install editorconfig-checker
+        run: npm install -g editorconfig-checker
+
+      - name: Check EditorConfig conformance
+        run: editorconfig-checker

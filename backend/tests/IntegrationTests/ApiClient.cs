@@ -173,7 +173,7 @@ namespace IntegrationTests
 					request_.Method = new System.Net.Http.HttpMethod("PUT");
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities/{opportunityId}"
 					urlBuilder_.Append("v1/volunteer-opportunities/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(opportunityId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -293,7 +293,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities/{opportunityId}"
 					urlBuilder_.Append("v1/volunteer-opportunities/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(opportunityId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -387,7 +387,7 @@ namespace IntegrationTests
 					request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities/{opportunityId}"
 					urlBuilder_.Append("v1/volunteer-opportunities/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(opportunityId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -500,7 +500,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities"
 					urlBuilder_.Append("v1/volunteer-opportunities");
 					urlBuilder_.Append('?');
@@ -618,7 +618,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities"
 					urlBuilder_.Append("v1/volunteer-opportunities");
 
@@ -738,7 +738,7 @@ namespace IntegrationTests
 					request_.Method = new System.Net.Http.HttpMethod("PUT");
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/organizations/{organizationId}"
 					urlBuilder_.Append("v1/organizations/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(organizationId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -848,7 +848,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/organizations/{organizationId}"
 					urlBuilder_.Append("v1/organizations/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(organizationId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -955,7 +955,7 @@ namespace IntegrationTests
 					request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/organizations/{organizationId}/members/{userId}"
 					urlBuilder_.Append("v1/organizations/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(organizationId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1054,7 +1054,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/organizations"
 					urlBuilder_.Append("v1/organizations");
 
@@ -1152,7 +1152,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/organizations"
 					urlBuilder_.Append("v1/organizations");
 
@@ -1262,7 +1262,7 @@ namespace IntegrationTests
 					request_.Method = new System.Net.Http.HttpMethod("POST");
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/organizations/{organizationId}/members"
 					urlBuilder_.Append("v1/organizations/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(organizationId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1364,7 +1364,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/engagements/{engagementId}/withdraw"
 					urlBuilder_.Append("v1/engagements/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(engagementId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1477,7 +1477,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/me/engagements"
 					urlBuilder_.Append("v1/me/engagements");
 
@@ -1571,7 +1571,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities/{opportunityId}/engagements"
 					urlBuilder_.Append("v1/volunteer-opportunities/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(opportunityId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1684,7 +1684,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/volunteer-opportunities/{opportunityId}/engagements"
 					urlBuilder_.Append("v1/volunteer-opportunities/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(opportunityId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1791,7 +1791,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/engagements/{engagementId}/confirm"
 					urlBuilder_.Append("v1/engagements/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(engagementId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1918,7 +1918,7 @@ namespace IntegrationTests
 					request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
 					var urlBuilder_ = new System.Text.StringBuilder();
-				
+
 					// Operation Path: "v1/engagements/{engagementId}/cancel"
 					urlBuilder_.Append("v1/engagements/");
 					urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(engagementId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -2115,7 +2115,7 @@ namespace IntegrationTests
 					var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
 					if (field_ != null)
 					{
-						var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+						var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
 							as System.Runtime.Serialization.EnumMemberAttribute;
 						if (attribute != null)
 						{
@@ -2127,7 +2127,7 @@ namespace IntegrationTests
 					return converted == null ? string.Empty : converted;
 				}
 			}
-			else if (value is bool) 
+			else if (value is bool)
 			{
 				return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
 			}

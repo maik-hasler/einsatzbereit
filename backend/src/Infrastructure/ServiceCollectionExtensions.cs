@@ -1,4 +1,4 @@
-﻿using Application.Common.Keycloak;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities;
@@ -38,7 +38,7 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IApplicationDbContextInitializer, ApplicationDbContextInitializer>();
 
 		services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
-		
+
 		services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
 		services.AddScoped<IVolunteerOpportunityReadRepository, VolunteerOpportunityReadRepository>();

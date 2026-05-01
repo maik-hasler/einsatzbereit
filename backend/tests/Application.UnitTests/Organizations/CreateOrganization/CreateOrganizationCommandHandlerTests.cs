@@ -52,14 +52,14 @@ public class CreateOrganizationCommandHandlerTests
 		var command = new CreateOrganizationCommand("Test Org", userId);
 
 		_keycloakService
-			.CreateOrganizationAsync("Test Org",cancellationToken)
+			.CreateOrganizationAsync("Test Org", cancellationToken)
 			.Returns(keycloakId);
 
 		// Act
-		await _sut.Handle(command,cancellationToken);
+		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _keycloakService.Received(1).AddMemberAsync(keycloakId, userId,cancellationToken);
+		await _keycloakService.Received(1).AddMemberAsync(keycloakId, userId, cancellationToken);
 	}
 
 	[Test]
@@ -72,14 +72,14 @@ public class CreateOrganizationCommandHandlerTests
 		var command = new CreateOrganizationCommand("Test Org", userId);
 
 		_keycloakService
-			.CreateOrganizationAsync("Test Org",cancellationToken)
+			.CreateOrganizationAsync("Test Org", cancellationToken)
 			.Returns(keycloakId);
 
 		// Act
-		await _sut.Handle(command,cancellationToken);
+		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _keycloakService.Received(1).AssignOrganizerRoleAsync(userId,cancellationToken);
+		await _keycloakService.Received(1).AssignOrganizerRoleAsync(userId, cancellationToken);
 	}
 
 	[Test]
@@ -92,11 +92,11 @@ public class CreateOrganizationCommandHandlerTests
 		var command = new CreateOrganizationCommand("Test Org", userId);
 
 		_keycloakService
-			.CreateOrganizationAsync("Test Org",cancellationToken)
+			.CreateOrganizationAsync("Test Org", cancellationToken)
 			.Returns(keycloakId);
 
 		// Act
-		await _sut.Handle(command,cancellationToken);
+		await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		await _dbContext.Organizations.Received(1).AddAsync(
@@ -115,7 +115,7 @@ public class CreateOrganizationCommandHandlerTests
 		var callOrder = new List<string>();
 
 		_keycloakService
-			.CreateOrganizationAsync("Test Org",cancellationToken)
+			.CreateOrganizationAsync("Test Org", cancellationToken)
 			.Returns(_ =>
 			{
 				callOrder.Add("CreateOrganization");
@@ -123,15 +123,15 @@ public class CreateOrganizationCommandHandlerTests
 			});
 
 		_keycloakService
-			.When(x => x.AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(),cancellationToken))
+			.When(x => x.AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), cancellationToken))
 			.Do(_ => callOrder.Add("AddMember"));
 
 		_keycloakService
-			.When(x => x.AssignOrganizerRoleAsync(Arg.Any<Guid>(),cancellationToken))
+			.When(x => x.AssignOrganizerRoleAsync(Arg.Any<Guid>(), cancellationToken))
 			.Do(_ => callOrder.Add("AssignRole"));
 
 		// Act
-		await _sut.Handle(command,cancellationToken);
+		await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		callOrder.Should().Equal(
@@ -147,11 +147,11 @@ public class CreateOrganizationCommandHandlerTests
 		var command = new CreateOrganizationCommand("Bad Org", userId);
 
 		_keycloakService
-			.CreateOrganizationAsync("Bad Org",cancellationToken)
+			.CreateOrganizationAsync("Bad Org", cancellationToken)
 			.ThrowsAsync(new HttpRequestException("Keycloak responded with 400 BadRequest"));
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(command,cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<HttpRequestException>();
@@ -169,15 +169,15 @@ public class CreateOrganizationCommandHandlerTests
 		var command = new CreateOrganizationCommand("Test Org", userId);
 
 		_keycloakService
-			.CreateOrganizationAsync("Test Org",cancellationToken)
+			.CreateOrganizationAsync("Test Org", cancellationToken)
 			.Returns(keycloakId);
 
 		_keycloakService
-			.AddMemberAsync(keycloakId, userId,cancellationToken)
+			.AddMemberAsync(keycloakId, userId, cancellationToken)
 			.ThrowsAsync(new HttpRequestException("User does not exist"));
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(command,cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<HttpRequestException>()

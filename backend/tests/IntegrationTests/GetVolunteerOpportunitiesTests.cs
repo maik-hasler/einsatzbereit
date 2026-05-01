@@ -71,13 +71,13 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
 		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1",cancellationToken);
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2",cancellationToken);
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 3", "Description 3",cancellationToken);
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 1", "Description 1", cancellationToken);
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 2", "Description 2", cancellationToken);
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity 3", "Description 3", cancellationToken);
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, null, null, null, null,cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, null, null, null, null, cancellationToken);
 
 		result.TotalItems.Should().Be(3);
 		result.Items.Should().HaveCount(1);
@@ -89,15 +89,15 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
-		var orgId = await CreateOrganizationAsync(authenticatedClient,cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		var first = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "First", "Created first",cancellationToken);
-		var second = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Second", "Created second",cancellationToken);
-		var third = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Third", "Created last",cancellationToken);
+		var first = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "First", "Created first", cancellationToken);
+		var second = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Second", "Created second", cancellationToken);
+		var third = await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Third", "Created last", cancellationToken);
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null,cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
 
 		var items = result.Items.ToList();
 		items.Should().HaveCount(3);
@@ -111,13 +111,13 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
-		var orgId = await CreateOrganizationAsync(authenticatedClient,cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description",cancellationToken);
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", cancellationToken);
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null,cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
 
 		var item = result.Items.Single();
 		item.OrganizationName.Should().Contain("Testorg_");
@@ -128,13 +128,13 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
-		var orgId = await CreateOrganizationAsync(authenticatedClient,cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description",cancellationToken);
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", cancellationToken);
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null,cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
 
 		var item = result.Items.Single();
 		item.Street.Should().Be("Musterstraße");
@@ -167,7 +167,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			City = "Berlin",
 			Occurrence = "OneTime",
 			ParticipationType = "Waitlist"
-		},cancellationToken);
+		}, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
@@ -178,7 +178,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
-		var orgId = await CreateOrganizationAsync(authenticatedClient,cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
 
 		var result = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
@@ -191,7 +191,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			City = "München",
 			Occurrence = "Recurring",
 			ParticipationType = "IndividualContact"
-		},cancellationToken);
+		}, cancellationToken);
 
 		result.Street.Should().Be("Hauptstraße");
 		result.HouseNumber.Should().Be("42a");
