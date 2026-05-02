@@ -19,8 +19,8 @@ frontend -> frontend: Store access token in memory\n(NOT in localStorage)
 frontend -> user: Render authenticated UI
 
 note over frontend,keycloak
-  Access token lifetime: short (e.g., 5 minutes)
-  Refresh token is used silently to obtain new access tokens
+	Access token lifetime: short (e.g., 5 minutes)
+	Refresh token is used silently to obtain new access tokens
 end note
 
 @enduml

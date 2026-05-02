@@ -1,8 +1,8 @@
-﻿namespace Domain.Primitives;
+namespace Domain.Primitives;
 
 public interface IAggregateRoot
 {
-    IReadOnlyCollection<DomainEvent> Events { get; }
+	IReadOnlyCollection<DomainEvent> Events { get; }
 
-    void ClearEvents();
+	void ClearEvents();
 }

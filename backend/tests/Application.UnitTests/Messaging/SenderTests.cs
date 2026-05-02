@@ -1,4 +1,4 @@
-﻿using Application.Common.Messaging;
+using Application.Common.Messaging;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,166 +7,166 @@ namespace Application.UnitTests.Messaging;
 
 public class SenderTests
 {
-    [Test]
-    public async Task Send_ShouldReturnResponse_WhenHandlerExists(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
-        services.AddScoped<ISender, Sender>();
+	[Test]
+	public async Task Send_ShouldReturnResponse_WhenHandlerExists(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var services = new ServiceCollection();
+		services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
+		services.AddScoped<ISender, Sender>();
 
-        var provider = services.BuildServiceProvider();
-        var sender = provider.GetRequiredService<ISender>();
+		var provider = services.BuildServiceProvider();
+		var sender = provider.GetRequiredService<ISender>();
 
-        var request = new TestRequest("Hello");
+		var request = new TestRequest("Hello");
 
-        // Act
-        var result = await sender.Send(request, cancellationToken);
+		// Act
+		var result = await sender.Send(request, cancellationToken);
 
-        // Assert
-        result.Should().Be("Handled: Hello");
-    }
+		// Assert
+		result.Should().Be("Handled: Hello");
+	}
 
-    [Test]
-    public async Task Send_ShouldThrowException_WhenHandlerIsMissing(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var services = new ServiceCollection();
-        services.AddScoped<ISender, Sender>();
+	[Test]
+	public async Task Send_ShouldThrowException_WhenHandlerIsMissing(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var services = new ServiceCollection();
+		services.AddScoped<ISender, Sender>();
 
-        var provider = services.BuildServiceProvider();
-        var sender = provider.GetRequiredService<ISender>();
+		var provider = services.BuildServiceProvider();
+		var sender = provider.GetRequiredService<ISender>();
 
-        var request = new TestRequest("Hello");
+		var request = new TestRequest("Hello");
 
-        // Act
-        Func<Task> act = async () => await sender.Send(request, cancellationToken);
+		// Act
+		Func<Task> act = async () => await sender.Send(request, cancellationToken);
 
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*No service for type 'Application.Common.Messaging.IRequestHandler*");
-    }
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*No service for type 'Application.Common.Messaging.IRequestHandler*");
+	}
 
-    [Test]
-    public async Task Send_ShouldExecutePipelineBehavior_WhenBehaviorIsRegistered(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var log = new List<string>();
+	[Test]
+	public async Task Send_ShouldExecutePipelineBehavior_WhenBehaviorIsRegistered(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var log = new List<string>();
 
-        var services = new ServiceCollection();
-        services.AddSingleton(log);
+		var services = new ServiceCollection();
+		services.AddSingleton(log);
 
-        services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
+		services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
 
-        services.AddScoped<IPipelineBehavior<TestRequest, string>>(
-            _ => new TestBehavior(log));
+		services.AddScoped<IPipelineBehavior<TestRequest, string>>(
+			_ => new TestBehavior(log));
 
-        services.AddScoped<ISender, Sender>();
+		services.AddScoped<ISender, Sender>();
 
-        var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
+		var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
-        // Act
-        await sender.Send(new TestRequest("Hello"), cancellationToken);
+		// Act
+		await sender.Send(new TestRequest("Hello"), cancellationToken);
 
-        // Assert
-        log.Should().ContainInOrder("Before", "After");
-    }
+		// Assert
+		log.Should().ContainInOrder("Before", "After");
+	}
 
-    [Test]
-    public async Task Send_ShouldRespectPipelineOrder_WhenMultipleBehaviorsAreRegistered(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var log = new List<string>();
+	[Test]
+	public async Task Send_ShouldRespectPipelineOrder_WhenMultipleBehaviorsAreRegistered(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var log = new List<string>();
 
-        var services = new ServiceCollection();
-        services.AddSingleton(log);
+		var services = new ServiceCollection();
+		services.AddSingleton(log);
 
-        services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
+		services.AddScoped<IRequestHandler<TestRequest, string>, TestHandler>();
 
-        services.AddScoped<IPipelineBehavior<TestRequest, string>>(
-            _ => new NamedBehavior("A", log));
+		services.AddScoped<IPipelineBehavior<TestRequest, string>>(
+			_ => new NamedBehavior("A", log));
 
-        services.AddScoped<IPipelineBehavior<TestRequest, string>>(
-            _ => new NamedBehavior("B", log));
+		services.AddScoped<IPipelineBehavior<TestRequest, string>>(
+			_ => new NamedBehavior("B", log));
 
-        services.AddScoped<ISender, Sender>();
+		services.AddScoped<ISender, Sender>();
 
-        var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
+		var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
 
-        // Act
-        await sender.Send(new TestRequest("Hello"), cancellationToken);
+		// Act
+		await sender.Send(new TestRequest("Hello"), cancellationToken);
 
-        // Assert
-        log.Should().Equal(
-            "A:Before",
-            "B:Before",
-            "B:After",
-            "A:After");
-    }
+		// Assert
+		log.Should().Equal(
+			"A:Before",
+			"B:Before",
+			"B:After",
+			"A:After");
+	}
 
-    private sealed record TestRequest(string Input) : ICommand<string>;
+	private sealed record TestRequest(string Input) : ICommand<string>;
 
-    private sealed class TestHandler : ICommandHandler<TestRequest, string>
-    {
-        public ValueTask<string> Handle(TestRequest request, CancellationToken ct)
-        {
-            return ValueTask.FromResult($"Handled: {request.Input}");
-        }
-    }
+	private sealed class TestHandler : ICommandHandler<TestRequest, string>
+	{
+		public ValueTask<string> Handle(TestRequest request, CancellationToken ct)
+		{
+			return ValueTask.FromResult($"Handled: {request.Input}");
+		}
+	}
 
-    private sealed class TestBehavior
-        : IPipelineBehavior<TestRequest, string>
-    {
-        private readonly List<string> _log;
+	private sealed class TestBehavior
+		: IPipelineBehavior<TestRequest, string>
+	{
+		private readonly List<string> _log;
 
-        public TestBehavior(List<string> log)
-        {
-            _log = log;
-        }
+		public TestBehavior(List<string> log)
+		{
+			_log = log;
+		}
 
-        public async ValueTask<string> Handle(
-            TestRequest request,
-            Func<ValueTask<string>> next,
-            CancellationToken cancellationToken)
-        {
-            _log.Add("Before");
+		public async ValueTask<string> Handle(
+			TestRequest request,
+			Func<ValueTask<string>> next,
+			CancellationToken cancellationToken)
+		{
+			_log.Add("Before");
 
-            var result = await next();
+			var result = await next();
 
-            _log.Add("After");
+			_log.Add("After");
 
-            return result;
-        }
-    }
+			return result;
+		}
+	}
 
-    private sealed class NamedBehavior
-        : IPipelineBehavior<TestRequest, string>
-    {
-        private readonly string _name;
-        private readonly List<string> _log;
+	private sealed class NamedBehavior
+		: IPipelineBehavior<TestRequest, string>
+	{
+		private readonly string _name;
+		private readonly List<string> _log;
 
-        public NamedBehavior(string name, List<string> log)
-        {
-            _name = name;
-            _log = log;
-        }
+		public NamedBehavior(string name, List<string> log)
+		{
+			_name = name;
+			_log = log;
+		}
 
-        public async ValueTask<string> Handle(
-            TestRequest request,
-            Func<ValueTask<string>> next,
-            CancellationToken cancellationToken)
-        {
-            _log.Add($"{_name}:Before");
+		public async ValueTask<string> Handle(
+			TestRequest request,
+			Func<ValueTask<string>> next,
+			CancellationToken cancellationToken)
+		{
+			_log.Add($"{_name}:Before");
 
-            var result = await next();
+			var result = await next();
 
-            _log.Add($"{_name}:After");
+			_log.Add($"{_name}:After");
 
-            return result;
-        }
-    }
+			return result;
+		}
+	}
 }

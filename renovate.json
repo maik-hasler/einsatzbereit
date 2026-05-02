@@ -1,27 +1,48 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "schedule": ["* 6 * * *"],
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": [
+    "* 6 * * *"
+  ],
   "timezone": "Europe/Berlin",
   "dependencyDashboard": true,
   "automerge": false,
-  "labels": ["dependencies", "renovate"],
+  "labels": [
+    "dependencies",
+    "renovate"
+  ],
   "rangeStrategy": "pin",
   "packageRules": [
     {
-      "matchManagers": ["nuget"],
-      "matchDepNames": ["Aspire.AppHost.Sdk"],
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchDepNames": [
+        "Aspire.AppHost.Sdk"
+      ],
       "rangeStrategy": "replace"
     },
     {
-      "matchManagers": ["nuget"],
-      "matchDepNames": ["Aspire.AppHost.Sdk"],
-      "matchUpdateTypes": ["pin"],
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchDepNames": [
+        "Aspire.AppHost.Sdk"
+      ],
+      "matchUpdateTypes": [
+        "pin"
+      ],
       "enabled": false
     },
     {
-      "matchManagers": ["nuget"],
-      "matchPackageNames": ["TUnit{/,}**"],
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchPackageNames": [
+        "TUnit{/,}**"
+      ],
       "groupName": "TUnit",
       "groupSlug": "tunit"
     }

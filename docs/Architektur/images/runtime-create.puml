@@ -20,9 +20,9 @@ backend -> frontend: 201 Created\n{id, title, ...}
 frontend -> organizer: Show success notification\nRedirect to opportunity detail page
 
 note over backend
-  If JWT is invalid: 401 Unauthorized
-  If role check fails: 403 Forbidden
-  If validation fails: 400 Bad Request
+	If JWT is invalid: 401 Unauthorized
+	If role check fails: 403 Forbidden
+	If validation fails: 400 Bad Request
 end note
 
 @enduml

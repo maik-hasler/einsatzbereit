@@ -1,8 +1,8 @@
-﻿namespace Domain.Primitives;
+namespace Domain.Primitives;
 
 public abstract class Entity<TId>(
-    TId id)
-    where TId : struct
+	TId id)
+	where TId : struct
 {
-    public TId Id { get; protected set; } = id;
+	public TId Id { get; protected set; } = id;
 }

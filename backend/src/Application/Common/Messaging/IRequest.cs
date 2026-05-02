@@ -1,3 +1,3 @@
-﻿namespace Application.Common.Messaging;
+namespace Application.Common.Messaging;
 
 public interface IRequest<out TResponse>;

@@ -9,7 +9,10 @@
   "rememberMe": true,
   "verifyEmail": false,
   "internationalizationEnabled": true,
-  "supportedLocales": ["de", "en"],
+  "supportedLocales": [
+    "de",
+    "en"
+  ],
   "defaultLocale": "de",
   "roles": {
     "realm": [
@@ -34,8 +37,12 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["http://localhost:*"],
-      "webOrigins": ["*"],
+      "redirectUris": [
+        "http://localhost:*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:*"
       },
@@ -101,7 +108,9 @@
       "email": "hannah@example.com",
       "firstName": "Hannah",
       "lastName": "Helferin",
-      "realmRoles": ["user"],
+      "realmRoles": [
+        "user"
+      ],
       "credentials": [
         {
           "type": "password",
@@ -117,7 +126,10 @@
       "email": "olaf@example.com",
       "firstName": "Olaf",
       "lastName": "Organisator",
-      "realmRoles": ["user", "organisator"],
+      "realmRoles": [
+        "user",
+        "organisator"
+      ],
       "credentials": [
         {
           "type": "password",
@@ -133,7 +145,9 @@
       "email": "admin@example.com",
       "firstName": "Admin",
       "lastName": "Admin",
-      "realmRoles": ["admin"],
+      "realmRoles": [
+        "admin"
+      ],
       "credentials": [
         {
           "type": "password",
@@ -147,7 +161,11 @@
       "enabled": true,
       "serviceAccountClientId": "backend",
       "clientRoles": {
-        "realm-management": ["manage-realm", "manage-users", "manage-organizations"]
+        "realm-management": [
+          "manage-realm",
+          "manage-users",
+          "manage-organizations"
+        ]
       }
     }
   ]
