@@ -9,62 +9,62 @@ namespace Application.UnitTests.Organizations.RemoveMember;
 
 public class RemoveMemberCommandHandlerTests
 {
-    private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
-    private readonly RemoveMemberCommandHandler _sut;
+	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
+	private readonly RemoveMemberCommandHandler _sut;
 
-    public RemoveMemberCommandHandlerTests()
-    {
-        _sut = new RemoveMemberCommandHandler(_keycloakService);
-    }
+	public RemoveMemberCommandHandlerTests()
+	{
+		_sut = new RemoveMemberCommandHandler(_keycloakService);
+	}
 
-    [Test]
-    public async Task Handle_ShouldCallRemoveMemberOnKeycloak(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var orgId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new RemoveMemberCommand(orgId, userId);
+	[Test]
+	public async Task Handle_ShouldCallRemoveMemberOnKeycloak(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new RemoveMemberCommand(orgId, userId);
 
-        // Act
-        await _sut.Handle(command, cancellationToken);
+		// Act
+		await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        await _keycloakService.Received(1).RemoveMemberAsync(orgId, userId, cancellationToken);
-    }
+		// Assert
+		await _keycloakService.Received(1).RemoveMemberAsync(orgId, userId, cancellationToken);
+	}
 
-    [Test]
-    public async Task Handle_ShouldReturnTrue_OnSuccess(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var command = new RemoveMemberCommand(Guid.NewGuid(), Guid.NewGuid());
+	[Test]
+	public async Task Handle_ShouldReturnTrue_OnSuccess(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new RemoveMemberCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        // Act
-        var result = await _sut.Handle(command, cancellationToken);
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        result.Should().BeTrue();
-    }
+		// Assert
+		result.Should().BeTrue();
+	}
 
-    [Test]
-    public async Task Handle_ShouldPropagateException_WhenKeycloakFails(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var orgId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new RemoveMemberCommand(orgId, userId);
+	[Test]
+	public async Task Handle_ShouldPropagateException_WhenKeycloakFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new RemoveMemberCommand(orgId, userId);
 
-        _keycloakService
-            .RemoveMemberAsync(orgId, userId, cancellationToken)
-            .ThrowsAsync(new HttpRequestException("Keycloak responded with 404 NotFound"));
+		_keycloakService
+			.RemoveMemberAsync(orgId, userId, cancellationToken)
+			.ThrowsAsync(new HttpRequestException("Keycloak responded with 404 NotFound"));
 
-        // Act
-        Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        await act.Should().ThrowAsync<HttpRequestException>()
-            .WithMessage("*404*");
-    }
+		// Assert
+		await act.Should().ThrowAsync<HttpRequestException>()
+			.WithMessage("*404*");
+	}
 }

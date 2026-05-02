@@ -1,76 +1,76 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application.Common.Messaging;
 
 internal sealed class Sender(
-    IServiceProvider serviceProvider)
-    : ISender
+	IServiceProvider serviceProvider)
+	: ISender
 {
-    private static readonly ConcurrentDictionary<Type, IHandlerWrapper> HandlerWrapperCache = [];
-    
-    public async ValueTask<TResponse> Send<TResponse>(
-        IRequest<TResponse> request,
-        CancellationToken cancellationToken = default)
-    {
-        var requestType = request.GetType();
+	private static readonly ConcurrentDictionary<Type, IHandlerWrapper> HandlerWrapperCache = [];
 
-        var handlerWrapper = HandlerWrapperCache.GetOrAdd(requestType, CreateHandlerWrapper);
-        
-        using var scope = serviceProvider.CreateScope();
+	public async ValueTask<TResponse> Send<TResponse>(
+		IRequest<TResponse> request,
+		CancellationToken cancellationToken = default)
+	{
+		var requestType = request.GetType();
 
-        var result = await handlerWrapper.HandleAsync(request, scope, cancellationToken);
+		var handlerWrapper = HandlerWrapperCache.GetOrAdd(requestType, CreateHandlerWrapper);
 
-        return (TResponse)result!;
-    }
+		using var scope = serviceProvider.CreateScope();
 
-    private static IHandlerWrapper CreateHandlerWrapper(
-        Type requestType)
-    {
-        var requestInterface = requestType.GetInterfaces()
-           .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
-            ?? throw new InvalidOperationException($"Request type '{requestType.Name}' does not implement IRequest<TResponse>");
-        
-        var responseType = requestInterface.GetGenericArguments()[0];
-        
-        var wrapperType = typeof(HandlerWrapper<,>).MakeGenericType(requestType, responseType);
-        
-        return (IHandlerWrapper)Activator.CreateInstance(wrapperType)!;
-    }
+		var result = await handlerWrapper.HandleAsync(request, scope, cancellationToken);
 
-    private interface IHandlerWrapper
-    {
-        public ValueTask<object?> HandleAsync(
-            object request,
-            IServiceScope scope,
-            CancellationToken cancellationToken = default);
-    }
+		return (TResponse)result!;
+	}
 
-    private sealed class HandlerWrapper<TRequest, TResponse>
-        : IHandlerWrapper
-        where TRequest : IRequest<TResponse>
-    {
-        public async ValueTask<object?> HandleAsync(
-            object request,
-            IServiceScope scope,
-            CancellationToken cancellationToken = default)
-        {
-            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<TRequest, TResponse>>();
-            
-            var behaviors = scope.ServiceProvider.GetServices<IPipelineBehavior<TRequest, TResponse>>()
-                .Reverse()
-                .ToArray();
-            
-            var pipeline = () => handler.Handle((TRequest)request, cancellationToken);
-            
-            foreach (var behavior in behaviors)
-            {
-                var next = pipeline;
+	private static IHandlerWrapper CreateHandlerWrapper(
+		Type requestType)
+	{
+		var requestInterface = requestType.GetInterfaces()
+			.FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
+			?? throw new InvalidOperationException($"Request type '{requestType.Name}' does not implement IRequest<TResponse>");
 
-                pipeline = () => behavior.Handle((TRequest)request, next, cancellationToken);
-            }
+		var responseType = requestInterface.GetGenericArguments()[0];
 
-            return await pipeline();
-        }
-    }
+		var wrapperType = typeof(HandlerWrapper<,>).MakeGenericType(requestType, responseType);
+
+		return (IHandlerWrapper)Activator.CreateInstance(wrapperType)!;
+	}
+
+	private interface IHandlerWrapper
+	{
+		public ValueTask<object?> HandleAsync(
+			object request,
+			IServiceScope scope,
+			CancellationToken cancellationToken = default);
+	}
+
+	private sealed class HandlerWrapper<TRequest, TResponse>
+		: IHandlerWrapper
+		where TRequest : IRequest<TResponse>
+	{
+		public async ValueTask<object?> HandleAsync(
+			object request,
+			IServiceScope scope,
+			CancellationToken cancellationToken = default)
+		{
+			var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<TRequest, TResponse>>();
+
+			var behaviors = scope.ServiceProvider.GetServices<IPipelineBehavior<TRequest, TResponse>>()
+				.Reverse()
+				.ToArray();
+
+			var pipeline = () => handler.Handle((TRequest)request, cancellationToken);
+
+			foreach (var behavior in behaviors)
+			{
+				var next = pipeline;
+
+				pipeline = () => behavior.Handle((TRequest)request, next, cancellationToken);
+			}
+
+			return await pipeline();
+		}
+	}
 }

@@ -6,21 +6,21 @@ using Domain.Primitives;
 namespace Application.Engagements.WithdrawEngagement.v1;
 
 internal sealed class WithdrawEngagementCommandHandler(
-    IApplicationDbContext dbContext)
-    : ICommandHandler<WithdrawEngagementCommand, Engagement>
+	IApplicationDbContext dbContext)
+	: ICommandHandler<WithdrawEngagementCommand, Engagement>
 {
-    public async ValueTask<Engagement> Handle(
-        WithdrawEngagementCommand request,
-        CancellationToken cancellationToken = default)
-    {
-        var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
-            ?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+	public async ValueTask<Engagement> Handle(
+		WithdrawEngagementCommand request,
+		CancellationToken cancellationToken = default)
+	{
+		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
+			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
 
-        if (engagement.VolunteerId.Value != request.VolunteerId)
-            throw new DomainException("Only the volunteer who created this engagement can withdraw it.");
+		if (engagement.VolunteerId.Value != request.VolunteerId)
+			throw new DomainException("Only the volunteer who created this engagement can withdraw it.");
 
-        engagement.Withdraw();
+		engagement.Withdraw();
 
-        return engagement;
-    }
+		return engagement;
+	}
 }

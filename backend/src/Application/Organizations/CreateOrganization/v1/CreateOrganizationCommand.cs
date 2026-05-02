@@ -4,6 +4,6 @@ using Domain.Organizations;
 namespace Application.Organizations.CreateOrganization.v1;
 
 public sealed record CreateOrganizationCommand(
-    string Name,
-    Guid UserId)
-    : ICommand<Organization>;
+	string Name,
+	Guid UserId)
+	: ICommand<Organization>;

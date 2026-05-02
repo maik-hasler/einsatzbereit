@@ -24,9 +24,9 @@ ci -> ci: Build Docker image for tagged component
 ci -> ghcr: Push image\nghcr.io/maik-hasler/einsatzbereit/<component>:v1.0.0
 
 note over ci,ghcr
-  Each component is versioned independently.
-  Tags: frontend/v*, backend/v*, keycloak/v*
-  See VERSIONING.md for the full strategy.
+	Each component is versioned independently.
+	Tags: frontend/v*, backend/v*, keycloak/v*
+	See VERSIONING.md for the full strategy.
 end note
 
 @enduml

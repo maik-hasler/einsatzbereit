@@ -12,21 +12,21 @@ namespace VisualTests;
 /// </summary>
 public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 {
-    public AspireFixture Fixture => fixture;
+	public AspireFixture Fixture => fixture;
 
-    [Before(Test)]
-    public async Task SetupVisualTest()
-    {
-        await fixture.WaitForResourceAsync("frontend");
+	[Before(Test)]
+	public async Task SetupVisualTest()
+	{
+		await fixture.WaitForResourceAsync("frontend");
 
-        await Context.RouteAsync("**/*", async route =>
-        {
-            var headers = new Dictionary<string, string>(
-                route.Request.Headers,
-                StringComparer.OrdinalIgnoreCase);
-            headers.Remove("traceparent");
-            headers.Remove("tracestate");
-            await route.ContinueAsync(new() { Headers = headers });
-        });
-    }
+		await Context.RouteAsync("**/*", async route =>
+		{
+			var headers = new Dictionary<string, string>(
+				route.Request.Headers,
+				StringComparer.OrdinalIgnoreCase);
+			headers.Remove("traceparent");
+			headers.Remove("tracestate");
+			await route.ContinueAsync(new() { Headers = headers });
+		});
+	}
 }
