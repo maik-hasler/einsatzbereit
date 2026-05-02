@@ -53,6 +53,13 @@ public static class ServiceCollectionExtensions
 				client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
 			});
 
+		services.AddHttpClient<IKeycloakUserService, KeycloakUserService>(
+			(sp, client) =>
+			{
+				var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
+				client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+			});
+
 		return services;
 	}
 }
