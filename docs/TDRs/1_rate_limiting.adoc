@@ -23,7 +23,7 @@ Current impact is low due to limited user traffic, but risk increases significan
 
 ==== Business Impact
 
-- *[Cost Control]:* Without rate limiting, excessive traffic (intentional or accidental) can increase hosting or bandwidth costs—critical for a non-profit with limited budget.
+- *[Cost Control]:* Without rate limiting, excessive traffic (intentional or accidental) can increase hosting or bandwidth costs-critical for a non-profit with limited budget.
 - *[Availability]:* Service outages reduce trust and reliability for users and stakeholders.
 - *[Resource Allocation]:* Time spent reacting to outages or abuse detracts from mission-focused development.
 
