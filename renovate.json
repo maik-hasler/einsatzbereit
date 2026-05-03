@@ -52,8 +52,8 @@
       "customType": "regex",
       "managerFilePatterns": [
         "/^(keycloak/)?CLAUDE\\.md$/",
-        "/^docs/Architektur/src/.*\\.adoc$/",
-        "/^docs/Architektur/images/.*\\.puml$/"
+        "/^docs/Architecture/src/.*\\.adoc$/",
+        "/^docs/Architecture/images/.*\\.puml$/"
       ],
       "matchStrings": [
         "Keycloak (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",

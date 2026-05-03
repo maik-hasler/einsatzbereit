@@ -4,8 +4,8 @@
 
 ```
 docs/
-├── Architektur/
-│   ├── Architektur.adoc        Master document (includes all sections below)
+├── Architecture/
+│   ├── Architecture.adoc        Master document (includes all sections below)
 │   ├── src/
 │   │   ├── 01_introduction_and_goals.adoc
 │   │   ├── 02_architecture_constraints.adoc
@@ -44,10 +44,19 @@ Local build requires Asciidoctor + asciidoctor-diagram gem. Easier to push and l
 
 ## ADR Conventions
 
-File naming: `{number}_{kebab-title}.adoc`  
+File naming: `{number}_{snake_case_title}.adoc`  
 Each ADR documents: context, decision, status (Accepted/Proposed/Deprecated), consequences.
 
 When creating a new ADR:
 - Next number in sequence
 - Status: `Proposed` initially, `Accepted` once agreed
 - Reference in `09_architecture_decisions.adoc` if needed
+
+## TDR Conventions
+
+File naming: `{number}_{snake_case_title}.adoc`  
+Each TDR documents follows the `TDRs\template.adoc`
+
+When creating a new TDR:
+- Next number in sequence
+- Reference in `11_technical_risks.adoc` if needed

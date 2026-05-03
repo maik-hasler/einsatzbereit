@@ -20,7 +20,7 @@ We use a monorepo. All components of the system live in a single repository.
 .github/
 └── workflows/
 docs/
-├── Architektur/
+├── Architecture/
 └── ADRs/
 keycloak/
 ├── Dockerfile
