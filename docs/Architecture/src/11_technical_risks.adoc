@@ -15,6 +15,6 @@ The following table lists the relevant risks and technical debts. Each risk or t
 |Missing rate limitation.
 |Planned
 |2026-05-03
-|link:TDRs/1-rate-limiting.adoc[Rate Limiting]
+|link:TDRs/1_rate_limiting.adoc[Rate Limiting]
 
 |===
