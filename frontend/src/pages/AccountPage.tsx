@@ -68,8 +68,9 @@ export default function AccountPage() {
 		);
 	}
 
-	const displayName =
-		(auth.user?.profile?.name ?? auth.user?.profile?.preferred_username ?? "") as string;
+	const displayName = (auth.user?.profile?.name ??
+		auth.user?.profile?.preferred_username ??
+		"") as string;
 
 	return (
 		<div className="mx-auto max-w-2xl">
