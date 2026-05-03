@@ -1,9 +1,9 @@
 using Application.Common.Messaging;
 using Domain.Users;
 
-namespace Application.Users.UpdateMyProfile.v1;
+namespace Application.Users.UpdateUserProfile.v1;
 
-public sealed record UpdateMyProfileCommand(
+public sealed record UpdateUserProfileCommand(
 	UserId UserId,
 	string? FirstName,
 	string? LastName)

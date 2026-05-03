@@ -1,18 +1,18 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Application.Common.Messaging;
-using Application.Users.UpdateMyProfile.v1;
+using Application.Users.UpdateUserProfile.v1;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Users.UpdateMyProfile.v1;
+namespace Api.Users.UpdateUserProfile.v1;
 
-internal sealed class UpdateMyProfileEndpoint
+internal sealed class UpdateUserProfileEndpoint
 	: IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
-		app.MapPut("/users/me", UpdateMyProfileAsync)
-			.WithName("UpdateMyProfile")
+		app.MapPut("/users/me", UpdateUserProfileAsync)
+			.WithName("UpdateUserProfile")
 			.WithTags("Users")
 			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -20,8 +20,8 @@ internal sealed class UpdateMyProfileEndpoint
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.MapToApiVersion(1);
 
-	private static async Task<IResult> UpdateMyProfileAsync(
-		[FromBody] UpdateMyProfileRequest request,
+	private static async Task<IResult> UpdateUserProfileAsync(
+		[FromBody] UpdateUserProfileRequest request,
 		[FromServices] ISender sender,
 		HttpContext httpContext,
 		CancellationToken cancellationToken)
@@ -32,7 +32,7 @@ internal sealed class UpdateMyProfileEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		var command = new UpdateMyProfileCommand(
+		var command = new UpdateUserProfileCommand(
 			new UserId(userId),
 			request.FirstName,
 			request.LastName);

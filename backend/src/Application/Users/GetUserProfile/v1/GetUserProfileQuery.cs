@@ -1,9 +1,9 @@
 using Application.Common.Messaging;
 using Domain.Users;
 
-namespace Application.Users.GetMyProfile.v1;
+namespace Application.Users.GetUserProfile.v1;
 
-public sealed record GetMyProfileQuery(UserId UserId)
+public sealed record GetUserProfileQuery(UserId UserId)
 	: IQuery<MyProfileResponse>;
 
 public sealed record MyProfileResponse(

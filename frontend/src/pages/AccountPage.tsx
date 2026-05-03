@@ -20,7 +20,7 @@ export default function AccountPage() {
 	useEffect(() => {
 		setLoading(true);
 		api
-			.getMyProfile()
+			.getUserProfile()
 			.then((data) => {
 				setProfile(data);
 				setForm({
@@ -39,7 +39,7 @@ export default function AccountPage() {
 		setError(null);
 		setSuccessMessage(null);
 		try {
-			await api.updateMyProfile({
+			await api.updateUserProfile({
 				firstName: form.firstName || undefined,
 				lastName: form.lastName || undefined,
 			});

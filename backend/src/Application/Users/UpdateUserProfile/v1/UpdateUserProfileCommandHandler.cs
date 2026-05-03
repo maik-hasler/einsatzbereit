@@ -1,14 +1,14 @@
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 
-namespace Application.Users.UpdateMyProfile.v1;
+namespace Application.Users.UpdateUserProfile.v1;
 
-internal sealed class UpdateMyProfileCommandHandler(
+internal sealed class UpdateUserProfileCommandHandler(
 	IKeycloakUserService keycloakUserService)
-	: ICommandHandler<UpdateMyProfileCommand, bool>
+	: ICommandHandler<UpdateUserProfileCommand, bool>
 {
 	public async ValueTask<bool> Handle(
-		UpdateMyProfileCommand request,
+		UpdateUserProfileCommand request,
 		CancellationToken cancellationToken = default)
 	{
 		await keycloakUserService.UpdateUserAsync(

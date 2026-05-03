@@ -1,14 +1,14 @@
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 
-namespace Application.Users.GetMyProfile.v1;
+namespace Application.Users.GetUserProfile.v1;
 
-internal sealed class GetMyProfileQueryHandler(
+internal sealed class GetUserProfileQueryHandler(
 	IKeycloakUserService keycloakUserService)
-	: IQueryHandler<GetMyProfileQuery, MyProfileResponse>
+	: IQueryHandler<GetUserProfileQuery, MyProfileResponse>
 {
 	public async ValueTask<MyProfileResponse> Handle(
-		GetMyProfileQuery request,
+		GetUserProfileQuery request,
 		CancellationToken cancellationToken = default)
 	{
 		var user = await keycloakUserService.GetUserAsync(
