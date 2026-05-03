@@ -1,0 +1,55 @@
+== 1. Rate Limiting
+
+- *Author:* @maik-hasler
+- *Version:* prior v1.0.0
+- *Date:* 2026-05-03
+- *Status:* Planned
+
+=== Description
+
+The backend API currently has no rate limiting or throttling configured.
+All endpoints can be accessed without restriction, regardless of request frequency or origin.
+
+=== Impact
+
+==== Technical Impact
+
+- *[System Stability]:* Unrestricted traffic can overload the server, leading to degraded performance or downtime.
+- *[Scalability]:* The system cannot safely handle sudden traffic spikes (e.g., bots, crawlers, or malicious requests).
+- *[Security]:* Increased exposure to abuse scenarios such as brute force attacks or denial-of-service (DoS).
+- *[Maintainability]:* Lack of centralized request control makes future scaling or protection mechanisms harder to introduce cleanly.
+
+Current impact is low due to limited user traffic, but risk increases significantly with growth or public exposure.
+
+==== Business Impact
+
+- *[Cost Control]:* Without rate limiting, excessive traffic (intentional or accidental) can increase hosting or bandwidth costs-critical for a non-profit with limited budget.
+- *[Availability]:* Service outages reduce trust and reliability for users and stakeholders.
+- *[Resource Allocation]:* Time spent reacting to outages or abuse detracts from mission-focused development.
+
+=== Symptoms
+
+- *[Performance Degradation]:* API response times increase under unexpected load.
+- *[Service Instability]:* Occasional crashes or restarts under traffic spikes.
+- *[Unusual Traffic Patterns]:* High request rates from single IPs or automated clients.
+
+
+=== Severity
+
+Medium (increasing to High with public exposure)
+
+Currently acceptable due to low usage, but becomes critical before scaling or wider release.
+
+=== Proposed Solution
+
+- *[Progressive Enhancement Approach]:* Start with a basic fixed-window or token-bucket strategy. Avoid complex distributed systems initially.
+- *[Future Option]:* If traffic grows, consider moving rate limiting to a reverse proxy or edge layer for better performance and scalability.
+
+=== Consequences of Delay
+
+Delaying implementation is acceptable in the short term due to low traffic. However:
+
+- Increased risk of downtime from accidental or malicious traffic
+- Potential unexpected cost spikes (bandwidth / compute)
+- More complex and risky implementation later when the system is under load
+- Reduced ability to safely onboard new users or make the service public

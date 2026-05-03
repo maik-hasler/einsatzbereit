@@ -1,0 +1,53 @@
+== [TECHNICAL DEBT TITLE]
+
+- *Author:* (optional) [Name of the person who identified the debt]
+- *Version:* (optional) [Project version or component]
+- *Date:* [YYYY-MM-DD - Date of identification]
+- *Status:* [Identified / Analyzed / Planned / In Progress / Resolved / Completed / Rejected]
+
+=== Description
+
+[What is the debt and where does it occur?
+How did it arise - time pressure, deliberate shortcut, outdated technology?
+How long has it existed?]
+
+=== Links (optional)
+
+- TDR-XXX: Related technical debt
+- ADR-XXX: Related architectural decision
+- QualityGoal-XXX: Relation to quality goal
+
+=== Impact
+
+==== Technical Impact
+
+- *[Area]:* [Description of how the debt affects system performance, scalability, or maintainability]
+- *[Area]:* [Additional technical impact]
+
+==== Business Impact (optional)
+
+- *[Area]:* [Impact on business processes, customer satisfaction, or risk levels]
+- *[Area]:* [Additional business impact]
+
+=== Symptoms (optional)
+
+- *[Symptom]:* [Observable signs of the technical debt, e.g. frequent bugs, slow performance]
+- *[Symptom]:* [Another observable issue]
+
+=== Severity
+
+*[Critical / High / Medium / Low]*
+
+=== Proposed Solution (optional)
+
+- *[Approach]:* [Recommended action to resolve the technical debt]
+- *[Approach]:* [Additional recommended action]
+
+=== Consequences of Delay (optional)
+
+[Description of the consequences if resolving the debt is delayed]
+
+=== Dependencies (optional)
+
+- *[Dependency]:* [Other tasks, components, or external factors that influence the resolution]
+- *[Dependency]:* [Additional dependency]
