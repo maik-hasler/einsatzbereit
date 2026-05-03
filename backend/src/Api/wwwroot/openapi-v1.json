@@ -1946,10 +1946,6 @@
         }
       },
       "UpdateUserProfileRequest": {
-        "required": [
-          "firstName",
-          "lastName"
-        ],
         "type": "object",
         "properties": {
           "firstName": {

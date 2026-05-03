@@ -55,7 +55,7 @@
         "/^docs/Architecture/src/.*\\.adoc$/",
         "/^docs/Architecture/images/.*\\.puml$/"
       ],
-      "matchStrings": [D
+      "matchStrings": [
         "Keycloak (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",
         "quay\\.io/keycloak/keycloak:(?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)"
       ],

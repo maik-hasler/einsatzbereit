@@ -3064,10 +3064,10 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("firstName")]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
