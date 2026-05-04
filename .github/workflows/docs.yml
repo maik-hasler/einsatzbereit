@@ -42,14 +42,18 @@ jobs:
               -a revremark="${{ steps.revision.outputs.revremark }}" \
               -b html5 \
               -D build \
-              docs/Architektur/Architektur.adoc
-            cp -r docs/Architektur/images/. build/images/
+              docs/Architecture/Architecture.adoc
+            cp -r docs/Architecture/images/. build/images/
             asciidoctor \
               -b html5 \
               -D build/ADRs \
               docs/ADRs/*.adoc
+            asciidoctor \
+              -b html5 \
+              -D build/TDRs \
+              docs/TDRs/*.adoc
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: build
 

@@ -3,26 +3,57 @@
   "extends": [
     "config:recommended"
   ],
-  "schedule": ["* 6 * * *"],
+  "schedule": [
+    "* 6 * * *"
+  ],
   "timezone": "Europe/Berlin",
   "dependencyDashboard": true,
   "automerge": false,
-  "labels": ["dependencies", "renovate"],
+  "labels": [
+    "dependencies",
+    "renovate"
+  ],
   "rangeStrategy": "pin",
   "packageRules": [
     {
-      "matchManagers": ["msbuild-sdk"],
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchDepNames": [
+        "Aspire.AppHost.Sdk"
+      ],
       "rangeStrategy": "replace"
+    },
+    {
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchDepNames": [
+        "Aspire.AppHost.Sdk"
+      ],
+      "matchUpdateTypes": [
+        "pin"
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
+        "nuget"
+      ],
+      "matchPackageNames": [
+        "TUnit{/,}**"
+      ],
+      "groupName": "TUnit",
+      "groupSlug": "tunit"
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "^CLAUDE\\.md$",
-        "^keycloak/CLAUDE\\.md$",
-        "^docs/Architektur/src/.*\\.adoc$",
-        "^docs/Architektur/images/.*\\.puml$"
+      "managerFilePatterns": [
+        "/^(keycloak/)?CLAUDE\\.md$/",
+        "/^docs/Architecture/src/.*\\.adoc$/",
+        "/^docs/Architecture/images/.*\\.puml$/"
       ],
       "matchStrings": [
         "Keycloak (?<currentValue>[\\d]+\\.[\\d]+\\.[\\d]+)",

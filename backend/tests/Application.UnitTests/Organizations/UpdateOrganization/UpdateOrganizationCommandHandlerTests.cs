@@ -12,110 +12,110 @@ namespace Application.UnitTests.Organizations.UpdateOrganization;
 
 public class UpdateOrganizationCommandHandlerTests
 {
-    private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-    private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
-        Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
-    private readonly UpdateOrganizationCommandHandler _sut;
+	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
+		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
+	private readonly UpdateOrganizationCommandHandler _sut;
 
-    public UpdateOrganizationCommandHandlerTests()
-    {
-        _dbContext.Organizations.Returns(_orgRepo);
-        _sut = new UpdateOrganizationCommandHandler(_dbContext);
-    }
+	public UpdateOrganizationCommandHandlerTests()
+	{
+		_dbContext.Organizations.Returns(_orgRepo);
+		_sut = new UpdateOrganizationCommandHandler(_dbContext);
+	}
 
-    [Test]
-    public async Task Handle_ShouldUpdateOrganization_WithAllFields(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var orgId = Guid.NewGuid();
-        var org = Organization.Create(new OrganizationId(orgId), "Alter Name");
+	[Test]
+	public async Task Handle_ShouldUpdateOrganization_WithAllFields(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var org = Organization.Create(new OrganizationId(orgId), "Alter Name");
 
-        _orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 
-        var command = new UpdateOrganizationCommand(
-            orgId,
-            "Neuer Name",
-            "Eine Beschreibung",
-            "kontakt@test.de",
-            "+49 123 456",
-            "https://example.org",
-            new UpdateAddressCommand("Hauptstraße", "1", "12345", "Berlin"));
+		var command = new UpdateOrganizationCommand(
+			orgId,
+			"Neuer Name",
+			"Eine Beschreibung",
+			"kontakt@test.de",
+			"+49 123 456",
+			"https://example.org",
+			new UpdateAddressCommand("Hauptstraße", "1", "12345", "Berlin"));
 
-        // Act
-        var result = await _sut.Handle(command, cancellationToken);
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        result.Should().BeTrue();
-        org.Name.Should().Be("Neuer Name");
-        org.Description.Should().Be("Eine Beschreibung");
-        org.ContactEmail.Should().Be("kontakt@test.de");
-        org.ContactPhone.Should().Be("+49 123 456");
-        org.Website.Should().Be("https://example.org");
-        org.Address.Should().NotBeNull();
-        org.Address!.Street.Should().Be("Hauptstraße");
-        org.Address.City.Should().Be("Berlin");
-    }
+		// Assert
+		result.Should().BeTrue();
+		org.Name.Should().Be("Neuer Name");
+		org.Description.Should().Be("Eine Beschreibung");
+		org.ContactEmail.Should().Be("kontakt@test.de");
+		org.ContactPhone.Should().Be("+49 123 456");
+		org.Website.Should().Be("https://example.org");
+		org.Address.Should().NotBeNull();
+		org.Address!.Street.Should().Be("Hauptstraße");
+		org.Address.City.Should().Be("Berlin");
+	}
 
-    [Test]
-    public async Task Handle_ShouldClearOptionalFields_WhenNullProvided(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var orgId = Guid.NewGuid();
-        var org = Organization.Create(new OrganizationId(orgId), "Org");
+	[Test]
+	public async Task Handle_ShouldClearOptionalFields_WhenNullProvided(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var org = Organization.Create(new OrganizationId(orgId), "Org");
 
-        _orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 
-        var command = new UpdateOrganizationCommand(
-            orgId, "Org", null, null, null, null, null);
+		var command = new UpdateOrganizationCommand(
+			orgId, "Org", null, null, null, null, null);
 
-        // Act
-        await _sut.Handle(command, cancellationToken);
+		// Act
+		await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        org.Description.Should().BeNull();
-        org.ContactEmail.Should().BeNull();
-        org.Address.Should().BeNull();
-    }
+		// Assert
+		org.Description.Should().BeNull();
+		org.ContactEmail.Should().BeNull();
+		org.Address.Should().BeNull();
+	}
 
-    [Test]
-    public async Task Handle_ShouldThrow_WhenOrganizationNotFound(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var orgId = Guid.NewGuid();
+	[Test]
+	public async Task Handle_ShouldThrow_WhenOrganizationNotFound(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
 
-        _orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
+		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
 
-        var command = new UpdateOrganizationCommand(
-            orgId, "Name", null, null, null, null, null);
+		var command = new UpdateOrganizationCommand(
+			orgId, "Name", null, null, null, null, null);
 
-        // Act
-        Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        await act.Should().ThrowAsync<DomainException>();
-    }
+		// Assert
+		await act.Should().ThrowAsync<DomainException>();
+	}
 
-    [Test]
-    public async Task Handle_ShouldThrow_WhenNameIsEmpty(
-        CancellationToken cancellationToken)
-    {
-        // Arrange
-        var orgId = Guid.NewGuid();
-        var org = Organization.Create(new OrganizationId(orgId), "Org");
+	[Test]
+	public async Task Handle_ShouldThrow_WhenNameIsEmpty(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var org = Organization.Create(new OrganizationId(orgId), "Org");
 
-        _orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 
-        var command = new UpdateOrganizationCommand(
-            orgId, "   ", null, null, null, null, null);
+		var command = new UpdateOrganizationCommand(
+			orgId, "   ", null, null, null, null, null);
 
-        // Act
-        Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
-        // Assert
-        await act.Should().ThrowAsync<DomainException>()
-            .WithMessage("*Name must not be empty*");
-    }
+		// Assert
+		await act.Should().ThrowAsync<DomainException>()
+			.WithMessage("*Name must not be empty*");
+	}
 }

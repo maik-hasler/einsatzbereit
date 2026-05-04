@@ -148,6 +148,12 @@ dotnet tool run openapi
 - No dead code - remove, don't comment out
 - Consistency within a module beats personal preference
 
+## Dependency Management
+
+Dependencies are managed by [Renovate](https://docs.renovatebot.com/) (config: `renovate.json`).
+
+The default `rangeStrategy` is `pin` - any new dependency range gets pinned to an exact version (e.g. NuGet `[10.0.7]`, npm `19.2.5`). The one exception is the `msbuild-sdk` manager: SDK references like `Aspire.AppHost.Sdk` must stay floating because bracketed pins (`[13.2.4]`) break SDK resolution. Two `packageRules` enforce this - one sets `rangeStrategy: replace` for all msbuild-sdk updates, the other disables `pin` update PRs entirely. Both rules must stay separate; merging them would only apply `replace` to pin updates and let the global `pin` strategy leak into regular version bumps.
+
 ## Architecture Decisions
 
 Significant architectural decisions are documented as ADRs under `docs/ADRs/`.

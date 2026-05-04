@@ -1,0 +1,20 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-technical-risks]]
+== Risks and Technical Debt
+
+The following table lists the relevant risks and technical debts. Each risk or technical debt links to the corresponding Technical Debt Record (TDR) with full context.
+
+.Risks and technical debts
+[cols="1,4,8,3,3,3" options="header"]
+|===
+|No. |Context |Description |Status |Date |TDR
+
+|1
+|Rate Limiting
+|Missing rate limitation.
+|Planned
+|2026-05-03
+|link:TDRs/1_rate_limiting.html[Rate Limiting]
+
+|===

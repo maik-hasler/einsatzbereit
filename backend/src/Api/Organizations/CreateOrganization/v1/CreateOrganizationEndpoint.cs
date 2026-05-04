@@ -9,32 +9,32 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Organizations.CreateOrganization.v1;
 
 internal sealed class CreateOrganizationEndpoint
-    : IEndpoint
+	: IEndpoint
 {
-    public void MapEndpoint(IEndpointRouteBuilder app)
-    {
-        app.MapPost("/organizations", CreateOrganizationAsync)
-            .WithName("CreateOrganization")
-            .Produces<Organization>()
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
-            .MapToApiVersion(1);
-    }
+	public void MapEndpoint(IEndpointRouteBuilder app)
+	{
+		app.MapPost("/organizations", CreateOrganizationAsync)
+			.WithName("CreateOrganization")
+			.Produces<Organization>()
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
+			.MapToApiVersion(1);
+	}
 
-    private static async Task<IResult> CreateOrganizationAsync(
-        [FromBody] CreateOrganizationRequest request,
-        ClaimsPrincipal user,
-        [FromServices] ISender sender,
-        CancellationToken cancellationToken)
-    {
-        var userId = Guid.Parse(user.FindFirstValue("sub")!);
+	private static async Task<IResult> CreateOrganizationAsync(
+		[FromBody] CreateOrganizationRequest request,
+		ClaimsPrincipal user,
+		[FromServices] ISender sender,
+		CancellationToken cancellationToken)
+	{
+		var userId = Guid.Parse(user.FindFirstValue("sub")!);
 
-        var command = new CreateOrganizationCommand(request.Name, userId);
+		var command = new CreateOrganizationCommand(request.Name, userId);
 
-        var result = await sender.Send(command, cancellationToken);
+		var result = await sender.Send(command, cancellationToken);
 
-        return Results.Ok(result);
-    }
+		return Results.Ok(result);
+	}
 }

@@ -4,4 +4,4 @@ using Domain.VolunteerOpportunities;
 namespace Application.Engagements.GetEngagements.v1;
 
 public sealed record GetEngagementsQuery(VolunteerOpportunityId OpportunityId)
-    : IQuery<List<EngagementSummary>>;
+	: IQuery<List<EngagementSummary>>;
