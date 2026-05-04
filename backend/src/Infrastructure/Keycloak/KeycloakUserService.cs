@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Application.Common.Keycloak;
 using Microsoft.Extensions.Options;
@@ -51,21 +50,12 @@ internal sealed class KeycloakUserService(
 	{
 		await EnsureAuthenticatedAsync(cancellationToken);
 
-		var getResponse = await httpClient.GetAsync(
-			$"/admin/realms/{_options.Realm}/users/{userId}",
-			cancellationToken);
-
-		await EnsureSuccessAsync(getResponse, cancellationToken);
-
-		var existing = await getResponse.Content.ReadFromJsonAsync<JsonObject>(cancellationToken)
-			?? throw new InvalidOperationException("Keycloak returned null user.");
-
-		existing["firstName"] = firstName is null ? null : JsonValue.Create(firstName);
-		existing["lastName"] = lastName is null ? null : JsonValue.Create(lastName);
+		var body = new { firstName, lastName };
 
 		var putResponse = await httpClient.PutAsJsonAsync(
 			$"/admin/realms/{_options.Realm}/users/{userId}",
-			existing,
+			body,
+			JsonOptions,
 			cancellationToken);
 
 		await EnsureSuccessAsync(putResponse, cancellationToken);
