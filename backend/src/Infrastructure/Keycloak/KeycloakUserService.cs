@@ -37,8 +37,8 @@ internal sealed class KeycloakUserService(
 		return new KeycloakUserProfile(
 			Guid.Parse(user.Id),
 			user.Username,
-			user.FirstName,
-			user.LastName,
+			NullIfEmpty(user.FirstName),
+			NullIfEmpty(user.LastName),
 			user.Email ?? string.Empty);
 	}
 
@@ -50,7 +50,13 @@ internal sealed class KeycloakUserService(
 	{
 		await EnsureAuthenticatedAsync(cancellationToken);
 
-		var body = new { firstName, lastName };
+		// Keycloak's admin API merges PUT bodies and skips null fields, so to
+		// clear firstName/lastName we must send an empty string instead of null.
+		var body = new
+		{
+			firstName = firstName ?? string.Empty,
+			lastName = lastName ?? string.Empty,
+		};
 
 		var putResponse = await httpClient.PutAsJsonAsync(
 			$"/admin/realms/{_options.Realm}/users/{userId}",
@@ -88,6 +94,9 @@ internal sealed class KeycloakUserService(
 		httpClient.DefaultRequestHeaders.Authorization =
 			new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult!.AccessToken);
 	}
+
+	private static string? NullIfEmpty(string? value) =>
+		string.IsNullOrEmpty(value) ? null : value;
 
 	private static async Task EnsureSuccessAsync(
 		HttpResponseMessage response,
