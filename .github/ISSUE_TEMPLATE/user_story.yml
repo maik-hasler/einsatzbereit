@@ -18,6 +18,17 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true
+
   - type: textarea
     id: user_story
     attributes:
@@ -27,6 +38,15 @@ body:
         As a <persona>
         I want to <action / goal>
         so that <benefit / value>
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the story in a few sentences. Avoid marketing language.
+      placeholder: Describe the story briefly and specifically.
     validations:
       required: true
 
@@ -42,16 +62,13 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: priority
+  - type: textarea
+    id: implementation
     attributes:
-      label: Priority
-      options:
-        - Low
-        - Medium
-        - High
-    validations:
-      required: true
+      label: Implementation Proposal
+      placeholder: |
+        - Approach / Solution Idea
+        - Alternatives (if any)
 
   - type: textarea
     id: additional_info
