@@ -46,6 +46,9 @@ public class IntegrationTestFixture
 
 		_keycloakClient = _app.CreateHttpClient("keycloak");
 
+		var backendClient = _app.CreateHttpClient("backend");
+		await WaitForBackendReadyAsync(backendClient);
+
 		await WaitForRealmReadyAsync();
 
 		_connectionString = await _app.GetConnectionStringAsync("einsatzbereit")
@@ -152,6 +155,24 @@ public class IntegrationTestFixture
 			?? throw new InvalidOperationException("Keycloak returned no admin token.");
 
 		return token.AccessToken;
+	}
+
+	private static async Task WaitForBackendReadyAsync(HttpClient client)
+	{
+		var deadline = DateTime.UtcNow.AddSeconds(120);
+		while (DateTime.UtcNow < deadline)
+		{
+			try
+			{
+				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+				var response = await client.GetAsync("/alive", cts.Token);
+				if (response.IsSuccessStatusCode)
+					return;
+			}
+			catch (Exception) { }
+			await Task.Delay(1000);
+		}
+		throw new TimeoutException("Backend did not become ready in time.");
 	}
 
 	private async Task WaitForRealmReadyAsync()

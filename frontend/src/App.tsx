@@ -9,6 +9,7 @@ import OrganizationSettingsPage from "./pages/OrganizationSettingsPage";
 import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
 import MyEngagementsPage from "./pages/MyEngagementsPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
+import AccountPage from "./pages/AccountPage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -53,6 +54,14 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							<EngagementManagementPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/account"
+					element={
+						<ProtectedRoute>
+							<AccountPage />
 						</ProtectedRoute>
 					}
 				/>
