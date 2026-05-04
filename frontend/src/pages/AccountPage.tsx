@@ -98,16 +98,18 @@ export default function AccountPage() {
 			)}
 
 			<form onSubmit={handleSave} className="space-y-5">
-				<Field label="Benutzername">
+				<Field label="Benutzername" id="username">
 					<input
+						id="username"
 						disabled
 						value={profile?.username ?? ""}
 						className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
 					/>
 				</Field>
 
-				<Field label="E-Mail-Adresse">
+				<Field label="E-Mail-Adresse" id="email">
 					<input
+						id="email"
 						disabled
 						type="email"
 						value={profile?.email ?? ""}
@@ -118,8 +120,9 @@ export default function AccountPage() {
 					</p>
 				</Field>
 
-				<Field label="Vorname">
+				<Field label="Vorname" id="first-name">
 					<input
+						id="first-name"
 						value={form.firstName}
 						onChange={(e) =>
 							setForm((f) => ({ ...f, firstName: e.target.value }))
@@ -128,8 +131,9 @@ export default function AccountPage() {
 					/>
 				</Field>
 
-				<Field label="Nachname">
+				<Field label="Nachname" id="last-name">
 					<input
+						id="last-name"
 						value={form.lastName}
 						onChange={(e) =>
 							setForm((f) => ({ ...f, lastName: e.target.value }))
@@ -164,14 +168,18 @@ const inputClass =
 
 function Field({
 	label,
+	id,
 	children,
 }: {
 	label: string;
+	id?: string;
 	children: React.ReactNode;
 }) {
 	return (
 		<div>
-			<label className="block text-sm font-medium text-gray-700">{label}</label>
+			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
+				{label}
+			</label>
 			{children}
 		</div>
 	);
