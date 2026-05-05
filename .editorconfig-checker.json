@@ -4,6 +4,6 @@
     "\\.md$",
     "ApiClient\\.cs$",
     "api-client\\.ts$",
-    "openapi-v\\.json$"
+    "openapi-v1\\.json$"
   ]
 }
