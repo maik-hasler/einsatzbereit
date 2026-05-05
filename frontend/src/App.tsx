@@ -11,6 +11,7 @@ import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPa
 import MyEngagementsPage from "./pages/MyEngagementsPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import AccountPage from "./pages/AccountPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -75,6 +76,7 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
+				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>
 	);

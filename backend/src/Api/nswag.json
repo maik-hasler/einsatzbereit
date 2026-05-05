@@ -21,6 +21,7 @@
       "dateType": "System.DateTimeOffset",
       "dateTimeType": "System.DateTimeOffset",
       "classStyle": "Poco",
+      "generateNullableReferenceTypes": true,
       "additionalNamespaceUsages": [
         "System.Collections.Generic"
       ]

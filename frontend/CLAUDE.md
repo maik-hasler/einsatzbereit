@@ -54,10 +54,11 @@ User clicks "Anmelden"
 `src/client/api-client.ts` is auto-generated from `backend/src/Api/wwwroot/openapi-v1.json` by NSwag on every backend build. Never edit it manually - changes will be overwritten.
 
 Use `useApiClient()` hook in all components:
+
 ```ts
-const api = useApiClient()
-await api.getVolunteerOpportunities(page, 10)
-await api.createOrganization({ name })
+const api = useApiClient();
+await api.getVolunteerOpportunities(page, 10);
+await api.createOrganization({ name });
 ```
 
 For one-off calls outside React (e.g., scripts), use `createApiClient(token)` directly.
@@ -66,11 +67,11 @@ For one-off calls outside React (e.g., scripts), use `createApiClient(token)` di
 
 Defined in `.env.development`. Exposed client-side via Vite (must use `VITE_` prefix).
 
-| Variable | Dev value |
-|---|---|
+| Variable                      | Dev value                                    |
+| ----------------------------- | -------------------------------------------- |
 | `VITE_KEYCLOAK_AUTHORITY_URL` | `http://localhost:8080/realms/einsatzbereit` |
-| `VITE_KEYCLOAK_CLIENT_ID` | `frontend` |
-| `VITE_API_URL` | `http://localhost:5000` |
+| `VITE_KEYCLOAK_CLIENT_ID`     | `frontend`                                   |
+| `VITE_API_URL`                | `http://localhost:5000`                      |
 
 Accessed via `import.meta.env.VITE_*`.
 
@@ -79,8 +80,10 @@ Accessed via `import.meta.env.VITE_*`.
 Roles come from `auth.user?.profile?.roles` (flat string array, custom Keycloak mapper).
 
 ```tsx
-const roles = (Array.isArray(auth.user?.profile?.roles) ? auth.user!.profile.roles : []) as string[]
-const isOrganisator = roles.includes('organisator')
+const roles = (
+	Array.isArray(auth.user?.profile?.roles) ? auth.user!.profile.roles : []
+) as string[];
+const isOrganisator = roles.includes("organisator");
 ```
 
 Known roles: `user`, `organisator`, `admin`.
@@ -98,6 +101,7 @@ Routes declared in `src/App.tsx`. Add new routes there.
 ```
 
 Current protected routes:
+
 - `/organizations/:organizationId/settings` → `OrganizationSettingsPage` (requires `organisator`)
 
 **Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
@@ -114,14 +118,14 @@ pnpm lint     # eslint, zero warnings allowed
 
 ## Key Dependencies
 
-| Package | Purpose |
-|---|---|
-| `vite` | Build tool + dev server |
-| `react` 19 | UI framework |
-| `react-router` v7 | Client-side routing |
+| Package              | Purpose                              |
+| -------------------- | ------------------------------------ |
+| `vite`               | Build tool + dev server              |
+| `react` 19           | UI framework                         |
+| `react-router` v7    | Client-side routing                  |
 | `react-oidc-context` | Keycloak OIDC (wraps oidc-client-ts) |
-| `oidc-client-ts` | PKCE flow, token management |
-| `@tailwindcss/vite` | Tailwind CSS 4 via Vite |
+| `oidc-client-ts`     | PKCE flow, token management          |
+| `@tailwindcss/vite`  | Tailwind CSS 4 via Vite              |
 
 ## Linting
 

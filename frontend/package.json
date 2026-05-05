@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
+    "i18n:check": "node scripts/check-i18n-keys.js"
   },
   "dependencies": {
     "i18next": "^26.0.8",
@@ -39,6 +40,7 @@
     "tailwindcss": "4.2.4",
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.2",
-    "vite": "8.0.10"
+    "vite": "8.0.10",
+    "vite-plugin-svgr": "5.2.0"
   }
 }
