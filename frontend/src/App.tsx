@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router";
 import { useAuth } from "react-oidc-context";
+import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import HomePage from "./pages/HomePage";
@@ -13,18 +14,19 @@ import AccountPage from "./pages/AccountPage";
 
 function CallbackPage() {
 	const auth = useAuth();
+	const { t } = useTranslation();
 	if (auth.error) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
 				<span className="text-red-600">
-					Authentifizierungsfehler: {auth.error.message}
+					{t("auth.authError", { message: auth.error.message })}
 				</span>
 			</div>
 		);
 	}
 	return (
 		<div className="flex min-h-screen items-center justify-center">
-			<span className="text-gray-500">Anmeldung wird abgeschlossen…</span>
+			<span className="text-gray-500">{t("auth.completing")}</span>
 		</div>
 	);
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 
@@ -14,6 +15,7 @@ export default function EditVolunteerOpportunityModal({
 	onSuccess,
 }: Props) {
 	const api = useApiClient();
+	const { t } = useTranslation();
 
 	const [title, setTitle] = useState(opportunity.title);
 	const [description, setDescription] = useState(opportunity.description);
@@ -43,7 +45,7 @@ export default function EditVolunteerOpportunityModal({
 			onSuccess();
 			onClose();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+			setError(err instanceof Error ? err.message : t("editOpportunity.unknownError"));
 		} finally {
 			setSubmitting(false);
 		}
@@ -52,12 +54,12 @@ export default function EditVolunteerOpportunityModal({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen">
-				<h2 className="mb-4 text-lg font-semibold">Bedarf bearbeiten</h2>
+				<h2 className="mb-4 text-lg font-semibold">{t("editOpportunity.title")}</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
 						<label className="mb-1 block text-sm font-medium text-gray-700">
-							Titel
+							{t("editOpportunity.fieldTitle")}
 						</label>
 						<input
 							value={title}
@@ -69,7 +71,7 @@ export default function EditVolunteerOpportunityModal({
 
 					<div>
 						<label className="mb-1 block text-sm font-medium text-gray-700">
-							Beschreibung
+							{t("editOpportunity.fieldDescription")}
 						</label>
 						<textarea
 							value={description}
@@ -89,7 +91,7 @@ export default function EditVolunteerOpportunityModal({
 							className="h-4 w-4"
 						/>
 						<label htmlFor="isRemote" className="text-sm text-gray-700">
-							Remote (kein Standort erforderlich)
+							{t("editOpportunity.fieldRemote")}
 						</label>
 					</div>
 
@@ -97,7 +99,7 @@ export default function EditVolunteerOpportunityModal({
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<label className="mb-1 block text-sm font-medium text-gray-700">
-									Straße
+									{t("editOpportunity.fieldStreet")}
 								</label>
 								<input
 									value={street}
@@ -108,7 +110,7 @@ export default function EditVolunteerOpportunityModal({
 							</div>
 							<div>
 								<label className="mb-1 block text-sm font-medium text-gray-700">
-									Hausnummer
+									{t("editOpportunity.fieldHouseNumber")}
 								</label>
 								<input
 									value={houseNumber}
@@ -119,7 +121,7 @@ export default function EditVolunteerOpportunityModal({
 							</div>
 							<div>
 								<label className="mb-1 block text-sm font-medium text-gray-700">
-									PLZ
+									{t("editOpportunity.fieldZip")}
 								</label>
 								<input
 									value={zipCode}
@@ -131,7 +133,7 @@ export default function EditVolunteerOpportunityModal({
 							</div>
 							<div>
 								<label className="mb-1 block text-sm font-medium text-gray-700">
-									Stadt
+									{t("editOpportunity.fieldCity")}
 								</label>
 								<input
 									value={city}
@@ -151,14 +153,14 @@ export default function EditVolunteerOpportunityModal({
 							onClick={onClose}
 							className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
 						>
-							Abbrechen
+							{t("editOpportunity.cancel")}
 						</button>
 						<button
 							type="submit"
 							disabled={submitting}
 							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
 						>
-							{submitting ? "Wird gespeichert…" : "Speichern"}
+							{submitting ? t("editOpportunity.saving") : t("editOpportunity.save")}
 						</button>
 					</div>
 				</form>
