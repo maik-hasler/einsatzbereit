@@ -8,7 +8,7 @@ public static class AuthHelper
 	{
 		await page.GotoAsync(frontendUrl.ToString());
 
-		await page.GetByRole(AriaRole.Button, new() { Name = "Anmelden" }).First.ClickAsync();
+		await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First.ClickAsync();
 
 		await page.WaitForURLAsync("**/realms/einsatzbereit/**");
 
