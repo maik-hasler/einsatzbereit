@@ -103,18 +103,18 @@
   "users": [
     {
       "id": "00000000-0000-0000-0000-000000000002",
-      "username": "hannah",
+      "username": "vera",
       "enabled": true,
-      "email": "hannah@example.com",
-      "firstName": "Hannah",
-      "lastName": "Helferin",
+      "email": "vera@example.com",
+      "firstName": "Vera",
+      "lastName": "Volunteer",
       "realmRoles": [
         "user"
       ],
       "credentials": [
         {
           "type": "password",
-          "value": "hannah123",
+          "value": "vera123",
           "temporary": false
         }
       ]

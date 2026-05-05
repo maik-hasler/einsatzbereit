@@ -150,7 +150,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var token = await fixture.GetAccessTokenAsync("hannah", "hannah123");
+		var token = await fixture.GetAccessTokenAsync("vera", "vera123");
 		var httpClient = fixture.CreateHttpClient();
 		httpClient.DefaultRequestHeaders.Authorization =
 			new AuthenticationHeaderValue("Bearer", token);
@@ -159,7 +159,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var act = () => client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			Title = "Not allowed",
-			Description = "Hannah cannot create opportunities",
+			Description = "Vera cannot create opportunities",
 			OrganizationId = Guid.NewGuid(),
 			Street = "Straße",
 			HouseNumber = "1",

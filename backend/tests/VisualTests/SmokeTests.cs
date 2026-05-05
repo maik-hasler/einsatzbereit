@@ -17,11 +17,11 @@ public class SmokeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task Login_AsHannah_CompletesAndReturnsToHome()
+	public async Task Login_AsVera_CompletesAndReturnsToHome()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "hannah", "hannah123");
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		await Expect(Page).ToHaveURLAsync($"{origin}/");

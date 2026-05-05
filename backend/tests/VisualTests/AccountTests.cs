@@ -10,7 +10,7 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "hannah", "hannah123");
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -25,12 +25,12 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "hannah", "hannah123");
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("@hannah")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("@vera")).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -38,12 +38,12 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "hannah", "hannah123");
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByLabel("First name").FillAsync("Hannah");
+		await Page.GetByLabel("First name").FillAsync("Vera");
 		await Page.GetByLabel("Last name").FillAsync("Muster");
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();

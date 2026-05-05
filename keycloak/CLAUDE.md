@@ -45,7 +45,7 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 
 | Username | Password | Roles |
 |---|---|---|
-| `hannah` | `hannah123` | `user` |
+| `vera` | `vera123` | `user` |
 | `olaf` | `olaf123` | `user`, `organisator` |
 | `admin` | `admin123` | `admin` |
 

@@ -78,7 +78,7 @@ public class CreateOrganizationTests(
 	public async Task GetOrganizations_ShouldReturnEmpty_WhenUserHasNoOrganizations(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var result = await client.GetOrganizationsAsync(cancellationToken);
 

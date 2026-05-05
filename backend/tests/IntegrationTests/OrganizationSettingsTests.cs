@@ -45,7 +45,7 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturn403_WhenUserLacksOrganisatorRole(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
 

@@ -15,14 +15,14 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldPersistChanges_WhenAuthenticated(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		await client.UpdateUserProfileAsync(
-			new UpdateUserProfileRequest { FirstName = "Hannah", LastName = "Muster" },
+			new UpdateUserProfileRequest { FirstName = "Vera", LastName = "Muster" },
 			cancellationToken);
 
 		var profile = await client.GetUserProfileAsync(cancellationToken);
-		profile.FirstName.Should().Be("Hannah");
+		profile.FirstName.Should().Be("Vera");
 		profile.LastName.Should().Be("Muster");
 	}
 
@@ -30,7 +30,7 @@ public class UpdateUserProfileTests(
 	public async Task UpdateUserProfile_ShouldClearNames_WhenNullValuesProvided(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		await client.UpdateUserProfileAsync(
 			new UpdateUserProfileRequest { FirstName = null, LastName = null },
