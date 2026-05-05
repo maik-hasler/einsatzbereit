@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import type {
 	PagedListOfVolunteerOpportunitySummary,
 	VolunteerOpportunitySummary,
@@ -18,6 +19,7 @@ export default function VolunteerOpportunitiesList({
 }: Props) {
 	const api = useApiClient();
 	const navigate = useNavigate();
+	const { t } = useTranslation();
 	const [data, setData] =
 		useState<PagedListOfVolunteerOpportunitySummary | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -59,14 +61,16 @@ export default function VolunteerOpportunitiesList({
 	return (
 		<div>
 			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-xl font-semibold">Aktuelle Bedarfe</h2>
+				<h2 className="text-xl font-semibold">
+					{t("opportunities.currentNeeds")}
+				</h2>
 				{canCreateOpportunity && (
 					<button
 						onClick={() => setShowModal(true)}
 						data-testid="create-opportunity-btn"
 						className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
 					>
-						+ Bedarf erstellen
+						{t("opportunities.createNeed")}
 					</button>
 				)}
 			</div>
@@ -74,7 +78,7 @@ export default function VolunteerOpportunitiesList({
 			<div className="mb-4 flex flex-wrap gap-2">
 				<input
 					type="text"
-					placeholder="Suche…"
+					placeholder={t("opportunities.searchPlaceholder")}
 					value={search}
 					onChange={(e) => {
 						setSearch(e.target.value);
@@ -84,7 +88,7 @@ export default function VolunteerOpportunitiesList({
 				/>
 				<input
 					type="text"
-					placeholder="Stadt…"
+					placeholder={t("opportunities.cityPlaceholder")}
 					value={city}
 					onChange={(e) => {
 						setCity(e.target.value);
@@ -100,9 +104,9 @@ export default function VolunteerOpportunitiesList({
 					}}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				>
-					<option value="">Alle Häufigkeiten</option>
-					<option value="OneTime">Einmalig</option>
-					<option value="Recurring">Regelmäßig</option>
+					<option value="">{t("opportunities.allFrequencies")}</option>
+					<option value="OneTime">{t("opportunities.oneTime")}</option>
+					<option value="Recurring">{t("opportunities.recurring")}</option>
 				</select>
 				<select
 					value={participationType}
@@ -112,19 +116,25 @@ export default function VolunteerOpportunitiesList({
 					}}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				>
-					<option value="">Alle Typen</option>
-					<option value="Waitlist">Warteliste</option>
-					<option value="IndividualContact">Einzelkontakt</option>
+					<option value="">{t("opportunities.allTypes")}</option>
+					<option value="Waitlist">{t("opportunities.waitlist")}</option>
+					<option value="IndividualContact">
+						{t("opportunities.individualContact")}
+					</option>
 				</select>
 			</div>
 
-			{loading && <p className="text-gray-500">Wird geladen…</p>}
-			{error && <p className="text-red-600">Fehler: {error}</p>}
+			{loading && <p className="text-gray-500">{t("opportunities.loading")}</p>}
+			{error && (
+				<p className="text-red-600">
+					{t("opportunities.error", { message: error })}
+				</p>
+			)}
 
 			{!loading && !error && data && (
 				<>
 					{data.items.length === 0 ? (
-						<p className="text-gray-500">Keine Bedarfe gefunden.</p>
+						<p className="text-gray-500">{t("opportunities.noResults")}</p>
 					) : (
 						<ul className="space-y-3">
 							{data.items.map((item: VolunteerOpportunitySummary) => (
@@ -146,17 +156,17 @@ export default function VolunteerOpportunitiesList({
 										</div>
 										<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
 											<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-												{formatOccurrence(item.occurrence)}
+												{formatOccurrence(item.occurrence, t)}
 											</span>
 											<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-												{formatParticipationType(item.participationType)}
+												{formatParticipationType(item.participationType, t)}
 											</span>
 										</div>
 									</div>
 									<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
 										<span>{item.organizationName}</span>
 										{item.isRemote ? (
-											<span>Remote</span>
+											<span>{t("opportunities.remote")}</span>
 										) : (
 											<span>
 												{item.street} {item.houseNumber}, {item.zipCode}{" "}
@@ -176,17 +186,20 @@ export default function VolunteerOpportunitiesList({
 								disabled={page <= 1}
 								className="rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40"
 							>
-								← Zurück
+								{t("opportunities.previous")}
 							</button>
 							<span className="text-sm text-gray-500">
-								{page} / {data.pageCount}
+								{t("opportunities.page", {
+									current: page,
+									total: data.pageCount,
+								})}
 							</span>
 							<button
 								onClick={() => setPage((p) => p + 1)}
 								disabled={page >= (data.pageCount ?? 1)}
 								className="rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40"
 							>
-								Weiter →
+								{t("opportunities.next")}
 							</button>
 						</div>
 					)}

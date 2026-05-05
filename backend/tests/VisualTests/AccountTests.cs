@@ -15,9 +15,9 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByLabel("Benutzername")).ToBeVisibleAsync();
-		await Expect(Page.GetByLabel("E-Mail-Adresse")).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Speichern" })).ToBeVisibleAsync();
+		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync();
+		await Expect(Page.GetByLabel("Email address")).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -43,11 +43,11 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByLabel("Vorname").FillAsync("Hannah");
-		await Page.GetByLabel("Nachname").FillAsync("Muster");
+		await Page.GetByLabel("First name").FillAsync("Hannah");
+		await Page.GetByLabel("Last name").FillAsync("Muster");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Speichern" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
 
-		await Expect(Page.GetByText("Änderungen gespeichert.")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Changes saved.")).ToBeVisibleAsync();
 	}
 }

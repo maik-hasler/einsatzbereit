@@ -1,10 +1,11 @@
 import { Link } from "react-router";
 import { useAuth } from "react-oidc-context";
-
-const currentYear = new Date().getFullYear();
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
 	const auth = useAuth();
+	const { t } = useTranslation();
+	const currentYear = new Date().getFullYear();
 
 	return (
 		<footer className="bg-brand-800 text-brand-200">
@@ -13,23 +14,22 @@ export default function Footer() {
 					{/* Brand */}
 					<div>
 						<h2 className="text-white text-2xl font-bold mb-4">
-							Einsatzbereit
+							{t("brand.name")}
 						</h2>
 						<p className="text-sm leading-relaxed max-w-xs">
-							Einsatzbereit bringt engagierte Helfer:innen mit regionalen
-							Bedarfen zusammen. Spontan, schnell und wirksam.
+							{t("brand.description")}
 						</p>
 					</div>
 
 					{/* Links */}
 					<div>
 						<h3 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
-							Plattform
+							{t("footer.platform")}
 						</h3>
 						<ul className="space-y-2 text-sm">
 							<li>
 								<Link to="/" className="hover:text-white transition-colors">
-									Einsätze finden
+									{t("footer.findOpportunities")}
 								</Link>
 							</li>
 							<li>
@@ -37,13 +37,13 @@ export default function Footer() {
 									onClick={() => auth.signinRedirect()}
 									className="hover:text-white transition-colors"
 								>
-									Mitmachen
+									{t("footer.participate")}
 								</button>
 							</li>
 						</ul>
 
 						<h3 className="text-white font-semibold mb-4 mt-6 uppercase text-xs tracking-wider">
-							Rechtliches
+							{t("footer.legal")}
 						</h3>
 						<ul className="space-y-2 text-sm">
 							<li>
@@ -51,7 +51,7 @@ export default function Footer() {
 									to="/impressum"
 									className="hover:text-white transition-colors"
 								>
-									Impressum
+									{t("footer.imprint")}
 								</Link>
 							</li>
 							<li>
@@ -59,7 +59,7 @@ export default function Footer() {
 									to="/datenschutz"
 									className="hover:text-white transition-colors"
 								>
-									Datenschutz
+									{t("footer.privacy")}
 								</Link>
 							</li>
 						</ul>
@@ -68,7 +68,7 @@ export default function Footer() {
 					{/* Social */}
 					<div>
 						<h3 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
-							Folge uns
+							{t("footer.followUs")}
 						</h3>
 						<div className="flex space-x-4">
 							<a
@@ -109,7 +109,7 @@ export default function Footer() {
 
 				{/* Bottom Bar */}
 				<div className="mt-12 pt-8 border-t border-brand-700 text-center text-xs">
-					<p>&copy; {currentYear} Einsatzbereit. Alle Rechte vorbehalten.</p>
+					<p>{t("footer.copyright", { year: currentYear })}</p>
 				</div>
 			</div>
 		</footer>

@@ -12,12 +12,16 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
+    "i18n:check": "node scripts/check-i18n-keys.js"
   },
   "dependencies": {
+    "i18next": "26.0.8",
+    "i18next-browser-languagedetector": "8.2.1",
     "oidc-client-ts": "3.5.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
+    "react-i18next": "17.0.6",
     "react-oidc-context": "3.3.1",
     "react-router": "7.14.2"
   },
@@ -30,6 +34,7 @@
     "@vitejs/plugin-react": "6.0.1",
     "eslint": "10.3.0",
     "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-i18next": "6.1.4",
     "eslint-plugin-react-hooks": "7.1.1",
     "prettier": "3.8.3",
     "tailwindcss": "4.2.4",

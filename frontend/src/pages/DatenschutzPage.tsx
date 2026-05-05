@@ -1,63 +1,60 @@
+import { useTranslation } from "react-i18next";
+
 export default function DatenschutzPage() {
+	const { t } = useTranslation();
+
 	return (
 		<>
-			<h1 className="mb-8 text-3xl font-bold">Datenschutzerklärung</h1>
+			<h1 className="mb-8 text-3xl font-bold">{t("datenschutz.title")}</h1>
 
 			<section className="mb-8">
-				<h2 className="mb-2 text-xl font-semibold">Verantwortliche Stelle</h2>
-				<p className="text-gray-700 leading-relaxed">
-					[Vor- und Nachname / Organisation]
-					<br />
-					[Straße und Hausnummer]
-					<br />
-					[PLZ und Ort]
-					<br />
-					E-Mail: [deine@email.de]
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("datenschutz.section1Title")}
+				</h2>
+				<p
+					className="text-gray-700 leading-relaxed"
+					style={{ whiteSpace: "pre-line" }}
+				>
+					{t("datenschutz.section1Body")}
 				</p>
 			</section>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
-					Erhebung und Speicherung personenbezogener Daten
+					{t("datenschutz.section2Title")}
 				</h2>
 				<p className="text-gray-700 leading-relaxed mb-4">
-					Beim Besuch dieser Website werden automatisch Informationen
-					allgemeiner Natur erfasst (z.&nbsp;B. IP-Adresse, Browsertyp, Uhrzeit
-					des Zugriffs). Diese Daten lassen keine Rückschlüsse auf Ihre Person
-					zu und werden zur Sicherstellung des Betriebs ausgewertet.
+					{t("datenschutz.section2Body1")}
 				</p>
 				<p className="text-gray-700 leading-relaxed">
-					Bei der Registrierung und Anmeldung über unseren
-					Authentifizierungsdienst (Keycloak) werden die von Ihnen eingegebenen
-					Daten (z.&nbsp;B. Name, E-Mail-Adresse) gespeichert, um Ihnen die
-					Nutzung der Plattform zu ermöglichen.
+					{t("datenschutz.section2Body2")}
 				</p>
 			</section>
 
 			<section className="mb-8">
-				<h2 className="mb-2 text-xl font-semibold">Weitergabe von Daten</h2>
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("datenschutz.section3Title")}
+				</h2>
 				<p className="text-gray-700 leading-relaxed">
-					Eine Übermittlung Ihrer persönlichen Daten an Dritte findet nicht
-					statt, es sei denn, dies ist zur Vertragsabwicklung erforderlich oder
-					Sie haben ausdrücklich eingewilligt.
+					{t("datenschutz.section3Body")}
 				</p>
 			</section>
 
 			<section className="mb-8">
-				<h2 className="mb-2 text-xl font-semibold">Cookies</h2>
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("datenschutz.section4Title")}
+				</h2>
 				<p className="text-gray-700 leading-relaxed">
-					Diese Website verwendet technisch notwendige Cookies für die
-					Authentifizierung (Session-Cookies). Es werden keine Tracking- oder
-					Werbe-Cookies eingesetzt.
+					{t("datenschutz.section4Body")}
 				</p>
 			</section>
 
 			<section className="mb-8">
-				<h2 className="mb-2 text-xl font-semibold">Ihre Rechte</h2>
+				<h2 className="mb-2 text-xl font-semibold">
+					{t("datenschutz.section5Title")}
+				</h2>
 				<p className="text-gray-700 leading-relaxed">
-					Sie haben das Recht auf Auskunft, Berichtigung, Löschung und
-					Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Wenden
-					Sie sich dazu an die oben genannte verantwortliche Stelle.
+					{t("datenschutz.section5Body")}
 				</p>
 			</section>
 		</>

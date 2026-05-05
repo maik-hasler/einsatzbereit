@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatDateTime } from "../lib/format";
@@ -19,6 +20,7 @@ export default function SignUpModal({
 	onSuccess,
 }: Props) {
 	const api = useApiClient();
+	const { t, i18n } = useTranslation();
 	const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>("");
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
@@ -41,7 +43,7 @@ export default function SignUpModal({
 			onSuccess();
 			onClose();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+			setError(err instanceof Error ? err.message : t("signUp.unknownError"));
 		} finally {
 			setSubmitting(false);
 		}
@@ -51,18 +53,18 @@ export default function SignUpModal({
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
 				<h2 className="mb-4 text-lg font-semibold">
-					{isWaitlist ? "Auf Warteliste eintragen" : "Interesse bekunden"}
+					{isWaitlist ? t("signUp.titleWaitlist") : t("signUp.titleInterest")}
 				</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{isWaitlist && (
 						<div>
 							<label className="mb-1 block text-sm font-medium text-gray-700">
-								Zeitslot wählen
+								{t("signUp.selectTimeSlot")}
 							</label>
 							{timeSlots.length === 0 ? (
 								<p className="text-sm text-gray-500">
-									Keine Zeitslots verfügbar.
+									{t("signUp.noTimeSlots")}
 								</p>
 							) : (
 								<select
@@ -71,12 +73,21 @@ export default function SignUpModal({
 									required
 									className="w-full rounded border px-3 py-2 text-sm"
 								>
-									<option value="">Bitte wählen…</option>
+									<option value="">{t("signUp.selectPlaceholder")}</option>
 									{timeSlots.map((ts) => (
 										<option key={ts.id} value={ts.id}>
-											{formatDateTime(ts.startDateTime as unknown as string)} -{" "}
-											{formatDateTime(ts.endDateTime as unknown as string)}{" "}
-											(max. {ts.maxParticipants})
+											{formatDateTime(
+												ts.startDateTime as unknown as string,
+												i18n.language,
+											)}{" "}
+											-{" "}
+											{formatDateTime(
+												ts.endDateTime as unknown as string,
+												i18n.language,
+											)}{" "}
+											{t("signUp.maxParticipants", {
+												count: ts.maxParticipants,
+											})}
 										</option>
 									))}
 								</select>
@@ -87,14 +98,14 @@ export default function SignUpModal({
 					{!isWaitlist && (
 						<div>
 							<label className="mb-1 block text-sm font-medium text-gray-700">
-								Nachricht
+								{t("signUp.message")}
 							</label>
 							<textarea
 								value={message}
 								onChange={(e) => setMessage(e.target.value)}
 								required
 								rows={4}
-								placeholder="Beschreibe kurz, warum du dich engagieren möchtest…"
+								placeholder={t("signUp.messagePlaceholder")}
 								className="w-full rounded border px-3 py-2 text-sm"
 							/>
 						</div>
@@ -108,14 +119,14 @@ export default function SignUpModal({
 							onClick={onClose}
 							className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
 						>
-							Abbrechen
+							{t("signUp.cancel")}
 						</button>
 						<button
 							type="submit"
 							disabled={submitting || (isWaitlist && timeSlots.length === 0)}
 							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
 						>
-							{submitting ? "Wird gesendet…" : "Anmelden"}
+							{submitting ? t("signUp.submitting") : t("signUp.submit")}
 						</button>
 					</div>
 				</form>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 
@@ -8,6 +9,7 @@ type Tab = "general" | "members";
 export default function OrganizationSettingsPage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
 	const api = useApiClient();
+	const { t, i18n } = useTranslation();
 	const [activeTab, setActiveTab] = useState<Tab>("general");
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -26,6 +28,8 @@ export default function OrganizationSettingsPage() {
 		zipCode: "",
 		city: "",
 	});
+
+	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	useEffect(() => {
 		if (!organizationId) return;
@@ -46,7 +50,7 @@ export default function OrganizationSettingsPage() {
 					city: data.address?.city ?? "",
 				});
 			})
-			.catch(() => setError("Organisation konnte nicht geladen werden."))
+			.catch(() => setError(t("orgSettings.loadError")))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
@@ -76,7 +80,7 @@ export default function OrganizationSettingsPage() {
 						}
 					: undefined,
 			});
-			setSuccessMessage("Änderungen gespeichert.");
+			setSuccessMessage(t("orgSettings.savedSuccess"));
 			setOrg((prev) =>
 				prev
 					? {
@@ -98,7 +102,7 @@ export default function OrganizationSettingsPage() {
 					: prev,
 			);
 		} catch {
-			setError("Speichern fehlgeschlagen.");
+			setError(t("orgSettings.saveError"));
 		} finally {
 			setSaving(false);
 		}
@@ -117,14 +121,14 @@ export default function OrganizationSettingsPage() {
 					: prev,
 			);
 		} catch {
-			setError("Mitglied konnte nicht entfernt werden.");
+			setError(t("orgSettings.removeMemberError"));
 		}
 	}
 
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center py-16">
-				<span className="text-gray-500">Wird geladen…</span>
+				<span className="text-gray-500">{t("orgSettings.loading")}</span>
 			</div>
 		);
 	}
@@ -132,7 +136,7 @@ export default function OrganizationSettingsPage() {
 	if (!org) {
 		return (
 			<div className="py-8 text-center text-red-600">
-				Organisation nicht gefunden.
+				{t("orgSettings.notFound")}
 			</div>
 		);
 	}
@@ -141,11 +145,12 @@ export default function OrganizationSettingsPage() {
 		<div className="mx-auto max-w-2xl">
 			<h1 className="mb-1 text-2xl font-bold text-gray-900">{org.name}</h1>
 			<p className="mb-6 text-sm text-gray-500">
-				Erstellt am{" "}
-				{new Date(org.createdOn).toLocaleDateString("de-DE", {
-					day: "2-digit",
-					month: "long",
-					year: "numeric",
+				{t("orgSettings.createdOn", {
+					date: new Date(org.createdOn).toLocaleDateString(locale, {
+						day: "2-digit",
+						month: "long",
+						year: "numeric",
+					}),
 				})}
 			</p>
 
@@ -161,8 +166,8 @@ export default function OrganizationSettingsPage() {
 						}`}
 					>
 						{tab === "general"
-							? "Allgemein"
-							: `Mitglieder (${org.members.length})`}
+							? t("orgSettings.tabGeneral")
+							: t("orgSettings.tabMembers", { count: org.members.length })}
 					</button>
 				))}
 			</div>
@@ -180,7 +185,7 @@ export default function OrganizationSettingsPage() {
 
 			{activeTab === "general" && (
 				<form onSubmit={handleSave} className="space-y-5">
-					<Field label="Name *">
+					<Field label={t("orgSettings.fieldName")}>
 						<input
 							required
 							value={form.name}
@@ -189,7 +194,7 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label="Beschreibung">
+					<Field label={t("orgSettings.fieldDescription")}>
 						<textarea
 							rows={3}
 							value={form.description}
@@ -203,7 +208,7 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label="Kontakt-E-Mail">
+					<Field label={t("orgSettings.fieldContactEmail")}>
 						<input
 							type="email"
 							value={form.contactEmail}
@@ -217,7 +222,7 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label="Telefon">
+					<Field label={t("orgSettings.fieldPhone")}>
 						<input
 							type="tel"
 							value={form.contactPhone}
@@ -231,7 +236,7 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label="Website">
+					<Field label={t("orgSettings.fieldWebsite")}>
 						<input
 							type="url"
 							value={form.website}
@@ -248,11 +253,13 @@ export default function OrganizationSettingsPage() {
 
 					<fieldset className="rounded-md border border-gray-200 p-4">
 						<legend className="px-1 text-sm font-medium text-gray-700">
-							Hauptadresse
+							{t("orgSettings.fieldAddress")}
 						</legend>
 						<div className="mt-3 grid grid-cols-3 gap-3">
 							<div className="col-span-2">
-								<label className={labelClass}>Straße</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldStreet")}
+								</label>
 								<input
 									value={form.street}
 									onChange={(e) =>
@@ -265,7 +272,9 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelClass}>Hausnummer</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldHouseNumber")}
+								</label>
 								<input
 									value={form.houseNumber}
 									onChange={(e) =>
@@ -278,7 +287,9 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelClass}>PLZ</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldZip")}
+								</label>
 								<input
 									maxLength={5}
 									value={form.zipCode}
@@ -292,7 +303,9 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div className="col-span-2">
-								<label className={labelClass}>Stadt</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldCity")}
+								</label>
 								<input
 									value={form.city}
 									onChange={(e) =>
@@ -313,7 +326,7 @@ export default function OrganizationSettingsPage() {
 							disabled={saving}
 							className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
 						>
-							{saving ? "Wird gespeichert…" : "Speichern"}
+							{saving ? t("orgSettings.saving") : t("orgSettings.save")}
 						</button>
 					</div>
 				</form>
@@ -335,7 +348,7 @@ export default function OrganizationSettingsPage() {
 								<p className="text-xs text-gray-500">{member.email}</p>
 								{member.isOrganisator && (
 									<span className="mt-0.5 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-										Organisator
+										{t("orgSettings.organisator")}
 									</span>
 								)}
 							</div>
@@ -343,7 +356,7 @@ export default function OrganizationSettingsPage() {
 								onClick={() => handleRemoveMember(member.userId)}
 								className="text-xs text-red-500 hover:text-red-700"
 							>
-								Entfernen
+								{t("orgSettings.removeMember")}
 							</button>
 						</li>
 					))}

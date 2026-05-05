@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { KeycloakOrganization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId, setActiveOrgCookie } from "../lib/activeOrg";
@@ -8,6 +9,7 @@ import CreateOrganizationModal from "./CreateOrganizationModal";
 export default function OrganizationSwitcher() {
 	const api = useApiClient();
 	const navigate = useNavigate();
+	const { t } = useTranslation();
 	const [orgs, setOrgs] = useState<KeycloakOrganization[]>([]);
 	const [activeOrgId, setActiveOrgId] = useState<string | null>(getActiveOrgId);
 	const [loading, setLoading] = useState(true);
@@ -105,7 +107,7 @@ export default function OrganizationSwitcher() {
 							d="M12 4.5v15m7.5-7.5h-15"
 						/>
 					</svg>
-					Organisation erstellen
+					{t("organization.create")}
 				</button>
 
 				{showModal && (
@@ -126,7 +128,7 @@ export default function OrganizationSwitcher() {
 					onClick={() => setOpen(!open)}
 					className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
 					aria-expanded={open}
-					aria-label="Organisation wechseln"
+					aria-label={t("organization.switchLabel")}
 				>
 					{/* Building icon */}
 					<svg
@@ -144,7 +146,7 @@ export default function OrganizationSwitcher() {
 					</svg>
 
 					<span className="max-w-[150px] truncate">
-						{activeOrg ? activeOrg.name : "Organisation wählen"}
+						{activeOrg ? activeOrg.name : t("organization.selectPlaceholder")}
 					</span>
 
 					{/* Chevron */}
@@ -230,7 +232,7 @@ export default function OrganizationSwitcher() {
 											d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
 										/>
 									</svg>
-									Einstellungen
+									{t("organization.settings")}
 								</button>
 							)}
 							<button
@@ -254,7 +256,7 @@ export default function OrganizationSwitcher() {
 										d="M12 4.5v15m7.5-7.5h-15"
 									/>
 								</svg>
-								Organisation erstellen
+								{t("organization.create")}
 							</button>
 						</div>
 					</div>

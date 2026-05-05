@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { CreateVolunteerOpportunityRequest } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 
@@ -14,6 +15,7 @@ export default function CreateVolunteerOpportunityModal({
 	onSuccess,
 }: Props) {
 	const api = useApiClient();
+	const { t } = useTranslation();
 	const [form, setForm] = useState<CreateVolunteerOpportunityRequest>({
 		title: "",
 		description: "",
@@ -38,7 +40,11 @@ export default function CreateVolunteerOpportunityModal({
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+			setError(
+				err instanceof Error
+					? err.message
+					: t("createOpportunity.unknownError"),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -53,7 +59,9 @@ export default function CreateVolunteerOpportunityModal({
 				className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<h2 className="mb-4 text-xl font-semibold">Bedarf erstellen</h2>
+				<h2 className="mb-4 text-xl font-semibold">
+					{t("createOpportunity.title")}
+				</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
@@ -61,7 +69,7 @@ export default function CreateVolunteerOpportunityModal({
 							htmlFor="opportunity-title"
 							className="mb-1 block text-sm font-medium"
 						>
-							Titel
+							{t("createOpportunity.fieldTitle")}
 						</label>
 						<input
 							id="opportunity-title"
@@ -83,7 +91,7 @@ export default function CreateVolunteerOpportunityModal({
 							htmlFor="opportunity-description"
 							className="mb-1 block text-sm font-medium"
 						>
-							Beschreibung
+							{t("createOpportunity.fieldDescription")}
 						</label>
 						<textarea
 							id="opportunity-description"
@@ -101,11 +109,13 @@ export default function CreateVolunteerOpportunityModal({
 					</div>
 
 					<fieldset className="space-y-3 rounded border p-3">
-						<legend className="px-1 text-sm font-medium">Adresse</legend>
+						<legend className="px-1 text-sm font-medium">
+							{t("createOpportunity.fieldAddress")}
+						</legend>
 						<div className="flex gap-3">
 							<div className="flex-1">
 								<label className="mb-1 block text-sm text-gray-600">
-									Straße
+									{t("createOpportunity.fieldStreet")}
 								</label>
 								<input
 									type="text"
@@ -122,7 +132,9 @@ export default function CreateVolunteerOpportunityModal({
 								/>
 							</div>
 							<div className="w-24">
-								<label className="mb-1 block text-sm text-gray-600">Nr.</label>
+								<label className="mb-1 block text-sm text-gray-600">
+									{t("createOpportunity.fieldNumber")}
+								</label>
 								<input
 									type="text"
 									required
@@ -140,7 +152,9 @@ export default function CreateVolunteerOpportunityModal({
 						</div>
 						<div className="flex gap-3">
 							<div className="w-28">
-								<label className="mb-1 block text-sm text-gray-600">PLZ</label>
+								<label className="mb-1 block text-sm text-gray-600">
+									{t("createOpportunity.fieldZip")}
+								</label>
 								<input
 									type="text"
 									required
@@ -158,7 +172,9 @@ export default function CreateVolunteerOpportunityModal({
 								/>
 							</div>
 							<div className="flex-1">
-								<label className="mb-1 block text-sm text-gray-600">Ort</label>
+								<label className="mb-1 block text-sm text-gray-600">
+									{t("createOpportunity.fieldCity")}
+								</label>
 								<input
 									type="text"
 									required
@@ -177,7 +193,9 @@ export default function CreateVolunteerOpportunityModal({
 					</fieldset>
 
 					<div>
-						<label className="mb-2 block text-sm font-medium">Häufigkeit</label>
+						<label className="mb-2 block text-sm font-medium">
+							{t("createOpportunity.fieldFrequency")}
+						</label>
 						<div className="flex gap-4">
 							<label className="flex items-center gap-2 text-sm">
 								<input
@@ -193,7 +211,7 @@ export default function CreateVolunteerOpportunityModal({
 									}
 									className="accent-black"
 								/>
-								Einmalig
+								{t("opportunities.oneTime")}
 							</label>
 							<label className="flex items-center gap-2 text-sm">
 								<input
@@ -209,14 +227,14 @@ export default function CreateVolunteerOpportunityModal({
 									}
 									className="accent-black"
 								/>
-								Regelmäßig
+								{t("opportunities.recurring")}
 							</label>
 						</div>
 					</div>
 
 					<div>
 						<label className="mb-2 block text-sm font-medium">
-							Teilnahmeart
+							{t("createOpportunity.fieldParticipationType")}
 						</label>
 						<div className="flex gap-4">
 							<label className="flex items-center gap-2 text-sm">
@@ -233,7 +251,7 @@ export default function CreateVolunteerOpportunityModal({
 									}
 									className="accent-black"
 								/>
-								Warteliste
+								{t("opportunities.waitlist")}
 							</label>
 							<label className="flex items-center gap-2 text-sm">
 								<input
@@ -249,7 +267,7 @@ export default function CreateVolunteerOpportunityModal({
 									}
 									className="accent-black"
 								/>
-								Einzelkontakt
+								{t("opportunities.individualContact")}
 							</label>
 						</div>
 					</div>
@@ -263,7 +281,7 @@ export default function CreateVolunteerOpportunityModal({
 							data-testid="modal-cancel"
 							className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
 						>
-							Abbrechen
+							{t("createOpportunity.cancel")}
 						</button>
 						<button
 							type="submit"
@@ -271,7 +289,9 @@ export default function CreateVolunteerOpportunityModal({
 							data-testid="modal-submit"
 							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
 						>
-							{loading ? "Wird erstellt…" : "Erstellen"}
+							{loading
+								? t("createOpportunity.creating")
+								: t("createOpportunity.submit")}
 						</button>
 					</div>
 				</form>
