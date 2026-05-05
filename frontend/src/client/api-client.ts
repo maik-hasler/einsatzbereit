@@ -8,2590 +8,1459 @@
 // ReSharper disable InconsistentNaming
 
 export class EinsatzbereitApi {
-	private http: {
-		fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
-	};
-	private baseUrl: string;
-	protected jsonParseReviver: ((key: string, value: any) => any) | undefined =
-		undefined;
-
-	constructor(
-		baseUrl?: string,
-		http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> },
-	) {
-		this.http = http ? http : (window as any);
-		this.baseUrl = baseUrl ?? "";
-	}
-
-	/**
-	 * @return No Content
-	 */
-	updateVolunteerOpportunity(
-		opportunityId: string,
-		body: UpdateVolunteerOpportunityRequest,
-		signal?: AbortSignal,
-	): Promise<void> {
-		let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}";
-		if (opportunityId === undefined || opportunityId === null)
-			throw new globalThis.Error(
-				"The parameter 'opportunityId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{opportunityId}",
-			encodeURIComponent("" + opportunityId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "PUT",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processUpdateVolunteerOpportunity(_response);
-		});
-	}
-
-	protected processUpdateVolunteerOpportunity(
-		response: Response,
-	): Promise<void> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 204) {
-			return response.text().then((_responseText) => {
-				return;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 403) {
-			return response.text().then((_responseText) => {
-				let result403: any = null;
-				result403 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Forbidden",
-					status,
-					_responseText,
-					_headers,
-					result403,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<void>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	getVolunteerOpportunityDetails(
-		opportunityId: string,
-		signal?: AbortSignal,
-	): Promise<VolunteerOpportunityDetails> {
-		let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}";
-		if (opportunityId === undefined || opportunityId === null)
-			throw new globalThis.Error(
-				"The parameter 'opportunityId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{opportunityId}",
-			encodeURIComponent("" + opportunityId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetVolunteerOpportunityDetails(_response);
-		});
-	}
-
-	protected processGetVolunteerOpportunityDetails(
-		response: Response,
-	): Promise<VolunteerOpportunityDetails> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as VolunteerOpportunityDetails);
-				return result200;
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<VolunteerOpportunityDetails>(null as any);
-	}
-
-	/**
-	 * @return No Content
-	 */
-	deleteVolunteerOpportunity(
-		opportunityId: string,
-		signal?: AbortSignal,
-	): Promise<void> {
-		let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}";
-		if (opportunityId === undefined || opportunityId === null)
-			throw new globalThis.Error(
-				"The parameter 'opportunityId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{opportunityId}",
-			encodeURIComponent("" + opportunityId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "DELETE",
-			signal,
-			headers: {},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processDeleteVolunteerOpportunity(_response);
-		});
-	}
-
-	protected processDeleteVolunteerOpportunity(
-		response: Response,
-	): Promise<void> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 204) {
-			return response.text().then((_responseText) => {
-				return;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 403) {
-			return response.text().then((_responseText) => {
-				let result403: any = null;
-				result403 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Forbidden",
-					status,
-					_responseText,
-					_headers,
-					result403,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<void>(null as any);
-	}
-
-	/**
-	 * @param search (optional)
-	 * @param city (optional)
-	 * @param occurrence (optional)
-	 * @param participationType (optional)
-	 * @return OK
-	 */
-	getVolunteerOpportunities(
-		pageNumber: number,
-		pageSize: number,
-		search: string | undefined,
-		city: string | undefined,
-		occurrence: string | undefined,
-		participationType: string | undefined,
-		signal?: AbortSignal,
-	): Promise<PagedListOfVolunteerOpportunitySummary> {
-		let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
-		if (pageNumber === undefined || pageNumber === null)
-			throw new globalThis.Error(
-				"The parameter 'pageNumber' must be defined and cannot be null.",
-			);
-		else url_ += "PageNumber=" + encodeURIComponent("" + pageNumber) + "&";
-		if (pageSize === undefined || pageSize === null)
-			throw new globalThis.Error(
-				"The parameter 'pageSize' must be defined and cannot be null.",
-			);
-		else url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
-		if (search === null)
-			throw new globalThis.Error("The parameter 'search' cannot be null.");
-		else if (search !== undefined)
-			url_ += "Search=" + encodeURIComponent("" + search) + "&";
-		if (city === null)
-			throw new globalThis.Error("The parameter 'city' cannot be null.");
-		else if (city !== undefined)
-			url_ += "City=" + encodeURIComponent("" + city) + "&";
-		if (occurrence === null)
-			throw new globalThis.Error("The parameter 'occurrence' cannot be null.");
-		else if (occurrence !== undefined)
-			url_ += "Occurrence=" + encodeURIComponent("" + occurrence) + "&";
-		if (participationType === null)
-			throw new globalThis.Error(
-				"The parameter 'participationType' cannot be null.",
-			);
-		else if (participationType !== undefined)
-			url_ +=
-				"ParticipationType=" + encodeURIComponent("" + participationType) + "&";
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetVolunteerOpportunities(_response);
-		});
-	}
-
-	protected processGetVolunteerOpportunities(
-		response: Response,
-	): Promise<PagedListOfVolunteerOpportunitySummary> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as PagedListOfVolunteerOpportunitySummary);
-				return result200;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<PagedListOfVolunteerOpportunitySummary>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	createVolunteerOpportunity(
-		body: CreateVolunteerOpportunityRequest,
-		signal?: AbortSignal,
-	): Promise<CreateVolunteerOpportunityResponse> {
-		let url_ = this.baseUrl + "/v1/volunteer-opportunities";
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "POST",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processCreateVolunteerOpportunity(_response);
-		});
-	}
-
-	protected processCreateVolunteerOpportunity(
-		response: Response,
-	): Promise<CreateVolunteerOpportunityResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as CreateVolunteerOpportunityResponse);
-				return result200;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 403) {
-			return response.text().then((_responseText) => {
-				let result403: any = null;
-				result403 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Forbidden",
-					status,
-					_responseText,
-					_headers,
-					result403,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<CreateVolunteerOpportunityResponse>(null as any);
-	}
-
-	/**
-	 * @return No Content
-	 */
-	updateUserProfile(
-		body: UpdateUserProfileRequest,
-		signal?: AbortSignal,
-	): Promise<void> {
-		let url_ = this.baseUrl + "/v1/users/me";
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "PUT",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processUpdateUserProfile(_response);
-		});
-	}
-
-	protected processUpdateUserProfile(response: Response): Promise<void> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 204) {
-			return response.text().then((_responseText) => {
-				return;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<void>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	getUserProfile(signal?: AbortSignal): Promise<MyProfileResponse> {
-		let url_ = this.baseUrl + "/v1/users/me";
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetUserProfile(_response);
-		});
-	}
-
-	protected processGetUserProfile(
-		response: Response,
-	): Promise<MyProfileResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as MyProfileResponse);
-				return result200;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<MyProfileResponse>(null as any);
-	}
-
-	/**
-	 * @return No Content
-	 */
-	updateOrganization(
-		organizationId: string,
-		body: UpdateOrganizationRequest,
-		signal?: AbortSignal,
-	): Promise<void> {
-		let url_ = this.baseUrl + "/v1/organizations/{organizationId}";
-		if (organizationId === undefined || organizationId === null)
-			throw new globalThis.Error(
-				"The parameter 'organizationId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{organizationId}",
-			encodeURIComponent("" + organizationId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "PUT",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processUpdateOrganization(_response);
-		});
-	}
-
-	protected processUpdateOrganization(response: Response): Promise<void> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 204) {
-			return response.text().then((_responseText) => {
-				return;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<void>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	getOrganizationDetails(
-		organizationId: string,
-		signal?: AbortSignal,
-	): Promise<OrganizationDetailsResponse> {
-		let url_ = this.baseUrl + "/v1/organizations/{organizationId}";
-		if (organizationId === undefined || organizationId === null)
-			throw new globalThis.Error(
-				"The parameter 'organizationId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{organizationId}",
-			encodeURIComponent("" + organizationId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetOrganizationDetails(_response);
-		});
-	}
-
-	protected processGetOrganizationDetails(
-		response: Response,
-	): Promise<OrganizationDetailsResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as OrganizationDetailsResponse);
-				return result200;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<OrganizationDetailsResponse>(null as any);
-	}
-
-	/**
-	 * @return No Content
-	 */
-	removeMember(
-		organizationId: string,
-		userId: string,
-		signal?: AbortSignal,
-	): Promise<void> {
-		let url_ =
-			this.baseUrl + "/v1/organizations/{organizationId}/members/{userId}";
-		if (organizationId === undefined || organizationId === null)
-			throw new globalThis.Error(
-				"The parameter 'organizationId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{organizationId}",
-			encodeURIComponent("" + organizationId),
-		);
-		if (userId === undefined || userId === null)
-			throw new globalThis.Error("The parameter 'userId' must be defined.");
-		url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "DELETE",
-			signal,
-			headers: {},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processRemoveMember(_response);
-		});
-	}
-
-	protected processRemoveMember(response: Response): Promise<void> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 204) {
-			return response.text().then((_responseText) => {
-				return;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<void>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	getOrganizations(signal?: AbortSignal): Promise<KeycloakOrganization[]> {
-		let url_ = this.baseUrl + "/v1/organizations";
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetOrganizations(_response);
-		});
-	}
-
-	protected processGetOrganizations(
-		response: Response,
-	): Promise<KeycloakOrganization[]> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as KeycloakOrganization[]);
-				return result200;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<KeycloakOrganization[]>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	createOrganization(
-		body: CreateOrganizationRequest,
-		signal?: AbortSignal,
-	): Promise<Organization> {
-		let url_ = this.baseUrl + "/v1/organizations";
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "POST",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processCreateOrganization(_response);
-		});
-	}
-
-	protected processCreateOrganization(
-		response: Response,
-	): Promise<Organization> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as Organization);
-				return result200;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<Organization>(null as any);
-	}
-
-	/**
-	 * @return No Content
-	 */
-	addMember(
-		organizationId: string,
-		body: AddMemberRequest,
-		signal?: AbortSignal,
-	): Promise<void> {
-		let url_ = this.baseUrl + "/v1/organizations/{organizationId}/members";
-		if (organizationId === undefined || organizationId === null)
-			throw new globalThis.Error(
-				"The parameter 'organizationId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{organizationId}",
-			encodeURIComponent("" + organizationId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "POST",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processAddMember(_response);
-		});
-	}
-
-	protected processAddMember(response: Response): Promise<void> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 204) {
-			return response.text().then((_responseText) => {
-				return;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<void>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	withdrawEngagement(
-		engagementId: string,
-		signal?: AbortSignal,
-	): Promise<EngagementStatusResponse> {
-		let url_ = this.baseUrl + "/v1/engagements/{engagementId}/withdraw";
-		if (engagementId === undefined || engagementId === null)
-			throw new globalThis.Error(
-				"The parameter 'engagementId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{engagementId}",
-			encodeURIComponent("" + engagementId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "PUT",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processWithdrawEngagement(_response);
-		});
-	}
-
-	protected processWithdrawEngagement(
-		response: Response,
-	): Promise<EngagementStatusResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as EngagementStatusResponse);
-				return result200;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<EngagementStatusResponse>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	getMyEngagements(signal?: AbortSignal): Promise<EngagementSummary[]> {
-		let url_ = this.baseUrl + "/v1/me/engagements";
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetMyEngagements(_response);
-		});
-	}
-
-	protected processGetMyEngagements(
-		response: Response,
-	): Promise<EngagementSummary[]> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as EngagementSummary[]);
-				return result200;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<EngagementSummary[]>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	getEngagements(
-		opportunityId: string,
-		signal?: AbortSignal,
-	): Promise<EngagementSummary[]> {
-		let url_ =
-			this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
-		if (opportunityId === undefined || opportunityId === null)
-			throw new globalThis.Error(
-				"The parameter 'opportunityId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{opportunityId}",
-			encodeURIComponent("" + opportunityId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "GET",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processGetEngagements(_response);
-		});
-	}
-
-	protected processGetEngagements(
-		response: Response,
-	): Promise<EngagementSummary[]> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as EngagementSummary[]);
-				return result200;
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 403) {
-			return response.text().then((_responseText) => {
-				let result403: any = null;
-				result403 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Forbidden",
-					status,
-					_responseText,
-					_headers,
-					result403,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<EngagementSummary[]>(null as any);
-	}
-
-	/**
-	 * @return Created
-	 */
-	createEngagement(
-		opportunityId: string,
-		body: CreateEngagementRequest,
-		signal?: AbortSignal,
-	): Promise<CreateEngagementResponse> {
-		let url_ =
-			this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
-		if (opportunityId === undefined || opportunityId === null)
-			throw new globalThis.Error(
-				"The parameter 'opportunityId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{opportunityId}",
-			encodeURIComponent("" + opportunityId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		const content_ = JSON.stringify(body);
-
-		let options_: RequestInit = {
-			body: content_,
-			method: "POST",
-			signal,
-			headers: {
-				"Content-Type": "application/json",
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processCreateEngagement(_response);
-		});
-	}
-
-	protected processCreateEngagement(
-		response: Response,
-	): Promise<CreateEngagementResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 201) {
-			return response.text().then((_responseText) => {
-				let result201: any = null;
-				result201 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as CreateEngagementResponse);
-				return result201;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<CreateEngagementResponse>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	confirmEngagement(
-		engagementId: string,
-		signal?: AbortSignal,
-	): Promise<EngagementStatusResponse> {
-		let url_ = this.baseUrl + "/v1/engagements/{engagementId}/confirm";
-		if (engagementId === undefined || engagementId === null)
-			throw new globalThis.Error(
-				"The parameter 'engagementId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{engagementId}",
-			encodeURIComponent("" + engagementId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "PUT",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processConfirmEngagement(_response);
-		});
-	}
-
-	protected processConfirmEngagement(
-		response: Response,
-	): Promise<EngagementStatusResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as EngagementStatusResponse);
-				return result200;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 403) {
-			return response.text().then((_responseText) => {
-				let result403: any = null;
-				result403 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Forbidden",
-					status,
-					_responseText,
-					_headers,
-					result403,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<EngagementStatusResponse>(null as any);
-	}
-
-	/**
-	 * @return OK
-	 */
-	cancelEngagement(
-		engagementId: string,
-		signal?: AbortSignal,
-	): Promise<EngagementStatusResponse> {
-		let url_ = this.baseUrl + "/v1/engagements/{engagementId}/cancel";
-		if (engagementId === undefined || engagementId === null)
-			throw new globalThis.Error(
-				"The parameter 'engagementId' must be defined.",
-			);
-		url_ = url_.replace(
-			"{engagementId}",
-			encodeURIComponent("" + engagementId),
-		);
-		url_ = url_.replace(/[?&]$/, "");
-
-		let options_: RequestInit = {
-			method: "PUT",
-			signal,
-			headers: {
-				Accept: "application/json",
-			},
-		};
-
-		return this.http.fetch(url_, options_).then((_response: Response) => {
-			return this.processCancelEngagement(_response);
-		});
-	}
-
-	protected processCancelEngagement(
-		response: Response,
-	): Promise<EngagementStatusResponse> {
-		const status = response.status;
-		let _headers: any = {};
-		if (response.headers && response.headers.forEach) {
-			response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-		}
-		if (status === 200) {
-			return response.text().then((_responseText) => {
-				let result200: any = null;
-				result200 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as EngagementStatusResponse);
-				return result200;
-			});
-		} else if (status === 400) {
-			return response.text().then((_responseText) => {
-				let result400: any = null;
-				result400 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Bad Request",
-					status,
-					_responseText,
-					_headers,
-					result400,
-				);
-			});
-		} else if (status === 401) {
-			return response.text().then((_responseText) => {
-				let result401: any = null;
-				result401 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Unauthorized",
-					status,
-					_responseText,
-					_headers,
-					result401,
-				);
-			});
-		} else if (status === 403) {
-			return response.text().then((_responseText) => {
-				let result403: any = null;
-				result403 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Forbidden",
-					status,
-					_responseText,
-					_headers,
-					result403,
-				);
-			});
-		} else if (status === 404) {
-			return response.text().then((_responseText) => {
-				let result404: any = null;
-				result404 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Not Found",
-					status,
-					_responseText,
-					_headers,
-					result404,
-				);
-			});
-		} else if (status === 500) {
-			return response.text().then((_responseText) => {
-				let result500: any = null;
-				result500 =
-					_responseText === ""
-						? null
-						: (JSON.parse(
-								_responseText,
-								this.jsonParseReviver,
-							) as ProblemDetails);
-				return throwException(
-					"Internal Server Error",
-					status,
-					_responseText,
-					_headers,
-					result500,
-				);
-			});
-		} else if (status !== 200 && status !== 204) {
-			return response.text().then((_responseText) => {
-				return throwException(
-					"An unexpected server error occurred.",
-					status,
-					_responseText,
-					_headers,
-				);
-			});
-		}
-		return Promise.resolve<EngagementStatusResponse>(null as any);
-	}
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return No Content
+     */
+    updateVolunteerOpportunity(opportunityId: string, body: UpdateVolunteerOpportunityRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateVolunteerOpportunity(_response);
+        });
+    }
+
+    protected processUpdateVolunteerOpportunity(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getVolunteerOpportunityDetails(opportunityId: string, signal?: AbortSignal): Promise<VolunteerOpportunityDetails> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetVolunteerOpportunityDetails(_response);
+        });
+    }
+
+    protected processGetVolunteerOpportunityDetails(response: Response): Promise<VolunteerOpportunityDetails> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VolunteerOpportunityDetails;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<VolunteerOpportunityDetails>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    deleteVolunteerOpportunity(opportunityId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteVolunteerOpportunity(_response);
+        });
+    }
+
+    protected processDeleteVolunteerOpportunity(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param search (optional) 
+     * @param city (optional) 
+     * @param occurrence (optional) 
+     * @param participationType (optional) 
+     * @return OK
+     */
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "PageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (search === null)
+            throw new globalThis.Error("The parameter 'search' cannot be null.");
+        else if (search !== undefined)
+            url_ += "Search=" + encodeURIComponent("" + search) + "&";
+        if (city === null)
+            throw new globalThis.Error("The parameter 'city' cannot be null.");
+        else if (city !== undefined)
+            url_ += "City=" + encodeURIComponent("" + city) + "&";
+        if (occurrence === null)
+            throw new globalThis.Error("The parameter 'occurrence' cannot be null.");
+        else if (occurrence !== undefined)
+            url_ += "Occurrence=" + encodeURIComponent("" + occurrence) + "&";
+        if (participationType === null)
+            throw new globalThis.Error("The parameter 'participationType' cannot be null.");
+        else if (participationType !== undefined)
+            url_ += "ParticipationType=" + encodeURIComponent("" + participationType) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetVolunteerOpportunities(_response);
+        });
+    }
+
+    protected processGetVolunteerOpportunities(response: Response): Promise<PagedListOfVolunteerOpportunitySummary> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfVolunteerOpportunitySummary;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PagedListOfVolunteerOpportunitySummary>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    createVolunteerOpportunity(body: CreateVolunteerOpportunityRequest, signal?: AbortSignal): Promise<CreateVolunteerOpportunityResponse> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateVolunteerOpportunity(_response);
+        });
+    }
+
+    protected processCreateVolunteerOpportunity(response: Response): Promise<CreateVolunteerOpportunityResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateVolunteerOpportunityResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CreateVolunteerOpportunityResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    updateUserProfile(body: UpdateUserProfileRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/users/me";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateUserProfile(_response);
+        });
+    }
+
+    protected processUpdateUserProfile(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getUserProfile(signal?: AbortSignal): Promise<MyProfileResponse> {
+        let url_ = this.baseUrl + "/v1/users/me";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetUserProfile(_response);
+        });
+    }
+
+    protected processGetUserProfile(response: Response): Promise<MyProfileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MyProfileResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MyProfileResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    updateOrganization(organizationId: string, body: UpdateOrganizationRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateOrganization(_response);
+        });
+    }
+
+    protected processUpdateOrganization(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrganizationDetails(organizationId: string, signal?: AbortSignal): Promise<OrganizationDetailsResponse> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOrganizationDetails(_response);
+        });
+    }
+
+    protected processGetOrganizationDetails(response: Response): Promise<OrganizationDetailsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OrganizationDetailsResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OrganizationDetailsResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    removeMember(organizationId: string, userId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/members/{userId}";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRemoveMember(_response);
+        });
+    }
+
+    protected processRemoveMember(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrganizations(signal?: AbortSignal): Promise<KeycloakOrganization[]> {
+        let url_ = this.baseUrl + "/v1/organizations";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOrganizations(_response);
+        });
+    }
+
+    protected processGetOrganizations(response: Response): Promise<KeycloakOrganization[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as KeycloakOrganization[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<KeycloakOrganization[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    createOrganization(body: CreateOrganizationRequest, signal?: AbortSignal): Promise<Organization> {
+        let url_ = this.baseUrl + "/v1/organizations";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateOrganization(_response);
+        });
+    }
+
+    protected processCreateOrganization(response: Response): Promise<Organization> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Organization;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Organization>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    addMember(organizationId: string, body: AddMemberRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/members";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAddMember(_response);
+        });
+    }
+
+    protected processAddMember(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    withdrawEngagement(engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+        let url_ = this.baseUrl + "/v1/engagements/{engagementId}/withdraw";
+        if (engagementId === undefined || engagementId === null)
+            throw new globalThis.Error("The parameter 'engagementId' must be defined.");
+        url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processWithdrawEngagement(_response);
+        });
+    }
+
+    protected processWithdrawEngagement(response: Response): Promise<EngagementStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementStatusResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getMyEngagements(signal?: AbortSignal): Promise<EngagementSummary[]> {
+        let url_ = this.baseUrl + "/v1/me/engagements";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyEngagements(_response);
+        });
+    }
+
+    protected processGetMyEngagements(response: Response): Promise<EngagementSummary[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementSummary[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementSummary[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getEngagements(opportunityId: string, signal?: AbortSignal): Promise<EngagementSummary[]> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetEngagements(_response);
+        });
+    }
+
+    protected processGetEngagements(response: Response): Promise<EngagementSummary[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementSummary[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementSummary[]>(null as any);
+    }
+
+    /**
+     * @return Created
+     */
+    createEngagement(opportunityId: string, body: CreateEngagementRequest, signal?: AbortSignal): Promise<CreateEngagementResponse> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateEngagement(_response);
+        });
+    }
+
+    protected processCreateEngagement(response: Response): Promise<CreateEngagementResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateEngagementResponse;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CreateEngagementResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    confirmEngagement(engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+        let url_ = this.baseUrl + "/v1/engagements/{engagementId}/confirm";
+        if (engagementId === undefined || engagementId === null)
+            throw new globalThis.Error("The parameter 'engagementId' must be defined.");
+        url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processConfirmEngagement(_response);
+        });
+    }
+
+    protected processConfirmEngagement(response: Response): Promise<EngagementStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementStatusResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    cancelEngagement(engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+        let url_ = this.baseUrl + "/v1/engagements/{engagementId}/cancel";
+        if (engagementId === undefined || engagementId === null)
+            throw new globalThis.Error("The parameter 'engagementId' must be defined.");
+        url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCancelEngagement(_response);
+        });
+    }
+
+    protected processCancelEngagement(response: Response): Promise<EngagementStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementStatusResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementStatusResponse>(null as any);
+    }
 }
 
 export interface AddMemberRequest {
-	userId: string;
+    userId: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface Address {
-	street: string;
-	houseNumber: string;
-	zipCode: string;
-	city: string;
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface AddressDto {
-	street: string;
-	houseNumber: string;
-	zipCode: string;
-	city: string;
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface CreateEngagementRequest {
-	type: string;
-	timeSlotId: string | undefined;
-	message: string | undefined;
+    type: string;
+    timeSlotId: string | undefined;
+    message: string | undefined;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface CreateEngagementResponse {
-	id: string;
-	opportunityId: string;
-	status: string;
-	createdOn: Date;
+    id: string;
+    opportunityId: string;
+    status: string;
+    createdOn: Date;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface CreateOrganizationRequest {
-	name: string;
+    name: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface CreateVolunteerOpportunityRequest {
-	title: string;
-	description: string;
-	organizationId: string;
-	street: string;
-	houseNumber: string;
-	zipCode: string;
-	city: string;
-	occurrence: string;
-	participationType: string;
+    title: string;
+    description: string;
+    organizationId: string;
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
+    occurrence: string;
+    participationType: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface CreateVolunteerOpportunityResponse {
-	id: string;
-	title: string;
-	description: string;
-	organizationId: string;
-	street: string | undefined;
-	houseNumber: string | undefined;
-	zipCode: string | undefined;
-	city: string | undefined;
-	isRemote: boolean;
-	occurrence: string;
-	participationType: string;
-	createdOn: Date;
+    id: string;
+    title: string;
+    description: string;
+    organizationId: string;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
+    isRemote: boolean;
+    occurrence: string;
+    participationType: string;
+    createdOn: Date;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface DomainEvent {
-	[key: string]: any;
+
+    [key: string]: any;
 }
 
 export interface EngagementStatusResponse {
-	id: string;
-	status: string;
-	modifiedOn: Date | undefined;
+    id: string;
+    status: string;
+    modifiedOn: Date | undefined;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface EngagementSummary {
-	id: string;
-	opportunityId: string;
-	volunteerId: string;
-	timeSlotId: string | undefined;
-	message: string | undefined;
-	status: string;
-	createdOn: Date;
+    id: string;
+    opportunityId: string;
+    volunteerId: string;
+    timeSlotId: string | undefined;
+    message: string | undefined;
+    status: string;
+    createdOn: Date;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface KeycloakOrganization {
-	id: string;
-	name: string;
+    id: string;
+    name: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface MyProfileResponse {
-	id: string;
-	username: string;
-	firstName: string | undefined;
-	lastName: string | undefined;
-	email: string;
+    id: string;
+    username: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface Organization {
-	name?: string;
-	description?: string | undefined;
-	contactEmail?: string | undefined;
-	contactPhone?: string | undefined;
-	website?: string | undefined;
-	address?: Address | undefined;
-	createdOn?: Date;
-	modifiedOn?: Date | undefined;
-	events?: DomainEvent[] | undefined;
-	id?: OrganizationId;
+    name?: string;
+    description?: string | undefined;
+    contactEmail?: string | undefined;
+    contactPhone?: string | undefined;
+    website?: string | undefined;
+    address?: Address | undefined;
+    createdOn?: Date;
+    modifiedOn?: Date | undefined;
+    events?: DomainEvent[] | undefined;
+    id?: OrganizationId;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface OrganizationDetailsResponse {
-	id: string;
-	name: string;
-	description: string | undefined;
-	contactEmail: string | undefined;
-	contactPhone: string | undefined;
-	website: string | undefined;
-	address: AddressDto | undefined;
-	createdOn: Date;
-	modifiedOn: Date | undefined;
-	members: OrganizationMemberDto[];
+    id: string;
+    name: string;
+    description: string | undefined;
+    contactEmail: string | undefined;
+    contactPhone: string | undefined;
+    website: string | undefined;
+    address: AddressDto | undefined;
+    createdOn: Date;
+    modifiedOn: Date | undefined;
+    members: OrganizationMemberDto[];
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface OrganizationId {
-	value?: string;
+    value?: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface OrganizationMemberDto {
-	userId: string;
-	username: string;
-	firstName: string | undefined;
-	lastName: string | undefined;
-	email: string;
-	isOrganisator: boolean;
+    userId: string;
+    username: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string;
+    isOrganisator: boolean;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface PagedListOfVolunteerOpportunitySummary {
-	totalItems?: number;
-	currentPage: number;
-	pageCount?: number;
-	items: VolunteerOpportunitySummary[];
+    totalItems?: number;
+    currentPage: number;
+    pageCount?: number;
+    items: VolunteerOpportunitySummary[];
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface ProblemDetails {
-	type?: string | undefined;
-	title?: string | undefined;
-	status?: number | undefined;
-	detail?: string | undefined;
-	instance?: string | undefined;
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface TimeSlotDetail {
-	id: string;
-	startDateTime: Date;
-	endDateTime: Date;
-	maxParticipants: number;
+    id: string;
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface UpdateAddressRequest {
-	street: string;
-	houseNumber: string;
-	zipCode: string;
-	city: string;
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface UpdateOrganizationRequest {
-	name: string;
-	description: string | undefined;
-	contactEmail: string | undefined;
-	contactPhone: string | undefined;
-	website: string | undefined;
-	address: UpdateAddressRequest | undefined;
+    name: string;
+    description: string | undefined;
+    contactEmail: string | undefined;
+    contactPhone: string | undefined;
+    website: string | undefined;
+    address: UpdateAddressRequest | undefined;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface UpdateUserProfileRequest {
-	firstName?: string | undefined;
-	lastName?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface UpdateVolunteerOpportunityRequest {
-	title: string;
-	description: string;
-	isRemote: boolean;
-	street: string | undefined;
-	houseNumber: string | undefined;
-	zipCode: string | undefined;
-	city: string | undefined;
+    title: string;
+    description: string;
+    isRemote: boolean;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface VolunteerOpportunityDetails {
-	id: string;
-	title: string;
-	description: string;
-	organizationId: string;
-	organizationName: string;
-	street: string | undefined;
-	houseNumber: string | undefined;
-	zipCode: string | undefined;
-	city: string | undefined;
-	isRemote: boolean;
-	occurrence: string;
-	participationType: string;
-	timeSlots: TimeSlotDetail[];
-	createdOn: Date;
+    id: string;
+    title: string;
+    description: string;
+    organizationId: string;
+    organizationName: string;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
+    isRemote: boolean;
+    occurrence: string;
+    participationType: string;
+    timeSlots: TimeSlotDetail[];
+    createdOn: Date;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export interface VolunteerOpportunitySummary {
-	id: string;
-	title: string;
-	description: string;
-	organizationName: string;
-	street: string | undefined;
-	houseNumber: string | undefined;
-	zipCode: string | undefined;
-	city: string | undefined;
-	isRemote: boolean;
-	occurrence: string;
-	participationType: string;
-	createdOn: Date;
+    id: string;
+    title: string;
+    description: string;
+    organizationName: string;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
+    isRemote: boolean;
+    occurrence: string;
+    participationType: string;
+    createdOn: Date;
 
-	[key: string]: any;
+    [key: string]: any;
 }
 
 export class ApiException extends Error {
-	override message: string;
-	status: number;
-	response: string;
-	headers: { [key: string]: any };
-	result: any;
+    override message: string;
+    status: number;
+    response: string;
+    headers: { [key: string]: any; };
+    result: any;
 
-	constructor(
-		message: string,
-		status: number,
-		response: string,
-		headers: { [key: string]: any },
-		result: any,
-	) {
-		super();
+    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
+        super();
 
-		this.message = message;
-		this.status = status;
-		this.response = response;
-		this.headers = headers;
-		this.result = result;
-	}
+        this.message = message;
+        this.status = status;
+        this.response = response;
+        this.headers = headers;
+        this.result = result;
+    }
 
-	protected isApiException = true;
+    protected isApiException = true;
 
-	static isApiException(obj: any): obj is ApiException {
-		return obj.isApiException === true;
-	}
+    static isApiException(obj: any): obj is ApiException {
+        return obj.isApiException === true;
+    }
 }
 
-function throwException(
-	message: string,
-	status: number,
-	response: string,
-	headers: { [key: string]: any },
-	result?: any,
-): any {
-	if (result !== null && result !== undefined) throw result;
-	else throw new ApiException(message, status, response, headers, null);
+function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): any {
+    if (result !== null && result !== undefined)
+        throw result;
+    else
+        throw new ApiException(message, status, response, headers, null);
 }
