@@ -4,7 +4,7 @@ export default function NotFoundPage() {
 	return (
 		<>
 			<h1 className="mb-4 text-4xl font-bold text-gray-900">
-				404 – Seite nicht gefunden
+				404 - Seite nicht gefunden
 			</h1>
 			<p className="mb-8 text-lg text-gray-600">
 				Die aufgerufene Seite existiert nicht. Sie könnte verschoben, gelöscht
