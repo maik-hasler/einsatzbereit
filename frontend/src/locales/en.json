@@ -232,6 +232,11 @@
       "authError": "Authentication error: {{message}}",
       "completing": "Completing sign-in…",
       "loading": "Loading…"
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
+      "backHome": "Back to home"
     }
   }
 }
