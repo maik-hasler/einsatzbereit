@@ -4,7 +4,6 @@ import PageEaten from "../assets/page-eaten.svg?react";
 export default function NotFoundPage() {
 	return (
 		<div className="relative flex min-h-[70vh] items-center justify-center overflow-hidden px-4 text-center">
-
 			<PageEaten className="absolute top-1/2 text-brand-500 w-85 translate-y-[-60%] opacity-35 sm:w-105" />
 
 			{/* Content */}
