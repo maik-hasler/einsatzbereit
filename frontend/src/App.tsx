@@ -12,6 +12,7 @@ import MyEngagementsPage from "./pages/MyEngagementsPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import AccountPage from "./pages/AccountPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -43,6 +44,10 @@ export default function App() {
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}
+				/>
+				<Route
+					path="/organizations/:organizationId"
+					element={<OrganizationProfilePage />}
 				/>
 				<Route
 					path="/my-engagements"

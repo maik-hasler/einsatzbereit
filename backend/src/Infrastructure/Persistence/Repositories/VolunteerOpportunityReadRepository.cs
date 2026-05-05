@@ -2,6 +2,7 @@ using Application.Common.Pagination;
 using Application.VolunteerOpportunities;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
+using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Id.Value,
 				x.vo.Title,
 				x.vo.Description,
+				x.vo.OrganizationId.Value,
 				x.org.Name,
 				x.vo.Address != null ? x.vo.Address.Street : null,
 				x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -116,5 +118,36 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.ParticipationType.ToString(),
 			timeSlots,
 			result.CreatedOn);
+	}
+
+	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
+		Guid organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		var organizationId_ = new OrganizationId(organizationId);
+
+		return await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.OrganizationId == organizationId_)
+			.Join(
+				dbContext.OrganizationsQuery,
+				vo => vo.OrganizationId,
+				org => org.Id,
+				(vo, org) => new { vo, org })
+			.OrderByDescending(x => x.vo.CreatedOn)
+			.Select(x => new VolunteerOpportunitySummary(
+				x.vo.Id.Value,
+				x.vo.Title,
+				x.vo.Description,
+				x.vo.OrganizationId.Value,
+				x.org.Name,
+				x.vo.Address != null ? x.vo.Address.Street : null,
+				x.vo.Address != null ? x.vo.Address.HouseNumber : null,
+				x.vo.Address != null ? x.vo.Address.ZipCode : null,
+				x.vo.Address != null ? x.vo.Address.City : null,
+				x.vo.IsRemote,
+				x.vo.Occurrence.ToString(),
+				x.vo.ParticipationType.ToString(),
+				x.vo.CreatedOn))
+			.ToListAsync(cancellationToken);
 	}
 }

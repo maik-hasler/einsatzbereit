@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	PagedListOfVolunteerOpportunitySummary,
@@ -164,7 +164,13 @@ export default function VolunteerOpportunitiesList({
 										</div>
 									</div>
 									<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-										<span>{item.organizationName}</span>
+										<Link
+											to={`/organizations/${item.organizationId}`}
+											className="hover:underline"
+											onClick={(e) => e.stopPropagation()}
+										>
+											{item.organizationName}
+										</Link>
 										{item.isRemote ? (
 											<span>{t("opportunities.remote")}</span>
 										) : (

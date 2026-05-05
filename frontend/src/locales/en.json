@@ -237,6 +237,17 @@
       "title": "Page not found",
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
+    },
+    "orgProfile": {
+      "loading": "Loading…",
+      "error": "Error: {{message}}",
+      "notFound": "Organization not found.",
+      "email": "Email:",
+      "phone": "Phone:",
+      "website": "Website:",
+      "address": "Address:",
+      "currentNeeds": "Current Opportunities",
+      "noOpportunities": "No current opportunities available."
     }
   }
 }
