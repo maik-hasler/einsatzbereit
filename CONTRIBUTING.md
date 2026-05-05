@@ -92,6 +92,8 @@ Rules:
 - Max 72 characters in the subject line
 - Reference the Issue number in the PR description, not the commit
 
+PR titles are validated against Conventional Commits in CI by the [`PR Title`](.github/workflows/pr-title.yml) workflow. Non-conforming titles fail the check.
+
 ## Pull Request Process
 
 1. Keep PRs focused - one logical change per PR
