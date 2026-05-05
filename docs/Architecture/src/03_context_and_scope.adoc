@@ -16,7 +16,7 @@ include::../images/business-context.puml[]
 |===
 |Element |Description
 
-|Volunteer Hannah
+|Volunteer Vera
 |Searches for opportunities to volunteer regionally. Wants to find concrete needs quickly without long-term commitment.
 
 |Organizer Olaf
