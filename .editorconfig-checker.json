@@ -3,6 +3,7 @@
     "LICENSE$",
     "\\.md$",
     "ApiClient\\.cs$",
-    "api-client\\.ts$"
+    "api-client\\.ts$",
+    "openapi-v\\.json$"
   ]
 }
