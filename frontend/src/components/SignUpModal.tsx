@@ -76,9 +76,18 @@ export default function SignUpModal({
 									<option value="">{t("signUp.selectPlaceholder")}</option>
 									{timeSlots.map((ts) => (
 										<option key={ts.id} value={ts.id}>
-											{formatDateTime(ts.startDateTime as unknown as string, i18n.language)} -{" "}
-											{formatDateTime(ts.endDateTime as unknown as string, i18n.language)}{" "}
-											{t("signUp.maxParticipants", { count: ts.maxParticipants })}
+											{formatDateTime(
+												ts.startDateTime as unknown as string,
+												i18n.language,
+											)}{" "}
+											-{" "}
+											{formatDateTime(
+												ts.endDateTime as unknown as string,
+												i18n.language,
+											)}{" "}
+											{t("signUp.maxParticipants", {
+												count: ts.maxParticipants,
+											})}
 										</option>
 									))}
 								</select>

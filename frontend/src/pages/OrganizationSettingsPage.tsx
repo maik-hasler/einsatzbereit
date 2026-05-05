@@ -257,7 +257,9 @@ export default function OrganizationSettingsPage() {
 						</legend>
 						<div className="mt-3 grid grid-cols-3 gap-3">
 							<div className="col-span-2">
-								<label className={labelClass}>{t("orgSettings.fieldStreet")}</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldStreet")}
+								</label>
 								<input
 									value={form.street}
 									onChange={(e) =>
@@ -270,7 +272,9 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelClass}>{t("orgSettings.fieldHouseNumber")}</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldHouseNumber")}
+								</label>
 								<input
 									value={form.houseNumber}
 									onChange={(e) =>
@@ -283,7 +287,9 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelClass}>{t("orgSettings.fieldZip")}</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldZip")}
+								</label>
 								<input
 									maxLength={5}
 									value={form.zipCode}
@@ -297,7 +303,9 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div className="col-span-2">
-								<label className={labelClass}>{t("orgSettings.fieldCity")}</label>
+								<label className={labelClass}>
+									{t("orgSettings.fieldCity")}
+								</label>
 								<input
 									value={form.city}
 									onChange={(e) =>

@@ -45,7 +45,9 @@ export default function EditVolunteerOpportunityModal({
 			onSuccess();
 			onClose();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("editOpportunity.unknownError"));
+			setError(
+				err instanceof Error ? err.message : t("editOpportunity.unknownError"),
+			);
 		} finally {
 			setSubmitting(false);
 		}
@@ -54,7 +56,9 @@ export default function EditVolunteerOpportunityModal({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen">
-				<h2 className="mb-4 text-lg font-semibold">{t("editOpportunity.title")}</h2>
+				<h2 className="mb-4 text-lg font-semibold">
+					{t("editOpportunity.title")}
+				</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
@@ -160,7 +164,9 @@ export default function EditVolunteerOpportunityModal({
 							disabled={submitting}
 							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
 						>
-							{submitting ? t("editOpportunity.saving") : t("editOpportunity.save")}
+							{submitting
+								? t("editOpportunity.saving")
+								: t("editOpportunity.save")}
 						</button>
 					</div>
 				</form>

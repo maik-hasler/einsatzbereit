@@ -61,7 +61,9 @@ export default function VolunteerOpportunitiesList({
 	return (
 		<div>
 			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-xl font-semibold">{t("opportunities.currentNeeds")}</h2>
+				<h2 className="text-xl font-semibold">
+					{t("opportunities.currentNeeds")}
+				</h2>
 				{canCreateOpportunity && (
 					<button
 						onClick={() => setShowModal(true)}
@@ -116,12 +118,18 @@ export default function VolunteerOpportunitiesList({
 				>
 					<option value="">{t("opportunities.allTypes")}</option>
 					<option value="Waitlist">{t("opportunities.waitlist")}</option>
-					<option value="IndividualContact">{t("opportunities.individualContact")}</option>
+					<option value="IndividualContact">
+						{t("opportunities.individualContact")}
+					</option>
 				</select>
 			</div>
 
 			{loading && <p className="text-gray-500">{t("opportunities.loading")}</p>}
-			{error && <p className="text-red-600">{t("opportunities.error", { message: error })}</p>}
+			{error && (
+				<p className="text-red-600">
+					{t("opportunities.error", { message: error })}
+				</p>
+			)}
 
 			{!loading && !error && data && (
 				<>
@@ -181,7 +189,10 @@ export default function VolunteerOpportunitiesList({
 								{t("opportunities.previous")}
 							</button>
 							<span className="text-sm text-gray-500">
-								{t("opportunities.page", { current: page, total: data.pageCount })}
+								{t("opportunities.page", {
+									current: page,
+									total: data.pageCount,
+								})}
 							</span>
 							<button
 								onClick={() => setPage((p) => p + 1)}

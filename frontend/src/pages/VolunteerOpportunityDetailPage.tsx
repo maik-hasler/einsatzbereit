@@ -56,14 +56,23 @@ export default function VolunteerOpportunityDetailPage() {
 			await api.deleteVolunteerOpportunity(opportunityId);
 			navigate("/");
 		} catch (err) {
-			alert(err instanceof Error ? err.message : t("opportunities.deleteError"));
+			alert(
+				err instanceof Error ? err.message : t("opportunities.deleteError"),
+			);
 			setDeleting(false);
 		}
 	}
 
-	if (loading) return <p className="text-gray-500">{t("opportunities.loading")}</p>;
-	if (error) return <p className="text-red-600">{t("opportunities.error", { message: error })}</p>;
-	if (!opportunity) return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
+	if (loading)
+		return <p className="text-gray-500">{t("opportunities.loading")}</p>;
+	if (error)
+		return (
+			<p className="text-red-600">
+				{t("opportunities.error", { message: error })}
+			</p>
+		);
+	if (!opportunity)
+		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
 
 	const isAuthenticated = auth.isAuthenticated;
 
@@ -93,7 +102,9 @@ export default function VolunteerOpportunityDetailPage() {
 							disabled={deleting}
 							className="rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
 						>
-							{deleting ? t("opportunities.deleting") : t("opportunities.delete")}
+							{deleting
+								? t("opportunities.deleting")
+								: t("opportunities.delete")}
 						</button>
 					</div>
 				)}
@@ -136,10 +147,19 @@ export default function VolunteerOpportunityDetailPage() {
 									key={ts.id}
 									className="rounded border px-3 py-2 text-sm text-gray-700"
 								>
-									{formatDateTime(ts.startDateTime as unknown as string, i18n.language)} -{" "}
-									{formatDateTime(ts.endDateTime as unknown as string, i18n.language)}
+									{formatDateTime(
+										ts.startDateTime as unknown as string,
+										i18n.language,
+									)}{" "}
+									-{" "}
+									{formatDateTime(
+										ts.endDateTime as unknown as string,
+										i18n.language,
+									)}
 									<span className="ml-2 text-gray-400">
-										{t("opportunities.maxParticipants", { count: ts.maxParticipants })}
+										{t("opportunities.maxParticipants", {
+											count: ts.maxParticipants,
+										})}
 									</span>
 								</li>
 							))}

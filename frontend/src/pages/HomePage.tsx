@@ -13,7 +13,9 @@ export default function HomePage() {
 
 	return (
 		<>
-			<h1 className="mb-4 text-4xl font-bold text-gray-900">{t("home.title")}</h1>
+			<h1 className="mb-4 text-4xl font-bold text-gray-900">
+				{t("home.title")}
+			</h1>
 			<p className="mb-8 text-lg text-gray-600">{t("home.subtitle")}</p>
 			<VolunteerOpportunitiesList canCreateOpportunity={canCreateOpportunity} />
 		</>

@@ -51,7 +51,11 @@ export default function EngagementManagementPage() {
 				),
 			);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : t("engagementManagement.confirmError"));
+			alert(
+				err instanceof Error
+					? err.message
+					: t("engagementManagement.confirmError"),
+			);
 		} finally {
 			setProcessing(null);
 		}
@@ -67,7 +71,11 @@ export default function EngagementManagementPage() {
 				),
 			);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : t("engagementManagement.cancelError"));
+			alert(
+				err instanceof Error
+					? err.message
+					: t("engagementManagement.cancelError"),
+			);
 		} finally {
 			setProcessing(null);
 		}
@@ -86,11 +94,19 @@ export default function EngagementManagementPage() {
 				{t("engagementManagement.title")}
 			</h1>
 
-			{loading && <p className="text-gray-500">{t("engagementManagement.loading")}</p>}
-			{error && <p className="text-red-600">{t("engagementManagement.error", { message: error })}</p>}
+			{loading && (
+				<p className="text-gray-500">{t("engagementManagement.loading")}</p>
+			)}
+			{error && (
+				<p className="text-red-600">
+					{t("engagementManagement.error", { message: error })}
+				</p>
+			)}
 
 			{!loading && !error && engagements.length === 0 && (
-				<p className="text-gray-500">{t("engagementManagement.noApplications")}</p>
+				<p className="text-gray-500">
+					{t("engagementManagement.noApplications")}
+				</p>
 			)}
 
 			{!loading && !error && engagements.length > 0 && (
@@ -103,7 +119,9 @@ export default function EngagementManagementPage() {
 										{t("engagementManagement.volunteer", { id: e.volunteerId })}
 									</p>
 									{e.message && (
-										<p className="mt-1 text-sm text-gray-700">&ldquo;{e.message}&rdquo;</p>
+										<p className="mt-1 text-sm text-gray-700">
+											&ldquo;{e.message}&rdquo;
+										</p>
 									)}
 									{e.timeSlotId && (
 										<p className="mt-1 text-xs text-gray-400">
@@ -129,14 +147,18 @@ export default function EngagementManagementPage() {
 												disabled={processing === e.id + "-confirm"}
 												className="text-xs rounded bg-green-600 px-2 py-1 text-white hover:bg-green-700 disabled:opacity-50"
 											>
-												{processing === e.id + "-confirm" ? t("engagementManagement.processing") : t("engagementManagement.confirm")}
+												{processing === e.id + "-confirm"
+													? t("engagementManagement.processing")
+													: t("engagementManagement.confirm")}
 											</button>
 											<button
 												onClick={() => handleCancel(e.id)}
 												disabled={processing === e.id + "-cancel"}
 												className="text-xs rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700 disabled:opacity-50"
 											>
-												{processing === e.id + "-cancel" ? t("engagementManagement.processing") : t("engagementManagement.cancel")}
+												{processing === e.id + "-cancel"
+													? t("engagementManagement.processing")
+													: t("engagementManagement.cancel")}
 											</button>
 										</div>
 									)}
@@ -146,7 +168,9 @@ export default function EngagementManagementPage() {
 											disabled={processing === e.id + "-cancel"}
 											className="text-xs text-red-600 hover:underline disabled:opacity-50"
 										>
-											{processing === e.id + "-cancel" ? t("engagementManagement.processing") : t("engagementManagement.revoke")}
+											{processing === e.id + "-cancel"
+												? t("engagementManagement.processing")
+												: t("engagementManagement.revoke")}
 										</button>
 									)}
 								</div>

@@ -81,7 +81,9 @@ export default function AccountPage() {
 					{getInitials(displayName)}
 				</div>
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">{t("account.title")}</h1>
+					<h1 className="text-2xl font-bold text-gray-900">
+						{t("account.title")}
+					</h1>
 					{profile && (
 						<p className="text-sm text-gray-500">@{profile.username}</p>
 					)}
@@ -117,9 +119,7 @@ export default function AccountPage() {
 						value={profile?.email ?? ""}
 						className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
 					/>
-					<p className="mt-1 text-xs text-gray-400">
-						{t("account.emailHint")}
-					</p>
+					<p className="mt-1 text-xs text-gray-400">{t("account.emailHint")}</p>
 				</Field>
 
 				<Field label={t("account.fieldFirstName")} id="first-name">
