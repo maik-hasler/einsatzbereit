@@ -1,14 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-
-const STATUS_LABELS: Record<string, string> = {
-	Pending: "Ausstehend",
-	Confirmed: "Bestätigt",
-	Cancelled: "Abgesagt",
-	Withdrawn: "Zurückgezogen",
-};
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -21,6 +15,16 @@ export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const navigate = useNavigate();
 	const api = useApiClient();
+	const { t, i18n } = useTranslation();
+
+	const STATUS_LABELS: Record<string, string> = {
+		Pending: t("engagementManagement.status.Pending"),
+		Confirmed: t("engagementManagement.status.Confirmed"),
+		Cancelled: t("engagementManagement.status.Cancelled"),
+		Withdrawn: t("engagementManagement.status.Withdrawn"),
+	};
+
+	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -47,7 +51,7 @@ export default function EngagementManagementPage() {
 				),
 			);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : "Fehler beim Bestätigen");
+			alert(err instanceof Error ? err.message : t("engagementManagement.confirmError"));
 		} finally {
 			setProcessing(null);
 		}
@@ -63,7 +67,7 @@ export default function EngagementManagementPage() {
 				),
 			);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : "Fehler beim Absagen");
+			alert(err instanceof Error ? err.message : t("engagementManagement.cancelError"));
 		} finally {
 			setProcessing(null);
 		}
@@ -75,18 +79,18 @@ export default function EngagementManagementPage() {
 				onClick={() => navigate(-1)}
 				className="mb-4 text-sm text-gray-500 hover:text-gray-800"
 			>
-				← Zurück
+				{t("engagementManagement.back")}
 			</button>
 
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
-				Bewerbungen verwalten
+				{t("engagementManagement.title")}
 			</h1>
 
-			{loading && <p className="text-gray-500">Wird geladen…</p>}
-			{error && <p className="text-red-600">Fehler: {error}</p>}
+			{loading && <p className="text-gray-500">{t("engagementManagement.loading")}</p>}
+			{error && <p className="text-red-600">{t("engagementManagement.error", { message: error })}</p>}
 
 			{!loading && !error && engagements.length === 0 && (
-				<p className="text-gray-500">Noch keine Bewerbungen.</p>
+				<p className="text-gray-500">{t("engagementManagement.noApplications")}</p>
 			)}
 
 			{!loading && !error && engagements.length > 0 && (
@@ -96,19 +100,20 @@ export default function EngagementManagementPage() {
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
 									<p className="text-sm font-mono text-gray-500 text-xs">
-										Freiwilliger: {e.volunteerId}
+										{t("engagementManagement.volunteer", { id: e.volunteerId })}
 									</p>
 									{e.message && (
-										<p className="mt-1 text-sm text-gray-700">"{e.message}"</p>
+										<p className="mt-1 text-sm text-gray-700">&ldquo;{e.message}&rdquo;</p>
 									)}
 									{e.timeSlotId && (
 										<p className="mt-1 text-xs text-gray-400">
-											Zeitslot: {e.timeSlotId}
+											{t("engagementManagement.timeSlot", { id: e.timeSlotId })}
 										</p>
 									)}
 									<p className="mt-1 text-xs text-gray-400">
-										Eingegangen:{" "}
-										{new Date(e.createdOn).toLocaleDateString("de-DE")}
+										{t("engagementManagement.receivedOn", {
+											date: new Date(e.createdOn).toLocaleDateString(locale),
+										})}
 									</p>
 								</div>
 								<div className="flex flex-col items-end gap-2 shrink-0">
@@ -124,14 +129,14 @@ export default function EngagementManagementPage() {
 												disabled={processing === e.id + "-confirm"}
 												className="text-xs rounded bg-green-600 px-2 py-1 text-white hover:bg-green-700 disabled:opacity-50"
 											>
-												{processing === e.id + "-confirm" ? "…" : "Bestätigen"}
+												{processing === e.id + "-confirm" ? t("engagementManagement.processing") : t("engagementManagement.confirm")}
 											</button>
 											<button
 												onClick={() => handleCancel(e.id)}
 												disabled={processing === e.id + "-cancel"}
 												className="text-xs rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700 disabled:opacity-50"
 											>
-												{processing === e.id + "-cancel" ? "…" : "Absagen"}
+												{processing === e.id + "-cancel" ? t("engagementManagement.processing") : t("engagementManagement.cancel")}
 											</button>
 										</div>
 									)}
@@ -141,7 +146,7 @@ export default function EngagementManagementPage() {
 											disabled={processing === e.id + "-cancel"}
 											className="text-xs text-red-600 hover:underline disabled:opacity-50"
 										>
-											{processing === e.id + "-cancel" ? "…" : "Stornieren"}
+											{processing === e.id + "-cancel" ? t("engagementManagement.processing") : t("engagementManagement.revoke")}
 										</button>
 									)}
 								</div>

@@ -1,14 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-
-const STATUS_LABELS: Record<string, string> = {
-	Pending: "Ausstehend",
-	Confirmed: "Bestätigt",
-	Cancelled: "Abgesagt",
-	Withdrawn: "Zurückgezogen",
-};
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -20,10 +14,20 @@ const STATUS_COLORS: Record<string, string> = {
 export default function MyEngagementsPage() {
 	const api = useApiClient();
 	const navigate = useNavigate();
+	const { t, i18n } = useTranslation();
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [withdrawing, setWithdrawing] = useState<string | null>(null);
+
+	const STATUS_LABELS: Record<string, string> = {
+		Pending: t("myEngagements.status.Pending"),
+		Confirmed: t("myEngagements.status.Confirmed"),
+		Cancelled: t("myEngagements.status.Cancelled"),
+		Withdrawn: t("myEngagements.status.Withdrawn"),
+	};
+
+	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	useEffect(() => {
 		api
@@ -44,7 +48,7 @@ export default function MyEngagementsPage() {
 				),
 			);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : "Fehler beim Zurückziehen");
+			alert(err instanceof Error ? err.message : t("myEngagements.withdrawError"));
 		} finally {
 			setWithdrawing(null);
 		}
@@ -53,20 +57,20 @@ export default function MyEngagementsPage() {
 	return (
 		<>
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
-				Meine Engagements
+				{t("myEngagements.title")}
 			</h1>
 
-			{loading && <p className="text-gray-500">Wird geladen…</p>}
-			{error && <p className="text-red-600">Fehler: {error}</p>}
+			{loading && <p className="text-gray-500">{t("myEngagements.loading")}</p>}
+			{error && <p className="text-red-600">{t("myEngagements.error", { message: error })}</p>}
 
 			{!loading && !error && engagements.length === 0 && (
 				<div className="text-center py-12">
-					<p className="text-gray-500 mb-4">Noch keine Anmeldungen.</p>
+					<p className="text-gray-500 mb-4">{t("myEngagements.noEngagements")}</p>
 					<button
 						onClick={() => navigate("/")}
 						className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
 					>
-						Bedarfe erkunden
+						{t("myEngagements.exploreNeeds")}
 					</button>
 				</div>
 			)}
@@ -83,16 +87,17 @@ export default function MyEngagementsPage() {
 										}
 										className="text-sm font-medium text-gray-900 hover:underline text-left"
 									>
-										Bedarf anzeigen →
+										{t("myEngagements.viewOpportunity")}
 									</button>
 									{e.message && (
 										<p className="mt-1 text-sm text-gray-500 truncate">
-											"{e.message}"
+											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
 									<p className="mt-1 text-xs text-gray-400">
-										Angemeldet:{" "}
-										{new Date(e.createdOn).toLocaleDateString("de-DE")}
+										{t("myEngagements.registeredOn", {
+											date: new Date(e.createdOn).toLocaleDateString(locale),
+										})}
 									</p>
 								</div>
 								<div className="flex flex-col items-end gap-2 shrink-0">
@@ -107,7 +112,7 @@ export default function MyEngagementsPage() {
 											disabled={withdrawing === e.id}
 											className="text-xs text-red-600 hover:underline disabled:opacity-50"
 										>
-											{withdrawing === e.id ? "…" : "Zurückziehen"}
+											{withdrawing === e.id ? t("myEngagements.withdrawing") : t("myEngagements.withdraw")}
 										</button>
 									)}
 								</div>

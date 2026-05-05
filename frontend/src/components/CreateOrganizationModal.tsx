@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 
 export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const api = useApiClient();
+	const { t } = useTranslation();
 	const [name, setName] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+			setError(err instanceof Error ? err.message : t("organization.unknownError"));
 		} finally {
 			setLoading(false);
 		}
@@ -37,17 +39,17 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 				className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<h2 className="mb-4 text-xl font-semibold">Organisation erstellen</h2>
+				<h2 className="mb-4 text-xl font-semibold">{t("organization.create")}</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
-						<label className="mb-1 block text-sm font-medium">Name</label>
+						<label className="mb-1 block text-sm font-medium">{t("organization.nameLabel")}</label>
 						<input
 							type="text"
 							required
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							placeholder="z.B. Freiwillige Feuerwehr Musterstadt"
+							placeholder={t("organization.namePlaceholder")}
 							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 						/>
 					</div>
@@ -61,7 +63,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							data-testid="modal-cancel"
 							className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
 						>
-							Abbrechen
+							{t("organization.cancel")}
 						</button>
 						<button
 							type="submit"
@@ -69,7 +71,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							data-testid="modal-submit"
 							className="rounded bg-brand-500 px-4 py-2 text-sm text-white hover:bg-brand-600 disabled:opacity-50"
 						>
-							{loading ? "Wird erstellt…" : "Erstellen"}
+							{loading ? t("organization.creating") : t("organization.submit")}
 						</button>
 					</div>
 				</form>

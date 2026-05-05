@@ -1,6 +1,8 @@
 import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import OrganizationSwitcher from "./OrganizationSwitcher";
+import LanguageSelector from "./LanguageSelector";
 
 function getInitials(name: string): string {
 	const parts = name.trim().split(/\s+/);
@@ -10,6 +12,7 @@ function getInitials(name: string): string {
 
 export default function Header() {
 	const auth = useAuth();
+	const { t } = useTranslation();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
@@ -43,7 +46,7 @@ export default function Header() {
 					{/* Brand */}
 					<a href="/" className="flex items-center gap-2 group">
 						<span className="text-xl font-bold text-brand-600 group-hover:text-brand-700 transition-colors">
-							Einsatzbereit
+							{t("brand.name")}
 						</span>
 					</a>
 
@@ -60,7 +63,7 @@ export default function Header() {
 										type="button"
 										onClick={() => setDropdownOpen((o) => !o)}
 										className="flex items-center gap-1.5 rounded-full p-0.5 hover:ring-2 hover:ring-brand-200 transition-all cursor-pointer"
-										aria-label="Benutzermenü"
+										aria-label={t("nav.userMenu")}
 										aria-expanded={dropdownOpen}
 									>
 										<span className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold">
@@ -107,7 +110,7 @@ export default function Header() {
 															d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
 														/>
 													</svg>
-													Meine Engagements
+													{t("nav.myEngagements")}
 												</a>
 												<a
 													href="/account"
@@ -131,7 +134,7 @@ export default function Header() {
 															d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
 														/>
 													</svg>
-													Profileinstellungen
+													{t("nav.profileSettings")}
 												</a>
 												<button
 													type="button"
@@ -151,7 +154,7 @@ export default function Header() {
 															d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"
 														/>
 													</svg>
-													Abmelden
+													{t("nav.signOut")}
 												</button>
 											</div>
 										</div>
@@ -165,17 +168,19 @@ export default function Header() {
 									onClick={() => auth.signinRedirect()}
 									className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
 								>
-									Anmelden
+									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
 									className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
 								>
-									Registrieren
+									{t("nav.register")}
 								</button>
 							</div>
 						)}
+						<div className="w-px h-6 bg-gray-200" />
+						<LanguageSelector />
 					</nav>
 
 					{/* Mobile Menu Button */}
@@ -183,7 +188,7 @@ export default function Header() {
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
 						className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition-colors"
-						aria-label="Menü öffnen"
+						aria-label={t("nav.openMenu")}
 						aria-expanded={mobileOpen}
 					>
 						{mobileOpen ? (
@@ -223,6 +228,9 @@ export default function Header() {
 			{mobileOpen && (
 				<div className="md:hidden border-t border-gray-100">
 					<div className="px-4 py-4 space-y-2">
+						<div className="pb-2">
+							<LanguageSelector />
+						</div>
 						{isLoggedIn ? (
 							<div className="space-y-1">
 								<div className="flex items-center gap-3 px-3 py-2">
@@ -240,20 +248,20 @@ export default function Header() {
 									href="/my-engagements"
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
-									Meine Engagements
+									{t("nav.myEngagements")}
 								</a>
 								<a
 									href="/account"
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
-									Profileinstellungen
+									{t("nav.profileSettings")}
 								</a>
 								<button
 									type="button"
 									onClick={() => auth.signoutRedirect()}
 									className="block w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
 								>
-									Abmelden
+									{t("nav.signOut")}
 								</button>
 							</div>
 						) : (
@@ -263,14 +271,14 @@ export default function Header() {
 									onClick={() => auth.signinRedirect()}
 									className="block w-full text-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
 								>
-									Anmelden
+									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
 									className="block w-full text-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
 								>
-									Registrieren
+									{t("nav.register")}
 								</button>
 							</div>
 						)}

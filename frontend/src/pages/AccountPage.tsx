@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
+import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { MyProfileResponse } from "../client/api-client";
 
 export default function AccountPage() {
 	const auth = useAuth();
 	const api = useApiClient();
+	const { t } = useTranslation();
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -28,7 +30,7 @@ export default function AccountPage() {
 					lastName: data.lastName ?? "",
 				});
 			})
-			.catch(() => setError("Profil konnte nicht geladen werden."))
+			.catch(() => setError(t("account.loadError")))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
@@ -43,7 +45,7 @@ export default function AccountPage() {
 				firstName: form.firstName || undefined,
 				lastName: form.lastName || undefined,
 			});
-			setSuccessMessage("Änderungen gespeichert.");
+			setSuccessMessage(t("account.savedSuccess"));
 			setProfile((prev) =>
 				prev
 					? {
@@ -54,7 +56,7 @@ export default function AccountPage() {
 					: prev,
 			);
 		} catch {
-			setError("Speichern fehlgeschlagen.");
+			setError(t("account.saveError"));
 		} finally {
 			setSaving(false);
 		}
@@ -63,7 +65,7 @@ export default function AccountPage() {
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center py-16">
-				<span className="text-gray-500">Wird geladen…</span>
+				<span className="text-gray-500">{t("account.loading")}</span>
 			</div>
 		);
 	}
@@ -79,7 +81,7 @@ export default function AccountPage() {
 					{getInitials(displayName)}
 				</div>
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">Mein Konto</h1>
+					<h1 className="text-2xl font-bold text-gray-900">{t("account.title")}</h1>
 					{profile && (
 						<p className="text-sm text-gray-500">@{profile.username}</p>
 					)}
@@ -98,7 +100,7 @@ export default function AccountPage() {
 			)}
 
 			<form onSubmit={handleSave} className="space-y-5">
-				<Field label="Benutzername" id="username">
+				<Field label={t("account.fieldUsername")} id="username">
 					<input
 						id="username"
 						disabled
@@ -107,7 +109,7 @@ export default function AccountPage() {
 					/>
 				</Field>
 
-				<Field label="E-Mail-Adresse" id="email">
+				<Field label={t("account.fieldEmail")} id="email">
 					<input
 						id="email"
 						disabled
@@ -116,11 +118,11 @@ export default function AccountPage() {
 						className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
 					/>
 					<p className="mt-1 text-xs text-gray-400">
-						E-Mail-Adresse kann nicht geändert werden.
+						{t("account.emailHint")}
 					</p>
 				</Field>
 
-				<Field label="Vorname" id="first-name">
+				<Field label={t("account.fieldFirstName")} id="first-name">
 					<input
 						id="first-name"
 						value={form.firstName}
@@ -131,7 +133,7 @@ export default function AccountPage() {
 					/>
 				</Field>
 
-				<Field label="Nachname" id="last-name">
+				<Field label={t("account.fieldLastName")} id="last-name">
 					<input
 						id="last-name"
 						value={form.lastName}
@@ -148,7 +150,7 @@ export default function AccountPage() {
 						disabled={saving}
 						className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
 					>
-						{saving ? "Wird gespeichert…" : "Speichern"}
+						{saving ? t("account.saving") : t("account.save")}
 					</button>
 				</div>
 			</form>
