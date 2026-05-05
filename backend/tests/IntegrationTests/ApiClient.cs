@@ -4,6 +4,8 @@
 // </auto-generated>
 //----------------------
 
+#nullable enable
+
 using System.Collections.Generic;
 
 #pragma warning disable 108 // Disable "CS0108 '{derivedDto}.ToJson()' hides inherited member '{dtoBase}.ToJson()'. Use the new keyword if hiding was intended."
@@ -48,7 +50,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string search = null, string city = null, string occurrence = null, string participationType = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -492,7 +494,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string search = null, string city = null, string occurrence = null, string participationType = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -2258,7 +2260,7 @@ namespace IntegrationTests
         {
             if (response == null || response.Content == null)
             {
-                return new ObjectResponseResult<T>(default(T), string.Empty);
+                return new ObjectResponseResult<T>(default(T)!, string.Empty);
             }
 
             if (ReadResponseAsString)
@@ -2267,7 +2269,7 @@ namespace IntegrationTests
                 try
                 {
                     var typedBody = System.Text.Json.JsonSerializer.Deserialize<T>(responseText, JsonSerializerSettings);
-                    return new ObjectResponseResult<T>(typedBody, responseText);
+                    return new ObjectResponseResult<T>(typedBody!, responseText);
                 }
                 catch (System.Text.Json.JsonException exception)
                 {
@@ -2282,7 +2284,7 @@ namespace IntegrationTests
                     using (var responseStream = await ReadAsStreamAsync(response.Content, cancellationToken).ConfigureAwait(false))
                     {
                         var typedBody = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
-                        return new ObjectResponseResult<T>(typedBody, string.Empty);
+                        return new ObjectResponseResult<T>(typedBody!, string.Empty);
                     }
                 }
                 catch (System.Text.Json.JsonException exception)
@@ -2293,7 +2295,7 @@ namespace IntegrationTests
             }
         }
 
-        private string ConvertToString(object value, System.Globalization.CultureInfo cultureInfo)
+        private string ConvertToString(object? value, System.Globalization.CultureInfo cultureInfo)
         {
             if (value == null)
             {
@@ -2354,9 +2356,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid UserId { get; set; }
+        public System.Guid UserId { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2373,21 +2375,21 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Street { get; set; }
+        public string Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string HouseNumber { get; set; }
+        public string HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ZipCode { get; set; }
+        public string ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string City { get; set; }
+        public string City { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2404,21 +2406,21 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Street { get; set; }
+        public string Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string HouseNumber { get; set; }
+        public string HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ZipCode { get; set; }
+        public string ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string City { get; set; }
+        public string City { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2435,15 +2437,15 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Type { get; set; }
+        public string Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("timeSlotId")]
-        public System.Guid? TimeSlotId { get; set; }
+        public System.Guid? TimeSlotId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("message")]
-        public string Message { get; set; }
+        public string? Message { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2460,21 +2462,21 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("opportunityId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OpportunityId { get; set; }
+        public System.Guid OpportunityId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Status { get; set; }
+        public string Status { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2491,9 +2493,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2510,41 +2512,41 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
+        public string Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OrganizationId { get; set; }
+        public System.Guid OrganizationId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Street { get; set; }
+        public string Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string HouseNumber { get; set; }
+        public string HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ZipCode { get; set; }
+        public string ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string City { get; set; }
+        public string City { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Occurrence { get; set; }
+        public string Occurrence { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ParticipationType { get; set; }
+        public string ParticipationType { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2561,48 +2563,48 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
+        public string Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OrganizationId { get; set; }
+        public System.Guid OrganizationId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
-        public string Street { get; set; }
+        public string? Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
-        public string HouseNumber { get; set; }
+        public string? HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
-        public string ZipCode { get; set; }
+        public string? ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
-        public string City { get; set; }
+        public string? City { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
-        public bool IsRemote { get; set; }
+        public bool IsRemote { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Occurrence { get; set; }
+        public string Occurrence { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ParticipationType { get; set; }
+        public string ParticipationType { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2617,7 +2619,7 @@ namespace IntegrationTests
     public partial class DomainEvent
     {
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2634,16 +2636,16 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Status { get; set; }
+        public string Status { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTimeOffset? ModifiedOn { get; set; }
+        public System.DateTimeOffset? ModifiedOn { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2660,31 +2662,31 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("opportunityId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OpportunityId { get; set; }
+        public System.Guid OpportunityId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("volunteerId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid VolunteerId { get; set; }
+        public System.Guid VolunteerId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("timeSlotId")]
-        public System.Guid? TimeSlotId { get; set; }
+        public System.Guid? TimeSlotId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("message")]
-        public string Message { get; set; }
+        public string? Message { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Status { get; set; }
+        public string Status { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2701,13 +2703,13 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2724,23 +2726,23 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Username { get; set; }
+        public string Username { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("firstName")]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
-        public string LastName { get; set; }
+        public string? LastName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Email { get; set; }
+        public string Email { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2756,36 +2758,36 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("contactEmail")]
-        public string ContactEmail { get; set; }
+        public string? ContactEmail { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("contactPhone")]
-        public string ContactPhone { get; set; }
+        public string? ContactPhone { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("website")]
-        public string Website { get; set; }
+        public string? Website { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("address")]
-        public Address Address { get; set; }
+        public Address? Address { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTimeOffset? ModifiedOn { get; set; }
+        public System.DateTimeOffset? ModifiedOn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("events")]
-        public System.Collections.Generic.ICollection<DomainEvent> Events { get; set; }
+        public System.Collections.Generic.ICollection<DomainEvent>? Events { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public OrganizationId Id { get; set; }
+        public OrganizationId Id { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2802,39 +2804,39 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("contactEmail")]
-        public string ContactEmail { get; set; }
+        public string? ContactEmail { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("contactPhone")]
-        public string ContactPhone { get; set; }
+        public string? ContactPhone { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("website")]
-        public string Website { get; set; }
+        public string? Website { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("address")]
-        public AddressDto Address { get; set; }
+        public AddressDto? Address { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTimeOffset? ModifiedOn { get; set; }
+        public System.DateTimeOffset? ModifiedOn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("members")]
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<OrganizationMemberDto> Members { get; set; } = new System.Collections.ObjectModel.Collection<OrganizationMemberDto>();
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2850,9 +2852,9 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("value")]
-        public System.Guid Value { get; set; }
+        public System.Guid Value { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2869,26 +2871,26 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid UserId { get; set; }
+        public System.Guid UserId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Username { get; set; }
+        public string Username { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("firstName")]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
-        public string LastName { get; set; }
+        public string? LastName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Email { get; set; }
+        public string Email { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isOrganisator")]
-        public bool IsOrganisator { get; set; }
+        public bool IsOrganisator { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2905,22 +2907,22 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("totalItems")]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int TotalItems { get; set; }
+        public int TotalItems { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("currentPage")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int CurrentPage { get; set; }
+        public int CurrentPage { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("pageCount")]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int PageCount { get; set; }
+        public int PageCount { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<VolunteerOpportunitySummary> Items { get; set; } = new System.Collections.ObjectModel.Collection<VolunteerOpportunitySummary>();
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2936,22 +2938,22 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public string Type { get; set; }
+        public string? Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
-        public string Title { get; set; }
+        public string? Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int? Status { get; set; }
+        public int? Status { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("detail")]
-        public string Detail { get; set; }
+        public string? Detail { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("instance")]
-        public string Instance { get; set; }
+        public string? Instance { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -2968,22 +2970,22 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("startDateTime")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset StartDateTime { get; set; }
+        public System.DateTimeOffset StartDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("endDateTime")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset EndDateTime { get; set; }
+        public System.DateTimeOffset EndDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("maxParticipants")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int MaxParticipants { get; set; }
+        public int MaxParticipants { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3000,21 +3002,21 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Street { get; set; }
+        public string Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string HouseNumber { get; set; }
+        public string HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ZipCode { get; set; }
+        public string ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string City { get; set; }
+        public string City { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3031,24 +3033,24 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("contactEmail")]
-        public string ContactEmail { get; set; }
+        public string? ContactEmail { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("contactPhone")]
-        public string ContactPhone { get; set; }
+        public string? ContactPhone { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("website")]
-        public string Website { get; set; }
+        public string? Website { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("address")]
-        public UpdateAddressRequest Address { get; set; }
+        public UpdateAddressRequest? Address { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3064,12 +3066,12 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("firstName")]
-        public string? FirstName { get; set; }
+        public string? FirstName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
-        public string? LastName { get; set; }
+        public string? LastName { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3086,28 +3088,28 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
+        public string Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
-        public bool IsRemote { get; set; }
+        public bool IsRemote { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
-        public string Street { get; set; }
+        public string? Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
-        public string HouseNumber { get; set; }
+        public string? HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
-        public string ZipCode { get; set; }
+        public string? ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
-        public string City { get; set; }
+        public string? City { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3124,46 +3126,46 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
+        public string Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OrganizationId { get; set; }
+        public System.Guid OrganizationId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string OrganizationName { get; set; }
+        public string OrganizationName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
-        public string Street { get; set; }
+        public string? Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
-        public string HouseNumber { get; set; }
+        public string? HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
-        public string ZipCode { get; set; }
+        public string? ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
-        public string City { get; set; }
+        public string? City { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
-        public bool IsRemote { get; set; }
+        public bool IsRemote { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Occurrence { get; set; }
+        public string Occurrence { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ParticipationType { get; set; }
+        public string ParticipationType { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("timeSlots")]
         [System.ComponentModel.DataAnnotations.Required]
@@ -3171,9 +3173,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3190,48 +3192,48 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
+        public System.Guid Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; }
+        public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; }
+        public string Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string OrganizationName { get; set; }
+        public string OrganizationName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
-        public string Street { get; set; }
+        public string? Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
-        public string HouseNumber { get; set; }
+        public string? HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
-        public string ZipCode { get; set; }
+        public string? ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
-        public string City { get; set; }
+        public string? City { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
-        public bool IsRemote { get; set; }
+        public bool IsRemote { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Occurrence { get; set; }
+        public string Occurrence { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ParticipationType { get; set; }
+        public string ParticipationType { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedOn { get; set; }
+        public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
@@ -3249,11 +3251,11 @@ namespace IntegrationTests
     {
         public int StatusCode { get; private set; }
 
-        public string Response { get; private set; }
+        public string? Response { get; private set; }
 
         public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
 
-        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception innerException)
+        public ApiException(string message, int statusCode, string? response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception? innerException)
             : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)), innerException)
         {
             StatusCode = statusCode;
@@ -3272,7 +3274,7 @@ namespace IntegrationTests
     {
         public TResult Result { get; private set; }
 
-        public ApiException(string message, int statusCode, string response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception innerException)
+        public ApiException(string message, int statusCode, string? response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception? innerException)
             : base(message, statusCode, response, headers, innerException)
         {
             Result = result;
