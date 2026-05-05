@@ -48,7 +48,9 @@ export default function MyEngagementsPage() {
 				),
 			);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : t("myEngagements.withdrawError"));
+			alert(
+				err instanceof Error ? err.message : t("myEngagements.withdrawError"),
+			);
 		} finally {
 			setWithdrawing(null);
 		}
@@ -61,11 +63,17 @@ export default function MyEngagementsPage() {
 			</h1>
 
 			{loading && <p className="text-gray-500">{t("myEngagements.loading")}</p>}
-			{error && <p className="text-red-600">{t("myEngagements.error", { message: error })}</p>}
+			{error && (
+				<p className="text-red-600">
+					{t("myEngagements.error", { message: error })}
+				</p>
+			)}
 
 			{!loading && !error && engagements.length === 0 && (
 				<div className="text-center py-12">
-					<p className="text-gray-500 mb-4">{t("myEngagements.noEngagements")}</p>
+					<p className="text-gray-500 mb-4">
+						{t("myEngagements.noEngagements")}
+					</p>
 					<button
 						onClick={() => navigate("/")}
 						className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
@@ -112,7 +120,9 @@ export default function MyEngagementsPage() {
 											disabled={withdrawing === e.id}
 											className="text-xs text-red-600 hover:underline disabled:opacity-50"
 										>
-											{withdrawing === e.id ? t("myEngagements.withdrawing") : t("myEngagements.withdraw")}
+											{withdrawing === e.id
+												? t("myEngagements.withdrawing")
+												: t("myEngagements.withdraw")}
 										</button>
 									)}
 								</div>

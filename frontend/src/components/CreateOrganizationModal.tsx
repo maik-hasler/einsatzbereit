@@ -24,7 +24,9 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : t("organization.unknownError"));
+			setError(
+				err instanceof Error ? err.message : t("organization.unknownError"),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -39,11 +41,15 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 				className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<h2 className="mb-4 text-xl font-semibold">{t("organization.create")}</h2>
+				<h2 className="mb-4 text-xl font-semibold">
+					{t("organization.create")}
+				</h2>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
-						<label className="mb-1 block text-sm font-medium">{t("organization.nameLabel")}</label>
+						<label className="mb-1 block text-sm font-medium">
+							{t("organization.nameLabel")}
+						</label>
 						<input
 							type="text"
 							required

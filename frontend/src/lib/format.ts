@@ -6,10 +6,7 @@ export function formatOccurrence(occurrence: string, t: TFunction): string {
 		: t("opportunities.oneTime");
 }
 
-export function formatParticipationType(
-	type: string,
-	t: TFunction,
-): string {
+export function formatParticipationType(type: string, t: TFunction): string {
 	return type === "Waitlist"
 		? t("opportunities.waitlist")
 		: t("opportunities.individualContact");
