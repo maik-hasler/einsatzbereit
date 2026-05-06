@@ -129,4 +129,157 @@ public class VolunteerOpportunityTests
 		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
 		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
 	}
+
+	// --- Update ---
+
+	[Test]
+	public void Update_ShouldChangeAllFields()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Old title", "Old desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+		var newAddress = new Address("Neue Straße", "42", "10115", "Hamburg");
+
+		opportunity.Update("New title", "New desc", false, newAddress);
+
+		opportunity.Title.Should().Be("New title");
+		opportunity.Description.Should().Be("New desc");
+		opportunity.Address.Should().Be(newAddress);
+	}
+
+	[Test]
+	public void Update_ShouldAllowRemote_WithNullAddress()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+
+		opportunity.Update("Remote title", "Remote desc", true, null);
+
+		opportunity.IsRemote.Should().BeTrue();
+		opportunity.Address.Should().BeNull();
+	}
+
+	[Test]
+	[Arguments("")]
+	[Arguments("   ")]
+	[Arguments(null)]
+	public void Update_ShouldThrow_WhenTitleIsEmpty(string? title)
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+
+		Action act = () => opportunity.Update(title!, "Desc", false, TestAddress);
+
+		act.Should().Throw<DomainException>().WithMessage("Title must not be empty.");
+	}
+
+	[Test]
+	[Arguments("")]
+	[Arguments("   ")]
+	[Arguments(null)]
+	public void Update_ShouldThrow_WhenDescriptionIsEmpty(string? description)
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+
+		Action act = () => opportunity.Update("Title", description!, false, TestAddress);
+
+		act.Should().Throw<DomainException>().WithMessage("Description must not be empty.");
+	}
+
+	[Test]
+	public void Update_ShouldThrow_WhenNotRemoteAndAddressIsNull()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+
+		Action act = () => opportunity.Update("Title", "Desc", false, null);
+
+		act.Should().Throw<DomainException>().WithMessage("Address is required for non-remote opportunities.");
+	}
+
+	// --- AddTimeSlot ---
+
+	[Test]
+	public void AddTimeSlot_ShouldAddSlot_WhenParticipationTypeIsWaitlist()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+		var start = DateTimeOffset.UtcNow;
+		var end = start.AddHours(2);
+
+		opportunity.AddTimeSlot(start, end, maxParticipants: 20);
+
+		opportunity.TimeSlots.Should().HaveCount(1);
+		opportunity.TimeSlots.First().MaxParticipants.Should().Be(20);
+	}
+
+	[Test]
+	public void AddTimeSlot_ShouldThrow_WhenParticipationTypeIsIndividualContact()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact);
+		var start = DateTimeOffset.UtcNow;
+		var end = start.AddHours(2);
+
+		Action act = () => opportunity.AddTimeSlot(start, end, maxParticipants: 10);
+
+		act.Should().Throw<DomainException>().WithMessage("*Waitlist*");
+	}
+
+	[Test]
+	public void AddTimeSlot_ShouldSupportMultipleSlots()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist);
+		var base_ = DateTimeOffset.UtcNow;
+
+		opportunity.AddTimeSlot(base_, base_.AddHours(2), 10);
+		opportunity.AddTimeSlot(base_.AddDays(7), base_.AddDays(7).AddHours(2), 10);
+
+		opportunity.TimeSlots.Should().HaveCount(2);
+	}
+
+	// --- RemoveTimeSlot ---
+
+	[Test]
+	public void RemoveTimeSlot_ShouldRemoveSlot_WhenSlotExists()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+		var start = DateTimeOffset.UtcNow;
+		opportunity.AddTimeSlot(start, start.AddHours(2), 10);
+		var slotId = opportunity.TimeSlots.First().Id;
+
+		opportunity.RemoveTimeSlot(slotId);
+
+		opportunity.TimeSlots.Should().BeEmpty();
+	}
+
+	[Test]
+	public void RemoveTimeSlot_ShouldThrow_WhenSlotNotFound()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+		var nonExistentId = new TimeSlotId(Guid.CreateVersion7());
+
+		Action act = () => opportunity.RemoveTimeSlot(nonExistentId);
+
+		act.Should().Throw<DomainException>().WithMessage($"*{nonExistentId.Value}*");
+	}
+
+	[Test]
+	public void RemoveTimeSlot_ShouldOnlyRemoveTargetSlot_WhenMultipleSlotsExist()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist);
+		var base_ = DateTimeOffset.UtcNow;
+		opportunity.AddTimeSlot(base_, base_.AddHours(2), 5);
+		opportunity.AddTimeSlot(base_.AddDays(7), base_.AddDays(7).AddHours(2), 5);
+
+		var idToRemove = opportunity.TimeSlots.First().Id;
+		opportunity.RemoveTimeSlot(idToRemove);
+
+		opportunity.TimeSlots.Should().HaveCount(1);
+		opportunity.TimeSlots.Should().NotContain(ts => ts.Id == idToRemove);
+	}
 }
