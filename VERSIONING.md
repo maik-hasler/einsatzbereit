@@ -1,53 +1,77 @@
 # Versioning & Publishing Strategy
 
-Dieses Projekt ist ein Monorepo mit unabhängig versionierten Komponenten.
-Jede Komponente wird als eigenes Docker Image über **GitHub Container Registry (ghcr.io)** publiziert.
+Dieses Projekt ist ein Monorepo mit einheitlicher Versionierung.
+Alle Komponenten werden gemeinsam als Docker Images über **GitHub Container Registry (ghcr.io)** publiziert.
 
 ## Tag-Format
 
-Releases werden über Git-Tags ausgelöst. Jede Komponente hat ein eigenes Tag-Prefix:
+Ein einziger Git-Tag loest den Release aller Komponenten aus:
 
-| Komponente | Tag-Pattern              | Image                                        |
-|------------|--------------------------|----------------------------------------------|
-| Keycloak   | `keycloak/v<version>`    | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
-| Frontend   | `frontend/v<version>`    | `ghcr.io/<owner>/einsatzbereit-frontend`     |
-| Backend    | `backend/v<version>`     | `ghcr.io/<owner>/einsatzbereit-backend`      |
+| Tag-Pattern           | Beschreibung              |
+|-----------------------|---------------------------|
+| `v<major>.<minor>.<patch>` | Stabiler Release     |
+| `v<major>.<minor>.<patch>-rc.<n>` | Release Candidate |
+
+Beispiele:
+- `v1.0.0` - Erster stabiler Release
+- `v1.1.0-rc.1` - Release Candidate fuer Version 1.1.0
+
+## Publizierte Images
+
+Jede Komponente bekommt dasselbe Versions-Tag:
+
+| Komponente | Image                                        |
+|------------|----------------------------------------------|
+| Backend    | `ghcr.io/<owner>/einsatzbereit-backend`      |
+| Frontend   | `ghcr.io/<owner>/einsatzbereit-frontend`     |
+| Keycloak   | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
 
 ## Versionierungsschema
 
-### Keycloak
+Standard [SemVer](https://semver.org/) fuer alle Komponenten:
 
-Format: `<upstream>.<patch>`
+- **MAJOR**: Breaking change in einer Komponente (z.B. inkompatible API-Aenderung)
+- **MINOR**: Neue Funktionalitaet, abwaertskompatibel
+- **PATCH**: Bugfix oder kleinere Konfigurationsaenderung
 
-Die ersten drei Stellen entsprechen der verwendeten Keycloak-Upstream-Version.
-Die vierte Stelle ist die eigene Patch-Version für Änderungen an Konfiguration, Realm-Exports oder Dockerfile.
+## Keycloak-Upstream-Version
 
-Beispiele:
-- `keycloak/v26.5.6.1` - Erster eigener Build auf Basis von Keycloak 26.5.6
-- `keycloak/v26.5.6.2` - Zweite Änderung (z.B. neue Realm-Config)
-- `keycloak/v26.5.6.2-rc.1` - Release Candidate für Patch 2
-- `keycloak/v27.0.0.1` - Upgrade auf Keycloak 27.0.0
+Da das Keycloak-Image auf einem bestimmten Upstream-Release basiert, wird die
+Upstream-Version als OCI-Label in das Image eingebettet:
 
-### Frontend & Backend
+```
+org.opencontainers.image.base.version=<keycloak-upstream-version>
+```
 
-Standard [SemVer](https://semver.org/):
-
-- `frontend/v1.0.0`
-- `backend/v0.1.0-rc.1`
+Die verwendete Upstream-Version ist direkt dem `keycloak/Dockerfile` zu entnehmen
+(erste `FROM`-Zeile). Bei einem Keycloak-Upgrade wird die Upstream-Version
+automatisch aus dem Dockerfile ausgelesen und in den Image-Labels gesetzt.
 
 ## Prerelease-Tags
 
-Alle Komponenten unterstützen `-rc.N` als einziges Prerelease-Suffix:
+Release Candidates werden mit `-rc.<n>` als Suffix gekennzeichnet:
 
-- `keycloak/v26.5.6.2-rc.1`
-- `frontend/v1.0.0-rc.1`
-- `backend/v0.1.0-rc.1`
+- `v1.0.0-rc.1`
+- `v1.0.0-rc.2`
 
 Prerelease-Tags erzeugen Docker Images, die **nicht** als `latest` getaggt werden.
 
 ## Workflow
 
-1. Änderungen auf `main` mergen
-2. Tag setzen: `git tag keycloak/v26.5.6.1`
-3. Tag pushen: `git push origin keycloak/v26.5.6.1`
-4. GitHub Actions baut und pusht das Docker Image automatisch
+1. Aenderungen auf `main` mergen
+2. Tag setzen: `git tag v1.0.0`
+3. Tag pushen: `git push origin v1.0.0`
+4. GitHub Actions baut und pusht alle drei Docker Images automatisch
+
+## Migration von der alten Strategie
+
+Bis einschliesslich dieses Releases wurden Komponenten unabhaengig mit
+komponentenspezifischen Tag-Prefixes versioniert:
+
+| Alt (deprecated)        | Ersetzt durch |
+|-------------------------|---------------|
+| `keycloak/v26.5.6.1`   | `v<semver>`   |
+| `frontend/v1.0.0`      | `v<semver>`   |
+| `backend/v0.1.0`       | `v<semver>`   |
+
+Die alten Tag-Patterns werden nicht mehr durch GitHub Actions verarbeitet.
