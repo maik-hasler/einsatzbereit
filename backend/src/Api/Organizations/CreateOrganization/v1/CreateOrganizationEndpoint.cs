@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.CreateOrganization.v1;
 using Domain.Organizations;
@@ -20,6 +21,7 @@ internal sealed class CreateOrganizationEndpoint
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
+			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 	}
 

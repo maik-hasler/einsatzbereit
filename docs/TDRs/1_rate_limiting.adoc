@@ -3,7 +3,7 @@
 - *Author:* @maik-hasler
 - *Version:* prior v1.0.0
 - *Date:* 2026-05-03
-- *Status:* Planned
+- *Status:* Resolved
 
 === Description
 
@@ -53,3 +53,37 @@ Delaying implementation is acceptable in the short term due to low traffic. Howe
 - Potential unexpected cost spikes (bandwidth / compute)
 - More complex and risky implementation later when the system is under load
 - Reduced ability to safely onboard new users or make the service public
+
+=== Resolution
+
+Resolved in issue #125 using ASP.NET Core's built-in `Microsoft.AspNetCore.RateLimiting` middleware.
+
+==== Implementation
+
+- Two named policies defined in `Api.Common.RateLimiting.RateLimitingPolicies`:
+  - `rate-limit-read` — Fixed-window limiter; authenticated requests partition by user `sub` claim (200 req/min), anonymous requests partition by client IP (60 req/min).
+  - `rate-limit-write` — Fixed-window limiter; partitioned by user `sub` claim (falls back to client IP for unauthenticated paths); 100 req/min.
+- All endpoints decorated with `.RequireRateLimiting(...)` — reads use the read policy, mutations use the write policy.
+- `app.UseRateLimiter()` placed after `UseAuthentication()` so user identity is available for per-user partitioning.
+- Limits are configurable via `appsettings.json` under the `RateLimiting` section and can be overridden per environment via standard .NET environment variables (e.g. `RateLimiting__Write__PermitLimit`).
+- Rejected requests receive HTTP `429 Too Many Requests`.
+- Client IP resolved from `X-Forwarded-For` header (first entry) when present, otherwise from the TCP connection; this supports deployments behind a reverse proxy.
+
+==== Default Limits
+
+[cols="2,1,1"]
+|===
+| Traffic type | Permit limit | Window
+
+| Authenticated reads (per user)
+| 200
+| 60 s
+
+| Anonymous reads (per IP)
+| 60
+| 60 s
+
+| Writes (per user / IP)
+| 100
+| 60 s
+|===
