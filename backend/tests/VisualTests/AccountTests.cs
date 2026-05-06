@@ -44,7 +44,7 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByLabel("First name").FillAsync("Vera");
-		await Page.GetByLabel("Last name").FillAsync("Muster");
+		await Page.GetByLabel("Last name").FillAsync("Sample");
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
 

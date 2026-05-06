@@ -29,17 +29,17 @@ public class CreateOrganizationCommandHandlerTests
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Feuerwehr Musterstadt", userId);
+		var command = new CreateOrganizationCommand("Sample Fire Department", userId);
 
 		_keycloakService
-			.CreateOrganizationAsync("Feuerwehr Musterstadt", cancellationToken)
+			.CreateOrganizationAsync("Sample Fire Department", cancellationToken)
 			.Returns(keycloakId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.Name.Should().Be("Feuerwehr Musterstadt");
+		result.Name.Should().Be("Sample Fire Department");
 	}
 
 	[Test]

@@ -11,7 +11,7 @@ namespace Application.UnitTests.VolunteerOpportunities.CreateVolunteerOpportunit
 public class CreateVolunteerOpportunityCommandHandlerTests
 {
 	private static readonly OrganizationId TestOrganizationId = new(Guid.NewGuid());
-	private static readonly Address TestAddress = new("Musterstraße", "1", "12345", "Berlin");
+	private static readonly Address TestAddress = new("Sample Street", "1", "12345", "Berlin");
 
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly CreateVolunteerOpportunityCommandHandler _sut;

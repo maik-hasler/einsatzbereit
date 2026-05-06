@@ -18,9 +18,9 @@ public class CreateOrganizationTests(
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var result = await client.CreateOrganizationAsync(
-			new CreateOrganizationRequest { Name = "Feuerwehr Musterstadt" }, cancellationToken);
+			new CreateOrganizationRequest { Name = "Sample Fire Department" }, cancellationToken);
 
-		result.Name.Should().Be("Feuerwehr Musterstadt");
+		result.Name.Should().Be("Sample Fire Department");
 	}
 
 	[Test]
@@ -67,11 +67,11 @@ public class CreateOrganizationTests(
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		await client.CreateOrganizationAsync(
-			new CreateOrganizationRequest { Name = "Testorganisation" }, cancellationToken);
+			new CreateOrganizationRequest { Name = "Test Organization" }, cancellationToken);
 
 		var result = await client.GetOrganizationsAsync(cancellationToken);
 
-		result.Should().Contain(o => o.Name == "Testorganisation");
+		result.Should().Contain(o => o.Name == "Test Organization");
 	}
 
 	[Test]

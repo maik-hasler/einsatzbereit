@@ -18,12 +18,12 @@ public class UpdateUserProfileTests(
 		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		await client.UpdateUserProfileAsync(
-			new UpdateUserProfileRequest { FirstName = "Vera", LastName = "Muster" },
+			new UpdateUserProfileRequest { FirstName = "Vera", LastName = "Sample" },
 			cancellationToken);
 
 		var profile = await client.GetUserProfileAsync(cancellationToken);
 		profile.FirstName.Should().Be("Vera");
-		profile.LastName.Should().Be("Muster");
+		profile.LastName.Should().Be("Sample");
 	}
 
 	[Test]

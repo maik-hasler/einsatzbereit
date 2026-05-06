@@ -13,14 +13,14 @@ public class OrganizationTests
 	{
 		// Arrange
 		var org = Organization.Create(new OrganizationId(Guid.NewGuid()), "Original");
-		var address = new Address("Musterstraße", "1", "12345", "Berlin");
+		var address = new Address("Sample Street", "1", "12345", "Berlin");
 
 		// Act
-		org.Update("Geändert", "Beschreibung", "mail@test.de", "+49 30 123", "https://test.de", address);
+		org.Update("Updated", "Description", "mail@test.de", "+49 30 123", "https://test.de", address);
 
 		// Assert
-		org.Name.Should().Be("Geändert");
-		org.Description.Should().Be("Beschreibung");
+		org.Name.Should().Be("Updated");
+		org.Description.Should().Be("Description");
 		org.ContactEmail.Should().Be("mail@test.de");
 		org.ContactPhone.Should().Be("+49 30 123");
 		org.Website.Should().Be("https://test.de");
@@ -32,7 +32,7 @@ public class OrganizationTests
 	{
 		// Arrange
 		var org = Organization.Create(new OrganizationId(Guid.NewGuid()), "Org");
-		org.Update("Org", null, null, null, null, new Address("Str", "1", "12345", "Stadt"));
+		org.Update("Org", null, null, null, null, new Address("St", "1", "12345", "City"));
 
 		// Act
 		org.Update("Org", null, null, null, null, null);

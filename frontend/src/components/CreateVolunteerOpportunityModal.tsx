@@ -120,7 +120,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
-									placeholder="Musterstraße"
+									placeholder="123 Main St"
 									value={form.street}
 									onChange={(e) =>
 										setForm((f) => ({
