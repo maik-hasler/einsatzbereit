@@ -1383,6 +1383,25 @@ export interface OrganizationMemberDto {
     [key: string]: any;
 }
 
+export interface PagedListOfVolunteerOpportunitySummary {
+    totalItems?: number;
+    currentPage: number;
+    pageCount?: number;
+    items: VolunteerOpportunitySummary[];
+
+    [key: string]: any;
+}
+
+export interface ProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+
+    [key: string]: any;
+}
+
 export interface PublicAddressDto {
     street: string;
     houseNumber: string;
@@ -1417,25 +1436,6 @@ export interface PublicOrganizationProfileResponse {
     website: string | undefined;
     address: PublicAddressDto | undefined;
     openOpportunities: PublicOpportunitySummaryDto[];
-
-    [key: string]: any;
-}
-
-export interface PagedListOfVolunteerOpportunitySummary {
-    totalItems?: number;
-    currentPage: number;
-    pageCount?: number;
-    items: VolunteerOpportunitySummary[];
-
-    [key: string]: any;
-}
-
-export interface ProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
 
     [key: string]: any;
 }

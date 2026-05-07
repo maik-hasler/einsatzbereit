@@ -25,10 +25,13 @@ export default function OrganizationProfilePage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
-	if (loading) return <p className="text-gray-500">{t("orgProfile.loading")}</p>;
+	if (loading)
+		return <p className="text-gray-500">{t("orgProfile.loading")}</p>;
 	if (error)
 		return (
-			<p className="text-red-600">{t("orgProfile.error", { message: error })}</p>
+			<p className="text-red-600">
+				{t("orgProfile.error", { message: error })}
+			</p>
 		);
 	if (!profile)
 		return <p className="text-gray-500">{t("orgProfile.notFound")}</p>;
