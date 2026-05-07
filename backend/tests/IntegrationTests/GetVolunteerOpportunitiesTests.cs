@@ -137,7 +137,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
 
 		var item = result.Items.Single();
-		item.Street.Should().Be("Musterstraße");
+		item.Street.Should().Be("Sample Street");
 		item.HouseNumber.Should().Be("1");
 		item.ZipCode.Should().Be("12345");
 		item.City.Should().Be("Berlin");
@@ -150,7 +150,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
-		var token = await fixture.GetAccessTokenAsync("hannah", "hannah123");
+		var token = await fixture.GetAccessTokenAsync("vera", "vera123");
 		var httpClient = fixture.CreateHttpClient();
 		httpClient.DefaultRequestHeaders.Authorization =
 			new AuthenticationHeaderValue("Bearer", token);
@@ -159,9 +159,9 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var act = () => client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			Title = "Not allowed",
-			Description = "Hannah cannot create opportunities",
+			Description = "Vera cannot create opportunities",
 			OrganizationId = Guid.NewGuid(),
-			Street = "Straße",
+			Street = "Test Street",
 			HouseNumber = "1",
 			ZipCode = "12345",
 			City = "Berlin",
@@ -185,18 +185,18 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			Title = "Opportunity with address",
 			Description = "Test",
 			OrganizationId = orgId,
-			Street = "Hauptstraße",
+			Street = "Main Street",
 			HouseNumber = "42a",
 			ZipCode = "54321",
-			City = "München",
+			City = "Munich",
 			Occurrence = "Recurring",
 			ParticipationType = "IndividualContact"
 		}, cancellationToken);
 
-		result.Street.Should().Be("Hauptstraße");
+		result.Street.Should().Be("Main Street");
 		result.HouseNumber.Should().Be("42a");
 		result.ZipCode.Should().Be("54321");
-		result.City.Should().Be("München");
+		result.City.Should().Be("Munich");
 		result.Occurrence.Should().Be("Recurring");
 		result.ParticipationType.Should().Be("IndividualContact");
 	}
@@ -228,7 +228,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			Title = title,
 			Description = description,
 			OrganizationId = orgId,
-			Street = "Musterstraße",
+			Street = "Sample Street",
 			HouseNumber = "1",
 			ZipCode = "12345",
 			City = "Berlin",

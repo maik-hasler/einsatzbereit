@@ -4,7 +4,7 @@
 
 title Business Context View
 
-Person(volunteer, "Volunteer Hannah", "Searches for regional volunteer opportunities")
+Person(volunteer, "Volunteer Vera", "Searches for regional volunteer opportunities")
 Person(organizer, "Organizer Olaf", "Creates volunteer opportunities for their organization")
 
 System(einsatzbereit, "Einsatzbereit", "Manages regional volunteer opportunities and volunteer registrations")

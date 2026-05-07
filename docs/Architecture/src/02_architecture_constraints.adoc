@@ -65,6 +65,6 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Async all the way
 |No `.Result` or `.Wait()` calls in the backend. All I/O operations use `async`/`await` throughout the call stack.
 
-|German UI, English code
-|The user interface and end-user documentation are in German (target audience). All code, commits, issues, and pull requests are in English.
+|English UI and code, multilingual support
+|The user interface, end-user documentation, and all code, commits, issues, and pull requests are in English. The UI supports multiple languages via internationalization.
 |===
