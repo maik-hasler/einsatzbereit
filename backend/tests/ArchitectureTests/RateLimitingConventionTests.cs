@@ -15,10 +15,8 @@ public sealed class RateLimitingConventionTests
 	public void AllEndpoints_ShouldHaveRateLimitingPolicyApplied()
 	{
 		var app = BuildMinimalAppWithAllEndpoints();
-		var dataSource = app.Services.GetRequiredService<EndpointDataSource>();
 
-		var endpointsWithoutRateLimiting = dataSource.Endpoints
-			.OfType<RouteEndpoint>()
+		var endpointsWithoutRateLimiting = GetAllRouteEndpoints(app)
 			.Where(e => e.Metadata.GetMetadata<IRateLimiterMetadata>() is null)
 			.Select(e => e.RoutePattern.RawText)
 			.ToList();
@@ -33,10 +31,8 @@ public sealed class RateLimitingConventionTests
 		var knownPolicies = new[] { RateLimitingPolicies.Read, RateLimitingPolicies.Write };
 
 		var app = BuildMinimalAppWithAllEndpoints();
-		var dataSource = app.Services.GetRequiredService<EndpointDataSource>();
 
-		var endpointsWithUnknownPolicy = dataSource.Endpoints
-			.OfType<RouteEndpoint>()
+		var endpointsWithUnknownPolicy = GetAllRouteEndpoints(app)
 			.Select(e => new
 			{
 				Route = e.RoutePattern.RawText,
@@ -49,6 +45,12 @@ public sealed class RateLimitingConventionTests
 		endpointsWithUnknownPolicy.Should().BeEmpty(
 			$"endpoints may only use the policies '{RateLimitingPolicies.Read}' or '{RateLimitingPolicies.Write}'");
 	}
+
+	private static IReadOnlyList<RouteEndpoint> GetAllRouteEndpoints(WebApplication app) =>
+		((IEndpointRouteBuilder)app).DataSources
+			.SelectMany(ds => ds.Endpoints)
+			.OfType<RouteEndpoint>()
+			.ToList();
 
 	private static WebApplication BuildMinimalAppWithAllEndpoints()
 	{
@@ -67,8 +69,8 @@ public sealed class RateLimitingConventionTests
 		builder.Services.AddAuthorization();
 		builder.Services.AddRateLimiter(_ => { });
 
-		// AddEndpoints() uses Assembly.GetExecutingAssembly(), which would be ArchitectureTests
-		// here. Manually register all IEndpoint implementations from the Api assembly instead.
+		// AddEndpoints() uses Assembly.GetExecutingAssembly(), which is ArchitectureTests here.
+		// Manually register all IEndpoint implementations from the Api assembly instead.
 		var endpointTypes = AssemblyAnchors.PresentationLayer.GetTypes()
 			.Where(t => t is { IsClass: true, IsAbstract: false }
 				&& typeof(IEndpoint).IsAssignableFrom(t));

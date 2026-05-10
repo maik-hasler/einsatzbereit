@@ -60,9 +60,9 @@ Resolved in issue #125 using ASP.NET Core's built-in `Microsoft.AspNetCore.RateL
 
 ==== Implementation
 
-- Two named policies defined in `Api.Common.RateLimiting.RateLimitingPolicies`:
-  - `rate-limit-read` - Fixed-window limiter; authenticated requests partition by user `sub` claim (200 req/min), anonymous requests partition by client IP (60 req/min).
-  - `rate-limit-write` - Fixed-window limiter; partitioned by user `sub` claim (falls back to client IP for unauthenticated paths); 100 req/min.
+- Two named policies are defined in `Api.Common.RateLimiting.RateLimitingPolicies`.
+- `rate-limit-read`: Fixed-window limiter; authenticated requests partition by user `sub` claim (200 req/min), anonymous requests partition by client IP (60 req/min).
+- `rate-limit-write`: Fixed-window limiter; partitioned by user `sub` claim (falls back to client IP for unauthenticated paths); 100 req/min.
 - All endpoints decorated with `.RequireRateLimiting(...)` - reads use the read policy, mutations use the write policy.
 - `app.UseRateLimiter()` placed after `UseAuthentication()` so user identity is available for per-user partitioning.
 - Limits are configurable via `appsettings.json` under the `RateLimiting` section and can be overridden per environment via standard .NET environment variables (e.g. `RateLimiting__Write__PermitLimit`).
