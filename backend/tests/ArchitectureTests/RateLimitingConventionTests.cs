@@ -3,7 +3,6 @@ using Api.Common.RateLimiting;
 using Asp.Versioning;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,7 +16,7 @@ public sealed class RateLimitingConventionTests
 		var app = BuildMinimalAppWithAllEndpoints();
 
 		var endpointsWithoutRateLimiting = GetAllRouteEndpoints(app)
-			.Where(e => e.Metadata.GetMetadata<IRateLimiterMetadata>() is null)
+			.Where(e => GetRateLimitingPolicyName(e) is null)
 			.Select(e => e.RoutePattern.RawText)
 			.ToList();
 
@@ -33,17 +32,24 @@ public sealed class RateLimitingConventionTests
 		var app = BuildMinimalAppWithAllEndpoints();
 
 		var endpointsWithUnknownPolicy = GetAllRouteEndpoints(app)
-			.Select(e => new
-			{
-				Route = e.RoutePattern.RawText,
-				Policy = e.Metadata.GetMetadata<IRateLimiterMetadata>()?.PolicyName,
-			})
+			.Select(e => new { Route = e.RoutePattern.RawText, Policy = GetRateLimitingPolicyName(e) })
 			.Where(e => e.Policy is not null && !knownPolicies.Contains(e.Policy))
 			.Select(e => $"{e.Route} uses unknown policy '{e.Policy}'")
 			.ToList();
 
 		endpointsWithUnknownPolicy.Should().BeEmpty(
 			$"endpoints may only use the policies '{RateLimitingPolicies.Read}' or '{RateLimitingPolicies.Write}'");
+	}
+
+	// Use type-name reflection instead of IRateLimiterMetadata to avoid a hard dependency
+	// on Microsoft.AspNetCore.RateLimiting (which is not reliably resolvable from
+	// Microsoft.NET.Sdk test projects even with a FrameworkReference).
+	private static string? GetRateLimitingPolicyName(RouteEndpoint endpoint)
+	{
+		var attr = endpoint.Metadata
+			.FirstOrDefault(m => m.GetType().Name == "EnableRateLimitingAttribute");
+
+		return attr?.GetType().GetProperty("PolicyName")?.GetValue(attr) as string;
 	}
 
 	private static IReadOnlyList<RouteEndpoint> GetAllRouteEndpoints(WebApplication app) =>
@@ -80,7 +86,6 @@ public sealed class RateLimitingConventionTests
 
 		var app = builder.Build();
 
-		// Replicate EndpointExtensions.MapEndpoints() without the assembly assumption
 		var versionSet = app.NewApiVersionSet()
 			.HasApiVersion(new ApiVersion(1))
 			.ReportApiVersions()
