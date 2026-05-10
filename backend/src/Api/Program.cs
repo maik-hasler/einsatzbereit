@@ -1,5 +1,3 @@
-using System.Security.Claims;
-using System.Threading.RateLimiting;
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
@@ -8,7 +6,6 @@ using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -65,60 +62,7 @@ builder.Services.AddCors(options =>
 			.AllowAnyMethod()));
 
 builder.Services.AddEndpoints();
-
-builder.Services.AddRateLimiter(options =>
-{
-	options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-	var readWindow = TimeSpan.FromSeconds(
-		builder.Configuration.GetValue("RateLimiting:Read:WindowSeconds", 60));
-	var readAuthLimit = builder.Configuration.GetValue("RateLimiting:Read:AuthenticatedPermitLimit", 200);
-	var readAnonLimit = builder.Configuration.GetValue("RateLimiting:Read:AnonymousPermitLimit", 60);
-	var writeWindow = TimeSpan.FromSeconds(
-		builder.Configuration.GetValue("RateLimiting:Write:WindowSeconds", 60));
-	var writeLimit = builder.Configuration.GetValue("RateLimiting:Write:PermitLimit", 100);
-
-	options.AddPolicy(RateLimitingPolicies.Read, httpContext =>
-	{
-		if (httpContext.User.Identity?.IsAuthenticated == true)
-		{
-			var userId = httpContext.User.FindFirstValue("sub") ?? "unknown";
-			return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
-			{
-				PermitLimit = readAuthLimit,
-				Window = readWindow,
-				QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-				QueueLimit = 0
-			});
-		}
-
-		var clientIp = GetClientIp(httpContext);
-		return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
-		{
-			PermitLimit = readAnonLimit,
-			Window = readWindow,
-			QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-			QueueLimit = 0
-		});
-	});
-
-	options.AddPolicy(RateLimitingPolicies.Write, httpContext =>
-	{
-		var key = httpContext.User.FindFirstValue("sub") ?? GetClientIp(httpContext);
-		return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
-		{
-			PermitLimit = writeLimit,
-			Window = writeWindow,
-			QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-			QueueLimit = 0
-		});
-	});
-
-	static string GetClientIp(HttpContext ctx) =>
-		ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-		?? ctx.Connection.RemoteIpAddress?.ToString()
-		?? "unknown";
-});
+builder.Services.AddRateLimitingPolicies(builder.Configuration);
 
 builder.Services.AddOpenApi("v1", options =>
 {
