@@ -63,15 +63,3 @@ Prerelease-Tags erzeugen Docker Images, die **nicht** als `latest` getaggt werde
 3. Tag pushen: `git push origin v1.0.0`
 4. GitHub Actions baut und pusht alle drei Docker Images automatisch
 
-## Migration von der alten Strategie
-
-Bis einschliesslich dieses Releases wurden Komponenten unabhaengig mit
-komponentenspezifischen Tag-Prefixes versioniert:
-
-| Alt (deprecated)        | Ersetzt durch |
-|-------------------------|---------------|
-| `keycloak/v26.5.6.1`   | `v<semver>`   |
-| `frontend/v1.0.0`      | `v<semver>`   |
-| `backend/v0.1.0`       | `v<semver>`   |
-
-Die alten Tag-Patterns werden nicht mehr durch GitHub Actions verarbeitet.
