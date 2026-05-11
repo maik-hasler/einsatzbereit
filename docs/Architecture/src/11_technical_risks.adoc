@@ -13,7 +13,7 @@ The following table lists the relevant risks and technical debts. Each risk or t
 |1
 |Rate Limiting
 |Missing rate limitation.
-|Planned
+|Resolved
 |2026-05-03
 |link:TDRs/1_rate_limiting.html[Rate Limiting]
 
