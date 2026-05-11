@@ -1,0 +1,221 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*'
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-backend:
+    name: Publish Backend
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ github.repository }}-backend
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: backend/global.json
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/package.json
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore backend
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build backend
+        working-directory: backend
+        run: dotnet build --no-restore
+
+      - name: Test - Application.UnitTests
+        working-directory: backend
+        run: dotnet run --project tests/Application.UnitTests --no-build
+
+      - name: Test - ArchitectureTests
+        working-directory: backend
+        run: dotnet run --project tests/ArchitectureTests --no-build
+
+      - name: Test - IntegrationTests
+        working-directory: backend
+        run: dotnet run --project tests/IntegrationTests --no-build
+
+      - name: Test - VisualTests
+        working-directory: backend
+        run: dotnet run --project tests/VisualTests --no-build
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+          if echo "$TAG" | grep -qE '-rc\.'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          file: backend/src/Api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-frontend:
+    name: Publish Frontend
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ github.repository }}-frontend
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/package.json
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Type check
+        working-directory: frontend
+        run: pnpm check
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+          if echo "$TAG" | grep -qE '-rc\.'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-keycloak:
+    name: Publish Keycloak
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ github.repository }}-keycloak
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+          if echo "$TAG" | grep -qE '-rc\.'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract Keycloak upstream version
+        id: keycloak
+        run: |
+          KC_VERSION=$(grep -m1 'FROM quay.io/keycloak/keycloak:' keycloak/Dockerfile | sed 's/.*keycloak:\([^ ]*\).*/\1/')
+          echo "upstream_version=${KC_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+          labels: |
+            org.opencontainers.image.base.version=${{ steps.keycloak.outputs.upstream_version }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: keycloak
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

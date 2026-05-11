@@ -1,53 +1,64 @@
 # Versioning & Publishing Strategy
 
-This project is a monorepo with independently versioned components.
-Each component is published as its own Docker image via **GitHub Container Registry (ghcr.io)**.
+This project is a monorepo with a unified versioning strategy.
+All components are published together as Docker images via **GitHub Container Registry (ghcr.io)**.
 
 ## Tag Format
 
-Releases are triggered via Git tags. Each component has its own tag prefix:
+A single Git tag triggers the release of all components:
 
-| Component | Tag Pattern              | Image                                        |
-|-----------|--------------------------|----------------------------------------------|
-| Keycloak  | `keycloak/v<version>`    | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
-| Frontend  | `frontend/v<version>`    | `ghcr.io/<owner>/einsatzbereit-frontend`     |
-| Backend   | `backend/v<version>`     | `ghcr.io/<owner>/einsatzbereit-backend`      |
+| Tag Pattern                        | Description       |
+|------------------------------------|-------------------|
+| `v<major>.<minor>.<patch>`         | Stable release    |
+| `v<major>.<minor>.<patch>-rc.<n>` | Release candidate |
+
+Examples:
+- `v1.0.0` - First stable release
+- `v1.1.0-rc.1` - Release candidate for version 1.1.0
+
+## Published Images
+
+Every component receives the same version tag:
+
+| Component | Image                                        |
+|-----------|----------------------------------------------|
+| Backend   | `ghcr.io/<owner>/einsatzbereit-backend`      |
+| Frontend  | `ghcr.io/<owner>/einsatzbereit-frontend`     |
+| Keycloak  | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
 
 ## Versioning Scheme
 
-### Keycloak
+Standard [SemVer](https://semver.org/) for all components:
 
-Format: `<upstream>.<patch>`
+- **MAJOR**: Breaking change in any component (e.g. incompatible API change)
+- **MINOR**: New functionality, backwards-compatible
+- **PATCH**: Bug fix or minor configuration change
 
-The first three parts match the Keycloak upstream version in use.
-The fourth part is the internal patch version for changes to configuration, realm exports, or Dockerfile.
+## Keycloak Upstream Version
 
-Examples:
-- `keycloak/v26.5.6.1` - First internal build based on Keycloak 26.5.6
-- `keycloak/v26.5.6.2` - Second change (e.g. new realm config)
-- `keycloak/v26.5.6.2-rc.1` - Release candidate for patch 2
-- `keycloak/v27.0.0.1` - Upgrade to Keycloak 27.0.0
+Since the Keycloak image is based on a specific upstream release, the upstream version is
+embedded as an OCI label in the image:
 
-### Frontend & Backend
+```
+org.opencontainers.image.base.version=<keycloak-upstream-version>
+```
 
-Standard [SemVer](https://semver.org/):
-
-- `frontend/v1.0.0`
-- `backend/v0.1.0-rc.1`
+The upstream version in use can be read directly from `keycloak/Dockerfile` (first `FROM` line).
+When upgrading Keycloak, the upstream version is automatically extracted from the Dockerfile
+and written into the image labels.
 
 ## Prerelease Tags
 
-All components support `-rc.N` as the only prerelease suffix:
+Release candidates are marked with an `-rc.<n>` suffix:
 
-- `keycloak/v26.5.6.2-rc.1`
-- `frontend/v1.0.0-rc.1`
-- `backend/v0.1.0-rc.1`
+- `v1.0.0-rc.1`
+- `v1.0.0-rc.2`
 
 Prerelease tags produce Docker images that are **not** tagged as `latest`.
 
 ## Workflow
 
 1. Merge changes into `main`
-2. Set tag: `git tag keycloak/v26.5.6.1`
-3. Push tag: `git push origin keycloak/v26.5.6.1`
-4. GitHub Actions builds and pushes the Docker image automatically
+2. Set tag: `git tag v1.0.0`
+3. Push tag: `git push origin v1.0.0`
+4. GitHub Actions builds and pushes all three Docker images automatically
