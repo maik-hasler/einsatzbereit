@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Engagements;
 using Application.Engagements.GetMyEngagements.v1;
@@ -19,6 +20,7 @@ internal sealed class GetMyEngagementsEndpoint
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
+			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetMyEngagementsAsync(

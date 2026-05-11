@@ -1,4 +1,5 @@
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Common.Pagination;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
@@ -18,6 +19,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
+			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 	}
 

@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Engagements.CreateEngagement.v1;
 using Domain.Users;
@@ -20,6 +21,7 @@ internal sealed class CreateEngagementEndpoint
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
+			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> CreateEngagementAsync(

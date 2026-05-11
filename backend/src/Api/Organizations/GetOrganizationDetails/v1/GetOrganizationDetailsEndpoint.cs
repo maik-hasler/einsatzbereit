@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.GetOrganizationDetails.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ internal sealed class GetOrganizationDetailsEndpoint
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
+			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 	}
 
