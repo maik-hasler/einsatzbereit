@@ -3,6 +3,7 @@ using Api.Common.RateLimiting;
 using Asp.Versioning;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,16 +42,8 @@ public sealed class RateLimitingConventionTests
 			$"endpoints may only use the policies '{RateLimitingPolicies.Read}' or '{RateLimitingPolicies.Write}'");
 	}
 
-	// Use type-name reflection instead of IRateLimiterMetadata to avoid a hard dependency
-	// on Microsoft.AspNetCore.RateLimiting (which is not reliably resolvable from
-	// Microsoft.NET.Sdk test projects even with a FrameworkReference).
-	private static string? GetRateLimitingPolicyName(RouteEndpoint endpoint)
-	{
-		var attr = endpoint.Metadata
-			.FirstOrDefault(m => m.GetType().Name == "EnableRateLimitingAttribute");
-
-		return attr?.GetType().GetProperty("PolicyName")?.GetValue(attr) as string;
-	}
+	private static string? GetRateLimitingPolicyName(RouteEndpoint endpoint) =>
+		endpoint.Metadata.GetMetadata<IRateLimiterMetadata>()?.PolicyName;
 
 	private static IReadOnlyList<RouteEndpoint> GetAllRouteEndpoints(WebApplication app) =>
 		((IEndpointRouteBuilder)app).DataSources
