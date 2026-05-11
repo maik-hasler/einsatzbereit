@@ -1,6 +1,6 @@
 # Einsatzbereit
 
-Volunteer coordination platform matching helpers with regional needs. German-language UI, English code/commits.
+Volunteer coordination platform matching helpers with regional needs. English UI and code, multilingual support.
 
 ## Monorepo Structure
 
@@ -41,7 +41,7 @@ Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend
 | pgAdmin | http://localhost:5050 | admin@admin.com / admin |
 | PostgreSQL | localhost:5432 | postgres / postgres |
 
-Test users: `hannah/hannah123` (user), `olaf/olaf123` (user + organisator), `admin/admin123` (admin)
+Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/admin123` (admin)
 
 ## Key Conventions
 

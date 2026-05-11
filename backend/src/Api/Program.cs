@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application;
 using Asp.Versioning;
 using Infrastructure;
@@ -61,6 +62,7 @@ builder.Services.AddCors(options =>
 			.AllowAnyMethod()));
 
 builder.Services.AddEndpoints();
+builder.Services.AddRateLimitingPolicies(builder.Configuration);
 
 builder.Services.AddOpenApi("v1", options =>
 {
@@ -94,6 +96,7 @@ app.MapDefaultEndpoints();
 
 app.UseCors();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapEndpoints();

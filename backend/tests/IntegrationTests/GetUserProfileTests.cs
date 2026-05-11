@@ -15,12 +15,12 @@ public class GetUserProfileTests(
 	public async Task GetUserProfile_ShouldReturnProfile_WhenAuthenticated(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var result = await client.GetUserProfileAsync(cancellationToken);
 
 		result.Id.Should().NotBeEmpty();
-		result.Username.Should().Be("hannah");
+		result.Username.Should().Be("vera");
 		result.Email.Should().NotBeNullOrEmpty();
 	}
 

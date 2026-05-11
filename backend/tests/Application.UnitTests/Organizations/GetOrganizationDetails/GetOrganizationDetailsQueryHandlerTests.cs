@@ -47,11 +47,11 @@ public class GetOrganizationDetailsQueryHandlerTests
 		// Arrange
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var org = Organization.Create(new OrganizationId(orgId), "Feuerwehr Musterstadt");
+		var org = Organization.Create(new OrganizationId(orgId), "Sample Fire Department");
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([
-			new KeycloakOrganizationMember(userId, "olaf", "Olaf", "Müller", "olaf@test.de", true)
+			new KeycloakOrganizationMember(userId, "olaf", "Olaf", "Miller", "olaf@test.de", true)
 		]);
 
 		// Act
@@ -60,7 +60,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		// Assert
 		result.Should().NotBeNull();
 		result!.Id.Should().Be(orgId);
-		result.Name.Should().Be("Feuerwehr Musterstadt");
+		result.Name.Should().Be("Sample Fire Department");
 		result.Members.Should().HaveCount(1);
 		result.Members[0].UserId.Should().Be(userId);
 		result.Members[0].IsOrganisator.Should().BeTrue();
@@ -74,7 +74,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		var orgId = Guid.NewGuid();
 		var org = Organization.Create(new OrganizationId(orgId), "Org");
 		org.Update("Org", null, null, null, null,
-			new Address("Hauptstraße", "1", "12345", "Berlin"));
+			new Address("Main Street", "1", "12345", "Berlin"));
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
@@ -84,7 +84,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 
 		// Assert
 		result!.Address.Should().NotBeNull();
-		result.Address!.Street.Should().Be("Hauptstraße");
+		result.Address!.Street.Should().Be("Main Street");
 		result.Address.City.Should().Be("Berlin");
 	}
 

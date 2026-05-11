@@ -29,31 +29,31 @@ public class UpdateOrganizationCommandHandlerTests
 	{
 		// Arrange
 		var orgId = Guid.NewGuid();
-		var org = Organization.Create(new OrganizationId(orgId), "Alter Name");
+		var org = Organization.Create(new OrganizationId(orgId), "Old Name");
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 
 		var command = new UpdateOrganizationCommand(
 			orgId,
-			"Neuer Name",
-			"Eine Beschreibung",
-			"kontakt@test.de",
+			"New Name",
+			"A Description",
+			"contact@test.com",
 			"+49 123 456",
 			"https://example.org",
-			new UpdateAddressCommand("Hauptstraße", "1", "12345", "Berlin"));
+			new UpdateAddressCommand("Main Street", "1", "12345", "Berlin"));
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		result.Should().BeTrue();
-		org.Name.Should().Be("Neuer Name");
-		org.Description.Should().Be("Eine Beschreibung");
-		org.ContactEmail.Should().Be("kontakt@test.de");
+		org.Name.Should().Be("New Name");
+		org.Description.Should().Be("A Description");
+		org.ContactEmail.Should().Be("contact@test.com");
 		org.ContactPhone.Should().Be("+49 123 456");
 		org.Website.Should().Be("https://example.org");
 		org.Address.Should().NotBeNull();
-		org.Address!.Street.Should().Be("Hauptstraße");
+		org.Address!.Street.Should().Be("Main Street");
 		org.Address.City.Should().Be("Berlin");
 	}
 

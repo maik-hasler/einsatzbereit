@@ -6,8 +6,8 @@ namespace IntegrationTests;
 public class GenerateAliasTests
 {
 	[Test]
-	[Arguments("Feuerwehr Musterstadt", "feuerwehr-musterstadt")]
-	[Arguments("THW Ortsverband", "thw-ortsverband")]
+	[Arguments("Fire Department Sample", "fire-department-sample")]
+	[Arguments("Volunteer Corps", "volunteer-corps")]
 	[Arguments("simple", "simple")]
 	public void GenerateAlias_ShouldLowercaseAndReplaceSpaces(string name, string expected)
 	{

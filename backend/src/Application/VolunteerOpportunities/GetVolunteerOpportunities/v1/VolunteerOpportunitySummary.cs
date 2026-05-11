@@ -4,6 +4,7 @@ public sealed record VolunteerOpportunitySummary(
 	Guid Id,
 	string Title,
 	string Description,
+	Guid OrganizationId,
 	string OrganizationName,
 	string? Street,
 	string? HouseNumber,

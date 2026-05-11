@@ -11,10 +11,10 @@ public class AddressTests
 	public void Constructor_ShouldCreateAddress_WithValidData()
 	{
 		// Act
-		var address = new Address("Musterstraße", "42a", "12345", "Berlin");
+		var address = new Address("Sample Street", "42a", "12345", "Berlin");
 
 		// Assert
-		address.Street.Should().Be("Musterstraße");
+		address.Street.Should().Be("Sample Street");
 		address.HouseNumber.Should().Be("42a");
 		address.ZipCode.Should().Be("12345");
 		address.City.Should().Be("Berlin");
@@ -38,7 +38,7 @@ public class AddressTests
 	[Arguments(null)]
 	public void Constructor_ShouldThrow_WhenHouseNumberIsEmpty(string? houseNumber)
 	{
-		var act = () => new Address("Straße", houseNumber!, "12345", "Berlin");
+		var act = () => new Address("Test Street", houseNumber!, "12345", "Berlin");
 
 		act.Should().Throw<DomainException>()
 			.WithMessage("House number must not be empty.");
@@ -52,7 +52,7 @@ public class AddressTests
 	[Arguments("123456")]
 	public void Constructor_ShouldThrow_WhenZipCodeIsInvalid(string? zipCode)
 	{
-		var act = () => new Address("Straße", "1", zipCode!, "Berlin");
+		var act = () => new Address("Test Street", "1", zipCode!, "Berlin");
 
 		act.Should().Throw<DomainException>()
 			.WithMessage("Zip code must be exactly 5 characters.");
@@ -64,7 +64,7 @@ public class AddressTests
 	[Arguments(null)]
 	public void Constructor_ShouldThrow_WhenCityIsEmpty(string? city)
 	{
-		var act = () => new Address("Straße", "1", "12345", city!);
+		var act = () => new Address("Test Street", "1", "12345", city!);
 
 		act.Should().Throw<DomainException>()
 			.WithMessage("City must not be empty.");
@@ -73,8 +73,8 @@ public class AddressTests
 	[Test]
 	public void Equals_ShouldReturnTrue_ForSameValues()
 	{
-		var address1 = new Address("Straße", "1", "12345", "Berlin");
-		var address2 = new Address("Straße", "1", "12345", "Berlin");
+		var address1 = new Address("Test Street", "1", "12345", "Berlin");
+		var address2 = new Address("Test Street", "1", "12345", "Berlin");
 
 		address1.Should().Be(address2);
 	}

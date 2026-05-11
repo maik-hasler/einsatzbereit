@@ -23,7 +23,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Entity Framework Core. The ORM (Object-Relational Mapper) used in the backend to interact with PostgreSQL. Manages the database schema via migrations.
 
 |Engagement
-|(German: Einsatz) The act of a volunteer signing up to help with a specific volunteer opportunity. Modeled as an `Engagement` entity in the domain.
+|The act of a volunteer signing up to help with a specific volunteer opportunity. Modeled as an `Engagement` entity in the domain.
 
 |GHCR
 |GitHub Container Registry. The Docker image registry used to publish the frontend, backend, and Keycloak images on version releases.
@@ -50,17 +50,17 @@ ifndef::imagesdir[:imagesdir: ../images]
 |OpenID Connect. An identity layer built on top of OAuth 2.0. Used for the authentication flow between the frontend, Keycloak, and the backend.
 
 |Organizer
-|(German: Organisator) A user with the `organisator` role. Represents a person who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
+|A user with the `organisator` role. Represents a person who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
 
 |Organization
-|(German: Organisation) A club, NGO, or other entity that posts volunteer opportunities on the platform.
+|A club, NGO, or other entity that posts volunteer opportunities on the platform.
 
 |PKCE
 |Proof Key for Code Exchange. An extension to the OAuth 2.0 Authorization Code Flow that prevents authorization code interception attacks. Required for public clients (SPAs) where a client secret cannot be kept confidential.
 
 |Volunteer
-|(German: Ehrenamtliche, Helferin) A user who searches for and signs up for volunteer opportunities. Test persona: Hannah (`hannah` / `hannah123`).
+|A user who searches for and signs up for volunteer opportunities. Test persona: Vera (`vera` / `vera123`).
 
 |Volunteer Opportunity
-|(German: Hilfsbedarf, Einsatzmöglichkeit) A concrete request for help posted by an organization. Describes what is needed, where, when, and what skills are required. Core entity of the domain.
+|A concrete request for help posted by an organization. Describes what is needed, where, when, and what skills are required. Core entity of the domain.
 |===

@@ -40,7 +40,7 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 
 | Username | Password     | Roles                 | Persona              | Can                                  |
 |----------|--------------|-----------------------|----------------------|--------------------------------------|
-| `hannah` | `hannah123`  | `user`                | Volunteer Hannah     | Browse volunteer opportunities       |
+| `vera`   | `vera123`    | `user`                | Volunteer Vera       | Browse volunteer opportunities       |
 | `olaf`   | `olaf123`    | `user`, `organisator` | Organizer Olaf       | Browse and create opportunities      |
 | `admin`  | `admin123`   | `admin`               | Administrator        | Full administration                  |
 

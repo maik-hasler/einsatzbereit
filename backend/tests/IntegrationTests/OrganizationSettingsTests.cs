@@ -19,12 +19,12 @@ public class OrganizationSettingsTests(
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
-			new CreateOrganizationRequest { Name = "Feuerwehr Details Test" }, cancellationToken);
+			new CreateOrganizationRequest { Name = "Organization Details Test" }, cancellationToken);
 
 		var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
 
 		result.Id.Should().Be(created.Id.Value);
-		result.Name.Should().Be("Feuerwehr Details Test");
+		result.Name.Should().Be("Organization Details Test");
 		result.Members.Should().NotBeEmpty();
 		result.CreatedOn.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
 	}
@@ -45,7 +45,7 @@ public class OrganizationSettingsTests(
 	public async Task GetOrganizationDetails_ShouldReturn403_WhenUserLacksOrganisatorRole(
 		CancellationToken cancellationToken)
 	{
-		var client = await CreateAuthenticatedClientAsync("hannah", "hannah123");
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
 
@@ -74,18 +74,18 @@ public class OrganizationSettingsTests(
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
-			new CreateOrganizationRequest { Name = "Vor Update" }, cancellationToken);
+			new CreateOrganizationRequest { Name = "Before Update" }, cancellationToken);
 
 		var updateRequest = new UpdateOrganizationRequest
 		{
-			Name = "Nach Update",
-			Description = "Neue Beschreibung",
-			ContactEmail = "kontakt@feuerwehr.de",
+			Name = "After Update",
+			Description = "New Description",
+			ContactEmail = "contact@example.com",
 			ContactPhone = "+49 30 123456",
-			Website = "https://feuerwehr.de",
+			Website = "https://example.com",
 			Address = new UpdateAddressRequest
 			{
-				Street = "Feuerwehrstraße",
+				Street = "Fire Station Street",
 				HouseNumber = "1",
 				ZipCode = "10115",
 				City = "Berlin"
@@ -95,9 +95,9 @@ public class OrganizationSettingsTests(
 		await client.UpdateOrganizationAsync(created.Id.Value, updateRequest, cancellationToken);
 
 		var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
-		result.Name.Should().Be("Nach Update");
-		result.Description.Should().Be("Neue Beschreibung");
-		result.ContactEmail.Should().Be("kontakt@feuerwehr.de");
+		result.Name.Should().Be("After Update");
+		result.Description.Should().Be("New Description");
+		result.ContactEmail.Should().Be("contact@example.com");
 		result.Address.Should().NotBeNull();
 		result.Address!.City.Should().Be("Berlin");
 	}
@@ -124,23 +124,23 @@ public class OrganizationSettingsTests(
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
 		var created = await client.CreateOrganizationAsync(
-			new CreateOrganizationRequest { Name = "Org mit Adresse" }, cancellationToken);
+			new CreateOrganizationRequest { Name = "Org with Address" }, cancellationToken);
 
 		await client.UpdateOrganizationAsync(created.Id.Value, new UpdateOrganizationRequest
 		{
-			Name = "Org mit Adresse",
+			Name = "Org with Address",
 			Address = new UpdateAddressRequest
 			{
-				Street = "Straße",
+				Street = "Test Street",
 				HouseNumber = "1",
 				ZipCode = "12345",
-				City = "Stadt"
+				City = "Sample City"
 			}
 		}, cancellationToken);
 
 		await client.UpdateOrganizationAsync(created.Id.Value, new UpdateOrganizationRequest
 		{
-			Name = "Org mit Adresse",
+			Name = "Org with Address",
 			Address = null
 		}, cancellationToken);
 

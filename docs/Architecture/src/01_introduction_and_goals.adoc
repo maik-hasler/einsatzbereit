@@ -67,7 +67,7 @@ _A complete list of all quality goals with detailed scenarios can be found in Ch
 |End users
 |_"I have a free Saturday afternoon and want to do something meaningful - but please without fighting through three forms first."_
 
-*Volunteer Hannah* expects an intuitive interface where she can quickly find suitable opportunities without registration hurdles or obligations.
+*Volunteer Vera* expects an intuitive interface where she can quickly find suitable opportunities without registration hurdles or obligations.
 
 |Organizations and clubs
 |End users

@@ -2,7 +2,7 @@
   "name": "einsatzbereit",
   "type": "module",
   "version": "1.0.0",
-  "packageManager": "pnpm@10.33.3",
+  "packageManager": "pnpm@10.33.4",
   "engines": {
     "node": "25.9.0"
   },
@@ -16,11 +16,11 @@
     "i18n:check": "node scripts/check-i18n-keys.js"
   },
   "dependencies": {
-    "i18next": "26.0.8",
+    "i18next": "26.0.10",
     "i18next-browser-languagedetector": "8.2.1",
     "oidc-client-ts": "3.5.0",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "react-i18next": "17.0.6",
     "react-oidc-context": "3.3.1",
     "react-router": "7.15.0"

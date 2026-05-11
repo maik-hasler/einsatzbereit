@@ -626,6 +626,58 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
+    getPublicOrganizationProfile(organizationId: string, signal?: AbortSignal): Promise<PublicOrganizationProfileResponse> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/profile";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPublicOrganizationProfile(_response);
+        });
+    }
+
+    protected processGetPublicOrganizationProfile(response: Response): Promise<PublicOrganizationProfileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PublicOrganizationProfileResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PublicOrganizationProfileResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     getOrganizations(signal?: AbortSignal): Promise<KeycloakOrganization[]> {
         let url_ = this.baseUrl + "/v1/organizations";
         url_ = url_.replace(/[?&]$/, "");
@@ -1350,6 +1402,44 @@ export interface ProblemDetails {
     [key: string]: any;
 }
 
+export interface PublicAddressDto {
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
+
+    [key: string]: any;
+}
+
+export interface PublicOpportunitySummaryDto {
+    id: string;
+    title: string;
+    description: string;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
+    isRemote: boolean;
+    occurrence: string;
+    participationType: string;
+    createdOn: Date;
+
+    [key: string]: any;
+}
+
+export interface PublicOrganizationProfileResponse {
+    id: string;
+    name: string;
+    description: string | undefined;
+    contactEmail: string | undefined;
+    contactPhone: string | undefined;
+    website: string | undefined;
+    address: PublicAddressDto | undefined;
+    openOpportunities: PublicOpportunitySummaryDto[];
+
+    [key: string]: any;
+}
+
 export interface TimeSlotDetail {
     id: string;
     startDateTime: Date;
@@ -1421,6 +1511,7 @@ export interface VolunteerOpportunitySummary {
     id: string;
     title: string;
     description: string;
+    organizationId: string;
     organizationName: string;
     street: string | undefined;
     houseNumber: string | undefined;
