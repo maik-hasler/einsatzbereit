@@ -67,23 +67,23 @@ The CI/CD pipeline runs on GitHub Actions and covers two concerns: quality gates
 ==== Image Publishing (on tag push)
 
 Images are published to GitHub Container Registry (GHCR) on version tag pushes.
-Each component is tagged independently using its own prefix:
+A single Git tag triggers the release of all components with the same version:
 
 [cols="1,2,2" options="header"]
 |===
 |Component |Tag format |Example
 
 |Frontend
-|`frontend/v{semver}`
-|`frontend/v1.0.0`
+|`v{semver}`
+|`v1.0.0`
 
 |Backend
-|`backend/v{semver}`
-|`backend/v1.0.0`
+|`v{semver}`
+|`v1.0.0`
 
 |Keycloak
-|`keycloak/v{upstream}.{patch}`
-|`keycloak/v26.5.6.1`
+|`v{semver}`
+|`v1.0.0`
 |===
 
 See [VERSIONING.md](../../VERSIONING.md) for the full versioning and publishing strategy.
