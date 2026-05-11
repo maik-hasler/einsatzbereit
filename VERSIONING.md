@@ -1,65 +1,64 @@
 # Versioning & Publishing Strategy
 
-Dieses Projekt ist ein Monorepo mit einheitlicher Versionierung.
-Alle Komponenten werden gemeinsam als Docker Images über **GitHub Container Registry (ghcr.io)** publiziert.
+This project is a monorepo with a unified versioning strategy.
+All components are published together as Docker images via **GitHub Container Registry (ghcr.io)**.
 
-## Tag-Format
+## Tag Format
 
-Ein einziger Git-Tag loest den Release aller Komponenten aus:
+A single Git tag triggers the release of all components:
 
-| Tag-Pattern           | Beschreibung              |
-|-----------------------|---------------------------|
-| `v<major>.<minor>.<patch>` | Stabiler Release     |
-| `v<major>.<minor>.<patch>-rc.<n>` | Release Candidate |
+| Tag Pattern                        | Description       |
+|------------------------------------|-------------------|
+| `v<major>.<minor>.<patch>`         | Stable release    |
+| `v<major>.<minor>.<patch>-rc.<n>` | Release candidate |
 
-Beispiele:
-- `v1.0.0` - Erster stabiler Release
-- `v1.1.0-rc.1` - Release Candidate fuer Version 1.1.0
+Examples:
+- `v1.0.0` - First stable release
+- `v1.1.0-rc.1` - Release candidate for version 1.1.0
 
-## Publizierte Images
+## Published Images
 
-Jede Komponente bekommt dasselbe Versions-Tag:
+Every component receives the same version tag:
 
-| Komponente | Image                                        |
-|------------|----------------------------------------------|
-| Backend    | `ghcr.io/<owner>/einsatzbereit-backend`      |
-| Frontend   | `ghcr.io/<owner>/einsatzbereit-frontend`     |
-| Keycloak   | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
+| Component | Image                                        |
+|-----------|----------------------------------------------|
+| Backend   | `ghcr.io/<owner>/einsatzbereit-backend`      |
+| Frontend  | `ghcr.io/<owner>/einsatzbereit-frontend`     |
+| Keycloak  | `ghcr.io/<owner>/einsatzbereit-keycloak`     |
 
-## Versionierungsschema
+## Versioning Scheme
 
-Standard [SemVer](https://semver.org/) fuer alle Komponenten:
+Standard [SemVer](https://semver.org/) for all components:
 
-- **MAJOR**: Breaking change in einer Komponente (z.B. inkompatible API-Aenderung)
-- **MINOR**: Neue Funktionalitaet, abwaertskompatibel
-- **PATCH**: Bugfix oder kleinere Konfigurationsaenderung
+- **MAJOR**: Breaking change in any component (e.g. incompatible API change)
+- **MINOR**: New functionality, backwards-compatible
+- **PATCH**: Bug fix or minor configuration change
 
-## Keycloak-Upstream-Version
+## Keycloak Upstream Version
 
-Da das Keycloak-Image auf einem bestimmten Upstream-Release basiert, wird die
-Upstream-Version als OCI-Label in das Image eingebettet:
+Since the Keycloak image is based on a specific upstream release, the upstream version is
+embedded as an OCI label in the image:
 
 ```
 org.opencontainers.image.base.version=<keycloak-upstream-version>
 ```
 
-Die verwendete Upstream-Version ist direkt dem `keycloak/Dockerfile` zu entnehmen
-(erste `FROM`-Zeile). Bei einem Keycloak-Upgrade wird die Upstream-Version
-automatisch aus dem Dockerfile ausgelesen und in den Image-Labels gesetzt.
+The upstream version in use can be read directly from `keycloak/Dockerfile` (first `FROM` line).
+When upgrading Keycloak, the upstream version is automatically extracted from the Dockerfile
+and written into the image labels.
 
-## Prerelease-Tags
+## Prerelease Tags
 
-Release Candidates werden mit `-rc.<n>` als Suffix gekennzeichnet:
+Release candidates are marked with an `-rc.<n>` suffix:
 
 - `v1.0.0-rc.1`
 - `v1.0.0-rc.2`
 
-Prerelease-Tags erzeugen Docker Images, die **nicht** als `latest` getaggt werden.
+Prerelease tags produce Docker images that are **not** tagged as `latest`.
 
 ## Workflow
 
-1. Aenderungen auf `main` mergen
-2. Tag setzen: `git tag v1.0.0`
-3. Tag pushen: `git push origin v1.0.0`
-4. GitHub Actions baut und pusht alle drei Docker Images automatisch
-
+1. Merge changes into `main`
+2. Set tag: `git tag v1.0.0`
+3. Push tag: `git push origin v1.0.0`
+4. GitHub Actions builds and pushes all three Docker images automatically
