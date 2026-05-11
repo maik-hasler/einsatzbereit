@@ -18,4 +18,8 @@ public interface IVolunteerOpportunityReadRepository
 	ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
 		Guid opportunityId,
 		CancellationToken cancellationToken = default);
+
+	ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
+		Guid organizationId,
+		CancellationToken cancellationToken = default);
 }

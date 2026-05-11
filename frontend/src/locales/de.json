@@ -237,6 +237,17 @@
       "title": "Seite nicht gefunden",
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
+    },
+    "orgProfile": {
+      "loading": "Wird geladen…",
+      "error": "Fehler: {{message}}",
+      "notFound": "Organisation nicht gefunden.",
+      "email": "E-Mail:",
+      "phone": "Telefon:",
+      "website": "Website:",
+      "address": "Adresse:",
+      "currentNeeds": "Aktuelle Bedarfe",
+      "noOpportunities": "Keine aktuellen Bedarfe vorhanden."
     }
   }
 }

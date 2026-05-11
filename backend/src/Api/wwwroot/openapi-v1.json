@@ -642,6 +642,57 @@
         }
       }
     },
+    "/v1/organizations/{organizationId}/profile": {
+      "get": {
+        "tags": [
+          "GetPublicOrganizationProfileEndpoint"
+        ],
+        "operationId": "GetPublicOrganizationProfile",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicOrganizationProfileResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/organizations": {
       "get": {
         "tags": [
@@ -1841,6 +1892,156 @@
           }
         }
       },
+      "PublicAddressDto": {
+        "required": [
+          "street",
+          "houseNumber",
+          "zipCode",
+          "city"
+        ],
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "houseNumber": {
+            "type": "string"
+          },
+          "zipCode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicOpportunitySummaryDto": {
+        "required": [
+          "id",
+          "title",
+          "description",
+          "street",
+          "houseNumber",
+          "zipCode",
+          "city",
+          "isRemote",
+          "occurrence",
+          "participationType",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "street": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "houseNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "zipCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isRemote": {
+            "type": "boolean"
+          },
+          "occurrence": {
+            "type": "string"
+          },
+          "participationType": {
+            "type": "string"
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PublicOrganizationProfileResponse": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "contactEmail",
+          "contactPhone",
+          "website",
+          "address",
+          "openOpportunities"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "address": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PublicAddressDto"
+              }
+            ]
+          },
+          "openOpportunities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOpportunitySummaryDto"
+            }
+          }
+        }
+      },
       "TimeSlotDetail": {
         "required": [
           "id",
@@ -2095,6 +2296,7 @@
           "id",
           "title",
           "description",
+          "organizationId",
           "organizationName",
           "street",
           "houseNumber",
@@ -2116,6 +2318,10 @@
           },
           "description": {
             "type": "string"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
           },
           "organizationName": {
             "type": "string"
@@ -2188,6 +2394,9 @@
     },
     {
       "name": "RemoveMemberEndpoint"
+    },
+    {
+      "name": "GetPublicOrganizationProfileEndpoint"
     },
     {
       "name": "GetOrganizationsEndpoint"

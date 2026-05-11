@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation, Trans } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
@@ -111,7 +111,12 @@ export default function VolunteerOpportunityDetailPage() {
 			</div>
 
 			<p className="mb-4 text-sm text-gray-500">
-				{opportunity.organizationName}
+				<Link
+					to={`/organizations/${opportunity.organizationId}`}
+					className="hover:underline"
+				>
+					{opportunity.organizationName}
+				</Link>
 			</p>
 
 			<p className="mb-6 text-gray-700">{opportunity.description}</p>
