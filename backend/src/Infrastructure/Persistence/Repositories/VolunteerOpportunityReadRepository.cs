@@ -93,8 +93,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (result is null)
 			return null;
 
-		var timeSlots = await dbContext.TimeSlotsQuery
-			.Where(ts => EF.Property<Guid>(ts, "volunteer_opportunity_id") == opportunityId)
+		var timeSlots = await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.Id == opportunityId_)
+			.SelectMany(vo => vo.TimeSlots)
 			.OrderBy(ts => ts.StartDateTime)
 			.Select(ts => new TimeSlotDetail(
 				ts.Id.Value,
