@@ -16,7 +16,8 @@ src/
 │   ├── Footer.tsx          Footer with links and social icons
 │   ├── OrganizationSwitcher.tsx        Dropdown to switch active org; reads/writes active-org cookie
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
-│   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), gated create button
+│   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, list/map toggle, gated create button
+│   ├── OpportunityMap.tsx              Leaflet/OSM map view with pins + bbox sync to filter state
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
 ├── layouts/
 │   ├── AppLayout.tsx       Header + <Outlet /> + Footer
@@ -126,6 +127,8 @@ pnpm lint     # eslint, zero warnings allowed
 | `react-oidc-context` | Keycloak OIDC (wraps oidc-client-ts) |
 | `oidc-client-ts`     | PKCE flow, token management          |
 | `@tailwindcss/vite`  | Tailwind CSS 4 via Vite              |
+| `leaflet`            | Map renderer (OpenStreetMap tiles)   |
+| `react-leaflet`      | React bindings for Leaflet           |
 
 ## Linting
 

@@ -1,12 +1,16 @@
+using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 
 internal sealed class UpdateVolunteerOpportunityCommandHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	IGeocodingService geocodingService,
+	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -17,7 +21,12 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
 
-		opportunity.Update(request.Title, request.Description, request.IsRemote, request.Address);
+		var address = request.Address;
+
+		if (!request.IsRemote && address is not null)
+			address = await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken);
+
+		opportunity.Update(request.Title, request.Description, request.IsRemote, address);
 
 		return true;
 	}

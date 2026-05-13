@@ -46,6 +46,15 @@
       "next": "Weiter →",
       "page": "{{current}} / {{total}}",
       "remote": "Remote",
+      "onsite": "Vor Ort",
+      "allLocations": "Alle Standorte",
+      "dateFromLabel": "Von Datum",
+      "dateToLabel": "Bis Datum",
+      "clearFilters": "Filter zurücksetzen",
+      "view": {
+        "list": "Liste",
+        "map": "Karte"
+      },
       "edit": "Bearbeiten",
       "delete": "Löschen",
       "deleting": "…",
@@ -248,6 +257,13 @@
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden."
+    },
+    "map": {
+      "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>-Mitwirkende",
+      "noPinsInView": "Keine Bedarfe im aktuellen Kartenausschnitt.",
+      "popup": {
+        "viewDetails": "Details anzeigen →"
+      }
     }
   }
 }

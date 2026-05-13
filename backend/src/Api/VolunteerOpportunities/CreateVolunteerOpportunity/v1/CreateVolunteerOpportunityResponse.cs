@@ -9,6 +9,8 @@ public sealed record CreateVolunteerOpportunityResponse(
 	string? HouseNumber,
 	string? ZipCode,
 	string? City,
+	double? Latitude,
+	double? Longitude,
 	bool IsRemote,
 	string Occurrence,
 	string ParticipationType,

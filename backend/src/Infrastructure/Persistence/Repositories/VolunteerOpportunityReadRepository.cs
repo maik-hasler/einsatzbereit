@@ -14,12 +14,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 	: IVolunteerOpportunityReadRepository
 {
 	public async ValueTask<PagedList<VolunteerOpportunitySummary>> GetPagedSummariesAsync(
-		int pageNumber,
-		int pageSize,
-		string? search,
-		string? city,
-		string? occurrence,
-		string? participationType,
+		VolunteerOpportunityFilter filter,
 		CancellationToken cancellationToken = default)
 	{
 		var query = dbContext.VolunteerOpportunitiesQuery
@@ -29,21 +24,45 @@ internal sealed class VolunteerOpportunityReadRepository(
 				org => org.Id,
 				(vo, org) => new { vo, org });
 
-		if (!string.IsNullOrWhiteSpace(search))
+		if (!string.IsNullOrWhiteSpace(filter.Search))
+		{
+			var search = filter.Search.ToLower();
 			query = query.Where(x =>
-				x.vo.Title.ToLower().Contains(search.ToLower()) ||
-				x.vo.Description.ToLower().Contains(search.ToLower()));
+				x.vo.Title.ToLower().Contains(search) ||
+				x.vo.Description.ToLower().Contains(search));
+		}
 
-		if (!string.IsNullOrWhiteSpace(city))
-			query = query.Where(x => x.vo.Address != null && x.vo.Address.City.ToLower().Contains(city.ToLower()));
+		if (!string.IsNullOrWhiteSpace(filter.City))
+		{
+			var city = filter.City.ToLower();
+			query = query.Where(x => x.vo.Address != null && x.vo.Address.City.ToLower().Contains(city));
+		}
 
-		if (!string.IsNullOrWhiteSpace(occurrence) && Enum.TryParse<Occurrence>(occurrence, ignoreCase: true, out var occ))
+		if (!string.IsNullOrWhiteSpace(filter.Occurrence) && Enum.TryParse<Occurrence>(filter.Occurrence, ignoreCase: true, out var occ))
 			query = query.Where(x => x.vo.Occurrence == occ);
 
-		if (!string.IsNullOrWhiteSpace(participationType) && Enum.TryParse<ParticipationType>(participationType, ignoreCase: true, out var pt))
+		if (!string.IsNullOrWhiteSpace(filter.ParticipationType) && Enum.TryParse<ParticipationType>(filter.ParticipationType, ignoreCase: true, out var pt))
 			query = query.Where(x => x.vo.ParticipationType == pt);
 
-		return await query
+		if (filter.IsRemote is bool isRemote)
+			query = query.Where(x => x.vo.IsRemote == isRemote);
+
+		if (filter.DateFrom is DateTimeOffset dateFrom)
+			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+
+		if (filter.DateTo is DateTimeOffset dateTo)
+			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+
+		var boundingBox = ResolveBoundingBox(filter);
+
+		if (boundingBox is GeoBoundingBox box)
+			query = query.Where(x =>
+				x.vo.Address != null &&
+				x.vo.Address.Latitude != null && x.vo.Address.Longitude != null &&
+				x.vo.Address.Latitude >= box.South && x.vo.Address.Latitude <= box.North &&
+				x.vo.Address.Longitude >= box.West && x.vo.Address.Longitude <= box.East);
+
+		var projected = query
 			.OrderByDescending(x => x.vo.CreatedOn)
 			.Select(x => new VolunteerOpportunitySummary(
 				x.vo.Id.Value,
@@ -55,11 +74,47 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Address != null ? x.vo.Address.HouseNumber : null,
 				x.vo.Address != null ? x.vo.Address.ZipCode : null,
 				x.vo.Address != null ? x.vo.Address.City : null,
+				x.vo.Address != null ? x.vo.Address.Latitude : null,
+				x.vo.Address != null ? x.vo.Address.Longitude : null,
 				x.vo.IsRemote,
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
-				x.vo.CreatedOn))
-			.ToPagedListAsync(pageNumber, pageSize, cancellationToken);
+				x.vo.CreatedOn));
+
+		if (filter.HasRadius)
+		{
+			var candidates = await projected.ToListAsync(cancellationToken);
+
+			var centerLat = filter.CenterLatitude!.Value;
+			var centerLon = filter.CenterLongitude!.Value;
+			var radiusKm = filter.RadiusKm!.Value;
+
+			var matched = candidates
+				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
+					GeoMath.DistanceKm(centerLat, centerLon, s.Latitude.Value, s.Longitude.Value) <= radiusKm)
+				.OrderBy(s => GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value))
+				.ToList();
+
+			var page = matched
+				.Skip((filter.PageNumber - 1) * filter.PageSize)
+				.Take(filter.PageSize)
+				.ToList();
+
+			return new PagedList<VolunteerOpportunitySummary>(page, matched.Count, filter.PageNumber, filter.PageSize);
+		}
+
+		return await projected.ToPagedListAsync(filter.PageNumber, filter.PageSize, cancellationToken);
+	}
+
+	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter)
+	{
+		if (filter.HasRadius)
+			return GeoMath.BoundingBoxFor(filter.CenterLatitude!.Value, filter.CenterLongitude!.Value, filter.RadiusKm!.Value);
+
+		if (filter.HasBoundingBox)
+			return new GeoBoundingBox(filter.South!.Value, filter.North!.Value, filter.West!.Value, filter.East!.Value);
+
+		return null;
 	}
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
@@ -113,6 +168,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.Address?.HouseNumber,
 			result.Address?.ZipCode,
 			result.Address?.City,
+			result.Address?.Latitude,
+			result.Address?.Longitude,
 			result.IsRemote,
 			result.Occurrence.ToString(),
 			result.ParticipationType.ToString(),
@@ -144,6 +201,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Address != null ? x.vo.Address.HouseNumber : null,
 				x.vo.Address != null ? x.vo.Address.ZipCode : null,
 				x.vo.Address != null ? x.vo.Address.City : null,
+				x.vo.Address != null ? x.vo.Address.Latitude : null,
+				x.vo.Address != null ? x.vo.Address.Longitude : null,
 				x.vo.IsRemote,
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),

@@ -10,6 +10,8 @@ public sealed record VolunteerOpportunitySummary(
 	string? HouseNumber,
 	string? ZipCode,
 	string? City,
+	double? Latitude,
+	double? Longitude,
 	bool IsRemote,
 	string Occurrence,
 	string ParticipationType,

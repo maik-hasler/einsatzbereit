@@ -1,9 +1,11 @@
+using Application.Common.Geocoding;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Application.UnitTests.VolunteerOpportunities.UpdateVolunteerOpportunity;
@@ -13,6 +15,9 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
+	private readonly ILogger<UpdateVolunteerOpportunityCommandHandler> _logger =
+		Substitute.For<ILogger<UpdateVolunteerOpportunityCommandHandler>>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
@@ -21,7 +26,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public UpdateVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_sut = new UpdateVolunteerOpportunityCommandHandler(_dbContext);
+		_sut = new UpdateVolunteerOpportunityCommandHandler(_dbContext, _geocodingService, _logger);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
@@ -51,6 +56,33 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		opportunity.Title.Should().Be("Neues Thema");
 		opportunity.Description.Should().Be("Neue Beschreibung");
 		opportunity.Address.Should().Be(newAddress);
+	}
+
+	[Test]
+	public async Task Handle_ShouldPersistCoordinates_WhenGeocodingSucceeds(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(new GeoCoordinates(53.55, 9.99));
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, new Address("Neue Straße", "99", "20095", "Hamburg"));
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		opportunity.Address!.Latitude.Should().Be(53.55);
+		opportunity.Address!.Longitude.Should().Be(9.99);
 	}
 
 	[Test]

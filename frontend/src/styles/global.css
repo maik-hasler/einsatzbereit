@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 /*
  * Brand-Farbpalette - hier ändern, um die gesamte App umzufärben.

@@ -9,5 +9,15 @@ public sealed record GetVolunteerOpportunitiesQuery(
 	string? Search,
 	string? City,
 	string? Occurrence,
-	string? ParticipationType)
+	string? ParticipationType,
+	bool? IsRemote,
+	DateTimeOffset? DateFrom,
+	DateTimeOffset? DateTo,
+	double? North,
+	double? South,
+	double? East,
+	double? West,
+	double? CenterLatitude,
+	double? CenterLongitude,
+	double? RadiusKm)
 	: IQuery<PagedList<VolunteerOpportunitySummary>>;
