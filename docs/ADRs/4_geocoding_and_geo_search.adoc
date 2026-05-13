@@ -21,17 +21,10 @@ filtering uses a SQL bounding-box prefilter plus an in-memory Haversine
 refinement for radius queries. We do not adopt PostGIS.
 
 === Rationale
-* Geocoding once at write time keeps reads fast and deterministic, and avoids
-  hammering Nominatim on every list request.
-* A bounding box on indexable nullable `address_latitude` / `address_longitude`
-  columns is sufficient for the platform's expected dataset size; results are
-  paginated regardless.
-* Haversine refinement happens in memory only on the bbox-bounded candidate
-  set, which is small by construction.
-* Nominatim has no API key, is free, and aligns with the project's
-  open-source self-hosting principle. The HTTP client is throttled to one
-  request per second per the public usage policy, with a short request
-  timeout so unreachable hosts do not stall command handlers.
+* Geocoding once at write time keeps reads fast and deterministic, and avoids hammering Nominatim on every list request.
+* A bounding box on indexable nullable `address_latitude` / `address_longitude` columns is sufficient for the platform's expected dataset size; results are paginated regardless.
+* Haversine refinement happens in memory only on the bbox-bounded candidate set, which is small by construction.
+* Nominatim has no API key, is free, and aligns with the project's open-source self-hosting principle. The HTTP client is throttled to one request per second per the public usage policy, with a short request timeout so unreachable hosts do not stall command handlers.
 
 === Considered Alternatives
 
@@ -42,8 +35,7 @@ PostgreSQL extension for proper spatial types and indexes.
 ** True geodesic accuracy and GiST/SP-GiST spatial indexes
 ** First-class spatial operators directly in EF Core via NetTopologySuite
 * Cons
-** Requires a Postgres extension to be enabled in every environment
-   (production, dev via Aspire, Testcontainers in CI)
+** Requires a Postgres extension to be enabled in every environment (production, dev via Aspire, Testcontainers in CI)
 ** Additional EF Core package (`Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite`)
 ** Operational complexity and migration noise not justified at current scale
 
@@ -66,10 +58,6 @@ Raise `OpportunityCreated`, handle it asynchronously, update coordinates later.
 ** Extra moving parts (outbox / worker) not warranted yet
 
 === Consequences
-* On-site opportunities created or updated while Nominatim is unreachable are
-  persisted with null coordinates; they appear in the list but not on the map
-  until a subsequent update succeeds.
-* Geocoding adds a per-request latency of up to one second plus network
-  round-trip on create/update; acceptable for a low-write workload.
-* If the platform scales or expands beyond Germany / dense geographic
-  filtering becomes a hotspot, revisit and consider PostGIS in a future TDR.
+* On-site opportunities created or updated while Nominatim is unreachable are persisted with null coordinates; they appear in the list but not on the map until a subsequent update succeeds.
+* Geocoding adds a per-request latency of up to one second plus network round-trip on create/update; acceptable for a low-write workload.
+* If the platform scales or expands beyond Germany / dense geographic filtering becomes a hotspot, revisit and consider PostGIS in a future TDR.
