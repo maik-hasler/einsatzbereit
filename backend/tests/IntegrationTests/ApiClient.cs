@@ -50,7 +50,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -499,7 +499,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -538,6 +538,46 @@ namespace IntegrationTests
                     if (participationType != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("ParticipationType")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(participationType, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (isRemote != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("IsRemote")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(isRemote, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (dateFrom != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("DateFrom")).Append('=').Append(System.Uri.EscapeDataString(dateFrom.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (dateTo != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("DateTo")).Append('=').Append(System.Uri.EscapeDataString(dateTo.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (north != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("North")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(north, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (south != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("South")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(south, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (east != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("East")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(east, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (west != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("West")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(west, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (centerLatitude != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("CenterLatitude")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(centerLatitude, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (centerLongitude != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("CenterLongitude")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(centerLongitude, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (radiusKm != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("RadiusKm")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(radiusKm, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -2690,6 +2730,14 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         public string? City { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("latitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Latitude { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("longitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Longitude { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
         public bool IsRemote { get; set; } = default!;
 
@@ -3384,6 +3432,14 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         public string? City { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("latitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Latitude { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("longitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Longitude { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
         public bool IsRemote { get; set; } = default!;
 
@@ -3449,6 +3505,14 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         public string? City { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("latitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Latitude { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("longitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Longitude { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
         public bool IsRemote { get; set; } = default!;

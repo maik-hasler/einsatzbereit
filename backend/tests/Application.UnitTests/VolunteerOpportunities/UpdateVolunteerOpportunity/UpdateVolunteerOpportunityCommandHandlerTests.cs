@@ -5,7 +5,7 @@ using AwesomeAssertions;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.VolunteerOpportunities.UpdateVolunteerOpportunity;
@@ -16,8 +16,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
-	private readonly ILogger<UpdateVolunteerOpportunityCommandHandler> _logger =
-		Substitute.For<ILogger<UpdateVolunteerOpportunityCommandHandler>>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
@@ -26,7 +24,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public UpdateVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_sut = new UpdateVolunteerOpportunityCommandHandler(_dbContext, _geocodingService, _logger);
+		_sut = new UpdateVolunteerOpportunityCommandHandler(
+			_dbContext,
+			_geocodingService,
+			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>

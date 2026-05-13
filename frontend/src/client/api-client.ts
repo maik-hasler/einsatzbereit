@@ -202,20 +202,20 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param search (optional)
-     * @param city (optional)
-     * @param occurrence (optional)
-     * @param participationType (optional)
-     * @param isRemote (optional)
-     * @param dateFrom (optional)
-     * @param dateTo (optional)
-     * @param north (optional)
-     * @param south (optional)
-     * @param east (optional)
-     * @param west (optional)
-     * @param centerLatitude (optional)
-     * @param centerLongitude (optional)
-     * @param radiusKm (optional)
+     * @param search (optional) 
+     * @param city (optional) 
+     * @param occurrence (optional) 
+     * @param participationType (optional) 
+     * @param isRemote (optional) 
+     * @param dateFrom (optional) 
+     * @param dateTo (optional) 
+     * @param north (optional) 
+     * @param south (optional) 
+     * @param east (optional) 
+     * @param west (optional) 
+     * @param centerLatitude (optional) 
+     * @param centerLongitude (optional) 
+     * @param radiusKm (optional) 
      * @return OK
      */
     getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {

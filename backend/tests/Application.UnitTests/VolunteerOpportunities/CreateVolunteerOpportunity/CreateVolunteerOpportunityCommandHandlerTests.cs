@@ -4,7 +4,7 @@ using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 
@@ -17,13 +17,14 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
-	private readonly ILogger<CreateVolunteerOpportunityCommandHandler> _logger =
-		Substitute.For<ILogger<CreateVolunteerOpportunityCommandHandler>>();
 	private readonly CreateVolunteerOpportunityCommandHandler _sut;
 
 	public CreateVolunteerOpportunityCommandHandlerTests()
 	{
-		_sut = new CreateVolunteerOpportunityCommandHandler(_dbContext, _geocodingService, _logger);
+		_sut = new CreateVolunteerOpportunityCommandHandler(
+			_dbContext,
+			_geocodingService,
+			NullLogger<CreateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
 	[Test]
