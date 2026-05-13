@@ -91,7 +91,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 			var matched = candidates
 				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
-					GeoMath.DistanceKm(centerLat, centerLon, s.Latitude.Value, s.Longitude.Value) <= radiusKm)
+					GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value) <= radiusKm)
 				.OrderBy(s => GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value))
 				.ToList();
 
