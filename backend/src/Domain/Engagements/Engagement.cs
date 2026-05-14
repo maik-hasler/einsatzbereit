@@ -18,6 +18,8 @@ public sealed class Engagement
 
 	public EngagementStatus Status { get; private set; }
 
+	public string? CancellationReason { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -81,12 +83,14 @@ public sealed class Engagement
 		Status = EngagementStatus.Confirmed;
 	}
 
-	public void Cancel()
+	public void Cancel(string? reason = null)
 	{
 		if (Status is EngagementStatus.Withdrawn or EngagementStatus.Cancelled)
 			throw new DomainException("Engagement is already terminated.");
 
+		CancellationReason = reason;
 		Status = EngagementStatus.Cancelled;
+		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId, OpportunityId, reason));
 	}
 
 	public void Withdraw()

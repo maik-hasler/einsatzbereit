@@ -17,7 +17,7 @@ internal sealed class CancelEngagementCommandHandler(
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
 
-		engagement.Cancel();
+		engagement.Cancel(request.Reason);
 
 		var notification = Notification.Create(
 			engagement.VolunteerId,

@@ -249,6 +249,19 @@
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
     },
+    "confirmDialog": {
+      "keep": "Keep",
+      "withdraw": {
+        "title": "Withdraw application?",
+        "message": "Are you sure you want to withdraw your application? This cannot be undone.",
+        "confirm": "Yes, withdraw"
+      },
+      "cancel": {
+        "title": "Cancel engagement?",
+        "message": "Are you sure you want to cancel this engagement? The volunteer will be informed.",
+        "confirm": "Yes, cancel"
+      }
+    },
     "orgProfile": {
       "loading": "Loading…",
       "error": "Error: {{message}}",

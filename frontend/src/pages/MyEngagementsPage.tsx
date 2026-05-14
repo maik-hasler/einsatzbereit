@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -18,7 +19,11 @@ export default function MyEngagementsPage() {
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [withdrawing, setWithdrawing] = useState<string | null>(null);
+	const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(
+		null,
+	);
+	const [withdrawing, setWithdrawing] = useState(false);
+	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
@@ -38,22 +43,31 @@ export default function MyEngagementsPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	async function handleWithdraw(engagementId: string) {
-		setWithdrawing(engagementId);
+	async function handleWithdrawConfirm() {
+		if (!confirmWithdrawId) return;
+		setWithdrawing(true);
+		setWithdrawError(null);
 		try {
-			const updated = await api.withdrawEngagement(engagementId);
+			const updated = await api.withdrawEngagement(confirmWithdrawId);
 			setEngagements((prev) =>
 				prev.map((e) =>
-					e.id === engagementId ? { ...e, status: updated.status } : e,
+					e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
 				),
 			);
+			setConfirmWithdrawId(null);
 		} catch (err) {
-			alert(
+			setWithdrawError(
 				err instanceof Error ? err.message : t("myEngagements.withdrawError"),
 			);
 		} finally {
-			setWithdrawing(null);
+			setWithdrawing(false);
 		}
+	}
+
+	function handleWithdrawClose() {
+		if (withdrawing) return;
+		setConfirmWithdrawId(null);
+		setWithdrawError(null);
 	}
 
 	return (
@@ -116,13 +130,10 @@ export default function MyEngagementsPage() {
 									</span>
 									{(e.status === "Pending" || e.status === "Confirmed") && (
 										<button
-											onClick={() => handleWithdraw(e.id)}
-											disabled={withdrawing === e.id}
-											className="text-xs text-red-600 hover:underline disabled:opacity-50"
+											onClick={() => setConfirmWithdrawId(e.id)}
+											className="text-xs text-red-600 hover:underline"
 										>
-											{withdrawing === e.id
-												? t("myEngagements.withdrawing")
-												: t("myEngagements.withdraw")}
+											{t("myEngagements.withdraw")}
 										</button>
 									)}
 								</div>
@@ -130,6 +141,18 @@ export default function MyEngagementsPage() {
 						</li>
 					))}
 				</ul>
+			)}
+
+			{confirmWithdrawId && (
+				<ConfirmDialog
+					title={t("confirmDialog.withdraw.title")}
+					message={t("confirmDialog.withdraw.message")}
+					confirmLabel={t("confirmDialog.withdraw.confirm")}
+					onConfirm={handleWithdrawConfirm}
+					onClose={handleWithdrawClose}
+					loading={withdrawing}
+					error={withdrawError}
+				/>
 			)}
 		</>
 	);

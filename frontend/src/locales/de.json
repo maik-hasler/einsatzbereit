@@ -249,6 +249,19 @@
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
     },
+    "confirmDialog": {
+      "keep": "Behalten",
+      "withdraw": {
+        "title": "Bewerbung zurückziehen?",
+        "message": "Möchtest du deine Bewerbung wirklich zurückziehen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm": "Ja, zurückziehen"
+      },
+      "cancel": {
+        "title": "Engagement absagen?",
+        "message": "Möchtest du dieses Engagement wirklich absagen? Der Freiwillige wird informiert.",
+        "confirm": "Ja, absagen"
+      }
+    },
     "orgProfile": {
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
