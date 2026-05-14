@@ -1,3 +1,4 @@
+using Application.Common;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -22,6 +23,8 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<ConnectionStringOptionsSetup>();
 
 		services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+		services.AddScoped<IDomainEventDispatcher, NullDomainEventDispatcher>();
+		services.AddScoped<ISaveChangesInterceptor, DomainEventInterceptor>();
 
 		services.AddDbContext<ApplicationDbContext>((sp, options) =>
 		{

@@ -28,14 +28,15 @@ internal sealed class CancelEngagementEndpoint
 
 	private static async Task<IResult> CancelEngagementAsync(
 		[FromRoute] Guid engagementId,
+		[FromBody] CancelEngagementRequest? body,
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
 		try
 		{
-			var command = new CancelEngagementCommand(new EngagementId(engagementId));
+			var command = new CancelEngagementCommand(new EngagementId(engagementId), body?.Reason);
 			var engagement = await sender.Send(command, cancellationToken);
-			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
+			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn, engagement.CancellationReason));
 		}
 		catch (DomainException ex) when (ex.Message.Contains("not found"))
 		{
