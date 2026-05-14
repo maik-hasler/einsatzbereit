@@ -2,7 +2,22 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(dotnet test:*)"
+      "Bash(dotnet test:*)",
+      "Bash(bash .claude/scripts/session-start.sh)",
+      "Bash(curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh)",
+      "Bash(pnpm format:write)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/scripts/session-start.sh"
+          }
+        ]
+      }
     ]
   }
 }
