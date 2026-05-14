@@ -19,7 +19,9 @@ export default function MyEngagementsPage() {
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(null);
+	const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(
+		null,
+	);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
