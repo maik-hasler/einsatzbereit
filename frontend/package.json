@@ -13,6 +13,7 @@
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
+    "format:write": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
     "i18n:check": "node scripts/check-i18n-keys.js"
   },
   "dependencies": {
