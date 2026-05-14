@@ -88,6 +88,7 @@ if (app.Environment.IsDevelopment())
 	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
 
 	await initializer.MigrateAsync();
+	await initializer.SeedAsync();
 
 	app.MapOpenApi();
 }
