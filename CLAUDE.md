@@ -52,3 +52,5 @@ Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/a
 - Commands/queries/DTOs: C# records
 - Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)
 - No `.Result`/`.Wait()` - async all the way
+- **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in any file - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes
+- **Shell scripts use tab indentation** - the EditorConfig rule for `.sh` files requires tabs, not spaces
