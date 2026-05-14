@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
+import { useApiClient } from "../hooks/useApiClient";
+import type { NotificationSummary } from "../client/api-client";
 
 function getInitials(name: string): string {
 	const parts = name.trim().split(/\s+/);
@@ -13,6 +15,7 @@ function getInitials(name: string): string {
 export default function Header() {
 	const auth = useAuth();
 	const { t } = useTranslation();
+	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
@@ -21,7 +24,10 @@ export default function Header() {
 	const initials = isLoggedIn ? getInitials(displayName) : "";
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [notifOpen, setNotifOpen] = useState(false);
+	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
 	const dropdownRef = useRef<HTMLDivElement>(null);
+	const notifRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
@@ -31,10 +37,32 @@ export default function Header() {
 			) {
 				setDropdownOpen(false);
 			}
+			if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+				setNotifOpen(false);
+			}
 		};
 		document.addEventListener("click", handler);
 		return () => document.removeEventListener("click", handler);
 	}, []);
+
+	useEffect(() => {
+		if (!notifOpen || !isLoggedIn) return;
+		let cancelled = false;
+		void (async () => {
+			try {
+				const result = await api.getMyNotifications();
+				if (!cancelled) setNotifications(result);
+			} catch {
+				// silently ignore fetch errors
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [notifOpen, isLoggedIn]);
+
+	const unreadCount = notifications.filter((n) => !n.isRead).length;
 
 	return (
 		<header className="bg-white border-b border-gray-200">
@@ -57,6 +85,109 @@ export default function Header() {
 								<OrganizationSwitcher />
 
 								<div className="w-px h-6 bg-gray-200" />
+
+								{/* Bell icon */}
+								<div className="relative" ref={notifRef}>
+									<button
+										type="button"
+										onClick={() => setNotifOpen((o) => !o)}
+										className="relative p-2 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition-colors cursor-pointer"
+										aria-label={t("notifications.bellLabel")}
+										aria-expanded={notifOpen}
+									>
+										<svg
+											className="w-5 h-5"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="1.5"
+											stroke="currentColor"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+											/>
+										</svg>
+										{unreadCount > 0 && (
+											<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+												{unreadCount > 9 ? "9+" : unreadCount}
+											</span>
+										)}
+									</button>
+
+									{/* Notification dropdown */}
+									{notifOpen && (
+										<div className="absolute right-0 top-full mt-2 w-80 rounded-lg bg-white border border-gray-200 shadow-lg z-50">
+											<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+												<p className="text-sm font-medium text-gray-900">
+													{t("notifications.bellLabel")}
+												</p>
+												{notifications.some((n) => !n.isRead) && (
+													<button
+														type="button"
+														className="text-xs text-brand-600 hover:underline cursor-pointer"
+														onClick={async () => {
+															await api.markAllNotificationsRead();
+															setNotifications((prev) =>
+																prev.map((n) => ({ ...n, isRead: true })),
+															);
+														}}
+													>
+														{t("notifications.markAllRead")}
+													</button>
+												)}
+											</div>
+											<ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+												{notifications.length === 0 ? (
+													<li className="px-4 py-6 text-center text-sm text-gray-400">
+														{t("notifications.empty")}
+													</li>
+												) : (
+													notifications.map((n) => (
+														<li key={n.id}>
+															<button
+																type="button"
+																className={`w-full text-left px-4 py-3 text-sm hover:bg-brand-50 transition-colors cursor-pointer ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
+																onClick={async () => {
+																	if (!n.isRead) {
+																		await api.markNotificationRead(n.id);
+																		setNotifications((prev) =>
+																			prev.map((x) =>
+																				x.id === n.id
+																					? { ...x, isRead: true }
+																					: x,
+																			),
+																		);
+																	}
+																	setNotifOpen(false);
+																	window.location.href = "/my-engagements";
+																}}
+															>
+																<span className="flex items-start gap-2">
+																	{!n.isRead && (
+																		<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+																	)}
+																	<span className={!n.isRead ? "" : "pl-4"}>
+																		{t(
+																			`notifications.kinds.${n.kind}` as Parameters<
+																				typeof t
+																			>[0],
+																			{ defaultValue: n.kind },
+																		)}
+																		<br />
+																		<span className="text-xs text-gray-400">
+																			{new Date(n.createdOn).toLocaleString()}
+																		</span>
+																	</span>
+																</span>
+															</button>
+														</li>
+													))
+												)}
+											</ul>
+										</div>
+									)}
+								</div>
 
 								<div className="relative" ref={dropdownRef}>
 									<button
@@ -244,6 +375,21 @@ export default function Header() {
 								<div className="px-3 py-2">
 									<OrganizationSwitcher />
 								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setMobileOpen(false);
+										setNotifOpen(true);
+									}}
+									className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+								>
+									{t("notifications.bellLabel")}
+									{unreadCount > 0 && (
+										<span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+											{unreadCount > 9 ? "9+" : unreadCount}
+										</span>
+									)}
+								</button>
 								<a
 									href="/my-engagements"
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"

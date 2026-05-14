@@ -1,8 +1,10 @@
 using System.Reflection;
 using Application.Common.Persistence;
 using Domain.Engagements;
-using Domain.VolunteerOpportunities;
+using Domain.Notifications;
 using Domain.Organizations;
+using Domain.Users;
+using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +41,21 @@ internal sealed class ApplicationDbContext(
 			e => e.Id);
 
 	internal IQueryable<Engagement> EngagementsQuery => Set<Engagement>().AsNoTracking();
+
+	public IAggregateRepository<Notification, NotificationId> Notifications
+		=> new AggregateRepository<Notification, NotificationId>(
+			Set<Notification>(),
+			Set<Notification>(),
+			n => n.Id);
+
+	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
+
+	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Notification>()
+			.Where(n => n.RecipientId == recipientId && !n.IsRead)
+			.ToListAsync(cancellationToken);
 
 	protected override void OnModelCreating(
 		ModelBuilder modelBuilder) =>

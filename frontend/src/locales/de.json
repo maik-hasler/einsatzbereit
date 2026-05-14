@@ -223,6 +223,17 @@
       "section4bTitle": "Haftung für Links",
       "section4bBody": "Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich."
     },
+    "notifications": {
+      "bellLabel": "Benachrichtigungen",
+      "markAllRead": "Alle als gelesen markieren",
+      "empty": "Keine Benachrichtigungen.",
+      "kinds": {
+        "EngagementCreated": "Neue Bewerbung eingegangen",
+        "EngagementConfirmed": "Deine Bewerbung wurde bestaetigt",
+        "EngagementCancelled": "Deine Bewerbung wurde abgesagt",
+        "EngagementWithdrawn": "Eine Bewerbung wurde zurueckgezogen"
+      }
+    },
     "language": {
       "de": "Deutsch",
       "en": "English",

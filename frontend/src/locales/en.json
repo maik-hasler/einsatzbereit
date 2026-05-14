@@ -223,6 +223,17 @@
       "section4bTitle": "Liability for links",
       "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages."
     },
+    "notifications": {
+      "bellLabel": "Notifications",
+      "markAllRead": "Mark all as read",
+      "empty": "No notifications.",
+      "kinds": {
+        "EngagementCreated": "New application received",
+        "EngagementConfirmed": "Your application was confirmed",
+        "EngagementCancelled": "Your application was cancelled",
+        "EngagementWithdrawn": "An application was withdrawn"
+      }
+    },
     "language": {
       "de": "Deutsch",
       "en": "English",
