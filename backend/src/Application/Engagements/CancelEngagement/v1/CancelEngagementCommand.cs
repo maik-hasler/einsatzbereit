@@ -3,5 +3,5 @@ using Domain.Engagements;
 
 namespace Application.Engagements.CancelEngagement.v1;
 
-public sealed record CancelEngagementCommand(EngagementId EngagementId)
+public sealed record CancelEngagementCommand(EngagementId EngagementId, string? Reason = null)
 	: ICommand<Engagement>;

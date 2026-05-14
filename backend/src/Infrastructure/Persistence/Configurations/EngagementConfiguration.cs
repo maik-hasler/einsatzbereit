@@ -39,6 +39,8 @@ internal sealed class EngagementConfiguration
 
 		builder.Property(e => e.Message);
 
+		builder.Property(e => e.CancellationReason);
+
 		builder.Property(e => e.Status)
 			.HasConversion<string>()
 			.IsRequired();
