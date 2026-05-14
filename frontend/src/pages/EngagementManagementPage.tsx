@@ -70,7 +70,7 @@ export default function EngagementManagementPage() {
 		setCancelling(true);
 		setCancelError(null);
 		try {
-			const updated = await api.cancelEngagement(confirmCancelId);
+			const updated = await api.cancelEngagement(confirmCancelId, null);
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === confirmCancelId ? { ...e, status: updated.status } : e,
