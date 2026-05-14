@@ -202,10 +202,10 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param search (optional) 
-     * @param city (optional) 
-     * @param occurrence (optional) 
-     * @param participationType (optional) 
+     * @param search (optional)
+     * @param city (optional)
+     * @param occurrence (optional)
+     * @param participationType (optional)
      * @return OK
      */
     getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
