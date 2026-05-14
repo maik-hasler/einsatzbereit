@@ -2,6 +2,7 @@ using Application.Common;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
+using Application.Notifications;
 using Application.VolunteerOpportunities;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
@@ -47,6 +48,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IVolunteerOpportunityReadRepository, VolunteerOpportunityReadRepository>();
 
 		services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
+
+		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
 
 		services.ConfigureOptions<KeycloakOptionsSetup>();
 		services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(

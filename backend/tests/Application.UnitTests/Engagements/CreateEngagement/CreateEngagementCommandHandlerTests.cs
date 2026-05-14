@@ -1,7 +1,9 @@
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.CreateEngagement.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
+using Domain.Notifications;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -12,14 +14,22 @@ namespace Application.UnitTests.Engagements.CreateEngagement;
 public class CreateEngagementCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IKeycloakOrganizationService _keycloakService =
+		Substitute.For<IKeycloakOrganizationService>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
+	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
+		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
+		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly CreateEngagementCommandHandler _sut;
 
 	public CreateEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
-		_sut = new CreateEngagementCommandHandler(_dbContext);
+		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_dbContext.Notifications.Returns(_notifRepo);
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService);
 	}
 
 	[Test]

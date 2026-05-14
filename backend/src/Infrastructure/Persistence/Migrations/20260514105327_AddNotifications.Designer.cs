@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260514105327_AddNotifications")]
+	partial class AddNotifications
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -27,10 +30,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<Guid>("Id")
 						.HasColumnType("uuid")
 						.HasColumnName("id");
-
-					b.Property<string>("CancellationReason")
-						.HasColumnType("text")
-						.HasColumnName("cancellation_reason");
 
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")
