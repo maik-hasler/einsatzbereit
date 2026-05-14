@@ -202,10 +202,10 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param search (optional)
-     * @param city (optional)
-     * @param occurrence (optional)
-     * @param participationType (optional)
+     * @param search (optional) 
+     * @param city (optional) 
+     * @param occurrence (optional) 
+     * @param participationType (optional) 
      * @return OK
      */
     getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
@@ -1296,19 +1296,24 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param body (optional) 
      * @return OK
      */
-    cancelEngagement(engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+    cancelEngagement(engagementId: string, body: CancelEngagementRequest | null | undefined, signal?: AbortSignal): Promise<EngagementStatusResponse> {
         let url_ = this.baseUrl + "/v1/engagements/{engagementId}/cancel";
         if (engagementId === undefined || engagementId === null)
             throw new globalThis.Error("The parameter 'engagementId' must be defined.");
         url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(body);
+
         let options_: RequestInit = {
+            body: content_,
             method: "PUT",
             signal,
             headers: {
+                "Content-Type": "application/json",
                 "Accept": "application/json"
             }
         };
@@ -1390,6 +1395,12 @@ export interface AddressDto {
     [key: string]: any;
 }
 
+export interface CancelEngagementRequest {
+    reason: string | undefined;
+
+    [key: string]: any;
+}
+
 export interface CreateEngagementRequest {
     type: string;
     timeSlotId: string | undefined;
@@ -1453,6 +1464,7 @@ export interface EngagementStatusResponse {
     id: string;
     status: string;
     modifiedOn: Date | undefined;
+    cancellationReason?: string | undefined;
 
     [key: string]: any;
 }
