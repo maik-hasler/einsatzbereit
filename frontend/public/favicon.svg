@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!--
+    COLORS: change the two stop-color values below to recolor the icon.
+    Start color (top-left): #22c55e  →  brand-500
+    End color (bottom-right): #34d399  →  accent-400
+  -->
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <!-- toe pads -->
+  <circle cx="10" cy="27" r="5"   fill="url(#g)"/>
+  <circle cx="19" cy="18" r="5.5" fill="url(#g)"/>
+  <circle cx="29" cy="18" r="5.5" fill="url(#g)"/>
+  <circle cx="38" cy="27" r="5"   fill="url(#g)"/>
+  <!-- main pad -->
+  <ellipse cx="24" cy="37" rx="11" ry="8.5" fill="url(#g)"/>
+</svg>

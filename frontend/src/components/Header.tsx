@@ -73,6 +73,12 @@ export default function Header() {
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
 					<a href="/" className="flex items-center gap-2 group">
+						<img
+							src="/logo-icon.svg"
+							alt=""
+							aria-hidden="true"
+							className="h-8 w-8"
+						/>
 						<span className="text-xl font-bold text-brand-600 group-hover:text-brand-700 transition-colors">
 							{t("brand.name")}
 						</span>
