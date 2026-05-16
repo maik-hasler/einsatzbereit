@@ -166,7 +166,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist"
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None"
 		}, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
@@ -190,7 +191,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "54321",
 			City = "Munich",
 			Occurrence = "Recurring",
-			ParticipationType = "IndividualContact"
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None"
 		}, cancellationToken);
 
 		result.Street.Should().Be("Main Street");
@@ -233,7 +235,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist"
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None"
 		}, cancellationToken);
 	}
 }
