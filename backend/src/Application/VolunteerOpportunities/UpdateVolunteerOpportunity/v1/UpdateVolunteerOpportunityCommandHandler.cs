@@ -17,7 +17,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
 
-		opportunity.Update(request.Title, request.Description, request.IsRemote, request.Address);
+		opportunity.Update(request.Title, request.Description, request.IsRemote, request.Address, request.CheckInMethod);
 
 		return true;
 	}

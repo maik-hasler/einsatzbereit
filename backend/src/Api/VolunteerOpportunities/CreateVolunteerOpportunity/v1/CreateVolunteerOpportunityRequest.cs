@@ -9,4 +9,5 @@ public sealed record CreateVolunteerOpportunityRequest(
 	string ZipCode,
 	string City,
 	string Occurrence,
-	string ParticipationType);
+	string ParticipationType,
+	string CheckInMethod);

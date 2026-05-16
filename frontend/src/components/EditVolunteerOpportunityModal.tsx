@@ -24,6 +24,7 @@ export default function EditVolunteerOpportunityModal({
 	const [houseNumber, setHouseNumber] = useState(opportunity.houseNumber ?? "");
 	const [zipCode, setZipCode] = useState(opportunity.zipCode ?? "");
 	const [city, setCity] = useState(opportunity.city ?? "");
+	const [checkInMethod, setCheckInMethod] = useState(opportunity.checkInMethod);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +42,7 @@ export default function EditVolunteerOpportunityModal({
 				houseNumber: isRemote ? undefined : houseNumber,
 				zipCode: isRemote ? undefined : zipCode,
 				city: isRemote ? undefined : city,
+				checkInMethod,
 			});
 			onSuccess();
 			onClose();
@@ -148,6 +150,34 @@ export default function EditVolunteerOpportunityModal({
 							</div>
 						</div>
 					)}
+
+					<div>
+						<label className="mb-2 block text-sm font-medium text-gray-700">
+							{t("createOpportunity.fieldCheckInMethod")}
+						</label>
+						<div className="flex flex-wrap gap-4">
+							{(
+								[
+									["None", t("checkInMethod.none")],
+									["QRCode", t("checkInMethod.qrCode")],
+									["PINCode", t("checkInMethod.pinCode")],
+									["Manual", t("checkInMethod.manual")],
+								] as [string, string][]
+							).map(([value, label]) => (
+								<label key={value} className="flex items-center gap-2 text-sm">
+									<input
+										type="radio"
+										name="checkInMethod"
+										value={value}
+										checked={checkInMethod === value}
+										onChange={(e) => setCheckInMethod(e.target.value)}
+										className="h-4 w-4"
+									/>
+									{label}
+								</label>
+							))}
+						</div>
+					</div>
 
 					{error && <p className="text-sm text-red-600">{error}</p>}
 

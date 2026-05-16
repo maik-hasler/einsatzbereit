@@ -11,5 +11,6 @@ public sealed record CreateVolunteerOpportunityCommand(
 	bool IsRemote,
 	Address? Address,
 	Occurrence Occurrence,
-	ParticipationType ParticipationType)
+	ParticipationType ParticipationType,
+	CheckInMethod CheckInMethod)
 	: ICommand<VolunteerOpportunity>;

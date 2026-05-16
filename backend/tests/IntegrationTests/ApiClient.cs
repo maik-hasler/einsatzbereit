@@ -2961,6 +2961,10 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ParticipationType { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CheckInMethod { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -3014,6 +3018,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ParticipationType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CheckInMethod { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -3688,6 +3696,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         public string? City { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CheckInMethod { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -3745,6 +3757,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ParticipationType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CheckInMethod { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("timeSlots")]
         [System.ComponentModel.DataAnnotations.Required]
@@ -3811,6 +3827,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("participationType")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ParticipationType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CheckInMethod { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

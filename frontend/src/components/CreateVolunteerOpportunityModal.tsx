@@ -26,6 +26,7 @@ export default function CreateVolunteerOpportunityModal({
 		city: "",
 		occurrence: "OneTime",
 		participationType: "Waitlist",
+		checkInMethod: "None",
 	});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -269,6 +270,39 @@ export default function CreateVolunteerOpportunityModal({
 								/>
 								{t("opportunities.individualContact")}
 							</label>
+						</div>
+					</div>
+
+					<div>
+						<label className="mb-2 block text-sm font-medium">
+							{t("createOpportunity.fieldCheckInMethod")}
+						</label>
+						<div className="flex flex-wrap gap-4">
+							{(
+								[
+									["None", t("checkInMethod.none")],
+									["QRCode", t("checkInMethod.qrCode")],
+									["PINCode", t("checkInMethod.pinCode")],
+									["Manual", t("checkInMethod.manual")],
+								] as [string, string][]
+							).map(([value, label]) => (
+								<label key={value} className="flex items-center gap-2 text-sm">
+									<input
+										type="radio"
+										name="checkInMethod"
+										value={value}
+										checked={form.checkInMethod === value}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												checkInMethod: e.target.value,
+											}))
+										}
+										className="accent-black"
+									/>
+									{label}
+								</label>
+							))}
 						</div>
 					</div>
 

@@ -1561,7 +1561,8 @@
           "zipCode",
           "city",
           "occurrence",
-          "participationType"
+          "participationType",
+          "checkInMethod"
         ],
         "type": "object",
         "properties": {
@@ -1592,6 +1593,9 @@
           },
           "participationType": {
             "type": "string"
+          },
+          "checkInMethod": {
+            "type": "string"
           }
         }
       },
@@ -1608,6 +1612,7 @@
           "isRemote",
           "occurrence",
           "participationType",
+          "checkInMethod",
           "createdOn"
         ],
         "type": "object",
@@ -1657,6 +1662,9 @@
             "type": "string"
           },
           "participationType": {
+            "type": "string"
+          },
+          "checkInMethod": {
             "type": "string"
           },
           "createdOn": {
@@ -2367,7 +2375,8 @@
           "street",
           "houseNumber",
           "zipCode",
-          "city"
+          "city",
+          "checkInMethod"
         ],
         "type": "object",
         "properties": {
@@ -2403,6 +2412,9 @@
               "null",
               "string"
             ]
+          },
+          "checkInMethod": {
+            "type": "string"
           }
         }
       },
@@ -2420,6 +2432,7 @@
           "isRemote",
           "occurrence",
           "participationType",
+          "checkInMethod",
           "timeSlots",
           "createdOn"
         ],
@@ -2475,6 +2488,9 @@
           "participationType": {
             "type": "string"
           },
+          "checkInMethod": {
+            "type": "string"
+          },
           "timeSlots": {
             "type": "array",
             "items": {
@@ -2501,6 +2517,7 @@
           "isRemote",
           "occurrence",
           "participationType",
+          "checkInMethod",
           "createdOn"
         ],
         "type": "object",
@@ -2553,6 +2570,9 @@
             "type": "string"
           },
           "participationType": {
+            "type": "string"
+          },
+          "checkInMethod": {
             "type": "string"
           },
           "createdOn": {

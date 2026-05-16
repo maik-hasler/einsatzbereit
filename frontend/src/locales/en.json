@@ -72,10 +72,17 @@
       "fieldCity": "City",
       "fieldFrequency": "Frequency",
       "fieldParticipationType": "Participation type",
+      "fieldCheckInMethod": "Check-in method",
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
       "unknownError": "Unknown error"
+    },
+    "checkInMethod": {
+      "none": "None (automatic)",
+      "qrCode": "QR Code",
+      "pinCode": "PIN Code",
+      "manual": "Manual"
     },
     "editOpportunity": {
       "title": "Edit opportunity",

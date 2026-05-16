@@ -23,6 +23,8 @@ public sealed class VolunteerOpportunity
 
 	public ParticipationType ParticipationType { get; private set; }
 
+	public CheckInMethod CheckInMethod { get; private set; }
+
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
 
 	public DateTimeOffset CreatedOn { get; private set; }
@@ -41,7 +43,8 @@ public sealed class VolunteerOpportunity
 		bool isRemote,
 		Address? address,
 		Occurrence occurrence,
-		ParticipationType participationType)
+		ParticipationType participationType,
+		CheckInMethod checkInMethod)
 		: base(id)
 	{
 		OrganizationId = organizationId;
@@ -51,6 +54,7 @@ public sealed class VolunteerOpportunity
 		Address = address;
 		Occurrence = occurrence;
 		ParticipationType = participationType;
+		CheckInMethod = checkInMethod;
 	}
 
 	public static VolunteerOpportunity Create(
@@ -60,7 +64,8 @@ public sealed class VolunteerOpportunity
 		bool isRemote,
 		Address? address,
 		Occurrence occurrence,
-		ParticipationType participationType)
+		ParticipationType participationType,
+		CheckInMethod checkInMethod)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
@@ -79,14 +84,16 @@ public sealed class VolunteerOpportunity
 			isRemote,
 			address,
 			occurrence,
-			participationType);
+			participationType,
+			checkInMethod);
 	}
 
 	public void Update(
 		string title,
 		string description,
 		bool isRemote,
-		Address? address)
+		Address? address,
+		CheckInMethod checkInMethod)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
@@ -101,6 +108,7 @@ public sealed class VolunteerOpportunity
 		Description = description;
 		IsRemote = isRemote;
 		Address = address;
+		CheckInMethod = checkInMethod;
 	}
 
 	public void AddTimeSlot(
