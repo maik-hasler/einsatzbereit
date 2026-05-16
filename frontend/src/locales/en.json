@@ -273,6 +273,13 @@
       "address": "Address:",
       "currentNeeds": "Current Opportunities",
       "noOpportunities": "No current opportunities available."
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "volunteerOpportunities": "Volunteer Opportunities",
+      "engagements": "Engagements",
+      "settings": "Settings",
+      "account": "Account"
     }
   }
 }

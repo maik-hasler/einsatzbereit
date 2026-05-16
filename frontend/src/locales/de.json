@@ -273,6 +273,13 @@
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden."
+    },
+    "breadcrumb": {
+      "home": "Startseite",
+      "volunteerOpportunities": "Einsatzmoglichkeiten",
+      "engagements": "Bewerbungen",
+      "settings": "Einstellungen",
+      "account": "Konto"
     }
   }
 }
