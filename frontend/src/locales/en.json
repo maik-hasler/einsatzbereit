@@ -42,6 +42,7 @@
       "loading": "Loading…",
       "error": "Error: {{message}}",
       "noResults": "No opportunities found.",
+      "loadMore": "Load more",
       "previous": "← Back",
       "next": "Next →",
       "page": "{{current}} / {{total}}",

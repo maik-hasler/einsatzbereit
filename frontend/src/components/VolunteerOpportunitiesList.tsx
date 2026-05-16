@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import type {
-	PagedListOfVolunteerOpportunitySummary,
-	VolunteerOpportunitySummary,
-} from "../client/api-client";
+import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
@@ -20,23 +17,59 @@ export default function VolunteerOpportunitiesList({
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	const [data, setData] =
-		useState<PagedListOfVolunteerOpportunitySummary | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [searchParams, setSearchParams] = useSearchParams();
+	const search = searchParams.get("search") ?? "";
+	const city = searchParams.get("city") ?? "";
+	const occurrence = searchParams.get("occurrence") ?? "";
+	const participationType = searchParams.get("participationType") ?? "";
+
+	const [items, setItems] = useState<VolunteerOpportunitySummary[]>([]);
 	const [page, setPage] = useState(1);
+	const [pageCount, setPageCount] = useState(1);
+	const [loading, setLoading] = useState(true);
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [showModal, setShowModal] = useState(false);
 
-	const [search, setSearch] = useState("");
-	const [city, setCity] = useState("");
-	const [occurrence, setOccurrence] = useState("");
-	const [participationType, setParticipationType] = useState("");
+	const prevFiltersRef = useRef({
+		search,
+		city,
+		occurrence,
+		participationType,
+		refreshKey,
+	});
 
 	useEffect(() => {
-		setLoading(true);
+		const prev = prevFiltersRef.current;
+		const filterChanged =
+			prev.search !== search ||
+			prev.city !== city ||
+			prev.occurrence !== occurrence ||
+			prev.participationType !== participationType ||
+			prev.refreshKey !== refreshKey;
+
+		prevFiltersRef.current = {
+			search,
+			city,
+			occurrence,
+			participationType,
+			refreshKey,
+		};
+
+		if (filterChanged) {
+			setItems([]);
+			if (page !== 1) {
+				setPage(1);
+				return;
+			}
+		}
+
+		if (page > 1) setLoadingMore(true);
+		else setLoading(true);
 		setError(null);
 
+		let cancelled = false;
 		api
 			.getVolunteerOpportunities(
 				page,
@@ -46,16 +79,39 @@ export default function VolunteerOpportunitiesList({
 				occurrence || undefined,
 				participationType || undefined,
 			)
-			.then((json: PagedListOfVolunteerOpportunitySummary) => setData(json))
-			.catch((err: Error) => setError(err.message))
-			.finally(() => setLoading(false));
+			.then((result) => {
+				if (cancelled) return;
+				if (page === 1) setItems(result.items);
+				else setItems((prev) => [...prev, ...result.items]);
+				setPageCount(result.pageCount ?? 1);
+				setLoading(false);
+				setLoadingMore(false);
+			})
+			.catch((err: Error) => {
+				if (cancelled) return;
+				setError(err.message);
+				setLoading(false);
+				setLoadingMore(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [page, refreshKey, search, city, occurrence, participationType]);
+	}, [page, search, city, occurrence, participationType, refreshKey]);
 
 	const activeOrgId = getActiveOrgId();
 
-	function handleFilterChange() {
-		setPage(1);
+	function updateFilter(key: string, value: string) {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				if (value) next.set(key, value);
+				else next.delete(key);
+				return next;
+			},
+			{ replace: true },
+		);
 	}
 
 	return (
@@ -80,28 +136,19 @@ export default function VolunteerOpportunitiesList({
 					type="text"
 					placeholder={t("opportunities.searchPlaceholder")}
 					value={search}
-					onChange={(e) => {
-						setSearch(e.target.value);
-						handleFilterChange();
-					}}
+					onChange={(e) => updateFilter("search", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<input
 					type="text"
 					placeholder={t("opportunities.cityPlaceholder")}
 					value={city}
-					onChange={(e) => {
-						setCity(e.target.value);
-						handleFilterChange();
-					}}
+					onChange={(e) => updateFilter("city", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<select
 					value={occurrence}
-					onChange={(e) => {
-						setOccurrence(e.target.value);
-						handleFilterChange();
-					}}
+					onChange={(e) => updateFilter("occurrence", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				>
 					<option value="">{t("opportunities.allFrequencies")}</option>
@@ -110,10 +157,7 @@ export default function VolunteerOpportunitiesList({
 				</select>
 				<select
 					value={participationType}
-					onChange={(e) => {
-						setParticipationType(e.target.value);
-						handleFilterChange();
-					}}
+					onChange={(e) => updateFilter("participationType", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				>
 					<option value="">{t("opportunities.allTypes")}</option>
@@ -131,13 +175,13 @@ export default function VolunteerOpportunitiesList({
 				</p>
 			)}
 
-			{!loading && !error && data && (
+			{!loading && !error && (
 				<>
-					{data.items.length === 0 ? (
+					{items.length === 0 ? (
 						<p className="text-gray-500">{t("opportunities.noResults")}</p>
 					) : (
 						<ul className="space-y-3">
-							{data.items.map((item: VolunteerOpportunitySummary) => (
+							{items.map((item: VolunteerOpportunitySummary) => (
 								<li
 									key={item.id}
 									className="cursor-pointer rounded border p-4 hover:bg-gray-50 transition-colors"
@@ -185,27 +229,16 @@ export default function VolunteerOpportunitiesList({
 						</ul>
 					)}
 
-					{(data.pageCount ?? 1) > 1 && (
-						<div className="mt-4 flex items-center gap-3">
-							<button
-								onClick={() => setPage((p) => p - 1)}
-								disabled={page <= 1}
-								className="rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40"
-							>
-								{t("opportunities.previous")}
-							</button>
-							<span className="text-sm text-gray-500">
-								{t("opportunities.page", {
-									current: page,
-									total: data.pageCount,
-								})}
-							</span>
+					{items.length > 0 && page < pageCount && (
+						<div className="mt-4 flex justify-center">
 							<button
 								onClick={() => setPage((p) => p + 1)}
-								disabled={page >= (data.pageCount ?? 1)}
-								className="rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40"
+								disabled={loadingMore}
+								className="rounded px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-40"
 							>
-								{t("opportunities.next")}
+								{loadingMore
+									? t("opportunities.loading")
+									: t("opportunities.loadMore")}
 							</button>
 						</div>
 					)}
