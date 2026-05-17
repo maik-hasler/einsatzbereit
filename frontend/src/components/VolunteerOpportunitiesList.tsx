@@ -30,6 +30,11 @@ export default function VolunteerOpportunitiesList({
 	const city = searchParams.get("city") ?? "";
 	const occurrence = searchParams.get("occurrence") ?? "";
 	const participationType = searchParams.get("participationType") ?? "";
+	const isRemoteParam = searchParams.get("isRemote") ?? "";
+	const dateFrom = searchParams.get("dateFrom") ?? "";
+	const dateTo = searchParams.get("dateTo") ?? "";
+
+	const [searchInput, setSearchInput] = useState(search);
 
 	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
 	const isMap = view === "map";
@@ -43,11 +48,18 @@ export default function VolunteerOpportunitiesList({
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [showModal, setShowModal] = useState(false);
 
+	useEffect(() => {
+		setSearchInput(search);
+	}, [search]);
+
 	const prevFiltersRef = useRef({
 		search,
 		city,
 		occurrence,
 		participationType,
+		isRemoteParam,
+		dateFrom,
+		dateTo,
 		isMap,
 		refreshKey,
 		bn: bounds?.north,
@@ -63,6 +75,9 @@ export default function VolunteerOpportunitiesList({
 			prev.city !== city ||
 			prev.occurrence !== occurrence ||
 			prev.participationType !== participationType ||
+			prev.isRemoteParam !== isRemoteParam ||
+			prev.dateFrom !== dateFrom ||
+			prev.dateTo !== dateTo ||
 			prev.isMap !== isMap ||
 			prev.bn !== bounds?.north ||
 			prev.bs !== bounds?.south ||
@@ -75,6 +90,9 @@ export default function VolunteerOpportunitiesList({
 			city,
 			occurrence,
 			participationType,
+			isRemoteParam,
+			dateFrom,
+			dateTo,
 			isMap,
 			refreshKey,
 			bn: bounds?.north,
@@ -98,6 +116,15 @@ export default function VolunteerOpportunitiesList({
 		const mapBounds = isMap ? bounds : undefined;
 
 		let cancelled = false;
+		const isRemoteBool =
+			isRemoteParam === "true"
+				? true
+				: isRemoteParam === "false"
+					? false
+					: undefined;
+		const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
+		const dateToParsed = dateTo ? new Date(dateTo) : undefined;
+
 		api
 			.getVolunteerOpportunities(
 				page,
@@ -106,9 +133,9 @@ export default function VolunteerOpportunitiesList({
 				city || undefined,
 				occurrence || undefined,
 				participationType || undefined,
-				undefined,
-				undefined,
-				undefined,
+				isRemoteBool,
+				dateFromParsed,
+				dateToParsed,
 				mapBounds?.north,
 				mapBounds?.south,
 				mapBounds?.east,
@@ -142,6 +169,9 @@ export default function VolunteerOpportunitiesList({
 		city,
 		occurrence,
 		participationType,
+		isRemoteParam,
+		dateFrom,
+		dateTo,
 		isMap,
 		bounds?.north,
 		bounds?.south,
@@ -163,6 +193,37 @@ export default function VolunteerOpportunitiesList({
 			{ replace: true },
 		);
 	}
+
+	function commitSearch() {
+		updateFilter("search", searchInput);
+	}
+
+	function clearFilters() {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				next.delete("search");
+				next.delete("city");
+				next.delete("occurrence");
+				next.delete("participationType");
+				next.delete("isRemote");
+				next.delete("dateFrom");
+				next.delete("dateTo");
+				return next;
+			},
+			{ replace: true },
+		);
+	}
+
+	const hasFilters = !!(
+		search ||
+		city ||
+		occurrence ||
+		participationType ||
+		isRemoteParam ||
+		dateFrom ||
+		dateTo
+	);
 
 	function handleBoundsChange(next: OpportunityBounds) {
 		setBounds(next);
@@ -220,8 +281,12 @@ export default function VolunteerOpportunitiesList({
 				<input
 					type="text"
 					placeholder={t("opportunities.searchPlaceholder")}
-					value={search}
-					onChange={(e) => updateFilter("search", e.target.value)}
+					value={searchInput}
+					onChange={(e) => setSearchInput(e.target.value)}
+					onBlur={commitSearch}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") commitSearch();
+					}}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<input
@@ -251,6 +316,38 @@ export default function VolunteerOpportunitiesList({
 						{t("opportunities.individualContact")}
 					</option>
 				</select>
+				<select
+					value={isRemoteParam}
+					onChange={(e) => updateFilter("isRemote", e.target.value)}
+					className="rounded border px-3 py-1.5 text-sm text-gray-700"
+				>
+					<option value="">{t("opportunities.allLocations")}</option>
+					<option value="true">{t("opportunities.remote")}</option>
+					<option value="false">{t("opportunities.onsite")}</option>
+				</select>
+				<input
+					type="date"
+					aria-label={t("opportunities.dateFromLabel")}
+					value={dateFrom}
+					onChange={(e) => updateFilter("dateFrom", e.target.value)}
+					className="rounded border px-3 py-1.5 text-sm text-gray-700"
+				/>
+				<input
+					type="date"
+					aria-label={t("opportunities.dateToLabel")}
+					value={dateTo}
+					onChange={(e) => updateFilter("dateTo", e.target.value)}
+					className="rounded border px-3 py-1.5 text-sm text-gray-700"
+				/>
+				{hasFilters && (
+					<button
+						type="button"
+						onClick={clearFilters}
+						className="rounded border px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100"
+					>
+						{t("opportunities.clearFilters")}
+					</button>
+				)}
 			</div>
 
 			{isMap && (
