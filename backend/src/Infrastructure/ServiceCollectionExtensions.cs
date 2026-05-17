@@ -1,4 +1,5 @@
 using Application.Achievements;
+using Application.Achievements.BadgeCatalog;
 using Application.Common;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
@@ -6,6 +7,7 @@ using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Notifications;
 using Application.VolunteerOpportunities;
+using Infrastructure.Achievements;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
@@ -55,6 +57,9 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
 
 		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
+
+		services.ConfigureOptions<BadgeCatalogOptionsSetup>();
+		services.AddSingleton<IBadgeCatalogService, BadgeCatalogService>();
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
 		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(

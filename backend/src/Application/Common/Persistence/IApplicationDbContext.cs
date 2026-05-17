@@ -21,7 +21,7 @@ public interface IApplicationDbContext
 
 	Task<bool> HasAchievementAsync(
 		UserId userId,
-		AchievementType type,
+		string badgeName,
 		CancellationToken cancellationToken = default);
 
 	ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(

@@ -1,3 +1,4 @@
+using Application.Achievements.BadgeCatalog;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Achievements;
@@ -5,16 +6,21 @@ using Domain.Achievements;
 namespace Application.Achievements.AwardAchievement.v1;
 
 internal sealed class AwardAchievementCommandHandler(
-	IApplicationDbContext dbContext)
-	: ICommandHandler<AwardAchievementCommand, Guid>
+	IApplicationDbContext dbContext,
+	IBadgeCatalogService catalogService)
+	: ICommandHandler<AwardAchievementCommand, Guid?>
 {
-	public async ValueTask<Guid> Handle(
+	public async ValueTask<Guid?> Handle(
 		AwardAchievementCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		var definition = catalogService.FindByKey(request.BadgeKey);
+		if (definition is null)
+			return null;
+
 		var alreadyAwarded = await dbContext.HasAchievementAsync(
 			request.UserId,
-			request.Type,
+			definition.Name,
 			cancellationToken);
 
 		if (alreadyAwarded)
@@ -22,9 +28,9 @@ internal sealed class AwardAchievementCommandHandler(
 
 		var achievement = Achievement.Create(
 			request.UserId,
-			request.Type,
-			request.Name,
-			request.Description);
+			definition.Type,
+			definition.Name,
+			definition.Description);
 
 		await dbContext.Achievements.AddAsync(achievement, cancellationToken);
 
