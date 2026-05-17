@@ -48,6 +48,6 @@ internal sealed class AchievementConfiguration
 
 		builder.HasIndex(a => a.UserId);
 
-		builder.HasIndex(a => new { a.UserId, a.Type }).IsUnique();
+		builder.HasIndex(a => new { a.UserId, a.Name }).IsUnique();
 	}
 }

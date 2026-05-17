@@ -2034,6 +2034,39 @@
           }
         }
       }
+    },
+    "/v1/badges": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "operationId": "GetBadgeCatalog",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BadgeCatalogEntry"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2066,6 +2099,9 @@
             "format": "date-time"
           }
         }
+      },
+      "AchievementType": {
+        "type": "integer"
       },
       "AddMemberRequest": {
         "required": [
@@ -2122,6 +2158,33 @@
           },
           "city": {
             "type": "string"
+          }
+        }
+      },
+      "BadgeCatalogEntry": {
+        "required": [
+          "key",
+          "type",
+          "name",
+          "description",
+          "isHidden"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AchievementType"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "isHidden": {
+            "type": "boolean"
           }
         }
       },
