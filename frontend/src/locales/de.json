@@ -42,6 +42,7 @@
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noResults": "Keine Bedarfe gefunden.",
+      "loadMore": "Mehr laden",
       "previous": "← Zurück",
       "next": "Weiter →",
       "page": "{{current}} / {{total}}",
