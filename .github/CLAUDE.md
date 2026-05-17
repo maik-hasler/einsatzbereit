@@ -17,9 +17,9 @@
 
 ### `dotnet.yml`
 - **Trigger:** `backend/**`, `frontend/**`, `keycloak/**` path filter or manual (frontend + keycloak included because VisualTests boots full stack via Aspire)
-- **Steps:** setup .NET + Node + pnpm → frontend `pnpm install` → `dotnet restore` → `dotnet build` → run each test project sequentially via `dotnet run --project ... --no-build`
-- **Test projects:** Application.UnitTests, ArchitectureTests, IntegrationTests, VisualTests
-- **Why `dotnet run` not `dotnet test`:** TUnit uses Microsoft.Testing.Platform; `dotnet test` on .NET 10 requires opt-in to new experience. `dotnet run` invokes the test runner directly.
+- **Steps:** setup .NET + Node + pnpm → frontend `pnpm install` → `dotnet restore` → `dotnet build` → `dotnet test --no-build`
+- **Test projects:** Application.UnitTests, ArchitectureTests, IntegrationTests, VisualTests (all discovered via solution file)
+- **Why `dotnet test` works:** `global.json` opts in to `Microsoft.Testing.Platform` runner, which TUnit requires.
 
 ### `frontend.yml`
 - **Trigger:** `frontend/**` path filter or manual

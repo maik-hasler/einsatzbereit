@@ -71,18 +71,6 @@ jobs:
         working-directory: backend
         run: dotnet build --no-restore
 
-      - name: Test - Application.UnitTests
+      - name: Test
         working-directory: backend
-        run: dotnet run --project tests/Application.UnitTests --no-build
-
-      - name: Test - ArchitectureTests
-        working-directory: backend
-        run: dotnet run --project tests/ArchitectureTests --no-build
-
-      - name: Test - IntegrationTests (Aspire + Docker)
-        working-directory: backend
-        run: dotnet run --project tests/IntegrationTests --no-build
-
-      - name: Test - VisualTests (Aspire + Docker + Playwright)
-        working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-build
+        run: dotnet test --no-build
