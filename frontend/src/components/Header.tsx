@@ -67,15 +67,13 @@ export default function Header() {
 	return (
 		<header className="bg-white border-b border-gray-200">
 			{/* Accent bar */}
-			<div className="h-1 bg-gradient-to-r from-brand-500 to-accent-400" />
+			<div className="h-1 bg-brand-800" />
 
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
-					<a href="/" className="flex items-center gap-2 group">
-						<span className="text-xl font-bold text-brand-600 group-hover:text-brand-700 transition-colors">
-							{t("brand.name")}
-						</span>
+					<a href="/" className="flex items-center">
+						<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
 					</a>
 
 					{/* Desktop Nav */}
