@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 
@@ -13,6 +13,14 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const [name, setName] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [onClose]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -33,15 +41,21 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	};
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-			onClick={onClose}
-		>
+		<div className="fixed inset-0 z-50 flex items-center justify-center">
+			<button
+				type="button"
+				className="absolute inset-0 bg-black/50"
+				onClick={onClose}
+				tabIndex={-1}
+				aria-hidden="true"
+			/>
 			<div
-				className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-				onClick={(e) => e.stopPropagation()}
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="create-org-dialog-title"
+				className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
 			>
-				<h2 className="mb-4 text-xl font-semibold">
+				<h2 id="create-org-dialog-title" className="mb-4 text-xl font-semibold">
 					{t("organization.create")}
 				</h2>
 
