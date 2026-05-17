@@ -1,4 +1,5 @@
 using Application.Common;
+using Application.Common.Email;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
@@ -6,6 +7,7 @@ using Application.Engagements;
 using Application.Notifications;
 using Application.Organizations;
 using Application.VolunteerOpportunities;
+using Infrastructure.Email;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
@@ -55,6 +57,9 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
 
 		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
+
+		services.ConfigureOptions<SmtpOptionsSetup>();
+		services.AddScoped<IEmailService, SmtpEmailService>();
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
 		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
