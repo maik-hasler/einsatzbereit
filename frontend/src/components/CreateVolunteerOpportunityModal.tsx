@@ -9,6 +9,13 @@ interface Props {
 	onSuccess: () => void;
 }
 
+interface PendingTimeSlot {
+	id: string;
+	startDateTime: string;
+	endDateTime: string;
+	maxParticipants: number;
+}
+
 export default function CreateVolunteerOpportunityModal({
 	organizationId,
 	onClose,
@@ -31,13 +38,53 @@ export default function CreateVolunteerOpportunityModal({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
+	const [newSlot, setNewSlot] = useState({
+		startDateTime: "",
+		endDateTime: "",
+		maxParticipants: 1,
+	});
+	const [slotError, setSlotError] = useState<string | null>(null);
+
+	function handleAddSlot() {
+		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
+		setSlotError(null);
+		const start = new Date(newSlot.startDateTime);
+		const end = new Date(newSlot.endDateTime);
+		if (end <= start) {
+			setSlotError(t("timeSlots.addError"));
+			return;
+		}
+		setPendingSlots((prev) => [
+			...prev,
+			{
+				id: crypto.randomUUID(),
+				startDateTime: newSlot.startDateTime,
+				endDateTime: newSlot.endDateTime,
+				maxParticipants: newSlot.maxParticipants,
+			},
+		]);
+		setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
+	}
+
+	function handleRemovePendingSlot(id: string) {
+		setPendingSlots((prev) => prev.filter((s) => s.id !== id));
+	}
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
 		setError(null);
 
 		try {
-			await api.createVolunteerOpportunity(form);
+			const opportunity = await api.createVolunteerOpportunity(form);
+			for (const slot of pendingSlots) {
+				await api.createTimeSlot(opportunity.id, {
+					startDateTime: new Date(slot.startDateTime),
+					endDateTime: new Date(slot.endDateTime),
+					maxParticipants: slot.maxParticipants,
+				});
+			}
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
@@ -51,13 +98,15 @@ export default function CreateVolunteerOpportunityModal({
 		}
 	};
 
+	const isWaitlist = form.participationType === "Waitlist";
+
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 			onClick={onClose}
 		>
 			<div
-				className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
+				className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<h2 className="mb-4 text-xl font-semibold">
@@ -305,6 +354,119 @@ export default function CreateVolunteerOpportunityModal({
 							))}
 						</div>
 					</div>
+
+					{/* Time Slot Management */}
+					<fieldset className="space-y-3 rounded border p-3">
+						<legend className="px-1 text-sm font-medium">
+							{t("timeSlots.sectionTitle")}
+						</legend>
+
+						{!isWaitlist && (
+							<p className="text-xs text-gray-500">
+								{t("timeSlots.sectionHint")}
+							</p>
+						)}
+
+						{isWaitlist && (
+							<>
+								{pendingSlots.length === 0 ? (
+									<p className="text-xs text-gray-500">
+										{t("timeSlots.noSlots")}
+									</p>
+								) : (
+									<ul className="space-y-2">
+										{pendingSlots.map((slot) => (
+											<li
+												key={slot.id}
+												className="flex items-center justify-between rounded bg-gray-50 px-3 py-2 text-sm"
+											>
+												<span>
+													{new Date(slot.startDateTime).toLocaleString()} -{" "}
+													{new Date(slot.endDateTime).toLocaleString()} (
+													{slot.maxParticipants})
+												</span>
+												<button
+													type="button"
+													onClick={() => handleRemovePendingSlot(slot.id)}
+													className="ml-2 text-xs text-red-600 hover:underline"
+												>
+													{t("timeSlots.removeButton")}
+												</button>
+											</li>
+										))}
+									</ul>
+								)}
+
+								<div className="space-y-2 border-t pt-2">
+									<p className="text-xs font-medium text-gray-700">
+										{t("timeSlots.addTitle")}
+									</p>
+									<div className="grid grid-cols-2 gap-2">
+										<div>
+											<label className="mb-1 block text-xs text-gray-600">
+												{t("timeSlots.fieldStart")}
+											</label>
+											<input
+												type="datetime-local"
+												value={newSlot.startDateTime}
+												onChange={(e) =>
+													setNewSlot((s) => ({
+														...s,
+														startDateTime: e.target.value,
+													}))
+												}
+												className="w-full rounded border px-2 py-1 text-xs"
+											/>
+										</div>
+										<div>
+											<label className="mb-1 block text-xs text-gray-600">
+												{t("timeSlots.fieldEnd")}
+											</label>
+											<input
+												type="datetime-local"
+												value={newSlot.endDateTime}
+												onChange={(e) =>
+													setNewSlot((s) => ({
+														...s,
+														endDateTime: e.target.value,
+													}))
+												}
+												className="w-full rounded border px-2 py-1 text-xs"
+											/>
+										</div>
+									</div>
+									<div>
+										<label className="mb-1 block text-xs text-gray-600">
+											{t("timeSlots.fieldMaxParticipants")}
+										</label>
+										<input
+											type="number"
+											min={1}
+											value={newSlot.maxParticipants}
+											onChange={(e) =>
+												setNewSlot((s) => ({
+													...s,
+													maxParticipants: parseInt(e.target.value, 10) || 1,
+												}))
+											}
+											className="w-24 rounded border px-2 py-1 text-xs"
+										/>
+									</div>
+									{slotError && (
+										<p className="text-xs text-red-600">{slotError}</p>
+									)}
+									<button
+										type="button"
+										disabled={!newSlot.startDateTime || !newSlot.endDateTime}
+										onClick={handleAddSlot}
+										className="rounded bg-gray-800 px-3 py-1 text-xs text-white hover:bg-gray-700 disabled:opacity-50"
+									>
+										{t("timeSlots.addButton")}
+									</button>
+								</div>
+							</>
+						)}
+					</fieldset>
 
 					{error && <p className="text-sm text-red-600">{error}</p>}
 

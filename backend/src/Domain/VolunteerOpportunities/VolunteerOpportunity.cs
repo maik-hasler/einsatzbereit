@@ -115,7 +115,7 @@ public sealed class VolunteerOpportunity
 		CheckInMethod = checkInMethod;
 	}
 
-	public void AddTimeSlot(
+	public TimeSlot AddTimeSlot(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
 		int maxParticipants)
@@ -125,6 +125,15 @@ public sealed class VolunteerOpportunity
 
 		var timeSlot = TimeSlot.Create(startDateTime, endDateTime, maxParticipants);
 		_timeSlots.Add(timeSlot);
+		return timeSlot;
+	}
+
+	public void UpdateTimeSlot(TimeSlotId timeSlotId, DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants)
+	{
+		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId)
+			?? throw new DomainException($"Time slot with id '{timeSlotId.Value}' not found.");
+
+		timeSlot.Update(startDateTime, endDateTime, maxParticipants);
 	}
 
 	public void RemoveTimeSlot(TimeSlotId timeSlotId)

@@ -19,7 +19,7 @@ internal sealed class ApplicationDbContext(
 	public IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities
 		=> new AggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>(
 			Set<VolunteerOpportunity>(),
-			Set<VolunteerOpportunity>(),
+			Set<VolunteerOpportunity>().Include(vo => vo.TimeSlots),
 			vo => vo.Id);
 
 	internal IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
