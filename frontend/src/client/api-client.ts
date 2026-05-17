@@ -1620,6 +1620,10 @@ export interface MyProfileResponse {
     firstName: string | undefined;
     lastName: string | undefined;
     email: string;
+    bio: string | undefined;
+    skills: string[];
+    languages: string[];
+    preferredContact: string | undefined;
 
     [key: string]: any;
 }
@@ -1779,6 +1783,10 @@ export interface UpdateOrganizationRequest {
 export interface UpdateUserProfileRequest {
     firstName?: string | undefined;
     lastName?: string | undefined;
+    bio?: string | undefined;
+    skills?: string[] | undefined;
+    languages?: string[] | undefined;
+    preferredContact?: string | undefined;
 
     [key: string]: any;
 }

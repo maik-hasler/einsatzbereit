@@ -16,6 +16,8 @@ public interface IApplicationDbContext
 
 	IAggregateRepository<Notification, NotificationId> Notifications { get; }
 
+	IAggregateRepository<User, UserId> Users { get; }
+
 	ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
 		CancellationToken cancellationToken = default);

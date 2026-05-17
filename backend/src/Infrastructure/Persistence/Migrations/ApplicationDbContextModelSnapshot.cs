@@ -149,6 +149,36 @@ namespace Infrastructure.Persistence.Migrations
 					b.ToTable("organization", (string)null);
 				});
 
+			modelBuilder.Entity("Domain.Users.User", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<string>("Bio")
+						.HasColumnType("text")
+						.HasColumnName("bio");
+
+					b.Property<string>("Languages")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("languages");
+
+					b.Property<string>("PreferredContact")
+						.HasColumnType("text")
+						.HasColumnName("preferred_contact");
+
+					b.Property<string>("Skills")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("skills");
+
+					b.HasKey("Id")
+						.HasName("pk_user");
+
+					b.ToTable("user", (string)null);
+				});
+
 			modelBuilder.Entity("Domain.VolunteerOpportunities.TimeSlot", b =>
 				{
 					b.Property<Guid>("Id")

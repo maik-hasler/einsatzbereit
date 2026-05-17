@@ -3348,6 +3348,20 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("bio")]
+        public string? Bio { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("skills")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Skills { get; set; } = new System.Collections.ObjectModel.Collection<string>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("languages")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Languages { get; set; } = new System.Collections.ObjectModel.Collection<string>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("preferredContact")]
+        public string? PreferredContact { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -3872,6 +3886,18 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
         public string? LastName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("bio")]
+        public string? Bio { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("skills")]
+        public System.Collections.Generic.ICollection<string>? Skills { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("languages")]
+        public System.Collections.Generic.ICollection<string>? Languages { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("preferredContact")]
+        public string? PreferredContact { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
