@@ -242,6 +242,25 @@ export default function Header() {
 													{t("nav.myEngagements")}
 												</a>
 												<a
+													href="/profile"
+													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+												>
+													<svg
+														className="w-4 h-4"
+														fill="none"
+														viewBox="0 0 24 24"
+														strokeWidth="1.5"
+														stroke="currentColor"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+														/>
+													</svg>
+													{t("nav.myProfile")}
+												</a>
+												<a
 													href="/account"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
@@ -393,6 +412,12 @@ export default function Header() {
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myEngagements")}
+								</a>
+								<a
+									href="/profile"
+									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+								>
+									{t("nav.myProfile")}
 								</a>
 								<a
 									href="/account"

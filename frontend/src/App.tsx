@@ -11,6 +11,7 @@ import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPa
 import MyEngagementsPage from "./pages/MyEngagementsPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import AccountPage from "./pages/AccountPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
@@ -71,6 +72,14 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							<AccountPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/profile"
+					element={
+						<ProtectedRoute>
+							<ProfilePage />
 						</ProtectedRoute>
 					}
 				/>
