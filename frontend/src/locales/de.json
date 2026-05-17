@@ -9,6 +9,7 @@
       "userMenu": "Benutzermenü",
       "myEngagements": "Meine Engagements",
       "myProfile": "Mein Profil",
+      "myAchievements": "Meine Errungenschaften",
       "profileSettings": "Profileinstellungen",
       "signOut": "Abmelden",
       "signIn": "Anmelden",
@@ -431,6 +432,16 @@
       "error": "Fehler: {{message}}",
       "noAchievements": "Noch keine Errungenschaften. Beginne mit dem Ehrenamt, um Abzeichen zu verdienen!",
       "unlockedOn": "Freigeschaltet: {{date}}",
+      "lockedBadge": "Geheimes Abzeichen",
+      "lockedDescription": "Bleib dabei, um es freizuschalten!",
+      "badgesTitle": "Abzeichen",
+      "streakTitle": "Deine Serien",
+      "loginStreak": "Login-Serie",
+      "activityStreak": "Aktivitätsserie",
+      "shareButton": "Errungenschaften teilen",
+      "shareText": "Schau dir meine Errungenschaften auf Einsatzbereit an!",
+      "shareCopied": "Link in die Zwischenablage kopiert!",
+      "newBadge": "🏆 Neues Abzeichen freigeschaltet: {{name}}!",
       "types": {
         "Milestone": "Meilenstein",
         "Streak": "Serie",
@@ -444,7 +455,8 @@
       "engagements": "Bewerbungen",
       "settings": "Einstellungen",
       "account": "Konto",
-      "profile": "Profil"
+      "profile": "Profil",
+      "achievements": "Meine Errungenschaften"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung fur diese Aktion.",
