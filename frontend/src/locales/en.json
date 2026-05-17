@@ -359,6 +359,19 @@
         "viewDetails": "View details →"
       }
     },
+    "achievements": {
+      "title": "My Achievements",
+      "loading": "Loading…",
+      "error": "Error: {{message}}",
+      "noAchievements": "No achievements yet. Start volunteering to earn badges!",
+      "unlockedOn": "Unlocked: {{date}}",
+      "types": {
+        "Milestone": "Milestone",
+        "Streak": "Streak",
+        "Social": "Social",
+        "Hidden": "Special"
+      }
+    },
     "breadcrumb": {
       "home": "Home",
       "volunteerOpportunities": "Volunteer Opportunities",

@@ -1947,10 +1947,126 @@
           }
         }
       }
+    },
+    "/v1/users/{userId}/achievements": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "operationId": "GetUserAchievements",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AchievementSummary"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/achievements": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "operationId": "GetMyAchievements",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AchievementSummary"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AchievementSummary": {
+        "required": [
+          "id",
+          "type",
+          "name",
+          "description",
+          "unlockedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unlockedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "AddMemberRequest": {
         "required": [
           "userId"
@@ -3345,6 +3461,9 @@
     },
     {
       "name": "Engagements"
+    },
+    {
+      "name": "Achievements"
     }
   ]
 }

@@ -1,3 +1,4 @@
+using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -16,6 +17,13 @@ public interface IApplicationDbContext
 	IAggregateRepository<Engagement, EngagementId> Engagements { get; }
 
 	IAggregateRepository<Notification, NotificationId> Notifications { get; }
+
+	IAggregateRepository<Achievement, AchievementId> Achievements { get; }
+
+	Task<bool> HasAchievementAsync(
+		UserId userId,
+		AchievementType type,
+		CancellationToken cancellationToken = default);
 
 	ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,

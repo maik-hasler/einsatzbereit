@@ -1,5 +1,6 @@
 using System.Reflection;
 using Application.Common.Persistence;
+using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -49,6 +50,21 @@ internal sealed class ApplicationDbContext(
 			n => n.Id);
 
 	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
+
+	public IAggregateRepository<Achievement, AchievementId> Achievements
+		=> new AggregateRepository<Achievement, AchievementId>(
+			Set<Achievement>(),
+			Set<Achievement>(),
+			a => a.Id);
+
+	internal IQueryable<Achievement> AchievementsQuery => Set<Achievement>().AsNoTracking();
+
+	public async Task<bool> HasAchievementAsync(
+		UserId userId,
+		AchievementType type,
+		CancellationToken cancellationToken = default) =>
+		await Set<Achievement>()
+			.AnyAsync(a => a.UserId == userId && a.Type == type, cancellationToken);
 
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,

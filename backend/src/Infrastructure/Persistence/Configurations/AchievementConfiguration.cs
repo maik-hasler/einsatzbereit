@@ -1,0 +1,53 @@
+using Domain.Achievements;
+using Domain.Users;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Infrastructure.Persistence.Configurations;
+
+internal sealed class AchievementConfiguration
+	: IEntityTypeConfiguration<Achievement>
+{
+	public void Configure(
+		EntityTypeBuilder<Achievement> builder)
+	{
+		builder.HasKey(a => a.Id);
+
+		builder.Property(a => a.Id)
+			.HasConversion(
+				id => id.Value,
+				guid => new AchievementId(guid))
+			.ValueGeneratedNever();
+
+		builder.Property(a => a.UserId)
+			.HasConversion(
+				id => id.Value,
+				guid => new UserId(guid))
+			.IsRequired();
+
+		builder.Property(a => a.Type)
+			.HasConversion<string>()
+			.IsRequired();
+
+		builder.Property(a => a.Name)
+			.IsRequired()
+			.HasMaxLength(200);
+
+		builder.Property(a => a.Description)
+			.IsRequired()
+			.HasMaxLength(1000);
+
+		builder.Property(a => a.UnlockedAt)
+			.IsRequired();
+
+		builder.Property(a => a.CreatedOn);
+
+		builder.Property(a => a.ModifiedOn);
+
+		builder.Ignore(a => a.Events);
+
+		builder.HasIndex(a => a.UserId);
+
+		builder.HasIndex(a => new { a.UserId, a.Type }).IsUnique();
+	}
+}
