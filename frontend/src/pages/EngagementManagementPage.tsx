@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -14,7 +15,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
-	const navigate = useNavigate();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 
@@ -28,6 +28,7 @@ export default function EngagementManagementPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
+	const [opportunityTitle, setOpportunityTitle] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState<string | null>(null);
@@ -35,11 +36,25 @@ export default function EngagementManagementPage() {
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
 
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{
+			label: opportunityTitle || t("breadcrumb.volunteerOpportunities"),
+			href: opportunityId ? `/volunteer-opportunities/${opportunityId}` : "/",
+		},
+		{ label: t("breadcrumb.engagements") },
+	]);
+
 	useEffect(() => {
 		if (!opportunityId) return;
-		api
-			.getEngagements(opportunityId)
-			.then(setEngagements)
+		Promise.all([
+			api.getEngagements(opportunityId),
+			api
+				.getVolunteerOpportunityDetails(opportunityId)
+				.then((d) => setOpportunityTitle(d.title))
+				.catch(() => undefined),
+		])
+			.then(([e]) => setEngagements(e))
 			.catch((err) => setError(err.message))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,13 +111,6 @@ export default function EngagementManagementPage() {
 
 	return (
 		<>
-			<button
-				onClick={() => navigate(-1)}
-				className="mb-4 text-sm text-gray-500 hover:text-gray-800"
-			>
-				{t("engagementManagement.back")}
-			</button>
-
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("engagementManagement.title")}
 			</h1>
