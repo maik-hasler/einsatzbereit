@@ -37,6 +37,12 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");
 
+					b.Property<bool>("IsCheckedIn")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_checked_in");
+
 					b.Property<string>("Message")
 						.HasColumnType("text")
 						.HasColumnName("message");

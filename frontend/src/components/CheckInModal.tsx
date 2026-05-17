@@ -19,8 +19,9 @@ export default function CheckInModal({
 }: CheckInModalProps) {
 	const api = useApiClient();
 	const { t } = useTranslation();
-	const [details, setDetails] =
-		useState<VolunteerOpportunityDetails | null>(null);
+	const [details, setDetails] = useState<VolunteerOpportunityDetails | null>(
+		null,
+	);
 	const [pin, setPin] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
