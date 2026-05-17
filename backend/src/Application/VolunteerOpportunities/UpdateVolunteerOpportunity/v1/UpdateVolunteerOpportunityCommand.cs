@@ -9,5 +9,7 @@ public sealed record UpdateVolunteerOpportunityCommand(
 	string Description,
 	bool IsRemote,
 	Address? Address,
+	Occurrence Occurrence,
+	ParticipationType ParticipationType,
 	CheckInMethod CheckInMethod)
 	: ICommand<bool>;

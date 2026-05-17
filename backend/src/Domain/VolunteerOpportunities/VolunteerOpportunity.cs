@@ -93,6 +93,8 @@ public sealed class VolunteerOpportunity
 		string description,
 		bool isRemote,
 		Address? address,
+		Occurrence occurrence,
+		ParticipationType participationType,
 		CheckInMethod checkInMethod)
 	{
 		if (string.IsNullOrWhiteSpace(title))
@@ -108,6 +110,8 @@ public sealed class VolunteerOpportunity
 		Description = description;
 		IsRemote = isRemote;
 		Address = address;
+		Occurrence = occurrence;
+		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
 	}
 

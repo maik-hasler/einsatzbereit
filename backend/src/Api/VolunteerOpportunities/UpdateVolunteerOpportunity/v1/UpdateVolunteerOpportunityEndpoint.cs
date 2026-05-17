@@ -43,6 +43,20 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 			address = new Address(request.Street, request.HouseNumber, request.ZipCode, request.City);
 		}
 
+		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence))
+		{
+			return Results.Problem(
+				"Invalid occurrence. Allowed values: OneTime, Recurring.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		if (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType))
+		{
+			return Results.Problem(
+				"Invalid participation type. Allowed values: Waitlist, IndividualContact.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
 		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod))
 		{
 			return Results.Problem(
@@ -50,7 +64,7 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		var command = new UpdateVolunteerOpportunityCommand(opportunityId, request.Title, request.Description, request.IsRemote, address, checkInMethod);
+		var command = new UpdateVolunteerOpportunityCommand(opportunityId, request.Title, request.Description, request.IsRemote, address, occurrence, participationType, checkInMethod);
 
 		await sender.Send(command, cancellationToken);
 

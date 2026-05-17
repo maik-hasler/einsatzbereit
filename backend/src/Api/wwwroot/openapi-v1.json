@@ -2503,6 +2503,8 @@
           "houseNumber",
           "zipCode",
           "city",
+          "occurrence",
+          "participationType",
           "checkInMethod"
         ],
         "type": "object",
@@ -2539,6 +2541,12 @@
               "null",
               "string"
             ]
+          },
+          "occurrence": {
+            "type": "string"
+          },
+          "participationType": {
+            "type": "string"
           },
           "checkInMethod": {
             "type": "string"
