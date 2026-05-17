@@ -52,7 +52,8 @@ internal sealed class ApplicationDbContextInitializer(
 				isRemote: false,
 				new Domain.VolunteerOpportunities.Address("Hauptstrasse", "1", "12345", "Musterstadt"),
 				Occurrence.OneTime,
-				ParticipationType.Waitlist);
+				ParticipationType.Waitlist,
+				CheckInMethod.Manual);
 			opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20);
 
 			var opp2 = VolunteerOpportunity.Create(
@@ -62,7 +63,8 @@ internal sealed class ApplicationDbContextInitializer(
 				isRemote: false,
 				new Domain.VolunteerOpportunities.Address("Rathausplatz", "1", "12345", "Musterstadt"),
 				Occurrence.Recurring,
-				ParticipationType.IndividualContact);
+				ParticipationType.IndividualContact,
+				CheckInMethod.None);
 
 			var opp3 = VolunteerOpportunity.Create(
 				org2Id,
@@ -71,7 +73,8 @@ internal sealed class ApplicationDbContextInitializer(
 				isRemote: false,
 				new Domain.VolunteerOpportunities.Address("Tiergartenweg", "5", "12345", "Musterstadt"),
 				Occurrence.Recurring,
-				ParticipationType.Waitlist);
+				ParticipationType.Waitlist,
+				CheckInMethod.QRCode);
 			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5);
 			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), 5);
 
@@ -82,7 +85,8 @@ internal sealed class ApplicationDbContextInitializer(
 				isRemote: true,
 				address: null,
 				Occurrence.OneTime,
-				ParticipationType.IndividualContact);
+				ParticipationType.IndividualContact,
+				CheckInMethod.None);
 
 			dbContext.Set<VolunteerOpportunity>().AddRange(opp1, opp2, opp3, opp4);
 

@@ -72,10 +72,17 @@
       "fieldCity": "Ort",
       "fieldFrequency": "Häufigkeit",
       "fieldParticipationType": "Teilnahmeart",
+      "fieldCheckInMethod": "Check-in-Methode",
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler"
+    },
+    "checkInMethod": {
+      "none": "Keine (automatisch)",
+      "qrCode": "QR-Code",
+      "pinCode": "PIN-Code",
+      "manual": "Manuell"
     },
     "editOpportunity": {
       "title": "Bedarf bearbeiten",

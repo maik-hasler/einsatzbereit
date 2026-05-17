@@ -33,7 +33,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist);
+			ParticipationType.Waitlist,
+			CheckInMethod.None);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -60,7 +61,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.Recurring,
-			ParticipationType.IndividualContact);
+			ParticipationType.IndividualContact,
+			CheckInMethod.Manual);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);

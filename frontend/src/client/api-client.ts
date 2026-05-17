@@ -1434,6 +1434,7 @@ export interface CreateVolunteerOpportunityRequest {
     city: string;
     occurrence: string;
     participationType: string;
+    checkInMethod: string;
 
     [key: string]: any;
 }
@@ -1450,6 +1451,7 @@ export interface CreateVolunteerOpportunityResponse {
     isRemote: boolean;
     occurrence: string;
     participationType: string;
+    checkInMethod: string;
     createdOn: Date;
 
     [key: string]: any;
@@ -1656,6 +1658,7 @@ export interface UpdateVolunteerOpportunityRequest {
     houseNumber: string | undefined;
     zipCode: string | undefined;
     city: string | undefined;
+    checkInMethod: string;
 
     [key: string]: any;
 }
@@ -1673,6 +1676,7 @@ export interface VolunteerOpportunityDetails {
     isRemote: boolean;
     occurrence: string;
     participationType: string;
+    checkInMethod: string;
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
 
@@ -1692,6 +1696,7 @@ export interface VolunteerOpportunitySummary {
     isRemote: boolean;
     occurrence: string;
     participationType: string;
+    checkInMethod: string;
     createdOn: Date;
 
     [key: string]: any;

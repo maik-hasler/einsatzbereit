@@ -25,7 +25,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	private static VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
-		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 	[Test]
 	public async Task Handle_ShouldUpdateFields_WhenOpportunityExists(
@@ -41,7 +41,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, CheckInMethod.Manual);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -66,7 +66,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Remote", "Desc", true, Address: null);
+			opportunityId, "Remote", "Desc", true, Address: null, CheckInMethod.None);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -88,7 +88,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress);
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, CheckInMethod.None);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -111,7 +111,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "   ", "Beschreibung", false, DefaultAddress);
+			opportunityId, "   ", "Beschreibung", false, DefaultAddress, CheckInMethod.None);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -134,7 +134,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, Address: null);
+			opportunityId, "Titel", "Beschreibung", false, Address: null, CheckInMethod.None);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);

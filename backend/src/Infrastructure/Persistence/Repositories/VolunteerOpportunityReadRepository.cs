@@ -58,6 +58,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.IsRemote,
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
+				x.vo.CheckInMethod.ToString(),
 				x.vo.CreatedOn))
 			.ToPagedListAsync(pageNumber, pageSize, cancellationToken);
 	}
@@ -86,6 +87,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.IsRemote,
 				x.vo.Occurrence,
 				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
 				x.vo.CreatedOn
 			})
 			.FirstOrDefaultAsync(cancellationToken);
@@ -117,6 +119,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.IsRemote,
 			result.Occurrence.ToString(),
 			result.ParticipationType.ToString(),
+			result.CheckInMethod.ToString(),
 			timeSlots,
 			result.CreatedOn);
 	}
@@ -148,6 +151,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.IsRemote,
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
+				x.vo.CheckInMethod.ToString(),
 				x.vo.CreatedOn))
 			.ToListAsync(cancellationToken);
 	}
