@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useRef } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import L from "leaflet";
@@ -25,6 +25,7 @@ const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 const DEFAULT_CENTER: [number, number] = [51.1657, 10.4515];
 const DEFAULT_ZOOM = 6;
+const BOUNDS_EPSILON = 1e-4;
 
 interface Props {
 	items: VolunteerOpportunitySummary[];
@@ -32,11 +33,26 @@ interface Props {
 	onBoundsChange: (bounds: OpportunityBounds) => void;
 }
 
+function boundsDifferMaterially(
+	a: OpportunityBounds | undefined,
+	b: OpportunityBounds,
+): boolean {
+	if (!a) return true;
+	return (
+		Math.abs(a.north - b.north) > BOUNDS_EPSILON ||
+		Math.abs(a.south - b.south) > BOUNDS_EPSILON ||
+		Math.abs(a.east - b.east) > BOUNDS_EPSILON ||
+		Math.abs(a.west - b.west) > BOUNDS_EPSILON
+	);
+}
+
 function BoundsWatcher({
 	onBoundsChange,
 }: {
 	onBoundsChange: (bounds: OpportunityBounds) => void;
 }) {
+	const lastSentRef = useRef<OpportunityBounds | undefined>(undefined);
+
 	const map = useMapEvents({
 		moveend: () => emit(),
 		zoomend: () => emit(),
@@ -44,18 +60,16 @@ function BoundsWatcher({
 
 	function emit() {
 		const b = map.getBounds();
-		onBoundsChange({
+		const next: OpportunityBounds = {
 			north: b.getNorth(),
 			south: b.getSouth(),
 			east: b.getEast(),
 			west: b.getWest(),
-		});
+		};
+		if (!boundsDifferMaterially(lastSentRef.current, next)) return;
+		lastSentRef.current = next;
+		onBoundsChange(next);
 	}
-
-	useEffect(() => {
-		emit();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
 	return null;
 }
@@ -68,10 +82,12 @@ export default function OpportunityMap({
 	const { t } = useTranslation();
 	const attribution = t("map.attribution");
 
-	const initialCenter: [number, number] = bounds
-		? [(bounds.north + bounds.south) / 2, (bounds.east + bounds.west) / 2]
-		: DEFAULT_CENTER;
-	const initialZoom = bounds ? 10 : DEFAULT_ZOOM;
+	const initialView = useRef<{ center: [number, number]; zoom: number }>({
+		center: bounds
+			? [(bounds.north + bounds.south) / 2, (bounds.east + bounds.west) / 2]
+			: DEFAULT_CENTER,
+		zoom: bounds ? 10 : DEFAULT_ZOOM,
+	});
 
 	type PinItem = VolunteerOpportunitySummary & {
 		latitude: number;
@@ -90,8 +106,8 @@ export default function OpportunityMap({
 			className="h-[500px] w-full overflow-hidden rounded border"
 		>
 			<MapContainer
-				center={initialCenter}
-				zoom={initialZoom}
+				center={initialView.current.center}
+				zoom={initialView.current.zoom}
 				scrollWheelZoom
 				className="h-full w-full"
 			>

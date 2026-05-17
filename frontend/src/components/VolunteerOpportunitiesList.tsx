@@ -253,24 +253,28 @@ export default function VolunteerOpportunitiesList({
 				</select>
 			</div>
 
-			{loading && <p className="text-gray-500">{t("opportunities.loading")}</p>}
+			{isMap && (
+				<OpportunityMap
+					items={items}
+					bounds={bounds}
+					onBoundsChange={handleBoundsChange}
+				/>
+			)}
+
+			{loading && items.length === 0 && (
+				<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
+					{t("opportunities.loading")}
+				</p>
+			)}
 			{error && (
 				<p className="text-red-600">
 					{t("opportunities.error", { message: error })}
 				</p>
 			)}
 
-			{!loading && !error && (
+			{!error && (
 				<>
-					{isMap && (
-						<OpportunityMap
-							items={items}
-							bounds={bounds}
-							onBoundsChange={handleBoundsChange}
-						/>
-					)}
-
-					{items.length === 0 ? (
+					{!loading && items.length === 0 ? (
 						<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
 							{isMap ? t("map.noPinsInView") : t("opportunities.noResults")}
 						</p>
