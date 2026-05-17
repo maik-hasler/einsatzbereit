@@ -225,6 +225,10 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("text")
 						.HasColumnName("check_in_method");
 
+					b.Property<string>("CheckInPin")
+						.HasColumnType("text")
+						.HasColumnName("check_in_pin");
+
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");

@@ -22,6 +22,7 @@ internal sealed class EngagementReadRepository(
 				e.TimeSlotId != null ? e.TimeSlotId.Value.Value : (Guid?)null,
 				e.Message,
 				e.Status.ToString(),
+				e.IsCheckedIn,
 				e.CreatedOn))
 			.ToListAsync(cancellationToken);
 
@@ -38,6 +39,7 @@ internal sealed class EngagementReadRepository(
 				e.TimeSlotId != null ? e.TimeSlotId.Value.Value : (Guid?)null,
 				e.Message,
 				e.Status.ToString(),
+				e.IsCheckedIn,
 				e.CreatedOn))
 			.ToListAsync(cancellationToken);
 }

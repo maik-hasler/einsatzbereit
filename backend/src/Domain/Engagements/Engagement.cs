@@ -20,6 +20,8 @@ public sealed class Engagement
 
 	public string? CancellationReason { get; private set; }
 
+	public bool IsCheckedIn { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -99,5 +101,13 @@ public sealed class Engagement
 			throw new DomainException("Engagement is already terminated.");
 
 		Status = EngagementStatus.Withdrawn;
+	}
+
+	public void CheckIn()
+	{
+		if (Status != EngagementStatus.Confirmed)
+			throw new DomainException("Only confirmed engagements can be checked in.");
+
+		IsCheckedIn = true;
 	}
 }

@@ -232,6 +232,25 @@
       "loadError": "Could not load profile.",
       "loading": "Loading…"
     },
+    "checkIn": {
+      "buttonLabel": "Check in",
+      "checkedInLabel": "Checked in",
+      "title": "Check in",
+      "qrInstruction": "Show this QR code to the organizer to check in.",
+      "pinInstruction": "Enter the PIN provided by the organizer.",
+      "pinLabel": "PIN",
+      "pinPlaceholder": "4-digit PIN",
+      "submitPin": "Submit",
+      "submitting": "…",
+      "success": "Checked in successfully!",
+      "invalidPin": "Invalid PIN. Please try again.",
+      "manualInstruction": "The organizer will check you in manually.",
+      "close": "Close",
+      "organizerPin": "Check-in PIN",
+      "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
+      "markCheckedIn": "Mark as checked in",
+      "markingCheckedIn": "…"
+    },
     "myEngagements": {
       "title": "My Engagements",
       "loading": "Loading…",

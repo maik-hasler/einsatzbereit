@@ -153,6 +153,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.CheckInMethod,
 				x.vo.Category,
 				x.vo.Tags,
+				x.vo.CheckInPin,
 				x.vo.CreatedOn
 			})
 			.FirstOrDefaultAsync(cancellationToken);
@@ -189,6 +190,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.CheckInMethod.ToString(),
 			result.Category?.ToString(),
 			result.Tags,
+			result.CheckInPin,
 			timeSlots,
 			result.CreatedOn);
 	}
