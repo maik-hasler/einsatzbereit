@@ -279,6 +279,7 @@ export default function VolunteerOpportunitiesList({
 			<div className="mb-4 flex flex-wrap gap-2">
 				<input
 					type="text"
+					aria-label={t("opportunities.searchPlaceholder")}
 					placeholder={t("opportunities.searchPlaceholder")}
 					value={searchInput}
 					onChange={(e) => setSearchInput(e.target.value)}
@@ -290,12 +291,14 @@ export default function VolunteerOpportunitiesList({
 				/>
 				<input
 					type="text"
+					aria-label={t("opportunities.cityPlaceholder")}
 					placeholder={t("opportunities.cityPlaceholder")}
 					value={city}
 					onChange={(e) => updateFilter("city", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<select
+					aria-label={t("opportunities.allFrequencies")}
 					value={occurrence}
 					onChange={(e) => updateFilter("occurrence", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -305,6 +308,7 @@ export default function VolunteerOpportunitiesList({
 					<option value="Recurring">{t("opportunities.recurring")}</option>
 				</select>
 				<select
+					aria-label={t("opportunities.allTypes")}
 					value={participationType}
 					onChange={(e) => updateFilter("participationType", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -316,6 +320,7 @@ export default function VolunteerOpportunitiesList({
 					</option>
 				</select>
 				<select
+					aria-label={t("opportunities.allLocations")}
 					value={isRemoteParam}
 					onChange={(e) => updateFilter("isRemote", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
