@@ -230,7 +230,14 @@
       "savedSuccess": "Changes saved.",
       "saveError": "Failed to save.",
       "loadError": "Could not load profile.",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your engagements will be anonymised and your Keycloak account will be deleted.",
+      "deleteAccountButton": "Delete my account",
+      "deleteConfirmTitle": "Delete account?",
+      "deleteConfirmMessage": "Are you sure you want to permanently delete your account? All your personal data will be erased and your engagements will be anonymised. This cannot be undone.",
+      "deleteConfirmButton": "Yes, delete permanently",
+      "deleteError": "Failed to delete account. Please try again or contact support."
     },
     "myEngagements": {
       "title": "My Engagements",
