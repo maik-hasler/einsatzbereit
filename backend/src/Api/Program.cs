@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.Middleware;
 using Api.Common.RateLimiting;
 using Application;
 using Asp.Versioning;
@@ -99,6 +100,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+app.UseMiddleware<LoginStreakMiddleware>();
 
 app.MapEndpoints();
 

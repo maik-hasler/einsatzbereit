@@ -24,6 +24,12 @@ public interface IApplicationDbContext
 		string badgeName,
 		CancellationToken cancellationToken = default);
 
+	IAggregateRepository<UserStreak, UserStreakId> UserStreaks { get; }
+
+	Task<UserStreak?> GetUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
 	ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
 		CancellationToken cancellationToken = default);
