@@ -3,6 +3,7 @@ using Api.Common.RateLimiting;
 using Application.Achievements.BadgeCatalog;
 using Application.Achievements.GetBadgeCatalog.v1;
 using Application.Common.Messaging;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Achievements.GetBadgeCatalog.v1;
 
@@ -19,7 +20,7 @@ internal sealed class GetBadgeCatalogEndpoint
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetBadgeCatalogAsync(
-		ISender sender,
+		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
 		var result = await sender.Send(new GetBadgeCatalogQuery(), cancellationToken);

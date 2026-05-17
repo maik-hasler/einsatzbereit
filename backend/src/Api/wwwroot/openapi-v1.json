@@ -839,6 +839,46 @@
         }
       }
     },
+    "/v1/me/streaks": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "GetMyStreaks",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreakSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/organizations/{organizationId}": {
       "put": {
         "tags": [
@@ -3049,6 +3089,31 @@
             "items": {
               "$ref": "#/components/schemas/PublicOpportunitySummaryDto"
             }
+          }
+        }
+      },
+      "StreakSummary": {
+        "required": [
+          "loginStreak",
+          "activityStreak"
+        ],
+        "type": "object",
+        "properties": {
+          "loginStreak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "activityStreak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
