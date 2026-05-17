@@ -133,6 +133,21 @@
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler"
     },
+    "timeSlots": {
+      "sectionTitle": "Zeitslots",
+      "sectionHint": "Zeitslots sind nur fur Wartelisten-Bedarfe verfugbar.",
+      "addTitle": "Zeitslot hinzufugen",
+      "fieldStart": "Beginn",
+      "fieldEnd": "Ende",
+      "fieldMaxParticipants": "Max. Teilnehmer",
+      "addButton": "Hinzufugen",
+      "adding": "Wird hinzugefugt…",
+      "removeButton": "Entfernen",
+      "removing": "…",
+      "noSlots": "Noch keine Zeitslots hinzugefugt.",
+      "addError": "Zeitslot konnte nicht hinzugefugt werden.",
+      "removeError": "Zeitslot konnte nicht entfernt werden."
+    },
     "signUp": {
       "titleWaitlist": "Auf Warteliste eintragen",
       "titleInterest": "Interesse bekunden",

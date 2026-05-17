@@ -1,12 +1,21 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { VolunteerOpportunityDetails } from "../client/api-client";
+import type {
+	TimeSlotDetail,
+	VolunteerOpportunityDetails,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 
 interface Props {
 	opportunity: VolunteerOpportunityDetails;
 	onClose: () => void;
 	onSuccess: () => void;
+}
+
+interface PendingTimeSlot {
+	startDateTime: string;
+	endDateTime: string;
+	maxParticipants: number;
 }
 
 export default function EditVolunteerOpportunityModal({
@@ -36,6 +45,18 @@ export default function EditVolunteerOpportunityModal({
 	const [tags, setTags] = useState<string[]>(opportunity.tags ?? []);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	const [timeSlots, setTimeSlots] = useState<TimeSlotDetail[]>(
+		opportunity.timeSlots ?? [],
+	);
+	const [newSlot, setNewSlot] = useState<PendingTimeSlot>({
+		startDateTime: "",
+		endDateTime: "",
+		maxParticipants: 1,
+	});
+	const [addingSlot, setAddingSlot] = useState(false);
+	const [slotError, setSlotError] = useState<string | null>(null);
+	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -67,6 +88,47 @@ export default function EditVolunteerOpportunityModal({
 			setSubmitting(false);
 		}
 	}
+
+	async function handleAddSlot() {
+		setAddingSlot(true);
+		setSlotError(null);
+		try {
+			const response = await api.createTimeSlot(opportunity.id, {
+				startDateTime: new Date(newSlot.startDateTime),
+				endDateTime: new Date(newSlot.endDateTime),
+				maxParticipants: newSlot.maxParticipants,
+			});
+			setTimeSlots((prev) => [
+				...prev,
+				{
+					id: response.id,
+					startDateTime: response.startDateTime,
+					endDateTime: response.endDateTime,
+					maxParticipants: response.maxParticipants,
+				},
+			]);
+			setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
+		} catch {
+			setSlotError(t("timeSlots.addError"));
+		} finally {
+			setAddingSlot(false);
+		}
+	}
+
+	async function handleRemoveSlot(timeSlotId: string) {
+		setRemovingSlotId(timeSlotId);
+		setSlotError(null);
+		try {
+			await api.deleteTimeSlot(opportunity.id, timeSlotId);
+			setTimeSlots((prev) => prev.filter((s) => s.id !== timeSlotId));
+		} catch {
+			setSlotError(t("timeSlots.removeError"));
+		} finally {
+			setRemovingSlotId(null);
+		}
+	}
+
+	const isWaitlist = participationType === "Waitlist";
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -295,6 +357,128 @@ export default function EditVolunteerOpportunityModal({
 							className="w-full rounded border px-3 py-2 text-sm"
 						/>
 					</div>
+
+					<fieldset className="space-y-3 rounded border p-3">
+						<legend className="px-1 text-sm font-medium">
+							{t("timeSlots.sectionTitle")}
+						</legend>
+
+						{!isWaitlist && (
+							<p className="text-xs text-gray-500">
+								{t("timeSlots.sectionHint")}
+							</p>
+						)}
+
+						{isWaitlist && (
+							<>
+								{timeSlots.length === 0 ? (
+									<p className="text-xs text-gray-500">
+										{t("timeSlots.noSlots")}
+									</p>
+								) : (
+									<ul className="space-y-2">
+										{timeSlots.map((slot) => (
+											<li
+												key={slot.id}
+												className="flex items-center justify-between rounded bg-gray-50 px-3 py-2 text-sm"
+											>
+												<span>
+													{new Date(slot.startDateTime).toLocaleString()} -{" "}
+													{new Date(slot.endDateTime).toLocaleString()} (
+													{slot.maxParticipants})
+												</span>
+												<button
+													type="button"
+													disabled={removingSlotId === slot.id}
+													onClick={() => handleRemoveSlot(slot.id)}
+													className="ml-2 text-xs text-red-600 hover:underline disabled:opacity-50"
+												>
+													{removingSlotId === slot.id
+														? t("timeSlots.removing")
+														: t("timeSlots.removeButton")}
+												</button>
+											</li>
+										))}
+									</ul>
+								)}
+
+								<div className="space-y-2 border-t pt-2">
+									<p className="text-xs font-medium text-gray-700">
+										{t("timeSlots.addTitle")}
+									</p>
+									<div className="grid grid-cols-2 gap-2">
+										<div>
+											<label className="mb-1 block text-xs text-gray-600">
+												{t("timeSlots.fieldStart")}
+											</label>
+											<input
+												type="datetime-local"
+												value={newSlot.startDateTime}
+												onChange={(e) =>
+													setNewSlot((s) => ({
+														...s,
+														startDateTime: e.target.value,
+													}))
+												}
+												className="w-full rounded border px-2 py-1 text-xs"
+											/>
+										</div>
+										<div>
+											<label className="mb-1 block text-xs text-gray-600">
+												{t("timeSlots.fieldEnd")}
+											</label>
+											<input
+												type="datetime-local"
+												value={newSlot.endDateTime}
+												onChange={(e) =>
+													setNewSlot((s) => ({
+														...s,
+														endDateTime: e.target.value,
+													}))
+												}
+												className="w-full rounded border px-2 py-1 text-xs"
+											/>
+										</div>
+									</div>
+									<div>
+										<label className="mb-1 block text-xs text-gray-600">
+											{t("timeSlots.fieldMaxParticipants")}
+										</label>
+										<input
+											type="number"
+											min={1}
+											value={newSlot.maxParticipants}
+											onChange={(e) =>
+												setNewSlot((s) => ({
+													...s,
+													maxParticipants: parseInt(e.target.value, 10) || 1,
+												}))
+											}
+											className="w-24 rounded border px-2 py-1 text-xs"
+										/>
+									</div>
+									<button
+										type="button"
+										disabled={
+											addingSlot ||
+											!newSlot.startDateTime ||
+											!newSlot.endDateTime
+										}
+										onClick={handleAddSlot}
+										className="rounded bg-gray-800 px-3 py-1 text-xs text-white hover:bg-gray-700 disabled:opacity-50"
+									>
+										{addingSlot
+											? t("timeSlots.adding")
+											: t("timeSlots.addButton")}
+									</button>
+								</div>
+
+								{slotError && (
+									<p className="text-xs text-red-600">{slotError}</p>
+								)}
+							</>
+						)}
+					</fieldset>
 
 					{error && <p className="text-sm text-red-600">{error}</p>}
 

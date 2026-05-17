@@ -202,6 +202,144 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return No Content
+     */
+    updateTimeSlot(opportunityId: string, timeSlotId: string, body: UpdateTimeSlotRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (timeSlotId === undefined || timeSlotId === null)
+            throw new globalThis.Error("The parameter 'timeSlotId' must be defined.");
+        url_ = url_.replace("{timeSlotId}", encodeURIComponent("" + timeSlotId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateTimeSlot(_response);
+        });
+    }
+
+    protected processUpdateTimeSlot(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    deleteTimeSlot(opportunityId: string, timeSlotId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (timeSlotId === undefined || timeSlotId === null)
+            throw new globalThis.Error("The parameter 'timeSlotId' must be defined.");
+        url_ = url_.replace("{timeSlotId}", encodeURIComponent("" + timeSlotId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteTimeSlot(_response);
+        });
+    }
+
+    protected processDeleteTimeSlot(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @param search (optional) 
      * @param city (optional) 
      * @param occurrence (optional) 
@@ -401,6 +539,80 @@ export class EinsatzbereitApi {
             });
         }
         return Promise.resolve<CreateVolunteerOpportunityResponse>(null as any);
+    }
+
+    /**
+     * @return Created
+     */
+    createTimeSlot(opportunityId: string, body: CreateTimeSlotRequest, signal?: AbortSignal): Promise<CreateTimeSlotResponse> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateTimeSlot(_response);
+        });
+    }
+
+    protected processCreateTimeSlot(response: Response): Promise<CreateTimeSlotResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateTimeSlotResponse;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CreateTimeSlotResponse>(null as any);
     }
 
     /**
@@ -1542,6 +1754,23 @@ export interface CreateOrganizationRequest {
     [key: string]: any;
 }
 
+export interface CreateTimeSlotRequest {
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
+
+    [key: string]: any;
+}
+
+export interface CreateTimeSlotResponse {
+    id: string;
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
+
+    [key: string]: any;
+}
+
 export interface CreateVolunteerOpportunityRequest {
     title: string;
     description: string;
@@ -1776,6 +2005,14 @@ export interface UpdateOrganizationRequest {
     contactPhone: string | undefined;
     website: string | undefined;
     address: UpdateAddressRequest | undefined;
+
+    [key: string]: any;
+}
+
+export interface UpdateTimeSlotRequest {
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
 
     [key: string]: any;
 }
