@@ -19,5 +19,7 @@ public sealed record GetVolunteerOpportunitiesQuery(
 	double? West,
 	double? CenterLatitude,
 	double? CenterLongitude,
-	double? RadiusKm)
+	double? RadiusKm,
+	string? Category,
+	string? Tag)
 	: IQuery<PagedList<VolunteerOpportunitySummary>>;

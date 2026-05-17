@@ -25,6 +25,10 @@ public sealed class VolunteerOpportunity
 
 	public CheckInMethod CheckInMethod { get; private set; }
 
+	public Category? Category { get; private set; }
+
+	public List<string> Tags { get; private set; } = [];
+
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
 
 	public DateTimeOffset CreatedOn { get; private set; }
@@ -44,7 +48,9 @@ public sealed class VolunteerOpportunity
 		Address? address,
 		Occurrence occurrence,
 		ParticipationType participationType,
-		CheckInMethod checkInMethod)
+		CheckInMethod checkInMethod,
+		Category? category,
+		List<string> tags)
 		: base(id)
 	{
 		OrganizationId = organizationId;
@@ -55,6 +61,8 @@ public sealed class VolunteerOpportunity
 		Occurrence = occurrence;
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
+		Category = category;
+		Tags = tags;
 	}
 
 	public static VolunteerOpportunity Create(
@@ -65,7 +73,9 @@ public sealed class VolunteerOpportunity
 		Address? address,
 		Occurrence occurrence,
 		ParticipationType participationType,
-		CheckInMethod checkInMethod)
+		CheckInMethod checkInMethod,
+		Category? category = null,
+		List<string>? tags = null)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
@@ -85,7 +95,9 @@ public sealed class VolunteerOpportunity
 			address,
 			occurrence,
 			participationType,
-			checkInMethod);
+			checkInMethod,
+			category,
+			tags ?? []);
 	}
 
 	public void Update(
@@ -95,7 +107,9 @@ public sealed class VolunteerOpportunity
 		Address? address,
 		Occurrence occurrence,
 		ParticipationType participationType,
-		CheckInMethod checkInMethod)
+		CheckInMethod checkInMethod,
+		Category? category,
+		List<string> tags)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
@@ -113,6 +127,8 @@ public sealed class VolunteerOpportunity
 		Occurrence = occurrence;
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
+		Category = category;
+		Tags = tags;
 	}
 
 	public void AddTimeSlot(

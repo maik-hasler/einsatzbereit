@@ -29,6 +29,11 @@ export default function EditVolunteerOpportunityModal({
 		opportunity.participationType,
 	);
 	const [checkInMethod, setCheckInMethod] = useState(opportunity.checkInMethod);
+	const [category, setCategory] = useState(opportunity.category ?? "");
+	const [tagsInput, setTagsInput] = useState(
+		(opportunity.tags ?? []).join(", "),
+	);
+	const [tags, setTags] = useState<string[]>(opportunity.tags ?? []);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +54,8 @@ export default function EditVolunteerOpportunityModal({
 				occurrence,
 				participationType,
 				checkInMethod,
+				category: category || undefined,
+				tags,
 			});
 			onSuccess();
 			onClose();
@@ -235,6 +242,58 @@ export default function EditVolunteerOpportunityModal({
 								</label>
 							))}
 						</div>
+					</div>
+
+					<div>
+						<label className="mb-1 block text-sm font-medium text-gray-700">
+							{t("editOpportunity.fieldCategory")}
+						</label>
+						<select
+							value={category}
+							onChange={(e) => setCategory(e.target.value)}
+							className="w-full rounded border px-3 py-2 text-sm"
+						>
+							<option value="">{t("editOpportunity.fieldCategoryNone")}</option>
+							{(
+								[
+									"Social",
+									"Environment",
+									"Sport",
+									"Education",
+									"DisasterRelief",
+									"Health",
+									"Animals",
+									"Culture",
+									"Technology",
+									"Other",
+								] as const
+							).map((c) => (
+								<option key={c} value={c}>
+									{t(`opportunities.category.${c}`)}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div>
+						<label className="mb-1 block text-sm font-medium text-gray-700">
+							{t("editOpportunity.fieldTags")}
+						</label>
+						<input
+							type="text"
+							value={tagsInput}
+							placeholder={t("editOpportunity.fieldTagsPlaceholder")}
+							onChange={(e) => {
+								setTagsInput(e.target.value);
+								setTags(
+									e.target.value
+										.split(",")
+										.map((s) => s.trim())
+										.filter((s) => s.length > 0),
+								);
+							}}
+							className="w-full rounded border px-3 py-2 text-sm"
+						/>
 					</div>
 
 					{error && <p className="text-sm text-red-600">{error}</p>}

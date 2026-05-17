@@ -50,6 +50,18 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
+		Category? category = null;
+		if (!string.IsNullOrWhiteSpace(request.Category))
+		{
+			if (!Enum.TryParse<Category>(request.Category, ignoreCase: true, out var parsedCategory))
+			{
+				return Results.Problem(
+					"Invalid category.",
+					statusCode: StatusCodes.Status400BadRequest);
+			}
+			category = parsedCategory;
+		}
+
 		var address = new Address(
 			request.Street,
 			request.HouseNumber,
@@ -64,7 +76,9 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			address,
 			occurrence,
 			participationType,
-			checkInMethod);
+			checkInMethod,
+			category,
+			[.. request.Tags ?? []]);
 
 		var opportunity = await sender.Send(command, cancellationToken);
 
@@ -83,6 +97,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			opportunity.Occurrence.ToString(),
 			opportunity.ParticipationType.ToString(),
 			opportunity.CheckInMethod.ToString(),
+			opportunity.Category?.ToString(),
+			opportunity.Tags,
 			opportunity.CreatedOn);
 
 		return Results.Ok(response);

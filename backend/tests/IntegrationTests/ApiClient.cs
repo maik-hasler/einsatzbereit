@@ -50,7 +50,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, string? category = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -519,7 +519,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, string? category = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -598,6 +598,14 @@ namespace IntegrationTests
                     if (radiusKm != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("RadiusKm")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(radiusKm, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (category != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Category")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(category, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (tag != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Tag")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(tag, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -3116,6 +3124,12 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string CheckInMethod { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("category")]
+        public string? Category { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        public System.Collections.Generic.ICollection<string>? Tags { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -3181,6 +3195,13 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string CheckInMethod { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("category")]
+        public string? Category { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Tags { get; set; } = new System.Collections.ObjectModel.Collection<string>();
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -3902,6 +3923,12 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string CheckInMethod { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("category")]
+        public string? Category { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        public System.Collections.Generic.ICollection<string>? Tags { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -3971,6 +3998,13 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string CheckInMethod { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("category")]
+        public string? Category { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Tags { get; set; } = new System.Collections.ObjectModel.Collection<string>();
 
         [System.Text.Json.Serialization.JsonPropertyName("timeSlots")]
         [System.ComponentModel.DataAnnotations.Required]
@@ -4049,6 +4083,13 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string CheckInMethod { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("category")]
+        public string? Category { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Tags { get; set; } = new System.Collections.ObjectModel.Collection<string>();
 
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

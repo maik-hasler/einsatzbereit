@@ -27,7 +27,10 @@ export default function CreateVolunteerOpportunityModal({
 		occurrence: "OneTime",
 		participationType: "Waitlist",
 		checkInMethod: "None",
+		category: undefined,
+		tags: [],
 	});
+	const [tagsInput, setTagsInput] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -321,6 +324,74 @@ export default function CreateVolunteerOpportunityModal({
 								</label>
 							))}
 						</div>
+					</div>
+
+					<div>
+						<label
+							htmlFor="create-category"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("createOpportunity.fieldCategory")}
+						</label>
+						<select
+							id="create-category"
+							value={form.category ?? ""}
+							onChange={(e) =>
+								setForm((f) => ({
+									...f,
+									category: e.target.value || undefined,
+								}))
+							}
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+						>
+							<option value="">
+								{t("createOpportunity.fieldCategoryNone")}
+							</option>
+							{(
+								[
+									"Social",
+									"Environment",
+									"Sport",
+									"Education",
+									"DisasterRelief",
+									"Health",
+									"Animals",
+									"Culture",
+									"Technology",
+									"Other",
+								] as const
+							).map((c) => (
+								<option key={c} value={c}>
+									{t(`opportunities.category.${c}`)}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div>
+						<label
+							htmlFor="create-tags"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("createOpportunity.fieldTags")}
+						</label>
+						<input
+							id="create-tags"
+							type="text"
+							value={tagsInput}
+							placeholder={t("createOpportunity.fieldTagsPlaceholder")}
+							onChange={(e) => {
+								setTagsInput(e.target.value);
+								setForm((f) => ({
+									...f,
+									tags: e.target.value
+										.split(",")
+										.map((s) => s.trim())
+										.filter((s) => s.length > 0),
+								}));
+							}}
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+						/>
 					</div>
 
 					{error && <p className="text-sm text-red-600">{error}</p>}
