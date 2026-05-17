@@ -4,6 +4,7 @@ using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
+
 namespace Application.Common.Persistence;
 
 public interface IApplicationDbContext
@@ -18,5 +19,13 @@ public interface IApplicationDbContext
 
 	ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
+		CancellationToken cancellationToken = default);
+
+	Task DeleteNotificationsForRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
+		UserId volunteerId,
 		CancellationToken cancellationToken = default);
 }

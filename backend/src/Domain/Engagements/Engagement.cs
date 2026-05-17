@@ -100,4 +100,10 @@ public sealed class Engagement
 
 		Status = EngagementStatus.Withdrawn;
 	}
+
+	public void Anonymize()
+	{
+		VolunteerId = new UserId(Guid.Empty);
+		Message = null;
+	}
 }

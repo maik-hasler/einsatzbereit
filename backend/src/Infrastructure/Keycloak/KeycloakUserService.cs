@@ -67,6 +67,19 @@ internal sealed class KeycloakUserService(
 		await EnsureSuccessAsync(putResponse, cancellationToken);
 	}
 
+	public async Task DeleteUserAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var deleteResponse = await httpClient.DeleteAsync(
+			$"/admin/realms/{_options.Realm}/users/{userId}",
+			cancellationToken);
+
+		await EnsureSuccessAsync(deleteResponse, cancellationToken);
+	}
+
 	private async Task EnsureAuthenticatedAsync(
 		CancellationToken cancellationToken)
 	{
