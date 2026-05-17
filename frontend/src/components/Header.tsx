@@ -46,6 +46,22 @@ export default function Header() {
 	}, []);
 
 	useEffect(() => {
+		if (!isLoggedIn) return;
+		const fetchCount = async () => {
+			try {
+				const result = await api.getMyNotifications();
+				setNotifications(result);
+			} catch {
+				// silently ignore
+			}
+		};
+		void fetchCount();
+		const id = setInterval(() => void fetchCount(), 30_000);
+		return () => clearInterval(id);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLoggedIn]);
+
+	useEffect(() => {
 		if (!notifOpen || !isLoggedIn) return;
 		let cancelled = false;
 		void (async () => {
