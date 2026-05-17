@@ -306,6 +306,18 @@
       "engagements": "Bewerbungen",
       "settings": "Einstellungen",
       "account": "Konto"
+    },
+    "error": {
+      "forbidden": "Du hast keine Berechtigung fur diese Aktion.",
+      "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es spater erneut.",
+      "boundaryTitle": "Etwas ist schiefgelaufen",
+      "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zuruck navigieren oder die Seite neu laden.",
+      "goBack": "Zuruck",
+      "reload": "Neu laden",
+      "500Title": "Serverfehler",
+      "500Message": "Ein unerwarteter Serverfehler ist aufgetreten. Bitte versuche es spater erneut.",
+      "backHome": "Zur Startseite",
+      "dismiss": "Schliessen"
     }
   }
 }
