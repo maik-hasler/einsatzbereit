@@ -206,9 +206,19 @@ export class EinsatzbereitApi {
      * @param city (optional) 
      * @param occurrence (optional) 
      * @param participationType (optional) 
+     * @param isRemote (optional) 
+     * @param dateFrom (optional) 
+     * @param dateTo (optional) 
+     * @param north (optional) 
+     * @param south (optional) 
+     * @param east (optional) 
+     * @param west (optional) 
+     * @param centerLatitude (optional) 
+     * @param centerLongitude (optional) 
+     * @param radiusKm (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -234,6 +244,46 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'participationType' cannot be null.");
         else if (participationType !== undefined)
             url_ += "ParticipationType=" + encodeURIComponent("" + participationType) + "&";
+        if (isRemote === null)
+            throw new globalThis.Error("The parameter 'isRemote' cannot be null.");
+        else if (isRemote !== undefined)
+            url_ += "IsRemote=" + encodeURIComponent("" + isRemote) + "&";
+        if (dateFrom === null)
+            throw new globalThis.Error("The parameter 'dateFrom' cannot be null.");
+        else if (dateFrom !== undefined)
+            url_ += "DateFrom=" + encodeURIComponent(dateFrom ? "" + dateFrom.toISOString() : "") + "&";
+        if (dateTo === null)
+            throw new globalThis.Error("The parameter 'dateTo' cannot be null.");
+        else if (dateTo !== undefined)
+            url_ += "DateTo=" + encodeURIComponent(dateTo ? "" + dateTo.toISOString() : "") + "&";
+        if (north === null)
+            throw new globalThis.Error("The parameter 'north' cannot be null.");
+        else if (north !== undefined)
+            url_ += "North=" + encodeURIComponent("" + north) + "&";
+        if (south === null)
+            throw new globalThis.Error("The parameter 'south' cannot be null.");
+        else if (south !== undefined)
+            url_ += "South=" + encodeURIComponent("" + south) + "&";
+        if (east === null)
+            throw new globalThis.Error("The parameter 'east' cannot be null.");
+        else if (east !== undefined)
+            url_ += "East=" + encodeURIComponent("" + east) + "&";
+        if (west === null)
+            throw new globalThis.Error("The parameter 'west' cannot be null.");
+        else if (west !== undefined)
+            url_ += "West=" + encodeURIComponent("" + west) + "&";
+        if (centerLatitude === null)
+            throw new globalThis.Error("The parameter 'centerLatitude' cannot be null.");
+        else if (centerLatitude !== undefined)
+            url_ += "CenterLatitude=" + encodeURIComponent("" + centerLatitude) + "&";
+        if (centerLongitude === null)
+            throw new globalThis.Error("The parameter 'centerLongitude' cannot be null.");
+        else if (centerLongitude !== undefined)
+            url_ += "CenterLongitude=" + encodeURIComponent("" + centerLongitude) + "&";
+        if (radiusKm === null)
+            throw new globalThis.Error("The parameter 'radiusKm' cannot be null.");
+        else if (radiusKm !== undefined)
+            url_ += "RadiusKm=" + encodeURIComponent("" + radiusKm) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1448,6 +1498,8 @@ export interface CreateVolunteerOpportunityResponse {
     houseNumber: string | undefined;
     zipCode: string | undefined;
     city: string | undefined;
+    latitude: number | undefined;
+    longitude: number | undefined;
     isRemote: boolean;
     occurrence: string;
     participationType: string;
@@ -1673,6 +1725,8 @@ export interface VolunteerOpportunityDetails {
     houseNumber: string | undefined;
     zipCode: string | undefined;
     city: string | undefined;
+    latitude: number | undefined;
+    longitude: number | undefined;
     isRemote: boolean;
     occurrence: string;
     participationType: string;
@@ -1693,6 +1747,8 @@ export interface VolunteerOpportunitySummary {
     houseNumber: string | undefined;
     zipCode: string | undefined;
     city: string | undefined;
+    latitude: number | undefined;
+    longitude: number | undefined;
     isRemote: boolean;
     occurrence: string;
     participationType: string;

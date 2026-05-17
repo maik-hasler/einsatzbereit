@@ -40,6 +40,8 @@ internal sealed class VolunteerOpportunityConfiguration
 			address.Property(a => a.HouseNumber).IsRequired();
 			address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
 			address.Property(a => a.City).IsRequired();
+			address.Property(a => a.Latitude);
+			address.Property(a => a.Longitude);
 		});
 
 		builder.Property(vo => vo.Occurrence)

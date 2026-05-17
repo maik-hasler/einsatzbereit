@@ -6,10 +6,18 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
+import OpportunityMap from "./OpportunityMap";
+import {
+	useOpportunityViewFilters,
+	type OpportunityBounds,
+} from "../hooks/useOpportunityFilters";
 
 interface Props {
 	canCreateOpportunity: boolean;
 }
+
+const LIST_PAGE_SIZE = 10;
+const MAP_PAGE_SIZE = 200;
 
 export default function VolunteerOpportunitiesList({
 	canCreateOpportunity,
@@ -22,6 +30,9 @@ export default function VolunteerOpportunitiesList({
 	const city = searchParams.get("city") ?? "";
 	const occurrence = searchParams.get("occurrence") ?? "";
 	const participationType = searchParams.get("participationType") ?? "";
+
+	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
+	const isMap = view === "map";
 
 	const [items, setItems] = useState<VolunteerOpportunitySummary[]>([]);
 	const [page, setPage] = useState(1);
@@ -37,7 +48,12 @@ export default function VolunteerOpportunitiesList({
 		city,
 		occurrence,
 		participationType,
+		isMap,
 		refreshKey,
+		bn: bounds?.north,
+		bs: bounds?.south,
+		be: bounds?.east,
+		bw: bounds?.west,
 	});
 
 	useEffect(() => {
@@ -47,6 +63,11 @@ export default function VolunteerOpportunitiesList({
 			prev.city !== city ||
 			prev.occurrence !== occurrence ||
 			prev.participationType !== participationType ||
+			prev.isMap !== isMap ||
+			prev.bn !== bounds?.north ||
+			prev.bs !== bounds?.south ||
+			prev.be !== bounds?.east ||
+			prev.bw !== bounds?.west ||
 			prev.refreshKey !== refreshKey;
 
 		prevFiltersRef.current = {
@@ -54,7 +75,12 @@ export default function VolunteerOpportunitiesList({
 			city,
 			occurrence,
 			participationType,
+			isMap,
 			refreshKey,
+			bn: bounds?.north,
+			bs: bounds?.south,
+			be: bounds?.east,
+			bw: bounds?.west,
 		};
 
 		if (filterChanged) {
@@ -69,15 +95,27 @@ export default function VolunteerOpportunitiesList({
 		else setLoading(true);
 		setError(null);
 
+		const mapBounds = isMap ? bounds : undefined;
+
 		let cancelled = false;
 		api
 			.getVolunteerOpportunities(
 				page,
-				10,
+				isMap ? MAP_PAGE_SIZE : LIST_PAGE_SIZE,
 				search || undefined,
 				city || undefined,
 				occurrence || undefined,
 				participationType || undefined,
+				undefined,
+				undefined,
+				undefined,
+				mapBounds?.north,
+				mapBounds?.south,
+				mapBounds?.east,
+				mapBounds?.west,
+				undefined,
+				undefined,
+				undefined,
 			)
 			.then((result) => {
 				if (cancelled) return;
@@ -98,7 +136,19 @@ export default function VolunteerOpportunitiesList({
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [page, search, city, occurrence, participationType, refreshKey]);
+	}, [
+		page,
+		search,
+		city,
+		occurrence,
+		participationType,
+		isMap,
+		bounds?.north,
+		bounds?.south,
+		bounds?.east,
+		bounds?.west,
+		refreshKey,
+	]);
 
 	const activeOrgId = getActiveOrgId();
 
@@ -114,21 +164,56 @@ export default function VolunteerOpportunitiesList({
 		);
 	}
 
+	function handleBoundsChange(next: OpportunityBounds) {
+		setBounds(next);
+	}
+
 	return (
 		<div>
 			<div className="mb-4 flex items-center justify-between">
 				<h2 className="text-xl font-semibold">
 					{t("opportunities.currentNeeds")}
 				</h2>
-				{canCreateOpportunity && (
-					<button
-						onClick={() => setShowModal(true)}
-						data-testid="create-opportunity-btn"
-						className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
+				<div className="flex items-center gap-2">
+					<div
+						role="group"
+						className="inline-flex overflow-hidden rounded border"
 					>
-						{t("opportunities.createNeed")}
-					</button>
-				)}
+						<button
+							type="button"
+							data-testid="view-toggle-list"
+							onClick={() => setView("list")}
+							className={
+								!isMap
+									? "bg-black px-3 py-1.5 text-sm text-white"
+									: "px-3 py-1.5 text-sm hover:bg-gray-100"
+							}
+						>
+							{t("opportunities.view.list")}
+						</button>
+						<button
+							type="button"
+							data-testid="view-toggle-map"
+							onClick={() => setView("map")}
+							className={
+								isMap
+									? "bg-black px-3 py-1.5 text-sm text-white"
+									: "px-3 py-1.5 text-sm hover:bg-gray-100"
+							}
+						>
+							{t("opportunities.view.map")}
+						</button>
+					</div>
+					{canCreateOpportunity && (
+						<button
+							onClick={() => setShowModal(true)}
+							data-testid="create-opportunity-btn"
+							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
+						>
+							{t("opportunities.createNeed")}
+						</button>
+					)}
+				</div>
 			</div>
 
 			<div className="mb-4 flex flex-wrap gap-2">
@@ -168,19 +253,33 @@ export default function VolunteerOpportunitiesList({
 				</select>
 			</div>
 
-			{loading && <p className="text-gray-500">{t("opportunities.loading")}</p>}
+			{isMap && (
+				<OpportunityMap
+					items={items}
+					bounds={bounds}
+					onBoundsChange={handleBoundsChange}
+				/>
+			)}
+
+			{loading && items.length === 0 && (
+				<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
+					{t("opportunities.loading")}
+				</p>
+			)}
 			{error && (
 				<p className="text-red-600">
 					{t("opportunities.error", { message: error })}
 				</p>
 			)}
 
-			{!loading && !error && (
+			{!error && (
 				<>
-					{items.length === 0 ? (
-						<p className="text-gray-500">{t("opportunities.noResults")}</p>
+					{!loading && items.length === 0 ? (
+						<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
+							{isMap ? t("map.noPinsInView") : t("opportunities.noResults")}
+						</p>
 					) : (
-						<ul className="space-y-3">
+						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<li
 									key={item.id}
@@ -229,7 +328,7 @@ export default function VolunteerOpportunitiesList({
 						</ul>
 					)}
 
-					{items.length > 0 && page < pageCount && (
+					{!isMap && items.length > 0 && page < pageCount && (
 						<div className="mt-4 flex justify-center">
 							<button
 								onClick={() => setPage((p) => p + 1)}

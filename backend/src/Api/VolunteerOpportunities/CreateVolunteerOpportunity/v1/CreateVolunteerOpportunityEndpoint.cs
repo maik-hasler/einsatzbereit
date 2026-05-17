@@ -77,6 +77,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			opportunity.Address?.HouseNumber,
 			opportunity.Address?.ZipCode,
 			opportunity.Address?.City,
+			opportunity.Address?.Latitude,
+			opportunity.Address?.Longitude,
 			opportunity.IsRemote,
 			opportunity.Occurrence.ToString(),
 			opportunity.ParticipationType.ToString(),

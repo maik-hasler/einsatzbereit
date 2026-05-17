@@ -47,6 +47,15 @@
       "next": "Next →",
       "page": "{{current}} / {{total}}",
       "remote": "Remote",
+      "onsite": "On-site",
+      "allLocations": "All locations",
+      "dateFromLabel": "From date",
+      "dateToLabel": "To date",
+      "clearFilters": "Clear filters",
+      "view": {
+        "list": "List",
+        "map": "Map"
+      },
       "edit": "Edit",
       "delete": "Delete",
       "deleting": "…",
@@ -280,6 +289,13 @@
       "address": "Address:",
       "currentNeeds": "Current Opportunities",
       "noOpportunities": "No current opportunities available."
+    },
+    "map": {
+      "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+      "noPinsInView": "No opportunities in the current map area.",
+      "popup": {
+        "viewDetails": "View details →"
+      }
     },
     "breadcrumb": {
       "home": "Home",

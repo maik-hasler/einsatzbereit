@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,13 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260513120000_AddOpportunityCoordinates")]
+	partial class AddOpportunityCoordinates
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
-				.HasAnnotation("ProductVersion", "10.0.8")
+				.HasAnnotation("ProductVersion", "10.0.5")
 				.HasAnnotation("Relational:MaxIdentifierLength", 63);
 
 			NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -27,10 +30,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<Guid>("Id")
 						.HasColumnType("uuid")
 						.HasColumnName("id");
-
-					b.Property<string>("CancellationReason")
-						.HasColumnType("text")
-						.HasColumnName("cancellation_reason");
 
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")
@@ -65,46 +64,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasName("pk_engagement");
 
 					b.ToTable("engagement", (string)null);
-				});
-
-			modelBuilder.Entity("Domain.Notifications.Notification", b =>
-				{
-					b.Property<Guid>("Id")
-						.HasColumnType("uuid")
-						.HasColumnName("id");
-
-					b.Property<DateTimeOffset>("CreatedOn")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("created_on");
-
-					b.Property<bool>("IsRead")
-						.HasColumnType("boolean")
-						.HasColumnName("is_read");
-
-					b.Property<string>("Kind")
-						.IsRequired()
-						.HasColumnType("text")
-						.HasColumnName("kind");
-
-					b.Property<DateTimeOffset?>("ModifiedOn")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("modified_on");
-
-					b.Property<Guid>("RecipientId")
-						.HasColumnType("uuid")
-						.HasColumnName("recipient_id");
-
-					b.Property<Guid>("RelatedEntityId")
-						.HasColumnType("uuid")
-						.HasColumnName("related_entity_id");
-
-					b.HasKey("Id")
-						.HasName("pk_notification");
-
-					b.HasIndex("RecipientId")
-						.HasDatabaseName("ix_notification_recipient_id");
-
-					b.ToTable("notification", (string)null);
 				});
 
 			modelBuilder.Entity("Domain.Organizations.Organization", b =>
@@ -184,11 +143,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<Guid>("Id")
 						.HasColumnType("uuid")
 						.HasColumnName("id");
-
-					b.Property<string>("CheckInMethod")
-						.IsRequired()
-						.HasColumnType("text")
-						.HasColumnName("check_in_method");
 
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")

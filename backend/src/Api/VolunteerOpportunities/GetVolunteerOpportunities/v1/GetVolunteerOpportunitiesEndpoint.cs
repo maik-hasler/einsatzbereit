@@ -28,7 +28,37 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
-		var query = new GetVolunteerOpportunitiesQuery(request.PageNumber, request.PageSize, request.Search, request.City, request.Occurrence, request.ParticipationType);
+		var hasLat = request.CenterLatitude.HasValue;
+		var hasLng = request.CenterLongitude.HasValue;
+		if (hasLat != hasLng)
+			return Results.Problem("CenterLatitude and CenterLongitude must both be supplied together.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.CenterLatitude is < -90 or > 90)
+			return Results.Problem("CenterLatitude must be between -90 and 90.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.CenterLongitude is < -180 or > 180)
+			return Results.Problem("CenterLongitude must be between -180 and 180.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.RadiusKm is <= 0)
+			return Results.Problem("RadiusKm must be greater than zero.", statusCode: StatusCodes.Status400BadRequest);
+
+		var query = new GetVolunteerOpportunitiesQuery(
+			request.PageNumber,
+			request.PageSize,
+			request.Search,
+			request.City,
+			request.Occurrence,
+			request.ParticipationType,
+			request.IsRemote,
+			request.DateFrom,
+			request.DateTo,
+			request.North,
+			request.South,
+			request.East,
+			request.West,
+			request.CenterLatitude,
+			request.CenterLongitude,
+			request.RadiusKm);
 
 		var result = await sender.Send(query, cancellationToken);
 

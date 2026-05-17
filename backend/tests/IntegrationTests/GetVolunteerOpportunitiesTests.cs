@@ -17,7 +17,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	{
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(0);
 		result.Items.Should().BeEmpty();
@@ -37,7 +37,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(2);
 		result.Items.Should().HaveCount(2);
@@ -56,7 +56,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 2, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 2, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(3);
 		result.Items.Should().HaveCount(2);
@@ -77,7 +77,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(2, 2, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(3);
 		result.Items.Should().HaveCount(1);
@@ -97,7 +97,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
 
 		var items = result.Items.ToList();
 		items.Should().HaveCount(3);
@@ -117,7 +117,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
 
 		var item = result.Items.Single();
 		item.OrganizationName.Should().Contain("Testorg_");
@@ -134,7 +134,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, null, null, null, null, cancellationToken);
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
 
 		var item = result.Items.Single();
 		item.Street.Should().Be("Sample Street");
@@ -201,6 +201,55 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		result.City.Should().Be("Munich");
 		result.Occurrence.Should().Be("Recurring");
 		result.ParticipationType.Should().Be("IndividualContact");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Beach cleanup", "Collect litter", cancellationToken);
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Soup kitchen", "Serve meals", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, "beach", cancellationToken: cancellationToken);
+
+		result.Items.Should().ContainSingle();
+		result.Items.Single().Title.Should().Be("Beach cleanup");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByIsRemote(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "On-site task", "Description", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var onSite = await sut.GetVolunteerOpportunitiesAsync(1, 10, isRemote: false, cancellationToken: cancellationToken);
+		var remote = await sut.GetVolunteerOpportunitiesAsync(1, 10, isRemote: true, cancellationToken: cancellationToken);
+
+		onSite.TotalItems.Should().Be(1);
+		remote.TotalItems.Should().Be(0);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnBadRequest_WhenRadiusIsNotPositive(
+		CancellationToken cancellationToken)
+	{
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => sut.GetVolunteerOpportunitiesAsync(
+			1, 10, centerLatitude: 52.5, centerLongitude: 13.4, radiusKm: 0, cancellationToken: cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
 	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)

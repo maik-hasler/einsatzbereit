@@ -1,9 +1,11 @@
 using Application.Common;
+using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Notifications;
 using Application.VolunteerOpportunities;
+using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
@@ -50,6 +52,16 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
 
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
+
+		services.ConfigureOptions<GeocodingOptionsSetup>();
+		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
+			(sp, client) =>
+			{
+				var geocodingOptions = sp.GetRequiredService<IOptions<GeocodingOptions>>().Value;
+				client.BaseAddress = new Uri(geocodingOptions.BaseUrl.TrimEnd('/') + "/");
+				client.Timeout = TimeSpan.FromSeconds(geocodingOptions.TimeoutSeconds);
+				client.DefaultRequestHeaders.UserAgent.ParseAdd(geocodingOptions.UserAgent);
+			});
 
 		services.ConfigureOptions<KeycloakOptionsSetup>();
 		services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(

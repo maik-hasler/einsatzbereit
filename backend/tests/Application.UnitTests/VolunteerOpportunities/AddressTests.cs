@@ -18,6 +18,37 @@ public class AddressTests
 		address.HouseNumber.Should().Be("42a");
 		address.ZipCode.Should().Be("12345");
 		address.City.Should().Be("Berlin");
+		address.Latitude.Should().BeNull();
+		address.Longitude.Should().BeNull();
+	}
+
+	[Test]
+	public void WithCoordinates_ShouldSetCoordinates_AndPreserveOtherFields()
+	{
+		var address = new Address("Sample Street", "42a", "12345", "Berlin");
+
+		var located = address.WithCoordinates(52.52, 13.405);
+
+		located.Street.Should().Be("Sample Street");
+		located.HouseNumber.Should().Be("42a");
+		located.ZipCode.Should().Be("12345");
+		located.City.Should().Be("Berlin");
+		located.Latitude.Should().Be(52.52);
+		located.Longitude.Should().Be(13.405);
+	}
+
+	[Test]
+	[Arguments(-90.1, 0.0)]
+	[Arguments(90.1, 0.0)]
+	[Arguments(0.0, -180.1)]
+	[Arguments(0.0, 180.1)]
+	public void WithCoordinates_ShouldThrow_WhenOutOfRange(double latitude, double longitude)
+	{
+		var address = new Address("Sample Street", "1", "12345", "Berlin");
+
+		var act = () => address.WithCoordinates(latitude, longitude);
+
+		act.Should().Throw<DomainException>();
 	}
 
 	[Test]
