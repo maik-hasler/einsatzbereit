@@ -300,6 +300,19 @@
         "viewDetails": "Details anzeigen →"
       }
     },
+    "achievements": {
+      "title": "Meine Errungenschaften",
+      "loading": "Wird geladen…",
+      "error": "Fehler: {{message}}",
+      "noAchievements": "Noch keine Errungenschaften. Beginne mit dem Ehrenamt, um Abzeichen zu verdienen!",
+      "unlockedOn": "Freigeschaltet: {{date}}",
+      "types": {
+        "Milestone": "Meilenstein",
+        "Streak": "Serie",
+        "Social": "Sozial",
+        "Hidden": "Besonders"
+      }
+    },
     "breadcrumb": {
       "home": "Startseite",
       "volunteerOpportunities": "Einsatzmoglichkeiten",

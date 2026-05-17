@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260517210319_AddAchievements")]
+	partial class AddAchievements
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -87,6 +90,12 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");
+
+					b.Property<bool>("IsCheckedIn")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_checked_in");
 
 					b.Property<string>("Message")
 						.HasColumnType("text")
@@ -241,6 +250,10 @@ namespace Infrastructure.Persistence.Migrations
 						.IsRequired()
 						.HasColumnType("text")
 						.HasColumnName("check_in_method");
+
+					b.Property<string>("CheckInPin")
+						.HasColumnType("text")
+						.HasColumnName("check_in_pin");
 
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")
