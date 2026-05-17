@@ -92,7 +92,7 @@ export default function OrganizationSwitcher() {
 					type="button"
 					onClick={() => setShowModal(true)}
 					data-testid="create-org-btn"
-					className="flex items-center gap-2 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-100 transition-colors"
+					className="flex items-center gap-2 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100 transition-colors"
 				>
 					<svg
 						className="w-4 h-4"
@@ -180,7 +180,7 @@ export default function OrganizationSwitcher() {
 											: "text-gray-700 hover:bg-gray-50"
 									}`}
 								>
-									<span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-600">
+									<span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
 										{org.name.charAt(0).toUpperCase()}
 									</span>
 									<span className="truncate">{org.name}</span>
@@ -241,7 +241,7 @@ export default function OrganizationSwitcher() {
 									setOpen(false);
 									setShowModal(true);
 								}}
-								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-brand-600 hover:bg-brand-50 transition-colors"
+								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-brand-700 hover:bg-brand-50 transition-colors"
 							>
 								<svg
 									className="w-4 h-4"

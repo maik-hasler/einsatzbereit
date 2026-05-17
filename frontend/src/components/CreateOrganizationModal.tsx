@@ -89,7 +89,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							type="submit"
 							disabled={loading}
 							data-testid="modal-submit"
-							className="rounded bg-brand-500 px-4 py-2 text-sm text-white hover:bg-brand-600 disabled:opacity-50"
+							className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
 						>
 							{loading ? t("organization.creating") : t("organization.submit")}
 						</button>
