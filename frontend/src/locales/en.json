@@ -28,6 +28,24 @@
       "title": "Einsatzbereit",
       "subtitle": "Volunteer spontaneously. Find your local cause near you."
     },
+    "landing": {
+      "heroTitle": "Ready to make a difference?",
+      "heroSubtitle": "Einsatzbereit connects committed volunteers with regional needs - spontaneously, quickly, and effectively.",
+      "heroCta": "Find opportunities",
+      "heroCtaOrg": "Register your organisation",
+      "ngoTitle": "For organisations",
+      "ngoSubtitle": "Reach motivated volunteers and fill your open positions faster.",
+      "ngoBenefit1": "Post volunteer opportunities in minutes",
+      "ngoBenefit2": "Manage applications and time slots in one place",
+      "ngoBenefit3": "Communicate directly with your volunteers",
+      "ngoCta": "Create an organisation",
+      "volunteerTitle": "For volunteers",
+      "volunteerSubtitle": "Find meaningful opportunities near you and get involved whenever you have time.",
+      "volunteerBenefit1": "Browse local needs without registration",
+      "volunteerBenefit2": "Sign up for a single engagement or join the waitlist",
+      "volunteerBenefit3": "Track all your engagements in one place",
+      "volunteerCta": "Browse opportunities"
+    },
     "opportunities": {
       "currentNeeds": "Current Opportunities",
       "createNeed": "+ Create opportunity",
