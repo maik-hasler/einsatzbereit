@@ -25,7 +25,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	}
 
 	private static VolunteerOpportunity CreateOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist);
+		VolunteerOpportunity.Create(DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 	[Test]
 	public async Task Handle_ShouldReturnTrue_WhenOpportunityExists(

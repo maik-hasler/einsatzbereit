@@ -965,6 +965,136 @@
         }
       }
     },
+    "/v1/notifications/{id}/read": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "MarkNotificationRead",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/notifications/read-all": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "MarkAllNotificationsRead",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "GetMyNotifications",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationSummary"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/engagements/{engagementId}/withdraw": {
       "put": {
         "tags": [
@@ -1310,6 +1440,22 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CancelEngagementRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -1435,6 +1581,20 @@
           }
         }
       },
+      "CancelEngagementRequest": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "CreateEngagementRequest": {
         "required": [
           "type",
@@ -1508,7 +1668,8 @@
           "zipCode",
           "city",
           "occurrence",
-          "participationType"
+          "participationType",
+          "checkInMethod"
         ],
         "type": "object",
         "properties": {
@@ -1539,6 +1700,9 @@
           },
           "participationType": {
             "type": "string"
+          },
+          "checkInMethod": {
+            "type": "string"
           }
         }
       },
@@ -1557,6 +1721,7 @@
           "isRemote",
           "occurrence",
           "participationType",
+          "checkInMethod",
           "createdOn"
         ],
         "type": "object",
@@ -1626,6 +1791,9 @@
           "participationType": {
             "type": "string"
           },
+          "checkInMethod": {
+            "type": "string"
+          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -1656,6 +1824,12 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "cancellationReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1752,6 +1926,36 @@
           },
           "email": {
             "type": "string"
+          }
+        }
+      },
+      "NotificationSummary": {
+        "required": [
+          "id",
+          "kind",
+          "relatedEntityId",
+          "isRead",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "relatedEntityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -2298,7 +2502,8 @@
           "street",
           "houseNumber",
           "zipCode",
-          "city"
+          "city",
+          "checkInMethod"
         ],
         "type": "object",
         "properties": {
@@ -2334,6 +2539,9 @@
               "null",
               "string"
             ]
+          },
+          "checkInMethod": {
+            "type": "string"
           }
         }
       },
@@ -2353,6 +2561,7 @@
           "isRemote",
           "occurrence",
           "participationType",
+          "checkInMethod",
           "timeSlots",
           "createdOn"
         ],
@@ -2426,6 +2635,9 @@
           "participationType": {
             "type": "string"
           },
+          "checkInMethod": {
+            "type": "string"
+          },
           "timeSlots": {
             "type": "array",
             "items": {
@@ -2454,6 +2666,7 @@
           "isRemote",
           "occurrence",
           "participationType",
+          "checkInMethod",
           "createdOn"
         ],
         "type": "object",
@@ -2526,6 +2739,9 @@
           "participationType": {
             "type": "string"
           },
+          "checkInMethod": {
+            "type": "string"
+          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -2573,6 +2789,9 @@
     },
     {
       "name": "AddMemberEndpoint"
+    },
+    {
+      "name": "Notifications"
     },
     {
       "name": "Engagements"

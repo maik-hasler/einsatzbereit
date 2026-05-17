@@ -1,6 +1,7 @@
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
+using Domain.Notifications;
 using Domain.Primitives;
 
 namespace Application.Engagements.ConfirmEngagement.v1;
@@ -17,6 +18,13 @@ internal sealed class ConfirmEngagementCommandHandler(
 			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
 
 		engagement.Confirm();
+
+		var notification = Notification.Create(
+			engagement.VolunteerId,
+			NotificationKind.EngagementConfirmed,
+			engagement.Id.Value);
+
+		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
 		return engagement;
 	}

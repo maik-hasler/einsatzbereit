@@ -3,11 +3,17 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { MyProfileResponse } from "../client/api-client";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
 export default function AccountPage() {
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t } = useTranslation();
+
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{ label: t("breadcrumb.account") },
+	]);
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);

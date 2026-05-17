@@ -26,7 +26,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		if (!request.IsRemote && address is not null)
 			address = await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken);
 
-		opportunity.Update(request.Title, request.Description, request.IsRemote, address);
+		opportunity.Update(request.Title, request.Description, request.IsRemote, address, request.CheckInMethod);
 
 		return true;
 	}

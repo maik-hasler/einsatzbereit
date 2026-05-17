@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
 type Tab = "general" | "members";
 
@@ -30,6 +31,15 @@ export default function OrganizationSettingsPage() {
 	});
 
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{
+			label: org?.name ?? "",
+			href: organizationId ? `/organizations/${organizationId}` : "/",
+		},
+		{ label: t("breadcrumb.settings") },
+	]);
 
 	useEffect(() => {
 		if (!organizationId) return;

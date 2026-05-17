@@ -15,4 +15,5 @@ public sealed record VolunteerOpportunitySummary(
 	bool IsRemote,
 	string Occurrence,
 	string ParticipationType,
+	string CheckInMethod,
 	DateTimeOffset CreatedOn);

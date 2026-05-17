@@ -110,11 +110,13 @@ Current protected routes:
 ## Scripts
 
 ```bash
-pnpm dev      # dev server on :4321
-pnpm build    # build to dist/ (static files)
-pnpm preview  # preview production build
-pnpm check    # tsc --noEmit
-pnpm lint     # eslint, zero warnings allowed
+pnpm dev           # dev server on :4321
+pnpm build         # build to dist/ (static files)
+pnpm preview       # preview production build
+pnpm check         # tsc --noEmit
+pnpm lint          # eslint, zero warnings allowed
+pnpm format:write  # apply Prettier formatting - run before every commit
+pnpm format:check  # check Prettier formatting (used by CI)
 ```
 
 ## Key Dependencies
@@ -131,6 +133,8 @@ pnpm lint     # eslint, zero warnings allowed
 | `react-leaflet`      | React bindings for Leaflet           |
 
 ## Linting
+
+Always run `pnpm format:write` before committing. The CI `lint` job runs `format:check` and will fail if any Prettier violations exist - causing `build` to be skipped and a follow-up fix commit.
 
 Run lint before every commit. All errors must be fixed - zero warnings allowed (`--max-warnings 0`).
 

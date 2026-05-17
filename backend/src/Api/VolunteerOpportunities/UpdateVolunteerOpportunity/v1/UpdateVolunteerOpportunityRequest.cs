@@ -7,4 +7,5 @@ public sealed record UpdateVolunteerOpportunityRequest(
 	string? Street,
 	string? HouseNumber,
 	string? ZipCode,
-	string? City);
+	string? City,
+	string CheckInMethod);

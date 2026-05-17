@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import ConfirmDialog from "../components/ConfirmDialog";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -13,7 +15,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
-	const navigate = useNavigate();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 
@@ -27,22 +28,40 @@ export default function EngagementManagementPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
+	const [opportunityTitle, setOpportunityTitle] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [processing, setProcessing] = useState<string | null>(null);
+	const [confirming, setConfirming] = useState<string | null>(null);
+	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+	const [cancelling, setCancelling] = useState(false);
+	const [cancelError, setCancelError] = useState<string | null>(null);
+
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{
+			label: opportunityTitle || t("breadcrumb.volunteerOpportunities"),
+			href: opportunityId ? `/volunteer-opportunities/${opportunityId}` : "/",
+		},
+		{ label: t("breadcrumb.engagements") },
+	]);
 
 	useEffect(() => {
 		if (!opportunityId) return;
-		api
-			.getEngagements(opportunityId)
-			.then(setEngagements)
+		Promise.all([
+			api.getEngagements(opportunityId),
+			api
+				.getVolunteerOpportunityDetails(opportunityId)
+				.then((d) => setOpportunityTitle(d.title))
+				.catch(() => undefined),
+		])
+			.then(([e]) => setEngagements(e))
 			.catch((err) => setError(err.message))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
 
 	async function handleConfirm(engagementId: string) {
-		setProcessing(engagementId + "-confirm");
+		setConfirming(engagementId);
 		try {
 			const updated = await api.confirmEngagement(engagementId);
 			setEngagements((prev) =>
@@ -57,39 +76,41 @@ export default function EngagementManagementPage() {
 					: t("engagementManagement.confirmError"),
 			);
 		} finally {
-			setProcessing(null);
+			setConfirming(null);
 		}
 	}
 
-	async function handleCancel(engagementId: string) {
-		setProcessing(engagementId + "-cancel");
+	async function handleCancelConfirm() {
+		if (!confirmCancelId) return;
+		setCancelling(true);
+		setCancelError(null);
 		try {
-			const updated = await api.cancelEngagement(engagementId);
+			const updated = await api.cancelEngagement(confirmCancelId, null);
 			setEngagements((prev) =>
 				prev.map((e) =>
-					e.id === engagementId ? { ...e, status: updated.status } : e,
+					e.id === confirmCancelId ? { ...e, status: updated.status } : e,
 				),
 			);
+			setConfirmCancelId(null);
 		} catch (err) {
-			alert(
+			setCancelError(
 				err instanceof Error
 					? err.message
 					: t("engagementManagement.cancelError"),
 			);
 		} finally {
-			setProcessing(null);
+			setCancelling(false);
 		}
+	}
+
+	function handleCancelClose() {
+		if (cancelling) return;
+		setConfirmCancelId(null);
+		setCancelError(null);
 	}
 
 	return (
 		<>
-			<button
-				onClick={() => navigate(-1)}
-				className="mb-4 text-sm text-gray-500 hover:text-gray-800"
-			>
-				{t("engagementManagement.back")}
-			</button>
-
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("engagementManagement.title")}
 			</h1>
@@ -144,33 +165,27 @@ export default function EngagementManagementPage() {
 										<div className="flex gap-2">
 											<button
 												onClick={() => handleConfirm(e.id)}
-												disabled={processing === e.id + "-confirm"}
+												disabled={confirming === e.id}
 												className="text-xs rounded bg-green-600 px-2 py-1 text-white hover:bg-green-700 disabled:opacity-50"
 											>
-												{processing === e.id + "-confirm"
+												{confirming === e.id
 													? t("engagementManagement.processing")
 													: t("engagementManagement.confirm")}
 											</button>
 											<button
-												onClick={() => handleCancel(e.id)}
-												disabled={processing === e.id + "-cancel"}
-												className="text-xs rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700 disabled:opacity-50"
+												onClick={() => setConfirmCancelId(e.id)}
+												className="text-xs rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
 											>
-												{processing === e.id + "-cancel"
-													? t("engagementManagement.processing")
-													: t("engagementManagement.cancel")}
+												{t("engagementManagement.cancel")}
 											</button>
 										</div>
 									)}
 									{e.status === "Confirmed" && (
 										<button
-											onClick={() => handleCancel(e.id)}
-											disabled={processing === e.id + "-cancel"}
-											className="text-xs text-red-600 hover:underline disabled:opacity-50"
+											onClick={() => setConfirmCancelId(e.id)}
+											className="text-xs text-red-600 hover:underline"
 										>
-											{processing === e.id + "-cancel"
-												? t("engagementManagement.processing")
-												: t("engagementManagement.revoke")}
+											{t("engagementManagement.revoke")}
 										</button>
 									)}
 								</div>
@@ -178,6 +193,18 @@ export default function EngagementManagementPage() {
 						</li>
 					))}
 				</ul>
+			)}
+
+			{confirmCancelId && (
+				<ConfirmDialog
+					title={t("confirmDialog.cancel.title")}
+					message={t("confirmDialog.cancel.message")}
+					confirmLabel={t("confirmDialog.cancel.confirm")}
+					onConfirm={handleCancelConfirm}
+					onClose={handleCancelClose}
+					loading={cancelling}
+					error={cancelError}
+				/>
 			)}
 		</>
 	);

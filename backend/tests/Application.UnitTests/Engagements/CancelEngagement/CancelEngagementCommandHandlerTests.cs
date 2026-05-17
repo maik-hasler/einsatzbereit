@@ -2,6 +2,7 @@ using Application.Common.Persistence;
 using Application.Engagements.CancelEngagement.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
+using Domain.Notifications;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -14,11 +15,14 @@ public class CancelEngagementCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
+	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
+		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly CancelEngagementCommandHandler _sut;
 
 	public CancelEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
+		_dbContext.Notifications.Returns(_notifRepo);
 		_sut = new CancelEngagementCommandHandler(_dbContext);
 	}
 

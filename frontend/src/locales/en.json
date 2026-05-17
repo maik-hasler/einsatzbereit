@@ -42,6 +42,7 @@
       "loading": "Loading…",
       "error": "Error: {{message}}",
       "noResults": "No opportunities found.",
+      "loadMore": "Load more",
       "previous": "← Back",
       "next": "Next →",
       "page": "{{current}} / {{total}}",
@@ -80,10 +81,17 @@
       "fieldCity": "City",
       "fieldFrequency": "Frequency",
       "fieldParticipationType": "Participation type",
+      "fieldCheckInMethod": "Check-in method",
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
       "unknownError": "Unknown error"
+    },
+    "checkInMethod": {
+      "none": "None (automatic)",
+      "qrCode": "QR Code",
+      "pinCode": "PIN Code",
+      "manual": "Manual"
     },
     "editOpportunity": {
       "title": "Edit opportunity",
@@ -232,6 +240,17 @@
       "section4bTitle": "Liability for links",
       "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages."
     },
+    "notifications": {
+      "bellLabel": "Notifications",
+      "markAllRead": "Mark all as read",
+      "empty": "No notifications.",
+      "kinds": {
+        "EngagementCreated": "New application received",
+        "EngagementConfirmed": "Your application was confirmed",
+        "EngagementCancelled": "Your application was cancelled",
+        "EngagementWithdrawn": "An application was withdrawn"
+      }
+    },
     "language": {
       "de": "Deutsch",
       "en": "English",
@@ -246,6 +265,19 @@
       "title": "Page not found",
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
+    },
+    "confirmDialog": {
+      "keep": "Keep",
+      "withdraw": {
+        "title": "Withdraw application?",
+        "message": "Are you sure you want to withdraw your application? This cannot be undone.",
+        "confirm": "Yes, withdraw"
+      },
+      "cancel": {
+        "title": "Cancel engagement?",
+        "message": "Are you sure you want to cancel this engagement? The volunteer will be informed.",
+        "confirm": "Yes, cancel"
+      }
     },
     "orgProfile": {
       "loading": "Loading…",
@@ -264,6 +296,13 @@
       "popup": {
         "viewDetails": "View details →"
       }
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "volunteerOpportunities": "Volunteer Opportunities",
+      "engagements": "Engagements",
+      "settings": "Settings",
+      "account": "Account"
     }
   }
 }

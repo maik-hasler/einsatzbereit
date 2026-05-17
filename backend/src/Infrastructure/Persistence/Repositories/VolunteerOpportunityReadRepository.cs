@@ -79,6 +79,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.IsRemote,
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
+				x.vo.CheckInMethod.ToString(),
 				x.vo.CreatedOn));
 
 		if (filter.HasRadius)
@@ -141,6 +142,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.IsRemote,
 				x.vo.Occurrence,
 				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
 				x.vo.CreatedOn
 			})
 			.FirstOrDefaultAsync(cancellationToken);
@@ -148,8 +150,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (result is null)
 			return null;
 
-		var timeSlots = await dbContext.TimeSlotsQuery
-			.Where(ts => EF.Property<Guid>(ts, "volunteer_opportunity_id") == opportunityId)
+		var timeSlots = await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.Id == opportunityId_)
+			.SelectMany(vo => vo.TimeSlots)
 			.OrderBy(ts => ts.StartDateTime)
 			.Select(ts => new TimeSlotDetail(
 				ts.Id.Value,
@@ -173,6 +176,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.IsRemote,
 			result.Occurrence.ToString(),
 			result.ParticipationType.ToString(),
+			result.CheckInMethod.ToString(),
 			timeSlots,
 			result.CreatedOn);
 	}
@@ -206,6 +210,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.IsRemote,
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
+				x.vo.CheckInMethod.ToString(),
 				x.vo.CreatedOn))
 			.ToListAsync(cancellationToken);
 	}

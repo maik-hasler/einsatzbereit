@@ -13,9 +13,7 @@ export default function Footer() {
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 					{/* Brand */}
 					<div>
-						<h2 className="text-white text-2xl font-bold mb-4">
-							{t("brand.name")}
-						</h2>
+						<img src="/logo.svg" alt={t("brand.name")} className="h-8 mb-4" />
 						<p className="text-sm leading-relaxed max-w-xs">
 							{t("brand.description")}
 						</p>

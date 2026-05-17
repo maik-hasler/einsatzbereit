@@ -17,7 +17,7 @@ einsatzbereit/
 
 | | |
 |---|---|
-| Backend | .NET 10, EF Core 9, PostgreSQL 18 |
+| Backend | .NET 10 (SDK 10.0.300, see `backend/global.json`), EF Core 9, PostgreSQL 18 |
 | Auth | Keycloak 26.6.1 (OIDC, JWT) |
 | Frontend | Vite SPA, React 19, React Router v7, Tailwind CSS 4 |
 | API client | NSwag-generated - **never hand-edit** `api-client.ts` |
@@ -26,6 +26,8 @@ einsatzbereit/
 | CI/CD | GitHub Actions → GHCR |
 
 ## Development Setup
+
+Required: .NET SDK **10.0.300** (enforced via `backend/global.json`). In Claude Code web/cloud sessions, the `SessionStart` hook installs it automatically via `dotnet-install.sh` if `dotnet` is not already on `PATH`.
 
 ```bash
 dotnet run --project backend/src/Aspire/AppHost
@@ -50,3 +52,5 @@ Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/a
 - Commands/queries/DTOs: C# records
 - Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)
 - No `.Result`/`.Wait()` - async all the way
+- **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in any file - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes
+- **Shell scripts use tab indentation** - the EditorConfig rule for `.sh` files requires tabs, not spaces

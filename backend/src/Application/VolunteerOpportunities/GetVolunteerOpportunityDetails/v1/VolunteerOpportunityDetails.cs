@@ -15,6 +15,7 @@ public sealed record VolunteerOpportunityDetails(
 	bool IsRemote,
 	string Occurrence,
 	string ParticipationType,
+	string CheckInMethod,
 	IReadOnlyList<TimeSlotDetail> TimeSlots,
 	DateTimeOffset CreatedOn);
 

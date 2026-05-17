@@ -2,7 +2,7 @@
   "name": "einsatzbereit",
   "type": "module",
   "version": "1.0.0",
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@11.1.1",
   "engines": {
     "node": "25.9.0"
   },
@@ -13,10 +13,11 @@
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
+    "format:write": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
     "i18n:check": "node scripts/check-i18n-keys.js"
   },
   "dependencies": {
-    "i18next": "26.0.10",
+    "i18next": "26.1.0",
     "i18next-browser-languagedetector": "8.2.1",
     "leaflet": "1.9.4",
     "oidc-client-ts": "3.5.0",
@@ -34,7 +35,7 @@
     "@types/node": "25.7.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "6.0.1",
+    "@vitejs/plugin-react": "6.0.2",
     "eslint": "10.3.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-i18next": "6.1.4",
@@ -43,7 +44,7 @@
     "tailwindcss": "4.3.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.3",
-    "vite": "8.0.12",
+    "vite": "8.0.13",
     "vite-plugin-svgr": "5.2.0"
   }
 }

@@ -43,7 +43,14 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 			address = new Address(request.Street, request.HouseNumber, request.ZipCode, request.City);
 		}
 
-		var command = new UpdateVolunteerOpportunityCommand(opportunityId, request.Title, request.Description, request.IsRemote, address);
+		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod))
+		{
+			return Results.Problem(
+				"Invalid check-in method. Allowed values: None, QRCode, PINCode, Manual.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		var command = new UpdateVolunteerOpportunityCommand(opportunityId, request.Title, request.Description, request.IsRemote, address, checkInMethod);
 
 		await sender.Send(command, cancellationToken);
 

@@ -28,7 +28,8 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 			request.IsRemote,
 			address,
 			request.Occurrence,
-			request.ParticipationType);
+			request.ParticipationType,
+			request.CheckInMethod);
 
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 

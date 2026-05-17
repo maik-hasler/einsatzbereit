@@ -1,19 +1,16 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import type {
-	PagedListOfVolunteerOpportunitySummary,
-	VolunteerOpportunitySummary,
-} from "../client/api-client";
+import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import {
-	useOpportunityFilters,
-	type OpportunityBounds,
-} from "../hooks/useOpportunityFilters";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import OpportunityMap from "./OpportunityMap";
+import {
+	useOpportunityViewFilters,
+	type OpportunityBounds,
+} from "../hooks/useOpportunityFilters";
 
 interface Props {
 	canCreateOpportunity: boolean;
@@ -28,93 +25,148 @@ export default function VolunteerOpportunitiesList({
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	const { filters, update, clear } = useOpportunityFilters();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const search = searchParams.get("search") ?? "";
+	const city = searchParams.get("city") ?? "";
+	const occurrence = searchParams.get("occurrence") ?? "";
+	const participationType = searchParams.get("participationType") ?? "";
 
-	const [data, setData] =
-		useState<PagedListOfVolunteerOpportunitySummary | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
+	const isMap = view === "map";
+
+	const [items, setItems] = useState<VolunteerOpportunitySummary[]>([]);
 	const [page, setPage] = useState(1);
+	const [pageCount, setPageCount] = useState(1);
+	const [loading, setLoading] = useState(true);
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [showModal, setShowModal] = useState(false);
 
-	const isMap = filters.view === "map";
+	const prevFiltersRef = useRef({
+		search,
+		city,
+		occurrence,
+		participationType,
+		isMap,
+		refreshKey,
+		bn: bounds?.north,
+		bs: bounds?.south,
+		be: bounds?.east,
+		bw: bounds?.west,
+	});
 
 	useEffect(() => {
-		setPage(1);
-	}, [
-		filters.search,
-		filters.city,
-		filters.occurrence,
-		filters.participationType,
-		filters.isRemote,
-		filters.dateFrom,
-		filters.dateTo,
-	]);
+		const prev = prevFiltersRef.current;
+		const filterChanged =
+			prev.search !== search ||
+			prev.city !== city ||
+			prev.occurrence !== occurrence ||
+			prev.participationType !== participationType ||
+			prev.isMap !== isMap ||
+			prev.bn !== bounds?.north ||
+			prev.bs !== bounds?.south ||
+			prev.be !== bounds?.east ||
+			prev.bw !== bounds?.west ||
+			prev.refreshKey !== refreshKey;
 
-	useEffect(() => {
-		setLoading(true);
+		prevFiltersRef.current = {
+			search,
+			city,
+			occurrence,
+			participationType,
+			isMap,
+			refreshKey,
+			bn: bounds?.north,
+			bs: bounds?.south,
+			be: bounds?.east,
+			bw: bounds?.west,
+		};
+
+		if (filterChanged) {
+			setItems([]);
+			if (page !== 1) {
+				setPage(1);
+				return;
+			}
+		}
+
+		if (page > 1) setLoadingMore(true);
+		else setLoading(true);
 		setError(null);
 
-		const dateFrom = filters.dateFrom ? new Date(filters.dateFrom) : undefined;
-		const dateTo = filters.dateTo ? new Date(filters.dateTo) : undefined;
-		const bounds = isMap ? filters.bounds : undefined;
+		const mapBounds = isMap ? bounds : undefined;
 
+		let cancelled = false;
 		api
 			.getVolunteerOpportunities(
-				isMap ? 1 : page,
+				page,
 				isMap ? MAP_PAGE_SIZE : LIST_PAGE_SIZE,
-				filters.search || undefined,
-				filters.city || undefined,
-				filters.occurrence || undefined,
-				filters.participationType || undefined,
-				filters.isRemote,
-				dateFrom,
-				dateTo,
-				bounds?.north,
-				bounds?.south,
-				bounds?.east,
-				bounds?.west,
+				search || undefined,
+				city || undefined,
+				occurrence || undefined,
+				participationType || undefined,
+				undefined,
+				undefined,
+				undefined,
+				mapBounds?.north,
+				mapBounds?.south,
+				mapBounds?.east,
+				mapBounds?.west,
 				undefined,
 				undefined,
 				undefined,
 			)
-			.then((json: PagedListOfVolunteerOpportunitySummary) => setData(json))
-			.catch((err: Error) => setError(err.message))
-			.finally(() => setLoading(false));
+			.then((result) => {
+				if (cancelled) return;
+				if (page === 1) setItems(result.items);
+				else setItems((prev) => [...prev, ...result.items]);
+				setPageCount(result.pageCount ?? 1);
+				setLoading(false);
+				setLoadingMore(false);
+			})
+			.catch((err: Error) => {
+				if (cancelled) return;
+				setError(err.message);
+				setLoading(false);
+				setLoadingMore(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		page,
-		refreshKey,
-		filters.search,
-		filters.city,
-		filters.occurrence,
-		filters.participationType,
-		filters.isRemote,
-		filters.dateFrom,
-		filters.dateTo,
+		search,
+		city,
+		occurrence,
+		participationType,
 		isMap,
-		filters.bounds?.north,
-		filters.bounds?.south,
-		filters.bounds?.east,
-		filters.bounds?.west,
+		bounds?.north,
+		bounds?.south,
+		bounds?.east,
+		bounds?.west,
+		refreshKey,
 	]);
 
 	const activeOrgId = getActiveOrgId();
 
-	const handleBoundsChange = useCallback(
-		(bounds: OpportunityBounds) => {
-			update({ bounds });
-		},
-		[update],
-	);
+	function updateFilter(key: string, value: string) {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				if (value) next.set(key, value);
+				else next.delete(key);
+				return next;
+			},
+			{ replace: true },
+		);
+	}
 
-	const remoteValue =
-		filters.isRemote === undefined
-			? ""
-			: filters.isRemote
-				? "remote"
-				: "onsite";
+	function handleBoundsChange(next: OpportunityBounds) {
+		setBounds(next);
+	}
 
 	return (
 		<div>
@@ -130,7 +182,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							data-testid="view-toggle-list"
-							onClick={() => update({ view: "list" })}
+							onClick={() => setView("list")}
 							className={
 								!isMap
 									? "bg-black px-3 py-1.5 text-sm text-white"
@@ -142,7 +194,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							data-testid="view-toggle-map"
-							onClick={() => update({ view: "map" })}
+							onClick={() => setView("map")}
 							className={
 								isMap
 									? "bg-black px-3 py-1.5 text-sm text-white"
@@ -164,24 +216,24 @@ export default function VolunteerOpportunitiesList({
 				</div>
 			</div>
 
-			<div className="mb-4 flex flex-wrap items-center gap-2">
+			<div className="mb-4 flex flex-wrap gap-2">
 				<input
 					type="text"
 					placeholder={t("opportunities.searchPlaceholder")}
-					value={filters.search}
-					onChange={(e) => update({ search: e.target.value })}
+					value={search}
+					onChange={(e) => updateFilter("search", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<input
 					type="text"
 					placeholder={t("opportunities.cityPlaceholder")}
-					value={filters.city}
-					onChange={(e) => update({ city: e.target.value })}
+					value={city}
+					onChange={(e) => updateFilter("city", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<select
-					value={filters.occurrence}
-					onChange={(e) => update({ occurrence: e.target.value })}
+					value={occurrence}
+					onChange={(e) => updateFilter("occurrence", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				>
 					<option value="">{t("opportunities.allFrequencies")}</option>
@@ -189,8 +241,8 @@ export default function VolunteerOpportunitiesList({
 					<option value="Recurring">{t("opportunities.recurring")}</option>
 				</select>
 				<select
-					value={filters.participationType}
-					onChange={(e) => update({ participationType: e.target.value })}
+					value={participationType}
+					onChange={(e) => updateFilter("participationType", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				>
 					<option value="">{t("opportunities.allTypes")}</option>
@@ -199,43 +251,6 @@ export default function VolunteerOpportunitiesList({
 						{t("opportunities.individualContact")}
 					</option>
 				</select>
-				<select
-					value={remoteValue}
-					onChange={(e) => {
-						const v = e.target.value;
-						update({
-							isRemote:
-								v === "remote" ? true : v === "onsite" ? false : undefined,
-						});
-					}}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				>
-					<option value="">{t("opportunities.allLocations")}</option>
-					<option value="onsite">{t("opportunities.onsite")}</option>
-					<option value="remote">{t("opportunities.remote")}</option>
-				</select>
-				<input
-					type="date"
-					value={filters.dateFrom}
-					onChange={(e) => update({ dateFrom: e.target.value })}
-					aria-label={t("opportunities.dateFromLabel")}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				/>
-				<input
-					type="date"
-					value={filters.dateTo}
-					onChange={(e) => update({ dateTo: e.target.value })}
-					aria-label={t("opportunities.dateToLabel")}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				/>
-				<button
-					type="button"
-					onClick={clear}
-					data-testid="clear-filters"
-					className="rounded border px-3 py-1.5 text-sm hover:bg-gray-100"
-				>
-					{t("opportunities.clearFilters")}
-				</button>
 			</div>
 
 			{loading && <p className="text-gray-500">{t("opportunities.loading")}</p>}
@@ -245,23 +260,23 @@ export default function VolunteerOpportunitiesList({
 				</p>
 			)}
 
-			{!loading && !error && data && (
+			{!loading && !error && (
 				<>
 					{isMap && (
 						<OpportunityMap
-							items={data.items}
-							bounds={filters.bounds}
+							items={items}
+							bounds={bounds}
 							onBoundsChange={handleBoundsChange}
 						/>
 					)}
 
-					{data.items.length === 0 ? (
-						<p className="mt-4 text-gray-500">
+					{items.length === 0 ? (
+						<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
 							{isMap ? t("map.noPinsInView") : t("opportunities.noResults")}
 						</p>
 					) : (
 						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
-							{data.items.map((item: VolunteerOpportunitySummary) => (
+							{items.map((item: VolunteerOpportunitySummary) => (
 								<li
 									key={item.id}
 									className="cursor-pointer rounded border p-4 hover:bg-gray-50 transition-colors"
@@ -309,27 +324,16 @@ export default function VolunteerOpportunitiesList({
 						</ul>
 					)}
 
-					{!isMap && (data.pageCount ?? 1) > 1 && (
-						<div className="mt-4 flex items-center gap-3">
-							<button
-								onClick={() => setPage((p) => p - 1)}
-								disabled={page <= 1}
-								className="rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40"
-							>
-								{t("opportunities.previous")}
-							</button>
-							<span className="text-sm text-gray-500">
-								{t("opportunities.page", {
-									current: page,
-									total: data.pageCount,
-								})}
-							</span>
+					{!isMap && items.length > 0 && page < pageCount && (
+						<div className="mt-4 flex justify-center">
 							<button
 								onClick={() => setPage((p) => p + 1)}
-								disabled={page >= (data.pageCount ?? 1)}
-								className="rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40"
+								disabled={loadingMore}
+								className="rounded px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-40"
 							>
-								{t("opportunities.next")}
+								{loadingMore
+									? t("opportunities.loading")
+									: t("opportunities.loadMore")}
 							</button>
 						</div>
 					)}

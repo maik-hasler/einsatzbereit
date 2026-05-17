@@ -43,6 +43,13 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
+		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod))
+		{
+			return Results.Problem(
+				"Invalid check-in method. Allowed values: None, QRCode, PINCode, Manual.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
 		var address = new Address(
 			request.Street,
 			request.HouseNumber,
@@ -56,7 +63,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			false,
 			address,
 			occurrence,
-			participationType);
+			participationType,
+			checkInMethod);
 
 		var opportunity = await sender.Send(command, cancellationToken);
 
@@ -74,6 +82,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			opportunity.IsRemote,
 			opportunity.Occurrence.ToString(),
 			opportunity.ParticipationType.ToString(),
+			opportunity.CheckInMethod.ToString(),
 			opportunity.CreatedOn);
 
 		return Results.Ok(response);
