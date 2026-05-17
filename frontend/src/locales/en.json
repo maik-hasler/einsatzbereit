@@ -8,6 +8,7 @@
     "nav": {
       "userMenu": "User menu",
       "myEngagements": "My Engagements",
+      "myAchievements": "My Achievements",
       "profileSettings": "Profile Settings",
       "signOut": "Sign out",
       "signIn": "Sign in",
@@ -365,6 +366,16 @@
       "error": "Error: {{message}}",
       "noAchievements": "No achievements yet. Start volunteering to earn badges!",
       "unlockedOn": "Unlocked: {{date}}",
+      "lockedBadge": "Mystery Badge",
+      "lockedDescription": "Keep volunteering to unlock!",
+      "badgesTitle": "Badges",
+      "streakTitle": "Your Streaks",
+      "loginStreak": "Login streak",
+      "activityStreak": "Activity streak",
+      "shareButton": "Share achievements",
+      "shareText": "Check out my achievements on Einsatzbereit!",
+      "shareCopied": "Link copied to clipboard!",
+      "newBadge": "🏆 New badge unlocked: {{name}}!",
       "types": {
         "Milestone": "Milestone",
         "Streak": "Streak",
@@ -377,7 +388,8 @@
       "volunteerOpportunities": "Volunteer Opportunities",
       "engagements": "Engagements",
       "settings": "Settings",
-      "account": "Account"
+      "account": "Account",
+      "achievements": "My Achievements"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",
