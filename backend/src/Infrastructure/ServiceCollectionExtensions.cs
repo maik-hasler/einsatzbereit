@@ -1,3 +1,4 @@
+using Application.Achievements;
 using Application.Common;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
@@ -55,6 +56,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
 
 		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
+
+		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
 		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
