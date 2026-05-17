@@ -25,6 +25,8 @@ public sealed class VolunteerOpportunity
 
 	public CheckInMethod CheckInMethod { get; private set; }
 
+	public string? CheckInPin { get; private set; }
+
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
 
 	public DateTimeOffset CreatedOn { get; private set; }
@@ -55,7 +57,12 @@ public sealed class VolunteerOpportunity
 		Occurrence = occurrence;
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
+		if (checkInMethod == CheckInMethod.PINCode)
+			CheckInPin = GeneratePin();
 	}
+
+	private static string GeneratePin() =>
+		Random.Shared.Next(1000, 10000).ToString("D4");
 
 	public static VolunteerOpportunity Create(
 		OrganizationId organizationId,

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
+import CheckInModal from "../components/CheckInModal";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -24,6 +25,8 @@ export default function MyEngagementsPage() {
 	);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
+	const [checkInEngagement, setCheckInEngagement] =
+		useState<EngagementSummary | null>(null);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
@@ -70,6 +73,15 @@ export default function MyEngagementsPage() {
 		setWithdrawError(null);
 	}
 
+	function handleCheckedIn() {
+		if (!checkInEngagement) return;
+		setEngagements((prev) =>
+			prev.map((e) =>
+				e.id === checkInEngagement.id ? { ...e, isCheckedIn: true } : e,
+			),
+		);
+	}
+
 	return (
 		<>
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
@@ -84,8 +96,8 @@ export default function MyEngagementsPage() {
 			)}
 
 			{!loading && !error && engagements.length === 0 && (
-				<div className="text-center py-12">
-					<p className="text-gray-500 mb-4">
+				<div className="py-12 text-center">
+					<p className="mb-4 text-gray-500">
 						{t("myEngagements.noEngagements")}
 					</p>
 					<button
@@ -107,12 +119,12 @@ export default function MyEngagementsPage() {
 										onClick={() =>
 											navigate(`/volunteer-opportunities/${e.opportunityId}`)
 										}
-										className="text-sm font-medium text-gray-900 hover:underline text-left"
+										className="text-left text-sm font-medium text-gray-900 hover:underline"
 									>
 										{t("myEngagements.viewOpportunity")}
 									</button>
 									{e.message && (
-										<p className="mt-1 text-sm text-gray-500 truncate">
+										<p className="mt-1 truncate text-sm text-gray-500">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
@@ -121,13 +133,26 @@ export default function MyEngagementsPage() {
 											date: new Date(e.createdOn).toLocaleDateString(locale),
 										})}
 									</p>
+									{e.isCheckedIn && (
+										<span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+											{t("checkIn.checkedInLabel")}
+										</span>
+									)}
 								</div>
-								<div className="flex flex-col items-end gap-2 shrink-0">
+								<div className="flex shrink-0 flex-col items-end gap-2">
 									<span
 										className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600"}`}
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>
+									{e.status === "Confirmed" && !e.isCheckedIn && (
+										<button
+											onClick={() => setCheckInEngagement(e)}
+											className="text-xs rounded bg-brand-800 px-2 py-1 text-white hover:bg-brand-700"
+										>
+											{t("checkIn.buttonLabel")}
+										</button>
+									)}
 									{(e.status === "Pending" || e.status === "Confirmed") && (
 										<button
 											onClick={() => setConfirmWithdrawId(e.id)}
@@ -152,6 +177,15 @@ export default function MyEngagementsPage() {
 					onClose={handleWithdrawClose}
 					loading={withdrawing}
 					error={withdrawError}
+				/>
+			)}
+
+			{checkInEngagement && (
+				<CheckInModal
+					engagementId={checkInEngagement.id}
+					opportunityId={checkInEngagement.opportunityId}
+					onCheckedIn={handleCheckedIn}
+					onClose={() => setCheckInEngagement(null)}
 				/>
 			)}
 		</>

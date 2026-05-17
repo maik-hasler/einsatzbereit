@@ -56,6 +56,8 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasConversion<string>()
 			.IsRequired();
 
+		builder.Property(vo => vo.CheckInPin);
+
 		builder.Property(vo => vo.CreatedOn);
 
 		builder.Property(vo => vo.ModifiedOn);

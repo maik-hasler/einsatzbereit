@@ -1709,6 +1709,148 @@
         }
       }
     },
+    "/v1/me/engagements/{engagementId}/check-in": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInWithPin",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInWithPinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engagements/{engagementId}/check-in": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInEngagement",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/engagements/{engagementId}/cancel": {
       "put": {
         "tags": [
@@ -1878,6 +2020,17 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "CheckInWithPinRequest": {
+        "required": [
+          "pin"
+        ],
+        "type": "object",
+        "properties": {
+          "pin": {
+            "type": "string"
           }
         }
       },
@@ -2184,6 +2337,7 @@
           "timeSlotId",
           "message",
           "status",
+          "isCheckedIn",
           "createdOn"
         ],
         "type": "object",
@@ -2215,6 +2369,9 @@
           },
           "status": {
             "type": "string"
+          },
+          "isCheckedIn": {
+            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -2939,6 +3096,7 @@
           "occurrence",
           "participationType",
           "checkInMethod",
+          "checkInPin",
           "timeSlots",
           "createdOn"
         ],
@@ -3014,6 +3172,12 @@
           },
           "checkInMethod": {
             "type": "string"
+          },
+          "checkInPin": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "timeSlots": {
             "type": "array",

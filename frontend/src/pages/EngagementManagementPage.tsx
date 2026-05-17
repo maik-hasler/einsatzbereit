@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { EngagementSummary } from "../client/api-client";
+import type {
+	EngagementSummary,
+	VolunteerOpportunityDetails,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -28,18 +31,20 @@ export default function EngagementManagementPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
-	const [opportunityTitle, setOpportunityTitle] = useState<string>("");
+	const [opportunity, setOpportunity] =
+		useState<VolunteerOpportunityDetails | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
+	const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },
 		{
-			label: opportunityTitle || t("breadcrumb.volunteerOpportunities"),
+			label: opportunity?.title || t("breadcrumb.volunteerOpportunities"),
 			href: opportunityId ? `/volunteer-opportunities/${opportunityId}` : "/",
 		},
 		{ label: t("breadcrumb.engagements") },
@@ -51,7 +56,7 @@ export default function EngagementManagementPage() {
 			api.getEngagements(opportunityId),
 			api
 				.getVolunteerOpportunityDetails(opportunityId)
-				.then((d) => setOpportunityTitle(d.title))
+				.then((d) => setOpportunity(d))
 				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
@@ -77,6 +82,22 @@ export default function EngagementManagementPage() {
 			);
 		} finally {
 			setConfirming(null);
+		}
+	}
+
+	async function handleCheckIn(engagementId: string) {
+		setCheckingIn(engagementId);
+		try {
+			await api.checkInEngagement(engagementId);
+			setEngagements((prev) =>
+				prev.map((e) =>
+					e.id === engagementId ? { ...e, isCheckedIn: true } : e,
+				),
+			);
+		} catch (err) {
+			alert(err instanceof Error ? err.message : t("checkIn.markCheckedIn"));
+		} finally {
+			setCheckingIn(null);
 		}
 	}
 
@@ -109,11 +130,29 @@ export default function EngagementManagementPage() {
 		setCancelError(null);
 	}
 
+	const checkInMethod = opportunity?.checkInMethod;
+	const showManualCheckIn =
+		checkInMethod === "Manual" || checkInMethod === "QRCode";
+
 	return (
 		<>
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("engagementManagement.title")}
 			</h1>
+
+			{checkInMethod === "PINCode" && opportunity?.checkInPin && (
+				<div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+					<p className="text-sm font-medium text-blue-900">
+						{t("checkIn.organizerPin")}
+					</p>
+					<p className="mt-1 font-mono text-2xl font-bold tracking-widest text-blue-800">
+						{opportunity.checkInPin}
+					</p>
+					<p className="mt-1 text-xs text-blue-600">
+						{t("checkIn.organizerPinHint")}
+					</p>
+				</div>
+			)}
 
 			{loading && (
 				<p className="text-gray-500">{t("engagementManagement.loading")}</p>
@@ -136,7 +175,7 @@ export default function EngagementManagementPage() {
 						<li key={e.id} className="rounded border p-4">
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
-									<p className="text-sm font-mono text-gray-500 text-xs">
+									<p className="font-mono text-xs text-gray-500">
 										{t("engagementManagement.volunteer", { id: e.volunteerId })}
 									</p>
 									{e.message && (
@@ -154,8 +193,13 @@ export default function EngagementManagementPage() {
 											date: new Date(e.createdOn).toLocaleDateString(locale),
 										})}
 									</p>
+									{e.isCheckedIn && (
+										<span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+											{t("checkIn.checkedInLabel")}
+										</span>
+									)}
 								</div>
-								<div className="flex flex-col items-end gap-2 shrink-0">
+								<div className="flex shrink-0 flex-col items-end gap-2">
 									<span
 										className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600"}`}
 									>
@@ -166,7 +210,7 @@ export default function EngagementManagementPage() {
 											<button
 												onClick={() => handleConfirm(e.id)}
 												disabled={confirming === e.id}
-												className="text-xs rounded bg-green-600 px-2 py-1 text-white hover:bg-green-700 disabled:opacity-50"
+												className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700 disabled:opacity-50"
 											>
 												{confirming === e.id
 													? t("engagementManagement.processing")
@@ -174,19 +218,32 @@ export default function EngagementManagementPage() {
 											</button>
 											<button
 												onClick={() => setConfirmCancelId(e.id)}
-												className="text-xs rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
+												className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
 											>
 												{t("engagementManagement.cancel")}
 											</button>
 										</div>
 									)}
 									{e.status === "Confirmed" && (
-										<button
-											onClick={() => setConfirmCancelId(e.id)}
-											className="text-xs text-red-600 hover:underline"
-										>
-											{t("engagementManagement.revoke")}
-										</button>
+										<div className="flex gap-2">
+											{showManualCheckIn && !e.isCheckedIn && (
+												<button
+													onClick={() => handleCheckIn(e.id)}
+													disabled={checkingIn === e.id}
+													className="rounded bg-brand-800 px-2 py-1 text-xs text-white hover:bg-brand-700 disabled:opacity-50"
+												>
+													{checkingIn === e.id
+														? t("checkIn.markingCheckedIn")
+														: t("checkIn.markCheckedIn")}
+												</button>
+											)}
+											<button
+												onClick={() => setConfirmCancelId(e.id)}
+												className="text-xs text-red-600 hover:underline"
+											>
+												{t("engagementManagement.revoke")}
+											</button>
+										</div>
 									)}
 								</div>
 							</div>
