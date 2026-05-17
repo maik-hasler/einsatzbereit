@@ -1710,6 +1710,8 @@ export interface UpdateVolunteerOpportunityRequest {
     houseNumber: string | undefined;
     zipCode: string | undefined;
     city: string | undefined;
+    occurrence: string;
+    participationType: string;
     checkInMethod: string;
 
     [key: string]: any;

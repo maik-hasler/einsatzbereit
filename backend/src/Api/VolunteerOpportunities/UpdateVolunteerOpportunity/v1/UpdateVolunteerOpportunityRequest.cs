@@ -8,4 +8,6 @@ public sealed record UpdateVolunteerOpportunityRequest(
 	string? HouseNumber,
 	string? ZipCode,
 	string? City,
+	string Occurrence,
+	string ParticipationType,
 	string CheckInMethod);

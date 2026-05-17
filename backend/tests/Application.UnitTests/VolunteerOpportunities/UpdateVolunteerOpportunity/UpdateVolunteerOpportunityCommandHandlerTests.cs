@@ -1,5 +1,6 @@
 using Application.Common.Geocoding;
 using Application.Common.Persistence;
+using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
@@ -15,6 +16,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
@@ -24,8 +26,12 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public UpdateVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_engagementReadRepository
+			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([]);
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
+			_engagementReadRepository,
 			_geocodingService,
 			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
@@ -47,7 +53,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, CheckInMethod.Manual);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.Manual);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -57,6 +63,89 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		opportunity.Title.Should().Be("Neues Thema");
 		opportunity.Description.Should().Be("Neue Beschreibung");
 		opportunity.Address.Should().Be(newAddress);
+	}
+
+	[Test]
+	public async Task Handle_ShouldUpdateOccurrenceAndParticipationType(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.None);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
+		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenParticipationTypeChanges_AndActiveEngagementsExist(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, Guid.NewGuid(), null, null, "Pending", DateTimeOffset.UtcNow)
+			]);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<DomainException>()
+			.WithMessage("*ParticipationType cannot be changed*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldAllowParticipationTypeChange_WhenOnlyCancelledEngagementsExist(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, Guid.NewGuid(), null, null, "Cancelled", DateTimeOffset.UtcNow)
+			]);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
 	}
 
 	[Test]
@@ -76,7 +165,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(new GeoCoordinates(53.55, 9.99));
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, new Address("Neue Straße", "99", "20095", "Hamburg"), CheckInMethod.None);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, new Address("Neue Straße", "99", "20095", "Hamburg"), Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -99,7 +188,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Remote", "Desc", true, Address: null, CheckInMethod.None);
+			opportunityId, "Remote", "Desc", true, Address: null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -121,7 +210,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, CheckInMethod.None);
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -144,7 +233,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "   ", "Beschreibung", false, DefaultAddress, CheckInMethod.None);
+			opportunityId, "   ", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -167,7 +256,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, Address: null, CheckInMethod.None);
+			opportunityId, "Titel", "Beschreibung", false, Address: null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);

@@ -3744,6 +3744,14 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("city")]
         public string? City { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Occurrence { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("participationType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ParticipationType { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string CheckInMethod { get; set; } = default!;
