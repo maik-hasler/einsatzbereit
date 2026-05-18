@@ -4,6 +4,7 @@
     "\\.md$",
     "ApiClient\\.cs$",
     "api-client\\.ts$",
-    "openapi-v1\\.json$"
+    "openapi-v1\\.json$",
+    "node_modules"
   ]
 }
