@@ -13,6 +13,7 @@ import EngagementManagementPage from "./pages/EngagementManagementPage";
 import AccountPage from "./pages/AccountPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
+import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -78,6 +79,14 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							<OrganizationSettingsPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/organizations/:organizationId/dashboard"
+					element={
+						<ProtectedRoute>
+							<OrganizationDashboardPage />
 						</ProtectedRoute>
 					}
 				/>

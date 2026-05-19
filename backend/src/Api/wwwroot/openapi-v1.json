@@ -901,6 +901,67 @@
         }
       }
     },
+    "/v1/organizations/{organizationId}/dashboard": {
+      "get": {
+        "tags": [
+          "GetOrganizationDashboardEndpoint"
+        ],
+        "operationId": "GetOrganizationDashboard",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/organizations/{organizationId}/members": {
       "post": {
         "tags": [
@@ -2024,6 +2085,49 @@
           }
         }
       },
+      "OrganizationDashboardResponse": {
+        "required": [
+          "openOpportunities",
+          "pendingEngagements",
+          "confirmedEngagementsNext7Days",
+          "cancelledEngagements"
+        ],
+        "type": "object",
+        "properties": {
+          "openOpportunities": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pendingEngagements": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "confirmedEngagementsNext7Days": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cancelledEngagements": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "OrganizationDetailsResponse": {
         "required": [
           "id",
@@ -2794,6 +2898,9 @@
     },
     {
       "name": "CreateOrganizationEndpoint"
+    },
+    {
+      "name": "GetOrganizationDashboardEndpoint"
     },
     {
       "name": "AddMemberEndpoint"

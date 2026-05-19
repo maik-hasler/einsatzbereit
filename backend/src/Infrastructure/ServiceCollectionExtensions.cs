@@ -4,6 +4,7 @@ using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Notifications;
+using Application.Organizations;
 using Application.VolunteerOpportunities;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
@@ -52,6 +53,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
 
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
+
+		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
 		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
