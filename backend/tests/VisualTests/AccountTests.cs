@@ -20,7 +20,7 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync();
 	}
 
-	[Test, Skip("Flaky: /v1/users/me sometimes returns no/empty profile in CI. Tracked separately.")]
+	[Test]
 	public async Task AccountPage_DisplaysUsername_AfterLogin()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
