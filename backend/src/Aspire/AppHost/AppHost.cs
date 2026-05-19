@@ -31,7 +31,6 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithReference(database)
 	.WaitFor(database)
 	.WaitFor(keycloak)
-	.WaitFor(mailpit)
 	.WithEnvironment("Authentication__Authority",
 		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
 	.WithEnvironment("Authentication__ValidIssuers__0",
