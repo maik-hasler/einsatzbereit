@@ -123,7 +123,7 @@ export default function Header() {
 												{notifications.some((n) => !n.isRead) && (
 													<button
 														type="button"
-														className="text-xs text-brand-600 hover:underline cursor-pointer"
+														className="text-xs text-brand-700 hover:underline cursor-pointer"
 														onClick={async () => {
 															await api.markAllNotificationsRead();
 															setNotifications((prev) =>
@@ -195,7 +195,7 @@ export default function Header() {
 										aria-label={t("nav.userMenu")}
 										aria-expanded={dropdownOpen}
 									>
-										<span className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold">
+										<span className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
 											{initials}
 										</span>
 										<svg
@@ -240,6 +240,25 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myEngagements")}
+												</a>
+												<a
+													href="/profile"
+													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+												>
+													<svg
+														className="w-4 h-4"
+														fill="none"
+														viewBox="0 0 24 24"
+														strokeWidth="1.5"
+														stroke="currentColor"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+														/>
+													</svg>
+													{t("nav.myProfile")}
 												</a>
 												<a
 													href="/account"
@@ -295,14 +314,14 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+									className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
+									className="rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
 								>
 									{t("nav.register")}
 								</button>
@@ -363,7 +382,7 @@ export default function Header() {
 						{isLoggedIn ? (
 							<div className="space-y-1">
 								<div className="flex items-center gap-3 px-3 py-2">
-									<div className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold">
+									<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
 										{initials}
 									</div>
 									<span className="text-sm font-medium text-gray-700">
@@ -395,6 +414,12 @@ export default function Header() {
 									{t("nav.myEngagements")}
 								</a>
 								<a
+									href="/profile"
+									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+								>
+									{t("nav.myProfile")}
+								</a>
+								<a
 									href="/account"
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
@@ -413,14 +438,14 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+									className="block w-full text-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
+									className="block w-full text-center rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
 								>
 									{t("nav.register")}
 								</button>

@@ -3,6 +3,7 @@ import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import prettier from "eslint-config-prettier";
 import i18next from "eslint-plugin-i18next";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
 export default tseslint.config(
 	js.configs.recommended,
@@ -13,6 +14,11 @@ export default tseslint.config(
 			"react-hooks/rules-of-hooks": "error",
 			"react-hooks/exhaustive-deps": "warn",
 		},
+	},
+	{
+		files: ["src/**/*.{ts,tsx}"],
+		plugins: { "jsx-a11y": jsxA11y },
+		rules: jsxA11y.flatConfigs.recommended.rules,
 	},
 	{
 		files: ["src/**/*.{ts,tsx}"],

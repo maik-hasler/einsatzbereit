@@ -31,15 +31,26 @@ export default function ConfirmDialog({
 	}, [onClose]);
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-			onClick={onClose}
-		>
+		<div className="fixed inset-0 z-50 flex items-center justify-center">
+			<button
+				type="button"
+				className="absolute inset-0 bg-black/50"
+				onClick={onClose}
+				tabIndex={-1}
+				aria-hidden="true"
+			/>
 			<div
-				className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
-				onClick={(e) => e.stopPropagation()}
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="confirm-dialog-title"
+				className="relative z-10 w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
 			>
-				<h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+				<h2
+					id="confirm-dialog-title"
+					className="text-lg font-semibold text-gray-900"
+				>
+					{title}
+				</h2>
 				<p className="mt-2 text-sm text-gray-600">{message}</p>
 
 				{error && <p className="mt-3 text-sm text-red-600">{error}</p>}

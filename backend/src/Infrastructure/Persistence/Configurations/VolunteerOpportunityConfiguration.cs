@@ -56,6 +56,13 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasConversion<string>()
 			.IsRequired();
 
+		builder.Property(vo => vo.Category)
+			.HasConversion<string>()
+			.IsRequired(false);
+
+		builder.PrimitiveCollection(vo => vo.Tags)
+			.HasColumnType("text[]");
+
 		builder.Property(vo => vo.CreatedOn);
 
 		builder.Property(vo => vo.ModifiedOn);

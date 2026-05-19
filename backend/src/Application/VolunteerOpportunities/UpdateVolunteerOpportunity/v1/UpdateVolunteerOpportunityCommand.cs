@@ -11,5 +11,7 @@ public sealed record UpdateVolunteerOpportunityCommand(
 	Address? Address,
 	Occurrence Occurrence,
 	ParticipationType ParticipationType,
-	CheckInMethod CheckInMethod)
+	CheckInMethod CheckInMethod,
+	Category? Category,
+	List<string> Tags)
 	: ICommand<bool>;

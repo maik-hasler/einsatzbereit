@@ -19,7 +19,7 @@ internal sealed class ApplicationDbContext(
 	public IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities
 		=> new AggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>(
 			Set<VolunteerOpportunity>(),
-			Set<VolunteerOpportunity>(),
+			Set<VolunteerOpportunity>().Include(vo => vo.TimeSlots),
 			vo => vo.Id);
 
 	internal IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
@@ -47,6 +47,12 @@ internal sealed class ApplicationDbContext(
 			Set<Notification>(),
 			Set<Notification>(),
 			n => n.Id);
+
+	public IAggregateRepository<User, UserId> Users
+		=> new AggregateRepository<User, UserId>(
+			Set<User>(),
+			Set<User>(),
+			u => u.Id);
 
 	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
 

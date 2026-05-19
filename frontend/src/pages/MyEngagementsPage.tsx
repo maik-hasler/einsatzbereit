@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
+import EmptyState from "../components/EmptyState";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -84,17 +85,14 @@ export default function MyEngagementsPage() {
 			)}
 
 			{!loading && !error && engagements.length === 0 && (
-				<div className="text-center py-12">
-					<p className="text-gray-500 mb-4">
-						{t("myEngagements.noEngagements")}
-					</p>
-					<button
-						onClick={() => navigate("/")}
-						className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
-					>
-						{t("myEngagements.exploreNeeds")}
-					</button>
-				</div>
+				<EmptyState
+					title={t("myEngagements.noEngagements")}
+					message={t("myEngagements.noEngagementsHint")}
+					action={{
+						label: t("myEngagements.exploreNeeds"),
+						onClick: () => navigate("/"),
+					}}
+				/>
 			)}
 
 			{!loading && !error && engagements.length > 0 && (

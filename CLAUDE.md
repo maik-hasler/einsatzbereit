@@ -42,6 +42,7 @@ Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend
 | Keycloak admin | http://localhost:8080 | admin / admin |
 | pgAdmin | http://localhost:5050 | admin@admin.com / admin |
 | PostgreSQL | localhost:5432 | postgres / postgres |
+| Mailpit (email) | http://localhost:1080 | - (no auth required) |
 
 Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/admin123` (admin)
 

@@ -142,10 +142,26 @@ Run lint before every commit. All errors must be fixed - zero warnings allowed (
 pnpm lint
 ```
 
-Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`.
+Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`, `jsx-a11y/recommended`.
 
 - No non-null assertions (`!`). Use `as Type` or type narrowing (`if (!x) return`).
 - If `api` is intentionally excluded from `exhaustive-deps`, suppress with `// eslint-disable-next-line react-hooks/exhaustive-deps` and keep it consistent with the existing pattern.
+
+## Accessibility (a11y)
+
+`eslint-plugin-jsx-a11y` is enabled with the recommended ruleset. All violations are errors - CI will fail on any a11y lint issue.
+
+Key conventions:
+
+- **Modal dialogs**: Use the backdrop-button pattern. Separate the clickable backdrop (`<button aria-hidden="true" tabIndex={-1}>`) from the dialog container (`<div role="dialog" aria-modal="true" aria-labelledby="...">`) inside a neutral wrapper div. Handle Escape via `useEffect` on `document`.
+- **Clickable cards**: Use a stretched `<Link className="absolute inset-0">` inside a `relative` `<li>` rather than putting `onClick` on the `<li>` directly. Any secondary links inside the card get `relative z-10` to sit above the stretched link.
+- **Interactive elements**: Only use native interactive elements (`<button>`, `<a>`, `<input>`, etc.) for interactions. Never add `onClick` to non-interactive elements (`div`, `span`, `li`, etc.) without an appropriate ARIA role.
+- **Images**: All `<img>` tags need an `alt` attribute. Purely decorative images use `alt=""`.
+- **SVG icons**: Decorative SVGs get `aria-hidden="true"`. Meaningful standalone SVGs need a `<title>` or `aria-label`.
+- **Form labels**: Every form control must have an associated `<label htmlFor="...">` or `aria-label`.
+- **`<a href="#">`**: Never use `href="#"`. Use a `<button>` if there is no navigation target.
+
+Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on the Home, MyEngagements, and OpportunityDetail pages. Tests fail on any "serious" or "critical" axe violation.
 
 ## Production
 
