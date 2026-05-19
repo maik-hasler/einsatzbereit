@@ -125,7 +125,6 @@ export default function CreateVolunteerOpportunityModal({
 				aria-modal="true"
 				aria-labelledby="create-opportunity-dialog-title"
 				className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen"
-				onClick={(e) => e.stopPropagation()}
 			>
 				<h2
 					id="create-opportunity-dialog-title"
