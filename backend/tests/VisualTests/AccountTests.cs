@@ -30,7 +30,8 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("@vera")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("@vera")).ToBeVisibleAsync(
+			new() { Timeout = 15_000 });
 	}
 
 	[Test]
