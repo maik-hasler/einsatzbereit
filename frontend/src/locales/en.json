@@ -133,6 +133,21 @@
       "cancel": "Cancel",
       "unknownError": "Unknown error"
     },
+    "timeSlots": {
+      "sectionTitle": "Time slots",
+      "sectionHint": "Time slots are only available for Waitlist opportunities.",
+      "addTitle": "Add time slot",
+      "fieldStart": "Start",
+      "fieldEnd": "End",
+      "fieldMaxParticipants": "Max. participants",
+      "addButton": "Add",
+      "adding": "Adding…",
+      "removeButton": "Remove",
+      "removing": "…",
+      "noSlots": "No time slots added yet.",
+      "addError": "Could not add time slot.",
+      "removeError": "Could not remove time slot."
+    },
     "signUp": {
       "titleWaitlist": "Join waitlist",
       "titleInterest": "Express interest",
