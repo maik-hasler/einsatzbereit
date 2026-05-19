@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
+import EmptyState from "../components/EmptyState";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -16,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const api = useApiClient();
+	const navigate = useNavigate();
 	const { t, i18n } = useTranslation();
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -125,9 +127,19 @@ export default function EngagementManagementPage() {
 			)}
 
 			{!loading && !error && engagements.length === 0 && (
-				<p className="text-gray-500">
-					{t("engagementManagement.noApplications")}
-				</p>
+				<EmptyState
+					title={t("engagementManagement.noApplications")}
+					message={t("engagementManagement.noApplicationsHint")}
+					action={{
+						label: t("engagementManagement.backToOpportunity"),
+						onClick: () =>
+							navigate(
+								opportunityId
+									? `/volunteer-opportunities/${opportunityId}`
+									: "/",
+							),
+					}}
+				/>
 			)}
 
 			{!loading && !error && engagements.length > 0 && (

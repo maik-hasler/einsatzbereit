@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
+import EmptyState from "./EmptyState";
 import OpportunityMap from "./OpportunityMap";
 import {
 	useOpportunityViewFilters,
@@ -372,9 +373,26 @@ export default function VolunteerOpportunitiesList({
 			{!error && (
 				<>
 					{!loading && items.length === 0 ? (
-						<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
-							{isMap ? t("map.noPinsInView") : t("opportunities.noResults")}
-						</p>
+						isMap ? (
+							<p className="mt-4 text-gray-500">{t("map.noPinsInView")}</p>
+						) : (
+							<EmptyState
+								title={t("opportunities.noResults")}
+								message={
+									hasFilters
+										? t("opportunities.noResultsWithFilters")
+										: undefined
+								}
+								action={
+									hasFilters
+										? {
+												label: t("opportunities.clearFilters"),
+												onClick: clearFilters,
+											}
+										: undefined
+								}
+							/>
+						)
 					) : (
 						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
 							{items.map((item: VolunteerOpportunitySummary) => (
