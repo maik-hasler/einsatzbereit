@@ -216,9 +216,11 @@ export class EinsatzbereitApi {
      * @param centerLatitude (optional) 
      * @param centerLongitude (optional) 
      * @param radiusKm (optional) 
+     * @param category (optional) 
+     * @param tag (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, category: string | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -284,6 +286,14 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'radiusKm' cannot be null.");
         else if (radiusKm !== undefined)
             url_ += "RadiusKm=" + encodeURIComponent("" + radiusKm) + "&";
+        if (category === null)
+            throw new globalThis.Error("The parameter 'category' cannot be null.");
+        else if (category !== undefined)
+            url_ += "Category=" + encodeURIComponent("" + category) + "&";
+        if (tag === null)
+            throw new globalThis.Error("The parameter 'tag' cannot be null.");
+        else if (tag !== undefined)
+            url_ += "Tag=" + encodeURIComponent("" + tag) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1543,6 +1553,8 @@ export interface CreateVolunteerOpportunityRequest {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[] | undefined;
 
     [key: string]: any;
 }
@@ -1562,6 +1574,8 @@ export interface CreateVolunteerOpportunityResponse {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[];
     createdOn: Date;
 
     [key: string]: any;
@@ -1780,6 +1794,8 @@ export interface UpdateVolunteerOpportunityRequest {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[] | undefined;
 
     [key: string]: any;
 }
@@ -1800,6 +1816,8 @@ export interface VolunteerOpportunityDetails {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[];
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
 
@@ -1822,6 +1840,8 @@ export interface VolunteerOpportunitySummary {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[];
     createdOn: Date;
 
     [key: string]: any;

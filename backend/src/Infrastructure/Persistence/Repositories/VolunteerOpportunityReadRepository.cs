@@ -53,6 +53,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (filter.DateTo is DateTimeOffset dateTo)
 			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
+		if (!string.IsNullOrWhiteSpace(filter.Category) && Enum.TryParse<Domain.VolunteerOpportunities.Category>(filter.Category, ignoreCase: true, out var cat))
+			query = query.Where(x => x.vo.Category == cat);
+
+		if (!string.IsNullOrWhiteSpace(filter.Tag))
+			query = query.Where(x => x.vo.Tags.Contains(filter.Tag));
+
 		var boundingBox = ResolveBoundingBox(filter);
 
 		if (boundingBox is GeoBoundingBox box)
@@ -80,6 +86,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
 				x.vo.CheckInMethod.ToString(),
+				x.vo.Category != null ? x.vo.Category.ToString() : null,
+				x.vo.Tags,
 				x.vo.CreatedOn));
 
 		if (filter.HasRadius)
@@ -143,6 +151,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Occurrence,
 				x.vo.ParticipationType,
 				x.vo.CheckInMethod,
+				x.vo.Category,
+				x.vo.Tags,
 				x.vo.CreatedOn
 			})
 			.FirstOrDefaultAsync(cancellationToken);
@@ -177,6 +187,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.Occurrence.ToString(),
 			result.ParticipationType.ToString(),
 			result.CheckInMethod.ToString(),
+			result.Category?.ToString(),
+			result.Tags,
 			timeSlots,
 			result.CreatedOn);
 	}
@@ -211,6 +223,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Occurrence.ToString(),
 				x.vo.ParticipationType.ToString(),
 				x.vo.CheckInMethod.ToString(),
+				x.vo.Category != null ? x.vo.Category.ToString() : null,
+				x.vo.Tags,
 				x.vo.CreatedOn))
 			.ToListAsync(cancellationToken);
 	}
