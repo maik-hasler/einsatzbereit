@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -24,7 +24,6 @@ export default function VolunteerOpportunitiesList({
 	canCreateOpportunity,
 }: Props) {
 	const api = useApiClient();
-	const navigate = useNavigate();
 	const { t } = useTranslation();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const search = searchParams.get("search") ?? "";
@@ -281,6 +280,7 @@ export default function VolunteerOpportunitiesList({
 			<div className="mb-4 flex flex-wrap gap-2">
 				<input
 					type="text"
+					aria-label={t("opportunities.searchPlaceholder")}
 					placeholder={t("opportunities.searchPlaceholder")}
 					value={searchInput}
 					onChange={(e) => setSearchInput(e.target.value)}
@@ -292,12 +292,14 @@ export default function VolunteerOpportunitiesList({
 				/>
 				<input
 					type="text"
+					aria-label={t("opportunities.cityPlaceholder")}
 					placeholder={t("opportunities.cityPlaceholder")}
 					value={city}
 					onChange={(e) => updateFilter("city", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<select
+					aria-label={t("opportunities.allFrequencies")}
 					value={occurrence}
 					onChange={(e) => updateFilter("occurrence", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -307,6 +309,7 @@ export default function VolunteerOpportunitiesList({
 					<option value="Recurring">{t("opportunities.recurring")}</option>
 				</select>
 				<select
+					aria-label={t("opportunities.allTypes")}
 					value={participationType}
 					onChange={(e) => updateFilter("participationType", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -318,6 +321,7 @@ export default function VolunteerOpportunitiesList({
 					</option>
 				</select>
 				<select
+					aria-label={t("opportunities.allLocations")}
 					value={isRemoteParam}
 					onChange={(e) => updateFilter("isRemote", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -398,45 +402,48 @@ export default function VolunteerOpportunitiesList({
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<li
 									key={item.id}
-									className="cursor-pointer rounded border p-4 hover:bg-gray-50 transition-colors"
-									onClick={() =>
-										navigate(`/volunteer-opportunities/${item.id}`)
-									}
+									className="relative rounded border hover:bg-gray-50 transition-colors"
 								>
-									<div className="flex items-start justify-between">
-										<div>
-											<strong className="block text-sm font-medium">
-												{item.title}
-											</strong>
-											<p className="mt-1 text-sm text-gray-600">
-												{item.description}
-											</p>
+									<Link
+										to={`/volunteer-opportunities/${item.id}`}
+										className="absolute inset-0 rounded"
+										aria-label={item.title}
+									/>
+									<div className="p-4">
+										<div className="flex items-start justify-between">
+											<div>
+												<strong className="block text-sm font-medium">
+													{item.title}
+												</strong>
+												<p className="mt-1 text-sm text-gray-600">
+													{item.description}
+												</p>
+											</div>
+											<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+												<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+													{formatOccurrence(item.occurrence, t)}
+												</span>
+												<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+													{formatParticipationType(item.participationType, t)}
+												</span>
+											</div>
 										</div>
-										<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-											<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-												{formatOccurrence(item.occurrence, t)}
-											</span>
-											<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-												{formatParticipationType(item.participationType, t)}
-											</span>
+										<div className="relative z-10 mt-2 flex items-center gap-4 text-xs text-gray-500">
+											<Link
+												to={`/organizations/${item.organizationId}`}
+												className="hover:underline"
+											>
+												{item.organizationName}
+											</Link>
+											{item.isRemote ? (
+												<span>{t("opportunities.remote")}</span>
+											) : (
+												<span>
+													{item.street} {item.houseNumber}, {item.zipCode}{" "}
+													{item.city}
+												</span>
+											)}
 										</div>
-									</div>
-									<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-										<Link
-											to={`/organizations/${item.organizationId}`}
-											className="hover:underline"
-											onClick={(e) => e.stopPropagation()}
-										>
-											{item.organizationName}
-										</Link>
-										{item.isRemote ? (
-											<span>{t("opportunities.remote")}</span>
-										) : (
-											<span>
-												{item.street} {item.houseNumber}, {item.zipCode}{" "}
-												{item.city}
-											</span>
-										)}
 									</div>
 								</li>
 							))}

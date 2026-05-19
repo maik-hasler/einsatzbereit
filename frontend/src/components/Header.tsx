@@ -123,7 +123,7 @@ export default function Header() {
 												{notifications.some((n) => !n.isRead) && (
 													<button
 														type="button"
-														className="text-xs text-brand-600 hover:underline cursor-pointer"
+														className="text-xs text-brand-700 hover:underline cursor-pointer"
 														onClick={async () => {
 															await api.markAllNotificationsRead();
 															setNotifications((prev) =>
@@ -195,7 +195,7 @@ export default function Header() {
 										aria-label={t("nav.userMenu")}
 										aria-expanded={dropdownOpen}
 									>
-										<span className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold">
+										<span className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
 											{initials}
 										</span>
 										<svg
@@ -295,14 +295,14 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+									className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
+									className="rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
 								>
 									{t("nav.register")}
 								</button>
@@ -363,7 +363,7 @@ export default function Header() {
 						{isLoggedIn ? (
 							<div className="space-y-1">
 								<div className="flex items-center gap-3 px-3 py-2">
-									<div className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold">
+									<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
 										{initials}
 									</div>
 									<span className="text-sm font-medium text-gray-700">
@@ -413,14 +413,14 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+									className="block w-full text-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
+									className="block w-full text-center rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
 								>
 									{t("nav.register")}
 								</button>

@@ -83,7 +83,7 @@ export default function AccountPage() {
 	return (
 		<div className="mx-auto max-w-2xl">
 			<div className="mb-6 flex items-center gap-4">
-				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-500 text-xl font-semibold text-white">
+				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-700 text-xl font-semibold text-white">
 					{getInitials(displayName)}
 				</div>
 				<div>
