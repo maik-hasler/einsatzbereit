@@ -27,7 +27,12 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
+		var waitForProfile = Page.WaitForResponseAsync(
+			r => r.Url.Contains("/users/me", StringComparison.OrdinalIgnoreCase) && r.Ok,
+			new() { Timeout = 30_000 });
+
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
+		await waitForProfile;
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.GetByText("@vera")).ToBeVisibleAsync(
