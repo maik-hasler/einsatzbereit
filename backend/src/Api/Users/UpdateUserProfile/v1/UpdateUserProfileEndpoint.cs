@@ -34,10 +34,21 @@ internal sealed class UpdateUserProfileEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
+		Domain.Users.PreferredContact? preferredContact = null;
+		if (request.PreferredContact is not null &&
+			Enum.TryParse<Domain.Users.PreferredContact>(request.PreferredContact, out var parsed))
+		{
+			preferredContact = parsed;
+		}
+
 		var command = new UpdateUserProfileCommand(
 			new UserId(userId),
 			request.FirstName,
-			request.LastName);
+			request.LastName,
+			request.Bio,
+			request.Skills ?? [],
+			request.Languages ?? [],
+			preferredContact);
 
 		await sender.Send(command, cancellationToken);
 

@@ -48,6 +48,12 @@ internal sealed class ApplicationDbContext(
 			Set<Notification>(),
 			n => n.Id);
 
+	public IAggregateRepository<User, UserId> Users
+		=> new AggregateRepository<User, UserId>(
+			Set<User>(),
+			Set<User>(),
+			u => u.Id);
+
 	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
 
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(

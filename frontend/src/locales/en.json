@@ -8,6 +8,7 @@
     "nav": {
       "userMenu": "User menu",
       "myEngagements": "My Engagements",
+      "myProfile": "My Profile",
       "profileSettings": "Profile Settings",
       "signOut": "Sign out",
       "signIn": "Sign in",
@@ -344,12 +345,33 @@
         "viewDetails": "View details →"
       }
     },
+    "profile": {
+      "title": "My Profile",
+      "fieldBio": "Bio",
+      "bioPlaceholder": "Tell organizers a little about yourself…",
+      "fieldSkills": "Skills & Interests",
+      "skillsPlaceholder": "Add a skill and press Enter",
+      "fieldLanguages": "Languages",
+      "languagesPlaceholder": "Add a language and press Enter",
+      "fieldPreferredContact": "Preferred contact channel",
+      "preferredContactEmail": "Email",
+      "preferredContactPhone": "Phone",
+      "preferredContactNone": "No preference",
+      "saving": "Saving…",
+      "save": "Save",
+      "savedSuccess": "Profile saved.",
+      "saveError": "Failed to save profile.",
+      "loadError": "Could not load profile.",
+      "loading": "Loading…",
+      "removeChip": "Remove"
+    },
     "breadcrumb": {
       "home": "Home",
       "volunteerOpportunities": "Volunteer Opportunities",
       "engagements": "Engagements",
       "settings": "Settings",
-      "account": "Account"
+      "account": "Account",
+      "profile": "Profile"
     }
   }
 }

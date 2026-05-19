@@ -2007,7 +2007,11 @@
           "username",
           "firstName",
           "lastName",
-          "email"
+          "email",
+          "bio",
+          "skills",
+          "languages",
+          "preferredContact"
         ],
         "type": "object",
         "properties": {
@@ -2032,6 +2036,30 @@
           },
           "email": {
             "type": "string"
+          },
+          "bio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredContact": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -2636,6 +2664,36 @@
             ]
           },
           "lastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "skills": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredContact": {
             "type": [
               "null",
               "string"

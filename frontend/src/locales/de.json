@@ -8,6 +8,7 @@
     "nav": {
       "userMenu": "Benutzermenü",
       "myEngagements": "Meine Engagements",
+      "myProfile": "Mein Profil",
       "profileSettings": "Profileinstellungen",
       "signOut": "Abmelden",
       "signIn": "Anmelden",
@@ -344,12 +345,33 @@
         "viewDetails": "Details anzeigen →"
       }
     },
+    "profile": {
+      "title": "Mein Profil",
+      "fieldBio": "Uber mich",
+      "bioPlaceholder": "Erzahl Organisatoren etwas uber dich…",
+      "fieldSkills": "Fahigkeiten & Interessen",
+      "skillsPlaceholder": "Fahigkeit eingeben und Enter drucken",
+      "fieldLanguages": "Sprachen",
+      "languagesPlaceholder": "Sprache eingeben und Enter drucken",
+      "fieldPreferredContact": "Bevorzugter Kontaktweg",
+      "preferredContactEmail": "E-Mail",
+      "preferredContactPhone": "Telefon",
+      "preferredContactNone": "Keine Praferenz",
+      "saving": "Wird gespeichert…",
+      "save": "Speichern",
+      "savedSuccess": "Profil gespeichert.",
+      "saveError": "Speichern fehlgeschlagen.",
+      "loadError": "Profil konnte nicht geladen werden.",
+      "loading": "Wird geladen…",
+      "removeChip": "Entfernen"
+    },
     "breadcrumb": {
       "home": "Startseite",
       "volunteerOpportunities": "Einsatzmoglichkeiten",
       "engagements": "Bewerbungen",
       "settings": "Einstellungen",
-      "account": "Konto"
+      "account": "Konto",
+      "profile": "Profil"
     }
   }
 }
