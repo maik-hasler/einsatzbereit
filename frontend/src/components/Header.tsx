@@ -47,17 +47,25 @@ export default function Header() {
 
 	useEffect(() => {
 		if (!isLoggedIn) return;
+		const controller = new AbortController();
 		const fetchCount = async () => {
 			try {
-				const result = await api.getMyNotifications();
+				const result = await api.getMyNotifications(controller.signal);
 				setNotifications(result);
 			} catch {
-				// silently ignore
+				// silently ignore (includes AbortError on cleanup)
 			}
 		};
-		void fetchCount();
+		// Delay first poll so it doesn't fire during the post-login page-load
+		// burst (oidc token exchange + initial data fetches), which would
+		// interfere with WaitForLoadState(NetworkIdle) in Playwright tests.
+		const initialTimer = setTimeout(() => void fetchCount(), 3000);
 		const id = setInterval(() => void fetchCount(), 30_000);
-		return () => clearInterval(id);
+		return () => {
+			controller.abort();
+			clearTimeout(initialTimer);
+			clearInterval(id);
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
 
