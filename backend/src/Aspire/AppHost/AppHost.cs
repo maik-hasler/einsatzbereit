@@ -4,7 +4,7 @@ var postgres = builder.AddPostgres("postgres")
 	.WithDataVolume()
 	.WithPgAdmin();
 
-var mailpit = builder.AddContainer("mailpit", "axllent/mailpit", "latest")
+var mailpit = builder.AddContainer("mailpit", "ghcr.io/axllent/mailpit", "latest")
 	.WithHttpEndpoint(port: 1080, targetPort: 8025, name: "webui", isProxied: false)
 	.WithEndpoint(port: 1025, targetPort: 1025, name: "smtp", scheme: "tcp", isProxied: false);
 
