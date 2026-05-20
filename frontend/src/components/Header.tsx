@@ -56,11 +56,12 @@ export default function Header() {
 				// silently ignore (includes AbortError on cleanup)
 			}
 		};
-		// Delay first poll so it doesn't fire during the post-login page-load
-		// burst (oidc token exchange + initial data fetches), which would
-		// interfere with WaitForLoadState(NetworkIdle) in Playwright tests.
+		// Delay the first poll so it doesn't fire during the post-login page-load
+		// burst (oidc token exchange + initial data fetches). Use a 60-second
+		// interval so background polls never land inside a Playwright
+		// WaitForLoadState(NetworkIdle) window (default timeout: 30 s).
 		const initialTimer = setTimeout(() => void fetchCount(), 3000);
-		const id = setInterval(() => void fetchCount(), 30_000);
+		const id = setInterval(() => void fetchCount(), 60_000);
 		return () => {
 			controller.abort();
 			clearTimeout(initialTimer);
