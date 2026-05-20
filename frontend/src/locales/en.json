@@ -387,6 +387,18 @@
       "settings": "Settings",
       "account": "Account",
       "profile": "Profile"
+    },
+    "error": {
+      "forbidden": "You do not have permission to do this.",
+      "serverError": "An unexpected error occurred. Please try again later.",
+      "boundaryTitle": "Something went wrong",
+      "boundaryMessage": "An unexpected error occurred. You can try going back or reloading the page.",
+      "goBack": "Go back",
+      "reload": "Reload",
+      "500Title": "Server Error",
+      "500Message": "An unexpected server error occurred. Please try again later.",
+      "backHome": "Back to home",
+      "dismiss": "Dismiss"
     }
   }
 }

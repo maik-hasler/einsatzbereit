@@ -28,9 +28,9 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("@vera")).ToBeVisibleAsync();
+		await Expect(Page.GetByLabel("Username")).ToHaveValueAsync("vera",
+			new() { Timeout = 30_000 });
 	}
 
 	[Test]
