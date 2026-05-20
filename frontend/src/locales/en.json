@@ -45,7 +45,8 @@
       "volunteerBenefit1": "Browse local needs without registration",
       "volunteerBenefit2": "Sign up for a single engagement or join the waitlist",
       "volunteerBenefit3": "Track all your engagements in one place",
-      "volunteerCta": "Browse opportunities"
+      "volunteerCta": "Browse opportunities",
+      "benefitsLabel": "Platform benefits"
     },
     "opportunities": {
       "currentNeeds": "Current Opportunities",

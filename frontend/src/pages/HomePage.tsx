@@ -2,6 +2,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
+import { useId } from "react";
 
 function CheckIcon() {
 	return (
@@ -23,6 +24,9 @@ function CheckIcon() {
 export default function HomePage() {
 	const auth = useAuth();
 	const { t } = useTranslation();
+	const heroTitleId = useId();
+	const volunteerTitleId = useId();
+	const ngoTitleId = useId();
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
@@ -32,9 +36,15 @@ export default function HomePage() {
 	return (
 		<>
 			{/* Hero */}
-			<section className="-mx-4 -mt-16 mb-16 bg-brand-800 px-4 py-20 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+			<section
+				aria-labelledby={heroTitleId}
+				className="-mx-4 -mt-16 mb-16 bg-brand-800 px-4 py-20 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+			>
 				<div className="mx-auto max-w-3xl text-center">
-					<h1 className="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+					<h1
+						id={heroTitleId}
+						className="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl"
+					>
 						{t("landing.heroTitle")}
 					</h1>
 					<p className="mb-8 text-lg text-brand-100">
@@ -61,16 +71,25 @@ export default function HomePage() {
 			</section>
 
 			{/* Benefits grid */}
-			<section className="mb-16 grid gap-8 sm:grid-cols-2">
+			<section
+				aria-label={t("landing.benefitsLabel")}
+				className="mb-16 grid gap-8 sm:grid-cols-2"
+			>
 				{/* For volunteers */}
 				<div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-					<h2 className="mb-2 text-xl font-semibold text-gray-900">
+					<h2
+						id={volunteerTitleId}
+						className="mb-2 text-xl font-semibold text-gray-900"
+					>
 						{t("landing.volunteerTitle")}
 					</h2>
 					<p className="mb-5 text-sm text-gray-500">
 						{t("landing.volunteerSubtitle")}
 					</p>
-					<ul className="space-y-3 text-sm text-gray-700">
+					<ul
+						aria-labelledby={volunteerTitleId}
+						className="space-y-3 text-sm text-gray-700"
+					>
 						{(
 							[
 								"volunteerBenefit1",
@@ -94,13 +113,19 @@ export default function HomePage() {
 
 				{/* For organisations */}
 				<div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-					<h2 className="mb-2 text-xl font-semibold text-gray-900">
+					<h2
+						id={ngoTitleId}
+						className="mb-2 text-xl font-semibold text-gray-900"
+					>
 						{t("landing.ngoTitle")}
 					</h2>
 					<p className="mb-5 text-sm text-gray-500">
 						{t("landing.ngoSubtitle")}
 					</p>
-					<ul className="space-y-3 text-sm text-gray-700">
+					<ul
+						aria-labelledby={ngoTitleId}
+						className="space-y-3 text-sm text-gray-700"
+					>
 						{(["ngoBenefit1", "ngoBenefit2", "ngoBenefit3"] as const).map(
 							(key) => (
 								<li key={key} className="flex gap-3">
@@ -112,9 +137,7 @@ export default function HomePage() {
 					</ul>
 					<button
 						type="button"
-						onClick={() =>
-							auth.isAuthenticated ? undefined : void auth.signinRedirect()
-						}
+						onClick={() => void auth.signinRedirect()}
 						className="mt-6 inline-block rounded-md border border-brand-800 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-50"
 					>
 						{t("landing.ngoCta")}
