@@ -38,11 +38,11 @@ public class IntegrationTestFixture
 
 		await notifications
 			.WaitForResourceAsync("keycloak", KnownResourceStates.Running)
-			.WaitAsync(TimeSpan.FromSeconds(180));
+			.WaitAsync(TimeSpan.FromMinutes(5));
 
 		await notifications
 			.WaitForResourceAsync("backend", KnownResourceStates.Running)
-			.WaitAsync(TimeSpan.FromSeconds(180));
+			.WaitAsync(TimeSpan.FromMinutes(5));
 
 		_keycloakClient = _app.CreateHttpClient("keycloak");
 
@@ -159,7 +159,7 @@ public class IntegrationTestFixture
 
 	private static async Task WaitForBackendReadyAsync(HttpClient client)
 	{
-		var deadline = DateTime.UtcNow.AddSeconds(120);
+		var deadline = DateTime.UtcNow.AddSeconds(300);
 		while (DateTime.UtcNow < deadline)
 		{
 			try
@@ -177,7 +177,7 @@ public class IntegrationTestFixture
 
 	private async Task WaitForRealmReadyAsync()
 	{
-		var deadline = DateTime.UtcNow.AddSeconds(120);
+		var deadline = DateTime.UtcNow.AddSeconds(300);
 		while (DateTime.UtcNow < deadline)
 		{
 			try
