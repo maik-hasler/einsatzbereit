@@ -27,7 +27,9 @@ internal sealed class GetVolunteerOpportunitiesQueryHandler(
 			request.West,
 			request.CenterLatitude,
 			request.CenterLongitude,
-			request.RadiusKm);
+			request.RadiusKm,
+			request.Category,
+			request.Tag);
 
 		return await readRepository.GetPagedSummariesAsync(filter, cancellationToken);
 	}

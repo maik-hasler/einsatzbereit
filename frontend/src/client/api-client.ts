@@ -202,6 +202,144 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return No Content
+     */
+    updateTimeSlot(opportunityId: string, timeSlotId: string, body: UpdateTimeSlotRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (timeSlotId === undefined || timeSlotId === null)
+            throw new globalThis.Error("The parameter 'timeSlotId' must be defined.");
+        url_ = url_.replace("{timeSlotId}", encodeURIComponent("" + timeSlotId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateTimeSlot(_response);
+        });
+    }
+
+    protected processUpdateTimeSlot(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    deleteTimeSlot(opportunityId: string, timeSlotId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (timeSlotId === undefined || timeSlotId === null)
+            throw new globalThis.Error("The parameter 'timeSlotId' must be defined.");
+        url_ = url_.replace("{timeSlotId}", encodeURIComponent("" + timeSlotId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteTimeSlot(_response);
+        });
+    }
+
+    protected processDeleteTimeSlot(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @param search (optional) 
      * @param city (optional) 
      * @param occurrence (optional) 
@@ -216,9 +354,11 @@ export class EinsatzbereitApi {
      * @param centerLatitude (optional) 
      * @param centerLongitude (optional) 
      * @param radiusKm (optional) 
+     * @param category (optional) 
+     * @param tag (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, category: string | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -284,6 +424,14 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'radiusKm' cannot be null.");
         else if (radiusKm !== undefined)
             url_ += "RadiusKm=" + encodeURIComponent("" + radiusKm) + "&";
+        if (category === null)
+            throw new globalThis.Error("The parameter 'category' cannot be null.");
+        else if (category !== undefined)
+            url_ += "Category=" + encodeURIComponent("" + category) + "&";
+        if (tag === null)
+            throw new globalThis.Error("The parameter 'tag' cannot be null.");
+        else if (tag !== undefined)
+            url_ += "Tag=" + encodeURIComponent("" + tag) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -394,6 +542,80 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return Created
+     */
+    createTimeSlot(opportunityId: string, body: CreateTimeSlotRequest, signal?: AbortSignal): Promise<CreateTimeSlotResponse> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateTimeSlot(_response);
+        });
+    }
+
+    protected processCreateTimeSlot(response: Response): Promise<CreateTimeSlotResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateTimeSlotResponse;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CreateTimeSlotResponse>(null as any);
+    }
+
+    /**
      * @return No Content
      */
     updateUserProfile(body: UpdateUserProfileRequest, signal?: AbortSignal): Promise<void> {
@@ -490,6 +712,101 @@ export class EinsatzbereitApi {
             });
         }
         return Promise.resolve<MyProfileResponse>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    deleteMyAccount(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/users/me";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteMyAccount(_response);
+        });
+    }
+
+    protected processDeleteMyAccount(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getMyStreaks(signal?: AbortSignal): Promise<StreakSummary> {
+        let url_ = this.baseUrl + "/v1/me/streaks";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyStreaks(_response);
+        });
+    }
+
+    protected processGetMyStreaks(response: Response): Promise<StreakSummary> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as StreakSummary;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<StreakSummary>(null as any);
     }
 
     /**
@@ -831,6 +1148,64 @@ export class EinsatzbereitApi {
             });
         }
         return Promise.resolve<Organization>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrganizationDashboard(organizationId: string, signal?: AbortSignal): Promise<OrganizationDashboardResponse> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/dashboard";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOrganizationDashboard(_response);
+        });
+    }
+
+    protected processGetOrganizationDashboard(response: Response): Promise<OrganizationDashboardResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OrganizationDashboardResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OrganizationDashboardResponse>(null as any);
     }
 
     /**
@@ -1346,6 +1721,132 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return OK
+     */
+    checkInWithPin(engagementId: string, body: CheckInWithPinRequest, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+        let url_ = this.baseUrl + "/v1/me/engagements/{engagementId}/check-in";
+        if (engagementId === undefined || engagementId === null)
+            throw new globalThis.Error("The parameter 'engagementId' must be defined.");
+        url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCheckInWithPin(_response);
+        });
+    }
+
+    protected processCheckInWithPin(response: Response): Promise<EngagementStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementStatusResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementStatusResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    checkInEngagement(engagementId: string, signal?: AbortSignal): Promise<EngagementStatusResponse> {
+        let url_ = this.baseUrl + "/v1/engagements/{engagementId}/check-in";
+        if (engagementId === undefined || engagementId === null)
+            throw new globalThis.Error("The parameter 'engagementId' must be defined.");
+        url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCheckInEngagement(_response);
+        });
+    }
+
+    protected processCheckInEngagement(response: Response): Promise<EngagementStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementStatusResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementStatusResponse>(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -1419,6 +1920,154 @@ export class EinsatzbereitApi {
         }
         return Promise.resolve<EngagementStatusResponse>(null as any);
     }
+
+    /**
+     * @return OK
+     */
+    getUserAchievements(userId: string, signal?: AbortSignal): Promise<AchievementSummary[]> {
+        let url_ = this.baseUrl + "/v1/users/{userId}/achievements";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetUserAchievements(_response);
+        });
+    }
+
+    protected processGetUserAchievements(response: Response): Promise<AchievementSummary[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AchievementSummary[];
+            return result200;
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AchievementSummary[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getMyAchievements(signal?: AbortSignal): Promise<AchievementSummary[]> {
+        let url_ = this.baseUrl + "/v1/me/achievements";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyAchievements(_response);
+        });
+    }
+
+    protected processGetMyAchievements(response: Response): Promise<AchievementSummary[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AchievementSummary[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AchievementSummary[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getBadgeCatalog(signal?: AbortSignal): Promise<BadgeCatalogEntry[]> {
+        let url_ = this.baseUrl + "/v1/badges";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetBadgeCatalog(_response);
+        });
+    }
+
+    protected processGetBadgeCatalog(response: Response): Promise<BadgeCatalogEntry[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BadgeCatalogEntry[];
+            return result200;
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BadgeCatalogEntry[]>(null as any);
+    }
+}
+
+export interface AchievementSummary {
+    id: string;
+    type: string;
+    name: string;
+    description: string;
+    unlockedAt: Date;
+
+    [key: string]: any;
 }
 
 export interface AddMemberRequest {
@@ -1445,8 +2094,24 @@ export interface AddressDto {
     [key: string]: any;
 }
 
+export interface BadgeCatalogEntry {
+    key: string;
+    type: number;
+    name: string;
+    description: string;
+    isHidden: boolean;
+
+    [key: string]: any;
+}
+
 export interface CancelEngagementRequest {
     reason: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface CheckInWithPinRequest {
+    pin: string;
 
     [key: string]: any;
 }
@@ -1474,6 +2139,23 @@ export interface CreateOrganizationRequest {
     [key: string]: any;
 }
 
+export interface CreateTimeSlotRequest {
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
+
+    [key: string]: any;
+}
+
+export interface CreateTimeSlotResponse {
+    id: string;
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
+
+    [key: string]: any;
+}
+
 export interface CreateVolunteerOpportunityRequest {
     title: string;
     description: string;
@@ -1485,6 +2167,8 @@ export interface CreateVolunteerOpportunityRequest {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[] | undefined;
 
     [key: string]: any;
 }
@@ -1504,6 +2188,8 @@ export interface CreateVolunteerOpportunityResponse {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[];
     createdOn: Date;
 
     [key: string]: any;
@@ -1530,6 +2216,7 @@ export interface EngagementSummary {
     timeSlotId: string | undefined;
     message: string | undefined;
     status: string;
+    isCheckedIn: boolean;
     createdOn: Date;
 
     [key: string]: any;
@@ -1548,6 +2235,10 @@ export interface MyProfileResponse {
     firstName: string | undefined;
     lastName: string | undefined;
     email: string;
+    bio: string | undefined;
+    skills: string[];
+    languages: string[];
+    preferredContact: string | undefined;
 
     [key: string]: any;
 }
@@ -1573,6 +2264,15 @@ export interface Organization {
     modifiedOn?: Date | undefined;
     events?: DomainEvent[] | undefined;
     id?: OrganizationId;
+
+    [key: string]: any;
+}
+
+export interface OrganizationDashboardResponse {
+    openOpportunities: number;
+    pendingEngagements: number;
+    confirmedEngagementsNext7Days: number;
+    cancelledEngagements: number;
 
     [key: string]: any;
 }
@@ -1666,6 +2366,13 @@ export interface PublicOrganizationProfileResponse {
     [key: string]: any;
 }
 
+export interface StreakSummary {
+    loginStreak: number;
+    activityStreak: number;
+
+    [key: string]: any;
+}
+
 export interface TimeSlotDetail {
     id: string;
     startDateTime: Date;
@@ -1695,9 +2402,21 @@ export interface UpdateOrganizationRequest {
     [key: string]: any;
 }
 
+export interface UpdateTimeSlotRequest {
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
+
+    [key: string]: any;
+}
+
 export interface UpdateUserProfileRequest {
     firstName?: string | undefined;
     lastName?: string | undefined;
+    bio?: string | undefined;
+    skills?: string[] | undefined;
+    languages?: string[] | undefined;
+    preferredContact?: string | undefined;
 
     [key: string]: any;
 }
@@ -1713,6 +2432,8 @@ export interface UpdateVolunteerOpportunityRequest {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[] | undefined;
 
     [key: string]: any;
 }
@@ -1733,6 +2454,9 @@ export interface VolunteerOpportunityDetails {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[];
+    checkInPin: string | undefined;
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
 
@@ -1755,6 +2479,8 @@ export interface VolunteerOpportunitySummary {
     occurrence: string;
     participationType: string;
     checkInMethod: string;
+    category: string | undefined;
+    tags: string[];
     createdOn: Date;
 
     [key: string]: any;

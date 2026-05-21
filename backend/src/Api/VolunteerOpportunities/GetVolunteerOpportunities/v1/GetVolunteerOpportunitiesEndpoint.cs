@@ -58,7 +58,9 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			request.West,
 			request.CenterLatitude,
 			request.CenterLongitude,
-			request.RadiusKm);
+			request.RadiusKm,
+			request.Category,
+			request.Tag);
 
 		var result = await sender.Send(query, cancellationToken);
 

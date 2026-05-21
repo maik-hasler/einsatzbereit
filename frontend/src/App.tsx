@@ -11,8 +11,11 @@ import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPa
 import MyEngagementsPage from "./pages/MyEngagementsPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import AccountPage from "./pages/AccountPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
+import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
+import AchievementsPage from "./pages/AchievementsPage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -74,10 +77,34 @@ export default function App() {
 					}
 				/>
 				<Route
+					path="/profile"
+					element={
+						<ProtectedRoute>
+							<ProfilePage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
 					path="/organizations/:organizationId/settings"
 					element={
 						<ProtectedRoute>
 							<OrganizationSettingsPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/organizations/:organizationId/dashboard"
+					element={
+						<ProtectedRoute>
+							<OrganizationDashboardPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/achievements"
+					element={
+						<ProtectedRoute>
+							<AchievementsPage />
 						</ProtectedRoute>
 					}
 				/>

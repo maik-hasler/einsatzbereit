@@ -146,7 +146,7 @@ public class VolunteerOpportunityTests
 			CheckInMethod.None);
 		var newAddress = new Address("Neue Straße", "42", "10115", "Hamburg");
 
-		opportunity.Update("New title", "New desc", false, newAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.Manual);
+		opportunity.Update("New title", "New desc", false, newAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.Manual, null, []);
 
 		opportunity.Title.Should().Be("New title");
 		opportunity.Description.Should().Be("New desc");
@@ -163,7 +163,7 @@ public class VolunteerOpportunityTests
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
 
-		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None);
+		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
 		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
 	}
@@ -175,7 +175,7 @@ public class VolunteerOpportunityTests
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
 
-		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None);
+		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, []);
 
 		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
 	}
@@ -187,7 +187,7 @@ public class VolunteerOpportunityTests
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
 
-		opportunity.Update("Remote title", "Remote desc", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
+		opportunity.Update("Remote title", "Remote desc", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
 		opportunity.IsRemote.Should().BeTrue();
 		opportunity.Address.Should().BeNull();
@@ -203,7 +203,7 @@ public class VolunteerOpportunityTests
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
 
-		Action act = () => opportunity.Update(title!, "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
+		Action act = () => opportunity.Update(title!, "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
 		act.Should().Throw<DomainException>().WithMessage("Title must not be empty.");
 	}
@@ -218,7 +218,7 @@ public class VolunteerOpportunityTests
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
 
-		Action act = () => opportunity.Update("Title", description!, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
+		Action act = () => opportunity.Update("Title", description!, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
 		act.Should().Throw<DomainException>().WithMessage("Description must not be empty.");
 	}
@@ -230,7 +230,7 @@ public class VolunteerOpportunityTests
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
 
-		Action act = () => opportunity.Update("Title", "Desc", false, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
+		Action act = () => opportunity.Update("Title", "Desc", false, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
 		act.Should().Throw<DomainException>().WithMessage("Address is required for non-remote opportunities.");
 	}

@@ -54,7 +54,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		var firstCard = Page.Locator("ul > li a").First;
 		var href = await firstCard.GetAttributeAsync("href");

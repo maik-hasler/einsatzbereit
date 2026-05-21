@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Breadcrumb from "../components/Breadcrumb";
 import { ToolbarProvider, useToolbarConfig } from "../contexts/ToolbarContext";
+import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 
 function ToolbarStrip() {
 	const config = useToolbarConfig();
@@ -19,6 +20,7 @@ function ToolbarStrip() {
 }
 
 function AppLayoutInner() {
+	useAchievementNotifier();
 	return (
 		<div className="min-h-screen flex flex-col">
 			<Header />

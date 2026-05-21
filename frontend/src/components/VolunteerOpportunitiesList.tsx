@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
+import EmptyState from "./EmptyState";
 import OpportunityMap from "./OpportunityMap";
 import {
 	useOpportunityViewFilters,
@@ -32,6 +33,8 @@ export default function VolunteerOpportunitiesList({
 	const isRemoteParam = searchParams.get("isRemote") ?? "";
 	const dateFrom = searchParams.get("dateFrom") ?? "";
 	const dateTo = searchParams.get("dateTo") ?? "";
+	const category = searchParams.get("category") ?? "";
+	const tag = searchParams.get("tag") ?? "";
 
 	const [searchInput, setSearchInput] = useState(search);
 
@@ -59,6 +62,8 @@ export default function VolunteerOpportunitiesList({
 		isRemoteParam,
 		dateFrom,
 		dateTo,
+		category,
+		tag,
 		isMap,
 		refreshKey,
 		bn: bounds?.north,
@@ -77,6 +82,8 @@ export default function VolunteerOpportunitiesList({
 			prev.isRemoteParam !== isRemoteParam ||
 			prev.dateFrom !== dateFrom ||
 			prev.dateTo !== dateTo ||
+			prev.category !== category ||
+			prev.tag !== tag ||
 			prev.isMap !== isMap ||
 			prev.bn !== bounds?.north ||
 			prev.bs !== bounds?.south ||
@@ -92,6 +99,8 @@ export default function VolunteerOpportunitiesList({
 			isRemoteParam,
 			dateFrom,
 			dateTo,
+			category,
+			tag,
 			isMap,
 			refreshKey,
 			bn: bounds?.north,
@@ -142,6 +151,8 @@ export default function VolunteerOpportunitiesList({
 				undefined,
 				undefined,
 				undefined,
+				category || undefined,
+				tag || undefined,
 			)
 			.then((result) => {
 				if (cancelled) return;
@@ -171,6 +182,8 @@ export default function VolunteerOpportunitiesList({
 		isRemoteParam,
 		dateFrom,
 		dateTo,
+		category,
+		tag,
 		isMap,
 		bounds?.north,
 		bounds?.south,
@@ -208,6 +221,8 @@ export default function VolunteerOpportunitiesList({
 				next.delete("isRemote");
 				next.delete("dateFrom");
 				next.delete("dateTo");
+				next.delete("category");
+				next.delete("tag");
 				return next;
 			},
 			{ replace: true },
@@ -221,7 +236,9 @@ export default function VolunteerOpportunitiesList({
 		participationType ||
 		isRemoteParam ||
 		dateFrom ||
-		dateTo
+		dateTo ||
+		category ||
+		tag
 	);
 
 	function handleBoundsChange(next: OpportunityBounds) {
@@ -343,6 +360,32 @@ export default function VolunteerOpportunitiesList({
 					onChange={(e) => updateFilter("dateTo", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				/>
+				<select
+					aria-label={t("opportunities.allCategories")}
+					value={category}
+					onChange={(e) => updateFilter("category", e.target.value)}
+					className="rounded border px-3 py-1.5 text-sm text-gray-700"
+				>
+					<option value="">{t("opportunities.allCategories")}</option>
+					{(
+						[
+							"Social",
+							"Environment",
+							"Sport",
+							"Education",
+							"DisasterRelief",
+							"Health",
+							"Animals",
+							"Culture",
+							"Technology",
+							"Other",
+						] as const
+					).map((c) => (
+						<option key={c} value={c}>
+							{t(`opportunities.category.${c}`)}
+						</option>
+					))}
+				</select>
 				{hasFilters && (
 					<button
 						type="button"
@@ -376,9 +419,26 @@ export default function VolunteerOpportunitiesList({
 			{!error && (
 				<>
 					{!loading && items.length === 0 ? (
-						<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
-							{isMap ? t("map.noPinsInView") : t("opportunities.noResults")}
-						</p>
+						isMap ? (
+							<p className="mt-4 text-gray-500">{t("map.noPinsInView")}</p>
+						) : (
+							<EmptyState
+								title={t("opportunities.noResults")}
+								message={
+									hasFilters
+										? t("opportunities.noResultsWithFilters")
+										: undefined
+								}
+								action={
+									hasFilters
+										? {
+												label: t("opportunities.clearFilters"),
+												onClick: clearFilters,
+											}
+										: undefined
+								}
+							/>
+						)
 					) : (
 						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
 							{items.map((item: VolunteerOpportunitySummary) => (
@@ -408,8 +468,27 @@ export default function VolunteerOpportunitiesList({
 												<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
 													{formatParticipationType(item.participationType, t)}
 												</span>
+												{item.category && (
+													<span className="rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
+														{t(`opportunities.category.${item.category}`)}
+													</span>
+												)}
 											</div>
 										</div>
+										{item.tags && item.tags.length > 0 && (
+											<div className="relative z-10 mt-2 flex flex-wrap gap-1">
+												{item.tags.map((tagItem) => (
+													<button
+														key={tagItem}
+														type="button"
+														onClick={() => updateFilter("tag", tagItem)}
+														className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-200"
+													>
+														#{tagItem}
+													</button>
+												))}
+											</div>
+										)}
 										<div className="relative z-10 mt-2 flex items-center gap-4 text-xs text-gray-500">
 											<Link
 												to={`/organizations/${item.organizationId}`}

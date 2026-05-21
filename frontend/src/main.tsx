@@ -5,6 +5,8 @@ import { AuthProvider } from "react-oidc-context";
 import { WebStorageStateStore } from "oidc-client-ts";
 import { BrowserRouter } from "react-router";
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { ToastProvider } from "./contexts/ToastContext";
 import "./styles/global.css";
 
 const oidcConfig = {
@@ -23,10 +25,14 @@ const oidcConfig = {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
-		<AuthProvider {...oidcConfig}>
-			<BrowserRouter>
-				<App />
-			</BrowserRouter>
-		</AuthProvider>
+		<ErrorBoundary>
+			<ToastProvider>
+				<AuthProvider {...oidcConfig}>
+					<BrowserRouter>
+						<App />
+					</BrowserRouter>
+				</AuthProvider>
+			</ToastProvider>
+		</ErrorBoundary>
 	</React.StrictMode>,
 );

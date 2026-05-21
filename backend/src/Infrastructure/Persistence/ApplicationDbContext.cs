@@ -1,5 +1,6 @@
 using System.Reflection;
 using Application.Common.Persistence;
+using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -19,7 +20,7 @@ internal sealed class ApplicationDbContext(
 	public IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities
 		=> new AggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>(
 			Set<VolunteerOpportunity>(),
-			Set<VolunteerOpportunity>(),
+			Set<VolunteerOpportunity>().Include(vo => vo.TimeSlots),
 			vo => vo.Id);
 
 	internal IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
@@ -48,13 +49,63 @@ internal sealed class ApplicationDbContext(
 			Set<Notification>(),
 			n => n.Id);
 
+	public IAggregateRepository<User, UserId> Users
+		=> new AggregateRepository<User, UserId>(
+			Set<User>(),
+			Set<User>(),
+			u => u.Id);
+
 	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
+
+	public IAggregateRepository<Achievement, AchievementId> Achievements
+		=> new AggregateRepository<Achievement, AchievementId>(
+			Set<Achievement>(),
+			Set<Achievement>(),
+			a => a.Id);
+
+	internal IQueryable<Achievement> AchievementsQuery => Set<Achievement>().AsNoTracking();
+
+	public async Task<bool> HasAchievementAsync(
+		UserId userId,
+		string badgeName,
+		CancellationToken cancellationToken = default) =>
+		await Set<Achievement>()
+			.AnyAsync(a => a.UserId == userId && a.Name == badgeName, cancellationToken);
+
+	public IAggregateRepository<UserStreak, UserStreakId> UserStreaks
+		=> new AggregateRepository<UserStreak, UserStreakId>(
+			Set<UserStreak>(),
+			Set<UserStreak>(),
+			s => s.Id);
+
+	internal IQueryable<UserStreak> UserStreaksQuery => Set<UserStreak>().AsNoTracking();
+
+	public async Task<UserStreak?> GetUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<UserStreak>()
+			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+
 
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
 		CancellationToken cancellationToken = default) =>
 		await Set<Notification>()
 			.Where(n => n.RecipientId == recipientId && !n.IsRead)
+			.ToListAsync(cancellationToken);
+
+	public async Task DeleteNotificationsForRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Notification>()
+			.Where(n => n.RecipientId == recipientId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.Where(e => e.VolunteerId == volunteerId)
 			.ToListAsync(cancellationToken);
 
 	protected override void OnModelCreating(

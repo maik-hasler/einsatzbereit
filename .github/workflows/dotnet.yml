@@ -71,6 +71,11 @@ jobs:
         working-directory: backend
         run: dotnet build --no-restore
 
+      - name: Pre-pull Docker images
+        run: |
+          docker pull quay.io/keycloak/keycloak:26.6.1
+          docker pull ghcr.io/axllent/mailpit:latest
+
       - name: Test - Application.UnitTests
         working-directory: backend
         run: dotnet run --project tests/Application.UnitTests --no-build

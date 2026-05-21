@@ -7,4 +7,5 @@ public sealed record EngagementSummary(
 	Guid? TimeSlotId,
 	string? Message,
 	string Status,
+	bool IsCheckedIn,
 	DateTimeOffset CreatedOn);

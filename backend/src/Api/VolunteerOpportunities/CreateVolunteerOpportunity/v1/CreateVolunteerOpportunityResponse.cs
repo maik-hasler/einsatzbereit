@@ -15,4 +15,6 @@ public sealed record CreateVolunteerOpportunityResponse(
 	string Occurrence,
 	string ParticipationType,
 	string CheckInMethod,
+	string? Category,
+	IReadOnlyList<string> Tags,
 	DateTimeOffset CreatedOn);
