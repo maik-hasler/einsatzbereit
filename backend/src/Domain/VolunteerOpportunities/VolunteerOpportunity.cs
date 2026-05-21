@@ -25,6 +25,12 @@ public sealed class VolunteerOpportunity
 
 	public CheckInMethod CheckInMethod { get; private set; }
 
+	public Category? Category { get; private set; }
+
+	public List<string> Tags { get; private set; } = [];
+
+	public string? CheckInPin { get; private set; }
+
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
 
 	public DateTimeOffset CreatedOn { get; private set; }
@@ -44,7 +50,9 @@ public sealed class VolunteerOpportunity
 		Address? address,
 		Occurrence occurrence,
 		ParticipationType participationType,
-		CheckInMethod checkInMethod)
+		CheckInMethod checkInMethod,
+		Category? category,
+		List<string> tags)
 		: base(id)
 	{
 		OrganizationId = organizationId;
@@ -55,7 +63,14 @@ public sealed class VolunteerOpportunity
 		Occurrence = occurrence;
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
+		Category = category;
+		Tags = tags;
+		if (checkInMethod == CheckInMethod.PINCode)
+			CheckInPin = GeneratePin();
 	}
+
+	private static string GeneratePin() =>
+		Random.Shared.Next(1000, 10000).ToString("D4");
 
 	public static VolunteerOpportunity Create(
 		OrganizationId organizationId,
@@ -65,7 +80,9 @@ public sealed class VolunteerOpportunity
 		Address? address,
 		Occurrence occurrence,
 		ParticipationType participationType,
-		CheckInMethod checkInMethod)
+		CheckInMethod checkInMethod,
+		Category? category = null,
+		List<string>? tags = null)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
@@ -85,7 +102,9 @@ public sealed class VolunteerOpportunity
 			address,
 			occurrence,
 			participationType,
-			checkInMethod);
+			checkInMethod,
+			category,
+			tags ?? []);
 	}
 
 	public void Update(
@@ -95,7 +114,9 @@ public sealed class VolunteerOpportunity
 		Address? address,
 		Occurrence occurrence,
 		ParticipationType participationType,
-		CheckInMethod checkInMethod)
+		CheckInMethod checkInMethod,
+		Category? category,
+		List<string> tags)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
@@ -113,9 +134,11 @@ public sealed class VolunteerOpportunity
 		Occurrence = occurrence;
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
+		Category = category;
+		Tags = tags;
 	}
 
-	public void AddTimeSlot(
+	public TimeSlot AddTimeSlot(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
 		int maxParticipants)
@@ -125,6 +148,15 @@ public sealed class VolunteerOpportunity
 
 		var timeSlot = TimeSlot.Create(startDateTime, endDateTime, maxParticipants);
 		_timeSlots.Add(timeSlot);
+		return timeSlot;
+	}
+
+	public void UpdateTimeSlot(TimeSlotId timeSlotId, DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants)
+	{
+		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId)
+			?? throw new DomainException($"Time slot with id '{timeSlotId.Value}' not found.");
+
+		timeSlot.Update(startDateTime, endDateTime, maxParticipants);
 	}
 
 	public void RemoveTimeSlot(TimeSlotId timeSlotId)

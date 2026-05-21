@@ -1,13 +1,16 @@
 using Application.Achievements;
 using Application.Achievements.BadgeCatalog;
 using Application.Common;
+using Application.Common.Email;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Notifications;
+using Application.Organizations;
 using Application.VolunteerOpportunities;
 using Infrastructure.Achievements;
+using Infrastructure.Email;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
 using Infrastructure.Persistence;
@@ -56,10 +59,15 @@ public static class ServiceCollectionExtensions
 
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
 
+		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
+
 		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
 
 		services.ConfigureOptions<BadgeCatalogOptionsSetup>();
 		services.AddSingleton<IBadgeCatalogService, BadgeCatalogService>();
+
+		services.ConfigureOptions<SmtpOptionsSetup>();
+		services.AddScoped<IEmailService, SmtpEmailService>();
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
 		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
@@ -72,6 +80,14 @@ public static class ServiceCollectionExtensions
 			});
 
 		services.ConfigureOptions<KeycloakOptionsSetup>();
+
+		services.AddSingleton<KeycloakAdminTokenProvider>();
+		services.AddHttpClient(KeycloakAdminTokenProvider.HttpClientName, (sp, client) =>
+		{
+			var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
+			client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+		});
+
 		services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
 			(sp, client) =>
 			{

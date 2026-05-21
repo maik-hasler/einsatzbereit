@@ -10,4 +10,6 @@ public sealed record CreateVolunteerOpportunityRequest(
 	string City,
 	string Occurrence,
 	string ParticipationType,
-	string CheckInMethod);
+	string CheckInMethod,
+	string? Category,
+	IReadOnlyList<string>? Tags);

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import EmptyState from "../components/EmptyState";
 
 type Tab = "general" | "members";
 
@@ -343,34 +344,43 @@ export default function OrganizationSettingsPage() {
 			)}
 
 			{activeTab === "members" && (
-				<ul className="divide-y divide-gray-100">
-					{org.members.map((member) => (
-						<li
-							key={member.userId}
-							className="flex items-center justify-between py-3"
-						>
-							<div>
-								<p className="text-sm font-medium text-gray-900">
-									{member.firstName && member.lastName
-										? `${member.firstName} ${member.lastName}`
-										: member.username}
-								</p>
-								<p className="text-xs text-gray-500">{member.email}</p>
-								{member.isOrganisator && (
-									<span className="mt-0.5 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-										{t("orgSettings.organisator")}
-									</span>
-								)}
-							</div>
-							<button
-								onClick={() => handleRemoveMember(member.userId)}
-								className="text-xs text-red-500 hover:text-red-700"
-							>
-								{t("orgSettings.removeMember")}
-							</button>
-						</li>
-					))}
-				</ul>
+				<>
+					{org.members.length === 0 ? (
+						<EmptyState
+							title={t("orgSettings.noMembers")}
+							message={t("orgSettings.noMembersHint")}
+						/>
+					) : (
+						<ul className="divide-y divide-gray-100">
+							{org.members.map((member) => (
+								<li
+									key={member.userId}
+									className="flex items-center justify-between py-3"
+								>
+									<div>
+										<p className="text-sm font-medium text-gray-900">
+											{member.firstName && member.lastName
+												? `${member.firstName} ${member.lastName}`
+												: member.username}
+										</p>
+										<p className="text-xs text-gray-500">{member.email}</p>
+										{member.isOrganisator && (
+											<span className="mt-0.5 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+												{t("orgSettings.organisator")}
+											</span>
+										)}
+									</div>
+									<button
+										onClick={() => handleRemoveMember(member.userId)}
+										className="text-xs text-red-500 hover:text-red-700"
+									>
+										{t("orgSettings.removeMember")}
+									</button>
+								</li>
+							))}
+						</ul>
+					)}
+				</>
 			)}
 		</div>
 	);

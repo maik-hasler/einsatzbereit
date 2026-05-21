@@ -1,6 +1,7 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Application.Common.Keycloak;
 using Microsoft.Extensions.Options;
 
@@ -8,6 +9,7 @@ namespace Infrastructure.Keycloak;
 
 internal sealed class KeycloakUserService(
 	HttpClient httpClient,
+	KeycloakAdminTokenProvider tokenProvider,
 	IOptions<KeycloakOptions> options)
 	: IKeycloakUserService
 {
@@ -22,10 +24,10 @@ internal sealed class KeycloakUserService(
 		Guid userId,
 		CancellationToken cancellationToken = default)
 	{
-		await EnsureAuthenticatedAsync(cancellationToken);
-
-		var response = await httpClient.GetAsync(
-			$"/admin/realms/{_options.Realm}/users/{userId}",
+		var response = await SendAuthorizedAsync(
+			() => httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}",
+				cancellationToken),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -48,8 +50,6 @@ internal sealed class KeycloakUserService(
 		string? lastName,
 		CancellationToken cancellationToken = default)
 	{
-		await EnsureAuthenticatedAsync(cancellationToken);
-
 		// Keycloak's admin API merges PUT bodies and skips null fields, so to
 		// clear firstName/lastName we must send an empty string instead of null.
 		var body = new
@@ -58,42 +58,56 @@ internal sealed class KeycloakUserService(
 			lastName = lastName ?? string.Empty,
 		};
 
-		var putResponse = await httpClient.PutAsJsonAsync(
-			$"/admin/realms/{_options.Realm}/users/{userId}",
-			body,
-			JsonOptions,
+		var response = await SendAuthorizedAsync(
+			() => httpClient.PutAsJsonAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}",
+				body,
+				JsonOptions,
+				cancellationToken),
 			cancellationToken);
 
-		await EnsureSuccessAsync(putResponse, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
-	private async Task EnsureAuthenticatedAsync(
+	public async Task DeleteUserAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		var response = await SendAuthorizedAsync(
+			() => httpClient.DeleteAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
+	private async Task<HttpResponseMessage> SendAuthorizedAsync(
+		Func<Task<HttpResponseMessage>> send,
 		CancellationToken cancellationToken)
 	{
-		if (httpClient.DefaultRequestHeaders.Authorization is not null)
+		await SetBearerAsync(forceRefresh: false, cancellationToken);
+
+		var response = await send();
+		if (response.StatusCode != HttpStatusCode.Unauthorized)
 		{
-			return;
+			return response;
 		}
 
-		var tokenRequest = new FormUrlEncodedContent([
-			new KeyValuePair<string, string>("grant_type", "client_credentials"),
-			new KeyValuePair<string, string>("client_id", _options.ClientId),
-			new KeyValuePair<string, string>("client_secret", _options.ClientSecret)
-		]);
-
-		var tokenResponse = await httpClient.PostAsync(
-			$"/realms/{_options.Realm}/protocol/openid-connect/token",
-			tokenRequest,
-			cancellationToken);
-
-		await EnsureSuccessAsync(tokenResponse, cancellationToken);
-
-		var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>(
-			JsonOptions, cancellationToken);
-
-		httpClient.DefaultRequestHeaders.Authorization =
-			new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult!.AccessToken);
+		// The cached admin token was rejected (e.g. Keycloak cold start or key
+		// rotation). Refresh once and retry so a transient 401 self-heals
+		// instead of bubbling up as a 500.
+		response.Dispose();
+		await SetBearerAsync(forceRefresh: true, cancellationToken);
+		return await send();
 	}
+
+	private async Task SetBearerAsync(
+		bool forceRefresh,
+		CancellationToken cancellationToken) =>
+		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+			"Bearer",
+			await tokenProvider.GetTokenAsync(forceRefresh, cancellationToken));
 
 	private static string? NullIfEmpty(string? value) =>
 		string.IsNullOrEmpty(value) ? null : value;
@@ -116,14 +130,10 @@ internal sealed class KeycloakUserService(
 			response.StatusCode);
 	}
 
-	private sealed record TokenResponse(
-		[property: JsonPropertyName("access_token")] string AccessToken);
-
 	private sealed record KeycloakUserResponse(
 		string Id,
 		string Username,
 		string? FirstName,
 		string? LastName,
 		string? Email);
-
 }

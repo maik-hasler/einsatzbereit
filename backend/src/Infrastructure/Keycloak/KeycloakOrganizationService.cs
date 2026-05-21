@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Application.Common.Keycloak;
 using Microsoft.Extensions.Options;
 
@@ -11,6 +11,7 @@ namespace Infrastructure.Keycloak;
 
 internal sealed class KeycloakOrganizationService(
 	HttpClient httpClient,
+	KeycloakAdminTokenProvider tokenProvider,
 	IOptions<KeycloakOptions> options)
 	: IKeycloakOrganizationService
 {
@@ -158,32 +159,10 @@ internal sealed class KeycloakOrganizationService(
 	}
 
 	private async Task EnsureAuthenticatedAsync(
-		CancellationToken cancellationToken)
-	{
-		if (httpClient.DefaultRequestHeaders.Authorization is not null)
-		{
-			return;
-		}
-
-		var tokenRequest = new FormUrlEncodedContent([
-			new KeyValuePair<string, string>("grant_type", "client_credentials"),
-			new KeyValuePair<string, string>("client_id", _options.ClientId),
-			new KeyValuePair<string, string>("client_secret", _options.ClientSecret)
-		]);
-
-		var tokenResponse = await httpClient.PostAsync(
-			$"/realms/{_options.Realm}/protocol/openid-connect/token",
-			tokenRequest,
-			cancellationToken);
-
-		await EnsureSuccessAsync(tokenResponse, cancellationToken);
-
-		var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>(
-			JsonOptions, cancellationToken);
-
-		httpClient.DefaultRequestHeaders.Authorization =
-			new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult!.AccessToken);
-	}
+		CancellationToken cancellationToken) =>
+		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+			"Bearer",
+			await tokenProvider.GetTokenAsync(forceRefresh: false, cancellationToken));
 
 	internal static string GenerateAlias(string name)
 	{
@@ -261,9 +240,6 @@ internal sealed class KeycloakOrganizationService(
 			inner: null,
 			response.StatusCode);
 	}
-
-	private sealed record TokenResponse(
-		[property: JsonPropertyName("access_token")] string AccessToken);
 
 	private sealed record KeycloakRole(
 		string Id,

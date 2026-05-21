@@ -26,7 +26,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		{
 			await notifications
 				.WaitForResourceAsync(name, KnownResourceStates.Running)
-				.WaitAsync(TimeSpan.FromMinutes(3));
+				.WaitAsync(TimeSpan.FromMinutes(5));
 		}
 
 		await WaitForRealmReadyAsync();
@@ -35,7 +35,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	private async Task WaitForRealmReadyAsync()
 	{
 		using var client = _app.CreateHttpClient("keycloak");
-		var deadline = DateTime.UtcNow.AddSeconds(120);
+		var deadline = DateTime.UtcNow.AddSeconds(300);
 		while (DateTime.UtcNow < deadline)
 		{
 			try

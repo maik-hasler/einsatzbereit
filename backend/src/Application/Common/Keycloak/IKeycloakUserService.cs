@@ -18,4 +18,8 @@ public interface IKeycloakUserService
 		string? firstName,
 		string? lastName,
 		CancellationToken cancellationToken = default);
+
+	Task DeleteUserAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default);
 }
