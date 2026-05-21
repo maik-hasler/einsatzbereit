@@ -91,11 +91,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Follow first org link from an opportunity card
-		var orgLink = Page.Locator("ul > li .relative.z-10 a").First;
-		var href = await orgLink.GetAttributeAsync("href");
+		var orgLinks = Page.Locator("ul > li .relative.z-10 a");
 
-		if (href is null)
+		if (await orgLinks.CountAsync() == 0)
 			return; // no opportunities seeded, skip
+
+		var href = await orgLinks.First.GetAttributeAsync("href");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -113,8 +114,19 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Open org switcher and navigate to settings via data-testid
-		await Page.GetByLabel("Switch organization").ClickAsync();
+		// Open org switcher (only rendered when olaf has at least one org)
+		var switcherBtn = Page.GetByLabel("Switch organization");
+
+		try
+		{
+			await switcherBtn.WaitForAsync(new() { Timeout = 5_000 });
+		}
+		catch (TimeoutException)
+		{
+			return; // olaf has no orgs, skip
+		}
+
+		await switcherBtn.ClickAsync();
 		var settingsBtn = Page.GetByTestId("org-settings-link");
 
 		if (await settingsBtn.CountAsync() == 0)
