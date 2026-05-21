@@ -11,8 +11,6 @@ public class SmokeTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 	}
 
