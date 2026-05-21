@@ -110,4 +110,10 @@ public sealed class Engagement
 
 		IsCheckedIn = true;
 	}
+
+	public void Anonymize()
+	{
+		VolunteerId = new UserId(Guid.Empty);
+		Message = null;
+	}
 }
