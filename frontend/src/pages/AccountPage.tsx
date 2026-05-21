@@ -25,6 +25,8 @@ export default function AccountPage() {
 		lastName: "",
 	});
 
+	const accessToken = auth.user?.access_token;
+
 	useEffect(() => {
 		let cancelled = false;
 		// Retry transient failures (e.g. the backend's /users/me briefly failing
@@ -65,7 +67,7 @@ export default function AccountPage() {
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [accessToken]);
 
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
