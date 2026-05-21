@@ -67,10 +67,10 @@ internal sealed class ApplicationDbContext(
 
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,
-		AchievementType type,
+		string badgeName,
 		CancellationToken cancellationToken = default) =>
 		await Set<Achievement>()
-			.AnyAsync(a => a.UserId == userId && a.Type == type, cancellationToken);
+			.AnyAsync(a => a.UserId == userId && a.Name == badgeName, cancellationToken);
 
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
