@@ -11,4 +11,8 @@ public sealed record MyProfileResponse(
 	string Username,
 	string? FirstName,
 	string? LastName,
-	string Email);
+	string Email,
+	string? Bio,
+	IReadOnlyList<string> Skills,
+	IReadOnlyList<string> Languages,
+	string? PreferredContact);

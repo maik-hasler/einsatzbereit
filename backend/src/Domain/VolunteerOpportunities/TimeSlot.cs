@@ -43,4 +43,17 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 			endDateTime,
 			maxParticipants);
 	}
+
+	public void Update(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants)
+	{
+		if (endDateTime <= startDateTime)
+			throw new DomainException("End date must be after start date.");
+
+		if (maxParticipants <= 0)
+			throw new DomainException("Max participants must be greater than zero.");
+
+		StartDateTime = startDateTime;
+		EndDateTime = endDateTime;
+		MaxParticipants = maxParticipants;
+	}
 }

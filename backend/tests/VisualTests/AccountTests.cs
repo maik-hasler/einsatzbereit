@@ -27,10 +27,16 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		// Wait for a successful /users/me load (tolerating an earlier attempt the
+		// frontend retries) before asserting, so a backend hiccup surfaces as a
+		// real status code instead of a silent empty-value timeout.
+		await Page.RunAndWaitForResponseAsync(
+			() => Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account"),
+			response => response.Url.Contains("/users/me") && response.Ok,
+			new() { Timeout = 30_000 });
 
-		await Expect(Page.GetByText("@vera")).ToBeVisibleAsync();
+		await Expect(Page.GetByLabel("Username")).ToHaveValueAsync("vera",
+			new() { Timeout = 30_000 });
 	}
 
 	[Test]

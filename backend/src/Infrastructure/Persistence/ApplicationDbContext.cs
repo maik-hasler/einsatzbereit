@@ -20,7 +20,7 @@ internal sealed class ApplicationDbContext(
 	public IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> VolunteerOpportunities
 		=> new AggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>(
 			Set<VolunteerOpportunity>(),
-			Set<VolunteerOpportunity>(),
+			Set<VolunteerOpportunity>().Include(vo => vo.TimeSlots),
 			vo => vo.Id);
 
 	internal IQueryable<VolunteerOpportunity> VolunteerOpportunitiesQuery => Set<VolunteerOpportunity>().AsNoTracking();
@@ -48,6 +48,12 @@ internal sealed class ApplicationDbContext(
 			Set<Notification>(),
 			Set<Notification>(),
 			n => n.Id);
+
+	public IAggregateRepository<User, UserId> Users
+		=> new AggregateRepository<User, UserId>(
+			Set<User>(),
+			Set<User>(),
+			u => u.Id);
 
 	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
 
@@ -80,11 +86,26 @@ internal sealed class ApplicationDbContext(
 		await Set<UserStreak>()
 			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
 
+
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
 		CancellationToken cancellationToken = default) =>
 		await Set<Notification>()
 			.Where(n => n.RecipientId == recipientId && !n.IsRead)
+			.ToListAsync(cancellationToken);
+
+	public async Task DeleteNotificationsForRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Notification>()
+			.Where(n => n.RecipientId == recipientId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.Where(e => e.VolunteerId == volunteerId)
 			.ToListAsync(cancellationToken);
 
 	protected override void OnModelCreating(

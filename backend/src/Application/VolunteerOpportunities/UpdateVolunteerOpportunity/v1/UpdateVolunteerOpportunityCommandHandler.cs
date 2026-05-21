@@ -48,7 +48,9 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			address,
 			request.Occurrence,
 			request.ParticipationType,
-			request.CheckInMethod);
+			request.CheckInMethod,
+			request.Category,
+			request.Tags);
 
 		return true;
 	}

@@ -16,4 +16,6 @@ public sealed record GetVolunteerOpportunitiesRequest(
 	double? West,
 	double? CenterLatitude,
 	double? CenterLongitude,
-	double? RadiusKm);
+	double? RadiusKm,
+	string? Category,
+	string? Tag);

@@ -16,6 +16,9 @@ public sealed record VolunteerOpportunityDetails(
 	string Occurrence,
 	string ParticipationType,
 	string CheckInMethod,
+	string? Category,
+	IReadOnlyList<string> Tags,
+	string? CheckInPin,
 	IReadOnlyList<TimeSlotDetail> TimeSlots,
 	DateTimeOffset CreatedOn);
 

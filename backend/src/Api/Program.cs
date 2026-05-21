@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.ExceptionHandlers;
 using Api.Common.Middleware;
 using Api.Common.RateLimiting;
 using Application;
@@ -65,6 +66,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
+
 builder.Services.AddOpenApi("v1", options =>
 {
 	options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
@@ -96,6 +101,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 
+app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();

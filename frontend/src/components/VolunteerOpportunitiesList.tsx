@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
+import EmptyState from "./EmptyState";
 import OpportunityMap from "./OpportunityMap";
 import {
 	useOpportunityViewFilters,
@@ -23,7 +24,6 @@ export default function VolunteerOpportunitiesList({
 	canCreateOpportunity,
 }: Props) {
 	const api = useApiClient();
-	const navigate = useNavigate();
 	const { t } = useTranslation();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const search = searchParams.get("search") ?? "";
@@ -33,6 +33,8 @@ export default function VolunteerOpportunitiesList({
 	const isRemoteParam = searchParams.get("isRemote") ?? "";
 	const dateFrom = searchParams.get("dateFrom") ?? "";
 	const dateTo = searchParams.get("dateTo") ?? "";
+	const category = searchParams.get("category") ?? "";
+	const tag = searchParams.get("tag") ?? "";
 
 	const [searchInput, setSearchInput] = useState(search);
 
@@ -60,6 +62,8 @@ export default function VolunteerOpportunitiesList({
 		isRemoteParam,
 		dateFrom,
 		dateTo,
+		category,
+		tag,
 		isMap,
 		refreshKey,
 		bn: bounds?.north,
@@ -78,6 +82,8 @@ export default function VolunteerOpportunitiesList({
 			prev.isRemoteParam !== isRemoteParam ||
 			prev.dateFrom !== dateFrom ||
 			prev.dateTo !== dateTo ||
+			prev.category !== category ||
+			prev.tag !== tag ||
 			prev.isMap !== isMap ||
 			prev.bn !== bounds?.north ||
 			prev.bs !== bounds?.south ||
@@ -93,6 +99,8 @@ export default function VolunteerOpportunitiesList({
 			isRemoteParam,
 			dateFrom,
 			dateTo,
+			category,
+			tag,
 			isMap,
 			refreshKey,
 			bn: bounds?.north,
@@ -143,6 +151,8 @@ export default function VolunteerOpportunitiesList({
 				undefined,
 				undefined,
 				undefined,
+				category || undefined,
+				tag || undefined,
 			)
 			.then((result) => {
 				if (cancelled) return;
@@ -172,6 +182,8 @@ export default function VolunteerOpportunitiesList({
 		isRemoteParam,
 		dateFrom,
 		dateTo,
+		category,
+		tag,
 		isMap,
 		bounds?.north,
 		bounds?.south,
@@ -209,6 +221,8 @@ export default function VolunteerOpportunitiesList({
 				next.delete("isRemote");
 				next.delete("dateFrom");
 				next.delete("dateTo");
+				next.delete("category");
+				next.delete("tag");
 				return next;
 			},
 			{ replace: true },
@@ -222,7 +236,9 @@ export default function VolunteerOpportunitiesList({
 		participationType ||
 		isRemoteParam ||
 		dateFrom ||
-		dateTo
+		dateTo ||
+		category ||
+		tag
 	);
 
 	function handleBoundsChange(next: OpportunityBounds) {
@@ -280,6 +296,7 @@ export default function VolunteerOpportunitiesList({
 			<div className="mb-4 flex flex-wrap gap-2">
 				<input
 					type="text"
+					aria-label={t("opportunities.searchPlaceholder")}
 					placeholder={t("opportunities.searchPlaceholder")}
 					value={searchInput}
 					onChange={(e) => setSearchInput(e.target.value)}
@@ -291,12 +308,14 @@ export default function VolunteerOpportunitiesList({
 				/>
 				<input
 					type="text"
+					aria-label={t("opportunities.cityPlaceholder")}
 					placeholder={t("opportunities.cityPlaceholder")}
 					value={city}
 					onChange={(e) => updateFilter("city", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm"
 				/>
 				<select
+					aria-label={t("opportunities.allFrequencies")}
 					value={occurrence}
 					onChange={(e) => updateFilter("occurrence", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -306,6 +325,7 @@ export default function VolunteerOpportunitiesList({
 					<option value="Recurring">{t("opportunities.recurring")}</option>
 				</select>
 				<select
+					aria-label={t("opportunities.allTypes")}
 					value={participationType}
 					onChange={(e) => updateFilter("participationType", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -317,6 +337,7 @@ export default function VolunteerOpportunitiesList({
 					</option>
 				</select>
 				<select
+					aria-label={t("opportunities.allLocations")}
 					value={isRemoteParam}
 					onChange={(e) => updateFilter("isRemote", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
@@ -339,6 +360,32 @@ export default function VolunteerOpportunitiesList({
 					onChange={(e) => updateFilter("dateTo", e.target.value)}
 					className="rounded border px-3 py-1.5 text-sm text-gray-700"
 				/>
+				<select
+					aria-label={t("opportunities.allCategories")}
+					value={category}
+					onChange={(e) => updateFilter("category", e.target.value)}
+					className="rounded border px-3 py-1.5 text-sm text-gray-700"
+				>
+					<option value="">{t("opportunities.allCategories")}</option>
+					{(
+						[
+							"Social",
+							"Environment",
+							"Sport",
+							"Education",
+							"DisasterRelief",
+							"Health",
+							"Animals",
+							"Culture",
+							"Technology",
+							"Other",
+						] as const
+					).map((c) => (
+						<option key={c} value={c}>
+							{t(`opportunities.category.${c}`)}
+						</option>
+					))}
+				</select>
 				{hasFilters && (
 					<button
 						type="button"
@@ -372,53 +419,92 @@ export default function VolunteerOpportunitiesList({
 			{!error && (
 				<>
 					{!loading && items.length === 0 ? (
-						<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
-							{isMap ? t("map.noPinsInView") : t("opportunities.noResults")}
-						</p>
+						isMap ? (
+							<p className="mt-4 text-gray-500">{t("map.noPinsInView")}</p>
+						) : (
+							<EmptyState
+								title={t("opportunities.noResults")}
+								message={
+									hasFilters
+										? t("opportunities.noResultsWithFilters")
+										: undefined
+								}
+								action={
+									hasFilters
+										? {
+												label: t("opportunities.clearFilters"),
+												onClick: clearFilters,
+											}
+										: undefined
+								}
+							/>
+						)
 					) : (
 						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<li
 									key={item.id}
-									className="cursor-pointer rounded border p-4 hover:bg-gray-50 transition-colors"
-									onClick={() =>
-										navigate(`/volunteer-opportunities/${item.id}`)
-									}
+									className="relative rounded border hover:bg-gray-50 transition-colors"
 								>
-									<div className="flex items-start justify-between">
-										<div>
-											<strong className="block text-sm font-medium">
-												{item.title}
-											</strong>
-											<p className="mt-1 text-sm text-gray-600">
-												{item.description}
-											</p>
+									<Link
+										to={`/volunteer-opportunities/${item.id}`}
+										className="absolute inset-0 rounded"
+										aria-label={item.title}
+									/>
+									<div className="p-4">
+										<div className="flex items-start justify-between">
+											<div>
+												<strong className="block text-sm font-medium">
+													{item.title}
+												</strong>
+												<p className="mt-1 text-sm text-gray-600">
+													{item.description}
+												</p>
+											</div>
+											<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+												<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+													{formatOccurrence(item.occurrence, t)}
+												</span>
+												<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+													{formatParticipationType(item.participationType, t)}
+												</span>
+												{item.category && (
+													<span className="rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
+														{t(`opportunities.category.${item.category}`)}
+													</span>
+												)}
+											</div>
 										</div>
-										<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-											<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-												{formatOccurrence(item.occurrence, t)}
-											</span>
-											<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-												{formatParticipationType(item.participationType, t)}
-											</span>
-										</div>
-									</div>
-									<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-										<Link
-											to={`/organizations/${item.organizationId}`}
-											className="hover:underline"
-											onClick={(e) => e.stopPropagation()}
-										>
-											{item.organizationName}
-										</Link>
-										{item.isRemote ? (
-											<span>{t("opportunities.remote")}</span>
-										) : (
-											<span>
-												{item.street} {item.houseNumber}, {item.zipCode}{" "}
-												{item.city}
-											</span>
+										{item.tags && item.tags.length > 0 && (
+											<div className="relative z-10 mt-2 flex flex-wrap gap-1">
+												{item.tags.map((tagItem) => (
+													<button
+														key={tagItem}
+														type="button"
+														onClick={() => updateFilter("tag", tagItem)}
+														className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-200"
+													>
+														#{tagItem}
+													</button>
+												))}
+											</div>
 										)}
+										<div className="relative z-10 mt-2 flex items-center gap-4 text-xs text-gray-500">
+											<Link
+												to={`/organizations/${item.organizationId}`}
+												className="hover:underline"
+											>
+												{item.organizationName}
+											</Link>
+											{item.isRemote ? (
+												<span>{t("opportunities.remote")}</span>
+											) : (
+												<span>
+													{item.street} {item.houseNumber}, {item.zipCode}{" "}
+													{item.city}
+												</span>
+											)}
+										</div>
 									</div>
 								</li>
 							))}

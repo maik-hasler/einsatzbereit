@@ -64,7 +64,29 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		var command = new UpdateVolunteerOpportunityCommand(opportunityId, request.Title, request.Description, request.IsRemote, address, occurrence, participationType, checkInMethod);
+		Category? category = null;
+		if (!string.IsNullOrWhiteSpace(request.Category))
+		{
+			if (!Enum.TryParse<Category>(request.Category, ignoreCase: true, out var parsedCategory))
+			{
+				return Results.Problem(
+					"Invalid category.",
+					statusCode: StatusCodes.Status400BadRequest);
+			}
+			category = parsedCategory;
+		}
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId,
+			request.Title,
+			request.Description,
+			request.IsRemote,
+			address,
+			occurrence,
+			participationType,
+			checkInMethod,
+			category,
+			[.. request.Tags ?? []]);
 
 		await sender.Send(command, cancellationToken);
 
