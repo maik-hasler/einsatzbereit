@@ -201,170 +201,6 @@
         }
       }
     },
-    "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}": {
-      "put": {
-        "tags": [
-          "UpdateTimeSlotEndpoint"
-        ],
-        "operationId": "UpdateTimeSlot",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "timeSlotId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTimeSlotRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "DeleteTimeSlotEndpoint"
-        ],
-        "operationId": "DeleteTimeSlot",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "timeSlotId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/volunteer-opportunities": {
       "get": {
         "tags": [
@@ -532,20 +368,6 @@
               ],
               "format": "double"
             }
-          },
-          {
-            "name": "Category",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Tag",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -629,97 +451,6 @@
           },
           "403": {
             "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/volunteer-opportunities/{opportunityId}/time-slots": {
-      "post": {
-        "tags": [
-          "CreateTimeSlotEndpoint"
-        ],
-        "operationId": "CreateTimeSlot",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTimeSlotRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateTimeSlotResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1180,67 +911,6 @@
           },
           "401": {
             "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/organizations/{organizationId}/dashboard": {
-      "get": {
-        "tags": [
-          "GetOrganizationDashboardEndpoint"
-        ],
-        "operationId": "GetOrganizationDashboard",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrganizationDashboardResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1784,6 +1454,148 @@
         }
       }
     },
+    "/v1/me/engagements/{engagementId}/check-in": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInWithPin",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInWithPinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engagements/{engagementId}/check-in": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInEngagement",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/engagements/{engagementId}/cancel": {
       "put": {
         "tags": [
@@ -1956,6 +1768,17 @@
           }
         }
       },
+      "CheckInWithPinRequest": {
+        "required": [
+          "pin"
+        ],
+        "type": "object",
+        "properties": {
+          "pin": {
+            "type": "string"
+          }
+        }
+      },
       "CreateEngagementRequest": {
         "required": [
           "type",
@@ -2019,63 +1842,6 @@
           }
         }
       },
-      "CreateTimeSlotRequest": {
-        "required": [
-          "startDateTime",
-          "endDateTime",
-          "maxParticipants"
-        ],
-        "type": "object",
-        "properties": {
-          "startDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "maxParticipants": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          }
-        }
-      },
-      "CreateTimeSlotResponse": {
-        "required": [
-          "id",
-          "startDateTime",
-          "endDateTime",
-          "maxParticipants"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "startDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "maxParticipants": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          }
-        }
-      },
       "CreateVolunteerOpportunityRequest": {
         "required": [
           "title",
@@ -2087,9 +1853,7 @@
           "city",
           "occurrence",
           "participationType",
-          "checkInMethod",
-          "category",
-          "tags"
+          "checkInMethod"
         ],
         "type": "object",
         "properties": {
@@ -2123,21 +1887,6 @@
           },
           "checkInMethod": {
             "type": "string"
-          },
-          "category": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "tags": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string"
-            }
           }
         }
       },
@@ -2157,8 +1906,6 @@
           "occurrence",
           "participationType",
           "checkInMethod",
-          "category",
-          "tags",
           "createdOn"
         ],
         "type": "object",
@@ -2231,18 +1978,6 @@
           "checkInMethod": {
             "type": "string"
           },
-          "category": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -2290,6 +2025,7 @@
           "timeSlotId",
           "message",
           "status",
+          "isCheckedIn",
           "createdOn"
         ],
         "type": "object",
@@ -2322,6 +2058,9 @@
           "status": {
             "type": "string"
           },
+          "isCheckedIn": {
+            "type": "boolean"
+          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -2350,11 +2089,7 @@
           "username",
           "firstName",
           "lastName",
-          "email",
-          "bio",
-          "skills",
-          "languages",
-          "preferredContact"
+          "email"
         ],
         "type": "object",
         "properties": {
@@ -2379,30 +2114,6 @@
           },
           "email": {
             "type": "string"
-          },
-          "bio": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "skills": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "languages": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "preferredContact": {
-            "type": [
-              "null",
-              "string"
-            ]
           }
         }
       },
@@ -2498,49 +2209,6 @@
           },
           "id": {
             "$ref": "#/components/schemas/OrganizationId"
-          }
-        }
-      },
-      "OrganizationDashboardResponse": {
-        "required": [
-          "openOpportunities",
-          "pendingEngagements",
-          "confirmedEngagementsNext7Days",
-          "cancelledEngagements"
-        ],
-        "type": "object",
-        "properties": {
-          "openOpportunities": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "pendingEngagements": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "confirmedEngagementsNext7Days": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "cancelledEngagements": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
           }
         }
       },
@@ -2997,32 +2665,6 @@
           }
         }
       },
-      "UpdateTimeSlotRequest": {
-        "required": [
-          "startDateTime",
-          "endDateTime",
-          "maxParticipants"
-        ],
-        "type": "object",
-        "properties": {
-          "startDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDateTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "maxParticipants": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          }
-        }
-      },
       "UpdateUserProfileRequest": {
         "type": "object",
         "properties": {
@@ -3033,36 +2675,6 @@
             ]
           },
           "lastName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "bio": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "skills": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string"
-            }
-          },
-          "languages": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string"
-            }
-          },
-          "preferredContact": {
             "type": [
               "null",
               "string"
@@ -3081,9 +2693,7 @@
           "city",
           "occurrence",
           "participationType",
-          "checkInMethod",
-          "category",
-          "tags"
+          "checkInMethod"
         ],
         "type": "object",
         "properties": {
@@ -3128,21 +2738,6 @@
           },
           "checkInMethod": {
             "type": "string"
-          },
-          "category": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "tags": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string"
-            }
           }
         }
       },
@@ -3163,8 +2758,7 @@
           "occurrence",
           "participationType",
           "checkInMethod",
-          "category",
-          "tags",
+          "checkInPin",
           "timeSlots",
           "createdOn"
         ],
@@ -3241,17 +2835,11 @@
           "checkInMethod": {
             "type": "string"
           },
-          "category": {
+          "checkInPin": {
             "type": [
               "null",
               "string"
             ]
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           },
           "timeSlots": {
             "type": "array",
@@ -3282,8 +2870,6 @@
           "occurrence",
           "participationType",
           "checkInMethod",
-          "category",
-          "tags",
           "createdOn"
         ],
         "type": "object",
@@ -3359,18 +2945,6 @@
           "checkInMethod": {
             "type": "string"
           },
-          "category": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -3390,19 +2964,10 @@
       "name": "DeleteVolunteerOpportunityEndpoint"
     },
     {
-      "name": "UpdateTimeSlotEndpoint"
-    },
-    {
-      "name": "DeleteTimeSlotEndpoint"
-    },
-    {
       "name": "GetVolunteerOpportunitiesEndpoint"
     },
     {
       "name": "CreateVolunteerOpportunityEndpoint"
-    },
-    {
-      "name": "CreateTimeSlotEndpoint"
     },
     {
       "name": "Users"
@@ -3424,9 +2989,6 @@
     },
     {
       "name": "CreateOrganizationEndpoint"
-    },
-    {
-      "name": "GetOrganizationDashboardEndpoint"
     },
     {
       "name": "AddMemberEndpoint"

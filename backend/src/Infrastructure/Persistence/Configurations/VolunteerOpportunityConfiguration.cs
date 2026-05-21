@@ -63,6 +63,8 @@ internal sealed class VolunteerOpportunityConfiguration
 		builder.PrimitiveCollection(vo => vo.Tags)
 			.HasColumnType("text[]");
 
+		builder.Property(vo => vo.CheckInPin);
+
 		builder.Property(vo => vo.CreatedOn);
 
 		builder.Property(vo => vo.ModifiedOn);

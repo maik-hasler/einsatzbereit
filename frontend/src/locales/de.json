@@ -258,6 +258,25 @@
       "deleteConfirmButton": "Ja, dauerhaft loschen",
       "deleteError": "Konto konnte nicht geloscht werden. Bitte versuche es erneut oder kontaktiere den Support."
     },
+    "checkIn": {
+      "buttonLabel": "Einchecken",
+      "checkedInLabel": "Eingecheckt",
+      "title": "Einchecken",
+      "qrInstruction": "Zeige diesen QR-Code dem Veranstalter zum Einchecken.",
+      "pinInstruction": "Gib die PIN des Veranstalters ein.",
+      "pinLabel": "PIN",
+      "pinPlaceholder": "4-stellige PIN",
+      "submitPin": "Bestatigen",
+      "submitting": "…",
+      "success": "Erfolgreich eingecheckt!",
+      "invalidPin": "Falsche PIN. Bitte erneut versuchen.",
+      "manualInstruction": "Der Veranstalter wird dich manuell einchecken.",
+      "close": "Schliessen",
+      "organizerPin": "Eincheck-PIN",
+      "organizerPinHint": "Teile diese PIN mit deinen Freiwilligen damit sie einchecken konnen.",
+      "markCheckedIn": "Als eingecheckt markieren",
+      "markingCheckedIn": "…"
+    },
     "myEngagements": {
       "title": "Meine Engagements",
       "loading": "Wird geladen…",
