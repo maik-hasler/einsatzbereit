@@ -15,6 +15,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
+import AchievementsPage from "./pages/AchievementsPage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -96,6 +97,14 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							<OrganizationDashboardPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/achievements"
+					element={
+						<ProtectedRoute>
+							<AchievementsPage />
 						</ProtectedRoute>
 					}
 				/>
