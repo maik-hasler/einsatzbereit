@@ -72,6 +72,21 @@ internal sealed class ApplicationDbContext(
 		await Set<Achievement>()
 			.AnyAsync(a => a.UserId == userId && a.Name == badgeName, cancellationToken);
 
+	public IAggregateRepository<UserStreak, UserStreakId> UserStreaks
+		=> new AggregateRepository<UserStreak, UserStreakId>(
+			Set<UserStreak>(),
+			Set<UserStreak>(),
+			s => s.Id);
+
+	internal IQueryable<UserStreak> UserStreaksQuery => Set<UserStreak>().AsNoTracking();
+
+	public async Task<UserStreak?> GetUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<UserStreak>()
+			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+
+
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
 		CancellationToken cancellationToken = default) =>

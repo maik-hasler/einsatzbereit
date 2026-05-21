@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<SmtpOptionsSetup>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
 
+
 		services.ConfigureOptions<GeocodingOptionsSetup>();
 		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
 			(sp, client) =>
