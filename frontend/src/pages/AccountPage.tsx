@@ -25,7 +25,10 @@ export default function AccountPage() {
 		lastName: "",
 	});
 
+	const accessToken = auth.user?.access_token;
+
 	useEffect(() => {
+		if (!accessToken) return;
 		setLoading(true);
 		api
 			.getUserProfile()
@@ -39,7 +42,7 @@ export default function AccountPage() {
 			.catch(() => setError(t("account.loadError")))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [accessToken]);
 
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
