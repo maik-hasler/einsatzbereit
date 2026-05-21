@@ -1,3 +1,4 @@
+using Application.Achievements;
 using Application.Common;
 using Application.Common.Email;
 using Application.Common.Geocoding;
@@ -57,6 +58,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
 
 		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
+
+		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
 
 		services.ConfigureOptions<SmtpOptionsSetup>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
