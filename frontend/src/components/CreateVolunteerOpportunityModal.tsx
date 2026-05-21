@@ -74,7 +74,6 @@ export default function CreateVolunteerOpportunityModal({
 		setPendingSlots((prev) => prev.filter((s) => s.id !== id));
 	}
 
-
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
 			if (e.key === "Escape") onClose();
