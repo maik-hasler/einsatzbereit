@@ -69,6 +69,19 @@ internal sealed class KeycloakUserService(
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
+	public async Task DeleteUserAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		var response = await SendAuthorizedAsync(
+			() => httpClient.DeleteAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
 	private async Task<HttpResponseMessage> SendAuthorizedAsync(
 		Func<Task<HttpResponseMessage>> send,
 		CancellationToken cancellationToken)
