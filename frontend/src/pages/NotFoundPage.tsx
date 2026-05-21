@@ -19,7 +19,7 @@ export default function NotFoundPage() {
 
 				<Link
 					to="/"
-					className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-brand-700"
+					className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-brand-800"
 				>
 					{t("notFound.backHome")}
 				</Link>

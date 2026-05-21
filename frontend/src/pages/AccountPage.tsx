@@ -173,7 +173,7 @@ export default function AccountPage() {
 						value={profile?.email ?? ""}
 						className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
 					/>
-					<p className="mt-1 text-xs text-gray-400">{t("account.emailHint")}</p>
+					<p className="mt-1 text-xs text-gray-500">{t("account.emailHint")}</p>
 				</Field>
 
 				<Field label={t("account.fieldFirstName")} id="first-name">
@@ -220,7 +220,7 @@ export default function AccountPage() {
 				<button
 					type="button"
 					onClick={() => setShowDeleteDialog(true)}
-					className="rounded-md border border-red-600 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
+					className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
 				>
 					{t("account.deleteAccountButton")}
 				</button>
