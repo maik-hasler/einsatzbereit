@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { useApiClient } from "../hooks/useApiClient";
 import type { MyProfileResponse } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function AccountPage() {
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t } = useTranslation();
+	const navigate = useNavigate();
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },
@@ -25,21 +28,53 @@ export default function AccountPage() {
 		lastName: "",
 	});
 
+	const accessToken = auth.user?.access_token;
+
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+
 	useEffect(() => {
-		setLoading(true);
-		api
-			.getUserProfile()
-			.then((data) => {
-				setProfile(data);
-				setForm({
-					firstName: data.firstName ?? "",
-					lastName: data.lastName ?? "",
-				});
-			})
-			.catch(() => setError(t("account.loadError")))
-			.finally(() => setLoading(false));
+		let cancelled = false;
+		// Retry transient failures (e.g. the backend's /users/me briefly failing
+		// while Keycloak warms up) instead of leaving the page blank forever.
+		const retryDelaysMs = [500, 1000, 2000];
+
+		async function loadProfile() {
+			setLoading(true);
+			for (let attempt = 0; ; attempt++) {
+				try {
+					const data = await api.getUserProfile();
+					if (cancelled) return;
+					setProfile(data);
+					setForm({
+						firstName: data.firstName ?? "",
+						lastName: data.lastName ?? "",
+					});
+					setError(null);
+					return;
+				} catch {
+					if (cancelled) return;
+					if (attempt >= retryDelaysMs.length) {
+						setError(t("account.loadError"));
+						return;
+					}
+					await new Promise<void>((resolve) =>
+						setTimeout(resolve, retryDelaysMs[attempt]),
+					);
+				}
+			}
+		}
+
+		loadProfile().finally(() => {
+			if (!cancelled) setLoading(false);
+		});
+
+		return () => {
+			cancelled = true;
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [accessToken]);
 
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
@@ -65,6 +100,19 @@ export default function AccountPage() {
 			setError(t("account.saveError"));
 		} finally {
 			setSaving(false);
+		}
+	}
+
+	async function handleDeleteAccount() {
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			await api.deleteMyAccount();
+			await auth.removeUser();
+			navigate("/");
+		} catch {
+			setDeleteError(t("account.deleteError"));
+			setDeleting(false);
 		}
 	}
 
@@ -160,6 +208,38 @@ export default function AccountPage() {
 					</button>
 				</div>
 			</form>
+
+			{/* Danger zone */}
+			<div className="mt-12 rounded-lg border border-red-200 bg-red-50 p-6">
+				<h2 className="mb-1 text-base font-semibold text-red-800">
+					{t("account.dangerZoneTitle")}
+				</h2>
+				<p className="mb-4 text-sm text-red-700">
+					{t("account.dangerZoneDescription")}
+				</p>
+				<button
+					type="button"
+					onClick={() => setShowDeleteDialog(true)}
+					className="rounded-md border border-red-600 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
+				>
+					{t("account.deleteAccountButton")}
+				</button>
+			</div>
+
+			{showDeleteDialog && (
+				<ConfirmDialog
+					title={t("account.deleteConfirmTitle")}
+					message={t("account.deleteConfirmMessage")}
+					confirmLabel={t("account.deleteConfirmButton")}
+					onConfirm={handleDeleteAccount}
+					onClose={() => {
+						setShowDeleteDialog(false);
+						setDeleteError(null);
+					}}
+					loading={deleting}
+					error={deleteError}
+				/>
+			)}
 		</div>
 	);
 }

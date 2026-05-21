@@ -89,6 +89,12 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");
 
+					b.Property<bool>("IsCheckedIn")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_checked_in");
+
 					b.Property<string>("Message")
 						.HasColumnType("text")
 						.HasColumnName("message");
@@ -276,6 +282,10 @@ namespace Infrastructure.Persistence.Migrations
 						.IsRequired()
 						.HasColumnType("text")
 						.HasColumnName("check_in_method");
+
+					b.Property<string>("CheckInPin")
+						.HasColumnType("text")
+						.HasColumnName("check_in_pin");
 
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")

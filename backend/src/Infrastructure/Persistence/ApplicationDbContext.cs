@@ -79,6 +79,20 @@ internal sealed class ApplicationDbContext(
 			.Where(n => n.RecipientId == recipientId && !n.IsRead)
 			.ToListAsync(cancellationToken);
 
+	public async Task DeleteNotificationsForRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Notification>()
+			.Where(n => n.RecipientId == recipientId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.Where(e => e.VolunteerId == volunteerId)
+			.ToListAsync(cancellationToken);
+
 	protected override void OnModelCreating(
 		ModelBuilder modelBuilder) =>
 			modelBuilder.ApplyConfigurationsFromAssembly(

@@ -104,7 +104,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, Guid.NewGuid(), null, null, "Pending", DateTimeOffset.UtcNow)
+				new EngagementSummary(Guid.NewGuid(), opportunityId, Guid.NewGuid(), null, null, "Pending", false, DateTimeOffset.UtcNow)
 			]);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -134,7 +134,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, Guid.NewGuid(), null, null, "Cancelled", DateTimeOffset.UtcNow)
+				new EngagementSummary(Guid.NewGuid(), opportunityId, Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow)
 			]);
 
 		var command = new UpdateVolunteerOpportunityCommand(
