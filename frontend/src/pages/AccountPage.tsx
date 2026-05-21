@@ -26,18 +26,44 @@ export default function AccountPage() {
 	});
 
 	useEffect(() => {
-		setLoading(true);
-		api
-			.getUserProfile()
-			.then((data) => {
-				setProfile(data);
-				setForm({
-					firstName: data.firstName ?? "",
-					lastName: data.lastName ?? "",
-				});
-			})
-			.catch(() => setError(t("account.loadError")))
-			.finally(() => setLoading(false));
+		let cancelled = false;
+		// Retry transient failures (e.g. the backend's /users/me briefly failing
+		// while Keycloak warms up) instead of leaving the page blank forever.
+		const retryDelaysMs = [500, 1000, 2000];
+
+		async function loadProfile() {
+			setLoading(true);
+			for (let attempt = 0; ; attempt++) {
+				try {
+					const data = await api.getUserProfile();
+					if (cancelled) return;
+					setProfile(data);
+					setForm({
+						firstName: data.firstName ?? "",
+						lastName: data.lastName ?? "",
+					});
+					setError(null);
+					return;
+				} catch {
+					if (cancelled) return;
+					if (attempt >= retryDelaysMs.length) {
+						setError(t("account.loadError"));
+						return;
+					}
+					await new Promise<void>((resolve) =>
+						setTimeout(resolve, retryDelaysMs[attempt]),
+					);
+				}
+			}
+		}
+
+		loadProfile().finally(() => {
+			if (!cancelled) setLoading(false);
+		});
+
+		return () => {
+			cancelled = true;
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
