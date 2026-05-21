@@ -67,6 +67,14 @@ public static class ServiceCollectionExtensions
 			});
 
 		services.ConfigureOptions<KeycloakOptionsSetup>();
+
+		services.AddSingleton<KeycloakAdminTokenProvider>();
+		services.AddHttpClient(KeycloakAdminTokenProvider.HttpClientName, (sp, client) =>
+		{
+			var keycloakOptions = sp.GetRequiredService<IOptions<KeycloakOptions>>().Value;
+			client.BaseAddress = new Uri(keycloakOptions.BaseUrl);
+		});
+
 		services.AddHttpClient<IKeycloakOrganizationService, KeycloakOrganizationService>(
 			(sp, client) =>
 			{

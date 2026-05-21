@@ -29,6 +29,25 @@
       "title": "Einsatzbereit",
       "subtitle": "Engagiere dich spontan. Finde dein Ehrenamt in der Nähe."
     },
+    "landing": {
+      "heroTitle": "Bereit, etwas zu bewegen?",
+      "heroSubtitle": "Einsatzbereit bringt engagierte Helfer:innen mit regionalen Bedarfen zusammen - spontan, schnell und wirksam.",
+      "heroCta": "Einsätze finden",
+      "heroCtaOrg": "Organisation registrieren",
+      "ngoTitle": "Für Organisationen",
+      "ngoSubtitle": "Erreiche motivierte Freiwillige und besetze deine offenen Stellen schneller.",
+      "ngoBenefit1": "Ehrenamtliche Stellen in Minuten ausschreiben",
+      "ngoBenefit2": "Bewerbungen und Zeitfenster an einem Ort verwalten",
+      "ngoBenefit3": "Direkt mit deinen Freiwilligen kommunizieren",
+      "ngoCta": "Organisation erstellen",
+      "volunteerTitle": "Für Freiwillige",
+      "volunteerSubtitle": "Finde bedeutungsvolle Einsätze in deiner Nähe und engagiere dich, wann immer du Zeit hast.",
+      "volunteerBenefit1": "Lokale Bedarfe ohne Registrierung durchsuchen",
+      "volunteerBenefit2": "Für einen einmaligen Einsatz anmelden oder auf die Warteliste setzen lassen",
+      "volunteerBenefit3": "Alle deine Engagements an einem Ort verwalten",
+      "volunteerCta": "Einsätze durchsuchen",
+      "benefitsLabel": "Plattform-Vorteile"
+    },
     "opportunities": {
       "currentNeeds": "Aktuelle Bedarfe",
       "createNeed": "+ Bedarf erstellen",
