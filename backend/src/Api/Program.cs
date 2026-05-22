@@ -98,6 +98,14 @@ if (app.Environment.IsDevelopment())
 
 	app.MapOpenApi();
 }
+else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
+	var scope = app.Services.CreateScope();
+
+	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
+
+	await initializer.MigrateAsync();
+}
 
 app.MapDefaultEndpoints();
 

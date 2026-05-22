@@ -47,13 +47,14 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": [
-        "http://localhost:*"
+        "http://localhost:*",
+        "https://einsatzbereit.maik-hasler.de/*"
       ],
       "webOrigins": [
         "*"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:*"
+        "post.logout.redirect.uris": "http://localhost:*##https://einsatzbereit.maik-hasler.de/*"
       },
       "protocol": "openid-connect",
       "protocolMappers": [
