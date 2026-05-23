@@ -55,3 +55,7 @@ Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/a
 - No `.Result`/`.Wait()` - async all the way
 - **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in any file - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes
 - **Shell scripts use tab indentation** - the EditorConfig rule for `.sh` files requires tabs, not spaces
+
+## Releases (autonomous from Claude Code on the web)
+
+Releases are driven by tags. The Claude Code on the web git proxy blocks tag pushes (working-branch only), so **do not** ask the user to `git push` a tag - push a `release/vX.Y.Z[-rc.N]` branch instead and let `.github/workflows/release-rc.yml` promote it. Full flow + the one-time `RELEASE_TOKEN` setup are documented in `.github/CLAUDE.md` under "Cutting a release from Claude Code on the web".
