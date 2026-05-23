@@ -241,18 +241,38 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Copy compose file
+      - name: Render .env
+        env:
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+          TRAEFIK_DASHBOARD_AUTH: ${{ secrets.TRAEFIK_DASHBOARD_AUTH }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          KEYCLOAK_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+        run: |
+          umask 077
+          {
+            printf 'ACME_EMAIL=%s\n' "$ACME_EMAIL"
+            printf 'TRAEFIK_DASHBOARD_AUTH=%s\n' "$TRAEFIK_DASHBOARD_AUTH"
+            printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER"
+            printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD"
+            printf 'KEYCLOAK_ADMIN_USER=%s\n' "$KEYCLOAK_ADMIN_USER"
+            printf 'KEYCLOAK_ADMIN_PASSWORD=%s\n' "$KEYCLOAK_ADMIN_PASSWORD"
+          } > .env
+
+      - name: Copy compose file and .env
         run: |
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" \
-            "mkdir -p /opt/einsatzbereit"
-          scp -i ~/.ssh/id_ed25519 docker-compose.yml \
-            "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:/opt/einsatzbereit/docker-compose.yml"
+            "mkdir -p /opt/einsatzbereit && chmod 700 /opt/einsatzbereit"
+          scp -i ~/.ssh/id_ed25519 docker-compose.yml .env \
+            "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:/opt/einsatzbereit/"
 
       - name: Pull and restart
         run: |
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set -euo pipefail
             cd /opt/einsatzbereit
+            chmod 600 .env
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
