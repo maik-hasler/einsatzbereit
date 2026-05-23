@@ -10,5 +10,8 @@ FROM quay.io/keycloak/keycloak:26.6.1
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 COPY themes /opt/keycloak/themes
+COPY realms /opt/keycloak/data/import
 
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized"]
+# --import-realm imports the baked realm on first start; it is skipped once the
+# realm already exists in the database, so restarts are idempotent.
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start", "--optimized", "--import-realm"]

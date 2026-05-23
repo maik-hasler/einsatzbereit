@@ -74,14 +74,13 @@ public static class ServiceDefaultsExtensions
 
 	public static WebApplication MapDefaultEndpoints(this WebApplication app)
 	{
-		if (app.Environment.IsDevelopment())
+		// Exposed in all environments so deployment health checks and live smoke
+		// tests have a target. Both checks return only liveness status, no details.
+		app.MapHealthChecks("/health");
+		app.MapHealthChecks("/alive", new HealthCheckOptions
 		{
-			app.MapHealthChecks("/health");
-			app.MapHealthChecks("/alive", new HealthCheckOptions
-			{
-				Predicate = r => r.Tags.Contains("live")
-			});
-		}
+			Predicate = r => r.Tags.Contains("live")
+		});
 
 		return app;
 	}
