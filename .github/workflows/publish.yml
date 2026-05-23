@@ -79,7 +79,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-          if echo "$TAG" | grep -qE '-rc\.'; then
+          if [[ "$TAG" == *-rc.* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
@@ -149,7 +149,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-          if echo "$TAG" | grep -qE '-rc\.'; then
+          if [[ "$TAG" == *-rc.* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
@@ -193,7 +193,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-          if echo "$TAG" | grep -qE '-rc\.'; then
+          if [[ "$TAG" == *-rc.* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
