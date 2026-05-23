@@ -243,21 +243,26 @@ jobs:
 
       - name: Render .env
         env:
-          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
-          TRAEFIK_DASHBOARD_AUTH: ${{ secrets.TRAEFIK_DASHBOARD_AUTH }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           KEYCLOAK_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
         run: |
           umask 077
+          # Wrap each value in double quotes and escape \ and " so secrets that
+          # contain quotes, hashes, leading apostrophes or other compose .env
+          # metacharacters do not break the parser.
+          escape() {
+            local v="$1"
+            v="${v//\\/\\\\}"
+            v="${v//\"/\\\"}"
+            printf '%s' "$v"
+          }
           {
-            printf 'ACME_EMAIL=%s\n' "$ACME_EMAIL"
-            printf 'TRAEFIK_DASHBOARD_AUTH=%s\n' "$TRAEFIK_DASHBOARD_AUTH"
-            printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER"
-            printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD"
-            printf 'KEYCLOAK_ADMIN_USER=%s\n' "$KEYCLOAK_ADMIN_USER"
-            printf 'KEYCLOAK_ADMIN_PASSWORD=%s\n' "$KEYCLOAK_ADMIN_PASSWORD"
+            printf 'POSTGRES_USER="%s"\n' "$(escape "$POSTGRES_USER")"
+            printf 'POSTGRES_PASSWORD="%s"\n' "$(escape "$POSTGRES_PASSWORD")"
+            printf 'KEYCLOAK_ADMIN_USER="%s"\n' "$(escape "$KEYCLOAK_ADMIN_USER")"
+            printf 'KEYCLOAK_ADMIN_PASSWORD="%s"\n' "$(escape "$KEYCLOAK_ADMIN_PASSWORD")"
           } > .env
 
       - name: Copy compose file and .env

@@ -1,38 +1,8 @@
+# Traefik runs as a host-level container outside this stack (shared across
+# multiple projects on the same host). Our services attach to the existing
+# proxy network and register routes via labels - they expect a Traefik
+# instance with the `myresolver` ACME resolver already configured.
 services:
-  traefik:
-    image: traefik:v3.6.9
-    container_name: traefik
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      - proxy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - letsencrypt:/letsencrypt
-    command:
-      - --api.dashboard=true
-      - --log.level=INFO
-      - --accesslog=true
-      - --providers.docker=true
-      - --providers.docker.exposedByDefault=false
-      - --entryPoints.web.address=:80
-      - --entryPoints.web.http.redirections.entryPoint.to=websecure
-      - --entryPoints.web.http.redirections.entryPoint.scheme=https
-      - --entryPoints.websecure.address=:443
-      - --entrypoints.websecure.http.tls.certresolver=myresolver
-      - --certificatesresolvers.myresolver.acme.email=${ACME_EMAIL:?set ACME_EMAIL in .env}
-      - --certificatesresolvers.myresolver.acme.tlschallenge=true
-      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.traefik-dashboard.rule=Host(`traefik.maik-hasler.de`)
-      - traefik.http.routers.traefik-dashboard.entrypoints=websecure
-      - traefik.http.routers.traefik-dashboard.service=api@internal
-      - traefik.http.routers.traefik-dashboard.middlewares=traefik-auth
-      - traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:?set TRAEFIK_DASHBOARD_AUTH in .env}
-
   postgres:
     image: postgres:18
     container_name: postgres
@@ -138,11 +108,11 @@ services:
 networks:
   proxy:
     name: proxy
+    external: true
   db:
     name: db
 
 volumes:
-  letsencrypt:
   postgres_data:
 
 configs:
