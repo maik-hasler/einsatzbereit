@@ -190,7 +190,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
-									placeholder="123 Main St"
+									placeholder={t("createOpportunity.streetPlaceholder")}
 									value={form.street}
 									onChange={(e) =>
 										setForm((f) => ({

@@ -111,6 +111,7 @@
       "fieldDescription": "Beschreibung",
       "fieldAddress": "Adresse",
       "fieldStreet": "Straße",
+      "streetPlaceholder": "Musterstraße 1",
       "fieldNumber": "Nr.",
       "fieldZip": "PLZ",
       "fieldCity": "Ort",
