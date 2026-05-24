@@ -441,6 +441,8 @@
       "shareButton": "Share achievements",
       "shareText": "Check out my achievements on Einsatzbereit!",
       "shareCopied": "Link copied to clipboard!",
+      "shareClose": "Close",
+      "shareCopyLink": "Copy link",
       "newBadge": "🏆 New badge unlocked: {{name}}!",
       "types": {
         "Milestone": "Milestone",
