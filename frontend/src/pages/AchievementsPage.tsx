@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type {
@@ -12,6 +13,7 @@ import ShareAchievementsModal from "../components/ShareAchievementsModal";
 
 export default function AchievementsPage() {
 	const api = useApiClient();
+	const auth = useAuth();
 	const { t } = useTranslation();
 
 	usePageToolbar([
@@ -129,7 +131,14 @@ export default function AchievementsPage() {
 
 			{shareModalOpen && (
 				<ShareAchievementsModal
-					shareUrl={window.location.origin + "/achievements"}
+					shareUrl={
+						auth.user?.profile?.sub
+							? window.location.origin +
+								"/users/" +
+								auth.user.profile.sub +
+								"/achievements"
+							: window.location.origin + "/achievements"
+					}
 					onClose={() => setShareModalOpen(false)}
 				/>
 			)}
