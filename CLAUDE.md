@@ -75,8 +75,19 @@ After every bug fix or feature implementation, **always** cut a release candidat
    git push -u origin release/vX.Y.Z-rc.N
    ```
 4. `release-rc.yml` creates the tag; `publish.yml` builds images and runs `deploy-staging`. Monitor via `mcp__github__pull_request_read get_check_runs` on the release commit, or poll the Actions tab.
-5. Once `deploy-staging` reports success, smoke-test:
+5. Once `deploy-staging` reports success, smoke-test with Playwright against the live site:
    - `curl -sf https://api.maik-hasler.de/health` - must return HTTP 200
-   - Manually verify the changed behaviour at **https://einsatzbereit.maik-hasler.de**
-6. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
-7. Only then mark the task complete.
+   - Run (or write + run) a **manual Playwright script** in `scripts/` that exercises the changed behaviour end-to-end against `https://einsatzbereit.maik-hasler.de`. The script must exit 0 (all assertions green).
+     ```bash
+     # Install playwright once per session if needed
+     npm install --save-dev playwright && npx playwright install chromium
+     # Run the smoke script for the feature you just fixed
+     node scripts/smoke-test-<feature>.mjs
+     ```
+   - Notes on live Playwright scripts:
+     - Use `ignoreHTTPSErrors: true` in `browser.newContext()` (sandbox TLS)
+     - The live Keycloak (`login.maik-hasler.de`) uses a **two-step** login: fill `#username` -> click `#kc-login` -> fill `#password` -> click `#kc-login`
+     - The sign-in button text may be "Sign in" or "Anmelden" - use `/sign in|anmelden/i`
+6. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this.
+7. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
+8. Only then mark the task complete.
