@@ -111,6 +111,7 @@
       "fieldDescription": "Description",
       "fieldAddress": "Address",
       "fieldStreet": "Street",
+      "streetPlaceholder": "123 Main St",
       "fieldNumber": "No.",
       "fieldZip": "ZIP",
       "fieldCity": "City",
