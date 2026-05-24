@@ -378,6 +378,11 @@
     },
     "confirmDialog": {
       "keep": "Behalten",
+      "delete": {
+        "title": "Einsatz löschen?",
+        "message": "Möchtest du diesen Einsatz wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm": "Ja, löschen"
+      },
       "withdraw": {
         "title": "Bewerbung zurückziehen?",
         "message": "Möchtest du deine Bewerbung wirklich zurückziehen? Diese Aktion kann nicht rückgängig gemacht werden.",
