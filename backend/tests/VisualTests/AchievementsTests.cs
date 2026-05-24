@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -16,7 +17,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var shareBtn = Page.GetByRole(AriaRole.Button,
-			new() { Name = new System.Text.RegularExpressions.Regex("Errungenschaften teilen|Share achievements", System.Text.RegularExpressions.RegexOptions.IgnoreCase) });
+			new() { Name = "Errungenschaften teilen" });
 		await Expect(shareBtn).ToBeVisibleAsync();
 		await shareBtn.ClickAsync();
 
@@ -29,9 +30,9 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Share URL contains /achievements
 		var dialogText = await dialog.TextContentAsync();
 		await Expect(dialog.GetByRole(AriaRole.Button,
-			new() { Name = new System.Text.RegularExpressions.Regex("Link kopieren|Copy link", System.Text.RegularExpressions.RegexOptions.IgnoreCase) }))
+			new() { Name = "Link kopieren" }))
 			.ToBeVisibleAsync();
-		Assert.That(dialogText, Does.Contain("/achievements"));
+		dialogText.Should().Contain("/achievements");
 	}
 
 	[Test]
@@ -45,7 +46,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button,
-			new() { Name = new System.Text.RegularExpressions.Regex("Errungenschaften teilen|Share achievements", System.Text.RegularExpressions.RegexOptions.IgnoreCase) })
+			new() { Name = "Errungenschaften teilen" })
 			.ClickAsync();
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeVisibleAsync();
@@ -66,7 +67,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button,
-			new() { Name = new System.Text.RegularExpressions.Regex("Errungenschaften teilen|Share achievements", System.Text.RegularExpressions.RegexOptions.IgnoreCase) })
+			new() { Name = "Errungenschaften teilen" })
 			.ClickAsync();
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeVisibleAsync();
