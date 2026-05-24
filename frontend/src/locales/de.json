@@ -63,7 +63,7 @@
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noResults": "Keine Bedarfe gefunden.",
-      "noResultsWithFilters": "Passe deine Filter an oder setze sie zurueck.",
+      "noResultsWithFilters": "Passe deine Filter an oder setze sie zurück.",
       "loadMore": "Mehr laden",
       "previous": "← Zurück",
       "next": "Weiter →",
@@ -252,12 +252,12 @@
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
       "dangerZoneTitle": "Gefahrenzone",
-      "dangerZoneDescription": "Konto und alle personenbezogenen Daten dauerhaft loschen. Diese Aktion ist unwiderruflich. Engagements werden anonymisiert und das Keycloak-Konto wird geloscht.",
-      "deleteAccountButton": "Mein Konto loschen",
-      "deleteConfirmTitle": "Konto loschen?",
-      "deleteConfirmMessage": "Bist du sicher, dass du dein Konto dauerhaft loschen mochtest? Alle personlichen Daten werden geloscht und deine Engagements werden anonymisiert. Das kann nicht ruckgangig gemacht werden.",
-      "deleteConfirmButton": "Ja, dauerhaft loschen",
-      "deleteError": "Konto konnte nicht geloscht werden. Bitte versuche es erneut oder kontaktiere den Support."
+      "dangerZoneDescription": "Konto und alle personenbezogenen Daten dauerhaft löschen. Diese Aktion ist unwiderruflich. Engagements werden anonymisiert und das Keycloak-Konto wird gelöscht.",
+      "deleteAccountButton": "Mein Konto löschen",
+      "deleteConfirmTitle": "Konto löschen?",
+      "deleteConfirmMessage": "Bist du sicher, dass du dein Konto dauerhaft löschen möchtest? Alle persönlichen Daten werden gelöscht und deine Engagements werden anonymisiert. Das kann nicht rückgängig gemacht werden.",
+      "deleteConfirmButton": "Ja, dauerhaft löschen",
+      "deleteError": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut oder kontaktiere den Support."
     },
     "checkIn": {
       "buttonLabel": "Einchecken",
@@ -283,7 +283,7 @@
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noEngagements": "Noch keine Anmeldungen.",
-      "noEngagementsHint": "Stoebre durch verfuegbare Bedarfe und melde dich fuer einen an.",
+      "noEngagementsHint": "Stöbre durch verfügbare Bedarfe und melde dich für einen an.",
       "exploreNeeds": "Bedarfe erkunden",
       "viewOpportunity": "Bedarf anzeigen →",
       "registeredOn": "Angemeldet: {{date}}",
@@ -303,8 +303,8 @@
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noApplications": "Noch keine Bewerbungen.",
-      "noApplicationsHint": "Sobald sich Freiwillige fuer diesen Bedarf bewerben, erscheinen sie hier.",
-      "backToOpportunity": "Zurueck zum Bedarf",
+      "noApplicationsHint": "Sobald sich Freiwillige für diesen Bedarf bewerben, erscheinen sie hier.",
+      "backToOpportunity": "Zurück zum Bedarf",
       "volunteer": "Freiwilliger: {{id}}",
       "timeSlot": "Zeitslot: {{id}}",
       "receivedOn": "Eingegangen: {{date}}",
@@ -355,9 +355,9 @@
       "empty": "Keine Benachrichtigungen.",
       "kinds": {
         "EngagementCreated": "Neue Bewerbung eingegangen",
-        "EngagementConfirmed": "Deine Bewerbung wurde bestaetigt",
+        "EngagementConfirmed": "Deine Bewerbung wurde bestätigt",
         "EngagementCancelled": "Deine Bewerbung wurde abgesagt",
-        "EngagementWithdrawn": "Eine Bewerbung wurde zurueckgezogen"
+        "EngagementWithdrawn": "Eine Bewerbung wurde zurückgezogen"
       }
     },
     "language": {
@@ -408,16 +408,16 @@
     },
     "profile": {
       "title": "Mein Profil",
-      "fieldBio": "Uber mich",
-      "bioPlaceholder": "Erzahl Organisatoren etwas uber dich…",
-      "fieldSkills": "Fahigkeiten & Interessen",
-      "skillsPlaceholder": "Fahigkeit eingeben und Enter drucken",
+      "fieldBio": "Über mich",
+      "bioPlaceholder": "Erzähl Organisatoren etwas über dich…",
+      "fieldSkills": "Fähigkeiten & Interessen",
+      "skillsPlaceholder": "Fähigkeit eingeben und Enter drücken",
       "fieldLanguages": "Sprachen",
-      "languagesPlaceholder": "Sprache eingeben und Enter drucken",
+      "languagesPlaceholder": "Sprache eingeben und Enter drücken",
       "fieldPreferredContact": "Bevorzugter Kontaktweg",
       "preferredContactEmail": "E-Mail",
       "preferredContactPhone": "Telefon",
-      "preferredContactNone": "Keine Praferenz",
+      "preferredContactNone": "Keine Präferenz",
       "saving": "Wird gespeichert…",
       "save": "Speichern",
       "savedSuccess": "Profil gespeichert.",
@@ -461,16 +461,16 @@
       "achievements": "Meine Errungenschaften"
     },
     "error": {
-      "forbidden": "Du hast keine Berechtigung fur diese Aktion.",
-      "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es spater erneut.",
+      "forbidden": "Du hast keine Berechtigung für diese Aktion.",
+      "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
       "boundaryTitle": "Etwas ist schiefgelaufen",
-      "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zuruck navigieren oder die Seite neu laden.",
-      "goBack": "Zuruck",
+      "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zurück navigieren oder die Seite neu laden.",
+      "goBack": "Zurück",
       "reload": "Neu laden",
       "500Title": "Serverfehler",
-      "500Message": "Ein unerwarteter Serverfehler ist aufgetreten. Bitte versuche es spater erneut.",
+      "500Message": "Ein unerwarteter Serverfehler ist aufgetreten. Bitte versuche es später erneut.",
       "backHome": "Zur Startseite",
-      "dismiss": "Schliessen"
+      "dismiss": "Schließen"
     }
   }
 }
