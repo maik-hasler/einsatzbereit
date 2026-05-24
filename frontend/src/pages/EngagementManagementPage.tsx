@@ -187,19 +187,31 @@ export default function EngagementManagementPage() {
 						<li key={e.id} className="rounded border p-4">
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
-									<p className="font-mono text-xs text-gray-500">
-										{t("engagementManagement.volunteer", { id: e.volunteerId })}
+									<p className="text-xs text-gray-500">
+										{t("engagementManagement.volunteer", {
+											id: e.volunteerId.slice(0, 8) + "…",
+										})}
 									</p>
 									{e.message && (
 										<p className="mt-1 text-sm text-gray-700">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
-									{e.timeSlotId && (
-										<p className="mt-1 text-xs text-gray-400">
-											{t("engagementManagement.timeSlot", { id: e.timeSlotId })}
-										</p>
-									)}
+									{e.timeSlotId &&
+										(() => {
+											const slot = opportunity?.timeSlots.find(
+												(s) => s.id === e.timeSlotId,
+											);
+											return (
+												<p className="mt-1 text-xs text-gray-400">
+													{slot
+														? `${new Date(slot.startDateTime as unknown as string).toLocaleString(locale)} - ${new Date(slot.endDateTime as unknown as string).toLocaleTimeString(locale)}`
+														: t("engagementManagement.timeSlot", {
+																id: e.timeSlotId.slice(0, 8) + "…",
+															})}
+												</p>
+											);
+										})()}
 									<p className="mt-1 text-xs text-gray-400">
 										{t("engagementManagement.receivedOn", {
 											date: new Date(e.createdOn).toLocaleDateString(locale),

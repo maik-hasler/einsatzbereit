@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
@@ -113,6 +113,11 @@ export default function App() {
 					path="/users/:userId/achievements"
 					element={<UserAchievementsPage />}
 				/>
+				<Route
+					path="/opportunities"
+					element={<Navigate to="/#opportunities" replace />}
+				/>
+				<Route path="/organizations" element={<Navigate to="/" replace />} />
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>

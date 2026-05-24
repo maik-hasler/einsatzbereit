@@ -39,7 +39,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("breadcrumb.volunteerOpportunities"), href: "/" },
+		{ label: t("breadcrumb.volunteerOpportunities"), href: "/#opportunities" },
 		{ label: opportunity?.title ?? "" },
 	]);
 
