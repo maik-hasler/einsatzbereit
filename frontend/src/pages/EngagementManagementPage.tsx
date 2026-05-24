@@ -9,6 +9,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import { formatDateTime } from "../lib/format";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -188,18 +189,28 @@ export default function EngagementManagementPage() {
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
 									<p className="font-mono text-xs text-gray-500">
-										{t("engagementManagement.volunteer", { id: e.volunteerId })}
+										{t("engagementManagement.volunteer", {
+											id: e.volunteerId.slice(0, 8) + "...",
+										})}
 									</p>
 									{e.message && (
 										<p className="mt-1 text-sm text-gray-700">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
-									{e.timeSlotId && (
-										<p className="mt-1 text-xs text-gray-400">
-											{t("engagementManagement.timeSlot", { id: e.timeSlotId })}
-										</p>
-									)}
+									{e.timeSlotId &&
+										(() => {
+											const slot = opportunity?.timeSlots.find(
+												(s) => s.id === e.timeSlotId,
+											);
+											return (
+												<p className="mt-1 text-xs text-gray-400">
+													{slot
+														? `${formatDateTime(slot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(slot.endDateTime as unknown as string, i18n.language)}`
+														: e.timeSlotId.slice(0, 8) + "..."}
+												</p>
+											);
+										})()}
 									<p className="mt-1 text-xs text-gray-400">
 										{t("engagementManagement.receivedOn", {
 											date: new Date(e.createdOn).toLocaleDateString(locale),
