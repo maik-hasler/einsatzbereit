@@ -133,7 +133,7 @@ export default function OrganizationDashboardPage() {
 					description={t("orgDashboard.pendingEngagementsDesc")}
 					value={data?.pendingEngagements}
 					loading={loading}
-					to={`/organizations/${organizationId}/settings`}
+					to={`/organizations/${organizationId}`}
 					color="yellow"
 				/>
 				<KpiCard
@@ -141,7 +141,7 @@ export default function OrganizationDashboardPage() {
 					description={t("orgDashboard.confirmedNext7DaysDesc")}
 					value={data?.confirmedEngagementsNext7Days}
 					loading={loading}
-					to={`/organizations/${organizationId}/settings`}
+					to={`/organizations/${organizationId}`}
 					color="green"
 				/>
 				<KpiCard
@@ -149,7 +149,7 @@ export default function OrganizationDashboardPage() {
 					description={t("orgDashboard.cancelledEngagementsDesc")}
 					value={data?.cancelledEngagements}
 					loading={loading}
-					to={`/organizations/${organizationId}/settings`}
+					to={`/organizations/${organizationId}`}
 					color="red"
 				/>
 			</div>
