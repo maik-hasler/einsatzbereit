@@ -17,7 +17,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var shareBtn = Page.GetByRole(AriaRole.Button,
-			new() { Name = "Errungenschaften teilen" });
+			new() { Name = "Share achievements" });
 		await Expect(shareBtn).ToBeVisibleAsync();
 		await shareBtn.ClickAsync();
 
@@ -30,7 +30,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Share URL contains /achievements
 		var dialogText = await dialog.TextContentAsync();
 		await Expect(dialog.GetByRole(AriaRole.Button,
-			new() { Name = "Link kopieren" }))
+			new() { Name = "Copy link" }))
 			.ToBeVisibleAsync();
 		dialogText.Should().Contain("/achievements");
 	}
@@ -46,7 +46,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button,
-			new() { Name = "Errungenschaften teilen" })
+			new() { Name = "Share achievements" })
 			.ClickAsync();
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeVisibleAsync();
@@ -67,7 +67,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByRole(AriaRole.Button,
-			new() { Name = "Errungenschaften teilen" })
+			new() { Name = "Share achievements" })
 			.ClickAsync();
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeVisibleAsync();
