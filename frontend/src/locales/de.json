@@ -441,6 +441,8 @@
       "shareButton": "Errungenschaften teilen",
       "shareText": "Schau dir meine Errungenschaften auf Einsatzbereit an!",
       "shareCopied": "Link in die Zwischenablage kopiert!",
+      "shareClose": "Schließen",
+      "shareCopyLink": "Link kopieren",
       "newBadge": "🏆 Neues Abzeichen freigeschaltet: {{name}}!",
       "types": {
         "Milestone": "Meilenstein",

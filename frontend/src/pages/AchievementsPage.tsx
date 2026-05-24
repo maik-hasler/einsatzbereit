@@ -7,8 +7,8 @@ import type {
 	StreakSummary,
 } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
-import { dispatchToast } from "../lib/toastBus";
 import BadgeGrid from "../components/BadgeGrid";
+import ShareAchievementsModal from "../components/ShareAchievementsModal";
 
 export default function AchievementsPage() {
 	const api = useApiClient();
@@ -24,6 +24,7 @@ export default function AchievementsPage() {
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [shareModalOpen, setShareModalOpen] = useState(false);
 
 	useEffect(() => {
 		Promise.all([
@@ -44,15 +45,7 @@ export default function AchievementsPage() {
 	}, []);
 
 	function handleShare() {
-		const text = t("achievements.shareText");
-		const url = window.location.origin + "/achievements";
-		if (navigator.share) {
-			void navigator.share({ title: t("achievements.title"), text, url });
-		} else {
-			void navigator.clipboard
-				.writeText(url)
-				.then(() => dispatchToast("success", t("achievements.shareCopied")));
-		}
+		setShareModalOpen(true);
 	}
 
 	if (error) {
@@ -133,6 +126,13 @@ export default function AchievementsPage() {
 				</h2>
 				<BadgeGrid earned={achievements} catalog={catalog} loading={loading} />
 			</section>
+
+			{shareModalOpen && (
+				<ShareAchievementsModal
+					shareUrl={window.location.origin + "/achievements"}
+					onClose={() => setShareModalOpen(false)}
+				/>
+			)}
 		</div>
 	);
 }
