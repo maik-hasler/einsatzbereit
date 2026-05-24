@@ -288,6 +288,7 @@
       "exploreNeeds": "Bedarfe erkunden",
       "viewOpportunity": "Bedarf anzeigen →",
       "registeredOn": "Angemeldet: {{date}}",
+      "checkIn": "Einchecken",
       "withdraw": "Zurückziehen",
       "withdrawing": "…",
       "withdrawError": "Fehler beim Zurückziehen",
@@ -321,6 +322,11 @@
         "Cancelled": "Abgesagt",
         "Withdrawn": "Zurückgezogen"
       }
+    },
+    "checkIn": {
+      "title": "Einchecken",
+      "message": "Zeige diesen Bildschirm dem Organisator oder scanne den QR-Code vor Ort, um deine Teilnahme zu bestätigen.",
+      "close": "Fertig"
     },
     "datenschutz": {
       "title": "Datenschutzerklärung",
