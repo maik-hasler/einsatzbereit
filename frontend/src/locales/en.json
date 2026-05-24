@@ -378,6 +378,11 @@
     },
     "confirmDialog": {
       "keep": "Keep",
+      "delete": {
+        "title": "Delete opportunity?",
+        "message": "Are you sure you want to permanently delete this opportunity? This cannot be undone.",
+        "confirm": "Yes, delete"
+      },
       "withdraw": {
         "title": "Withdraw application?",
         "message": "Are you sure you want to withdraw your application? This cannot be undone.",

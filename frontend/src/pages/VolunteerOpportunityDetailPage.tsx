@@ -11,6 +11,7 @@ import {
 } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
 import EditVolunteerOpportunityModal from "../components/EditVolunteerOpportunityModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 
 export default function VolunteerOpportunityDetailPage() {
@@ -27,7 +28,9 @@ export default function VolunteerOpportunityDetailPage() {
 	const [showSignUp, setShowSignUp] = useState(false);
 	const [signedUp, setSignedUp] = useState(false);
 	const [showEdit, setShowEdit] = useState(false);
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
@@ -56,14 +59,15 @@ export default function VolunteerOpportunityDetailPage() {
 			.finally(() => setLoading(false));
 	}
 
-	async function handleDelete() {
-		if (!opportunityId || !confirm(t("opportunities.confirmDelete"))) return;
+	async function handleDeleteConfirm() {
+		if (!opportunityId) return;
 		setDeleting(true);
+		setDeleteError(null);
 		try {
 			await api.deleteVolunteerOpportunity(opportunityId);
 			navigate("/");
 		} catch (err) {
-			alert(
+			setDeleteError(
 				err instanceof Error ? err.message : t("opportunities.deleteError"),
 			);
 			setDeleting(false);
@@ -98,7 +102,7 @@ export default function VolunteerOpportunityDetailPage() {
 							{t("opportunities.edit")}
 						</button>
 						<button
-							onClick={handleDelete}
+							onClick={() => setShowDeleteConfirm(true)}
 							disabled={deleting}
 							className="rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
 						>
@@ -233,6 +237,21 @@ export default function VolunteerOpportunityDetailPage() {
 					opportunity={opportunity}
 					onClose={() => setShowEdit(false)}
 					onSuccess={load}
+				/>
+			)}
+
+			{showDeleteConfirm && (
+				<ConfirmDialog
+					title={t("confirmDialog.delete.title")}
+					message={t("confirmDialog.delete.message")}
+					confirmLabel={t("confirmDialog.delete.confirm")}
+					onConfirm={handleDeleteConfirm}
+					onClose={() => {
+						setShowDeleteConfirm(false);
+						setDeleteError(null);
+					}}
+					loading={deleting}
+					error={deleteError}
 				/>
 			)}
 		</div>
