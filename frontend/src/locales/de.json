@@ -377,6 +377,11 @@
     },
     "confirmDialog": {
       "keep": "Behalten",
+      "delete": {
+        "title": "Einsatz loeschen?",
+        "message": "Moechtest du diesen Einsatz wirklich dauerhaft loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.",
+        "confirm": "Ja, loeschen"
+      },
       "withdraw": {
         "title": "Bewerbung zurückziehen?",
         "message": "Möchtest du deine Bewerbung wirklich zurückziehen? Diese Aktion kann nicht rückgängig gemacht werden.",

@@ -28,6 +28,7 @@ void i18next
 
 i18next.on("languageChanged", (lang: string) => {
 	document.documentElement.lang = lang;
+	localStorage.setItem("i18nextLng", lang);
 });
 document.documentElement.lang = i18next.language;
 

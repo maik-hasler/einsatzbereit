@@ -1,9 +1,7 @@
 import { Link } from "react-router";
-import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 
 export default function Footer() {
-	const auth = useAuth();
 	const { t } = useTranslation();
 	const currentYear = new Date().getFullYear();
 
@@ -31,12 +29,12 @@ export default function Footer() {
 								</Link>
 							</li>
 							<li>
-								<button
-									onClick={() => auth.signinRedirect()}
+								<Link
+									to="/#opportunities"
 									className="hover:text-white transition-colors"
 								>
 									{t("footer.participate")}
-								</button>
+								</Link>
 							</li>
 						</ul>
 
