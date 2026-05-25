@@ -2,7 +2,7 @@ import "./i18n";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { AuthProvider } from "react-oidc-context";
-import { WebStorageStateStore } from "oidc-client-ts";
+import { WebStorageStateStore, type User } from "oidc-client-ts";
 import { BrowserRouter } from "react-router";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -19,8 +19,9 @@ const oidcConfig = {
 	automaticSilentRenew: true,
 	// Use localStorage so Playwright storageState captures the session
 	userStore: new WebStorageStateStore({ store: window.localStorage }),
-	onSigninCallback: () => {
-		window.location.replace("/");
+	onSigninCallback: (user: User | undefined) => {
+		const returnTo = (user?.state as { returnTo?: string })?.returnTo ?? "/";
+		window.history.replaceState({}, "", returnTo);
 	},
 };
 
