@@ -49,7 +49,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByPlaceholder("Search…").FillAsync("volunteer");
-		await Page.GetByPlaceholder("Search…").PressAsync("Enter");
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*search=volunteer"));
 	}
@@ -126,7 +125,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByPlaceholder("Search…").FillAsync("zzz_no_match_xyz_abc_999");
-		await Page.GetByPlaceholder("Search…").PressAsync("Enter");
+
+		// Wait for the debounce (400 ms) to fire and network to settle before asserting.
+		await Page.WaitForURLAsync(new Regex(@"\?.*search=zzz"), new() { Timeout = 5_000 });
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(
@@ -143,7 +144,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByPlaceholder("Search…").FillAsync("help");
-		await Page.GetByPlaceholder("Search…").PressAsync("Enter");
 		await Page.GetByPlaceholder("City…").FillAsync("Munich");
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*search=help"));
@@ -160,7 +160,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByPlaceholder("Search…").ClearAsync();
-		await Page.GetByPlaceholder("Search…").PressAsync("Enter");
 
 		await Expect(Page).Not.ToHaveURLAsync(new Regex(@"\?.*search="));
 	}
