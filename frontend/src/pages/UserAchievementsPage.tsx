@@ -8,10 +8,13 @@ import type {
 } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import BadgeGrid from "../components/BadgeGrid";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function UserAchievementsPage() {
 	const { userId } = useParams<{ userId: string }>();
 	const { t } = useTranslation();
+
+	usePageTitle(t("achievements.publicTitle"));
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },

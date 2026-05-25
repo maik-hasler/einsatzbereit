@@ -10,6 +10,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { formatDateTime } from "../lib/format";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -23,6 +24,13 @@ export default function EngagementManagementPage() {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t, i18n } = useTranslation();
+	const [opportunity, setOpportunity] =
+		useState<VolunteerOpportunityDetails | null>(null);
+	usePageTitle(
+		opportunity?.title
+			? `${t("engagementManagement.title")} - ${opportunity.title}`
+			: t("engagementManagement.title"),
+	);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("engagementManagement.status.Pending"),
@@ -34,8 +42,6 @@ export default function EngagementManagementPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
-	const [opportunity, setOpportunity] =
-		useState<VolunteerOpportunityDetails | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState<string | null>(null);

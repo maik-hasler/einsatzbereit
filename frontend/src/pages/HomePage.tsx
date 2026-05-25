@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
 import { useId } from "react";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 function CheckIcon() {
 	return (
@@ -24,6 +25,7 @@ function CheckIcon() {
 export default function HomePage() {
 	const auth = useAuth();
 	const { t } = useTranslation();
+	usePageTitle();
 	const heroTitleId = useId();
 	const volunteerTitleId = useId();
 	const ngoTitleId = useId();

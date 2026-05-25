@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { PublicOrganizationProfileResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -12,6 +13,7 @@ export default function OrganizationProfilePage() {
 
 	const [profile, setProfile] =
 		useState<PublicOrganizationProfileResponse | null>(null);
+	usePageTitle(profile?.name ?? t("orgProfile.loading"));
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 

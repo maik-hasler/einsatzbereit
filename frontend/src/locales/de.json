@@ -213,6 +213,7 @@
       "viewEngagements": "Engagements anzeigen →"
     },
     "orgSettings": {
+      "title": "Organisation bearbeiten",
       "createdOn": "Erstellt am {{date}}",
       "tabGeneral": "Allgemein",
       "tabMembers": "Mitglieder ({{count}})",

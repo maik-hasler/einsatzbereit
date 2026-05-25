@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
+import { usePageTitle } from "../hooks/usePageTitle";
 import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
@@ -15,6 +16,7 @@ export default function AchievementsPage() {
 	const api = useApiClient();
 	const auth = useAuth();
 	const { t } = useTranslation();
+	usePageTitle(t("achievements.title"));
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },
