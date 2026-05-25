@@ -105,7 +105,8 @@
       "expressInterest": "Interesse bekunden",
       "signupSuccess": "Anmeldung erfolgreich! Deine Bewerbung wurde übermittelt.",
       "notFound": "Nicht gefunden.",
-      "back": "← Zurück"
+      "back": "← Zurück",
+      "filterToggle": "Filter"
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",
