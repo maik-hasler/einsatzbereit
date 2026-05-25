@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
 	TimeSlotDetail,
@@ -130,10 +130,33 @@ export default function EditVolunteerOpportunityModal({
 
 	const isWaitlist = participationType === "Waitlist";
 
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [onClose]);
+
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-			<div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen">
-				<h2 className="mb-4 text-lg font-semibold">
+		<div className="fixed inset-0 z-50 flex items-center justify-center">
+			<button
+				type="button"
+				className="absolute inset-0 bg-black/40"
+				onClick={onClose}
+				tabIndex={-1}
+				aria-hidden="true"
+			/>
+			<div
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="edit-opportunity-dialog-title"
+				className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-screen"
+			>
+				<h2
+					id="edit-opportunity-dialog-title"
+					className="mb-4 text-lg font-semibold"
+				>
 					{t("editOpportunity.title")}
 				</h2>
 
