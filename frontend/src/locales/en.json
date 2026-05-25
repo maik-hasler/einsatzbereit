@@ -64,6 +64,7 @@
       "error": "Error: {{message}}",
       "noResults": "No opportunities found.",
       "noResultsWithFilters": "Try adjusting or clearing your filters.",
+      "noResultsWithSearch": "Try a different search term.",
       "loadMore": "Load more",
       "previous": "← Back",
       "next": "Next →",
@@ -192,12 +193,21 @@
       "selectPlaceholder": "Select organization",
       "settings": "Settings",
       "dashboard": "Dashboard",
+      "engagements": "Manage Engagements",
       "nameLabel": "Name",
       "namePlaceholder": "e.g. Volunteer Fire Department",
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
       "unknownError": "Unknown error"
+    },
+    "orgEngagements": {
+      "title": "Engagement Overview",
+      "loading": "Loading…",
+      "error": "Error: {{message}}",
+      "noOpportunities": "No open opportunities",
+      "noOpportunitiesHint": "Create a volunteer opportunity to start receiving applications.",
+      "manageEngagements": "Manage engagements →"
     },
     "orgDashboard": {
       "title": "Organization Dashboard",

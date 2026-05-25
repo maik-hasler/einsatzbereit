@@ -510,9 +510,11 @@ export default function VolunteerOpportunitiesList({
 							<EmptyState
 								title={t("opportunities.noResults")}
 								message={
-									hasFilters
-										? t("opportunities.noResultsWithFilters")
-										: undefined
+									search
+										? t("opportunities.noResultsWithSearch")
+										: hasFilters
+											? t("opportunities.noResultsWithFilters")
+											: undefined
 								}
 								action={
 									hasFilters
@@ -542,6 +544,14 @@ export default function VolunteerOpportunitiesList({
 												<strong className="block text-sm font-medium">
 													{item.title}
 												</strong>
+												<p className="mt-0.5 text-xs text-gray-500">
+													<Link
+														to={`/organizations/${item.organizationId}`}
+														className="relative z-10 hover:underline"
+													>
+														{item.organizationName}
+													</Link>
+												</p>
 												<p className="mt-1 text-sm text-gray-600">
 													{item.description}
 												</p>
@@ -574,13 +584,7 @@ export default function VolunteerOpportunitiesList({
 												))}
 											</div>
 										)}
-										<div className="relative z-10 mt-2 flex items-center gap-4 text-xs text-gray-500">
-											<Link
-												to={`/organizations/${item.organizationId}`}
-												className="hover:underline"
-											>
-												{item.organizationName}
-											</Link>
+										<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
 											{item.isRemote ? (
 												<span>{t("opportunities.remote")}</span>
 											) : (

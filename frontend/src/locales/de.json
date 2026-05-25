@@ -64,6 +64,7 @@
       "error": "Fehler: {{message}}",
       "noResults": "Keine Bedarfe gefunden.",
       "noResultsWithFilters": "Passe deine Filter an oder setze sie zurück.",
+      "noResultsWithSearch": "Versuche einen anderen Suchbegriff.",
       "loadMore": "Mehr laden",
       "previous": "← Zurück",
       "next": "Weiter →",
@@ -192,6 +193,7 @@
       "selectPlaceholder": "Organisation wählen",
       "settings": "Einstellungen",
       "dashboard": "Dashboard",
+      "engagements": "Bewerbungen verwalten",
       "nameLabel": "Name",
       "namePlaceholder": "z.B. Freiwillige Feuerwehr Musterstadt",
       "creating": "Wird erstellt…",
@@ -214,6 +216,14 @@
       "cancelledEngagementsDesc": "Insgesamt abgesagt über alle Einsätze",
       "viewOpportunities": "Einsätze anzeigen →",
       "viewEngagements": "Engagements anzeigen →"
+    },
+    "orgEngagements": {
+      "title": "Bewerbungen",
+      "loading": "Wird geladen…",
+      "error": "Fehler: {{message}}",
+      "noOpportunities": "Keine offenen Einsatzmöglichkeiten",
+      "noOpportunitiesHint": "Erstelle eine Einsatzmöglichkeit, um Bewerbungen zu erhalten.",
+      "manageEngagements": "Bewerbungen verwalten →"
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",
