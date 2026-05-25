@@ -440,6 +440,7 @@
     },
     "achievements": {
       "title": "Meine Errungenschaften",
+      "publicTitle": "Errungenschaften",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noAchievements": "Noch keine Errungenschaften. Beginne mit dem Ehrenamt, um Abzeichen zu verdienen!",
@@ -470,7 +471,8 @@
       "settings": "Einstellungen",
       "account": "Konto",
       "profile": "Profil",
-      "achievements": "Meine Errungenschaften"
+      "achievements": "Meine Errungenschaften",
+      "userAchievements": "Errungenschaften"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",

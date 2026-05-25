@@ -440,6 +440,7 @@
     },
     "achievements": {
       "title": "My Achievements",
+      "publicTitle": "Achievements",
       "loading": "Loading…",
       "error": "Error: {{message}}",
       "noAchievements": "No achievements yet. Start volunteering to earn badges!",
@@ -470,7 +471,8 @@
       "settings": "Settings",
       "account": "Account",
       "profile": "Profile",
-      "achievements": "My Achievements"
+      "achievements": "My Achievements",
+      "userAchievements": "Achievements"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",
