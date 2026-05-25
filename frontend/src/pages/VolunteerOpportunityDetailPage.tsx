@@ -13,6 +13,7 @@ import { getActiveOrgId } from "../lib/activeOrg";
 import SignUpModal from "../components/SignUpModal";
 import EditVolunteerOpportunityModal from "../components/EditVolunteerOpportunityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 
 export default function VolunteerOpportunityDetailPage() {
@@ -145,6 +146,18 @@ export default function VolunteerOpportunityDetailPage() {
 					</span>
 				)}
 			</div>
+
+			{!opportunity.isRemote &&
+				opportunity.latitude !== undefined &&
+				opportunity.longitude !== undefined && (
+					<div className="mb-6">
+						<SingleMarkerMap
+							latitude={opportunity.latitude}
+							longitude={opportunity.longitude}
+							label={`${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
+						/>
+					</div>
+				)}
 
 			{opportunity.participationType === "Waitlist" &&
 				opportunity.timeSlots.length > 0 && (
