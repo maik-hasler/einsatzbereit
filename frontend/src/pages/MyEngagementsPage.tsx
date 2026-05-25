@@ -119,7 +119,7 @@ export default function MyEngagementsPage() {
 										}
 										className="text-left text-sm font-medium text-gray-900 hover:underline"
 									>
-										{t("myEngagements.viewOpportunity")}
+										{e.opportunityTitle}
 									</button>
 									{e.message && (
 										<p className="mt-1 truncate text-sm text-gray-500">
