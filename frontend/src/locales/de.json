@@ -73,6 +73,8 @@
       "dateFromLabel": "Von Datum",
       "dateToLabel": "Bis Datum",
       "clearFilters": "Filter zurücksetzen",
+      "clearSearch": "Suche löschen",
+      "clearCity": "Stadtfilter löschen",
       "allCategories": "Alle Kategorien",
       "category": {
         "Social": "Soziales",

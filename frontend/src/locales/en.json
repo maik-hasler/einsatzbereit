@@ -73,6 +73,8 @@
       "dateFromLabel": "From date",
       "dateToLabel": "To date",
       "clearFilters": "Clear filters",
+      "clearSearch": "Clear search",
+      "clearCity": "Clear city filter",
       "allCategories": "All categories",
       "category": {
         "Social": "Social",
