@@ -453,24 +453,28 @@ export default function Header() {
 								</button>
 								<a
 									href="/my-engagements"
+									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myEngagements")}
 								</a>
 								<a
 									href="/profile"
+									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myProfile")}
 								</a>
 								<a
 									href="/achievements"
+									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myAchievements")}
 								</a>
 								<a
 									href="/account"
+									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.profileSettings")}
