@@ -340,7 +340,7 @@ export default function VolunteerOpportunitiesList({
 			</div>
 
 			<div
-				className={`mb-4 flex flex-wrap gap-2 ${filtersOpen ? "" : "hidden sm:flex"}`}
+				className={`mb-4 flex flex-wrap gap-2 ${filtersOpen ? "" : "max-sm:hidden"}`}
 			>
 				<div className="relative">
 					<input
