@@ -37,6 +37,10 @@ export default function VolunteerOpportunitiesList({
 	const tag = searchParams.get("tag") ?? "";
 
 	const [searchInput, setSearchInput] = useState(search);
+	const [cityInput, setCityInput] = useState(city);
+
+	const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const cityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
 	const isMap = view === "map";
@@ -53,6 +57,10 @@ export default function VolunteerOpportunitiesList({
 	useEffect(() => {
 		setSearchInput(search);
 	}, [search]);
+
+	useEffect(() => {
+		setCityInput(city);
+	}, [city]);
 
 	const prevFiltersRef = useRef({
 		search,
@@ -206,10 +214,6 @@ export default function VolunteerOpportunitiesList({
 		);
 	}
 
-	function commitSearch() {
-		updateFilter("search", searchInput);
-	}
-
 	function clearFilters() {
 		setSearchParams(
 			(prev) => {
@@ -294,26 +298,68 @@ export default function VolunteerOpportunitiesList({
 			</div>
 
 			<div className="mb-4 flex flex-wrap gap-2">
-				<input
-					type="text"
-					aria-label={t("opportunities.searchPlaceholder")}
-					placeholder={t("opportunities.searchPlaceholder")}
-					value={searchInput}
-					onChange={(e) => setSearchInput(e.target.value)}
-					onBlur={commitSearch}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") commitSearch();
-					}}
-					className="rounded border px-3 py-1.5 text-sm"
-				/>
-				<input
-					type="text"
-					aria-label={t("opportunities.cityPlaceholder")}
-					placeholder={t("opportunities.cityPlaceholder")}
-					value={city}
-					onChange={(e) => updateFilter("city", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm"
-				/>
+				<div className="relative">
+					<input
+						type="text"
+						aria-label={t("opportunities.searchPlaceholder")}
+						placeholder={t("opportunities.searchPlaceholder")}
+						value={searchInput}
+						onChange={(e) => {
+							const val = e.target.value;
+							setSearchInput(val);
+							if (searchDebounceRef.current)
+								clearTimeout(searchDebounceRef.current);
+							searchDebounceRef.current = setTimeout(() => {
+								updateFilter("search", val);
+							}, 400);
+						}}
+						className="rounded border px-3 py-1.5 pr-7 text-sm"
+					/>
+					{searchInput && (
+						<button
+							type="button"
+							onClick={() => {
+								setSearchInput("");
+								updateFilter("search", "");
+							}}
+							aria-label={t("opportunities.clearSearch")}
+							className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+						>
+							&times;
+						</button>
+					)}
+				</div>
+				<div className="relative">
+					<input
+						type="text"
+						aria-label={t("opportunities.cityPlaceholder")}
+						placeholder={t("opportunities.cityPlaceholder")}
+						value={cityInput}
+						onChange={(e) => {
+							const val = e.target.value;
+							setCityInput(val);
+							if (cityDebounceRef.current)
+								clearTimeout(cityDebounceRef.current);
+							cityDebounceRef.current = setTimeout(() => {
+								updateFilter("city", val);
+							}, 400);
+						}}
+						className="rounded border px-3 py-1.5 pr-7 text-sm"
+					/>
+					{cityInput && (
+						<button
+							type="button"
+							onClick={() => {
+								setCityInput("");
+								updateFilter("city", "");
+							}}
+							aria-label={t("opportunities.clearCity")}
+							className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+						>
+							&times;
+						</button>
+					)}
+				</div>
 				<select
 					aria-label={t("opportunities.allFrequencies")}
 					value={occurrence}
