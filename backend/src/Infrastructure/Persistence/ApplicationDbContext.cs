@@ -108,6 +108,12 @@ internal sealed class ApplicationDbContext(
 			.Where(e => e.VolunteerId == volunteerId)
 			.ToListAsync(cancellationToken);
 
+	public async Task<int> CountConfirmedEngagementsForVolunteerAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.CountAsync(e => e.VolunteerId == volunteerId && e.Status == EngagementStatus.Confirmed, cancellationToken);
+
 	protected override void OnModelCreating(
 		ModelBuilder modelBuilder) =>
 			modelBuilder.ApplyConfigurationsFromAssembly(

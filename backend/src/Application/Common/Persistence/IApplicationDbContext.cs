@@ -45,4 +45,8 @@ public interface IApplicationDbContext
 	Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
+
+	Task<int> CountConfirmedEngagementsForVolunteerAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default);
 }
