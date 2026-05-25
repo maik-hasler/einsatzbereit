@@ -5,6 +5,7 @@ import type { PublicOrganizationProfileResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -13,9 +14,14 @@ export default function OrganizationProfilePage() {
 
 	const [profile, setProfile] =
 		useState<PublicOrganizationProfileResponse | null>(null);
-	usePageTitle(profile?.name ?? t("orgProfile.loading"));
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	usePageTitle(profile?.name ?? t("orgProfile.loading"));
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{ label: profile?.name ?? t("orgProfile.loading") },
+	]);
 
 	useEffect(() => {
 		if (!organizationId) return;
