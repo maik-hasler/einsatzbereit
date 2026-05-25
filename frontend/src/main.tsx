@@ -21,7 +21,7 @@ const oidcConfig = {
 	userStore: new WebStorageStateStore({ store: window.localStorage }),
 	onSigninCallback: (user: User | undefined) => {
 		const returnTo = (user?.state as { returnTo?: string })?.returnTo ?? "/";
-		window.history.replaceState({}, "", returnTo);
+		window.location.replace(returnTo);
 	},
 };
 
