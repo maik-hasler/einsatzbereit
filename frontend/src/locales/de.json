@@ -349,7 +349,7 @@
     "datenschutz": {
       "title": "Datenschutzerklärung",
       "section1Title": "Verantwortliche Stelle",
-      "section1Body": "Maik Hasler\nAdresse auf Anfrage\nE-Mail: maikhslr@gmail.com",
+      "section1Body": "Maik Hasler\nAdresse: Auf Anfrage per E-Mail\nE-Mail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section2Title": "Erhebung und Speicherung personenbezogener Daten",
       "section2Body1": "Beim Besuch dieser Website werden automatisch Informationen allgemeiner Natur erfasst (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs). Diese Daten lassen keine Rückschlüsse auf Ihre Person zu und werden zur Sicherstellung des Betriebs ausgewertet.",
       "section2Body2": "Bei der Registrierung und Anmeldung über unseren Authentifizierungsdienst (Keycloak) werden die von Ihnen eingegebenen Daten (z. B. Name, E-Mail-Adresse) gespeichert, um Ihnen die Nutzung der Plattform zu ermöglichen.",

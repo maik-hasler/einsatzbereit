@@ -341,7 +341,7 @@
     "datenschutz": {
       "title": "Privacy Policy",
       "section1Title": "Responsible party",
-      "section1Body": "Maik Hasler\nAddress available on request\nEmail: maikhslr@gmail.com",
+      "section1Body": "Maik Hasler\nAddress: Available on request via email\nEmail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section2Title": "Collection and storage of personal data",
       "section2Body1": "When visiting this website, general information is automatically collected (e.g. IP address, browser type, time of access). This data does not allow conclusions about your person and is evaluated to ensure operation.",
       "section2Body2": "When registering and logging in via our authentication service (Keycloak), the data you enter (e.g. name, email address) is stored to enable you to use the platform.",
