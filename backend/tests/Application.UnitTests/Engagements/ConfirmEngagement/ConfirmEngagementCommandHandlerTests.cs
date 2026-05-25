@@ -1,5 +1,6 @@
 using Application.Common.Email;
 using Application.Common.Keycloak;
+using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements.ConfirmEngagement.v1;
 using AwesomeAssertions;
@@ -21,6 +22,7 @@ public class ConfirmEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly ISender _sender = Substitute.For<ISender>();
 	private readonly ConfirmEngagementCommandHandler _sut;
 
 	public ConfirmEngagementCommandHandlerTests()
@@ -30,7 +32,7 @@ public class ConfirmEngagementCommandHandlerTests
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_sut = new ConfirmEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService);
+		_sut = new ConfirmEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _sender);
 	}
 
 	[Test]

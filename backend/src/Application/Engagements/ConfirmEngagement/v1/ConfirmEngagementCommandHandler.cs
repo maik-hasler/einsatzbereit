@@ -1,3 +1,4 @@
+using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
@@ -12,7 +13,8 @@ namespace Application.Engagements.ConfirmEngagement.v1;
 internal sealed class ConfirmEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	ISender sender)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -35,6 +37,13 @@ internal sealed class ConfirmEngagementCommandHandler(
 		var isoYear = System.Globalization.ISOWeek.GetYear(now);
 		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
 		await RecordActivityStreakAsync(engagement.VolunteerId, isoYear, isoWeek, cancellationToken);
+
+		// Count from DB (not yet saved) and +1 for this confirmation
+		var confirmedCount = await dbContext.CountConfirmedEngagementsForVolunteerAsync(
+			engagement.VolunteerId,
+			cancellationToken) + 1;
+
+		await EvaluateMilestoneAchievementsAsync(engagement.VolunteerId, confirmedCount, cancellationToken);
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
 		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId.Value, cancellationToken);
@@ -63,5 +72,24 @@ internal sealed class ConfirmEngagementCommandHandler(
 			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
 		}
 		streak.RecordActivity(isoYear, isoWeek);
+	}
+
+	private async Task EvaluateMilestoneAchievementsAsync(
+		UserId volunteerId,
+		int confirmedCount,
+		CancellationToken cancellationToken)
+	{
+		string[] keysToAward = confirmedCount switch
+		{
+			1 => ["first-step"],
+			5 => ["dedicated-5"],
+			100 => ["centurion-100"],
+			_ => []
+		};
+
+		foreach (var key in keysToAward)
+		{
+			await sender.Send(new AwardAchievementCommand(volunteerId, key), cancellationToken);
+		}
 	}
 }
