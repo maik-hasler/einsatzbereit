@@ -264,18 +264,19 @@
       "buttonLabel": "Einchecken",
       "checkedInLabel": "Eingecheckt",
       "title": "Einchecken",
+      "message": "Zeige diesen Bildschirm dem Organisator oder scanne den QR-Code vor Ort, um deine Teilnahme zu bestätigen.",
       "qrInstruction": "Zeige diesen QR-Code dem Veranstalter zum Einchecken.",
       "pinInstruction": "Gib die PIN des Veranstalters ein.",
       "pinLabel": "PIN",
       "pinPlaceholder": "4-stellige PIN",
-      "submitPin": "Bestatigen",
+      "submitPin": "Bestätigen",
       "submitting": "…",
       "success": "Erfolgreich eingecheckt!",
       "invalidPin": "Falsche PIN. Bitte erneut versuchen.",
       "manualInstruction": "Der Veranstalter wird dich manuell einchecken.",
-      "close": "Schliessen",
+      "close": "Fertig",
       "organizerPin": "Eincheck-PIN",
-      "organizerPinHint": "Teile diese PIN mit deinen Freiwilligen damit sie einchecken konnen.",
+      "organizerPinHint": "Teile diese PIN mit deinen Freiwilligen, damit sie einchecken können.",
       "markCheckedIn": "Als eingecheckt markieren",
       "markingCheckedIn": "…"
     },
@@ -322,11 +323,6 @@
         "Cancelled": "Abgesagt",
         "Withdrawn": "Zurückgezogen"
       }
-    },
-    "checkIn": {
-      "title": "Einchecken",
-      "message": "Zeige diesen Bildschirm dem Organisator oder scanne den QR-Code vor Ort, um deine Teilnahme zu bestätigen.",
-      "close": "Fertig"
     },
     "datenschutz": {
       "title": "Datenschutzerklärung",
