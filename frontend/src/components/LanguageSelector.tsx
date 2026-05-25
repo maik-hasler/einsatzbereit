@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
-	{ code: "en", flag: "🇬🇧" },
-	{ code: "de", flag: "🇩🇪" },
+	{ code: "en", flag: "🇬🇧", label: "English" },
+	{ code: "de", flag: "🇩🇪", label: "Deutsch" },
 ] as const;
 
 type LangCode = (typeof LANGUAGES)[number]["code"];
@@ -39,9 +39,7 @@ export default function LanguageSelector() {
 				className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
 			>
 				<span>{current.flag}</span>
-				<span className="font-medium">
-					{t(`language.${currentCode}` as const)}
-				</span>
+				<span className="font-medium">{current.label}</span>
 				<svg
 					className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
 					fill="none"
@@ -82,7 +80,7 @@ export default function LanguageSelector() {
 								}`}
 							>
 								<span>{lang.flag}</span>
-								<span>{t(`language.${lang.code}` as const)}</span>
+								<span>{lang.label}</span>
 								{lang.code === currentCode && (
 									<span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-500" />
 								)}
