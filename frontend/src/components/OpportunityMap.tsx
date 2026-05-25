@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import L from "leaflet";
 import {
@@ -120,12 +119,12 @@ export default function OpportunityMap({
 							<div className="mt-1 text-xs text-gray-600">
 								{item.organizationName}
 							</div>
-							<Link
-								to={`/volunteer-opportunities/${item.id}`}
+							<a
+								href={`/volunteer-opportunities/${item.id}`}
 								className="mt-2 inline-block text-sm text-blue-600 hover:underline"
 							>
 								{t("map.popup.viewDetails")}
-							</Link>
+							</a>
 						</Popup>
 					</Marker>
 				))}
