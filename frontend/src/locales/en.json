@@ -341,7 +341,7 @@
     "datenschutz": {
       "title": "Privacy Policy",
       "section1Title": "Responsible party",
-      "section1Body": "[First and last name / Organization]\n[Street and house number]\n[ZIP and city]\nEmail: [your@email.de]",
+      "section1Body": "Maik Hasler\nAddress available on request\nEmail: maikhslr@gmail.com",
       "section2Title": "Collection and storage of personal data",
       "section2Body1": "When visiting this website, general information is automatically collected (e.g. IP address, browser type, time of access). This data does not allow conclusions about your person and is evaluated to ensure operation.",
       "section2Body2": "When registering and logging in via our authentication service (Keycloak), the data you enter (e.g. name, email address) is stored to enable you to use the platform.",
@@ -355,11 +355,11 @@
     "impressum": {
       "title": "Imprint",
       "section1Title": "Information according to § 5 TMG",
-      "section1Body": "[First and last name / Organization]\n[Street and house number]\n[ZIP and city]",
+      "section1Body": "Maik Hasler\nAddress available on request",
       "section2Title": "Contact",
-      "section2Body": "Email: [your@email.de]",
+      "section2Body": "Email: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section3Title": "Responsible for content according to § 55 para. 2 RStV",
-      "section3Body": "[First and last name]\n[Address as above]",
+      "section3Body": "Maik Hasler\nAddress available on request",
       "section4Title": "Disclaimer",
       "section4aTitle": "Liability for content",
       "section4aBody": "The contents of these pages have been created with the greatest care. However, we cannot guarantee the accuracy, completeness and timeliness of the content.",

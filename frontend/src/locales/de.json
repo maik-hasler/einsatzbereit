@@ -349,7 +349,7 @@
     "datenschutz": {
       "title": "Datenschutzerklärung",
       "section1Title": "Verantwortliche Stelle",
-      "section1Body": "[Vor- und Nachname / Organisation]\n[Straße und Hausnummer]\n[PLZ und Ort]\nE-Mail: [deine@email.de]",
+      "section1Body": "Maik Hasler\nAdresse auf Anfrage\nE-Mail: maikhslr@gmail.com",
       "section2Title": "Erhebung und Speicherung personenbezogener Daten",
       "section2Body1": "Beim Besuch dieser Website werden automatisch Informationen allgemeiner Natur erfasst (z. B. IP-Adresse, Browsertyp, Uhrzeit des Zugriffs). Diese Daten lassen keine Rückschlüsse auf Ihre Person zu und werden zur Sicherstellung des Betriebs ausgewertet.",
       "section2Body2": "Bei der Registrierung und Anmeldung über unseren Authentifizierungsdienst (Keycloak) werden die von Ihnen eingegebenen Daten (z. B. Name, E-Mail-Adresse) gespeichert, um Ihnen die Nutzung der Plattform zu ermöglichen.",
@@ -363,11 +363,11 @@
     "impressum": {
       "title": "Impressum",
       "section1Title": "Angaben gemäß § 5 TMG",
-      "section1Body": "[Vor- und Nachname / Organisation]\n[Straße und Hausnummer]\n[PLZ und Ort]",
+      "section1Body": "Maik Hasler\nAdresse auf Anfrage",
       "section2Title": "Kontakt",
-      "section2Body": "E-Mail: [deine@email.de]",
+      "section2Body": "E-Mail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
       "section3Title": "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV",
-      "section3Body": "[Vor- und Nachname]\n[Adresse wie oben]",
+      "section3Body": "Maik Hasler\nAdresse auf Anfrage",
       "section4Title": "Haftungsausschluss",
       "section4aTitle": "Haftung für Inhalte",
       "section4aBody": "Die Inhalte dieser Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.",
