@@ -232,6 +232,31 @@ export default function OrganizationSwitcher() {
 									</button>
 									<button
 										type="button"
+										data-testid="org-engagements-link"
+										onClick={() => {
+											setOpen(false);
+											navigate(`/organizations/${activeOrgId}/engagements`);
+										}}
+										className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+									>
+										<svg
+											className="w-4 h-4 text-gray-400"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="1.5"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+											/>
+										</svg>
+										{t("organization.engagements")}
+									</button>
+									<button
+										type="button"
 										data-testid="org-settings-link"
 										onClick={() => {
 											setOpen(false);

@@ -15,6 +15,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
+import OrganizationEngagementsPage from "./pages/OrganizationEngagementsPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 
@@ -98,6 +99,14 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							<OrganizationDashboardPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/organizations/:organizationId/engagements"
+					element={
+						<ProtectedRoute>
+							<OrganizationEngagementsPage />
 						</ProtectedRoute>
 					}
 				/>
