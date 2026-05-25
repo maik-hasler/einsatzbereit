@@ -288,6 +288,7 @@
       "exploreNeeds": "Explore opportunities",
       "viewOpportunity": "View opportunity →",
       "registeredOn": "Signed up: {{date}}",
+      "checkIn": "Check in",
       "withdraw": "Withdraw",
       "withdrawing": "…",
       "withdrawError": "Error withdrawing",
@@ -321,6 +322,11 @@
         "Cancelled": "Cancelled",
         "Withdrawn": "Withdrawn"
       }
+    },
+    "checkIn": {
+      "title": "Check in",
+      "message": "Show this screen to the organizer or scan the QR code at the venue to confirm your attendance.",
+      "close": "Done"
     },
     "datenschutz": {
       "title": "Privacy Policy",

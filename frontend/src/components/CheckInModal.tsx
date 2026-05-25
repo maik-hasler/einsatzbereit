@@ -58,16 +58,19 @@ export default function CheckInModal({
 	const checkInMethod = details?.checkInMethod;
 
 	return (
-		<>
-			<div
-				className="fixed inset-0 bg-black/50 z-40"
-				aria-hidden="true"
+		<div className="fixed inset-0 z-50 flex items-center justify-center">
+			<button
+				type="button"
+				className="absolute inset-0 bg-black/50"
 				onClick={onClose}
+				tabIndex={-1}
+				aria-hidden="true"
 			/>
-			<dialog
-				open
-				className="fixed inset-0 z-50 m-auto h-fit w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+			<div
+				role="dialog"
+				aria-modal="true"
 				aria-labelledby="checkin-title"
+				className="relative z-10 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
 			>
 				<h2
 					id="checkin-title"
@@ -82,11 +85,11 @@ export default function CheckInModal({
 
 				{details && !success && checkInMethod === "QRCode" && (
 					<div className="flex flex-col items-center gap-4">
-						<p className="text-sm text-gray-600 text-center">
+						<p className="text-center text-sm text-gray-600">
 							{t("checkIn.qrInstruction")}
 						</p>
 						<QRCodeSVG value={engagementId} size={200} />
-						<p className="text-xs text-gray-400 font-mono break-all">
+						<p className="break-all font-mono text-xs text-gray-400">
 							{engagementId}
 						</p>
 					</div>
@@ -139,7 +142,7 @@ export default function CheckInModal({
 				)}
 
 				{success && (
-					<p className="text-sm text-green-700 font-medium">
+					<p className="text-sm font-medium text-green-700">
 						{t("checkIn.success")}
 					</p>
 				)}
@@ -151,7 +154,7 @@ export default function CheckInModal({
 				>
 					{t("checkIn.close")}
 				</button>
-			</dialog>
-		</>
+			</div>
+		</div>
 	);
 }
