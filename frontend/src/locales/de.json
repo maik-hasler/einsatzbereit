@@ -192,12 +192,21 @@
       "selectPlaceholder": "Organisation wählen",
       "settings": "Einstellungen",
       "dashboard": "Dashboard",
+      "engagements": "Bewerbungen verwalten",
       "nameLabel": "Name",
       "namePlaceholder": "z.B. Freiwillige Feuerwehr Musterstadt",
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler"
+    },
+    "orgEngagements": {
+      "title": "Bewerbungen",
+      "loading": "Wird geladen…",
+      "error": "Fehler: {{message}}",
+      "noOpportunities": "Keine offenen Einsatzmöglichkeiten",
+      "noOpportunitiesHint": "Erstelle eine Einsatzmöglichkeit, um Bewerbungen zu erhalten.",
+      "manageEngagements": "Bewerbungen verwalten →"
     },
     "orgDashboard": {
       "title": "Organisations-Dashboard",
