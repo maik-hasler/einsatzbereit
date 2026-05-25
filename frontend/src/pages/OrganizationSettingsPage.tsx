@@ -5,6 +5,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import EmptyState from "../components/EmptyState";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 type Tab = "general" | "members";
 
@@ -32,6 +33,8 @@ export default function OrganizationSettingsPage() {
 	});
 
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+
+	usePageTitle(t("orgSettings.title"));
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },

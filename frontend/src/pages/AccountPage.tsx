@@ -6,12 +6,14 @@ import { useApiClient } from "../hooks/useApiClient";
 import type { MyProfileResponse } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function AccountPage() {
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	usePageTitle(t("account.title"));
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },

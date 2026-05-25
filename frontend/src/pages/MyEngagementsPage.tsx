@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import CheckInModal from "../components/CheckInModal";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -18,6 +19,7 @@ export default function MyEngagementsPage() {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t, i18n } = useTranslation();
+	usePageTitle(t("myEngagements.title"));
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

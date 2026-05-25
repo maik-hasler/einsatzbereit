@@ -213,6 +213,7 @@
       "viewEngagements": "View engagements →"
     },
     "orgSettings": {
+      "title": "Edit Organisation",
       "createdOn": "Created on {{date}}",
       "tabGeneral": "General",
       "tabMembers": "Members ({{count}})",

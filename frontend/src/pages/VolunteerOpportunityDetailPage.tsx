@@ -13,6 +13,7 @@ import SignUpModal from "../components/SignUpModal";
 import EditVolunteerOpportunityModal from "../components/EditVolunteerOpportunityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -23,6 +24,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
+	usePageTitle(opportunity?.title);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showSignUp, setShowSignUp] = useState(false);
