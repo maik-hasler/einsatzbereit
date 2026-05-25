@@ -216,15 +216,10 @@ export default function VolunteerOpportunitiesList({
 	const activeOrgId = getActiveOrgId();
 
 	function updateFilter(key: string, value: string) {
-		setSearchParams(
-			(prev) => {
-				const next = new URLSearchParams(prev);
-				if (value) next.set(key, value);
-				else next.delete(key);
-				return next;
-			},
-			{ replace: true },
-		);
+		const next = new URLSearchParams(window.location.search);
+		if (value) next.set(key, value);
+		else next.delete(key);
+		setSearchParams(next, { replace: true });
 	}
 
 	function clearFilters() {
