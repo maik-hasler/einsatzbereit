@@ -64,6 +64,7 @@
       "error": "Error: {{message}}",
       "noResults": "No opportunities found.",
       "noResultsWithFilters": "Try adjusting or clearing your filters.",
+      "noResultsWithSearch": "Try a different search term.",
       "loadMore": "Load more",
       "previous": "← Back",
       "next": "Next →",
