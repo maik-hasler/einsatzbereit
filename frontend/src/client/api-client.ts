@@ -2212,6 +2212,7 @@ export interface EngagementStatusResponse {
 export interface EngagementSummary {
     id: string;
     opportunityId: string;
+    opportunityTitle: string;
     volunteerId: string;
     timeSlotId: string | undefined;
     message: string | undefined;
