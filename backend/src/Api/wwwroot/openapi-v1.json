@@ -820,6 +820,77 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "DeleteMyAccount",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/streaks": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "GetMyStreaks",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreakSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/organizations/{organizationId}": {
@@ -1753,6 +1824,148 @@
         }
       }
     },
+    "/v1/me/engagements/{engagementId}/check-in": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInWithPin",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInWithPinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engagements/{engagementId}/check-in": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "CheckInEngagement",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/engagements/{engagementId}/cancel": {
       "put": {
         "tags": [
@@ -1849,10 +2062,162 @@
           }
         }
       }
+    },
+    "/v1/users/{userId}/achievements": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "operationId": "GetUserAchievements",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AchievementSummary"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/achievements": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "operationId": "GetMyAchievements",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AchievementSummary"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/badges": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "operationId": "GetBadgeCatalog",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BadgeCatalogEntry"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AchievementSummary": {
+        "required": [
+          "id",
+          "type",
+          "name",
+          "description",
+          "unlockedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unlockedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AchievementType": {
+        "type": "integer"
+      },
       "AddMemberRequest": {
         "required": [
           "userId"
@@ -1911,6 +2276,33 @@
           }
         }
       },
+      "BadgeCatalogEntry": {
+        "required": [
+          "key",
+          "type",
+          "name",
+          "description",
+          "isHidden"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AchievementType"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "isHidden": {
+            "type": "boolean"
+          }
+        }
+      },
       "CancelEngagementRequest": {
         "required": [
           "reason"
@@ -1922,6 +2314,17 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "CheckInWithPinRequest": {
+        "required": [
+          "pin"
+        ],
+        "type": "object",
+        "properties": {
+          "pin": {
+            "type": "string"
           }
         }
       },
@@ -2255,10 +2658,12 @@
         "required": [
           "id",
           "opportunityId",
+          "opportunityTitle",
           "volunteerId",
           "timeSlotId",
           "message",
           "status",
+          "isCheckedIn",
           "createdOn"
         ],
         "type": "object",
@@ -2270,6 +2675,9 @@
           "opportunityId": {
             "type": "string",
             "format": "uuid"
+          },
+          "opportunityTitle": {
+            "type": "string"
           },
           "volunteerId": {
             "type": "string",
@@ -2290,6 +2698,9 @@
           },
           "status": {
             "type": "string"
+          },
+          "isCheckedIn": {
+            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -2862,6 +3273,31 @@
           }
         }
       },
+      "StreakSummary": {
+        "required": [
+          "loginStreak",
+          "activityStreak"
+        ],
+        "type": "object",
+        "properties": {
+          "loginStreak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "activityStreak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "TimeSlotDetail": {
         "required": [
           "id",
@@ -3134,6 +3570,7 @@
           "checkInMethod",
           "category",
           "tags",
+          "checkInPin",
           "timeSlots",
           "createdOn"
         ],
@@ -3221,6 +3658,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "checkInPin": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "timeSlots": {
             "type": "array",
@@ -3405,6 +3848,9 @@
     },
     {
       "name": "Engagements"
+    },
+    {
+      "name": "Achievements"
     }
   ]
 }

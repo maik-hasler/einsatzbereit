@@ -23,6 +23,58 @@ namespace Infrastructure.Persistence.Migrations
 
 			NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+			modelBuilder.Entity("Domain.Achievements.Achievement", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<string>("Description")
+						.IsRequired()
+						.HasMaxLength(1000)
+						.HasColumnType("character varying(1000)")
+						.HasColumnName("description");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<string>("Name")
+						.IsRequired()
+						.HasMaxLength(200)
+						.HasColumnType("character varying(200)")
+						.HasColumnName("name");
+
+					b.Property<string>("Type")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("type");
+
+					b.Property<DateTimeOffset>("UnlockedAt")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("unlocked_at");
+
+					b.Property<Guid>("UserId")
+						.HasColumnType("uuid")
+						.HasColumnName("user_id");
+
+					b.HasKey("Id")
+						.HasName("pk_achievement");
+
+					b.HasIndex("UserId")
+						.HasDatabaseName("ix_achievement_user_id");
+
+					b.HasIndex("UserId", "Name")
+						.IsUnique()
+						.HasDatabaseName("ix_achievement_user_id_name");
+
+					b.ToTable("achievement", (string)null);
+				});
+
 			modelBuilder.Entity("Domain.Engagements.Engagement", b =>
 				{
 					b.Property<Guid>("Id")
@@ -36,6 +88,12 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");
+
+					b.Property<bool>("IsCheckedIn")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_checked_in");
 
 					b.Property<string>("Message")
 						.HasColumnType("text")
@@ -179,6 +237,58 @@ namespace Infrastructure.Persistence.Migrations
 					b.ToTable("user", (string)null);
 				});
 
+			modelBuilder.Entity("Domain.Users.UserStreak", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<int>("ActivityStreak")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("integer")
+						.HasDefaultValue(0)
+						.HasColumnName("activity_streak");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<int?>("LastActiveIsoWeek")
+						.HasColumnType("integer")
+						.HasColumnName("last_active_iso_week");
+
+					b.Property<int?>("LastActiveIsoYear")
+						.HasColumnType("integer")
+						.HasColumnName("last_active_iso_year");
+
+					b.Property<DateOnly?>("LastLoginDate")
+						.HasColumnType("date")
+						.HasColumnName("last_login_date");
+
+					b.Property<int>("LoginStreak")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("integer")
+						.HasDefaultValue(0)
+						.HasColumnName("login_streak");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<Guid>("UserId")
+						.HasColumnType("uuid")
+						.HasColumnName("user_id");
+
+					b.HasKey("Id")
+						.HasName("pk_user_streak");
+
+					b.HasIndex("UserId")
+						.IsUnique()
+						.HasDatabaseName("ix_user_streak_user_id");
+
+					b.ToTable("user_streak", (string)null);
+				});
+
 			modelBuilder.Entity("Domain.VolunteerOpportunities.TimeSlot", b =>
 				{
 					b.Property<Guid>("Id")
@@ -224,6 +334,10 @@ namespace Infrastructure.Persistence.Migrations
 						.IsRequired()
 						.HasColumnType("text")
 						.HasColumnName("check_in_method");
+
+					b.Property<string>("CheckInPin")
+						.HasColumnType("text")
+						.HasColumnName("check_in_pin");
 
 					b.Property<DateTimeOffset>("CreatedOn")
 						.HasColumnType("timestamp with time zone")

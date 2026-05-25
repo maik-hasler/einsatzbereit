@@ -54,7 +54,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		var firstCard = Page.Locator("ul > li a").First;
 		var href = await firstCard.GetAttributeAsync("href");
@@ -63,6 +63,145 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			return; // no opportunities seeded, skip
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task AccountPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Follow first org link from an opportunity card
+		var orgLinks = Page.Locator("ul > li .relative.z-10 a");
+
+		if (await orgLinks.CountAsync() == 0)
+			return; // no opportunities seeded, skip
+
+		var href = await orgLinks.First.GetAttributeAsync("href");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrganizationSettingsPage_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Open org switcher (only rendered when olaf has at least one org)
+		var switcherBtn = Page.GetByLabel("Switch organization");
+
+		try
+		{
+			await switcherBtn.WaitForAsync(new() { Timeout = 5_000 });
+		}
+		catch (TimeoutException)
+		{
+			return; // olaf has no orgs, skip
+		}
+
+		await switcherBtn.ClickAsync();
+		var settingsBtn = Page.GetByTestId("org-settings-link");
+
+		if (await settingsBtn.CountAsync() == 0)
+			return; // olaf has no org, skip
+
+		await settingsBtn.ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/organizations/**/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Find a detail page link, navigate, then follow "Manage applications" link
+		var firstCard = Page.Locator("ul > li a").First;
+		var cardHref = await firstCard.GetAttributeAsync("href");
+
+		if (cardHref is null)
+			return; // no opportunities seeded, skip
+
+		await Page.GotoAsync($"{origin}{cardHref}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var manageLink = Page.Locator("a[href$='/engagements']");
+
+		if (await manageLink.CountAsync() == 0)
+			return; // olaf does not manage this opportunity, skip
+
+		var engagementsHref = await manageLink.First.GetAttributeAsync("href");
+		await Page.GotoAsync($"{origin}{engagementsHref}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task DatenschutzPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/datenschutz");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task ImpressumPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/impressum");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task NotFoundPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/this-page-does-not-exist");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

@@ -1,9 +1,11 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import PageEaten from "../assets/page-eaten.svg?react";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function NotFoundPage() {
 	const { t } = useTranslation();
+	usePageTitle(t("notFound.title"));
 
 	return (
 		<div className="relative flex min-h-[70vh] items-center justify-center overflow-hidden px-4 text-center">
@@ -19,7 +21,7 @@ export default function NotFoundPage() {
 
 				<Link
 					to="/"
-					className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-brand-700"
+					className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-brand-800"
 				>
 					{t("notFound.backHome")}
 				</Link>

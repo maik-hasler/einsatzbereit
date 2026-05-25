@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
+using Api.Common.Middleware;
 using Api.Common.RateLimiting;
 using Application;
 using Asp.Versioning;
@@ -97,6 +98,14 @@ if (app.Environment.IsDevelopment())
 
 	app.MapOpenApi();
 }
+else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
+	var scope = app.Services.CreateScope();
+
+	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
+
+	await initializer.MigrateAsync();
+}
 
 app.MapDefaultEndpoints();
 
@@ -105,6 +114,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+app.UseMiddleware<LoginStreakMiddleware>();
 
 app.MapEndpoints();
 

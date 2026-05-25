@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ${{ github.repository }}-backend
+    outputs:
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v6
 
@@ -77,7 +79,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-          if echo "$TAG" | grep -qE '-rc\.'; then
+          if [[ "$TAG" == *-rc.* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
@@ -91,6 +93,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -146,7 +149,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-          if echo "$TAG" | grep -qE '-rc\.'; then
+          if [[ "$TAG" == *-rc.* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
@@ -160,6 +163,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -189,7 +193,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
           echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-          if echo "$TAG" | grep -qE '-rc\.'; then
+          if [[ "$TAG" == *-rc.* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
@@ -209,6 +213,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable=${{ steps.version.outputs.prerelease == 'false' }}
+            type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
           labels: |
             org.opencontainers.image.base.version=${{ steps.keycloak.outputs.upstream_version }}
 
@@ -219,3 +224,62 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [publish-backend, publish-frontend, publish-keycloak]
+    if: needs.publish-backend.outputs.prerelease == 'true'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Render .env
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          KEYCLOAK_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+        run: |
+          umask 077
+          # Wrap each value in double quotes and escape \ and " so secrets that
+          # contain quotes, hashes, leading apostrophes or other compose .env
+          # metacharacters do not break the parser.
+          escape() {
+            local v="$1"
+            v="${v//\\/\\\\}"
+            v="${v//\"/\\\"}"
+            printf '%s' "$v"
+          }
+          {
+            printf 'POSTGRES_USER="%s"\n' "$(escape "$POSTGRES_USER")"
+            printf 'POSTGRES_PASSWORD="%s"\n' "$(escape "$POSTGRES_PASSWORD")"
+            printf 'KEYCLOAK_ADMIN_USER="%s"\n' "$(escape "$KEYCLOAK_ADMIN_USER")"
+            printf 'KEYCLOAK_ADMIN_PASSWORD="%s"\n' "$(escape "$KEYCLOAK_ADMIN_PASSWORD")"
+          } > .env
+
+      - name: Copy compose file and .env
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" \
+            "mkdir -p /opt/einsatzbereit && chmod 700 /opt/einsatzbereit"
+          scp -i ~/.ssh/id_ed25519 docker-compose.yml .env \
+            "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:/opt/einsatzbereit/"
+
+      - name: Pull and restart
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            set -euo pipefail
+            cd /opt/einsatzbereit
+            chmod 600 .env
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune --force
+          EOF

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
@@ -15,6 +15,8 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
+import AchievementsPage from "./pages/AchievementsPage";
+import UserAchievementsPage from "./pages/UserAchievementsPage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -99,6 +101,23 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
+				<Route
+					path="/achievements"
+					element={
+						<ProtectedRoute>
+							<AchievementsPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/users/:userId/achievements"
+					element={<UserAchievementsPage />}
+				/>
+				<Route
+					path="/opportunities"
+					element={<Navigate to="/#opportunities" replace />}
+				/>
+				<Route path="/organizations" element={<Navigate to="/" replace />} />
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>

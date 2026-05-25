@@ -9,6 +9,7 @@
       "userMenu": "User menu",
       "myEngagements": "My Engagements",
       "myProfile": "My Profile",
+      "myAchievements": "My Achievements",
       "profileSettings": "Profile Settings",
       "signOut": "Sign out",
       "signIn": "Sign in",
@@ -73,6 +74,8 @@
       "dateFromLabel": "From date",
       "dateToLabel": "To date",
       "clearFilters": "Clear filters",
+      "clearSearch": "Clear search",
+      "clearCity": "Clear city filter",
       "allCategories": "All categories",
       "category": {
         "Social": "Social",
@@ -110,6 +113,7 @@
       "fieldDescription": "Description",
       "fieldAddress": "Address",
       "fieldStreet": "Street",
+      "streetPlaceholder": "123 Main St",
       "fieldNumber": "No.",
       "fieldZip": "ZIP",
       "fieldCity": "City",
@@ -211,6 +215,7 @@
       "viewEngagements": "View engagements →"
     },
     "orgSettings": {
+      "title": "Edit Organisation",
       "createdOn": "Created on {{date}}",
       "tabGeneral": "General",
       "tabMembers": "Members ({{count}})",
@@ -249,7 +254,34 @@
       "savedSuccess": "Changes saved.",
       "saveError": "Failed to save.",
       "loadError": "Could not load profile.",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your engagements will be anonymised and your Keycloak account will be deleted.",
+      "deleteAccountButton": "Delete my account",
+      "deleteConfirmTitle": "Delete account?",
+      "deleteConfirmMessage": "Are you sure you want to permanently delete your account? All your personal data will be erased and your engagements will be anonymised. This cannot be undone.",
+      "deleteConfirmButton": "Yes, delete permanently",
+      "deleteError": "Failed to delete account. Please try again or contact support."
+    },
+    "checkIn": {
+      "buttonLabel": "Check in",
+      "checkedInLabel": "Checked in",
+      "title": "Check in",
+      "message": "Show this screen to the organizer or scan the QR code at the venue to confirm your attendance.",
+      "qrInstruction": "Show this QR code to the organizer to check in.",
+      "pinInstruction": "Enter the PIN provided by the organizer.",
+      "pinLabel": "PIN",
+      "pinPlaceholder": "4-digit PIN",
+      "submitPin": "Submit",
+      "submitting": "…",
+      "success": "Checked in successfully!",
+      "invalidPin": "Invalid PIN. Please try again.",
+      "manualInstruction": "The organizer will check you in manually.",
+      "close": "Done",
+      "organizerPin": "Check-in PIN",
+      "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
+      "markCheckedIn": "Mark as checked in",
+      "markingCheckedIn": "…"
     },
     "myEngagements": {
       "title": "My Engagements",
@@ -260,6 +292,7 @@
       "exploreNeeds": "Explore opportunities",
       "viewOpportunity": "View opportunity →",
       "registeredOn": "Signed up: {{date}}",
+      "checkIn": "Check in",
       "withdraw": "Withdraw",
       "withdrawing": "…",
       "withdrawError": "Error withdrawing",
@@ -350,6 +383,11 @@
     },
     "confirmDialog": {
       "keep": "Keep",
+      "delete": {
+        "title": "Delete opportunity?",
+        "message": "Are you sure you want to permanently delete this opportunity? This cannot be undone.",
+        "confirm": "Yes, delete"
+      },
       "withdraw": {
         "title": "Withdraw application?",
         "message": "Are you sure you want to withdraw your application? This cannot be undone.",
@@ -399,13 +437,41 @@
       "loading": "Loading…",
       "removeChip": "Remove"
     },
+    "achievements": {
+      "title": "My Achievements",
+      "publicTitle": "Achievements",
+      "loading": "Loading…",
+      "error": "Error: {{message}}",
+      "noAchievements": "No achievements yet. Start volunteering to earn badges!",
+      "unlockedOn": "Unlocked: {{date}}",
+      "lockedBadge": "Mystery Badge",
+      "lockedDescription": "Keep volunteering to unlock!",
+      "badgesTitle": "Badges",
+      "streakTitle": "Your Streaks",
+      "loginStreak": "Login streak",
+      "activityStreak": "Activity streak",
+      "shareButton": "Share achievements",
+      "shareText": "Check out my achievements on Einsatzbereit!",
+      "shareCopied": "Link copied to clipboard!",
+      "shareClose": "Close",
+      "shareCopyLink": "Copy link",
+      "newBadge": "🏆 New badge unlocked: {{name}}!",
+      "types": {
+        "Milestone": "Milestone",
+        "Streak": "Streak",
+        "Social": "Social",
+        "Hidden": "Special"
+      }
+    },
     "breadcrumb": {
       "home": "Home",
       "volunteerOpportunities": "Volunteer Opportunities",
       "engagements": "Engagements",
       "settings": "Settings",
       "account": "Account",
-      "profile": "Profile"
+      "profile": "Profile",
+      "achievements": "My Achievements",
+      "userAchievements": "Achievements"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",

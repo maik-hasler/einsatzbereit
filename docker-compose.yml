@@ -1,0 +1,122 @@
+# Traefik runs as a host-level container outside this stack (shared across
+# multiple projects on the same host). Our services attach to the existing
+# proxy network and register routes via labels - they expect a Traefik
+# instance with the `myresolver` ACME resolver already configured.
+services:
+  postgres:
+    image: postgres:18
+    container_name: postgres
+    restart: unless-stopped
+    networks:
+      - db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    configs:
+      - source: postgres-init
+        target: /docker-entrypoint-initdb.d/01-create-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  keycloak:
+    image: ghcr.io/maik-hasler/einsatzbereit-keycloak:staging
+    container_name: keycloak
+    restart: unless-stopped
+    networks:
+      - proxy
+      - db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      KC_HOSTNAME: https://login.maik-hasler.de
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.keycloak.rule=Host(`login.maik-hasler.de`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls=true
+      - traefik.http.routers.keycloak.tls.certresolver=myresolver
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+
+  backend:
+    image: ghcr.io/maik-hasler/einsatzbereit-backend:staging
+    container_name: backend
+    restart: unless-stopped
+    networks:
+      - proxy
+      - db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      Database__MigrateOnStartup: "true"
+      ConnectionStrings__einsatzbereit: "Host=postgres;Database=einsatzbereit;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
+      Authentication__Authority: https://login.maik-hasler.de/realms/einsatzbereit
+      Authentication__ValidIssuers__0: https://login.maik-hasler.de/realms/einsatzbereit
+      Keycloak__BaseUrl: http://keycloak:8080
+      Cors__Origins__0: https://einsatzbereit.maik-hasler.de
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.backend.rule=Host(`api.maik-hasler.de`)
+      - traefik.http.routers.backend.entrypoints=websecure
+      - traefik.http.routers.backend.tls=true
+      - traefik.http.routers.backend.tls.certresolver=myresolver
+      - traefik.http.services.backend.loadbalancer.server.port=8080
+
+  frontend:
+    image: ghcr.io/maik-hasler/einsatzbereit-frontend:staging
+    container_name: frontend
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      backend:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    environment:
+      VITE_KEYCLOAK_AUTHORITY_URL: https://login.maik-hasler.de/realms/einsatzbereit
+      VITE_KEYCLOAK_CLIENT_ID: frontend
+      VITE_API_URL: https://api.maik-hasler.de
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.frontend.rule=Host(`einsatzbereit.maik-hasler.de`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls=true
+      - traefik.http.routers.frontend.tls.certresolver=myresolver
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+
+networks:
+  proxy:
+    name: proxy
+    external: true
+  db:
+    name: db
+
+volumes:
+  postgres_data:
+
+configs:
+  postgres-init:
+    content: |
+      SELECT 'CREATE DATABASE einsatzbereit' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'einsatzbereit')\gexec
+      SELECT 'CREATE DATABASE keycloak' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'keycloak')\gexec

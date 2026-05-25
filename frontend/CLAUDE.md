@@ -161,7 +161,7 @@ Key conventions:
 - **Form labels**: Every form control must have an associated `<label htmlFor="...">` or `aria-label`.
 - **`<a href="#">`**: Never use `href="#"`. Use a `<button>` if there is no navigation target.
 
-Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on the Home, MyEngagements, and OpportunityDetail pages. Tests fail on any "serious" or "critical" axe violation.
+Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page: Home, MyEngagements, OpportunityDetail, Account, OrganizationProfile, OrganizationSettings, EngagementManagement, Datenschutz, Impressum, and NotFound. Tests fail on any "serious" or "critical" axe violation.
 
 ## Production
 

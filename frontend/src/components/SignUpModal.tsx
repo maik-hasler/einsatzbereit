@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -28,6 +28,14 @@ export default function SignUpModal({
 
 	const isWaitlist = participationType === "Waitlist";
 
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [onClose]);
+
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setSubmitting(true);
@@ -50,9 +58,21 @@ export default function SignUpModal({
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-			<div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-				<h2 className="mb-4 text-lg font-semibold">
+		<div className="fixed inset-0 z-50 flex items-center justify-center">
+			<button
+				type="button"
+				className="absolute inset-0 bg-black/40"
+				onClick={onClose}
+				tabIndex={-1}
+				aria-hidden="true"
+			/>
+			<div
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="sign-up-dialog-title"
+				className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+			>
+				<h2 id="sign-up-dialog-title" className="mb-4 text-lg font-semibold">
 					{isWaitlist ? t("signUp.titleWaitlist") : t("signUp.titleInterest")}
 				</h2>
 

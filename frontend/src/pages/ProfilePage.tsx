@@ -3,12 +3,14 @@ import { useTranslation } from "react-i18next";
 import type { MyProfileResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 type ContactPref = "Email" | "Phone" | "";
 
 export default function ProfilePage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
+	usePageTitle(t("profile.title"));
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },

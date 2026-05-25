@@ -1,0 +1,63 @@
+name: Promote release branch to tag
+
+# Lets agents that cannot push tag refs directly (e.g. Claude Code on the web,
+# whose git proxy restricts pushes to the current working branch) request a
+# release by pushing a branch named `release/vX.Y.Z[-rc.N]`. This workflow
+# validates the name, promotes it to a real annotated tag, and deletes the
+# branch. The tag push then triggers `publish.yml` end-to-end.
+#
+# IMPORTANT: the tag is pushed using RELEASE_TOKEN (a fine-grained PAT with
+# contents: write on this repo), NOT the default GITHUB_TOKEN. A tag pushed
+# with GITHUB_TOKEN does not trigger other workflows, so publish.yml would
+# never run.
+
+on:
+  push:
+    branches:
+      - 'release/v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote branch to tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Extract tag from branch name
+        id: tag
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/release/}"
+          if [[ ! "$BRANCH" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "::error::Branch name 'release/$BRANCH' is not a valid release tag (expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-rc.N)"
+            exit 1
+          fi
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists; nothing to do."
+            exit 0
+          fi
+          git tag -a "$TAG" -m "Promoted from release/$TAG"
+          git push origin "$TAG"
+
+      - name: Delete release branch
+        if: always()
+        run: git push origin --delete "${GITHUB_REF#refs/heads/}" || true

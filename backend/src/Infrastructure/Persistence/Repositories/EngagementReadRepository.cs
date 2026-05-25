@@ -14,15 +14,21 @@ internal sealed class EngagementReadRepository(
 		CancellationToken cancellationToken = default) =>
 		await dbContext.EngagementsQuery
 			.Where(e => e.OpportunityId == opportunityId)
+			.Join(
+				dbContext.VolunteerOpportunitiesQuery,
+				e => e.OpportunityId,
+				o => o.Id,
+				(e, o) => new EngagementSummary(
+					e.Id.Value,
+					e.OpportunityId.Value,
+					o.Title,
+					e.VolunteerId.Value,
+					e.TimeSlotId != null ? e.TimeSlotId.Value.Value : (Guid?)null,
+					e.Message,
+					e.Status.ToString(),
+					e.IsCheckedIn,
+					e.CreatedOn))
 			.OrderByDescending(e => e.CreatedOn)
-			.Select(e => new EngagementSummary(
-				e.Id.Value,
-				e.OpportunityId.Value,
-				e.VolunteerId.Value,
-				e.TimeSlotId != null ? e.TimeSlotId.Value.Value : (Guid?)null,
-				e.Message,
-				e.Status.ToString(),
-				e.CreatedOn))
 			.ToListAsync(cancellationToken);
 
 	public async ValueTask<List<EngagementSummary>> GetByVolunteerAsync(
@@ -30,14 +36,20 @@ internal sealed class EngagementReadRepository(
 		CancellationToken cancellationToken = default) =>
 		await dbContext.EngagementsQuery
 			.Where(e => e.VolunteerId == volunteerId)
+			.Join(
+				dbContext.VolunteerOpportunitiesQuery,
+				e => e.OpportunityId,
+				o => o.Id,
+				(e, o) => new EngagementSummary(
+					e.Id.Value,
+					e.OpportunityId.Value,
+					o.Title,
+					e.VolunteerId.Value,
+					e.TimeSlotId != null ? e.TimeSlotId.Value.Value : (Guid?)null,
+					e.Message,
+					e.Status.ToString(),
+					e.IsCheckedIn,
+					e.CreatedOn))
 			.OrderByDescending(e => e.CreatedOn)
-			.Select(e => new EngagementSummary(
-				e.Id.Value,
-				e.OpportunityId.Value,
-				e.VolunteerId.Value,
-				e.TimeSlotId != null ? e.TimeSlotId.Value.Value : (Guid?)null,
-				e.Message,
-				e.Status.ToString(),
-				e.CreatedOn))
 			.ToListAsync(cancellationToken);
 }

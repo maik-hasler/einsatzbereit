@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { OrganizationDashboardResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import Breadcrumb from "../components/Breadcrumb";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 interface KpiCardProps {
 	label: string;
@@ -81,6 +82,7 @@ export default function OrganizationDashboardPage() {
 	const [data, setData] = useState<OrganizationDashboardResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	usePageTitle(data?.name ?? t("orgDashboard.title"));
 
 	useEffect(() => {
 		if (!organizationId) return;
@@ -133,7 +135,7 @@ export default function OrganizationDashboardPage() {
 					description={t("orgDashboard.pendingEngagementsDesc")}
 					value={data?.pendingEngagements}
 					loading={loading}
-					to={`/organizations/${organizationId}/settings`}
+					to={`/organizations/${organizationId}`}
 					color="yellow"
 				/>
 				<KpiCard
@@ -141,7 +143,7 @@ export default function OrganizationDashboardPage() {
 					description={t("orgDashboard.confirmedNext7DaysDesc")}
 					value={data?.confirmedEngagementsNext7Days}
 					loading={loading}
-					to={`/organizations/${organizationId}/settings`}
+					to={`/organizations/${organizationId}`}
 					color="green"
 				/>
 				<KpiCard
@@ -149,7 +151,7 @@ export default function OrganizationDashboardPage() {
 					description={t("orgDashboard.cancelledEngagementsDesc")}
 					value={data?.cancelledEngagements}
 					loading={loading}
-					to={`/organizations/${organizationId}/settings`}
+					to={`/organizations/${organizationId}`}
 					color="red"
 				/>
 			</div>

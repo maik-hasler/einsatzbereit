@@ -1,4 +1,5 @@
 import { dispatchToast } from "../lib/toastBus";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import { EinsatzbereitApi } from "./api-client";
 
 async function handleErrorResponse(response: Response): Promise<void> {
@@ -28,7 +29,7 @@ async function handleErrorResponse(response: Response): Promise<void> {
 }
 
 export function createApiClient(accessToken?: string): EinsatzbereitApi {
-	return new EinsatzbereitApi(import.meta.env.VITE_API_URL, {
+	return new EinsatzbereitApi(runtimeConfig.apiUrl, {
 		fetch: async (url: RequestInfo, init?: RequestInit) => {
 			const response = await globalThis.fetch(url, {
 				...init,

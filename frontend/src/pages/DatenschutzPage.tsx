@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function DatenschutzPage() {
 	const { t } = useTranslation();
+	usePageTitle(t("datenschutz.title"));
 
 	return (
 		<>

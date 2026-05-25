@@ -1,3 +1,5 @@
+using Application.Common.Email;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.CancelEngagement.v1;
 using AwesomeAssertions;
@@ -17,13 +19,18 @@ public class CancelEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly CancelEngagementCommandHandler _sut;
 
 	public CancelEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
-		_sut = new CancelEngagementCommandHandler(_dbContext);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
+		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService);
 	}
 
 	private static Engagement CreatePendingWaitlistEngagement() =>

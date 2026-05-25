@@ -5,6 +5,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import EmptyState from "../components/EmptyState";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 type Tab = "general" | "members";
 
@@ -32,6 +33,8 @@ export default function OrganizationSettingsPage() {
 	});
 
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+
+	usePageTitle(t("orgSettings.title"));
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },
@@ -196,8 +199,9 @@ export default function OrganizationSettingsPage() {
 
 			{activeTab === "general" && (
 				<form onSubmit={handleSave} className="space-y-5">
-					<Field label={t("orgSettings.fieldName")}>
+					<Field label={t("orgSettings.fieldName")} id="org-name">
 						<input
+							id="org-name"
 							required
 							value={form.name}
 							onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -205,8 +209,9 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label={t("orgSettings.fieldDescription")}>
+					<Field label={t("orgSettings.fieldDescription")} id="org-description">
 						<textarea
+							id="org-description"
 							rows={3}
 							value={form.description}
 							onChange={(e) =>
@@ -219,8 +224,12 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label={t("orgSettings.fieldContactEmail")}>
+					<Field
+						label={t("orgSettings.fieldContactEmail")}
+						id="org-contact-email"
+					>
 						<input
+							id="org-contact-email"
 							type="email"
 							value={form.contactEmail}
 							onChange={(e) =>
@@ -233,8 +242,9 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label={t("orgSettings.fieldPhone")}>
+					<Field label={t("orgSettings.fieldPhone")} id="org-phone">
 						<input
+							id="org-phone"
 							type="tel"
 							value={form.contactPhone}
 							onChange={(e) =>
@@ -247,8 +257,9 @@ export default function OrganizationSettingsPage() {
 						/>
 					</Field>
 
-					<Field label={t("orgSettings.fieldWebsite")}>
+					<Field label={t("orgSettings.fieldWebsite")} id="org-website">
 						<input
+							id="org-website"
 							type="url"
 							value={form.website}
 							onChange={(e) =>
@@ -268,10 +279,11 @@ export default function OrganizationSettingsPage() {
 						</legend>
 						<div className="mt-3 grid grid-cols-3 gap-3">
 							<div className="col-span-2">
-								<label className={labelClass}>
+								<label htmlFor="org-street" className={labelClass}>
 									{t("orgSettings.fieldStreet")}
 								</label>
 								<input
+									id="org-street"
 									value={form.street}
 									onChange={(e) =>
 										setForm((f) => ({
@@ -283,10 +295,11 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelClass}>
+								<label htmlFor="org-house-number" className={labelClass}>
 									{t("orgSettings.fieldHouseNumber")}
 								</label>
 								<input
+									id="org-house-number"
 									value={form.houseNumber}
 									onChange={(e) =>
 										setForm((f) => ({
@@ -298,10 +311,11 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelClass}>
+								<label htmlFor="org-zip" className={labelClass}>
 									{t("orgSettings.fieldZip")}
 								</label>
 								<input
+									id="org-zip"
 									maxLength={5}
 									value={form.zipCode}
 									onChange={(e) =>
@@ -314,10 +328,11 @@ export default function OrganizationSettingsPage() {
 								/>
 							</div>
 							<div className="col-span-2">
-								<label className={labelClass}>
+								<label htmlFor="org-city" className={labelClass}>
 									{t("orgSettings.fieldCity")}
 								</label>
 								<input
+									id="org-city"
 									value={form.city}
 									onChange={(e) =>
 										setForm((f) => ({
@@ -372,7 +387,7 @@ export default function OrganizationSettingsPage() {
 									</div>
 									<button
 										onClick={() => handleRemoveMember(member.userId)}
-										className="text-xs text-red-500 hover:text-red-700"
+										className="text-xs text-red-700 hover:text-red-800"
 									>
 										{t("orgSettings.removeMember")}
 									</button>
@@ -393,14 +408,18 @@ const labelClass = "block text-xs text-gray-600";
 
 function Field({
 	label,
+	id,
 	children,
 }: {
 	label: string;
+	id?: string;
 	children: React.ReactNode;
 }) {
 	return (
 		<div>
-			<label className="block text-sm font-medium text-gray-700">{label}</label>
+			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
+				{label}
+			</label>
 			{children}
 		</div>
 	);
