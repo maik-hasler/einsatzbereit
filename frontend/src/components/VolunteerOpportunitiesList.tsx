@@ -38,9 +38,22 @@ export default function VolunteerOpportunitiesList({
 
 	const [searchInput, setSearchInput] = useState(search);
 	const [cityInput, setCityInput] = useState(city);
+	const [filtersOpen, setFiltersOpen] = useState(false);
 
 	const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const cityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const activeFilterCount = [
+		search,
+		city,
+		occurrence,
+		participationType,
+		isRemoteParam,
+		dateFrom,
+		dateTo,
+		category,
+		tag,
+	].filter(Boolean).length;
 
 	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
 	const isMap = view === "map";
@@ -297,7 +310,38 @@ export default function VolunteerOpportunitiesList({
 				</div>
 			</div>
 
-			<div className="mb-4 flex flex-wrap gap-2">
+			<div className="mb-2 sm:hidden">
+				<button
+					type="button"
+					onClick={() => setFiltersOpen((o) => !o)}
+					className="flex items-center gap-2 rounded border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+				>
+					<span>{t("opportunities.filterToggle")}</span>
+					{activeFilterCount > 0 && (
+						<span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-black text-xs text-white">
+							{activeFilterCount}
+						</span>
+					)}
+					<svg
+						className={`h-4 w-4 text-gray-500 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+						fill="none"
+						viewBox="0 0 24 24"
+						strokeWidth="2"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="m19.5 8.25-7.5 7.5-7.5-7.5"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			<div
+				className={`mb-4 flex flex-wrap gap-2 ${filtersOpen ? "" : "hidden sm:flex"}`}
+			>
 				<div className="relative">
 					<input
 						type="text"

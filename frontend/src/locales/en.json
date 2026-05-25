@@ -105,7 +105,8 @@
       "expressInterest": "Express interest",
       "signupSuccess": "Sign-up successful! Your application has been submitted.",
       "notFound": "Not found.",
-      "back": "← Back"
+      "back": "← Back",
+      "filterToggle": "Filter"
     },
     "createOpportunity": {
       "title": "Create opportunity",
