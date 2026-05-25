@@ -9,6 +9,7 @@ import {
 	formatOccurrence,
 	formatParticipationType,
 } from "../lib/format";
+import { getActiveOrgId } from "../lib/activeOrg";
 import SignUpModal from "../components/SignUpModal";
 import EditVolunteerOpportunityModal from "../components/EditVolunteerOpportunityModal";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -33,6 +34,7 @@ export default function VolunteerOpportunityDetailPage() {
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isOrganisator = roles.includes("organisator");
+	const activeOrgId = getActiveOrgId();
 
 	usePageToolbar([
 		{ label: t("breadcrumb.home"), href: "/" },
@@ -89,7 +91,7 @@ export default function VolunteerOpportunityDetailPage() {
 				<h1 className="text-2xl font-bold text-gray-900">
 					{opportunity.title}
 				</h1>
-				{isOrganisator && (
+				{isOrganisator && opportunity.organizationId === activeOrgId && (
 					<div className="flex gap-2 shrink-0">
 						<button
 							onClick={() => setShowEdit(true)}
@@ -172,7 +174,7 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				)}
 
-			{isOrganisator && (
+			{isOrganisator && opportunity.organizationId === activeOrgId && (
 				<div className="mb-6">
 					<button
 						onClick={() =>
