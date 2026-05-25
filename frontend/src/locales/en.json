@@ -264,6 +264,7 @@
       "buttonLabel": "Check in",
       "checkedInLabel": "Checked in",
       "title": "Check in",
+      "message": "Show this screen to the organizer or scan the QR code at the venue to confirm your attendance.",
       "qrInstruction": "Show this QR code to the organizer to check in.",
       "pinInstruction": "Enter the PIN provided by the organizer.",
       "pinLabel": "PIN",
@@ -273,7 +274,7 @@
       "success": "Checked in successfully!",
       "invalidPin": "Invalid PIN. Please try again.",
       "manualInstruction": "The organizer will check you in manually.",
-      "close": "Close",
+      "close": "Done",
       "organizerPin": "Check-in PIN",
       "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
       "markCheckedIn": "Mark as checked in",
@@ -322,11 +323,6 @@
         "Cancelled": "Cancelled",
         "Withdrawn": "Withdrawn"
       }
-    },
-    "checkIn": {
-      "title": "Check in",
-      "message": "Show this screen to the organizer or scan the QR code at the venue to confirm your attendance.",
-      "close": "Done"
     },
     "datenschutz": {
       "title": "Privacy Policy",
