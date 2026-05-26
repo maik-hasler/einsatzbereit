@@ -279,8 +279,8 @@ function note(sev, title, detail) {
 
 	// Check for stats/KPIs on dashboard
 	const hasStats = dashText?.toLowerCase().includes("total") ||
-									 dashText?.toLowerCase().includes("count") ||
-									 dashText?.match(/\d+\s*(engagement|applicant|volunteer)/i);
+		dashText?.toLowerCase().includes("count") ||
+		dashText?.match(/\d+\s*(engagement|applicant|volunteer)/i);
 	if (!hasStats) note("enhancement", "Organization dashboard lacks metrics/statistics", "The org dashboard should show volunteer statistics (total sign-ups, confirmed, pending) but displays minimal data");
 
 	// Opportunity detail with olaf - check edit modal fields
