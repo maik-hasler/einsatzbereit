@@ -1,27 +1,23 @@
-/**
- * deep-test-3.mjs – Corrected token extraction + full lifecycle tests
- *
- * Fixes from deep-test-2:
- *   - Tokens stored in localStorage (WebStorageStateStore), not sessionStorage
- *   - Key format: oidc.user:<authority>:<client_id>
- *   - Org listing uses /v1/organizations (auth required for details, not list)
- *
- * Suites:
- *   1  Token extraction validation
- *   2  Full engagement lifecycle (sign-up → confirm → check-in → achievement)
- *   3  CRUD: create → edit → delete opportunity
- *   4  Organization member management
- *   5  Org dashboard UI vs API
- *   6  CheckIn modal (QR + manual)
- *   7  Account page: first/last name save, delete dialog
- *   8  Notification read-state flow (UI + API)
- *   9  Streak display
- *   10 My Engagements UX: links, org name, withdraw button
- *   11 Advanced filter combinations (UI smoke)
- *   12 Create opportunity: category filter + tag filter verify
- *   13 Org settings: save contact info → public profile confirms
- *   14 Volunteer self-check-in UI flow
- */
+// deep-test-3.mjs - Corrected token extraction + full lifecycle tests
+// Fixes from deep-test-2:
+//   - Tokens stored in localStorage (WebStorageStateStore), not sessionStorage
+//   - Key format: oidc.user:<authority>:<client_id>
+//   - Org listing uses /v1/organizations (auth required for details, not list)
+// Suites:
+//   1  Token extraction validation
+//   2  Full engagement lifecycle (sign-up, confirm, check-in, achievement)
+//   3  CRUD: create, edit, delete opportunity
+//   4  Organization member management
+//   5  Org dashboard UI vs API
+//   6  CheckIn modal (QR + manual)
+//   7  Account page: first/last name save, delete dialog
+//   8  Notification read-state flow (UI + API)
+//   9  Streak display
+//   10 My Engagements UX: links, org name, withdraw button
+//   11 Advanced filter combinations (UI smoke)
+//   12 Create opportunity: category filter + tag filter verify
+//   13 Org settings: save contact info, public profile confirms
+//   14 Volunteer self-check-in UI flow
 
 import { chromium } from "playwright";
 import fs from "fs";
@@ -141,7 +137,7 @@ async function run() {
 			olafOrgId = orgList[0].id;
 			ok(`olaf org: "${orgList[0].name}" (${olafOrgId.slice(0, 8)}…)`);
 		} else {
-			// Try without auth – public list
+			// Try without auth - public list
 			const { data: publicList } = await apiFetch("GET", "/v1/organizations");
 			if (Array.isArray(publicList) && publicList.length > 0) {
 				olafOrgId = publicList[0].id;
@@ -154,7 +150,7 @@ async function run() {
 		// Opportunity
 		const { data: oppList } = await apiFetch("GET", "/v1/volunteer-opportunities?PageNumber=1&PageSize=20");
 		testOppId = oppList?.items?.[0]?.id;
-		ok(`Test opportunity: ${testOppId?.slice(0, 8)} – "${oppList?.items?.[0]?.title}"`);
+		ok(`Test opportunity: ${testOppId?.slice(0, 8)} - "${oppList?.items?.[0]?.title}"`);
 	} catch (e) { ko("Suite 1", e); }
 
 	// ── Suite 2: Full engagement lifecycle ─────────────────────────────────
@@ -183,7 +179,7 @@ async function run() {
 			const { data: myEngs } = await apiFetch("GET", "/v1/me/engagements", veraToken);
 			const ex = myEngs?.find((e) => e.opportunityId === testOppId && e.status !== "Withdrawn" && e.status !== "Cancelled");
 			mainEngId = ex?.id;
-			ok(`vera already signed up (409) – using existing ${mainEngId?.slice(0, 8)} status=${ex?.status}`);
+			ok(`vera already signed up (409) - using existing ${mainEngId?.slice(0, 8)} status=${ex?.status}`);
 		} else {
 			note("bug", `Sign-up returned ${s1}`, JSON.stringify(eng1)?.slice(0, 100));
 		}
@@ -202,7 +198,7 @@ async function run() {
 			);
 			if (c1 === 200 || c1 === 204) ok(`olaf confirmed → ${c1}`);
 			else note("bug", `Confirm returned ${c1}`, JSON.stringify(cd1)?.slice(0, 80));
-		} else ok(`Engagement already ${engA?.status} – skipping confirm`);
+		} else ok(`Engagement already ${engA?.status} - skipping confirm`);
 
 		// Re-read status
 		const { data: myEngsB } = await apiFetch("GET", "/v1/me/engagements", veraToken);
@@ -256,7 +252,7 @@ async function run() {
 		const { status: cS, data: cD } = await apiFetch(
 			"POST", "/v1/volunteer-opportunities", olafToken, {
 				title: "CRUD Test Opportunity",
-				description: "Automated lifecycle test – will be deleted.",
+				description: "Automated lifecycle test - will be deleted.",
 				organizationId: olafOrgId,
 				isRemote: true,
 				occurrence: "OneTime",
@@ -293,7 +289,7 @@ async function run() {
 		// Edit
 		const { status: eS } = await apiFetch(
 			"PUT", `/v1/volunteer-opportunities/${crudOppId}`, olafToken, {
-				title: "CRUD Test – EDITED",
+				title: "CRUD Test - EDITED",
 				description: "Updated.",
 				isRemote: false,
 				street: "Musterstraße",
@@ -312,7 +308,7 @@ async function run() {
 
 		// Verify edit
 		const { data: editedDetail } = await apiFetch("GET", `/v1/volunteer-opportunities/${crudOppId}`);
-		if (editedDetail?.title === "CRUD Test – EDITED") ok("Title edit persisted");
+		if (editedDetail?.title === "CRUD Test - EDITED") ok("Title edit persisted");
 		else note("bug", `Title after edit: "${editedDetail?.title}"`);
 		if (editedDetail?.occurrence === "Recurring") ok("Occurrence edit persisted");
 		if (editedDetail?.participationType === "Waitlist") ok("ParticipationType edit persisted");
@@ -406,7 +402,7 @@ async function run() {
 				note("bug", `Add member returned ${addS}`, JSON.stringify(addD)?.slice(0, 80));
 			}
 		} else {
-			ok("vera already in org – remove then re-add to test full flow");
+			ok("vera already in org - remove then re-add to test full flow");
 			const { status: rmS } = await apiFetch(
 				"DELETE", `/v1/organizations/${olafOrgId}/members/${veraId}`, olafToken,
 			);
@@ -543,7 +539,7 @@ async function run() {
 	} catch (e) { ko("Suite 6", e); }
 
 	// ── Suite 7: Account page ──────────────────────────────────────────────
-	console.log("\n=== Suite 7: Account page – name save, delete dialog ===");
+	console.log("\n=== Suite 7: Account page - name save, delete dialog ===");
 	try {
 		await veraPage.goto(`${BASE}/account`);
 		await veraPage.waitForLoadState("networkidle");
@@ -710,7 +706,7 @@ async function run() {
 			if (await titleBtn.count() > 0) {
 				const tag = await titleBtn.evaluate((el) => el.tagName.toLowerCase());
 				if (tag === "a") ok("Opportunity title is a proper <a> link");
-				else if (tag === "button") note("enhancement", "Opportunity title is <button onClick> not <Link> – no right-click open-in-new-tab");
+				else if (tag === "button") note("enhancement", "Opportunity title is <button onClick> not <Link> - no right-click open-in-new-tab");
 				ok(`Title element tag: <${tag}>`);
 			}
 
@@ -728,7 +724,7 @@ async function run() {
 			if (await orgLink.count() > 0) ok("Org link present on engagement item");
 			else {
 				const orgText = await first.textContent();
-				note("enhancement", "No org name/link on My Engagements items – EngagementSummary missing organizationName field");
+				note("enhancement", "No org name/link on My Engagements items - EngagementSummary missing organizationName field");
 			}
 
 			// Check for withdraw/cancel button
@@ -740,7 +736,7 @@ async function run() {
 			const mainText = await first.textContent();
 			const hasDate = /\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2}|Jan|Feb|Mar|Apr|Mai|Jun|Jul|Aug|Sep|Oct|Nov|Dec/.test(mainText ?? "");
 			if (hasDate) ok("Date information visible on engagement item");
-			else note("enhancement", "No date shown on My Engagements items – users don't know when they signed up");
+			else note("enhancement", "No date shown on My Engagements items - users don't know when they signed up");
 		}
 	} catch (e) { ko("Suite 10", e); }
 
@@ -832,7 +828,7 @@ async function run() {
 		ok(`GET /v1/organizations (public) → ${pubOrgs}, ${Array.isArray(pubOrgData) ? pubOrgData.length : "?"} org(s)`);
 	} catch (e) { ko("Suite 12", e); }
 
-	// ── Suite 13: UI smoke – create opportunity modal ──────────────────────
+	// ── Suite 13: UI smoke - create opportunity modal ──────────────────────
 	console.log("\n=== Suite 13: Create opportunity modal UI ===");
 	try {
 		await olafPage.goto(`${BASE}/`);
@@ -919,7 +915,7 @@ async function run() {
 			await ss(veraPage, "14b-checkin-modal-vera");
 			const modal = veraPage.locator('[role="dialog"]');
 			if (await modal.count() > 0) ok("Self check-in modal opens from My Engagements");
-			else ok("Self check-in button clicked (no modal – direct API call)");
+			else ok("Self check-in button clicked (no modal - direct API call)");
 		} else {
 			note("enhancement", "No self-check-in button visible on My Engagements for confirmed engagement");
 		}

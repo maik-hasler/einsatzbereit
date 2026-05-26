@@ -1,26 +1,22 @@
-/**
- * deep-test-2.mjs  –  End-to-end lifecycle + advanced coverage
- *
- * Strategy: login once per user, cache the bearer token, then mix
- * fetch()-based API calls with Playwright UI checks so we never lose
- * session state between suites.
- *
- * Suites:
- *   1  Token harvest & API authentication
- *   2  Full engagement lifecycle (sign-up → confirm → check-in → achievement)
- *   3  Withdraw / cancel flows (volunteer side + org side)
- *   4  Create → edit → delete opportunity (full CRUD)
- *   5  Advanced opportunity filters (date range, category, tag, bbox/radius)
- *   6  Account page – first/last name save, delete-account dialog
- *   7  Organization member management (add via invite, remove)
- *   8  Org dashboard data
- *   9  CheckInModal UI (QR vs manual)
- *   10 API performance – measure response times for key endpoints
- *   11 Concurrency guard – double sign-up to the same slot
- *   12 Volunteer profile page – public view
- *   13 i18n completeness – spot-check German translations
- *   14 Footer / legal pages (Impressum, Datenschutz)
- */
+// deep-test-2.mjs - End-to-end lifecycle + advanced coverage
+// Strategy: login once per user, cache the bearer token, then mix
+// fetch()-based API calls with Playwright UI checks so we never lose
+// session state between suites.
+// Suites:
+//   1  Token harvest & API authentication
+//   2  Full engagement lifecycle (sign-up, confirm, check-in, achievement)
+//   3  Withdraw / cancel flows (volunteer side + org side)
+//   4  Create, edit, delete opportunity (full CRUD)
+//   5  Advanced opportunity filters (date range, category, tag, bbox/radius)
+//   6  Account page - first/last name save, delete-account dialog
+//   7  Organization member management (add via invite, remove)
+//   8  Org dashboard data
+//   9  CheckInModal UI (QR vs manual)
+//   10 API performance - measure response times for key endpoints
+//   11 Concurrency guard - double sign-up to the same slot
+//   12 Volunteer profile page - public view
+//   13 i18n completeness - spot-check German translations
+//   14 Footer / legal pages (Impressum, Datenschutz)
 
 import { chromium } from "playwright";
 import fs from "fs";
@@ -125,7 +121,7 @@ async function run() {
 			olafOrgId = orgs[0].id;
 			ok(`olaf org: "${orgs[0].name}" (${olafOrgId.slice(0, 8)})`);
 		} else {
-			note("bug", "Olaf has no organisations – lifecycle tests will be limited");
+			note("bug", "Olaf has no organisations - lifecycle tests will be limited");
 		}
 	} catch (e) { ko("Suite 1", e); }
 
@@ -158,11 +154,11 @@ async function run() {
 			signedUpEngagementId = signupData?.id;
 			ok(`vera signed up → engagement ${signedUpEngagementId?.slice(0, 8)} (status ${signupStatus})`);
 		} else if (signupStatus === 409) {
-			// Already signed up – look up existing engagement
+			// Already signed up - look up existing engagement
 			const { data: myEngs } = await api("GET", "/v1/me/engagements", veraToken);
 			const existing = myEngs?.find((e) => e.opportunityId === testOppId);
 			signedUpEngagementId = existing?.id;
-			ok(`vera already signed up – using existing engagement ${signedUpEngagementId?.slice(0, 8)}`);
+			ok(`vera already signed up - using existing engagement ${signedUpEngagementId?.slice(0, 8)}`);
 		} else {
 			note("bug", `Sign-up returned ${signupStatus}`, JSON.stringify(signupData));
 		}
@@ -188,7 +184,7 @@ async function run() {
 				note("bug", `Confirm returned ${confirmStatus}`, JSON.stringify(confirmData));
 			}
 		} else {
-			ok(`Engagement already ${engRecord.status} – skipping confirm step`);
+			ok(`Engagement already ${engRecord.status} - skipping confirm step`);
 		}
 
 		// Verify status = Confirmed
@@ -214,7 +210,7 @@ async function run() {
 		if (checkedIn?.isCheckedIn) ok("isCheckedIn = true after self check-in");
 		else note("bug", `isCheckedIn = ${checkedIn?.isCheckedIn} after check-in`);
 
-		// Check achievements – should have "first-step" if vera's first
+		// Check achievements - should have "first-step" if vera's first
 		const { status: achStatus, data: achievements } = await api(
 			"GET", "/v1/me/achievements", veraToken,
 		);
@@ -227,7 +223,7 @@ async function run() {
 			note("bug", `GET /me/achievements returned ${achStatus}`);
 		}
 
-		// Check notifications – olaf should have gotten one when vera signed up
+		// Check notifications - olaf should have gotten one when vera signed up
 		const { data: olafNotifs } = await api("GET", "/v1/notifications", olafToken);
 		if (Array.isArray(olafNotifs)) {
 			ok(`olaf has ${olafNotifs.length} notification(s)`);
@@ -237,7 +233,7 @@ async function run() {
 			else note("enhancement", "No notifications in olaf's inbox after vera signed up");
 		}
 
-		// Check notifications for vera – should have gotten one when olaf confirmed
+		// Check notifications for vera - should have gotten one when olaf confirmed
 		const { data: veraNotifs } = await api("GET", "/v1/notifications", veraToken);
 		if (Array.isArray(veraNotifs)) {
 			ok(`vera has ${veraNotifs.length} notification(s)`);
@@ -291,7 +287,7 @@ async function run() {
 				note("bug", `Withdraw returned ${wStatus}`, JSON.stringify(wData));
 			}
 		} else {
-			note("enhancement", "Could not create a second engagement for withdraw test – opportunity may have a single slot");
+			note("enhancement", "Could not create a second engagement for withdraw test - opportunity may have a single slot");
 		}
 
 		// Org-side cancel: olaf cancels an engagement
@@ -327,11 +323,11 @@ async function run() {
 	console.log("\n=== Suite 4: Opportunity CRUD (create → edit → delete) ===");
 	let createdOppId = null;
 	try {
-		if (!olafOrgId) throw new Error("No org ID – skipping CRUD suite");
+		if (!olafOrgId) throw new Error("No org ID - skipping CRUD suite");
 
 		// Create a new opportunity via API
 		const createBody = {
-			title: "Deep Test Opportunity – CRUD",
+			title: "Deep Test Opportunity - CRUD",
 			description: "Created by automated deep test. Will be deleted at end.",
 			organizationId: olafOrgId,
 			isRemote: true,
@@ -373,7 +369,7 @@ async function run() {
 
 		// Edit: update title and description
 		const editBody = {
-			title: "Deep Test Opportunity – UPDATED",
+			title: "Deep Test Opportunity - UPDATED",
 			description: "Updated by automated test.",
 			isRemote: true,
 			occurrence: "OneTime",
@@ -394,7 +390,7 @@ async function run() {
 
 		// Verify edit persisted
 		const { data: updated } = await api("GET", `/v1/volunteer-opportunities/${createdOppId}`);
-		if (updated?.title === "Deep Test Opportunity – UPDATED") ok("Edit persisted: title updated");
+		if (updated?.title === "Deep Test Opportunity - UPDATED") ok("Edit persisted: title updated");
 		else note("bug", `Title after edit: "${updated?.title}"`);
 		if (updated?.category === "Education") ok("Edit persisted: category updated");
 		else note("bug", `Category after edit: "${updated?.category}"`);
@@ -405,7 +401,7 @@ async function run() {
 		await ss(olafPage, "04a-edited-opportunity");
 		const h1 = await olafPage.locator("h1").first().textContent();
 		if (h1?.includes("UPDATED")) ok("Updated title visible on detail page");
-		else note("bug", `Detail page h1: "${h1?.trim()}" – expected updated title`);
+		else note("bug", `Detail page h1: "${h1?.trim()}" - expected updated title`);
 
 		// Add a time slot
 		const slotBody = {
@@ -540,7 +536,7 @@ async function run() {
 	} catch (e) { ko("Suite 5", e); }
 
 	// ── Suite 6: Account page ──────────────────────────────────────────────
-	console.log("\n=== Suite 6: Account page – name save & delete dialog ===");
+	console.log("\n=== Suite 6: Account page - name save & delete dialog ===");
 	try {
 		await veraPage.goto(`${BASE}/account`);
 		await veraPage.waitForLoadState("networkidle");
@@ -640,7 +636,7 @@ async function run() {
 				note("bug", `Add member returned ${addStatus}`, JSON.stringify(addData)?.slice(0, 100));
 			}
 		} else {
-			ok("vera is already a member – skipping add (would need remove+re-add)");
+			ok("vera is already a member - skipping add (would need remove+re-add)");
 		}
 
 		// UI: members tab in org settings
@@ -831,7 +827,7 @@ async function run() {
 		                    r2.status === 200 || r2.status === 201;
 		if (oneSuccess && oneConflict) ok("Concurrent double sign-up correctly produces one 409");
 		else if (r1.status === 409 && r2.status === 409) ok("Both concurrent sign-ups rejected (already registered)");
-		else note("bug", "Both concurrent sign-ups may have succeeded – duplicate engagement possible");
+		else note("bug", "Both concurrent sign-ups may have succeeded - duplicate engagement possible");
 	} catch (e) { ko("Suite 11", e); }
 
 	// ── Suite 12: Public volunteer profile ─────────────────────────────────
@@ -858,7 +854,7 @@ async function run() {
 		// Check page is accessible without login
 		const signInBtn = freshPage.locator("button", { hasText: /sign in|anmelden/i });
 		if (await signInBtn.count() === 0) ok("Public achievements page accessible without login (no login prompt)");
-		else note("bug", "Sign-in prompt shown on public achievements page – should be accessible to all");
+		else note("bug", "Sign-in prompt shown on public achievements page - should be accessible to all");
 
 		await freshCtx.close();
 	} catch (e) { ko("Suite 12", e); }

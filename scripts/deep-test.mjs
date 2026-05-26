@@ -1,22 +1,19 @@
-/**
- * deep-test.mjs  –  In-depth live staging tests
- *
- * Covers:
- *   Suite 1  – Opportunity list: filters, pagination, map toggle
- *   Suite 2  – Opportunity detail: full content, map, badges
- *   Suite 3  – Sign-up flow (vera signs up for an opportunity)
- *   Suite 4  – My engagements: status, withdraw
- *   Suite 5  – Notification system: mark-read, mark-all-read
- *   Suite 6  – Streaks API
- *   Suite 7  – Achievement / badge catalog
- *   Suite 8  – Engagement management (olaf side)
- *   Suite 9  – Create opportunity + time-slot validation
- *   Suite 10 – Org settings: save contact info, verify on profile
- *   Suite 11 – Form validation / required fields
- *   Suite 12 – Deep-link / URL filter persistence
- *   Suite 13 – Error boundary (404 page)
- *   Suite 14 – API contract spot-checks (status codes, schemas)
- */
+// deep-test.mjs - In-depth live staging tests
+// Covers:
+//   Suite 1  - Opportunity list: filters, pagination, map toggle
+//   Suite 2  - Opportunity detail: full content, map, badges
+//   Suite 3  - Sign-up flow (vera signs up for an opportunity)
+//   Suite 4  - My engagements: status, withdraw
+//   Suite 5  - Notification system: mark-read, mark-all-read
+//   Suite 6  - Streaks API
+//   Suite 7  - Achievement / badge catalog
+//   Suite 8  - Engagement management (olaf side)
+//   Suite 9  - Create opportunity + time-slot validation
+//   Suite 10 - Org settings: save contact info, verify on profile
+//   Suite 11 - Form validation / required fields
+//   Suite 12 - Deep-link / URL filter persistence
+//   Suite 13 - Error boundary (404 page)
+//   Suite 14 - API contract spot-checks (status codes, schemas)
 
 import { chromium } from "playwright";
 import fs from "fs";
@@ -79,8 +76,8 @@ async function getBearerToken(page) {
 async function run() {
 	const browser = await chromium.launch({ headless: true });
 
-	// ── Suite 1: Opportunity list – filters, pagination, map toggle ──────────
-	console.log("\n=== Suite 1: Opportunity list – filters, pagination, map ===");
+	// ── Suite 1: Opportunity list - filters, pagination, map toggle ──────────
+	console.log("\n=== Suite 1: Opportunity list - filters, pagination, map ===");
 	{
 		const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
 		const page = await ctx.newPage();
@@ -149,7 +146,7 @@ async function run() {
 				note("enhancement", "No map/list toggle button found on homepage");
 			}
 
-			// Pagination – navigate to page 2 if available
+			// Pagination - navigate to page 2 if available
 			const nextBtn = page.locator("button[aria-label*='next' i], button", { hasText: /next|weiter|›|»/i }).first();
 			if (await nextBtn.count() > 0 && await nextBtn.isEnabled()) {
 				await nextBtn.click();
@@ -166,8 +163,8 @@ async function run() {
 		await ctx.close();
 	}
 
-	// ── Suite 2: Opportunity detail – full content ───────────────────────────
-	console.log("\n=== Suite 2: Opportunity detail – full content check ===");
+	// ── Suite 2: Opportunity detail - full content ───────────────────────────
+	console.log("\n=== Suite 2: Opportunity detail - full content check ===");
 	let firstOppId = null;
 	{
 		const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
@@ -300,7 +297,7 @@ async function run() {
 							// Check if modal closed (also a success indicator)
 							const modalGone = await page.locator('[role="dialog"]').count() === 0;
 							if (modalGone) ok("Sign-up modal closed after submission (success)");
-							else note("bug", "Sign-up modal still open after submit – possible silent error");
+							else note("bug", "Sign-up modal still open after submit - possible silent error");
 						}
 					} else {
 						note("bug", "Sign-up modal has no submit button");
@@ -364,11 +361,11 @@ async function run() {
 					ok("Withdraw/cancel button visible on engagement");
 					// Don't actually click it - just confirm it's there
 				} else {
-					note("enhancement", "No withdraw/cancel button on My Engagements – users cannot withdraw from an opportunity");
+					note("enhancement", "No withdraw/cancel button on My Engagements - users cannot withdraw from an opportunity");
 				}
 			} else if (mainText?.match(/no engagement|keine|empty|leer/i)) {
 				ok("My Engagements shows empty state");
-				note("enhancement", "Vera has no engagements – sign-up in suite 3 may have failed or opp is different org");
+				note("enhancement", "Vera has no engagements - sign-up in suite 3 may have failed or opp is different org");
 			} else {
 				ok("My Engagements page loaded (content state unclear)");
 			}
@@ -649,7 +646,7 @@ async function run() {
 							note("bug", `Org engagements endpoint returned ${engStatus}`, JSON.stringify(engBody)?.slice(0, 100));
 						}
 					} else {
-						note("enhancement", "Olaf's org has no opportunities yet – create one to test engagement management");
+						note("enhancement", "Olaf's org has no opportunities yet - create one to test engagement management");
 					}
 				}
 			}
@@ -773,8 +770,8 @@ async function run() {
 		await ctx.close();
 	}
 
-	// ── Suite 10: Org settings – save and verify on profile ─────────────────
-	console.log("\n=== Suite 10: Org settings – save contact info, verify on profile ===");
+	// ── Suite 10: Org settings - save and verify on profile ─────────────────
+	console.log("\n=== Suite 10: Org settings - save contact info, verify on profile ===");
 	{
 		const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
 		const page = await ctx.newPage();
@@ -883,7 +880,7 @@ async function run() {
 			else if (s7 === 200 && b7) {
 				note(
 					"enhancement",
-					"No max page size enforced – PageSize=1000 accepted",
+					"No max page size enforced - PageSize=1000 accepted",
 					"Large page sizes should be capped (e.g. max 100) to prevent DoS.",
 				);
 			}
@@ -952,7 +949,7 @@ async function run() {
 			if (h1?.match(/not found|404|nicht gefunden/i)) {
 				ok(`404 page shows correct heading: "${h1.trim()}"`);
 			} else {
-				note("bug", `404 page h1 is "${h1?.trim()}" – expected 404/not-found message`);
+				note("bug", `404 page h1 is "${h1?.trim()}" - expected 404/not-found message`);
 			}
 
 			// Check it still has header/footer (SPA layout)
@@ -1010,7 +1007,7 @@ async function run() {
 						note(
 							"enhancement",
 							"Org dashboard API endpoint exists but no dashboard link in nav",
-							`GET /v1/organizations/${olafOrgId}/dashboard → 200 with keys: ${keys.join(", ")} – but the UI has no dashboard page`,
+							`GET /v1/organizations/${olafOrgId}/dashboard → 200 with keys: ${keys.join(", ")} - but the UI has no dashboard page`,
 						);
 					}
 				} else {
