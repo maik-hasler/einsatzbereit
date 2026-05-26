@@ -174,12 +174,12 @@ function note(sev, title, detail) {
 	await page.waitForLoadState("networkidle");
 	await page.screenshot({ path: `${SCREENSHOTS}/09-my-engagements.png`, fullPage: false });
 
-	// Account page  
+	// Account page
 	await page.goto(`${BASE}/account`);
 	await page.waitForLoadState("networkidle");
 	await page.screenshot({ path: `${SCREENSHOTS}/10-account.png`, fullPage: true });
 	const acctText = await page.locator("body").textContent();
-	
+
 	// Check for profile picture / avatar support
 	const hasAvatar = page.locator("img[alt*='avatar'], img[alt*='profile'], [data-testid*='avatar']").first();
 	const hasAvatarVisible = await hasAvatar.isVisible({ timeout: 1000 }).catch(() => false);
@@ -210,7 +210,7 @@ function note(sev, title, detail) {
 		await page.goto(`${BASE}${href}`);
 		await page.waitForLoadState("networkidle");
 		await page.screenshot({ path: `${SCREENSHOTS}/12-opportunity-detail-loggedin.png`, fullPage: true });
-		
+
 		// Check for sign-up CTA visibility
 		const signUpArea = await page.locator("main").textContent();
 		console.log("Opportunity detail (logged in) main text:", signUpArea?.slice(0, 300));
@@ -240,10 +240,10 @@ function note(sev, title, detail) {
 		await createBtn.click();
 		await page.locator('[role="dialog"]').waitFor({ timeout: 5000 });
 		await page.screenshot({ path: `${SCREENSHOTS}/13-create-opportunity-modal.png`, fullPage: false });
-		
+
 		const modalText = await page.locator('[role="dialog"]').textContent();
 		console.log("Create modal fields visible:", modalText?.slice(0, 500));
-		
+
 		// Check if category field is in the form
 		const hasCategoryField = page.locator('[role="dialog"]').getByLabel(/category|kategorie/i);
 		const hasCat = await hasCategoryField.isVisible({ timeout: 1000 }).catch(() => false);
@@ -276,10 +276,10 @@ function note(sev, title, detail) {
 	await page.screenshot({ path: `${SCREENSHOTS}/15-org-dashboard.png`, fullPage: true });
 	const dashText = await page.locator("body").textContent();
 	console.log("Dashboard text:", dashText?.slice(0, 400));
-	
+
 	// Check for stats/KPIs on dashboard
-	const hasStats = dashText?.toLowerCase().includes("total") || 
-									 dashText?.toLowerCase().includes("count") || 
+	const hasStats = dashText?.toLowerCase().includes("total") ||
+									 dashText?.toLowerCase().includes("count") ||
 									 dashText?.match(/\d+\s*(engagement|applicant|volunteer)/i);
 	if (!hasStats) note("enhancement", "Organization dashboard lacks metrics/statistics", "The org dashboard should show volunteer statistics (total sign-ups, confirmed, pending) but displays minimal data");
 
@@ -287,20 +287,20 @@ function note(sev, title, detail) {
 	await page.goto(`${BASE}/volunteer-opportunities/${opId}`);
 	await page.waitForLoadState("networkidle");
 	await page.screenshot({ path: `${SCREENSHOTS}/16-opportunity-detail-organisator.png`, fullPage: true });
-	
+
 	const editBtn = page.getByRole("button", { name: /edit|bearbeiten/i });
 	if (await editBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
 		await editBtn.click();
 		await page.locator("div.fixed.inset-0.z-50").first().waitFor({ timeout: 5000 });
 		await page.screenshot({ path: `${SCREENSHOTS}/17-edit-opportunity-modal.png`, fullPage: false });
-		
+
 		const editModal = page.locator("div.fixed.inset-0.z-50").first();
 		const editText = await editModal.textContent();
 		console.log("Edit modal fields:", editText?.slice(0, 400));
-		
+
 		const hasCategoryInEdit = await editModal.getByLabel(/category|kategorie/i).isVisible({ timeout: 1000 }).catch(() => false);
 		if (!hasCategoryInEdit) note("enhancement", "Category field missing from edit opportunity modal", "Category cannot be set when editing an opportunity");
-		
+
 		const hasTagsInEdit = await editModal.getByLabel(/tags|schlagwort/i).isVisible({ timeout: 1000 }).catch(() => false);
 		if (!hasTagsInEdit) note("enhancement", "Tags field missing from edit opportunity modal", "Tags cannot be added when editing an opportunity");
 

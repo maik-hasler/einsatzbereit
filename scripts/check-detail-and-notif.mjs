@@ -74,7 +74,7 @@ if (hasAvatar) {
 	await page.waitForTimeout(500);
 	await page.screenshot({ path: `${SCREENSHOTS}/20-user-menu.png`, fullPage: false });
 	const menuText = await page.locator("body").textContent();
-	console.log("\nAfter avatar click, body includes:", 
+	console.log("\nAfter avatar click, body includes:",
 		menuText?.match(/sign out|abmelden|logout|profile|account|settings/i)?.[0] ?? "nothing notable");
 }
 

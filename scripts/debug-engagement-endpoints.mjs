@@ -18,7 +18,7 @@ const browser = await chromium.launch({ headless: true });
 	await page.locator("#password").fill("vera123");
 	await page.locator("#kc-login").click();
 	await page.waitForURL(`${BASE}/`, { timeout: 30000 });
-	
+
 	// Get token from storage
 	const token = await page.evaluate(() => {
 		for (let i = 0; i < sessionStorage.length; i++) {
@@ -30,7 +30,7 @@ const browser = await chromium.launch({ headless: true });
 		}
 		return null;
 	});
-	
+
 	if (token) {
 		// Call /v1/me/engagements directly
 		const resp = await ctx.request.get(`${API}/v1/me/engagements`, {
@@ -40,7 +40,7 @@ const browser = await chromium.launch({ headless: true });
 		const body = await resp.text();
 		console.log("Response:", body.slice(0, 300));
 	}
-	
+
 	await ctx.close();
 }
 
@@ -57,7 +57,7 @@ const browser = await chromium.launch({ headless: true });
 	await page.locator("#password").fill("olaf123");
 	await page.locator("#kc-login").click();
 	await page.waitForURL(`${BASE}/`, { timeout: 30000 });
-	
+
 	const token = await page.evaluate(() => {
 		for (let i = 0; i < sessionStorage.length; i++) {
 			const key = sessionStorage.key(i);
@@ -68,13 +68,13 @@ const browser = await chromium.launch({ headless: true });
 		}
 		return null;
 	});
-	
+
 	// First get an opportunity ID
 	const opResp = await ctx.request.get(`${API}/v1/volunteer-opportunities?PageNumber=1&PageSize=1`);
 	const opData = await opResp.json();
 	const opId = opData.items?.[0]?.id;
 	console.log(`\nOpportunity ID: ${opId}`);
-	
+
 	if (token && opId) {
 		const resp = await ctx.request.get(`${API}/v1/volunteer-opportunities/${opId}/engagements`, {
 			headers: { Authorization: `Bearer ${token}` }
@@ -83,7 +83,7 @@ const browser = await chromium.launch({ headless: true });
 		const body = await resp.text();
 		console.log("Response:", body.slice(0, 300));
 	}
-	
+
 	await ctx.close();
 }
 

@@ -39,7 +39,7 @@ await bellBtn.click();
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${SCREENSHOTS}/21-notifications-panel.png`, fullPage: false });
 const bodyAfterBell = await page.locator("body").textContent();
-console.log("Body after bell click (first 300 chars after header):", 
+console.log("Body after bell click (first 300 chars after header):",
 	bodyAfterBell?.slice(0, 500));
 
 // Check if any panel/dropdown appeared
