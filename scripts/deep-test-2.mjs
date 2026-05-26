@@ -823,8 +823,9 @@ async function run() {
 		]);
 		ok(`Concurrent signup: r1=${r1.status} r2=${r2.status}`);
 		const oneConflict = r1.status === 409 || r2.status === 409;
-		const oneSuccess  = r1.status === 200 || r1.status === 201 ||
-		                    r2.status === 200 || r2.status === 201;
+		const r1ok = r1.status === 200 || r1.status === 201;
+		const r2ok = r2.status === 200 || r2.status === 201;
+		const oneSuccess = r1ok || r2ok;
 		if (oneSuccess && oneConflict) ok("Concurrent double sign-up correctly produces one 409");
 		else if (r1.status === 409 && r2.status === 409) ok("Both concurrent sign-ups rejected (already registered)");
 		else note("bug", "Both concurrent sign-ups may have succeeded - duplicate engagement possible");
