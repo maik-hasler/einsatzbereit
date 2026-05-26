@@ -21,15 +21,15 @@ await page.waitForURL(`${BASE}/`, { timeout: 30000 });
 
 // Get vera's JWT roles
 const roles = await page.evaluate(() => {
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const key = sessionStorage.key(i);
-    if (key && key.includes("oidc.user")) {
-      const val = JSON.parse(sessionStorage.getItem(key) || "{}");
-      const profile = val.profile;
-      return profile;
-    }
-  }
-  return null;
+	for (let i = 0; i < sessionStorage.length; i++) {
+		const key = sessionStorage.key(i);
+		if (key && key.includes("oidc.user")) {
+			const val = JSON.parse(sessionStorage.getItem(key) || "{}");
+			const profile = val.profile;
+			return profile;
+		}
+	}
+	return null;
 });
 console.log("Vera's JWT profile:", JSON.stringify(roles, null, 2));
 
@@ -40,7 +40,7 @@ await page.waitForTimeout(500);
 await page.screenshot({ path: `${SCREENSHOTS}/21-notifications-panel.png`, fullPage: false });
 const bodyAfterBell = await page.locator("body").textContent();
 console.log("Body after bell click (first 300 chars after header):", 
-  bodyAfterBell?.slice(0, 500));
+	bodyAfterBell?.slice(0, 500));
 
 // Check if any panel/dropdown appeared
 const hasDropdown = await page.locator('[role="dialog"], [role="listbox"], [aria-live], .notification-panel, [data-testid*="notif"]').first().isVisible({ timeout: 1000 }).catch(() => false);
@@ -58,9 +58,9 @@ await page.waitForLoadState("networkidle");
 const allButtons = await page.locator("button").all();
 console.log("\nAll buttons on opportunity detail page:");
 for (const btn of allButtons) {
-  const text = await btn.textContent().catch(() => "");
-  const visible = await btn.isVisible().catch(() => false);
-  console.log(` - "${text?.trim()}" visible=${visible}`);
+	const text = await btn.textContent().catch(() => "");
+	const visible = await btn.isVisible().catch(() => false);
+	console.log(` - "${text?.trim()}" visible=${visible}`);
 }
 
 await browser.close();

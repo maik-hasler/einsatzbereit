@@ -10,9 +10,9 @@ const page = await ctx.newPage();
 
 const apiResults = {};
 page.on("response", async resp => {
-  if (resp.url().includes("api.maik-hasler.de/v1/")) {
-    try { apiResults[resp.url()] = `${resp.status()}`; } catch {}
-  }
+	if (resp.url().includes("api.maik-hasler.de/v1/")) {
+		try { apiResults[resp.url()] = `${resp.status()}`; } catch {}
+	}
 });
 
 // Login as vera
@@ -38,9 +38,9 @@ console.log(mainText?.slice(0, 1000));
 const buttons = await page.locator("main button").all();
 console.log("\nButtons in main:");
 for (const btn of buttons) {
-  const text = await btn.textContent().catch(() => "");
-  const visible = await btn.isVisible().catch(() => false);
-  if (visible) console.log(" -", text?.trim());
+	const text = await btn.textContent().catch(() => "");
+	const visible = await btn.isVisible().catch(() => false);
+	if (visible) console.log(" -", text?.trim());
 }
 
 await page.screenshot({ path: `${SCREENSHOTS}/19-opportunity-detail-signup.png`, fullPage: true });
@@ -56,9 +56,9 @@ console.log("\nNotification bell found:", hasBell);
 const headerButtons = await page.locator("header button").all();
 console.log("All header buttons:");
 for (const btn of headerButtons) {
-  const text = await btn.textContent().catch(() => "");
-  const ariaLabel = await btn.getAttribute("aria-label").catch(() => "");
-  console.log(` - text: "${text?.trim()}" aria-label: "${ariaLabel}"`);
+	const text = await btn.textContent().catch(() => "");
+	const ariaLabel = await btn.getAttribute("aria-label").catch(() => "");
+	console.log(` - text: "${text?.trim()}" aria-label: "${ariaLabel}"`);
 }
 
 // Check if there's a user menu and sign-out
@@ -70,12 +70,12 @@ console.log("\nUser menu/sign-out button visible:", hasUserMenu);
 const avatarBtn = page.locator("header button").filter({ hasText: /^[A-Z]{1,2}$/ }).first();
 const hasAvatar = await avatarBtn.isVisible({ timeout: 2000 }).catch(() => false);
 if (hasAvatar) {
-  await avatarBtn.click();
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: `${SCREENSHOTS}/20-user-menu.png`, fullPage: false });
-  const menuText = await page.locator("body").textContent();
-  console.log("\nAfter avatar click, body includes:", 
-    menuText?.match(/sign out|abmelden|logout|profile|account|settings/i)?.[0] ?? "nothing notable");
+	await avatarBtn.click();
+	await page.waitForTimeout(500);
+	await page.screenshot({ path: `${SCREENSHOTS}/20-user-menu.png`, fullPage: false });
+	const menuText = await page.locator("body").textContent();
+	console.log("\nAfter avatar click, body includes:", 
+		menuText?.match(/sign out|abmelden|logout|profile|account|settings/i)?.[0] ?? "nothing notable");
 }
 
 console.log("\nAPI calls made:", JSON.stringify(apiResults, null, 2));

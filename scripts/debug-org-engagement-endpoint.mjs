@@ -9,13 +9,13 @@ const page = await ctx.newPage();
 
 const apiResults = {};
 page.on("response", async resp => {
-  const url = resp.url();
-  if (url.includes("api.maik-hasler.de/v1/")) {
-    try {
-      const body = await resp.text();
-      apiResults[url] = `${resp.status()} ${body.slice(0, 200)}`;
-    } catch {}
-  }
+	const url = resp.url();
+	if (url.includes("api.maik-hasler.de/v1/")) {
+		try {
+			const body = await resp.text();
+			apiResults[url] = `${resp.status()} ${body.slice(0, 200)}`;
+		} catch {}
+	}
 });
 
 // Login as olaf (organisator)
@@ -38,7 +38,7 @@ const bodyText = await page.locator("body").textContent();
 console.log("Body:", bodyText?.slice(0, 400));
 console.log("\nAPI calls:");
 for (const [url, r] of Object.entries(apiResults)) {
-  console.log(`  ${url}: ${r}`);
+	console.log(`  ${url}: ${r}`);
 }
 
 await browser.close();

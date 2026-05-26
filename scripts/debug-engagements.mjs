@@ -13,11 +13,11 @@ const apiCalls = [];
 page.on("console", msg => consoleMsgs.push(`[${msg.type()}] ${msg.text()}`));
 page.on("pageerror", err => networkErrors.push(`PageError: ${err.message}`));
 page.on("response", async resp => {
-  if (resp.url().includes("api.maik-hasler.de")) {
-    let body = "";
-    try { body = await resp.text(); } catch {}
-    apiCalls.push(`${resp.status()} ${resp.url()} | ${body.slice(0, 300)}`);
-  }
+	if (resp.url().includes("api.maik-hasler.de")) {
+		let body = "";
+		try { body = await resp.text(); } catch {}
+		apiCalls.push(`${resp.status()} ${resp.url()} | ${body.slice(0, 300)}`);
+	}
 });
 
 await page.goto(BASE);

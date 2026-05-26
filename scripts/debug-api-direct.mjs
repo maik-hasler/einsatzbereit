@@ -10,13 +10,13 @@ const page = await ctx.newPage();
 // Intercept responses
 const apiResults = {};
 page.on("response", async resp => {
-  const url = resp.url();
-  if (url.includes("/v1/me/engagements") || url.includes("/v1/volunteer-opportunities")) {
-    try {
-      const body = await resp.text();
-      apiResults[url] = { status: resp.status(), body: body.slice(0, 500) };
-    } catch {}
-  }
+	const url = resp.url();
+	if (url.includes("/v1/me/engagements") || url.includes("/v1/volunteer-opportunities")) {
+		try {
+			const body = await resp.text();
+			apiResults[url] = { status: resp.status(), body: body.slice(0, 500) };
+		} catch {}
+	}
 });
 
 // Login as vera
@@ -35,8 +35,8 @@ await page.waitForLoadState("networkidle");
 
 console.log("API results:");
 for (const [url, r] of Object.entries(apiResults)) {
-  console.log(`  ${r.status} ${url}`);
-  console.log(`  Body: ${r.body}`);
+	console.log(`  ${r.status} ${url}`);
+	console.log(`  Body: ${r.body}`);
 }
 
 // Also navigate to olaf's engagement management
@@ -46,13 +46,13 @@ const ctx2 = await browser.newContext({ ignoreHTTPSErrors: true });
 const page2 = await ctx2.newPage();
 const apiResults2 = {};
 page2.on("response", async resp => {
-  const url = resp.url();
-  if (url.includes("/v1/") && url.includes("engagements")) {
-    try {
-      const body = await resp.text();
-      apiResults2[url] = { status: resp.status(), body: body.slice(0, 500) };
-    } catch {}
-  }
+	const url = resp.url();
+	if (url.includes("/v1/") && url.includes("engagements")) {
+		try {
+			const body = await resp.text();
+			apiResults2[url] = { status: resp.status(), body: body.slice(0, 500) };
+		} catch {}
+	}
 });
 
 await page2.goto(BASE);
@@ -68,25 +68,25 @@ await page2.waitForURL(`${BASE}/`, { timeout: 30000 });
 // Go to engagement management for the opportunity
 const opLink = page2.locator("main a[href*='/volunteer-opportunities/']").first();
 if (await opLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-  const href = await opLink.getAttribute("href");
-  const opId = href?.match(/volunteer-opportunities\/([^/]+)/)?.[1];
-  if (opId) {
-    await page2.goto(`${BASE}/organizations/${opId}/engagements`).catch(() => {});
-    // try the management page
-    await page2.goto(`${BASE}/volunteer-opportunities/${opId}`);
-    await page2.waitForLoadState("networkidle");
-    const engBtn = page2.getByRole("button", { name: /manage engagements|teilnehmer|manage/i });
-    if (await engBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await engBtn.click();
-      await page2.waitForLoadState("networkidle");
-    }
-  }
+	const href = await opLink.getAttribute("href");
+	const opId = href?.match(/volunteer-opportunities\/([^/]+)/)?.[1];
+	if (opId) {
+		await page2.goto(`${BASE}/organizations/${opId}/engagements`).catch(() => {});
+		// try the management page
+		await page2.goto(`${BASE}/volunteer-opportunities/${opId}`);
+		await page2.waitForLoadState("networkidle");
+		const engBtn = page2.getByRole("button", { name: /manage engagements|teilnehmer|manage/i });
+		if (await engBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+			await engBtn.click();
+			await page2.waitForLoadState("networkidle");
+		}
+	}
 }
 
 console.log("\nOlaf API results:");
 for (const [url, r] of Object.entries(apiResults2)) {
-  console.log(`  ${r.status} ${url}`);
-  console.log(`  Body: ${r.body}`);
+	console.log(`  ${r.status} ${url}`);
+	console.log(`  Body: ${r.body}`);
 }
 
 await ctx2.close();
