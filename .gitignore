@@ -5,3 +5,6 @@
 
 # Root-level node_modules (Playwright smoke-test scripts)
 node_modules/
+
+# Playwright screenshots from exploratory testing
+scripts/screenshots/
