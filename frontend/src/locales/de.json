@@ -438,6 +438,7 @@
     },
     "profile": {
       "title": "Mein Profil",
+      "sectionDetails": "Profil-Details",
       "fieldBio": "Über mich",
       "bioPlaceholder": "Erzähl Organisatoren etwas über dich…",
       "fieldSkills": "Fähigkeiten & Interessen",

@@ -430,6 +430,7 @@
     },
     "profile": {
       "title": "My Profile",
+      "sectionDetails": "Profile Details",
       "fieldBio": "Bio",
       "bioPlaceholder": "Tell organizers a little about yourself…",
       "fieldSkills": "Skills & Interests",
