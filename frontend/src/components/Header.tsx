@@ -28,6 +28,7 @@ export default function Header() {
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const notifRef = useRef<HTMLDivElement>(null);
+	const mobileNotifRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
@@ -37,7 +38,12 @@ export default function Header() {
 			) {
 				setDropdownOpen(false);
 			}
-			if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+			if (
+				notifRef.current &&
+				!notifRef.current.contains(e.target as Node) &&
+				(!mobileNotifRef.current ||
+					!mobileNotifRef.current.contains(e.target as Node))
+			) {
 				setNotifOpen(false);
 			}
 		};
@@ -438,10 +444,7 @@ export default function Header() {
 								</div>
 								<button
 									type="button"
-									onClick={() => {
-										setMobileOpen(false);
-										setNotifOpen(true);
-									}}
+									onClick={() => setNotifOpen((o) => !o)}
 									className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("notifications.bellLabel")}
@@ -451,6 +454,81 @@ export default function Header() {
 										</span>
 									)}
 								</button>
+								{notifOpen && (
+									<div
+										ref={mobileNotifRef}
+										className="rounded-lg border border-gray-200 bg-white shadow-sm"
+									>
+										<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+											<p className="text-sm font-medium text-gray-900">
+												{t("notifications.bellLabel")}
+											</p>
+											{notifications.some((n) => !n.isRead) && (
+												<button
+													type="button"
+													className="text-xs text-brand-700 hover:underline cursor-pointer"
+													onClick={async () => {
+														await api.markAllNotificationsRead();
+														setNotifications((prev) =>
+															prev.map((n) => ({ ...n, isRead: true })),
+														);
+													}}
+												>
+													{t("notifications.markAllRead")}
+												</button>
+											)}
+										</div>
+										<ul className="max-h-64 overflow-y-auto divide-y divide-gray-50">
+											{notifications.length === 0 ? (
+												<li className="px-4 py-6 text-center text-sm text-gray-400">
+													{t("notifications.empty")}
+												</li>
+											) : (
+												notifications.map((n) => (
+													<li key={n.id}>
+														<button
+															type="button"
+															className={`w-full text-left px-4 py-3 text-sm hover:bg-brand-50 transition-colors cursor-pointer ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
+															onClick={async () => {
+																if (!n.isRead) {
+																	await api.markNotificationRead(n.id);
+																	setNotifications((prev) =>
+																		prev.map((x) =>
+																			x.id === n.id
+																				? { ...x, isRead: true }
+																				: x,
+																		),
+																	);
+																}
+																setNotifOpen(false);
+																setMobileOpen(false);
+																window.location.href = "/my-engagements";
+															}}
+														>
+															<span className="flex items-start gap-2">
+																{!n.isRead && (
+																	<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+																)}
+																<span className={!n.isRead ? "" : "pl-4"}>
+																	{t(
+																		`notifications.kinds.${n.kind}` as Parameters<
+																			typeof t
+																		>[0],
+																		{ defaultValue: n.kind },
+																	)}
+																	<br />
+																	<span className="text-xs text-gray-400">
+																		{new Date(n.createdOn).toLocaleString()}
+																	</span>
+																</span>
+															</span>
+														</button>
+													</li>
+												))
+											)}
+										</ul>
+									</div>
+								)}
 								<a
 									href="/my-engagements"
 									onClick={() => setMobileOpen(false)}
