@@ -1,3 +1,4 @@
+using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
@@ -20,6 +21,8 @@ public class ConfirmEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IAggregateRepository<UserStreak, UserStreakId> _streakRepo =
+		Substitute.For<IAggregateRepository<UserStreak, UserStreakId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly ISender _sender = Substitute.For<ISender>();
@@ -29,6 +32,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
+		_dbContext.UserStreaks.Returns(_streakRepo);
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
@@ -141,5 +145,74 @@ public class ConfirmEngagementCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<DomainException>().WithMessage("*Only pending*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldAwardWeeklyHeroBadge_WhenActivityStreakReaches4(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			volunteerId,
+			new TimeSlotId(Guid.CreateVersion7()));
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		// Streak at 3 consecutive weeks; next activity takes it to 4
+		var streak = BuildActivityStreakOf(volunteerId, 3);
+		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId), cancellationToken);
+
+		await _sender.Received(1).Send(
+			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4" && c.UserId == volunteerId),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAwardWeeklyHeroBadge_WhenActivityStreakIsBelow3(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			volunteerId,
+			new TimeSlotId(Guid.CreateVersion7()));
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		// Streak at 1; next activity takes it to 2 - no badge yet
+		var streak = BuildActivityStreakOf(volunteerId, 1);
+		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId), cancellationToken);
+
+		await _sender.DidNotReceive().Send(
+			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4"),
+			Arg.Any<CancellationToken>());
+	}
+
+	private static UserStreak BuildActivityStreakOf(UserId userId, int weeks)
+	{
+		var streak = UserStreak.Create(userId);
+		// Record activity in consecutive ISO weeks ending before the current week
+		var now = DateTime.UtcNow;
+		var currentYear = System.Globalization.ISOWeek.GetYear(now);
+		var currentWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
+		for (var i = weeks; i >= 1; i--)
+		{
+			var week = currentWeek - i;
+			var year = currentYear;
+			if (week <= 0)
+			{
+				year--;
+				week += 52;
+			}
+			streak.RecordActivity(year, week);
+		}
+		return streak;
 	}
 }
