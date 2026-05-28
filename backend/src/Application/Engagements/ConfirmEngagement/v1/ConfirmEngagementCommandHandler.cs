@@ -72,6 +72,11 @@ internal sealed class ConfirmEngagementCommandHandler(
 			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
 		}
 		streak.RecordActivity(isoYear, isoWeek);
+
+		if (streak.ActivityStreak == 4)
+		{
+			await sender.Send(new AwardAchievementCommand(volunteerId, "weekly-hero-4"), cancellationToken);
+		}
 	}
 
 	private async Task EvaluateMilestoneAchievementsAsync(

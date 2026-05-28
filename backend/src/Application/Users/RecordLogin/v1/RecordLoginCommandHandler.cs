@@ -1,3 +1,4 @@
+using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Users;
@@ -5,7 +6,8 @@ using Domain.Users;
 namespace Application.Users.RecordLogin.v1;
 
 internal sealed class RecordLoginCommandHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	ISender sender)
 	: ICommandHandler<RecordLoginCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -21,6 +23,12 @@ internal sealed class RecordLoginCommandHandler(
 		}
 
 		streak.RecordLogin(request.Date);
+
+		if (streak.LoginStreak == 7)
+		{
+			await sender.Send(new AwardAchievementCommand(request.UserId, "on-a-roll-7"), cancellationToken);
+		}
+
 		return true;
 	}
 }
