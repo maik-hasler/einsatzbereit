@@ -73,8 +73,8 @@ async function checkDetailPage() {
 		fail("breadcrumb", "no nav[aria-label=Breadcrumb] found");
 	}
 
-	// #373 share button.
-	const shareButton = page.getByRole("button", { name: /share/i });
+	// #373 share button (matched by stable test id, locale-independent).
+	const shareButton = page.getByTestId("share-opportunity");
 	if ((await shareButton.count()) > 0) {
 		ok("share button present on detail page");
 	} else {
