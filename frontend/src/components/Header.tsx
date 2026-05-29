@@ -1,6 +1,7 @@
 import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
@@ -15,6 +16,7 @@ function getInitials(name: string): string {
 export default function Header() {
 	const auth = useAuth();
 	const { t } = useTranslation();
+	const navigate = useNavigate();
 	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
@@ -189,7 +191,7 @@ export default function Header() {
 																		);
 																	}
 																	setNotifOpen(false);
-																	window.location.href = "/my-engagements";
+																	navigate("/my-engagements");
 																}}
 															>
 																<span className="flex items-start gap-2">
@@ -478,7 +480,7 @@ export default function Header() {
 																}
 																setNotifOpen(false);
 																setMobileOpen(false);
-																window.location.href = "/my-engagements";
+																navigate("/my-engagements");
 															}}
 														>
 															<span className="flex items-start gap-2">

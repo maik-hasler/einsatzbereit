@@ -17,6 +17,12 @@ internal sealed class CreateEngagementCommandHandler(
 		CreateEngagementCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
+			request.OpportunityId, cancellationToken);
+
+		if (opportunity is null)
+			throw new DomainException($"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found.");
+
 		var engagement = request.TimeSlotId is not null
 			? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
 			: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
@@ -24,23 +30,17 @@ internal sealed class CreateEngagementCommandHandler(
 
 		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
 
-		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
-			request.OpportunityId, cancellationToken);
+		var members = await keycloakOrganizationService
+			.GetMembersAsync(opportunity.OrganizationId.Value, cancellationToken);
 
-		if (opportunity is not null)
+		foreach (var organizer in members.Where(m => m.IsOrganisator))
 		{
-			var members = await keycloakOrganizationService
-				.GetMembersAsync(opportunity.OrganizationId.Value, cancellationToken);
+			var notification = Notification.Create(
+				new UserId(organizer.UserId),
+				NotificationKind.EngagementCreated,
+				engagement.Id.Value);
 
-			foreach (var organizer in members.Where(m => m.IsOrganisator))
-			{
-				var notification = Notification.Create(
-					new UserId(organizer.UserId),
-					NotificationKind.EngagementCreated,
-					engagement.Id.Value);
-
-				await dbContext.Notifications.AddAsync(notification, cancellationToken);
-			}
+			await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		}
 
 		return engagement;

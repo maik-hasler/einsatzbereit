@@ -22,7 +22,7 @@ interface Props {
 
 export default function SingleMarkerMap({ latitude, longitude, label }: Props) {
 	return (
-		<div className="h-64 w-full overflow-hidden rounded border">
+		<div className="isolate h-64 w-full overflow-hidden rounded border">
 			<MapContainer
 				center={[latitude, longitude]}
 				zoom={14}

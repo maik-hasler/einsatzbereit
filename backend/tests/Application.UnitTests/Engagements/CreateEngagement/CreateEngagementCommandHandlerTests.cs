@@ -4,6 +4,7 @@ using Application.Engagements.CreateEngagement.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Notifications;
+using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -24,12 +25,55 @@ public class CreateEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly CreateEngagementCommandHandler _sut;
 
+	private static readonly Address TestAddress = new("Main St", "1", "12345", "Berlin");
+
+	private static VolunteerOpportunity CreateTestOpportunity(VolunteerOpportunityId id)
+	{
+		var org = VolunteerOpportunity.Create(
+			new OrganizationId(Guid.NewGuid()),
+			"Test Opportunity",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None);
+		return org;
+	}
+
 	public CreateEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
+		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([]);
 		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService);
+	}
+
+	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
+	{
+		var opportunity = CreateTestOpportunity(opportunityId);
+		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
+			.Returns(opportunity);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenOpportunityDoesNotExist(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
+			.Returns((VolunteerOpportunity?)null);
+		var command = new CreateEngagementCommand(opportunityId, new UserId(Guid.CreateVersion7()),
+			new TimeSlotId(Guid.CreateVersion7()), Message: null);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<DomainException>().WithMessage("*not found*");
 	}
 
 	[Test]
@@ -40,6 +84,7 @@ public class CreateEngagementCommandHandlerTests
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
 		var volunteerId = new UserId(Guid.CreateVersion7());
 		var timeSlotId = new TimeSlotId(Guid.CreateVersion7());
+		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
 		// Act
@@ -58,6 +103,7 @@ public class CreateEngagementCommandHandlerTests
 		// Arrange
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
 		var volunteerId = new UserId(Guid.CreateVersion7());
+		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Ich helfe gerne!");
 
 		// Act
@@ -74,8 +120,10 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
+		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			opportunityId,
 			new UserId(Guid.CreateVersion7()),
 			new TimeSlotId(Guid.CreateVersion7()),
 			Message: null);
@@ -92,8 +140,10 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
+		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			opportunityId,
 			new UserId(Guid.CreateVersion7()),
 			TimeSlotId: null,
 			Message: null);
@@ -111,6 +161,7 @@ public class CreateEngagementCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
 			new UserId(Guid.CreateVersion7()),
@@ -130,8 +181,10 @@ public class CreateEngagementCommandHandlerTests
 	{
 		// Arrange
 		var volunteerId = new UserId(Guid.CreateVersion7());
+		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			opportunityId,
 			volunteerId,
 			new TimeSlotId(Guid.CreateVersion7()),
 			Message: null);

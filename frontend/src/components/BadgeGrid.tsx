@@ -35,6 +35,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 	const isHidden = catalog.isHidden && !isEarned;
 	const typeName = isEarned ? typeLabel(earned.type) : typeLabel(catalog.type);
 	const icon = TYPE_ICON[typeName] ?? "🏅";
+	const tooltipId = `badge-tooltip-${catalog.key}`;
 
 	return (
 		<div
@@ -43,6 +44,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 					? "border-brand-200 bg-white shadow-sm hover:shadow-md"
 					: "border-gray-100 bg-gray-50"
 			}`}
+			aria-describedby={!isHidden ? tooltipId : undefined}
 		>
 			<div
 				className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full text-2xl ${
@@ -69,7 +71,11 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 				<p className="mt-1 text-xs text-gray-400">{catalog.description}</p>
 			)}
 			{!isHidden && (
-				<div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
+				<div
+					id={tooltipId}
+					role="tooltip"
+					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block"
+				>
 					<p className="font-semibold">{catalog.name}</p>
 					<p className="mt-0.5 text-gray-300">{catalog.description}</p>
 					{isEarned && (

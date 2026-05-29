@@ -271,6 +271,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							data-testid="view-toggle-list"
+							aria-pressed={!isMap}
 							onClick={() => setView("list")}
 							className={
 								!isMap
@@ -283,6 +284,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							data-testid="view-toggle-map"
+							aria-pressed={isMap}
 							onClick={() => setView("map")}
 							className={
 								isMap
