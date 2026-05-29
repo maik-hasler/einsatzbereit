@@ -49,4 +49,7 @@ public interface IApplicationDbContext
 	Task<int> CountConfirmedEngagementsForVolunteerAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
+
+	Task<bool> CanConnectAsync(
+		CancellationToken cancellationToken = default);
 }

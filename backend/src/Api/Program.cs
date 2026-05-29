@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
+using Api.Common.Health;
 using Api.Common.Middleware;
 using Api.Common.RateLimiting;
 using Application;
@@ -62,6 +63,13 @@ builder.Services.AddCors(options =>
 		policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4321"])
 			.AllowAnyHeader()
 			.AllowAnyMethod()));
+
+builder.Services.AddHttpClient(KeycloakHealthCheck.HttpClientName, client =>
+	client.Timeout = TimeSpan.FromSeconds(5));
+
+builder.Services.AddHealthChecks()
+	.AddCheck<DatabaseHealthCheck>("database", tags: ["ready"])
+	.AddCheck<KeycloakHealthCheck>("keycloak", tags: ["ready"]);
 
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);

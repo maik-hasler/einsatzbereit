@@ -144,7 +144,7 @@ export default function SignUpModal({
 						<button
 							type="submit"
 							disabled={submitting || (isWaitlist && timeSlots.length === 0)}
-							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+							className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
 						>
 							{submitting ? t("signUp.submitting") : t("signUp.submit")}
 						</button>

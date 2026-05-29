@@ -16,6 +16,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { dispatchToast } from "../lib/toastBus";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -64,6 +65,23 @@ export default function VolunteerOpportunityDetailPage() {
 			.finally(() => setLoading(false));
 	}
 
+	async function handleShare() {
+		const url = window.location.href;
+		try {
+			if (navigator.share) {
+				await navigator.share({
+					title: opportunity?.title ?? document.title,
+					url,
+				});
+			} else {
+				await navigator.clipboard.writeText(url);
+				dispatchToast("success", t("opportunities.linkCopied"));
+			}
+		} catch {
+			// User dismissed the share sheet or clipboard access was denied - ignore.
+		}
+	}
+
 	async function handleDeleteConfirm() {
 		if (!opportunityId) return;
 		setDeleting(true);
@@ -98,25 +116,48 @@ export default function VolunteerOpportunityDetailPage() {
 				<h1 className="text-2xl font-bold text-gray-900">
 					{opportunity.title}
 				</h1>
-				{isOrganisator && opportunity.organizationId === activeOrgId && (
-					<div className="flex gap-2 shrink-0">
-						<button
-							onClick={() => setShowEdit(true)}
-							className="rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+				<div className="flex gap-2 shrink-0">
+					<button
+						onClick={handleShare}
+						aria-label={t("opportunities.shareOpportunity")}
+						className="inline-flex items-center gap-1.5 rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+					>
+						<svg
+							className="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth="2"
+							stroke="currentColor"
+							aria-hidden="true"
 						>
-							{t("opportunities.edit")}
-						</button>
-						<button
-							onClick={() => setShowDeleteConfirm(true)}
-							disabled={deleting}
-							className="rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-						>
-							{deleting
-								? t("opportunities.deleting")
-								: t("opportunities.delete")}
-						</button>
-					</div>
-				)}
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+							/>
+						</svg>
+						<span className="hidden sm:inline">{t("opportunities.share")}</span>
+					</button>
+					{isOrganisator && opportunity.organizationId === activeOrgId && (
+						<>
+							<button
+								onClick={() => setShowEdit(true)}
+								className="rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+							>
+								{t("opportunities.edit")}
+							</button>
+							<button
+								onClick={() => setShowDeleteConfirm(true)}
+								disabled={deleting}
+								className="rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+							>
+								{deleting
+									? t("opportunities.deleting")
+									: t("opportunities.delete")}
+							</button>
+						</>
+					)}
+				</div>
 			</div>
 
 			<p className="mb-4 text-sm text-gray-500">

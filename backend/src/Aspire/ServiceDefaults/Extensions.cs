@@ -75,8 +75,16 @@ public static class ServiceDefaultsExtensions
 	public static WebApplication MapDefaultEndpoints(this WebApplication app)
 	{
 		// Exposed in all environments so deployment health checks and live smoke
-		// tests have a target. Both checks return only liveness status, no details.
-		app.MapHealthChecks("/health");
+		// tests have a target.
+		//
+		// /health  = readiness: critical dependencies (database, Keycloak) must be
+		//            reachable. Returns non-200 when a dependency is down so uptime
+		//            monitors and the docker-compose healthcheck see the real state.
+		// /alive   = liveness: the process is up. Stays 200 regardless of deps.
+		app.MapHealthChecks("/health", new HealthCheckOptions
+		{
+			Predicate = r => r.Tags.Contains("ready")
+		});
 		app.MapHealthChecks("/alive", new HealthCheckOptions
 		{
 			Predicate = r => r.Tags.Contains("live")
