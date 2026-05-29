@@ -119,6 +119,7 @@ export default function VolunteerOpportunityDetailPage() {
 				<div className="flex gap-2 shrink-0">
 					<button
 						onClick={handleShare}
+						data-testid="share-opportunity"
 						aria-label={t("opportunities.shareOpportunity")}
 						className="inline-flex items-center gap-1.5 rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
 					>
