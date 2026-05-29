@@ -163,4 +163,29 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await Expect(Page).Not.ToHaveURLAsync(new Regex(@"\?.*search="));
 	}
+
+	[Test]
+	public async Task DetailPage_ShowsBreadcrumbAndShareButton()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
+
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		var href = await firstCard.GetAttributeAsync("href");
+		href.Should().NotBeNull();
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// #394 breadcrumb navigation present.
+		await Expect(Page.GetByRole(AriaRole.Navigation, new() { Name = "Breadcrumb" }))
+			.ToBeVisibleAsync();
+
+		// #373 share button present with accessible name.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Share opportunity" }))
+			.ToBeVisibleAsync();
+	}
 }
