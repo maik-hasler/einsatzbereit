@@ -385,7 +385,9 @@
         "EngagementCreated": "Neue Bewerbung eingegangen",
         "EngagementConfirmed": "Deine Bewerbung wurde bestätigt",
         "EngagementCancelled": "Deine Bewerbung wurde abgesagt",
-        "EngagementWithdrawn": "Eine Bewerbung wurde zurückgezogen"
+        "EngagementWithdrawn": "Eine Bewerbung wurde zurückgezogen",
+        "OpportunityUpdated": "Ein Bedarf, für den du dich angemeldet hast, wurde aktualisiert",
+        "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt"
       }
     },
     "language": {

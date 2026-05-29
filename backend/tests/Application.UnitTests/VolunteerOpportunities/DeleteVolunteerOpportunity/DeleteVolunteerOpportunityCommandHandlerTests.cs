@@ -1,6 +1,8 @@
 using Application.Common.Persistence;
+using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 using AwesomeAssertions;
+using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
@@ -13,6 +15,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
+		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IEngagementReadRepository _engagementReadRepository =
+		Substitute.For<IEngagementReadRepository>();
 	private readonly DeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
@@ -21,7 +27,11 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	public DeleteVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext);
+		_dbContext.Notifications.Returns(_notifRepo);
+		_engagementReadRepository
+			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([]);
+		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity() =>
@@ -63,6 +73,64 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		_opportunityRepo.Received(1).Delete(opportunity);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotifyActiveVolunteers_WhenOpportunityDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var pendingVolunteer = Guid.NewGuid();
+		var confirmedVolunteer = Guid.NewGuid();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", pendingVolunteer, null, null, "Pending", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", confirmedVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
+			]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+
+		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
+		await _notifRepo.Received(2).AddAsync(
+			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityDeleted && n.RelatedEntityId == opportunityId),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotNotify_WhenNoActiveEngagements(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
+			]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+
+		// Assert
+		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

@@ -377,7 +377,9 @@
         "EngagementCreated": "New application received",
         "EngagementConfirmed": "Your application was confirmed",
         "EngagementCancelled": "Your application was cancelled",
-        "EngagementWithdrawn": "An application was withdrawn"
+        "EngagementWithdrawn": "An application was withdrawn",
+        "OpportunityUpdated": "An opportunity you signed up for was updated",
+        "OpportunityDeleted": "An opportunity you signed up for was removed"
       }
     },
     "language": {

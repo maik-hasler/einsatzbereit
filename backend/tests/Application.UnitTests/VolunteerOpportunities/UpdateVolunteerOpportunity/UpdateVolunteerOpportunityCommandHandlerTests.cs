@@ -3,6 +3,7 @@ using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 using AwesomeAssertions;
+using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
@@ -16,6 +17,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
+		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
@@ -26,6 +29,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	public UpdateVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_dbContext.Notifications.Returns(_notifRepo);
 		_engagementReadRepository
 			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
@@ -241,6 +245,39 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<DomainException>()
 			.WithMessage("*Title must not be empty*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotifyActiveVolunteers_WhenUpdated(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var activeVolunteer = Guid.NewGuid();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", activeVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+			]);
+
+		// Same participation type, so the update proceeds and volunteers are notified.
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
+			cancellationToken);
 	}
 
 	[Test]

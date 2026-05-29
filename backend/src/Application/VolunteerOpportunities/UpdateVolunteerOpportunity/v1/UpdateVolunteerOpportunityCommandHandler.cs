@@ -2,6 +2,8 @@ using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
+using Application.Notifications;
+using Domain.Notifications;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 using Microsoft.Extensions.Logging;
@@ -19,14 +21,16 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		UpdateVolunteerOpportunityCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		var opportunityId = new VolunteerOpportunityId(request.OpportunityId);
+
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
-			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
+			opportunityId, cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
 
 		if (request.ParticipationType != opportunity.ParticipationType)
 		{
 			var engagements = await engagementReadRepository.GetByOpportunityAsync(
-				new VolunteerOpportunityId(request.OpportunityId), cancellationToken);
+				opportunityId, cancellationToken);
 
 			var hasActiveEngagements = engagements.Any(e =>
 				e.Status is "Pending" or "Confirmed");
@@ -51,6 +55,14 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			request.CheckInMethod,
 			request.Category,
 			request.Tags);
+
+		// Notify volunteers with an active engagement that details changed (#406).
+		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
+			dbContext,
+			engagementReadRepository,
+			opportunityId,
+			NotificationKind.OpportunityUpdated,
+			cancellationToken);
 
 		return true;
 	}
