@@ -17,6 +17,7 @@ import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
+import { getApiErrorMessage } from "../lib/apiError";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -61,7 +62,7 @@ export default function VolunteerOpportunityDetailPage() {
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
 			.then(setOpportunity)
-			.catch((err) => setError(err.message))
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
 	}
 

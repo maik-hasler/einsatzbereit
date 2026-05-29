@@ -5,6 +5,7 @@ import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
+import { getApiErrorMessage } from "../lib/apiError";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
 import OpportunityMap from "./OpportunityMap";
@@ -183,9 +184,9 @@ export default function VolunteerOpportunitiesList({
 				setLoading(false);
 				setLoadingMore(false);
 			})
-			.catch((err: Error) => {
+			.catch((err) => {
 				if (cancelled) return;
-				setError(err.message);
+				setError(getApiErrorMessage(err, t("error.serverError")));
 				setLoading(false);
 				setLoadingMore(false);
 			});

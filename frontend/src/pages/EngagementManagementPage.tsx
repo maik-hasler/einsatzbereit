@@ -12,6 +12,7 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
+import { getApiErrorMessage } from "../lib/apiError";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -70,7 +71,7 @@ export default function EngagementManagementPage() {
 				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
-			.catch((err) => setError(err.message))
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);

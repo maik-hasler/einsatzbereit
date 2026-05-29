@@ -1428,7 +1428,7 @@ export class EinsatzbereitApi {
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
-            method: "PUT",
+            method: "POST",
             signal,
             headers: {
                 "Accept": "application/json"
@@ -1661,7 +1661,7 @@ export class EinsatzbereitApi {
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
-            method: "PUT",
+            method: "POST",
             signal,
             headers: {
                 "Accept": "application/json"
@@ -1861,7 +1861,7 @@ export class EinsatzbereitApi {
 
         let options_: RequestInit = {
             body: content_,
-            method: "PUT",
+            method: "POST",
             signal,
             headers: {
                 "Content-Type": "application/json",

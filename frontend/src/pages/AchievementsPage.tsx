@@ -11,6 +11,7 @@ import type {
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import BadgeGrid from "../components/BadgeGrid";
 import ShareAchievementsModal from "../components/ShareAchievementsModal";
+import { getApiErrorMessage } from "../lib/apiError";
 
 export default function AchievementsPage() {
 	const api = useApiClient();
@@ -41,9 +42,7 @@ export default function AchievementsPage() {
 				setCatalog(cat);
 				setStreaks(str);
 			})
-			.catch((err: unknown) =>
-				setError(err instanceof Error ? err.message : String(err)),
-			)
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);

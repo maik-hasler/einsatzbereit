@@ -13,7 +13,7 @@ internal sealed class CancelEngagementEndpoint
 	: IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
-		app.MapPut("/engagements/{engagementId:guid}/cancel", CancelEngagementAsync)
+		app.MapPost("/engagements/{engagementId:guid}/cancel", CancelEngagementAsync)
 			.WithName("CancelEngagement")
 			.WithTags("Engagements")
 			.Produces<EngagementStatusResponse>()

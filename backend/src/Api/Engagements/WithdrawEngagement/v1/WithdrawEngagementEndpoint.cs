@@ -13,7 +13,7 @@ internal sealed class WithdrawEngagementEndpoint
 	: IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
-		app.MapPut("/engagements/{engagementId:guid}/withdraw", WithdrawEngagementAsync)
+		app.MapPost("/engagements/{engagementId:guid}/withdraw", WithdrawEngagementAsync)
 			.WithName("WithdrawEngagement")
 			.WithTags("Engagements")
 			.Produces<EngagementStatusResponse>()

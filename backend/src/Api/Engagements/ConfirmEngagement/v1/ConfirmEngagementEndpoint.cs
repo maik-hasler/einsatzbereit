@@ -13,7 +13,7 @@ internal sealed class ConfirmEngagementEndpoint
 	: IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
-		app.MapPut("/engagements/{engagementId:guid}/confirm", ConfirmEngagementAsync)
+		app.MapPost("/engagements/{engagementId:guid}/confirm", ConfirmEngagementAsync)
 			.WithName("ConfirmEngagement")
 			.WithTags("Engagements")
 			.Produces<EngagementStatusResponse>()

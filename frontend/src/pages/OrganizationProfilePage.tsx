@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import { getApiErrorMessage } from "../lib/apiError";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -28,7 +29,7 @@ export default function OrganizationProfilePage() {
 		api
 			.getPublicOrganizationProfile(organizationId)
 			.then(setProfile)
-			.catch((err: Error) => setError(err.message))
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);

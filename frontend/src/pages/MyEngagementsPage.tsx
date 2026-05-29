@@ -7,6 +7,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import CheckInModal from "../components/CheckInModal";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { getApiErrorMessage } from "../lib/apiError";
 
 const STATUS_COLORS: Record<string, string> = {
 	Pending: "bg-yellow-50 text-yellow-700",
@@ -44,7 +45,7 @@ export default function MyEngagementsPage() {
 		api
 			.getMyEngagements()
 			.then(setEngagements)
-			.catch((err) => setError(err.message))
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
