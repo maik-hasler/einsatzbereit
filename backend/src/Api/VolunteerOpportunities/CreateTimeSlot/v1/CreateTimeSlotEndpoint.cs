@@ -32,21 +32,10 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		try
-		{
-			var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
-			var command = new CreateTimeSlotCommand(opportunityId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId);
-			var timeSlotId = await sender.Send(command, cancellationToken);
-			var response = new CreateTimeSlotResponse(timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants);
-			return Results.Created($"/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}", response);
-		}
-		catch (DomainException ex) when (ex.Message.Contains("not found"))
-		{
-			return Results.NotFound();
-		}
-		catch (DomainException ex)
-		{
-			return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
-		}
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var command = new CreateTimeSlotCommand(opportunityId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId);
+		var timeSlotId = await sender.Send(command, cancellationToken);
+		var response = new CreateTimeSlotResponse(timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants);
+		return Results.Created($"/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}", response);
 	}
 }

@@ -34,20 +34,9 @@ internal sealed class ConfirmEngagementEndpoint
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		try
-		{
-			var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
-			var command = new ConfirmEngagementCommand(new EngagementId(engagementId), userId);
-			var engagement = await sender.Send(command, cancellationToken);
-			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
-		}
-		catch (DomainException ex) when (ex.Message.Contains("not found"))
-		{
-			return Results.NotFound();
-		}
-		catch (DomainException ex)
-		{
-			return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
-		}
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var command = new ConfirmEngagementCommand(new EngagementId(engagementId), userId);
+		var engagement = await sender.Send(command, cancellationToken);
+		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
 	}
 }
