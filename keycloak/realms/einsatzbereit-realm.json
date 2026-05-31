@@ -137,8 +137,8 @@
       "credentials": [
         {
           "type": "password",
-          "value": "vera123",
-          "temporary": false
+          "secretData": "{\"value\":\"Uc4T3pxk4AlbUdiAOq6Z53FoIUIvUTw/GiLqREHfgvc=\",\"salt\":\"HYtOV0NYMZTP5FpMSjCyBw==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
         }
       ]
     },
@@ -158,8 +158,8 @@
       "credentials": [
         {
           "type": "password",
-          "value": "olaf123",
-          "temporary": false
+          "secretData": "{\"value\":\"lNoPUrmLRFeqdZEdkdqWRFWWejhB8iwVd6DfgftqToY=\",\"salt\":\"FNbLnqA0DLZw6/4vfZOC/Q==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
         }
       ]
     },
@@ -178,8 +178,8 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin123",
-          "temporary": false
+          "secretData": "{\"value\":\"T2Mjy1GA3lLieuNiy+IxRNIlyKAYcGB4aJOH4ky2Uf4=\",\"salt\":\"y3pdmlteVR00GyMcZ4eKwA==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
         }
       ]
     },
