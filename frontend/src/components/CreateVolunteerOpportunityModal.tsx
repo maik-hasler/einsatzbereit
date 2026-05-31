@@ -501,6 +501,11 @@ export default function CreateVolunteerOpportunityModal({
 											<input
 												type="datetime-local"
 												value={newSlot.startDateTime}
+												min={new Date(
+													Date.now() - new Date().getTimezoneOffset() * 60000,
+												)
+													.toISOString()
+													.slice(0, 16)}
 												onChange={(e) =>
 													setNewSlot((s) => ({
 														...s,

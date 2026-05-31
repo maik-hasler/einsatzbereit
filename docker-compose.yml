@@ -83,6 +83,7 @@ services:
       Authentication__Authority: https://login.maik-hasler.de/realms/einsatzbereit
       Authentication__ValidIssuers__0: https://login.maik-hasler.de/realms/einsatzbereit
       Keycloak__BaseUrl: http://keycloak:8080
+      Keycloak__ClientSecret: ${KEYCLOAK_BACKEND_SECRET:?set KEYCLOAK_BACKEND_SECRET in .env}
       Cors__Origins__0: https://einsatzbereit.maik-hasler.de
     labels:
       - traefik.enable=true
