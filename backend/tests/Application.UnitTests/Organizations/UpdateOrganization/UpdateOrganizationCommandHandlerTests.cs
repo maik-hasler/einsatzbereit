@@ -1,9 +1,11 @@
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.UpdateOrganization.v1;
 using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
@@ -15,12 +17,19 @@ public class UpdateOrganizationCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
+	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly UpdateOrganizationCommandHandler _sut;
+
+	private static readonly Guid DefaultOrgId = Guid.NewGuid();
+	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
 
 	public UpdateOrganizationCommandHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
-		_sut = new UpdateOrganizationCommandHandler(_dbContext);
+		_keycloakOrgService
+			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganization(DefaultOrgId, "Test Org")]);
+		_sut = new UpdateOrganizationCommandHandler(_dbContext, _keycloakOrgService);
 	}
 
 	[Test]
@@ -28,7 +37,7 @@ public class UpdateOrganizationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 		var org = Organization.Create(new OrganizationId(orgId), "Old Name");
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
@@ -40,7 +49,8 @@ public class UpdateOrganizationCommandHandlerTests
 			"contact@test.com",
 			"+49 123 456",
 			"https://example.org",
-			new UpdateAddressCommand("Main Street", "1", "12345", "Berlin"));
+			new UpdateAddressCommand("Main Street", "1", "12345", "Berlin"),
+			DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -62,13 +72,13 @@ public class UpdateOrganizationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 		var org = Organization.Create(new OrganizationId(orgId), "Org");
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 
 		var command = new UpdateOrganizationCommand(
-			orgId, "Org", null, null, null, null, null);
+			orgId, "Org", null, null, null, null, null, DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -84,12 +94,12 @@ public class UpdateOrganizationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
 
 		var command = new UpdateOrganizationCommand(
-			orgId, "Name", null, null, null, null, null);
+			orgId, "Name", null, null, null, null, null, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -103,13 +113,13 @@ public class UpdateOrganizationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 		var org = Organization.Create(new OrganizationId(orgId), "Org");
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 
 		var command = new UpdateOrganizationCommand(
-			orgId, "   ", null, null, null, null, null);
+			orgId, "   ", null, null, null, null, null, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);

@@ -1,3 +1,5 @@
+using Application.Common.Authorization;
+using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
@@ -6,7 +8,8 @@ namespace Application.Organizations.GetOrganizationDashboard.v1;
 
 internal sealed class GetOrganizationDashboardQueryHandler(
 	IApplicationDbContext dbContext,
-	IOrganizationDashboardReadRepository readRepository)
+	IOrganizationDashboardReadRepository readRepository,
+	IKeycloakOrganizationService keycloakOrgService)
 	: IQueryHandler<GetOrganizationDashboardQuery, OrganizationDashboardResponse?>
 {
 	public async ValueTask<OrganizationDashboardResponse?> Handle(
@@ -18,6 +21,12 @@ internal sealed class GetOrganizationDashboardQueryHandler(
 
 		if (organization is null)
 			return null;
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrgService,
+			request.OrganizationId,
+			request.RequestingUserId,
+			cancellationToken);
 
 		return await readRepository.GetKpisAsync(request.OrganizationId, cancellationToken);
 	}

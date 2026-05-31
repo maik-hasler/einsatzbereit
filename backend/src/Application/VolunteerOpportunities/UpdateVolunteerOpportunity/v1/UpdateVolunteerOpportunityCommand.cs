@@ -1,4 +1,5 @@
 using Application.Common.Messaging;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
@@ -13,5 +14,6 @@ public sealed record UpdateVolunteerOpportunityCommand(
 	ParticipationType ParticipationType,
 	CheckInMethod CheckInMethod,
 	Category? Category,
-	List<string> Tags)
+	List<string> Tags,
+	UserId RequestingUserId)
 	: ICommand<bool>;

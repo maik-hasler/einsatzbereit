@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Domain.Primitives;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -16,18 +17,26 @@ internal sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> log
 			return false;
 
 		var isNotFound = domainException.Message.Contains("not found", StringComparison.OrdinalIgnoreCase);
-		var statusCode = isNotFound ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest;
+		var isForbidden = domainException.Message.Contains("permission", StringComparison.OrdinalIgnoreCase);
+		var statusCode = isForbidden
+			? StatusCodes.Status403Forbidden
+			: isNotFound
+				? StatusCodes.Status404NotFound
+				: StatusCodes.Status400BadRequest;
 
 		logger.LogInformation(
 			"DomainException handled: {Message} -> {StatusCode}",
 			domainException.Message,
 			statusCode);
 
+		var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
+
 		var problem = new ProblemDetails
 		{
-			Title = isNotFound ? "Not Found" : "Bad Request",
+			Title = isForbidden ? "Forbidden" : isNotFound ? "Not Found" : "Bad Request",
 			Status = statusCode,
 			Detail = domainException.Message,
+			Extensions = { ["traceId"] = traceId },
 		};
 
 		httpContext.Response.StatusCode = statusCode;

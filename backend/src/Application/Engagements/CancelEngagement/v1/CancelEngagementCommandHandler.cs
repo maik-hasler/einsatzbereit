@@ -1,3 +1,4 @@
+using Application.Common.Authorization;
 using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
@@ -11,6 +12,7 @@ namespace Application.Engagements.CancelEngagement.v1;
 internal sealed class CancelEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
+	IKeycloakOrganizationService keycloakOrgService,
 	IEmailService emailService)
 	: ICommandHandler<CancelEngagementCommand, Engagement>
 {
@@ -21,6 +23,16 @@ internal sealed class CancelEngagementCommandHandler(
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
 
+		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
+		if (opportunity is not null)
+		{
+			await OwnershipGuard.EnsureIsOrgMemberAsync(
+				keycloakOrgService,
+				opportunity.OrganizationId.Value,
+				request.RequestingUserId,
+				cancellationToken);
+		}
+
 		engagement.Cancel(request.Reason);
 
 		var notification = Notification.Create(
@@ -29,8 +41,6 @@ internal sealed class CancelEngagementCommandHandler(
 			engagement.Id.Value);
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
-
-		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
 		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId.Value, cancellationToken);
 
 		var reasonText = string.IsNullOrWhiteSpace(request.Reason)

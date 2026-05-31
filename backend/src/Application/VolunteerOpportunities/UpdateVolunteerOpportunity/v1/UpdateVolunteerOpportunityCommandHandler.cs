@@ -1,4 +1,6 @@
+using Application.Common.Authorization;
 using Application.Common.Geocoding;
+using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -14,6 +16,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
 	IGeocodingService geocodingService,
+	IKeycloakOrganizationService keycloakOrgService,
 	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
@@ -26,6 +29,12 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			opportunityId, cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrgService,
+			opportunity.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
 
 		if (request.ParticipationType != opportunity.ParticipationType)
 		{

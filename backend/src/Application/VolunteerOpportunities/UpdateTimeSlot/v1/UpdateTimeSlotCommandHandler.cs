@@ -1,3 +1,5 @@
+using Application.Common.Authorization;
+using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -10,7 +12,8 @@ namespace Application.VolunteerOpportunities.UpdateTimeSlot.v1;
 
 internal sealed class UpdateTimeSlotCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository)
+	IEngagementReadRepository engagementReadRepository,
+	IKeycloakOrganizationService keycloakOrgService)
 	: ICommandHandler<UpdateTimeSlotCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -22,6 +25,12 @@ internal sealed class UpdateTimeSlotCommandHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			opportunityId, cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrgService,
+			opportunity.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
 
 		opportunity.UpdateTimeSlot(
 			new TimeSlotId(request.TimeSlotId),

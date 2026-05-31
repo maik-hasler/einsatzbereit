@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
@@ -9,6 +10,7 @@ using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -74,6 +76,14 @@ builder.Services.AddHealthChecks()
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);
 
+builder.Services.AddHttpLogging(logging =>
+{
+	logging.LoggingFields = HttpLoggingFields.RequestMethod
+		| HttpLoggingFields.RequestPath
+		| HttpLoggingFields.ResponseStatusCode
+		| HttpLoggingFields.Duration;
+});
+
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
@@ -116,6 +126,18 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 }
 
 app.MapDefaultEndpoints();
+
+app.UseHttpLogging();
+
+app.Use(async (context, next) =>
+{
+	context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+	context.Response.Headers["X-Frame-Options"] = "DENY";
+	context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+	context.Response.Headers["X-Trace-Id"] =
+		Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+	await next();
+});
 
 app.UseExceptionHandler();
 app.UseCors();

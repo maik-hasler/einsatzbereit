@@ -1,3 +1,4 @@
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
@@ -5,6 +6,7 @@ using AwesomeAssertions;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
 
@@ -19,10 +21,12 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
+	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly DeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
 	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
 
 	public DeleteVolunteerOpportunityCommandHandlerTests()
 	{
@@ -31,7 +35,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		_engagementReadRepository
 			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
+		_keycloakOrgService
+			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
+		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakOrgService);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity() =>
@@ -50,7 +57,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		// Act
-		var result = await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		var result = await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().BeTrue();
@@ -69,7 +76,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		// Act
-		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		_opportunityRepo.Received(1).Delete(opportunity);
@@ -99,7 +106,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			]);
 
 		// Act
-		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
 		await _notifRepo.Received(2).AddAsync(
@@ -127,7 +134,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			]);
 
 		// Act
-		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
@@ -145,7 +152,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<DomainException>()
@@ -164,7 +171,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		// Act
-		try { await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken); }
+		try { await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken); }
 		catch (DomainException) { }
 
 		// Assert

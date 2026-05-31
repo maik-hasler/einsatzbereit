@@ -1,7 +1,7 @@
 import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
@@ -105,9 +105,9 @@ export default function Header() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
-					<a href="/" className="flex items-center">
+					<Link to="/" className="flex items-center">
 						<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
-					</a>
+					</Link>
 
 					{/* Desktop Nav */}
 					<nav className="hidden md:flex items-center gap-3">
@@ -255,8 +255,8 @@ export default function Header() {
 												</p>
 											</div>
 											<div className="py-1">
-												<a
-													href="/my-engagements"
+												<Link
+													to="/my-engagements"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
 													<svg
@@ -273,9 +273,9 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myEngagements")}
-												</a>
-												<a
-													href="/profile"
+												</Link>
+												<Link
+													to="/profile"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
 													<svg
@@ -292,9 +292,9 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myProfile")}
-												</a>
-												<a
-													href="/achievements"
+												</Link>
+												<Link
+													to="/achievements"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
 													<svg
@@ -311,7 +311,7 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myAchievements")}
-												</a>
+												</Link>
 												<button
 													type="button"
 													onClick={() => auth.signoutRedirect()}
@@ -510,27 +510,27 @@ export default function Header() {
 										</ul>
 									</div>
 								)}
-								<a
-									href="/my-engagements"
+								<Link
+									to="/my-engagements"
 									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myEngagements")}
-								</a>
-								<a
-									href="/profile"
+								</Link>
+								<Link
+									to="/profile"
 									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myProfile")}
-								</a>
-								<a
-									href="/achievements"
+								</Link>
+								<Link
+									to="/achievements"
 									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myAchievements")}
-								</a>
+								</Link>
 								<button
 									type="button"
 									onClick={() => auth.signoutRedirect()}

@@ -1,7 +1,9 @@
+using Application.Common.Authorization;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
+using Domain.Primitives;
 
 namespace Application.Organizations.GetOrganizationDetails.v1;
 
@@ -19,6 +21,12 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 
 		if (organization is null)
 			return null;
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrganizationService,
+			request.OrganizationId,
+			request.RequestingUserId,
+			cancellationToken);
 
 		var members = await keycloakOrganizationService.GetMembersAsync(
 			request.OrganizationId, cancellationToken);

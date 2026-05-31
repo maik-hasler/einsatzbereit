@@ -3,7 +3,10 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.GetOrganizationDetails.v1;
+using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Organizations.GetOrganizationDetails.v1;
 
@@ -16,6 +19,7 @@ internal sealed class GetOrganizationDetailsEndpoint
 			.WithName("GetOrganizationDetails")
 			.Produces<OrganizationDetailsResponse>()
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
@@ -26,9 +30,11 @@ internal sealed class GetOrganizationDetailsEndpoint
 	private static async Task<IResult> GetOrganizationDetailsAsync(
 		[FromRoute] Guid organizationId,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var query = new GetOrganizationDetailsQuery(organizationId);
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var query = new GetOrganizationDetailsQuery(organizationId, userId);
 
 		var result = await sender.Send(query, cancellationToken);
 

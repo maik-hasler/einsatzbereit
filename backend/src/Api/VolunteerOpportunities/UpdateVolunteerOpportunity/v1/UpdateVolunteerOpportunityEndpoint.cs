@@ -3,8 +3,11 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
+using Domain.Primitives;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 
@@ -28,8 +31,10 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 		[FromRoute] Guid opportunityId,
 		[FromBody] UpdateVolunteerOpportunityRequest request,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
 		Address? address = null;
 		if (!request.IsRemote)
 		{
@@ -86,7 +91,8 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 			participationType,
 			checkInMethod,
 			category,
-			[.. request.Tags ?? []]);
+			[.. request.Tags ?? []],
+			userId);
 
 		await sender.Send(command, cancellationToken);
 
