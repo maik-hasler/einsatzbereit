@@ -22,10 +22,9 @@ internal sealed class RecordLoginCommandHandler(
 			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
 		}
 
-		var streakBefore = streak.LoginStreak;
 		streak.RecordLogin(request.Date);
 
-		if (streakBefore < 7 && streak.LoginStreak == 7)
+		if (streak.LoginStreak >= 7)
 		{
 			await sender.Send(new AwardAchievementCommand(request.UserId, "on-a-roll-7"), cancellationToken);
 		}

@@ -67,6 +67,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						<input
 							type="text"
 							required
+							maxLength={100}
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder={t("organization.namePlaceholder")}

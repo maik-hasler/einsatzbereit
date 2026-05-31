@@ -422,7 +422,10 @@ export default function Header() {
 								</div>
 								<button
 									type="button"
-									onClick={() => setNotifOpen((o) => !o)}
+									onClick={(e) => {
+										e.stopPropagation();
+										setNotifOpen((o) => !o);
+									}}
 									className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("notifications.bellLabel")}

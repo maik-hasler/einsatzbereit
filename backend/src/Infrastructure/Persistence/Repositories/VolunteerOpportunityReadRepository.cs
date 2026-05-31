@@ -2,6 +2,7 @@ using Application.Common.Pagination;
 using Application.VolunteerOpportunities;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
+using Domain.Engagements;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Extensions;
@@ -88,7 +89,11 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.CheckInMethod.ToString(),
 				x.vo.Category != null ? x.vo.Category.ToString() : null,
 				x.vo.Tags,
-				x.vo.CreatedOn));
+				x.vo.CreatedOn,
+				x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
+				dbContext.EngagementsQuery.Count(e =>
+					e.OpportunityId == x.vo.Id &&
+					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))));
 
 		if (filter.HasRadius)
 		{
@@ -172,6 +177,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 				ts.MaxParticipants))
 			.ToListAsync(cancellationToken);
 
+		var currentParticipantCount = await dbContext.EngagementsQuery
+			.CountAsync(e =>
+				e.OpportunityId == opportunityId_ &&
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
+				cancellationToken);
+
 		return new VolunteerOpportunityDetails(
 			result.Id.Value,
 			result.Title,
@@ -192,7 +203,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.Tags,
 			result.CheckInPin,
 			timeSlots,
-			result.CreatedOn);
+			result.CreatedOn,
+			currentParticipantCount);
 	}
 
 	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
@@ -227,7 +239,11 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.CheckInMethod.ToString(),
 				x.vo.Category != null ? x.vo.Category.ToString() : null,
 				x.vo.Tags,
-				x.vo.CreatedOn))
+				x.vo.CreatedOn,
+				x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
+				dbContext.EngagementsQuery.Count(e =>
+					e.OpportunityId == x.vo.Id &&
+					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))))
 			.ToListAsync(cancellationToken);
 	}
 }

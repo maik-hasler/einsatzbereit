@@ -73,7 +73,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 		}
 		streak.RecordActivity(isoYear, isoWeek);
 
-		if (streak.ActivityStreak == 4)
+		if (streak.ActivityStreak >= 4)
 		{
 			await sender.Send(new AwardAchievementCommand(volunteerId, "weekly-hero-4"), cancellationToken);
 		}

@@ -110,7 +110,13 @@
       "signupSuccess": "Sign-up successful! Your application has been submitted.",
       "notFound": "Not found.",
       "back": "← Back",
-      "filterToggle": "Filter"
+      "filterToggle": "Filter",
+      "full": "Full",
+      "spotsLeft": "{{count}} spot left",
+      "spotsLeft_plural": "{{count}} spots left",
+      "fewSpotsLeft": "Only {{count}} spot left!",
+      "fewSpotsLeft_plural": "Only {{count}} spots left!",
+      "noSpotsLeft": "This opportunity is currently full."
     },
     "createOpportunity": {
       "title": "Create opportunity",

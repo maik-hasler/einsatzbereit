@@ -3572,7 +3572,8 @@
           "tags",
           "checkInPin",
           "timeSlots",
-          "createdOn"
+          "createdOn",
+          "currentParticipantCount"
         ],
         "type": "object",
         "properties": {
@@ -3674,6 +3675,14 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "currentParticipantCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -3696,7 +3705,9 @@
           "checkInMethod",
           "category",
           "tags",
-          "createdOn"
+          "createdOn",
+          "totalMaxParticipants",
+          "currentParticipantCount"
         ],
         "type": "object",
         "properties": {
@@ -3786,6 +3797,22 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "totalMaxParticipants": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "currentParticipantCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       }

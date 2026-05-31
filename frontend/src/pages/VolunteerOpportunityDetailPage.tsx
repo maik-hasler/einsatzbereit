@@ -249,16 +249,44 @@ export default function VolunteerOpportunityDetailPage() {
 				</div>
 			)}
 
-			{isAuthenticated && !isOrganisator && !signedUp && (
-				<button
-					onClick={() => setShowSignUp(true)}
-					className="rounded bg-black px-5 py-2 text-sm text-white hover:bg-gray-800"
-				>
-					{opportunity.participationType === "Waitlist"
-						? t("opportunities.joinWaitlist")
-						: t("opportunities.expressInterest")}
-				</button>
-			)}
+			{isAuthenticated &&
+				!isOrganisator &&
+				!signedUp &&
+				(() => {
+					const totalMax = opportunity.timeSlots.reduce(
+						(sum, ts) => sum + ts.maxParticipants,
+						0,
+					);
+					const spotsLeft =
+						totalMax > 0
+							? totalMax - opportunity.currentParticipantCount
+							: Infinity;
+					const isFull = totalMax > 0 && spotsLeft <= 0;
+					return (
+						<div className="space-y-2">
+							{totalMax > 0 && (
+								<p
+									className={`text-sm font-medium ${isFull ? "text-red-600" : spotsLeft <= 3 ? "text-orange-600" : "text-gray-600"}`}
+								>
+									{isFull
+										? t("opportunities.noSpotsLeft")
+										: spotsLeft <= 5
+											? t("opportunities.fewSpotsLeft", { count: spotsLeft })
+											: t("opportunities.spotsLeft", { count: spotsLeft })}
+								</p>
+							)}
+							<button
+								onClick={() => setShowSignUp(true)}
+								disabled={isFull}
+								className="rounded bg-brand-700 px-5 py-2 text-sm text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{opportunity.participationType === "Waitlist"
+									? t("opportunities.joinWaitlist")
+									: t("opportunities.expressInterest")}
+							</button>
+						</div>
+					);
+				})()}
 
 			{!isAuthenticated && (
 				<p className="text-sm text-gray-500">

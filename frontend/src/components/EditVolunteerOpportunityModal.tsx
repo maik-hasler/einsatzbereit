@@ -169,6 +169,7 @@ export default function EditVolunteerOpportunityModal({
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							required
+							maxLength={150}
 							className="w-full rounded border px-3 py-2 text-sm"
 						/>
 					</div>
@@ -182,6 +183,7 @@ export default function EditVolunteerOpportunityModal({
 							onChange={(e) => setDescription(e.target.value)}
 							required
 							rows={3}
+							maxLength={2000}
 							className="w-full rounded border px-3 py-2 text-sm"
 						/>
 					</div>

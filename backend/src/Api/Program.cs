@@ -62,7 +62,7 @@ builder.Services.AddCors(options =>
 	options.AddDefaultPolicy(policy =>
 		policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4321"])
 			.AllowAnyHeader()
-			.AllowAnyMethod()));
+			.WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));
 
 builder.Services.AddHttpClient(KeycloakHealthCheck.HttpClientName, client =>
 	client.Timeout = TimeSpan.FromSeconds(5));

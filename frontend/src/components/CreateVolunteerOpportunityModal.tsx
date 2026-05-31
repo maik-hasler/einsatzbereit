@@ -145,6 +145,7 @@ export default function CreateVolunteerOpportunityModal({
 							id="opportunity-title"
 							type="text"
 							required
+							maxLength={150}
 							value={form.title}
 							onChange={(e) =>
 								setForm((f) => ({
@@ -167,6 +168,7 @@ export default function CreateVolunteerOpportunityModal({
 							id="opportunity-description"
 							required
 							rows={3}
+							maxLength={2000}
 							value={form.description}
 							onChange={(e) =>
 								setForm((f) => ({
@@ -190,6 +192,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
+									maxLength={100}
 									placeholder={t("createOpportunity.streetPlaceholder")}
 									value={form.street}
 									onChange={(e) =>
@@ -208,6 +211,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
+									maxLength={10}
 									placeholder="1a"
 									value={form.houseNumber}
 									onChange={(e) =>
@@ -248,6 +252,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
+									maxLength={100}
 									placeholder="Berlin"
 									value={form.city}
 									onChange={(e) =>

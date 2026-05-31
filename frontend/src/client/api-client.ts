@@ -2460,6 +2460,7 @@ export interface VolunteerOpportunityDetails {
     checkInPin: string | undefined;
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
+    currentParticipantCount: number;
 
     [key: string]: any;
 }
@@ -2483,6 +2484,8 @@ export interface VolunteerOpportunitySummary {
     category: string | undefined;
     tags: string[];
     createdOn: Date;
+    totalMaxParticipants: number;
+    currentParticipantCount: number;
 
     [key: string]: any;
 }

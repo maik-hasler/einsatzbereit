@@ -587,15 +587,40 @@ export default function VolunteerOpportunitiesList({
 												))}
 											</div>
 										)}
-										<div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-											{item.isRemote ? (
-												<span>{t("opportunities.remote")}</span>
-											) : (
-												<span>
-													{item.street} {item.houseNumber}, {item.zipCode}{" "}
-													{item.city}
-												</span>
-											)}
+										<div className="mt-2 flex items-center justify-between gap-4 text-xs text-gray-500">
+											<span>
+												{item.isRemote ? (
+													t("opportunities.remote")
+												) : (
+													<>
+														{item.street} {item.houseNumber}, {item.zipCode}{" "}
+														{item.city}
+													</>
+												)}
+											</span>
+											{item.totalMaxParticipants > 0 &&
+												(() => {
+													const spotsLeft =
+														item.totalMaxParticipants -
+														item.currentParticipantCount;
+													return spotsLeft <= 0 ? (
+														<span className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-700">
+															{t("opportunities.full")}
+														</span>
+													) : spotsLeft <= 3 ? (
+														<span className="rounded-full bg-orange-100 px-2 py-0.5 font-medium text-orange-700">
+															{t("opportunities.spotsLeft", {
+																count: spotsLeft,
+															})}
+														</span>
+													) : (
+														<span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
+															{t("opportunities.spotsLeft", {
+																count: spotsLeft,
+															})}
+														</span>
+													);
+												})()}
 										</div>
 									</div>
 								</li>

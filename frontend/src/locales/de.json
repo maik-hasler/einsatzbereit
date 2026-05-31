@@ -110,7 +110,13 @@
       "signupSuccess": "Anmeldung erfolgreich! Deine Bewerbung wurde übermittelt.",
       "notFound": "Nicht gefunden.",
       "back": "← Zurück",
-      "filterToggle": "Filter"
+      "filterToggle": "Filter",
+      "full": "Ausgebucht",
+      "spotsLeft": "{{count}} Platz frei",
+      "spotsLeft_plural": "{{count}} Plaetze frei",
+      "fewSpotsLeft": "Nur noch {{count}} Platz!",
+      "fewSpotsLeft_plural": "Nur noch {{count}} Plaetze!",
+      "noSpotsLeft": "Dieser Bedarf ist aktuell ausgebucht."
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",
