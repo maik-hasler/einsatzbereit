@@ -74,6 +74,8 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasForeignKey("volunteer_opportunity_id")
 			.IsRequired();
 
+		builder.HasIndex(vo => vo.OrganizationId);
+
 		builder.Ignore(vo => vo.Events);
 	}
 }

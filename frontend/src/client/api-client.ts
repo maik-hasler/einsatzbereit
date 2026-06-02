@@ -854,6 +854,12 @@ export class EinsatzbereitApi {
             result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Unauthorized", status, _responseText, _headers, result401);
             });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
             let result404: any = null;
@@ -911,6 +917,12 @@ export class EinsatzbereitApi {
             let result401: any = null;
             result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
             });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
@@ -1188,6 +1200,12 @@ export class EinsatzbereitApi {
             result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Unauthorized", status, _responseText, _headers, result401);
             });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
             let result404: any = null;
@@ -1428,7 +1446,7 @@ export class EinsatzbereitApi {
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
-            method: "PUT",
+            method: "POST",
             signal,
             headers: {
                 "Accept": "application/json"
@@ -1574,6 +1592,12 @@ export class EinsatzbereitApi {
             result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Forbidden", status, _responseText, _headers, result403);
             });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
             let result500: any = null;
@@ -1661,7 +1685,7 @@ export class EinsatzbereitApi {
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
-            method: "PUT",
+            method: "POST",
             signal,
             headers: {
                 "Accept": "application/json"
@@ -1861,7 +1885,7 @@ export class EinsatzbereitApi {
 
         let options_: RequestInit = {
             body: content_,
-            method: "PUT",
+            method: "POST",
             signal,
             headers: {
                 "Content-Type": "application/json",
@@ -2460,6 +2484,7 @@ export interface VolunteerOpportunityDetails {
     checkInPin: string | undefined;
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
+    currentParticipantCount: number;
 
     [key: string]: any;
 }
@@ -2483,6 +2508,8 @@ export interface VolunteerOpportunitySummary {
     category: string | undefined;
     tags: string[];
     createdOn: Date;
+    totalMaxParticipants: number;
+    currentParticipantCount: number;
 
     [key: string]: any;
 }

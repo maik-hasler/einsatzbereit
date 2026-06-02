@@ -283,3 +283,23 @@ jobs:
             docker compose up -d --remove-orphans
             docker image prune --force
           EOF
+
+      - name: Post-deploy health gate
+        run: |
+          set -uo pipefail
+          # The API /health endpoint is a readiness probe (database + Keycloak
+          # reachability), so a 200 confirms the new deployment can actually serve
+          # traffic. Fail the deploy if it never becomes healthy instead of
+          # reporting a green deploy over a broken stack.
+          echo "Waiting for https://api.maik-hasler.de/health to report ready..."
+          for i in $(seq 1 30); do
+            code=$(curl -fsS -o /dev/null -w "%{http_code}" https://api.maik-hasler.de/health || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "API healthy (HTTP 200) after attempt $i."
+              exit 0
+            fi
+            echo "Attempt $i/30: /health -> $code; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::API did not report healthy within 5 minutes after deploy."
+          exit 1

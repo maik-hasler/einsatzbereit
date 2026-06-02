@@ -18,17 +18,30 @@ internal sealed class OrganizationDashboardReadRepository(
 		var now = DateTimeOffset.UtcNow;
 		var sevenDaysLater = now.AddDays(7);
 
-		var orgOpportunityIds = dbContext.VolunteerOpportunitiesQuery
+		// Materialize the org's opportunity ids once instead of re-running the
+		// same subquery inside every count below.
+		var orgOpportunityIds = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == orgId)
-			.Select(vo => vo.Id);
+			.Select(vo => vo.Id)
+			.ToListAsync(cancellationToken);
 
-		var openOpportunities = await orgOpportunityIds.CountAsync(cancellationToken);
+		var openOpportunities = orgOpportunityIds.Count;
 
-		var pendingEngagements = await dbContext.EngagementsQuery
-			.CountAsync(
-				e => orgOpportunityIds.Contains(e.OpportunityId) && e.Status == EngagementStatus.Pending,
-				cancellationToken);
+		// A single grouped query covers every status breakdown (pending, cancelled, ...).
+		var countsByStatus = await dbContext.EngagementsQuery
+			.Where(e => orgOpportunityIds.Contains(e.OpportunityId))
+			.GroupBy(e => e.Status)
+			.Select(g => new { Status = g.Key, Count = g.Count() })
+			.ToListAsync(cancellationToken);
 
+		var pendingEngagements = countsByStatus
+			.FirstOrDefault(c => c.Status == EngagementStatus.Pending)?.Count ?? 0;
+
+		var cancelledEngagements = countsByStatus
+			.FirstOrDefault(c => c.Status == EngagementStatus.Cancelled)?.Count ?? 0;
+
+		// The "next 7 days" metric needs a join to time slots plus a date filter,
+		// so it stays a dedicated query (still using the materialized id list).
 		var confirmedEngagementsNext7Days = await dbContext.EngagementsQuery
 			.Where(e => orgOpportunityIds.Contains(e.OpportunityId) && e.Status == EngagementStatus.Confirmed && e.TimeSlotId != null)
 			.Join(
@@ -37,11 +50,6 @@ internal sealed class OrganizationDashboardReadRepository(
 				ts => ts.Id,
 				(e, ts) => ts.StartDateTime)
 			.CountAsync(start => start >= now && start <= sevenDaysLater, cancellationToken);
-
-		var cancelledEngagements = await dbContext.EngagementsQuery
-			.CountAsync(
-				e => orgOpportunityIds.Contains(e.OpportunityId) && e.Status == EngagementStatus.Cancelled,
-				cancellationToken);
 
 		return new OrganizationDashboardResponse(
 			openOpportunities,

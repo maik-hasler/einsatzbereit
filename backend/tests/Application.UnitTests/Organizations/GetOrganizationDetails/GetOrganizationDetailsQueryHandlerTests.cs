@@ -4,6 +4,7 @@ using Application.Organizations.GetOrganizationDetails.v1;
 using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
+using Domain.Users;
 using NSubstitute;
 
 
@@ -17,9 +18,15 @@ public class GetOrganizationDetailsQueryHandlerTests
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
 	private readonly GetOrganizationDetailsQueryHandler _sut;
 
+	private static readonly Guid DefaultOrgId = Guid.NewGuid();
+	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+
 	public GetOrganizationDetailsQueryHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
+		_keycloakService
+			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganization(DefaultOrgId, "Test Org")]);
 		_sut = new GetOrganizationDetailsQueryHandler(_dbContext, _keycloakService);
 	}
 
@@ -28,12 +35,12 @@ public class GetOrganizationDetailsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().BeNull();
@@ -45,7 +52,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 		var userId = Guid.NewGuid();
 		var org = Organization.Create(new OrganizationId(orgId), "Sample Fire Department");
 
@@ -55,7 +62,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().NotBeNull();
@@ -71,7 +78,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 		var org = Organization.Create(new OrganizationId(orgId), "Org");
 		org.Update("Org", null, null, null, null,
 			new Address("Main Street", "1", "12345", "Berlin"));
@@ -80,7 +87,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result!.Address.Should().NotBeNull();
@@ -93,14 +100,14 @@ public class GetOrganizationDetailsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var orgId = Guid.NewGuid();
+		var orgId = DefaultOrgId;
 		var org = Organization.Create(new OrganizationId(orgId), "Org");
 
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result!.Address.Should().BeNull();

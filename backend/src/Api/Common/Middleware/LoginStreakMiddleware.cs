@@ -10,6 +10,20 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next)
 	private static DateOnly _currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
 	private static readonly Lock _lock = new();
 
+	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
+	{
+		if (string.IsNullOrWhiteSpace(ianaId))
+			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		try
+		{
+			return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
+		}
+		catch
+		{
+			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		}
+	}
+
 	public async Task InvokeAsync(HttpContext context, ISender sender)
 	{
 		if (context.User.Identity?.IsAuthenticated == true)
@@ -17,7 +31,9 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next)
 			var subClaim = context.User.FindFirst("sub")?.Value;
 			if (subClaim is not null && Guid.TryParse(subClaim, out var userId))
 			{
-				var today = DateOnly.FromDateTime(DateTime.UtcNow);
+				var tzHeader = context.Request.Headers["X-Timezone"].FirstOrDefault();
+				var tz = ResolveTimeZone(tzHeader);
+				var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz).DateTime);
 
 				bool shouldUpdate;
 				lock (_lock)

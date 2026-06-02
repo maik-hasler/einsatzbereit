@@ -4,7 +4,9 @@ using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 
@@ -26,11 +28,13 @@ internal sealed class DeleteVolunteerOpportunityEndpoint
 	private static async Task<IResult> DeleteVolunteerOpportunityAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
 		try
 		{
-			var command = new DeleteVolunteerOpportunityCommand(opportunityId);
+			var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+			var command = new DeleteVolunteerOpportunityCommand(opportunityId, userId);
 			await sender.Send(command, cancellationToken);
 			return Results.NoContent();
 		}

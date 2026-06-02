@@ -112,7 +112,7 @@ export default function CreateVolunteerOpportunityModal({
 	const isWaitlist = form.participationType === "Waitlist";
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-[2000] flex items-center justify-center">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/50"
@@ -145,6 +145,7 @@ export default function CreateVolunteerOpportunityModal({
 							id="opportunity-title"
 							type="text"
 							required
+							maxLength={150}
 							value={form.title}
 							onChange={(e) =>
 								setForm((f) => ({
@@ -152,7 +153,7 @@ export default function CreateVolunteerOpportunityModal({
 									title: e.target.value,
 								}))
 							}
-							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 						/>
 					</div>
 
@@ -167,6 +168,7 @@ export default function CreateVolunteerOpportunityModal({
 							id="opportunity-description"
 							required
 							rows={3}
+							maxLength={2000}
 							value={form.description}
 							onChange={(e) =>
 								setForm((f) => ({
@@ -174,7 +176,7 @@ export default function CreateVolunteerOpportunityModal({
 									description: e.target.value,
 								}))
 							}
-							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 						/>
 					</div>
 
@@ -190,6 +192,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
+									maxLength={100}
 									placeholder={t("createOpportunity.streetPlaceholder")}
 									value={form.street}
 									onChange={(e) =>
@@ -198,7 +201,7 @@ export default function CreateVolunteerOpportunityModal({
 											street: e.target.value,
 										}))
 									}
-									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 								/>
 							</div>
 							<div className="w-24">
@@ -208,6 +211,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
+									maxLength={10}
 									placeholder="1a"
 									value={form.houseNumber}
 									onChange={(e) =>
@@ -216,7 +220,7 @@ export default function CreateVolunteerOpportunityModal({
 											houseNumber: e.target.value,
 										}))
 									}
-									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 								/>
 							</div>
 						</div>
@@ -238,7 +242,7 @@ export default function CreateVolunteerOpportunityModal({
 											zipCode: e.target.value,
 										}))
 									}
-									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 								/>
 							</div>
 							<div className="flex-1">
@@ -248,6 +252,7 @@ export default function CreateVolunteerOpportunityModal({
 								<input
 									type="text"
 									required
+									maxLength={100}
 									placeholder="Berlin"
 									value={form.city}
 									onChange={(e) =>
@@ -256,7 +261,7 @@ export default function CreateVolunteerOpportunityModal({
 											city: e.target.value,
 										}))
 									}
-									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+									className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 								/>
 							</div>
 						</div>
@@ -279,7 +284,7 @@ export default function CreateVolunteerOpportunityModal({
 											occurrence: e.target.value,
 										}))
 									}
-									className="accent-black"
+									className="accent-brand-600"
 								/>
 								{t("opportunities.oneTime")}
 							</label>
@@ -295,7 +300,7 @@ export default function CreateVolunteerOpportunityModal({
 											occurrence: e.target.value,
 										}))
 									}
-									className="accent-black"
+									className="accent-brand-600"
 								/>
 								{t("opportunities.recurring")}
 							</label>
@@ -319,7 +324,7 @@ export default function CreateVolunteerOpportunityModal({
 											participationType: e.target.value,
 										}))
 									}
-									className="accent-black"
+									className="accent-brand-600"
 								/>
 								{t("opportunities.waitlist")}
 							</label>
@@ -335,7 +340,7 @@ export default function CreateVolunteerOpportunityModal({
 											participationType: e.target.value,
 										}))
 									}
-									className="accent-black"
+									className="accent-brand-600"
 								/>
 								{t("opportunities.individualContact")}
 							</label>
@@ -367,7 +372,7 @@ export default function CreateVolunteerOpportunityModal({
 												checkInMethod: e.target.value,
 											}))
 										}
-										className="accent-black"
+										className="accent-brand-600"
 									/>
 									{label}
 								</label>
@@ -391,7 +396,7 @@ export default function CreateVolunteerOpportunityModal({
 									category: e.target.value || undefined,
 								}))
 							}
-							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 						>
 							<option value="">
 								{t("createOpportunity.fieldCategoryNone")}
@@ -439,7 +444,7 @@ export default function CreateVolunteerOpportunityModal({
 										.filter((s) => s.length > 0),
 								}));
 							}}
-							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
 						/>
 					</div>
 
@@ -496,6 +501,11 @@ export default function CreateVolunteerOpportunityModal({
 											<input
 												type="datetime-local"
 												value={newSlot.startDateTime}
+												min={new Date(
+													Date.now() - new Date().getTimezoneOffset() * 60000,
+												)
+													.toISOString()
+													.slice(0, 16)}
 												onChange={(e) =>
 													setNewSlot((s) => ({
 														...s,
@@ -570,7 +580,7 @@ export default function CreateVolunteerOpportunityModal({
 							type="submit"
 							disabled={loading}
 							data-testid="modal-submit"
-							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+							className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
 						>
 							{loading
 								? t("createOpportunity.creating")

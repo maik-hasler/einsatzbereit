@@ -1,6 +1,7 @@
 import { dispatchToast } from "../lib/toastBus";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { EinsatzbereitApi } from "./api-client";
+import i18next from "../i18n";
 
 async function handleErrorResponse(response: Response): Promise<void> {
 	if (response.ok) return;
@@ -10,12 +11,12 @@ async function handleErrorResponse(response: Response): Promise<void> {
 	}
 
 	if (response.status === 403) {
-		dispatchToast("error", "You do not have permission to do this.");
+		dispatchToast("error", i18next.t("error.forbidden"));
 		return;
 	}
 
 	if (response.status >= 500) {
-		let detail = "An unexpected error occurred. Please try again later.";
+		let detail = i18next.t("error.serverError");
 		try {
 			const clone = response.clone();
 			const body = await clone.json();
@@ -36,6 +37,7 @@ export function createApiClient(accessToken?: string): EinsatzbereitApi {
 				headers: {
 					...init?.headers,
 					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+					"X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
 				},
 			});
 			await handleErrorResponse(response);

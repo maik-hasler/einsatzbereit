@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +14,13 @@ internal sealed class UnhandledExceptionHandler(
 		Exception exception,
 		CancellationToken cancellationToken)
 	{
-		logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+		var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
+
+		logger.LogError(
+			exception,
+			"Unhandled exception [{TraceId}]: {Message}",
+			traceId,
+			exception.Message);
 
 		var problem = new ProblemDetails
 		{
@@ -22,6 +29,7 @@ internal sealed class UnhandledExceptionHandler(
 			Detail = environment.IsDevelopment()
 				? exception.Message
 				: "An unexpected error occurred. Please try again later.",
+			Extensions = { ["traceId"] = traceId },
 		};
 
 		httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;

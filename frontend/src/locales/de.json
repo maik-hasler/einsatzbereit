@@ -97,6 +97,9 @@
       "edit": "Bearbeiten",
       "delete": "Löschen",
       "deleting": "…",
+      "share": "Teilen",
+      "shareOpportunity": "Bedarf teilen",
+      "linkCopied": "Link in die Zwischenablage kopiert",
       "confirmDelete": "Bedarf wirklich löschen?",
       "deleteError": "Fehler beim Löschen",
       "availableTimeSlots": "Verfügbare Zeitslots",
@@ -107,7 +110,13 @@
       "signupSuccess": "Anmeldung erfolgreich! Deine Bewerbung wurde übermittelt.",
       "notFound": "Nicht gefunden.",
       "back": "← Zurück",
-      "filterToggle": "Filter"
+      "filterToggle": "Filter",
+      "full": "Ausgebucht",
+      "spotsLeft": "{{count}} Platz frei",
+      "spotsLeft_plural": "{{count}} Plaetze frei",
+      "fewSpotsLeft": "Nur noch {{count}} Platz!",
+      "fewSpotsLeft_plural": "Nur noch {{count}} Plaetze!",
+      "noSpotsLeft": "Dieser Bedarf ist aktuell ausgebucht."
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",
@@ -382,7 +391,9 @@
         "EngagementCreated": "Neue Bewerbung eingegangen",
         "EngagementConfirmed": "Deine Bewerbung wurde bestätigt",
         "EngagementCancelled": "Deine Bewerbung wurde abgesagt",
-        "EngagementWithdrawn": "Eine Bewerbung wurde zurückgezogen"
+        "EngagementWithdrawn": "Eine Bewerbung wurde zurückgezogen",
+        "OpportunityUpdated": "Ein Bedarf, für den du dich angemeldet hast, wurde aktualisiert",
+        "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt"
       }
     },
     "language": {
@@ -438,6 +449,7 @@
     },
     "profile": {
       "title": "Mein Profil",
+      "sectionDetails": "Profil-Details",
       "fieldBio": "Über mich",
       "bioPlaceholder": "Erzähl Organisatoren etwas über dich…",
       "fieldSkills": "Fähigkeiten & Interessen",

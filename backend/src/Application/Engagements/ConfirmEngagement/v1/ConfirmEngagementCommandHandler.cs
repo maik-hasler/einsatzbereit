@@ -1,4 +1,5 @@
 using Application.Achievements.AwardAchievement.v1;
+using Application.Common.Authorization;
 using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
@@ -13,6 +14,7 @@ namespace Application.Engagements.ConfirmEngagement.v1;
 internal sealed class ConfirmEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
+	IKeycloakOrganizationService keycloakOrgService,
 	IEmailService emailService,
 	ISender sender)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
@@ -23,6 +25,16 @@ internal sealed class ConfirmEngagementCommandHandler(
 	{
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+
+		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
+		if (opportunity is not null)
+		{
+			await OwnershipGuard.EnsureIsOrgMemberAsync(
+				keycloakOrgService,
+				opportunity.OrganizationId.Value,
+				request.RequestingUserId,
+				cancellationToken);
+		}
 
 		engagement.Confirm();
 
@@ -45,7 +57,6 @@ internal sealed class ConfirmEngagementCommandHandler(
 
 		await EvaluateMilestoneAchievementsAsync(engagement.VolunteerId, confirmedCount, cancellationToken);
 
-		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
 		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId.Value, cancellationToken);
 
 		await emailService.SendAsync(
@@ -72,6 +83,11 @@ internal sealed class ConfirmEngagementCommandHandler(
 			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
 		}
 		streak.RecordActivity(isoYear, isoWeek);
+
+		if (streak.ActivityStreak >= 4)
+		{
+			await sender.Send(new AwardAchievementCommand(volunteerId, "weekly-hero-4"), cancellationToken);
+		}
 	}
 
 	private async Task EvaluateMilestoneAchievementsAsync(

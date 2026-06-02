@@ -16,6 +16,8 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { dispatchToast } from "../lib/toastBus";
+import { getApiErrorMessage } from "../lib/apiError";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -60,8 +62,25 @@ export default function VolunteerOpportunityDetailPage() {
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
 			.then(setOpportunity)
-			.catch((err) => setError(err.message))
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
+	}
+
+	async function handleShare() {
+		const url = window.location.href;
+		try {
+			if (navigator.share) {
+				await navigator.share({
+					title: opportunity?.title ?? document.title,
+					url,
+				});
+			} else {
+				await navigator.clipboard.writeText(url);
+				dispatchToast("success", t("opportunities.linkCopied"));
+			}
+		} catch {
+			// User dismissed the share sheet or clipboard access was denied - ignore.
+		}
 	}
 
 	async function handleDeleteConfirm() {
@@ -98,25 +117,49 @@ export default function VolunteerOpportunityDetailPage() {
 				<h1 className="text-2xl font-bold text-gray-900">
 					{opportunity.title}
 				</h1>
-				{isOrganisator && opportunity.organizationId === activeOrgId && (
-					<div className="flex gap-2 shrink-0">
-						<button
-							onClick={() => setShowEdit(true)}
-							className="rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+				<div className="flex gap-2 shrink-0">
+					<button
+						onClick={handleShare}
+						data-testid="share-opportunity"
+						aria-label={t("opportunities.shareOpportunity")}
+						className="inline-flex items-center gap-1.5 rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+					>
+						<svg
+							className="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth="2"
+							stroke="currentColor"
+							aria-hidden="true"
 						>
-							{t("opportunities.edit")}
-						</button>
-						<button
-							onClick={() => setShowDeleteConfirm(true)}
-							disabled={deleting}
-							className="rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-						>
-							{deleting
-								? t("opportunities.deleting")
-								: t("opportunities.delete")}
-						</button>
-					</div>
-				)}
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+							/>
+						</svg>
+						<span className="hidden sm:inline">{t("opportunities.share")}</span>
+					</button>
+					{isOrganisator && opportunity.organizationId === activeOrgId && (
+						<>
+							<button
+								onClick={() => setShowEdit(true)}
+								className="rounded border px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+							>
+								{t("opportunities.edit")}
+							</button>
+							<button
+								onClick={() => setShowDeleteConfirm(true)}
+								disabled={deleting}
+								className="rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+							>
+								{deleting
+									? t("opportunities.deleting")
+									: t("opportunities.delete")}
+							</button>
+						</>
+					)}
+				</div>
 			</div>
 
 			<p className="mb-4 text-sm text-gray-500">
@@ -206,16 +249,44 @@ export default function VolunteerOpportunityDetailPage() {
 				</div>
 			)}
 
-			{isAuthenticated && !isOrganisator && !signedUp && (
-				<button
-					onClick={() => setShowSignUp(true)}
-					className="rounded bg-black px-5 py-2 text-sm text-white hover:bg-gray-800"
-				>
-					{opportunity.participationType === "Waitlist"
-						? t("opportunities.joinWaitlist")
-						: t("opportunities.expressInterest")}
-				</button>
-			)}
+			{isAuthenticated &&
+				!isOrganisator &&
+				!signedUp &&
+				(() => {
+					const totalMax = opportunity.timeSlots.reduce(
+						(sum, ts) => sum + ts.maxParticipants,
+						0,
+					);
+					const spotsLeft =
+						totalMax > 0
+							? totalMax - opportunity.currentParticipantCount
+							: Infinity;
+					const isFull = totalMax > 0 && spotsLeft <= 0;
+					return (
+						<div className="space-y-2">
+							{totalMax > 0 && (
+								<p
+									className={`text-sm font-medium ${isFull ? "text-red-600" : spotsLeft <= 3 ? "text-orange-600" : "text-gray-600"}`}
+								>
+									{isFull
+										? t("opportunities.noSpotsLeft")
+										: spotsLeft <= 5
+											? t("opportunities.fewSpotsLeft", { count: spotsLeft })
+											: t("opportunities.spotsLeft", { count: spotsLeft })}
+								</p>
+							)}
+							<button
+								onClick={() => setShowSignUp(true)}
+								disabled={isFull}
+								className="rounded bg-brand-700 px-5 py-2 text-sm text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{opportunity.participationType === "Waitlist"
+									? t("opportunities.joinWaitlist")
+									: t("opportunities.expressInterest")}
+							</button>
+						</div>
+					);
+				})()}
 
 			{!isAuthenticated && (
 				<p className="text-sm text-gray-500">

@@ -10,6 +10,7 @@ public class VolunteerOpportunityTests
 {
 	private static readonly OrganizationId TestOrganizationId = new(Guid.NewGuid());
 	private static readonly Address TestAddress = new("Sample Street", "1", "12345", "Berlin");
+	private static readonly DateTimeOffset FutureSlotStart = DateTimeOffset.UtcNow.AddDays(1);
 
 	[Test]
 	public void Create_ShouldCreateVolunteerOpportunity_WithValidData()
@@ -243,10 +244,8 @@ public class VolunteerOpportunityTests
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
-		var start = DateTimeOffset.UtcNow;
-		var end = start.AddHours(2);
 
-		opportunity.AddTimeSlot(start, end, maxParticipants: 20);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), maxParticipants: 20);
 
 		opportunity.TimeSlots.Should().HaveCount(1);
 		opportunity.TimeSlots.First().MaxParticipants.Should().Be(20);
@@ -258,10 +257,8 @@ public class VolunteerOpportunityTests
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
 			CheckInMethod.None);
-		var start = DateTimeOffset.UtcNow;
-		var end = start.AddHours(2);
 
-		Action act = () => opportunity.AddTimeSlot(start, end, maxParticipants: 10);
+		Action act = () => opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), maxParticipants: 10);
 
 		act.Should().Throw<DomainException>().WithMessage("*Waitlist*");
 	}
@@ -272,10 +269,9 @@ public class VolunteerOpportunityTests
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist,
 			CheckInMethod.None);
-		var base_ = DateTimeOffset.UtcNow;
 
-		opportunity.AddTimeSlot(base_, base_.AddHours(2), 10);
-		opportunity.AddTimeSlot(base_.AddDays(7), base_.AddDays(7).AddHours(2), 10);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
+		opportunity.AddTimeSlot(FutureSlotStart.AddDays(7), FutureSlotStart.AddDays(7).AddHours(2), 10);
 
 		opportunity.TimeSlots.Should().HaveCount(2);
 	}
@@ -288,8 +284,7 @@ public class VolunteerOpportunityTests
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
 			CheckInMethod.None);
-		var start = DateTimeOffset.UtcNow;
-		opportunity.AddTimeSlot(start, start.AddHours(2), 10);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
 		var slotId = opportunity.TimeSlots.First().Id;
 
 		opportunity.RemoveTimeSlot(slotId);
@@ -316,9 +311,8 @@ public class VolunteerOpportunityTests
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist,
 			CheckInMethod.None);
-		var base_ = DateTimeOffset.UtcNow;
-		opportunity.AddTimeSlot(base_, base_.AddHours(2), 5);
-		opportunity.AddTimeSlot(base_.AddDays(7), base_.AddDays(7).AddHours(2), 5);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 5);
+		opportunity.AddTimeSlot(FutureSlotStart.AddDays(7), FutureSlotStart.AddDays(7).AddHours(2), 5);
 
 		var idToRemove = opportunity.TimeSlots.First().Id;
 		opportunity.RemoveTimeSlot(idToRemove);

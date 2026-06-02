@@ -19,18 +19,27 @@ public class CancelEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
+		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly CancelEngagementCommandHandler _sut;
+
+	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
 
 	public CancelEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
+		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService);
+		_keycloakOrgService
+			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganization(Guid.Empty, "any")]);
+		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _keycloakOrgService, _emailService);
 	}
 
 	private static Engagement CreatePendingWaitlistEngagement() =>
@@ -49,7 +58,7 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act
-		var result = await _sut.Handle(new CancelEngagementCommand(engagementId), cancellationToken);
+		var result = await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Status.Should().Be(EngagementStatus.Cancelled);
@@ -66,7 +75,7 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act
-		var result = await _sut.Handle(new CancelEngagementCommand(engagementId), cancellationToken);
+		var result = await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Status.Should().Be(EngagementStatus.Cancelled);
@@ -81,7 +90,7 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId), cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<DomainException>()
@@ -99,7 +108,7 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId), cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
@@ -116,7 +125,7 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId), cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
@@ -132,7 +141,7 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act
-		var result = await _sut.Handle(new CancelEngagementCommand(engagementId), cancellationToken);
+		var result = await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().BeSameAs(engagement);

@@ -41,7 +41,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-[2000] flex items-center justify-center">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/50"
@@ -67,6 +67,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						<input
 							type="text"
 							required
+							maxLength={100}
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder={t("organization.namePlaceholder")}

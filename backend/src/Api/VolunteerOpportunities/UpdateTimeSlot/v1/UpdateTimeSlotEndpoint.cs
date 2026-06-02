@@ -4,7 +4,9 @@ using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.UpdateTimeSlot.v1;
 using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.UpdateTimeSlot.v1;
 
@@ -28,21 +30,12 @@ internal sealed class UpdateTimeSlotEndpoint : IEndpoint
 		[FromRoute] Guid timeSlotId,
 		[FromBody] UpdateTimeSlotRequest request,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		try
-		{
-			var command = new UpdateTimeSlotCommand(opportunityId, timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants);
-			await sender.Send(command, cancellationToken);
-			return Results.NoContent();
-		}
-		catch (DomainException ex) when (ex.Message.Contains("not found"))
-		{
-			return Results.NotFound();
-		}
-		catch (DomainException ex)
-		{
-			return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
-		}
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var command = new UpdateTimeSlotCommand(opportunityId, timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId);
+		await sender.Send(command, cancellationToken);
+		return Results.NoContent();
 	}
 }

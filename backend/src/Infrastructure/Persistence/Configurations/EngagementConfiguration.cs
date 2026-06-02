@@ -53,6 +53,16 @@ internal sealed class EngagementConfiguration
 
 		builder.Property(e => e.ModifiedOn);
 
+		builder.HasIndex(e => e.OpportunityId);
+
+		builder.HasIndex(e => e.VolunteerId);
+
+		builder.HasOne<TimeSlot>()
+			.WithMany()
+			.HasForeignKey(e => e.TimeSlotId)
+			.IsRequired(false)
+			.OnDelete(DeleteBehavior.SetNull);
+
 		builder.Ignore(e => e.Events);
 	}
 }

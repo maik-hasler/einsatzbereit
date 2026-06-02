@@ -102,7 +102,7 @@ export default function OpportunityMap({
 	return (
 		<div
 			data-testid="opportunity-map"
-			className="h-[500px] w-full overflow-hidden rounded border"
+			className="isolate h-[500px] w-full overflow-hidden rounded border"
 		>
 			<MapContainer
 				center={initialView.current.center}

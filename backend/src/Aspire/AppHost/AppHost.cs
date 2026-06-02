@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
@@ -16,9 +18,41 @@ var keycloakRealmPath = Path.GetFullPath(
 var keycloakThemePath = Path.GetFullPath(
 	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
+// The committed realm keeps production security settings; some break the local
+// Aspire + Playwright flow. Write a dev-only copy with two relaxations and import
+// that. Production never runs this AppHost - it uses the baked image + committed realm.
+//  - webOrigins: Aspire serves the frontend on a dynamic http://localhost:<port>
+//    origin that no fixed webOrigins entry matches (Keycloak webOrigins are exact CORS
+//    origins, not port wildcards), so the browser OIDC token exchange is CORS-blocked.
+//    Allow all origins for the public frontend client.
+//  - bruteForceProtected: the parallel VisualTests log in concurrently as the shared
+//    seed users, which trips brute-force protection and gets rejected. Disable it.
+var localRealm = JsonNode.Parse(
+	File.ReadAllText(Path.Combine(keycloakRealmPath, "einsatzbereit-realm.json")))!;
+if (localRealm["clients"] is JsonArray realmClients)
+{
+	foreach (var client in realmClients)
+	{
+		if (client is JsonObject clientObject
+			&& clientObject["clientId"]?.GetValue<string>() == "frontend")
+		{
+			clientObject["webOrigins"] = new JsonArray("*");
+		}
+	}
+}
+
+localRealm["bruteForceProtected"] = false;
+
+var keycloakRealmImportPath = Path.Combine(
+	Path.GetTempPath(), "einsatzbereit-aspire-realm-import");
+Directory.CreateDirectory(keycloakRealmImportPath);
+File.WriteAllText(
+	Path.Combine(keycloakRealmImportPath, "einsatzbereit-realm.json"),
+	localRealm.ToJsonString());
+
 var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.6.1")
 	.WithEnvironment("KC_DB", "dev-file")
-	.WithBindMount(keycloakRealmPath, "/opt/keycloak/data/import", isReadOnly: true)
+	.WithBindMount(keycloakRealmImportPath, "/opt/keycloak/data/import", isReadOnly: true)
 	.WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
 	.WithArgs("start-dev", "--import-realm")
 	.WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);

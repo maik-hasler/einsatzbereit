@@ -2,12 +2,22 @@
   "realm": "einsatzbereit",
   "enabled": true,
   "organizationsEnabled": true,
+  "sslRequired": "external",
   "loginTheme": "einsatzbereit",
   "registrationAllowed": true,
   "registrationEmailAsUsername": false,
   "resetPasswordAllowed": true,
   "rememberMe": true,
   "verifyEmail": true,
+  "passwordPolicy": "length(8) and digits(1) and lowerCase(1) and upperCase(1)",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
   "smtpServer": {
     "host": "mailpit",
     "port": "1025",
@@ -51,7 +61,8 @@
         "https://einsatzbereit.maik-hasler.de/*"
       ],
       "webOrigins": [
-        "*"
+        "http://localhost:*",
+        "https://einsatzbereit.maik-hasler.de"
       ],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:*##https://einsatzbereit.maik-hasler.de/*"
@@ -126,8 +137,8 @@
       "credentials": [
         {
           "type": "password",
-          "value": "vera123",
-          "temporary": false
+          "secretData": "{\"value\":\"Uc4T3pxk4AlbUdiAOq6Z53FoIUIvUTw/GiLqREHfgvc=\",\"salt\":\"HYtOV0NYMZTP5FpMSjCyBw==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
         }
       ]
     },
@@ -147,8 +158,8 @@
       "credentials": [
         {
           "type": "password",
-          "value": "olaf123",
-          "temporary": false
+          "secretData": "{\"value\":\"lNoPUrmLRFeqdZEdkdqWRFWWejhB8iwVd6DfgftqToY=\",\"salt\":\"FNbLnqA0DLZw6/4vfZOC/Q==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
         }
       ]
     },
@@ -167,8 +178,8 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin123",
-          "temporary": false
+          "secretData": "{\"value\":\"T2Mjy1GA3lLieuNiy+IxRNIlyKAYcGB4aJOH4ky2Uf4=\",\"salt\":\"y3pdmlteVR00GyMcZ4eKwA==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
         }
       ]
     },

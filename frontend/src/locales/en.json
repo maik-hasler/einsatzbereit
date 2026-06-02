@@ -97,6 +97,9 @@
       "edit": "Edit",
       "delete": "Delete",
       "deleting": "…",
+      "share": "Share",
+      "shareOpportunity": "Share opportunity",
+      "linkCopied": "Link copied to clipboard",
       "confirmDelete": "Really delete this opportunity?",
       "deleteError": "Error deleting",
       "availableTimeSlots": "Available time slots",
@@ -107,7 +110,13 @@
       "signupSuccess": "Sign-up successful! Your application has been submitted.",
       "notFound": "Not found.",
       "back": "← Back",
-      "filterToggle": "Filter"
+      "filterToggle": "Filter",
+      "full": "Full",
+      "spotsLeft": "{{count}} spot left",
+      "spotsLeft_plural": "{{count}} spots left",
+      "fewSpotsLeft": "Only {{count}} spot left!",
+      "fewSpotsLeft_plural": "Only {{count}} spots left!",
+      "noSpotsLeft": "This opportunity is currently full."
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -374,7 +383,9 @@
         "EngagementCreated": "New application received",
         "EngagementConfirmed": "Your application was confirmed",
         "EngagementCancelled": "Your application was cancelled",
-        "EngagementWithdrawn": "An application was withdrawn"
+        "EngagementWithdrawn": "An application was withdrawn",
+        "OpportunityUpdated": "An opportunity you signed up for was updated",
+        "OpportunityDeleted": "An opportunity you signed up for was removed"
       }
     },
     "language": {
@@ -430,6 +441,7 @@
     },
     "profile": {
       "title": "My Profile",
+      "sectionDetails": "Profile Details",
       "fieldBio": "Bio",
       "bioPlaceholder": "Tell organizers a little about yourself…",
       "fieldSkills": "Skills & Interests",

@@ -18,4 +18,6 @@ public sealed record VolunteerOpportunitySummary(
 	string CheckInMethod,
 	string? Category,
 	IReadOnlyList<string> Tags,
-	DateTimeOffset CreatedOn);
+	DateTimeOffset CreatedOn,
+	int TotalMaxParticipants,
+	int CurrentParticipantCount);

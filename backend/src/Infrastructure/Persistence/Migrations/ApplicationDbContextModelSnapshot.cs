@@ -123,6 +123,15 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasKey("Id")
 						.HasName("pk_engagement");
 
+					b.HasIndex("OpportunityId")
+						.HasDatabaseName("ix_engagement_opportunity_id");
+
+					b.HasIndex("TimeSlotId")
+						.HasDatabaseName("ix_engagement_time_slot_id");
+
+					b.HasIndex("VolunteerId")
+						.HasDatabaseName("ix_engagement_volunteer_id");
+
 					b.ToTable("engagement", (string)null);
 				});
 
@@ -383,7 +392,19 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasKey("Id")
 						.HasName("pk_volunteer_opportunity");
 
+					b.HasIndex("OrganizationId")
+						.HasDatabaseName("ix_volunteer_opportunity_organization_id");
+
 					b.ToTable("volunteer_opportunity", (string)null);
+				});
+
+			modelBuilder.Entity("Domain.Engagements.Engagement", b =>
+				{
+					b.HasOne("Domain.VolunteerOpportunities.TimeSlot", null)
+						.WithMany()
+						.HasForeignKey("TimeSlotId")
+						.OnDelete(DeleteBehavior.SetNull)
+						.HasConstraintName("fk_engagement_time_slot_time_slot_id");
 				});
 
 			modelBuilder.Entity("Domain.Organizations.Organization", b =>

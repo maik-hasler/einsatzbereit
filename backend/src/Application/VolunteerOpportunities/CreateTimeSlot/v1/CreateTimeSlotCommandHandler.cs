@@ -1,3 +1,5 @@
+using Application.Common.Authorization;
+using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -5,7 +7,9 @@ using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities.CreateTimeSlot.v1;
 
-internal sealed class CreateTimeSlotCommandHandler(IApplicationDbContext dbContext)
+internal sealed class CreateTimeSlotCommandHandler(
+	IApplicationDbContext dbContext,
+	IKeycloakOrganizationService keycloakOrgService)
 	: ICommandHandler<CreateTimeSlotCommand, Guid>
 {
 	public async ValueTask<Guid> Handle(
@@ -15,6 +19,12 @@ internal sealed class CreateTimeSlotCommandHandler(IApplicationDbContext dbConte
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrgService,
+			opportunity.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
 
 		var timeSlot = opportunity.AddTimeSlot(request.StartDateTime, request.EndDateTime, request.MaxParticipants);
 

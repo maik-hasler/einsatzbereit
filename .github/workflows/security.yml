@@ -1,0 +1,72 @@
+name: Dependency Security Scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/security.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/security.yml'
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nuget-audit:
+    name: NuGet dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: backend/global.json
+
+      - name: Restore backend
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Audit NuGet packages
+        working-directory: backend
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee /tmp/nuget-audit.txt
+          if grep -qi "critical\|high" /tmp/nuget-audit.txt; then
+            echo "Critical or high vulnerabilities found:"
+            grep -i "critical\|high" /tmp/nuget-audit.txt
+            exit 1
+          fi
+          echo "No critical or high vulnerabilities found."
+
+  npm-audit:
+    name: npm dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/package.json
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit npm packages
+        working-directory: frontend
+        run: pnpm audit --audit-level=high

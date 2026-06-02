@@ -22,14 +22,14 @@ internal sealed class UserConfiguration
 
 		builder.Property(u => u.Skills)
 			.HasConversion(
-				list => string.Join('\n', list),
-				raw => (IReadOnlyList<string>)(raw == "" ? Array.Empty<string>() : raw.Split('\n', StringSplitOptions.None)))
+				list => string.Join('|', list),
+				raw => (IReadOnlyList<string>)(raw == "" ? Array.Empty<string>() : raw.Split('|', StringSplitOptions.RemoveEmptyEntries)))
 			.HasColumnType("text");
 
 		builder.Property(u => u.Languages)
 			.HasConversion(
-				list => string.Join('\n', list),
-				raw => (IReadOnlyList<string>)(raw == "" ? Array.Empty<string>() : raw.Split('\n', StringSplitOptions.None)))
+				list => string.Join('|', list),
+				raw => (IReadOnlyList<string>)(raw == "" ? Array.Empty<string>() : raw.Split('|', StringSplitOptions.RemoveEmptyEntries)))
 			.HasColumnType("text");
 
 		builder.Property(u => u.PreferredContact)

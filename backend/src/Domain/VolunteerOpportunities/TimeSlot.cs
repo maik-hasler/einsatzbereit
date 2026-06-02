@@ -31,6 +31,9 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 		DateTimeOffset endDateTime,
 		int maxParticipants)
 	{
+		if (startDateTime <= DateTimeOffset.UtcNow)
+			throw new DomainException("Start date must be in the future.");
+
 		if (endDateTime <= startDateTime)
 			throw new DomainException("End date must be after start date.");
 

@@ -9,6 +9,7 @@ import type {
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import BadgeGrid from "../components/BadgeGrid";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { getApiErrorMessage } from "../lib/apiError";
 
 export default function UserAchievementsPage() {
 	const { userId } = useParams<{ userId: string }>();
@@ -34,10 +35,9 @@ export default function UserAchievementsPage() {
 				setAchievements(ach);
 				setCatalog(cat);
 			})
-			.catch((err: unknown) =>
-				setError(err instanceof Error ? err.message : String(err)),
-			)
+			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
 			.finally(() => setLoading(false));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [userId]);
 
 	if (error) {

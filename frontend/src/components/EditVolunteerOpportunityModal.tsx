@@ -139,7 +139,7 @@ export default function EditVolunteerOpportunityModal({
 	}, [onClose]);
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-[2000] flex items-center justify-center">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/40"
@@ -169,6 +169,7 @@ export default function EditVolunteerOpportunityModal({
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							required
+							maxLength={150}
 							className="w-full rounded border px-3 py-2 text-sm"
 						/>
 					</div>
@@ -182,6 +183,7 @@ export default function EditVolunteerOpportunityModal({
 							onChange={(e) => setDescription(e.target.value)}
 							required
 							rows={3}
+							maxLength={2000}
 							className="w-full rounded border px-3 py-2 text-sm"
 						/>
 					</div>
@@ -516,7 +518,7 @@ export default function EditVolunteerOpportunityModal({
 						<button
 							type="submit"
 							disabled={submitting}
-							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+							className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
 						>
 							{submitting
 								? t("editOpportunity.saving")

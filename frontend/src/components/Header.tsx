@@ -1,6 +1,7 @@
 import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, Link } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
@@ -15,6 +16,7 @@ function getInitials(name: string): string {
 export default function Header() {
 	const auth = useAuth();
 	const { t } = useTranslation();
+	const navigate = useNavigate();
 	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
@@ -28,6 +30,7 @@ export default function Header() {
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const notifRef = useRef<HTMLDivElement>(null);
+	const mobileNotifRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
@@ -37,7 +40,12 @@ export default function Header() {
 			) {
 				setDropdownOpen(false);
 			}
-			if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+			if (
+				notifRef.current &&
+				!notifRef.current.contains(e.target as Node) &&
+				(!mobileNotifRef.current ||
+					!mobileNotifRef.current.contains(e.target as Node))
+			) {
 				setNotifOpen(false);
 			}
 		};
@@ -97,9 +105,9 @@ export default function Header() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
-					<a href="/" className="flex items-center">
+					<Link to="/" className="flex items-center">
 						<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
-					</a>
+					</Link>
 
 					{/* Desktop Nav */}
 					<nav className="hidden md:flex items-center gap-3">
@@ -183,7 +191,7 @@ export default function Header() {
 																		);
 																	}
 																	setNotifOpen(false);
-																	window.location.href = "/my-engagements";
+																	navigate("/my-engagements");
 																}}
 															>
 																<span className="flex items-start gap-2">
@@ -247,8 +255,8 @@ export default function Header() {
 												</p>
 											</div>
 											<div className="py-1">
-												<a
-													href="/my-engagements"
+												<Link
+													to="/my-engagements"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
 													<svg
@@ -265,9 +273,9 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myEngagements")}
-												</a>
-												<a
-													href="/profile"
+												</Link>
+												<Link
+													to="/profile"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
 													<svg
@@ -284,9 +292,9 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myProfile")}
-												</a>
-												<a
-													href="/achievements"
+												</Link>
+												<Link
+													to="/achievements"
 													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
 												>
 													<svg
@@ -303,31 +311,7 @@ export default function Header() {
 														/>
 													</svg>
 													{t("nav.myAchievements")}
-												</a>
-												<a
-													href="/account"
-													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
-												>
-													<svg
-														className="w-4 h-4"
-														fill="none"
-														viewBox="0 0 24 24"
-														strokeWidth="1.5"
-														stroke="currentColor"
-													>
-														<path
-															strokeLinecap="round"
-															strokeLinejoin="round"
-															d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
-														/>
-														<path
-															strokeLinecap="round"
-															strokeLinejoin="round"
-															d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-														/>
-													</svg>
-													{t("nav.profileSettings")}
-												</a>
+												</Link>
 												<button
 													type="button"
 													onClick={() => auth.signoutRedirect()}
@@ -438,9 +422,9 @@ export default function Header() {
 								</div>
 								<button
 									type="button"
-									onClick={() => {
-										setMobileOpen(false);
-										setNotifOpen(true);
+									onClick={(e) => {
+										e.stopPropagation();
+										setNotifOpen((o) => !o);
 									}}
 									className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
@@ -451,34 +435,102 @@ export default function Header() {
 										</span>
 									)}
 								</button>
-								<a
-									href="/my-engagements"
+								{notifOpen && (
+									<div
+										ref={mobileNotifRef}
+										className="rounded-lg border border-gray-200 bg-white shadow-sm"
+									>
+										<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+											<p className="text-sm font-medium text-gray-900">
+												{t("notifications.bellLabel")}
+											</p>
+											{notifications.some((n) => !n.isRead) && (
+												<button
+													type="button"
+													className="text-xs text-brand-700 hover:underline cursor-pointer"
+													onClick={async () => {
+														await api.markAllNotificationsRead();
+														setNotifications((prev) =>
+															prev.map((n) => ({ ...n, isRead: true })),
+														);
+													}}
+												>
+													{t("notifications.markAllRead")}
+												</button>
+											)}
+										</div>
+										<ul className="max-h-64 overflow-y-auto divide-y divide-gray-50">
+											{notifications.length === 0 ? (
+												<li className="px-4 py-6 text-center text-sm text-gray-400">
+													{t("notifications.empty")}
+												</li>
+											) : (
+												notifications.map((n) => (
+													<li key={n.id}>
+														<button
+															type="button"
+															className={`w-full text-left px-4 py-3 text-sm hover:bg-brand-50 transition-colors cursor-pointer ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
+															onClick={async () => {
+																if (!n.isRead) {
+																	await api.markNotificationRead(n.id);
+																	setNotifications((prev) =>
+																		prev.map((x) =>
+																			x.id === n.id
+																				? { ...x, isRead: true }
+																				: x,
+																		),
+																	);
+																}
+																setNotifOpen(false);
+																setMobileOpen(false);
+																navigate("/my-engagements");
+															}}
+														>
+															<span className="flex items-start gap-2">
+																{!n.isRead && (
+																	<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+																)}
+																<span className={!n.isRead ? "" : "pl-4"}>
+																	{t(
+																		`notifications.kinds.${n.kind}` as Parameters<
+																			typeof t
+																		>[0],
+																		{ defaultValue: n.kind },
+																	)}
+																	<br />
+																	<span className="text-xs text-gray-400">
+																		{new Date(n.createdOn).toLocaleString()}
+																	</span>
+																</span>
+															</span>
+														</button>
+													</li>
+												))
+											)}
+										</ul>
+									</div>
+								)}
+								<Link
+									to="/my-engagements"
 									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myEngagements")}
-								</a>
-								<a
-									href="/profile"
+								</Link>
+								<Link
+									to="/profile"
 									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myProfile")}
-								</a>
-								<a
-									href="/achievements"
+								</Link>
+								<Link
+									to="/achievements"
 									onClick={() => setMobileOpen(false)}
 									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
 								>
 									{t("nav.myAchievements")}
-								</a>
-								<a
-									href="/account"
-									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
-								>
-									{t("nav.profileSettings")}
-								</a>
+								</Link>
 								<button
 									type="button"
 									onClick={() => auth.signoutRedirect()}

@@ -1,4 +1,5 @@
 using Application.Common.Messaging;
+using Domain.Users;
 
 namespace Application.VolunteerOpportunities.UpdateTimeSlot.v1;
 
@@ -7,5 +8,6 @@ public sealed record UpdateTimeSlotCommand(
 	Guid TimeSlotId,
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
-	int MaxParticipants)
+	int MaxParticipants,
+	UserId RequestingUserId)
 	: ICommand<bool>;

@@ -20,7 +20,8 @@ public sealed record VolunteerOpportunityDetails(
 	IReadOnlyList<string> Tags,
 	string? CheckInPin,
 	IReadOnlyList<TimeSlotDetail> TimeSlots,
-	DateTimeOffset CreatedOn);
+	DateTimeOffset CreatedOn,
+	int CurrentParticipantCount);
 
 public sealed record TimeSlotDetail(
 	Guid Id,

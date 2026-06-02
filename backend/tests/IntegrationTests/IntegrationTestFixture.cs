@@ -20,6 +20,8 @@ public class IntegrationTestFixture
 	private const string FrontendClientId = "frontend";
 	private const string BackendClientId = "backend";
 	private const string BackendClientSecret = "backend-secret";
+	private const string OrganisatorRole = "organisator";
+	private const string BaselineOrganisator = "olaf";
 
 	private DistributedApplication _app = null!;
 	private Respawner _respawner = null!;
@@ -65,6 +67,7 @@ public class IntegrationTestFixture
 
 		await _respawner.ResetAsync(conn);
 		await ResetKeycloakOrganizationsAsync();
+		await ResetKeycloakOrganisatorRolesAsync();
 	}
 
 	public async ValueTask DisposeAsync() =>
@@ -105,6 +108,7 @@ public class IntegrationTestFixture
 	{
 		await ResetDatabaseAsync();
 		await ResetKeycloakOrganizationsAsync();
+		await ResetKeycloakOrganisatorRolesAsync();
 	}
 
 	public async Task ResetKeycloakOrganizationsAsync()
@@ -125,6 +129,52 @@ public class IntegrationTestFixture
 		{
 			using var deleteRequest = new HttpRequestMessage(
 				HttpMethod.Delete, $"/admin/realms/{Realm}/organizations/{org.Id}");
+			deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+			var deleteResponse = await _keycloakClient.SendAsync(deleteRequest);
+			await EnsureSuccessAsync(deleteResponse);
+		}
+	}
+
+	// Some tests grant a user the realm-level "organisator" role by creating an
+	// organization (CreateOrganization assigns it to the creator). That role is
+	// global and survives ResetKeycloakOrganizationsAsync, which only deletes
+	// organizations - so it leaks into later tests in the shared session and
+	// breaks assumptions that, for example, vera is not an organisator. Revoke it
+	// from every non-baseline user between tests to restore the imported baseline.
+	public async Task ResetKeycloakOrganisatorRolesAsync()
+	{
+		var adminToken = await GetAdminTokenAsync();
+
+		using var roleRequest = new HttpRequestMessage(
+			HttpMethod.Get, $"/admin/realms/{Realm}/roles/{OrganisatorRole}");
+		roleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var roleResponse = await _keycloakClient.SendAsync(roleRequest);
+		await EnsureSuccessAsync(roleResponse);
+
+		var organisatorRole = await roleResponse.Content.ReadFromJsonAsync<KeycloakRole>()
+			?? throw new InvalidOperationException("Keycloak role 'organisator' not found.");
+
+		using var usersRequest = new HttpRequestMessage(
+			HttpMethod.Get, $"/admin/realms/{Realm}/roles/{OrganisatorRole}/users?max=1000");
+		usersRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var usersResponse = await _keycloakClient.SendAsync(usersRequest);
+		await EnsureSuccessAsync(usersResponse);
+
+		var users = await usersResponse.Content.ReadFromJsonAsync<List<KeycloakUser>>() ?? [];
+
+		foreach (var user in users)
+		{
+			if (string.Equals(user.Username, BaselineOrganisator, StringComparison.OrdinalIgnoreCase))
+				continue;
+
+			using var deleteRequest = new HttpRequestMessage(
+				HttpMethod.Delete, $"/admin/realms/{Realm}/users/{user.Id}/role-mappings/realm")
+			{
+				Content = JsonContent.Create(new[] { new { id = organisatorRole.Id, name = organisatorRole.Name } }),
+			};
 			deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
 			var deleteResponse = await _keycloakClient.SendAsync(deleteRequest);
@@ -210,4 +260,8 @@ public class IntegrationTestFixture
 		[property: JsonPropertyName("access_token")] string AccessToken);
 
 	private sealed record KeycloakOrganization(string Id, string Name);
+
+	private sealed record KeycloakRole(string Id, string Name);
+
+	private sealed record KeycloakUser(string Id, string Username);
 }

@@ -3,7 +3,10 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.UpdateOrganization.v1;
+using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Organizations.UpdateOrganization.v1;
 
@@ -17,6 +20,7 @@ internal sealed class UpdateOrganizationEndpoint
 			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
@@ -28,8 +32,11 @@ internal sealed class UpdateOrganizationEndpoint
 		[FromRoute] Guid organizationId,
 		[FromBody] UpdateOrganizationRequest request,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+
 		var addressCommand = request.Address is null
 			? null
 			: new UpdateAddressCommand(
@@ -45,7 +52,8 @@ internal sealed class UpdateOrganizationEndpoint
 			request.ContactEmail,
 			request.ContactPhone,
 			request.Website,
-			addressCommand);
+			addressCommand,
+			userId);
 
 		await sender.Send(command, cancellationToken);
 

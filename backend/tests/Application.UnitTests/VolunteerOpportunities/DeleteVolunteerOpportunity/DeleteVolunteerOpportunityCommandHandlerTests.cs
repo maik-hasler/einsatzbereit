@@ -1,8 +1,12 @@
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
+using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 using AwesomeAssertions;
+using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
 
@@ -13,15 +17,28 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
+		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IEngagementReadRepository _engagementReadRepository =
+		Substitute.For<IEngagementReadRepository>();
+	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly DeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
 	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
 
 	public DeleteVolunteerOpportunityCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext);
+		_dbContext.Notifications.Returns(_notifRepo);
+		_engagementReadRepository
+			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns([]);
+		_keycloakOrgService
+			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
+		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakOrgService);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity() =>
@@ -40,7 +57,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		// Act
-		var result = await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		var result = await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().BeTrue();
@@ -59,10 +76,68 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		// Act
-		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		_opportunityRepo.Received(1).Delete(opportunity);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotifyActiveVolunteers_WhenOpportunityDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var pendingVolunteer = Guid.NewGuid();
+		var confirmedVolunteer = Guid.NewGuid();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", pendingVolunteer, null, null, "Pending", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", confirmedVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
+			]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
+		await _notifRepo.Received(2).AddAsync(
+			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityDeleted && n.RelatedEntityId == opportunityId),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotNotify_WhenNoActiveEngagements(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
+			]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -77,7 +152,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		await act.Should().ThrowAsync<DomainException>()
@@ -96,7 +171,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		// Act
-		try { await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId), cancellationToken); }
+		try { await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken); }
 		catch (DomainException) { }
 
 		// Assert

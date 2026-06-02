@@ -54,6 +54,6 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
 
-		await Expect(Page.GetByText("Changes saved.")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Profile saved.")).ToBeVisibleAsync();
 	}
 }

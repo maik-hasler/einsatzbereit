@@ -2,6 +2,7 @@ using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
+using Domain.Primitives;
 
 namespace Application.Organizations.CreateOrganization.v1;
 
@@ -14,6 +15,9 @@ internal sealed class CreateOrganizationCommandHandler(
 		CreateOrganizationCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		if (string.IsNullOrWhiteSpace(request.Name))
+			throw new DomainException("Name must not be empty.");
+
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
 			request.Name, cancellationToken);
 

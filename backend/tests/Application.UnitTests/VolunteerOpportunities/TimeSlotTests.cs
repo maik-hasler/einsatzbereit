@@ -6,34 +6,42 @@ namespace Application.UnitTests.VolunteerOpportunities;
 
 public class TimeSlotTests
 {
-	private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
-	private static readonly DateTimeOffset Tomorrow = Now.AddDays(1);
+	private static readonly DateTimeOffset Tomorrow = DateTimeOffset.UtcNow.AddDays(1);
+	private static readonly DateTimeOffset DayAfterTomorrow = DateTimeOffset.UtcNow.AddDays(2);
 
 	[Test]
 	public void Create_ShouldCreateTimeSlot_WithValidData()
 	{
-		var timeSlot = TimeSlot.Create(Now, Tomorrow, maxParticipants: 10);
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10);
 
-		timeSlot.StartDateTime.Should().Be(Now);
-		timeSlot.EndDateTime.Should().Be(Tomorrow);
+		timeSlot.StartDateTime.Should().Be(Tomorrow);
+		timeSlot.EndDateTime.Should().Be(DayAfterTomorrow);
 		timeSlot.MaxParticipants.Should().Be(10);
 	}
 
 	[Test]
 	public void Create_ShouldAssignId()
 	{
-		var timeSlot = TimeSlot.Create(Now, Tomorrow, maxParticipants: 5);
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 5);
 
 		timeSlot.Id.Value.Should().NotBe(Guid.Empty);
 	}
 
 	[Test]
+	public void Create_ShouldThrow_WhenStartDateIsInThePast()
+	{
+		var pastStart = DateTimeOffset.UtcNow.AddHours(-1);
+		var futureEnd = DateTimeOffset.UtcNow.AddDays(1);
+
+		Action act = () => TimeSlot.Create(pastStart, futureEnd, maxParticipants: 10);
+
+		act.Should().Throw<DomainException>().WithMessage("*Start date must be in the future*");
+	}
+
+	[Test]
 	public void Create_ShouldThrow_WhenEndDateIsBeforeStartDate()
 	{
-		var start = Tomorrow;
-		var end = Now;
-
-		Action act = () => TimeSlot.Create(start, end, maxParticipants: 10);
+		Action act = () => TimeSlot.Create(DayAfterTomorrow, Tomorrow, maxParticipants: 10);
 
 		act.Should().Throw<DomainException>().WithMessage("*End date must be after start date*");
 	}
@@ -41,7 +49,7 @@ public class TimeSlotTests
 	[Test]
 	public void Create_ShouldThrow_WhenEndDateEqualsStartDate()
 	{
-		Action act = () => TimeSlot.Create(Now, Now, maxParticipants: 10);
+		Action act = () => TimeSlot.Create(Tomorrow, Tomorrow, maxParticipants: 10);
 
 		act.Should().Throw<DomainException>().WithMessage("*End date must be after start date*");
 	}
@@ -49,7 +57,7 @@ public class TimeSlotTests
 	[Test]
 	public void Create_ShouldThrow_WhenMaxParticipantsIsZero()
 	{
-		Action act = () => TimeSlot.Create(Now, Tomorrow, maxParticipants: 0);
+		Action act = () => TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 0);
 
 		act.Should().Throw<DomainException>().WithMessage("*Max participants must be greater than zero*");
 	}
@@ -57,7 +65,7 @@ public class TimeSlotTests
 	[Test]
 	public void Create_ShouldThrow_WhenMaxParticipantsIsNegative()
 	{
-		Action act = () => TimeSlot.Create(Now, Tomorrow, maxParticipants: -1);
+		Action act = () => TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: -1);
 
 		act.Should().Throw<DomainException>().WithMessage("*Max participants must be greater than zero*");
 	}
@@ -65,7 +73,7 @@ public class TimeSlotTests
 	[Test]
 	public void Create_ShouldAllowMaxParticipantsOfOne()
 	{
-		var timeSlot = TimeSlot.Create(Now, Tomorrow, maxParticipants: 1);
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 1);
 
 		timeSlot.MaxParticipants.Should().Be(1);
 	}
@@ -73,8 +81,8 @@ public class TimeSlotTests
 	[Test]
 	public void Create_ShouldGenerateUniqueIds_ForDifferentSlots()
 	{
-		var slot1 = TimeSlot.Create(Now, Tomorrow, maxParticipants: 5);
-		var slot2 = TimeSlot.Create(Now, Tomorrow, maxParticipants: 5);
+		var slot1 = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 5);
+		var slot2 = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 5);
 
 		slot1.Id.Should().NotBe(slot2.Id);
 	}
