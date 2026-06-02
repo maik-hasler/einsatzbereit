@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
@@ -16,9 +18,36 @@ var keycloakRealmPath = Path.GetFullPath(
 var keycloakThemePath = Path.GetFullPath(
 	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
+// The committed realm keeps strict CORS webOrigins for production. Locally, Aspire
+// serves the frontend on a dynamic http://localhost:<port> origin that no fixed
+// webOrigins entry can match (Keycloak webOrigins are exact CORS origins, not port
+// wildcards), which breaks the browser OIDC token exchange. Write a dev-only realm
+// copy that allows all origins for the public frontend client. Production never runs
+// this AppHost - it uses the baked image with the committed realm.
+var localRealm = JsonNode.Parse(
+	File.ReadAllText(Path.Combine(keycloakRealmPath, "einsatzbereit-realm.json")))!;
+if (localRealm["clients"] is JsonArray realmClients)
+{
+	foreach (var client in realmClients)
+	{
+		if (client is JsonObject clientObject
+			&& clientObject["clientId"]?.GetValue<string>() == "frontend")
+		{
+			clientObject["webOrigins"] = new JsonArray("*");
+		}
+	}
+}
+
+var keycloakRealmImportPath = Path.Combine(
+	Path.GetTempPath(), "einsatzbereit-aspire-realm-import");
+Directory.CreateDirectory(keycloakRealmImportPath);
+File.WriteAllText(
+	Path.Combine(keycloakRealmImportPath, "einsatzbereit-realm.json"),
+	localRealm.ToJsonString());
+
 var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26.6.1")
 	.WithEnvironment("KC_DB", "dev-file")
-	.WithBindMount(keycloakRealmPath, "/opt/keycloak/data/import", isReadOnly: true)
+	.WithBindMount(keycloakRealmImportPath, "/opt/keycloak/data/import", isReadOnly: true)
 	.WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
 	.WithArgs("start-dev", "--import-realm")
 	.WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);
