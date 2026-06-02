@@ -18,12 +18,15 @@ var keycloakRealmPath = Path.GetFullPath(
 var keycloakThemePath = Path.GetFullPath(
 	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
-// The committed realm keeps strict CORS webOrigins for production. Locally, Aspire
-// serves the frontend on a dynamic http://localhost:<port> origin that no fixed
-// webOrigins entry can match (Keycloak webOrigins are exact CORS origins, not port
-// wildcards), which breaks the browser OIDC token exchange. Write a dev-only realm
-// copy that allows all origins for the public frontend client. Production never runs
-// this AppHost - it uses the baked image with the committed realm.
+// The committed realm keeps production security settings; some break the local
+// Aspire + Playwright flow. Write a dev-only copy with two relaxations and import
+// that. Production never runs this AppHost - it uses the baked image + committed realm.
+//  - webOrigins: Aspire serves the frontend on a dynamic http://localhost:<port>
+//    origin that no fixed webOrigins entry matches (Keycloak webOrigins are exact CORS
+//    origins, not port wildcards), so the browser OIDC token exchange is CORS-blocked.
+//    Allow all origins for the public frontend client.
+//  - bruteForceProtected: the parallel VisualTests log in concurrently as the shared
+//    seed users, which trips brute-force protection and gets rejected. Disable it.
 var localRealm = JsonNode.Parse(
 	File.ReadAllText(Path.Combine(keycloakRealmPath, "einsatzbereit-realm.json")))!;
 if (localRealm["clients"] is JsonArray realmClients)
@@ -37,6 +40,8 @@ if (localRealm["clients"] is JsonArray realmClients)
 		}
 	}
 }
+
+localRealm["bruteForceProtected"] = false;
 
 var keycloakRealmImportPath = Path.Combine(
 	Path.GetTempPath(), "einsatzbereit-aspire-realm-import");
