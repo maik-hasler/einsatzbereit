@@ -33,12 +33,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # The Keycloak image ships no curl/wget, so probe the management health
+    # endpoint (port 9000) over bash's /dev/tcp instead. /bin/sh is bash on the
+    # UBI-based image, but we invoke bash explicitly for clarity and parity with
+    # the backend (whose /bin/sh is dash and cannot do /dev/tcp).
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9000/health/ready || exit 1"]
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/localhost/9000 && printf "GET /health/ready HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && cat <&3 | grep -q "200 OK"'
       interval: 10s
       timeout: 5s
       retries: 15
-      start_period: 60s
+      start_period: 90s
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -70,8 +78,16 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    # The .NET aspnet image ships no curl/wget and its /bin/sh is dash (no
+    # /dev/tcp), so probe the liveness endpoint over bash's /dev/tcp. /alive
+    # (not /health) is used so the container is gated on the app being up, not
+    # on downstream readiness, which avoids dependency deadlocks.
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      test:
+        - CMD
+        - bash
+        - -c
+        - 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /alive HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && cat <&3 | grep -q "200 OK"'
       interval: 10s
       timeout: 5s
       retries: 10
