@@ -17,7 +17,7 @@
     "i18n:check": "node scripts/check-i18n-keys.js"
   },
   "dependencies": {
-    "i18next": "26.2.0",
+    "i18next": "26.3.0",
     "i18next-browser-languagedetector": "8.2.1",
     "leaflet": "1.9.4",
     "oidc-client-ts": "3.5.0",
