@@ -20,7 +20,7 @@
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[10.0.8]" />
 		<PackageVersion Include="Microsoft.Extensions.Http" Version="[10.0.8]" />
 		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[10.0.8]" />
-		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="[10.0.1]" />
+		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="[10.0.2]" />
 		<!-- Aspire: ServiceDefaults -->
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="[10.6.0]" />
 		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="[10.6.0]" />
