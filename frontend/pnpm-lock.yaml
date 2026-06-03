@@ -27,20 +27,20 @@ importers:
         specifier: 19.2.6
         version: 19.2.6
       react-dom:
-        specifier: 19.2.6
-        version: 19.2.6(react@19.2.6)
+        specifier: 19.2.7
+        version: 19.2.7(react@19.2.6)
       react-i18next:
         specifier: 17.0.8
-        version: 17.0.8(i18next@26.3.0(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
+        version: 17.0.8(i18next@26.3.0(typescript@6.0.3))(react-dom@19.2.7(react@19.2.6))(react@19.2.6)(typescript@6.0.3)
       react-leaflet:
         specifier: 5.0.0
-        version: 5.0.0(leaflet@1.9.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        version: 5.0.0(leaflet@1.9.4)(react-dom@19.2.7(react@19.2.6))(react@19.2.6)
       react-oidc-context:
         specifier: 3.3.1
         version: 3.3.1(oidc-client-ts@3.5.0)(react@19.2.6)
       react-router:
         specifier: 7.16.0
-        version: 7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        version: 7.16.0(react-dom@19.2.7(react@19.2.6))(react@19.2.6)
     devDependencies:
       '@eslint/js':
         specifier: 10.0.1
@@ -1461,10 +1461,10 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  react-dom@19.2.6:
-    resolution: {integrity: sha512-0prMI+hvBbPjsWnxDLxlCGyM8PN6UuWjEUCYmZhO67xIV9Xasa/r/vDnq+Xyq4Lo27g8QSbO5YzARu0D1Sps3g==}
+  react-dom@19.2.7:
+    resolution: {integrity: sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==}
     peerDependencies:
-      react: ^19.2.6
+      react: ^19.2.7
 
   react-i18next@17.0.8:
     resolution: {integrity: sha512-0ooKbGLU8JXhe1zwpQUWIeXSgLPOfwJmgheWRIUpcoA0CpyabpGhayjdG+/eA5esC1AQ8h2jWpXjJfzQzeDOCw==}
@@ -1988,11 +1988,11 @@ snapshots:
 
   '@oxc-project/types@0.132.0': {}
 
-  '@react-leaflet/core@3.0.0(leaflet@1.9.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@react-leaflet/core@3.0.0(leaflet@1.9.4)(react-dom@19.2.7(react@19.2.6))(react@19.2.6)':
     dependencies:
       leaflet: 1.9.4
       react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
+      react-dom: 19.2.7(react@19.2.6)
 
   '@rolldown/binding-android-arm64@1.0.2':
     optional: true
@@ -3192,12 +3192,12 @@ snapshots:
     dependencies:
       react: 19.2.6
 
-  react-dom@19.2.6(react@19.2.6):
+  react-dom@19.2.7(react@19.2.6):
     dependencies:
       react: 19.2.6
       scheduler: 0.27.0
 
-  react-i18next@17.0.8(i18next@26.3.0(typescript@6.0.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@6.0.3):
+  react-i18next@17.0.8(i18next@26.3.0(typescript@6.0.3))(react-dom@19.2.7(react@19.2.6))(react@19.2.6)(typescript@6.0.3):
     dependencies:
       '@babel/runtime': 7.29.2
       html-parse-stringify: 3.0.1
@@ -3205,28 +3205,28 @@ snapshots:
       react: 19.2.6
       use-sync-external-store: 1.6.0(react@19.2.6)
     optionalDependencies:
-      react-dom: 19.2.6(react@19.2.6)
+      react-dom: 19.2.7(react@19.2.6)
       typescript: 6.0.3
 
-  react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.2.7(react@19.2.6))(react@19.2.6):
     dependencies:
-      '@react-leaflet/core': 3.0.0(leaflet@1.9.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@react-leaflet/core': 3.0.0(leaflet@1.9.4)(react-dom@19.2.7(react@19.2.6))(react@19.2.6)
       leaflet: 1.9.4
       react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
+      react-dom: 19.2.7(react@19.2.6)
 
   react-oidc-context@3.3.1(oidc-client-ts@3.5.0)(react@19.2.6):
     dependencies:
       oidc-client-ts: 3.5.0
       react: 19.2.6
 
-  react-router@7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  react-router@7.16.0(react-dom@19.2.7(react@19.2.6))(react@19.2.6):
     dependencies:
       cookie: 1.1.1
       react: 19.2.6
       set-cookie-parser: 2.7.2
     optionalDependencies:
-      react-dom: 19.2.6(react@19.2.6)
+      react-dom: 19.2.7(react@19.2.6)
 
   react@19.2.6: {}
 
