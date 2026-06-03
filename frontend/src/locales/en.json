@@ -77,6 +77,13 @@
       "clearFilters": "Clear filters",
       "clearSearch": "Clear search",
       "clearCity": "Clear city filter",
+      "clearOccurrence": "Clear frequency filter",
+      "clearType": "Clear type filter",
+      "clearLocation": "Clear location filter",
+      "clearDateFrom": "Clear from date",
+      "clearDateTo": "Clear to date",
+      "clearCategory": "Clear category filter",
+      "clearTag": "Clear tag filter",
       "allCategories": "All categories",
       "category": {
         "Social": "Social",

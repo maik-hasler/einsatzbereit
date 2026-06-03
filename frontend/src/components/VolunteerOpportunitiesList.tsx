@@ -21,6 +21,41 @@ interface Props {
 const LIST_PAGE_SIZE = 10;
 const MAP_PAGE_SIZE = 200;
 
+function ChipCloseIcon() {
+	return (
+		<svg
+			className="h-3 w-3"
+			viewBox="0 0 12 12"
+			fill="currentColor"
+			aria-hidden="true"
+		>
+			<path d="M6 4.586 10.586 0 12 1.414 7.414 6 12 10.586 10.586 12 6 7.414 1.414 12 0 10.586 4.586 6 0 1.414 1.414 0 6 4.586z" />
+		</svg>
+	);
+}
+
+interface FilterChipProps {
+	label: string;
+	ariaLabel: string;
+	onRemove: () => void;
+}
+
+function FilterChip({ label, ariaLabel, onRemove }: FilterChipProps) {
+	return (
+		<span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-800">
+			{label}
+			<button
+				type="button"
+				onClick={onRemove}
+				aria-label={ariaLabel}
+				className="rounded-full p-0.5 hover:bg-brand-200"
+			>
+				<ChipCloseIcon />
+			</button>
+		</span>
+	);
+}
+
 export default function VolunteerOpportunitiesList({
 	canCreateOpportunity,
 }: Props) {
@@ -258,16 +293,21 @@ export default function VolunteerOpportunitiesList({
 		setBounds(next);
 	}
 
+	const inputClass =
+		"rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none";
+	const selectClass =
+		"rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none";
+
 	return (
 		<div>
 			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-xl font-semibold">
+				<h2 className="text-xl font-semibold text-gray-900">
 					{t("opportunities.currentNeeds")}
 				</h2>
 				<div className="flex items-center gap-2">
 					<div
 						role="group"
-						className="inline-flex overflow-hidden rounded border"
+						className="inline-flex overflow-hidden rounded-lg border border-gray-200"
 					>
 						<button
 							type="button"
@@ -276,8 +316,8 @@ export default function VolunteerOpportunitiesList({
 							onClick={() => setView("list")}
 							className={
 								!isMap
-									? "bg-black px-3 py-1.5 text-sm text-white"
-									: "px-3 py-1.5 text-sm hover:bg-gray-100"
+									? "bg-brand-800 px-3 py-1.5 text-sm font-medium text-white"
+									: "px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-700"
 							}
 						>
 							{t("opportunities.view.list")}
@@ -289,8 +329,8 @@ export default function VolunteerOpportunitiesList({
 							onClick={() => setView("map")}
 							className={
 								isMap
-									? "bg-black px-3 py-1.5 text-sm text-white"
-									: "px-3 py-1.5 text-sm hover:bg-gray-100"
+									? "bg-brand-800 px-3 py-1.5 text-sm font-medium text-white"
+									: "px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-700"
 							}
 						>
 							{t("opportunities.view.map")}
@@ -300,7 +340,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							onClick={() => setShowModal(true)}
 							data-testid="create-opportunity-btn"
-							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
+							className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none"
 						>
 							{t("opportunities.createNeed")}
 						</button>
@@ -308,180 +348,284 @@ export default function VolunteerOpportunitiesList({
 				</div>
 			</div>
 
-			<div className="mb-2 sm:hidden">
-				<button
-					type="button"
-					onClick={() => setFiltersOpen((o) => !o)}
-					className="flex items-center gap-2 rounded border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-				>
-					<span>{t("opportunities.filterToggle")}</span>
-					{activeFilterCount > 0 && (
-						<span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-black text-xs text-white">
-							{activeFilterCount}
-						</span>
-					)}
-					<svg
-						className={`h-4 w-4 text-gray-500 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="2"
-						stroke="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="m19.5 8.25-7.5 7.5-7.5-7.5"
-						/>
-					</svg>
-				</button>
-			</div>
-
-			<div
-				className={`mb-4 flex flex-wrap gap-2 ${filtersOpen ? "" : "max-sm:hidden"}`}
-			>
-				<div className="relative">
-					<input
-						type="text"
-						aria-label={t("opportunities.searchPlaceholder")}
-						placeholder={t("opportunities.searchPlaceholder")}
-						value={searchInput}
-						onChange={(e) => {
-							const val = e.target.value;
-							setSearchInput(val);
-							if (searchDebounceRef.current)
-								clearTimeout(searchDebounceRef.current);
-							searchDebounceRef.current = setTimeout(() => {
-								updateFilter("search", val);
-							}, 400);
-						}}
-						className="rounded border px-3 py-1.5 pr-7 text-sm"
-					/>
-					{searchInput && (
-						<button
-							type="button"
-							onClick={() => {
-								setSearchInput("");
-								updateFilter("search", "");
-							}}
-							aria-label={t("opportunities.clearSearch")}
-							className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-						>
-							&times;
-						</button>
-					)}
-				</div>
-				<div className="relative">
-					<input
-						type="text"
-						aria-label={t("opportunities.cityPlaceholder")}
-						placeholder={t("opportunities.cityPlaceholder")}
-						value={cityInput}
-						onChange={(e) => {
-							const val = e.target.value;
-							setCityInput(val);
-							if (cityDebounceRef.current)
-								clearTimeout(cityDebounceRef.current);
-							cityDebounceRef.current = setTimeout(() => {
-								updateFilter("city", val);
-							}, 400);
-						}}
-						className="rounded border px-3 py-1.5 pr-7 text-sm"
-					/>
-					{cityInput && (
-						<button
-							type="button"
-							onClick={() => {
-								setCityInput("");
-								updateFilter("city", "");
-							}}
-							aria-label={t("opportunities.clearCity")}
-							className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-						>
-							&times;
-						</button>
-					)}
-				</div>
-				<select
-					aria-label={t("opportunities.allFrequencies")}
-					value={occurrence}
-					onChange={(e) => updateFilter("occurrence", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				>
-					<option value="">{t("opportunities.allFrequencies")}</option>
-					<option value="OneTime">{t("opportunities.oneTime")}</option>
-					<option value="Recurring">{t("opportunities.recurring")}</option>
-				</select>
-				<select
-					aria-label={t("opportunities.allTypes")}
-					value={participationType}
-					onChange={(e) => updateFilter("participationType", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				>
-					<option value="">{t("opportunities.allTypes")}</option>
-					<option value="Waitlist">{t("opportunities.waitlist")}</option>
-					<option value="IndividualContact">
-						{t("opportunities.individualContact")}
-					</option>
-				</select>
-				<select
-					aria-label={t("opportunities.allLocations")}
-					value={isRemoteParam}
-					onChange={(e) => updateFilter("isRemote", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				>
-					<option value="">{t("opportunities.allLocations")}</option>
-					<option value="true">{t("opportunities.remote")}</option>
-					<option value="false">{t("opportunities.onsite")}</option>
-				</select>
-				<input
-					type="date"
-					aria-label={t("opportunities.dateFromLabel")}
-					value={dateFrom}
-					onChange={(e) => updateFilter("dateFrom", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				/>
-				<input
-					type="date"
-					aria-label={t("opportunities.dateToLabel")}
-					value={dateTo}
-					onChange={(e) => updateFilter("dateTo", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				/>
-				<select
-					aria-label={t("opportunities.allCategories")}
-					value={category}
-					onChange={(e) => updateFilter("category", e.target.value)}
-					className="rounded border px-3 py-1.5 text-sm text-gray-700"
-				>
-					<option value="">{t("opportunities.allCategories")}</option>
-					{(
-						[
-							"Social",
-							"Environment",
-							"Sport",
-							"Education",
-							"DisasterRelief",
-							"Health",
-							"Animals",
-							"Culture",
-							"Technology",
-							"Other",
-						] as const
-					).map((c) => (
-						<option key={c} value={c}>
-							{t(`opportunities.category.${c}`)}
-						</option>
-					))}
-				</select>
-				{hasFilters && (
+			<div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<div className="mb-3 sm:hidden">
 					<button
 						type="button"
-						onClick={clearFilters}
-						className="rounded border px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100"
+						onClick={() => setFiltersOpen((o) => !o)}
+						className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 					>
-						{t("opportunities.clearFilters")}
+						<span className="flex items-center gap-2">
+							<svg
+								className="h-4 w-4 text-brand-600"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth="2"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25"
+								/>
+							</svg>
+							{t("opportunities.filterToggle")}
+							{activeFilterCount > 0 && (
+								<span className="rounded-full bg-brand-500 px-1.5 py-0.5 text-xs font-medium text-white">
+									{activeFilterCount}
+								</span>
+							)}
+						</span>
+						<svg
+							className={`h-4 w-4 text-gray-400 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth="2"
+							stroke="currentColor"
+							aria-hidden="true"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="m19.5 8.25-7.5 7.5-7.5-7.5"
+							/>
+						</svg>
 					</button>
+				</div>
+
+				<div
+					className={`flex flex-wrap gap-2 ${filtersOpen ? "" : "max-sm:hidden"}`}
+				>
+					<div className="relative">
+						<input
+							type="text"
+							aria-label={t("opportunities.searchPlaceholder")}
+							placeholder={t("opportunities.searchPlaceholder")}
+							value={searchInput}
+							onChange={(e) => {
+								const val = e.target.value;
+								setSearchInput(val);
+								if (searchDebounceRef.current)
+									clearTimeout(searchDebounceRef.current);
+								searchDebounceRef.current = setTimeout(() => {
+									updateFilter("search", val);
+								}, 400);
+							}}
+							className={`${inputClass} pr-7`}
+						/>
+						{searchInput && (
+							<button
+								type="button"
+								onClick={() => {
+									setSearchInput("");
+									updateFilter("search", "");
+								}}
+								aria-label={t("opportunities.clearSearch")}
+								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+							>
+								&times;
+							</button>
+						)}
+					</div>
+					<div className="relative">
+						<input
+							type="text"
+							aria-label={t("opportunities.cityPlaceholder")}
+							placeholder={t("opportunities.cityPlaceholder")}
+							value={cityInput}
+							onChange={(e) => {
+								const val = e.target.value;
+								setCityInput(val);
+								if (cityDebounceRef.current)
+									clearTimeout(cityDebounceRef.current);
+								cityDebounceRef.current = setTimeout(() => {
+									updateFilter("city", val);
+								}, 400);
+							}}
+							className={`${inputClass} pr-7`}
+						/>
+						{cityInput && (
+							<button
+								type="button"
+								onClick={() => {
+									setCityInput("");
+									updateFilter("city", "");
+								}}
+								aria-label={t("opportunities.clearCity")}
+								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+							>
+								&times;
+							</button>
+						)}
+					</div>
+					<select
+						aria-label={t("opportunities.allFrequencies")}
+						value={occurrence}
+						onChange={(e) => updateFilter("occurrence", e.target.value)}
+						className={selectClass}
+					>
+						<option value="">{t("opportunities.allFrequencies")}</option>
+						<option value="OneTime">{t("opportunities.oneTime")}</option>
+						<option value="Recurring">{t("opportunities.recurring")}</option>
+					</select>
+					<select
+						aria-label={t("opportunities.allTypes")}
+						value={participationType}
+						onChange={(e) => updateFilter("participationType", e.target.value)}
+						className={selectClass}
+					>
+						<option value="">{t("opportunities.allTypes")}</option>
+						<option value="Waitlist">{t("opportunities.waitlist")}</option>
+						<option value="IndividualContact">
+							{t("opportunities.individualContact")}
+						</option>
+					</select>
+					<select
+						aria-label={t("opportunities.allLocations")}
+						value={isRemoteParam}
+						onChange={(e) => updateFilter("isRemote", e.target.value)}
+						className={selectClass}
+					>
+						<option value="">{t("opportunities.allLocations")}</option>
+						<option value="true">{t("opportunities.remote")}</option>
+						<option value="false">{t("opportunities.onsite")}</option>
+					</select>
+					<input
+						type="date"
+						aria-label={t("opportunities.dateFromLabel")}
+						value={dateFrom}
+						onChange={(e) => updateFilter("dateFrom", e.target.value)}
+						className={selectClass}
+					/>
+					<input
+						type="date"
+						aria-label={t("opportunities.dateToLabel")}
+						value={dateTo}
+						onChange={(e) => updateFilter("dateTo", e.target.value)}
+						className={selectClass}
+					/>
+					<select
+						aria-label={t("opportunities.allCategories")}
+						value={category}
+						onChange={(e) => updateFilter("category", e.target.value)}
+						className={selectClass}
+					>
+						<option value="">{t("opportunities.allCategories")}</option>
+						{(
+							[
+								"Social",
+								"Environment",
+								"Sport",
+								"Education",
+								"DisasterRelief",
+								"Health",
+								"Animals",
+								"Culture",
+								"Technology",
+								"Other",
+							] as const
+						).map((c) => (
+							<option key={c} value={c}>
+								{t(`opportunities.category.${c}`)}
+							</option>
+						))}
+					</select>
+				</div>
+
+				{hasFilters && (
+					<div
+						className={`mt-3 flex flex-wrap items-center gap-1.5 border-t border-gray-100 pt-3 ${filtersOpen ? "" : "max-sm:hidden"}`}
+					>
+						{search && (
+							<FilterChip
+								label={search}
+								ariaLabel={t("opportunities.clearSearch")}
+								onRemove={() => {
+									setSearchInput("");
+									updateFilter("search", "");
+								}}
+							/>
+						)}
+						{city && (
+							<FilterChip
+								label={city}
+								ariaLabel={t("opportunities.clearCity")}
+								onRemove={() => {
+									setCityInput("");
+									updateFilter("city", "");
+								}}
+							/>
+						)}
+						{occurrence && (
+							<FilterChip
+								label={
+									occurrence === "OneTime"
+										? t("opportunities.oneTime")
+										: t("opportunities.recurring")
+								}
+								ariaLabel={t("opportunities.clearOccurrence")}
+								onRemove={() => updateFilter("occurrence", "")}
+							/>
+						)}
+						{participationType && (
+							<FilterChip
+								label={
+									participationType === "Waitlist"
+										? t("opportunities.waitlist")
+										: t("opportunities.individualContact")
+								}
+								ariaLabel={t("opportunities.clearType")}
+								onRemove={() => updateFilter("participationType", "")}
+							/>
+						)}
+						{isRemoteParam && (
+							<FilterChip
+								label={
+									isRemoteParam === "true"
+										? t("opportunities.remote")
+										: t("opportunities.onsite")
+								}
+								ariaLabel={t("opportunities.clearLocation")}
+								onRemove={() => updateFilter("isRemote", "")}
+							/>
+						)}
+						{dateFrom && (
+							<FilterChip
+								label={`${t("opportunities.dateFromLabel")}: ${dateFrom}`}
+								ariaLabel={t("opportunities.clearDateFrom")}
+								onRemove={() => updateFilter("dateFrom", "")}
+							/>
+						)}
+						{dateTo && (
+							<FilterChip
+								label={`${t("opportunities.dateToLabel")}: ${dateTo}`}
+								ariaLabel={t("opportunities.clearDateTo")}
+								onRemove={() => updateFilter("dateTo", "")}
+							/>
+						)}
+						{category && (
+							<FilterChip
+								label={t(`opportunities.category.${category}`)}
+								ariaLabel={t("opportunities.clearCategory")}
+								onRemove={() => updateFilter("category", "")}
+							/>
+						)}
+						{tag && (
+							<FilterChip
+								label={`#${tag}`}
+								ariaLabel={t("opportunities.clearTag")}
+								onRemove={() => updateFilter("tag", "")}
+							/>
+						)}
+						<button
+							type="button"
+							onClick={clearFilters}
+							className="ml-1 text-xs font-medium text-gray-500 underline hover:text-gray-700"
+						>
+							{t("opportunities.clearFilters")}
+						</button>
+					</div>
 				)}
 			</div>
 

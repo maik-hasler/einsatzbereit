@@ -77,6 +77,13 @@
       "clearFilters": "Filter zurücksetzen",
       "clearSearch": "Suche löschen",
       "clearCity": "Stadtfilter löschen",
+      "clearOccurrence": "Häufigkeitsfilter löschen",
+      "clearType": "Typfilter löschen",
+      "clearLocation": "Standortfilter löschen",
+      "clearDateFrom": "Von-Datum löschen",
+      "clearDateTo": "Bis-Datum löschen",
+      "clearCategory": "Kategoriefilter löschen",
+      "clearTag": "Tag-Filter löschen",
       "allCategories": "Alle Kategorien",
       "category": {
         "Social": "Soziales",
