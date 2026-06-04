@@ -84,6 +84,9 @@
       "clearDateTo": "Clear to date",
       "clearCategory": "Clear category filter",
       "clearTag": "Clear tag filter",
+      "all": "All",
+      "anyDate": "Any date",
+      "clearDateRange": "Clear dates",
       "filterLabelSearch": "Search",
       "filterLabelCity": "City",
       "filterLabelCategory": "Category",
@@ -91,6 +94,7 @@
       "filterLabelLocation": "Location",
       "filterLabelFrequency": "Frequency",
       "filterLabelDateRange": "Date range",
+      "filterLabelTag": "Tag",
       "allCategories": "All categories",
       "category": {
         "Social": "Social",
