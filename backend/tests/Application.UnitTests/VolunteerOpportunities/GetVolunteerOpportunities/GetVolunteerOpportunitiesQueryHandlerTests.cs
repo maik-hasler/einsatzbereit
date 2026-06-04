@@ -21,7 +21,7 @@ public class GetVolunteerOpportunitiesQueryHandlerTests
 	}
 
 	private static GetVolunteerOpportunitiesQuery Query(int pageNumber, int pageSize) =>
-		new(pageNumber, pageSize, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+		new(pageNumber, pageSize, null, null, null, null, null, null, null, null, null, null, null, null, null);
 
 	private async Task<VolunteerOpportunityFilter> CapturedFilterAsync(int pageNumber, int pageSize)
 	{

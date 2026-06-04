@@ -158,25 +158,6 @@ function GlobeIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
 	);
 }
 
-function CalendarIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
-	return (
-		<svg
-			className={className}
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="2"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
-			/>
-		</svg>
-	);
-}
-
 function HashIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
 	return (
 		<svg
@@ -442,8 +423,6 @@ export default function VolunteerOpportunitiesList({
 	const occurrence = searchParams.get("occurrence") ?? "";
 	const participationType = searchParams.get("participationType") ?? "";
 	const isRemoteParam = searchParams.get("isRemote") ?? "";
-	const dateFrom = searchParams.get("dateFrom") ?? "";
-	const dateTo = searchParams.get("dateTo") ?? "";
 	const categoriesParam = searchParams.get("categories") ?? "";
 	const tag = searchParams.get("tag") ?? "";
 	const city = searchParams.get("city") ?? "";
@@ -548,8 +527,6 @@ export default function VolunteerOpportunitiesList({
 		occurrence,
 		participationType,
 		isRemoteParam,
-		dateFrom,
-		dateTo,
 		categories: categoriesParam,
 		tag,
 		isMap,
@@ -569,8 +546,6 @@ export default function VolunteerOpportunitiesList({
 			prev.occurrence !== occurrence ||
 			prev.participationType !== participationType ||
 			prev.isRemoteParam !== isRemoteParam ||
-			prev.dateFrom !== dateFrom ||
-			prev.dateTo !== dateTo ||
 			prev.categories !== categoriesParam ||
 			prev.tag !== tag ||
 			prev.isMap !== isMap ||
@@ -587,8 +562,6 @@ export default function VolunteerOpportunitiesList({
 			occurrence,
 			participationType,
 			isRemoteParam,
-			dateFrom,
-			dateTo,
 			categories: categoriesParam,
 			tag,
 			isMap,
@@ -620,8 +593,6 @@ export default function VolunteerOpportunitiesList({
 				: isRemoteParam === "false"
 					? false
 					: undefined;
-		const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
-		const dateToParsed = dateTo ? new Date(dateTo) : undefined;
 
 		const centerLatitude = hasLocation ? parseFloat(lat) : undefined;
 		const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
@@ -635,8 +606,6 @@ export default function VolunteerOpportunitiesList({
 				occurrence || undefined,
 				participationType || undefined,
 				isRemoteBool,
-				dateFromParsed,
-				dateToParsed,
 				mapBounds?.north,
 				mapBounds?.south,
 				mapBounds?.east,
@@ -674,8 +643,6 @@ export default function VolunteerOpportunitiesList({
 		occurrence,
 		participationType,
 		isRemoteParam,
-		dateFrom,
-		dateTo,
 		categoriesParam,
 		tag,
 		isMap,
@@ -706,8 +673,6 @@ export default function VolunteerOpportunitiesList({
 				next.delete("occurrence");
 				next.delete("participationType");
 				next.delete("isRemote");
-				next.delete("dateFrom");
-				next.delete("dateTo");
 				next.delete("categories");
 				next.delete("tag");
 				return next;
@@ -789,8 +754,6 @@ export default function VolunteerOpportunitiesList({
 		occurrence ||
 		participationType ||
 		isRemoteParam ||
-		dateFrom ||
-		dateTo ||
 		selectedCategories.length > 0 ||
 		tag
 	);
@@ -1160,67 +1123,6 @@ export default function VolunteerOpportunitiesList({
 						/>
 					</FilterDropdown>
 
-					{/* Date range */}
-					<FilterDropdown
-						icon={<CalendarIcon className="h-3.5 w-3.5" />}
-						label={t("opportunities.filterLabelDateRange")}
-						displayValue={
-							dateFrom && dateTo
-								? `${dateFrom} - ${dateTo}`
-								: dateFrom
-									? `>= ${dateFrom}`
-									: dateTo
-										? `<= ${dateTo}`
-										: ""
-						}
-						isOpen={openFilter === "date"}
-						onToggle={() =>
-							setOpenFilter((f) => (f === "date" ? null : "date"))
-						}
-						onClear={() => {
-							updateFilter("dateFrom", "");
-							updateFilter("dateTo", "");
-						}}
-						clearAriaLabel={t("opportunities.clearDateRange")}
-					>
-						<div className="flex w-60 flex-col gap-3 p-4">
-							<div>
-								<span className="mb-1.5 block text-xs font-medium text-gray-500">
-									{t("opportunities.dateFromLabel")}
-								</span>
-								<input
-									type="date"
-									aria-label={t("opportunities.dateFromLabel")}
-									value={dateFrom}
-									max={dateTo || undefined}
-									onChange={(e) => updateFilter("dateFrom", e.target.value)}
-									className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none ${
-										dateFrom
-											? "border-brand-500 bg-brand-50 text-brand-700"
-											: "border-gray-200 text-gray-700 focus:border-brand-500"
-									}`}
-								/>
-							</div>
-							<div>
-								<span className="mb-1.5 block text-xs font-medium text-gray-500">
-									{t("opportunities.dateToLabel")}
-								</span>
-								<input
-									type="date"
-									aria-label={t("opportunities.dateToLabel")}
-									value={dateTo}
-									min={dateFrom || undefined}
-									onChange={(e) => updateFilter("dateTo", e.target.value)}
-									className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none ${
-										dateTo
-											? "border-brand-500 bg-brand-50 text-brand-700"
-											: "border-gray-200 text-gray-700 focus:border-brand-500"
-									}`}
-								/>
-							</div>
-						</div>
-					</FilterDropdown>
-
 					{/* Tag (static pill) */}
 					{tag && (
 						<div
@@ -1319,24 +1221,6 @@ export default function VolunteerOpportunitiesList({
 								}
 								ariaLabel={t("opportunities.clearOccurrence")}
 								onRemove={() => updateFilter("occurrence", "")}
-							/>
-						)}
-						{(dateFrom || dateTo) && (
-							<FilterChip
-								icon={<CalendarIcon />}
-								chipLabel={t("opportunities.filterLabelDateRange")}
-								value={
-									dateFrom && dateTo
-										? `${dateFrom} - ${dateTo}`
-										: dateFrom
-											? `>= ${dateFrom}`
-											: `<= ${dateTo}`
-								}
-								ariaLabel={t("opportunities.clearDateRange")}
-								onRemove={() => {
-									updateFilter("dateFrom", "");
-									updateFilter("dateTo", "");
-								}}
 							/>
 						)}
 						{tag && (

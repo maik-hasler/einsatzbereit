@@ -344,8 +344,6 @@ export class EinsatzbereitApi {
      * @param occurrence (optional) 
      * @param participationType (optional) 
      * @param isRemote (optional) 
-     * @param dateFrom (optional) 
-     * @param dateTo (optional) 
      * @param north (optional) 
      * @param south (optional) 
      * @param east (optional) 
@@ -357,7 +355,7 @@ export class EinsatzbereitApi {
      * @param tag (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -383,14 +381,6 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'isRemote' cannot be null.");
         else if (isRemote !== undefined)
             url_ += "IsRemote=" + encodeURIComponent("" + isRemote) + "&";
-        if (dateFrom === null)
-            throw new globalThis.Error("The parameter 'dateFrom' cannot be null.");
-        else if (dateFrom !== undefined)
-            url_ += "DateFrom=" + encodeURIComponent(dateFrom ? "" + dateFrom.toISOString() : "") + "&";
-        if (dateTo === null)
-            throw new globalThis.Error("The parameter 'dateTo' cannot be null.");
-        else if (dateTo !== undefined)
-            url_ += "DateTo=" + encodeURIComponent(dateTo ? "" + dateTo.toISOString() : "") + "&";
         if (north === null)
             throw new globalThis.Error("The parameter 'north' cannot be null.");
         else if (north !== undefined)

@@ -23,8 +23,6 @@ internal sealed class GetVolunteerOpportunitiesQueryHandler(
 			request.Occurrence,
 			request.ParticipationType,
 			request.IsRemote,
-			request.DateFrom,
-			request.DateTo,
 			request.North,
 			request.South,
 			request.East,
