@@ -7,6 +7,8 @@ public sealed record VolunteerOpportunityFilter(
 	string? Occurrence = null,
 	string? ParticipationType = null,
 	bool? IsRemote = null,
+	DateTimeOffset? DateFrom = null,
+	DateTimeOffset? DateTo = null,
 	double? North = null,
 	double? South = null,
 	double? East = null,

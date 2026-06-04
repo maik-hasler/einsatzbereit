@@ -7,6 +7,8 @@ public sealed record GetVolunteerOpportunitiesRequest(
 	string? Occurrence,
 	string? ParticipationType,
 	bool? IsRemote,
+	DateTimeOffset? DateFrom,
+	DateTimeOffset? DateTo,
 	double? North,
 	double? South,
 	double? East,

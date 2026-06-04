@@ -40,6 +40,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (filter.IsRemote is bool isRemote)
 			query = query.Where(x => x.vo.IsRemote == isRemote);
 
+		if (filter.DateFrom is DateTimeOffset dateFrom)
+			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+
+		if (filter.DateTo is DateTimeOffset dateTo)
+			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+
 		if (filter.Categories is { Length: > 0 })
 		{
 			var parsedCategories = filter.Categories

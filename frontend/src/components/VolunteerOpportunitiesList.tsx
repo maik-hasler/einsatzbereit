@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
-import { formatOccurrence, formatParticipationType } from "../lib/format";
+import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
@@ -52,6 +52,20 @@ interface CitySuggestion {
 	lat: number;
 	lng: number;
 }
+
+function fmtIso(d: Date): string {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function fmtShortDate(iso: string): string {
+	const d = new Date(iso + "T00:00:00");
+	return new Intl.DateTimeFormat(undefined, {
+		day: "numeric",
+		month: "short",
+	}).format(d);
+}
+
+// ── Icons ────────────────────────────────────────────────────────────────────
 
 function PinIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
 	return (
@@ -158,6 +172,25 @@ function GlobeIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
 	);
 }
 
+function CalendarIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+	return (
+		<svg
+			className={className}
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth="2"
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+			/>
+		</svg>
+	);
+}
+
 function HashIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
 	return (
 		<svg
@@ -202,6 +235,44 @@ function ChevronIcon({
 	);
 }
 
+function ChevronLeftIcon() {
+	return (
+		<svg
+			className="h-4 w-4"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth="2"
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M15.75 19.5 8.25 12l7.5-7.5"
+			/>
+		</svg>
+	);
+}
+
+function ChevronRightIcon() {
+	return (
+		<svg
+			className="h-4 w-4"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth="2"
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="m8.25 4.5 7.5 7.5-7.5 7.5"
+			/>
+		</svg>
+	);
+}
+
 function ChipXIcon() {
 	return (
 		<svg
@@ -231,6 +302,212 @@ function CheckMiniIcon() {
 		</svg>
 	);
 }
+
+// ── MiniCalendar ─────────────────────────────────────────────────────────────
+
+function MiniCalendar({
+	fromStr,
+	toStr,
+	onChange,
+}: {
+	fromStr: string;
+	toStr: string;
+	onChange: (from: string, to: string) => void;
+}) {
+	const { t } = useTranslation();
+
+	const todayMidnight = (() => {
+		const d = new Date();
+		d.setHours(0, 0, 0, 0);
+		return d;
+	})();
+
+	const parseIso = (s: string): Date | null => {
+		if (!s) return null;
+		const d = new Date(s + "T00:00:00");
+		return isNaN(d.getTime()) ? null : d;
+	};
+
+	const from = parseIso(fromStr);
+	const to = parseIso(toStr);
+
+	const [calYear, setCalYear] = useState<number>(() =>
+		(from ?? todayMidnight).getFullYear(),
+	);
+	const [calMonth, setCalMonth] = useState<number>(() =>
+		(from ?? todayMidnight).getMonth(),
+	);
+	const [hover, setHover] = useState<Date | null>(null);
+
+	const firstOfMonth = new Date(calYear, calMonth, 1);
+	const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+	const startDow = (firstOfMonth.getDay() + 6) % 7; // Mon=0
+
+	const cells: (Date | null)[] = [
+		...Array<null>(startDow).fill(null),
+		...Array.from(
+			{ length: daysInMonth },
+			(_, i) => new Date(calYear, calMonth, i + 1),
+		),
+	];
+	while (cells.length % 7 !== 0) cells.push(null);
+
+	const effTo = from && !to && hover && hover >= from ? hover : to;
+	const rangeA = from && effTo ? (from <= effTo ? from : effTo) : null;
+	const rangeB = from && effTo ? (from <= effTo ? effTo : from) : null;
+
+	function clickDay(day: Date) {
+		if (!from || (from && to)) {
+			onChange(fmtIso(day), "");
+		} else if (day < from) {
+			onChange(fmtIso(day), "");
+		} else if (day.getTime() === from.getTime()) {
+			onChange("", "");
+		} else {
+			onChange(fromStr, fmtIso(day));
+		}
+	}
+
+	function prevMonth() {
+		if (calMonth === 0) {
+			setCalMonth(11);
+			setCalYear((y) => y - 1);
+		} else {
+			setCalMonth((m) => m - 1);
+		}
+	}
+	function nextMonth() {
+		if (calMonth === 11) {
+			setCalMonth(0);
+			setCalYear((y) => y + 1);
+		} else {
+			setCalMonth((m) => m + 1);
+		}
+	}
+
+	const monthName = new Intl.DateTimeFormat(undefined, {
+		month: "long",
+	}).format(firstOfMonth);
+	const dayLabels = Array.from({ length: 7 }, (_, i) => {
+		const ref = new Date(2024, 0, 1 + i); // 2024-01-01 was Monday
+		return new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(ref);
+	});
+
+	return (
+		<div className="w-64 select-none p-3">
+			<div className="mb-2 flex items-center justify-between">
+				<button
+					type="button"
+					onClick={prevMonth}
+					aria-label={t("opportunities.prevMonth")}
+					className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+				>
+					<ChevronLeftIcon />
+				</button>
+				<span className="text-sm font-medium text-gray-800">
+					{monthName} {calYear}
+				</span>
+				<button
+					type="button"
+					onClick={nextMonth}
+					aria-label={t("opportunities.nextMonth")}
+					className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+				>
+					<ChevronRightIcon />
+				</button>
+			</div>
+
+			<div className="mb-1 grid grid-cols-7">
+				{dayLabels.map((dl, i) => (
+					<div
+						key={i}
+						className="py-1 text-center text-[11px] font-medium text-gray-400"
+					>
+						{dl}
+					</div>
+				))}
+			</div>
+
+			<div className="grid grid-cols-7">
+				{cells.map((day, i) => {
+					if (!day) return <div key={i} className="h-9" />;
+
+					const t0 = day.getTime();
+					const isToday = t0 === todayMidnight.getTime();
+					const isFrom = from !== null && t0 === from.getTime();
+					const isTo = to !== null && t0 === to.getTime();
+					const isEdge = isFrom || isTo;
+					const inRange =
+						rangeA !== null && rangeB !== null && day > rangeA && day < rangeB;
+					const isRangeStart =
+						rangeA !== null && rangeB !== null && t0 === rangeA.getTime();
+					const isRangeEnd =
+						rangeA !== null && rangeB !== null && t0 === rangeB.getTime();
+					const isHoverRange =
+						from !== null &&
+						!to &&
+						hover !== null &&
+						hover >= from &&
+						day > from &&
+						day <= hover;
+
+					return (
+						<div
+							key={i}
+							className={[
+								"flex h-9 items-center justify-center",
+								inRange || isHoverRange ? "bg-brand-100" : "",
+								isRangeStart && rangeB ? "rounded-l-full" : "",
+								isRangeEnd && rangeA ? "rounded-r-full" : "",
+							]
+								.join(" ")
+								.trim()}
+						>
+							<button
+								type="button"
+								onClick={() => clickDay(day)}
+								onMouseEnter={() => {
+									if (from && !to) setHover(day);
+								}}
+								onMouseLeave={() => {
+									if (from && !to) setHover(null);
+								}}
+								className={[
+									"flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
+									isEdge
+										? "bg-brand-600 font-semibold text-white"
+										: isToday
+											? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
+											: "text-gray-700 hover:bg-gray-100",
+								].join(" ")}
+							>
+								{day.getDate()}
+							</button>
+						</div>
+					);
+				})}
+			</div>
+
+			{from && (
+				<div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2">
+					<span className="text-xs text-gray-500">
+						{fmtShortDate(fmtIso(from))}
+						{to ? ` - ${fmtShortDate(fmtIso(to))}` : ""}
+					</span>
+					<button
+						type="button"
+						onClick={() => onChange("", "")}
+						className="text-xs text-gray-400 hover:text-gray-600"
+					>
+						{t("opportunities.clearDate")}
+					</button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function FilterChip({
 	icon,
@@ -405,13 +682,15 @@ function FilterDropdown({
 				)}
 			</div>
 			{isOpen && (
-				<div className="absolute left-0 top-full z-20 mt-1.5 min-w-[10rem] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+				<div className="absolute left-0 top-full z-20 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
 					{children}
 				</div>
 			)}
 		</div>
 	);
 }
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function VolunteerOpportunitiesList({
 	canCreateOpportunity,
@@ -423,6 +702,8 @@ export default function VolunteerOpportunitiesList({
 	const occurrence = searchParams.get("occurrence") ?? "";
 	const participationType = searchParams.get("participationType") ?? "";
 	const isRemoteParam = searchParams.get("isRemote") ?? "";
+	const dateFrom = searchParams.get("dateFrom") ?? "";
+	const dateTo = searchParams.get("dateTo") ?? "";
 	const categoriesParam = searchParams.get("categories") ?? "";
 	const tag = searchParams.get("tag") ?? "";
 	const city = searchParams.get("city") ?? "";
@@ -511,7 +792,7 @@ export default function VolunteerOpportunitiesList({
 				setLocationSuggestions(suggestions);
 				setShowLocationSuggestions(suggestions.length > 0);
 			} catch {
-				// AbortError or network error - ignore
+				// AbortError or network - ignore
 			}
 		}, 350);
 		return () => {
@@ -527,6 +808,8 @@ export default function VolunteerOpportunitiesList({
 		occurrence,
 		participationType,
 		isRemoteParam,
+		dateFrom,
+		dateTo,
 		categories: categoriesParam,
 		tag,
 		isMap,
@@ -546,6 +829,8 @@ export default function VolunteerOpportunitiesList({
 			prev.occurrence !== occurrence ||
 			prev.participationType !== participationType ||
 			prev.isRemoteParam !== isRemoteParam ||
+			prev.dateFrom !== dateFrom ||
+			prev.dateTo !== dateTo ||
 			prev.categories !== categoriesParam ||
 			prev.tag !== tag ||
 			prev.isMap !== isMap ||
@@ -562,6 +847,8 @@ export default function VolunteerOpportunitiesList({
 			occurrence,
 			participationType,
 			isRemoteParam,
+			dateFrom,
+			dateTo,
 			categories: categoriesParam,
 			tag,
 			isMap,
@@ -593,6 +880,8 @@ export default function VolunteerOpportunitiesList({
 				: isRemoteParam === "false"
 					? false
 					: undefined;
+		const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
+		const dateToParsed = dateTo ? new Date(dateTo) : undefined;
 
 		const centerLatitude = hasLocation ? parseFloat(lat) : undefined;
 		const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
@@ -606,6 +895,8 @@ export default function VolunteerOpportunitiesList({
 				occurrence || undefined,
 				participationType || undefined,
 				isRemoteBool,
+				dateFromParsed,
+				dateToParsed,
 				mapBounds?.north,
 				mapBounds?.south,
 				mapBounds?.east,
@@ -643,6 +934,8 @@ export default function VolunteerOpportunitiesList({
 		occurrence,
 		participationType,
 		isRemoteParam,
+		dateFrom,
+		dateTo,
 		categoriesParam,
 		tag,
 		isMap,
@@ -673,6 +966,8 @@ export default function VolunteerOpportunitiesList({
 				next.delete("occurrence");
 				next.delete("participationType");
 				next.delete("isRemote");
+				next.delete("dateFrom");
+				next.delete("dateTo");
 				next.delete("categories");
 				next.delete("tag");
 				return next;
@@ -689,6 +984,32 @@ export default function VolunteerOpportunitiesList({
 				next.delete("lat");
 				next.delete("lng");
 				next.delete("radius");
+				return next;
+			},
+			{ replace: true },
+		);
+	}
+
+	function clearDateRange() {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				next.delete("dateFrom");
+				next.delete("dateTo");
+				return next;
+			},
+			{ replace: true },
+		);
+	}
+
+	function handleDateChange(from: string, to: string) {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				if (from) next.set("dateFrom", from);
+				else next.delete("dateFrom");
+				if (to) next.set("dateTo", to);
+				else next.delete("dateTo");
 				return next;
 			},
 			{ replace: true },
@@ -754,6 +1075,8 @@ export default function VolunteerOpportunitiesList({
 		occurrence ||
 		participationType ||
 		isRemoteParam ||
+		dateFrom ||
+		dateTo ||
 		selectedCategories.length > 0 ||
 		tag
 	);
@@ -772,6 +1095,15 @@ export default function VolunteerOpportunitiesList({
 				: t("opportunities.nCategoriesSelected", {
 						count: selectedCategories.length,
 					});
+
+	const dateDisplayValue = dateFrom
+		? dateTo
+			? t("opportunities.dateRangeDisplay", {
+					from: fmtShortDate(dateFrom),
+					to: fmtShortDate(dateTo),
+				})
+			: t("opportunities.dateFromDisplay", { date: fmtShortDate(dateFrom) })
+		: "";
 
 	return (
 		<div>
@@ -823,12 +1155,9 @@ export default function VolunteerOpportunitiesList({
 				</div>
 			</div>
 
-			<div className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm">
-				{/* Filter pills */}
-				<div
-					ref={filterBarRef}
-					className="flex flex-wrap items-center gap-2 p-4"
-				>
+			{/* Filter bar - no card wrapper, inline on page */}
+			<div ref={filterBarRef} className="mb-2">
+				<div className="flex flex-wrap items-center gap-2 pb-3">
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<PinIcon className="h-3.5 w-3.5" />}
@@ -848,7 +1177,6 @@ export default function VolunteerOpportunitiesList({
 						clearAriaLabel={t("opportunities.clearLocation")}
 					>
 						<div className="w-72 p-4">
-							{/* City input */}
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
 								{t("opportunities.filterLabelCity")}
 							</p>
@@ -859,9 +1187,7 @@ export default function VolunteerOpportunitiesList({
 									aria-label={t("opportunities.filterLabelCity")}
 									placeholder={t("opportunities.locationPlaceholder")}
 									value={locationCityInput}
-									onChange={(e) => {
-										setLocationCityInput(e.target.value);
-									}}
+									onChange={(e) => setLocationCityInput(e.target.value)}
 									onBlur={() =>
 										setTimeout(() => setShowLocationSuggestions(false), 150)
 									}
@@ -914,14 +1240,12 @@ export default function VolunteerOpportunitiesList({
 								)}
 							</div>
 
-							{/* Or divider */}
 							<div className="mb-3 flex items-center gap-2 text-xs text-gray-400">
 								<div className="flex-1 border-t border-gray-100" />
 								{t("opportunities.orLabel")}
 								<div className="flex-1 border-t border-gray-100" />
 							</div>
 
-							{/* GPS button */}
 							<button
 								type="button"
 								onClick={handleUseMyLocation}
@@ -938,7 +1262,6 @@ export default function VolunteerOpportunitiesList({
 								<p className="mb-3 text-xs text-red-500">{locationError}</p>
 							)}
 
-							{/* Radius selector */}
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
 								{t("opportunities.radiusLabel")}
 							</p>
@@ -1037,7 +1360,7 @@ export default function VolunteerOpportunitiesList({
 					{/* Remote / onsite */}
 					<FilterDropdown
 						icon={<GlobeIcon className="h-3.5 w-3.5" />}
-						label={t("opportunities.filterLabelLocation")}
+						label={t("opportunities.filterLabelRemote")}
 						displayValue={
 							isRemoteParam === "true"
 								? t("opportunities.remote")
@@ -1123,6 +1446,25 @@ export default function VolunteerOpportunitiesList({
 						/>
 					</FilterDropdown>
 
+					{/* Date range - custom calendar picker */}
+					<FilterDropdown
+						icon={<CalendarIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelDateRange")}
+						displayValue={dateDisplayValue}
+						isOpen={openFilter === "date"}
+						onToggle={() =>
+							setOpenFilter((f) => (f === "date" ? null : "date"))
+						}
+						onClear={clearDateRange}
+						clearAriaLabel={t("opportunities.clearDateRange")}
+					>
+						<MiniCalendar
+							fromStr={dateFrom}
+							toStr={dateTo}
+							onChange={handleDateChange}
+						/>
+					</FilterDropdown>
+
 					{/* Tag (static pill) */}
 					{tag && (
 						<div
@@ -1161,7 +1503,7 @@ export default function VolunteerOpportunitiesList({
 
 				{/* Active filter chips */}
 				{hasFilters && (
-					<div className="flex flex-wrap items-center gap-1.5 border-t border-gray-100 px-4 py-2.5">
+					<div className="mb-3 flex flex-wrap items-center gap-1.5">
 						{hasLocation && (
 							<FilterChip
 								icon={<PinIcon />}
@@ -1200,7 +1542,7 @@ export default function VolunteerOpportunitiesList({
 						{isRemoteParam && (
 							<FilterChip
 								icon={<GlobeIcon />}
-								chipLabel={t("opportunities.filterLabelLocation")}
+								chipLabel={t("opportunities.filterLabelRemote")}
 								value={
 									isRemoteParam === "true"
 										? t("opportunities.remote")
@@ -1221,6 +1563,15 @@ export default function VolunteerOpportunitiesList({
 								}
 								ariaLabel={t("opportunities.clearOccurrence")}
 								onRemove={() => updateFilter("occurrence", "")}
+							/>
+						)}
+						{(dateFrom || dateTo) && (
+							<FilterChip
+								icon={<CalendarIcon />}
+								chipLabel={t("opportunities.filterLabelDateRange")}
+								value={dateDisplayValue}
+								ariaLabel={t("opportunities.clearDateRange")}
+								onRemove={clearDateRange}
 							/>
 						)}
 						{tag && (
@@ -1279,80 +1630,56 @@ export default function VolunteerOpportunitiesList({
 							/>
 						)
 					) : (
-						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
-							{items.map((item: VolunteerOpportunitySummary) => (
-								<li
-									key={item.id}
-									className="relative rounded border transition-colors hover:bg-gray-50"
-								>
-									<Link
-										to={`/volunteer-opportunities/${item.id}`}
-										className="absolute inset-0 rounded"
-										aria-label={item.title}
-									/>
-									<div className="p-4">
-										<div className="flex items-start justify-between">
-											<div>
-												<strong className="block text-sm font-medium">
-													{item.title}
-												</strong>
-												<p className="mt-0.5 text-xs text-gray-500">
-													<Link
-														to={`/organizations/${item.organizationId}`}
-														className="relative z-10 hover:underline"
-													>
-														{item.organizationName}
-													</Link>
-												</p>
-												<p className="mt-1 text-sm text-gray-600">
-													{item.description}
-												</p>
-											</div>
-											<div className="ml-2 flex shrink-0 flex-col items-end gap-1">
-												<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+						<ul className={isMap ? "mt-4 space-y-2" : "space-y-2"}>
+							{items.map((item: VolunteerOpportunitySummary) => {
+								const spotsLeft =
+									item.totalMaxParticipants > 0
+										? item.totalMaxParticipants - item.currentParticipantCount
+										: null;
+								return (
+									<li
+										key={item.id}
+										className="relative rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-sm"
+									>
+										<Link
+											to={`/volunteer-opportunities/${item.id}`}
+											className="absolute inset-0 rounded-lg"
+											aria-label={item.title}
+										/>
+										<div className="p-4">
+											<div className="flex items-start justify-between gap-3">
+												<div className="min-w-0 flex-1">
+													<strong className="block text-sm font-semibold leading-snug text-gray-900">
+														{item.title}
+													</strong>
+													<p className="mt-0.5 text-xs text-gray-500">
+														<Link
+															to={`/organizations/${item.organizationId}`}
+															className="relative z-10 hover:underline"
+														>
+															{item.organizationName}
+														</Link>
+													</p>
+												</div>
+												<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 													{formatOccurrence(item.occurrence, t)}
 												</span>
-												<span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-													{formatParticipationType(item.participationType, t)}
-												</span>
-												{item.category && (
-													<span className="rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
-														{t(`opportunities.category.${item.category}`)}
-													</span>
-												)}
 											</div>
-										</div>
-										{item.tags && item.tags.length > 0 && (
-											<div className="relative z-10 mt-2 flex flex-wrap gap-1">
-												{item.tags.map((tagItem) => (
-													<button
-														key={tagItem}
-														type="button"
-														onClick={() => updateFilter("tag", tagItem)}
-														className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-200"
-													>
-														#{tagItem}
-													</button>
-												))}
-											</div>
-										)}
-										<div className="mt-2 flex items-center justify-between gap-4 text-xs text-gray-500">
-											<span>
-												{item.isRemote ? (
-													t("opportunities.remote")
-												) : (
-													<>
-														{item.street} {item.houseNumber}, {item.zipCode}{" "}
-														{item.city}
-													</>
-												)}
-											</span>
-											{item.totalMaxParticipants > 0 &&
-												(() => {
-													const spotsLeft =
-														item.totalMaxParticipants -
-														item.currentParticipantCount;
-													return spotsLeft <= 0 ? (
+											<div className="mt-2 flex items-center justify-between gap-4 text-xs text-gray-500">
+												<div className="flex items-center gap-2">
+													{item.isRemote ? (
+														<span>{t("opportunities.remote")}</span>
+													) : (
+														item.city && <span>{item.city}</span>
+													)}
+													{item.category && (
+														<span className="rounded-full bg-green-50 px-2 py-0.5 text-green-700">
+															{t(`opportunities.category.${item.category}`)}
+														</span>
+													)}
+												</div>
+												{spotsLeft !== null &&
+													(spotsLeft <= 0 ? (
 														<span className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-700">
 															{t("opportunities.full")}
 														</span>
@@ -1368,12 +1695,12 @@ export default function VolunteerOpportunitiesList({
 																count: spotsLeft,
 															})}
 														</span>
-													);
-												})()}
+													))}
+											</div>
 										</div>
-									</div>
-								</li>
-							))}
+									</li>
+								);
+							})}
 						</ul>
 					)}
 

@@ -10,6 +10,8 @@ public sealed record GetVolunteerOpportunitiesQuery(
 	string? Occurrence,
 	string? ParticipationType,
 	bool? IsRemote,
+	DateTimeOffset? DateFrom,
+	DateTimeOffset? DateTo,
 	double? North,
 	double? South,
 	double? East,
