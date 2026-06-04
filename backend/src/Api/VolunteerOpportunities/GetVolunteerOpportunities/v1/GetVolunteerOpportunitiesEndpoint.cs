@@ -45,7 +45,6 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 		var query = new GetVolunteerOpportunitiesQuery(
 			request.PageNumber,
 			request.PageSize,
-			request.Search,
 			request.City,
 			request.Occurrence,
 			request.ParticipationType,
@@ -59,7 +58,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			request.CenterLatitude,
 			request.CenterLongitude,
 			request.RadiusKm,
-			request.Category,
+			request.Categories,
 			request.Tag);
 
 		var result = await sender.Send(query, cancellationToken);

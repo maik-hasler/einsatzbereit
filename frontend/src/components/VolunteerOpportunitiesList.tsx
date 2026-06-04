@@ -21,7 +21,24 @@ interface Props {
 const LIST_PAGE_SIZE = 10;
 const MAP_PAGE_SIZE = 200;
 
+const CATEGORY_VALUES = [
+	"Social",
+	"Environment",
+	"Sport",
+	"Education",
+	"DisasterRelief",
+	"Health",
+	"Animals",
+	"Culture",
+	"Technology",
+	"Other",
+] as const;
+
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+
 interface NominatimPlace {
+	lat: string;
+	lon: string;
 	address?: {
 		city?: string;
 		town?: string;
@@ -30,23 +47,10 @@ interface NominatimPlace {
 	};
 }
 
-function SearchIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
-	return (
-		<svg
-			className={className}
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="2"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-			/>
-		</svg>
-	);
+interface CitySuggestion {
+	label: string;
+	lat: number;
+	lng: number;
 }
 
 function PinIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
@@ -233,40 +237,17 @@ function ChipXIcon() {
 function CheckMiniIcon() {
 	return (
 		<svg
-			className="h-4 w-4 text-brand-600"
-			viewBox="0 0 20 20"
-			fill="currentColor"
+			className="h-2.5 w-2.5 text-white"
+			viewBox="0 0 10 10"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.5"
+			strokeLinecap="round"
+			strokeLinejoin="round"
 			aria-hidden="true"
 		>
-			<path
-				fillRule="evenodd"
-				d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-				clipRule="evenodd"
-			/>
+			<path d="M1.5 5.5l2.5 2.5 4.5-5" />
 		</svg>
-	);
-}
-
-function DropdownOption({
-	label,
-	selected,
-	onClick,
-}: {
-	label: string;
-	selected: boolean;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
-				selected ? "font-medium text-brand-700" : "text-gray-700"
-			}`}
-		>
-			<span className="h-4 w-4 shrink-0">{selected && <CheckMiniIcon />}</span>
-			{label}
-		</button>
 	);
 }
 
@@ -301,6 +282,76 @@ function FilterChip({
 				<ChipXIcon />
 			</button>
 		</span>
+	);
+}
+
+function DropdownOption({
+	label,
+	selected,
+	onClick,
+}: {
+	label: string;
+	selected: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+				selected ? "font-medium text-brand-700" : "text-gray-700"
+			}`}
+		>
+			<span className="h-4 w-4 shrink-0">
+				{selected && (
+					<svg
+						className="h-4 w-4 text-brand-600"
+						viewBox="0 0 20 20"
+						fill="currentColor"
+						aria-hidden="true"
+					>
+						<path
+							fillRule="evenodd"
+							d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+							clipRule="evenodd"
+						/>
+					</svg>
+				)}
+			</span>
+			{label}
+		</button>
+	);
+}
+
+function MultiDropdownOption({
+	label,
+	selected,
+	onClick,
+}: {
+	label: string;
+	selected: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			aria-pressed={selected}
+			className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+				selected ? "text-brand-700" : "text-gray-700"
+			}`}
+		>
+			<span
+				className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+					selected
+						? "border-brand-500 bg-brand-500"
+						: "border-gray-300 bg-white"
+				}`}
+			>
+				{selected && <CheckMiniIcon />}
+			</span>
+			{label}
+		</button>
 	);
 }
 
@@ -387,26 +438,34 @@ export default function VolunteerOpportunitiesList({
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const [searchParams, setSearchParams] = useSearchParams();
-	const search = searchParams.get("search") ?? "";
-	const city = searchParams.get("city") ?? "";
+
 	const occurrence = searchParams.get("occurrence") ?? "";
 	const participationType = searchParams.get("participationType") ?? "";
 	const isRemoteParam = searchParams.get("isRemote") ?? "";
 	const dateFrom = searchParams.get("dateFrom") ?? "";
 	const dateTo = searchParams.get("dateTo") ?? "";
-	const category = searchParams.get("category") ?? "";
+	const categoriesParam = searchParams.get("categories") ?? "";
 	const tag = searchParams.get("tag") ?? "";
+	const city = searchParams.get("city") ?? "";
+	const lat = searchParams.get("lat") ?? "";
+	const lng = searchParams.get("lng") ?? "";
+	const radius = searchParams.get("radius") ?? "";
 
-	const [searchInput, setSearchInput] = useState(search);
-	const [cityInput, setCityInput] = useState(city);
+	const selectedCategories = categoriesParam
+		? categoriesParam.split(",").filter(Boolean)
+		: [];
+	const hasLocation = !!(lat && lng && radius);
+
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
-	const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
-	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [locationCityInput, setLocationCityInput] = useState(city);
+	const [locationSuggestions, setLocationSuggestions] = useState<
+		CitySuggestion[]
+	>([]);
+	const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+	const [locationLocating, setLocationLocating] = useState(false);
+	const [locationError, setLocationError] = useState<string | null>(null);
 
-	const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const cityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const nominatimAbortRef = useRef<AbortController | null>(null);
-	const cityWrapperRef = useRef<HTMLDivElement>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
 
 	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
@@ -422,71 +481,6 @@ export default function VolunteerOpportunitiesList({
 	const [showModal, setShowModal] = useState(false);
 
 	useEffect(() => {
-		setSearchInput(search);
-	}, [search]);
-
-	useEffect(() => {
-		setCityInput(city);
-	}, [city]);
-
-	useEffect(() => {
-		if (cityInput.length < 2) {
-			setCitySuggestions([]);
-			setShowSuggestions(false);
-			return;
-		}
-		nominatimAbortRef.current?.abort();
-		const controller = new AbortController();
-		nominatimAbortRef.current = controller;
-		const timer = setTimeout(async () => {
-			try {
-				const res = await fetch(
-					`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&featuretype=city&q=${encodeURIComponent(cityInput)}&limit=6`,
-					{
-						signal: controller.signal,
-						headers: { "Accept-Language": "de,en" },
-					},
-				);
-				if (!res.ok) return;
-				const data = (await res.json()) as NominatimPlace[];
-				const cities = data
-					.map(
-						(r) =>
-							r.address?.city ??
-							r.address?.town ??
-							r.address?.village ??
-							r.address?.municipality ??
-							"",
-					)
-					.filter((c) => c.length > 0)
-					.filter((c, i, arr) => arr.indexOf(c) === i)
-					.slice(0, 6);
-				setCitySuggestions(cities);
-				setShowSuggestions(cities.length > 0);
-			} catch {
-				// AbortError on cleanup or network error - ignore
-			}
-		}, 350);
-		return () => {
-			clearTimeout(timer);
-			controller.abort();
-		};
-	}, [cityInput]);
-
-	useEffect(() => {
-		function handleOutside(e: MouseEvent) {
-			if (
-				cityWrapperRef.current &&
-				!cityWrapperRef.current.contains(e.target as Node)
-			) {
-				setShowSuggestions(false);
-			}
-		}
-		document.addEventListener("mousedown", handleOutside);
-		return () => document.removeEventListener("mousedown", handleOutside);
-	}, []);
-
-	useEffect(() => {
 		function handleOutside(e: MouseEvent) {
 			if (
 				filterBarRef.current &&
@@ -499,15 +493,64 @@ export default function VolunteerOpportunitiesList({
 		return () => document.removeEventListener("mousedown", handleOutside);
 	}, []);
 
+	useEffect(() => {
+		if (locationCityInput.length < 2) {
+			setLocationSuggestions([]);
+			setShowLocationSuggestions(false);
+			return;
+		}
+		nominatimAbortRef.current?.abort();
+		const controller = new AbortController();
+		nominatimAbortRef.current = controller;
+		const timer = setTimeout(async () => {
+			try {
+				const res = await fetch(
+					`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&featuretype=city&q=${encodeURIComponent(locationCityInput)}&limit=6`,
+					{
+						signal: controller.signal,
+						headers: { "Accept-Language": "de,en" },
+					},
+				);
+				if (!res.ok) return;
+				const data = (await res.json()) as NominatimPlace[];
+				const suggestions: CitySuggestion[] = data
+					.map((r) => ({
+						label:
+							r.address?.city ??
+							r.address?.town ??
+							r.address?.village ??
+							r.address?.municipality ??
+							"",
+						lat: parseFloat(r.lat),
+						lng: parseFloat(r.lon),
+					}))
+					.filter((s) => s.label.length > 0)
+					.filter(
+						(s, i, arr) => arr.findIndex((x) => x.label === s.label) === i,
+					)
+					.slice(0, 6);
+				setLocationSuggestions(suggestions);
+				setShowLocationSuggestions(suggestions.length > 0);
+			} catch {
+				// AbortError or network error - ignore
+			}
+		}, 350);
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
+	}, [locationCityInput]);
+
 	const prevFiltersRef = useRef({
-		search,
-		city,
+		lat,
+		lng,
+		radius,
 		occurrence,
 		participationType,
 		isRemoteParam,
 		dateFrom,
 		dateTo,
-		category,
+		categories: categoriesParam,
 		tag,
 		isMap,
 		refreshKey,
@@ -520,14 +563,15 @@ export default function VolunteerOpportunitiesList({
 	useEffect(() => {
 		const prev = prevFiltersRef.current;
 		const filterChanged =
-			prev.search !== search ||
-			prev.city !== city ||
+			prev.lat !== lat ||
+			prev.lng !== lng ||
+			prev.radius !== radius ||
 			prev.occurrence !== occurrence ||
 			prev.participationType !== participationType ||
 			prev.isRemoteParam !== isRemoteParam ||
 			prev.dateFrom !== dateFrom ||
 			prev.dateTo !== dateTo ||
-			prev.category !== category ||
+			prev.categories !== categoriesParam ||
 			prev.tag !== tag ||
 			prev.isMap !== isMap ||
 			prev.bn !== bounds?.north ||
@@ -537,14 +581,15 @@ export default function VolunteerOpportunitiesList({
 			prev.refreshKey !== refreshKey;
 
 		prevFiltersRef.current = {
-			search,
-			city,
+			lat,
+			lng,
+			radius,
 			occurrence,
 			participationType,
 			isRemoteParam,
 			dateFrom,
 			dateTo,
-			category,
+			categories: categoriesParam,
 			tag,
 			isMap,
 			refreshKey,
@@ -578,12 +623,15 @@ export default function VolunteerOpportunitiesList({
 		const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
 		const dateToParsed = dateTo ? new Date(dateTo) : undefined;
 
+		const centerLatitude = hasLocation ? parseFloat(lat) : undefined;
+		const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
+		const radiusKm = hasLocation ? parseFloat(radius) : undefined;
+
 		api
 			.getVolunteerOpportunities(
 				page,
 				isMap ? MAP_PAGE_SIZE : LIST_PAGE_SIZE,
-				search || undefined,
-				city || undefined,
+				undefined,
 				occurrence || undefined,
 				participationType || undefined,
 				isRemoteBool,
@@ -593,10 +641,10 @@ export default function VolunteerOpportunitiesList({
 				mapBounds?.south,
 				mapBounds?.east,
 				mapBounds?.west,
-				undefined,
-				undefined,
-				undefined,
-				category || undefined,
+				centerLatitude,
+				centerLongitude,
+				radiusKm,
+				selectedCategories.length > 0 ? selectedCategories : undefined,
 				tag || undefined,
 			)
 			.then((result) => {
@@ -620,14 +668,15 @@ export default function VolunteerOpportunitiesList({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		page,
-		search,
-		city,
+		lat,
+		lng,
+		radius,
 		occurrence,
 		participationType,
 		isRemoteParam,
 		dateFrom,
 		dateTo,
-		category,
+		categoriesParam,
 		tag,
 		isMap,
 		bounds?.north,
@@ -650,14 +699,16 @@ export default function VolunteerOpportunitiesList({
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev);
-				next.delete("search");
 				next.delete("city");
+				next.delete("lat");
+				next.delete("lng");
+				next.delete("radius");
 				next.delete("occurrence");
 				next.delete("participationType");
 				next.delete("isRemote");
 				next.delete("dateFrom");
 				next.delete("dateTo");
-				next.delete("category");
+				next.delete("categories");
 				next.delete("tag");
 				return next;
 			},
@@ -665,27 +716,99 @@ export default function VolunteerOpportunitiesList({
 		);
 	}
 
-	const hasFilters = !!(
-		search ||
-		city ||
-		occurrence ||
-		participationType ||
-		isRemoteParam ||
-		dateFrom ||
-		dateTo ||
-		category ||
-		tag
-	);
+	function clearLocation() {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				next.delete("city");
+				next.delete("lat");
+				next.delete("lng");
+				next.delete("radius");
+				return next;
+			},
+			{ replace: true },
+		);
+	}
+
+	function toggleCategory(cat: string) {
+		const next = selectedCategories.includes(cat)
+			? selectedCategories.filter((c) => c !== cat)
+			: [...selectedCategories, cat];
+		const params = new URLSearchParams(window.location.search);
+		if (next.length > 0) params.set("categories", next.join(","));
+		else params.delete("categories");
+		setSearchParams(params, { replace: true });
+	}
+
+	function selectLocationSuggestion(suggestion: CitySuggestion) {
+		const currentRadius = searchParams.get("radius") || "10";
+		const params = new URLSearchParams(window.location.search);
+		params.set("city", suggestion.label);
+		params.set("lat", suggestion.lat.toString());
+		params.set("lng", suggestion.lng.toString());
+		params.set("radius", currentRadius);
+		setSearchParams(params, { replace: true });
+		setLocationCityInput(suggestion.label);
+		setShowLocationSuggestions(false);
+		setOpenFilter(null);
+	}
+
+	function handleUseMyLocation() {
+		if (!navigator.geolocation) {
+			setLocationError(t("opportunities.locationNotSupported"));
+			return;
+		}
+		setLocationLocating(true);
+		setLocationError(null);
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				setLocationLocating(false);
+				const currentRadius = searchParams.get("radius") || "10";
+				const params = new URLSearchParams(window.location.search);
+				params.delete("city");
+				params.set("lat", pos.coords.latitude.toString());
+				params.set("lng", pos.coords.longitude.toString());
+				params.set("radius", currentRadius);
+				setSearchParams(params, { replace: true });
+				setLocationCityInput("");
+				setOpenFilter(null);
+			},
+			() => {
+				setLocationLocating(false);
+				setLocationError(t("opportunities.locationError"));
+			},
+		);
+	}
 
 	function handleBoundsChange(next: OpportunityBounds) {
 		setBounds(next);
 	}
 
-	function selectCitySuggestion(suggestion: string) {
-		setCityInput(suggestion);
-		updateFilter("city", suggestion);
-		setShowSuggestions(false);
-	}
+	const hasFilters = !!(
+		hasLocation ||
+		occurrence ||
+		participationType ||
+		isRemoteParam ||
+		dateFrom ||
+		dateTo ||
+		selectedCategories.length > 0 ||
+		tag
+	);
+
+	const locationDisplayValue = hasLocation
+		? city
+			? `${city} · ${radius} km`
+			: `${t("opportunities.myLocation")} · ${radius} km`
+		: "";
+
+	const categoryDisplayValue =
+		selectedCategories.length === 0
+			? ""
+			: selectedCategories.length === 1
+				? t(`opportunities.category.${selectedCategories[0]}`)
+				: t("opportunities.nCategoriesSelected", {
+						count: selectedCategories.length,
+					});
 
 	return (
 		<div>
@@ -738,79 +861,60 @@ export default function VolunteerOpportunitiesList({
 			</div>
 
 			<div className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm">
-				{/* Search + city */}
-				<div className="p-4 pb-3">
-					<div className="flex flex-col gap-3 sm:flex-row">
-						<div className="flex flex-1 flex-col gap-1">
-							<div className="relative">
-								<SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-								<input
-									type="text"
-									aria-label={t("opportunities.searchPlaceholder")}
-									placeholder={t("opportunities.searchPlaceholder")}
-									value={searchInput}
-									onChange={(e) => {
-										const val = e.target.value;
-										setSearchInput(val);
-										if (searchDebounceRef.current)
-											clearTimeout(searchDebounceRef.current);
-										searchDebounceRef.current = setTimeout(() => {
-											updateFilter("search", val);
-										}, 400);
-									}}
-									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
-								/>
-								{searchInput && (
-									<button
-										type="button"
-										onClick={() => {
-											setSearchInput("");
-											updateFilter("search", "");
-										}}
-										aria-label={t("opportunities.clearSearch")}
-										className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-									>
-										&times;
-									</button>
-								)}
-							</div>
-						</div>
-
-						<div ref={cityWrapperRef} className="flex flex-col gap-1 sm:w-52">
-							<div className="relative">
+				{/* Filter pills */}
+				<div
+					ref={filterBarRef}
+					className="flex flex-wrap items-center gap-2 p-4"
+				>
+					{/* Location + Radius */}
+					<FilterDropdown
+						icon={<PinIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelLocation")}
+						displayValue={locationDisplayValue}
+						isOpen={openFilter === "location"}
+						onToggle={() => {
+							if (openFilter !== "location") {
+								setLocationCityInput(city);
+								setLocationSuggestions([]);
+								setShowLocationSuggestions(false);
+								setLocationError(null);
+							}
+							setOpenFilter((f) => (f === "location" ? null : "location"));
+						}}
+						onClear={clearLocation}
+						clearAriaLabel={t("opportunities.clearLocation")}
+					>
+						<div className="w-72 p-4">
+							{/* City input */}
+							<p className="mb-1.5 text-xs font-medium text-gray-500">
+								{t("opportunities.filterLabelCity")}
+							</p>
+							<div className="relative mb-3">
 								<PinIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
 									type="text"
-									role="combobox"
-									aria-autocomplete="list"
-									aria-expanded={showSuggestions}
-									aria-haspopup="listbox"
-									aria-controls="city-suggestions"
-									aria-label={t("opportunities.cityPlaceholder")}
-									placeholder={t("opportunities.cityPlaceholder")}
-									value={cityInput}
-									onFocus={() => {
-										if (citySuggestions.length > 0) setShowSuggestions(true);
-									}}
+									aria-label={t("opportunities.filterLabelCity")}
+									placeholder={t("opportunities.locationPlaceholder")}
+									value={locationCityInput}
 									onChange={(e) => {
-										const val = e.target.value;
-										setCityInput(val);
-										if (cityDebounceRef.current)
-											clearTimeout(cityDebounceRef.current);
-										cityDebounceRef.current = setTimeout(() => {
-											updateFilter("city", val);
-										}, 400);
+										setLocationCityInput(e.target.value);
+									}}
+									onBlur={() =>
+										setTimeout(() => setShowLocationSuggestions(false), 150)
+									}
+									onFocus={() => {
+										if (locationSuggestions.length > 0)
+											setShowLocationSuggestions(true);
 									}}
 									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
 								/>
-								{cityInput && (
+								{locationCityInput && (
 									<button
 										type="button"
 										onClick={() => {
-											setCityInput("");
-											updateFilter("city", "");
-											setCitySuggestions([]);
-											setShowSuggestions(false);
+											setLocationCityInput("");
+											setLocationSuggestions([]);
+											setShowLocationSuggestions(false);
 										}}
 										aria-label={t("opportunities.clearCity")}
 										className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -818,91 +922,111 @@ export default function VolunteerOpportunitiesList({
 										&times;
 									</button>
 								)}
-								{showSuggestions && (
+								{showLocationSuggestions && (
 									<ul
-										id="city-suggestions"
 										role="listbox"
 										className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
 									>
-										{citySuggestions.map((s, i) => (
+										{locationSuggestions.map((s, i) => (
 											<li
 												key={i}
 												role="option"
 												aria-selected={false}
 												tabIndex={-1}
 												onMouseDown={(e) => e.preventDefault()}
-												onClick={() => selectCitySuggestion(s)}
+												onClick={() => selectLocationSuggestion(s)}
 												onKeyDown={(e) => {
 													if (e.key === "Enter" || e.key === " ")
-														selectCitySuggestion(s);
+														selectLocationSuggestion(s);
 												}}
 												className="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700"
 											>
 												<span className="flex items-center gap-2">
 													<PinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-													{s}
+													{s.label}
 												</span>
 											</li>
 										))}
 									</ul>
 								)}
 							</div>
-						</div>
-					</div>
-				</div>
 
-				{/* Filter pills */}
-				<div
-					ref={filterBarRef}
-					className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3"
-				>
+							{/* Or divider */}
+							<div className="mb-3 flex items-center gap-2 text-xs text-gray-400">
+								<div className="flex-1 border-t border-gray-100" />
+								{t("opportunities.orLabel")}
+								<div className="flex-1 border-t border-gray-100" />
+							</div>
+
+							{/* GPS button */}
+							<button
+								type="button"
+								onClick={handleUseMyLocation}
+								disabled={locationLocating}
+								className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+							>
+								<PinIcon className="h-4 w-4" />
+								{locationLocating
+									? t("opportunities.locating")
+									: t("opportunities.useMyLocation")}
+							</button>
+
+							{locationError && (
+								<p className="mb-3 text-xs text-red-500">{locationError}</p>
+							)}
+
+							{/* Radius selector */}
+							<p className="mb-1.5 text-xs font-medium text-gray-500">
+								{t("opportunities.radiusLabel")}
+							</p>
+							<div className="flex flex-wrap gap-1.5">
+								{RADIUS_OPTIONS.map((r) => (
+									<button
+										key={r}
+										type="button"
+										onClick={() => updateFilter("radius", String(r))}
+										className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+											radius === String(r)
+												? "border-brand-500 bg-brand-50 font-medium text-brand-700"
+												: "border-gray-200 text-gray-600 hover:border-gray-300"
+										}`}
+									>
+										{t("opportunities.radiusKmValue", { count: r })}
+									</button>
+								))}
+							</div>
+						</div>
+					</FilterDropdown>
+
+					{/* Category multi-select */}
 					<FilterDropdown
 						icon={<TagIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelCategory")}
-						displayValue={
-							category ? t(`opportunities.category.${category}`) : ""
-						}
+						displayValue={categoryDisplayValue}
 						isOpen={openFilter === "category"}
 						onToggle={() =>
 							setOpenFilter((f) => (f === "category" ? null : "category"))
 						}
-						onClear={() => updateFilter("category", "")}
+						onClear={() => {
+							const params = new URLSearchParams(window.location.search);
+							params.delete("categories");
+							setSearchParams(params, { replace: true });
+						}}
 						clearAriaLabel={t("opportunities.clearCategory")}
 					>
-						<DropdownOption
-							label={t("opportunities.all")}
-							selected={!category}
-							onClick={() => {
-								updateFilter("category", "");
-								setOpenFilter(null);
-							}}
-						/>
-						{(
-							[
-								"Social",
-								"Environment",
-								"Sport",
-								"Education",
-								"DisasterRelief",
-								"Health",
-								"Animals",
-								"Culture",
-								"Technology",
-								"Other",
-							] as const
-						).map((c) => (
-							<DropdownOption
-								key={c}
-								label={t(`opportunities.category.${c}`)}
-								selected={category === c}
-								onClick={() => {
-									updateFilter("category", c);
-									setOpenFilter(null);
-								}}
-							/>
-						))}
+						<div className="py-1">
+							{CATEGORY_VALUES.map((c) => (
+								<MultiDropdownOption
+									key={c}
+									label={t(`opportunities.category.${c}`)}
+									selected={selectedCategories.includes(c)}
+									onClick={() => toggleCategory(c)}
+								/>
+							))}
+						</div>
 					</FilterDropdown>
 
+					{/* Participation type */}
 					<FilterDropdown
 						testId="filter-type"
 						icon={<UsersIcon className="h-3.5 w-3.5" />}
@@ -947,6 +1071,7 @@ export default function VolunteerOpportunitiesList({
 						/>
 					</FilterDropdown>
 
+					{/* Remote / onsite */}
 					<FilterDropdown
 						icon={<GlobeIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelLocation")}
@@ -957,9 +1082,9 @@ export default function VolunteerOpportunitiesList({
 									? t("opportunities.onsite")
 									: ""
 						}
-						isOpen={openFilter === "location"}
+						isOpen={openFilter === "remote"}
 						onToggle={() =>
-							setOpenFilter((f) => (f === "location" ? null : "location"))
+							setOpenFilter((f) => (f === "remote" ? null : "remote"))
 						}
 						onClear={() => updateFilter("isRemote", "")}
 						clearAriaLabel={t("opportunities.clearLocation")}
@@ -990,6 +1115,7 @@ export default function VolunteerOpportunitiesList({
 						/>
 					</FilterDropdown>
 
+					{/* Frequency */}
 					<FilterDropdown
 						testId="filter-frequency"
 						icon={<ClockIcon className="h-3.5 w-3.5" />}
@@ -1034,6 +1160,7 @@ export default function VolunteerOpportunitiesList({
 						/>
 					</FilterDropdown>
 
+					{/* Date range */}
 					<FilterDropdown
 						icon={<CalendarIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelDateRange")}
@@ -1041,9 +1168,9 @@ export default function VolunteerOpportunitiesList({
 							dateFrom && dateTo
 								? `${dateFrom} - ${dateTo}`
 								: dateFrom
-									? `≥ ${dateFrom}`
+									? `>= ${dateFrom}`
 									: dateTo
-										? `≤ ${dateTo}`
+										? `<= ${dateTo}`
 										: ""
 						}
 						isOpen={openFilter === "date"}
@@ -1094,13 +1221,14 @@ export default function VolunteerOpportunitiesList({
 						</div>
 					</FilterDropdown>
 
+					{/* Tag (static pill) */}
 					{tag && (
 						<div
 							role="group"
 							aria-label={`${t("opportunities.filterLabelTag")}: ${tag}`}
 							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-brand-50"
 						>
-							<span className="flex items-center gap-1.5 py-1.5 pl-3 pr-1.5 text-sm font-medium text-brand-700 whitespace-nowrap">
+							<span className="flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-3 pr-1.5 text-sm font-medium text-brand-700">
 								<HashIcon
 									className="h-3.5 w-3.5 shrink-0 text-brand-500"
 									aria-hidden="true"
@@ -1132,37 +1260,26 @@ export default function VolunteerOpportunitiesList({
 				{/* Active filter chips */}
 				{hasFilters && (
 					<div className="flex flex-wrap items-center gap-1.5 border-t border-gray-100 px-4 py-2.5">
-						{search && (
-							<FilterChip
-								icon={<SearchIcon />}
-								chipLabel={t("opportunities.filterLabelSearch")}
-								value={search}
-								ariaLabel={t("opportunities.clearSearch")}
-								onRemove={() => {
-									setSearchInput("");
-									updateFilter("search", "");
-								}}
-							/>
-						)}
-						{city && (
+						{hasLocation && (
 							<FilterChip
 								icon={<PinIcon />}
-								chipLabel={t("opportunities.filterLabelCity")}
-								value={city}
-								ariaLabel={t("opportunities.clearCity")}
-								onRemove={() => {
-									setCityInput("");
-									updateFilter("city", "");
-								}}
+								chipLabel={t("opportunities.filterLabelLocation")}
+								value={locationDisplayValue}
+								ariaLabel={t("opportunities.clearLocation")}
+								onRemove={clearLocation}
 							/>
 						)}
-						{category && (
+						{selectedCategories.length > 0 && (
 							<FilterChip
 								icon={<TagIcon />}
 								chipLabel={t("opportunities.filterLabelCategory")}
-								value={t(`opportunities.category.${category}`)}
+								value={categoryDisplayValue}
 								ariaLabel={t("opportunities.clearCategory")}
-								onRemove={() => updateFilter("category", "")}
+								onRemove={() => {
+									const params = new URLSearchParams(window.location.search);
+									params.delete("categories");
+									setSearchParams(params, { replace: true });
+								}}
 							/>
 						)}
 						{participationType && (
@@ -1263,11 +1380,9 @@ export default function VolunteerOpportunitiesList({
 							<EmptyState
 								title={t("opportunities.noResults")}
 								message={
-									search
-										? t("opportunities.noResultsWithSearch")
-										: hasFilters
-											? t("opportunities.noResultsWithFilters")
-											: undefined
+									hasFilters
+										? t("opportunities.noResultsWithFilters")
+										: undefined
 								}
 								action={
 									hasFilters

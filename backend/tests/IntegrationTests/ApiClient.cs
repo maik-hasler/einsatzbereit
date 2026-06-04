@@ -60,7 +60,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, string? category = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -814,7 +814,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? search = null, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, string? category = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PagedListOfVolunteerOpportunitySummary> GetVolunteerOpportunitiesAsync(int pageNumber, int pageSize, string? city = null, string? occurrence = null, string? participationType = null, bool? isRemote = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, double? north = null, double? south = null, double? east = null, double? west = null, double? centerLatitude = null, double? centerLongitude = null, double? radiusKm = null, System.Collections.Generic.IEnumerable<string>? categories = null, string? tag = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (pageNumber == null)
                 throw new System.ArgumentNullException("pageNumber");
@@ -838,10 +838,6 @@ namespace IntegrationTests
                     urlBuilder_.Append('?');
                     urlBuilder_.Append(System.Uri.EscapeDataString("PageNumber")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageNumber, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     urlBuilder_.Append(System.Uri.EscapeDataString("PageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    if (search != null)
-                    {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("Search")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(search, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    }
                     if (city != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("City")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(city, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
@@ -894,9 +890,9 @@ namespace IntegrationTests
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("RadiusKm")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(radiusKm, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
-                    if (category != null)
+                    if (categories != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("Category")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(category, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                            foreach (var item_ in categories) { urlBuilder_.Append(System.Uri.EscapeDataString("Categories")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(item_, System.Globalization.CultureInfo.InvariantCulture))).Append('&'); }
                     }
                     if (tag != null)
                     {

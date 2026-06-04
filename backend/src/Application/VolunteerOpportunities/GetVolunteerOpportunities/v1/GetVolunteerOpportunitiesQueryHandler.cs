@@ -13,15 +13,12 @@ internal sealed class GetVolunteerOpportunitiesQueryHandler(
 		GetVolunteerOpportunitiesQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		// Normalize paging so a non-positive page number can never produce a
-		// negative SQL OFFSET (#362) and an unbounded page size is capped (#363).
 		var pageNumber = Math.Max(1, request.PageNumber);
 		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
 		var filter = new VolunteerOpportunityFilter(
 			pageNumber,
 			pageSize,
-			request.Search,
 			request.City,
 			request.Occurrence,
 			request.ParticipationType,
@@ -35,7 +32,7 @@ internal sealed class GetVolunteerOpportunitiesQueryHandler(
 			request.CenterLatitude,
 			request.CenterLongitude,
 			request.RadiusKm,
-			request.Category,
+			request.Categories,
 			request.Tag);
 
 		return await readRepository.GetPagedSummariesAsync(filter, cancellationToken);

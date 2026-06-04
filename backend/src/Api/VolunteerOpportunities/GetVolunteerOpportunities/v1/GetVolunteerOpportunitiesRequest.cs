@@ -3,7 +3,6 @@ namespace Api.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 public sealed record GetVolunteerOpportunitiesRequest(
 	int PageNumber,
 	int PageSize,
-	string? Search,
 	string? City,
 	string? Occurrence,
 	string? ParticipationType,
@@ -17,5 +16,5 @@ public sealed record GetVolunteerOpportunitiesRequest(
 	double? CenterLatitude,
 	double? CenterLongitude,
 	double? RadiusKm,
-	string? Category,
+	string[]? Categories,
 	string? Tag);

@@ -340,7 +340,6 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param search (optional) 
      * @param city (optional) 
      * @param occurrence (optional) 
      * @param participationType (optional) 
@@ -354,11 +353,11 @@ export class EinsatzbereitApi {
      * @param centerLatitude (optional) 
      * @param centerLongitude (optional) 
      * @param radiusKm (optional) 
-     * @param category (optional) 
+     * @param categories (optional) 
      * @param tag (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, category: string | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -368,10 +367,6 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
         else
             url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
-        if (search === null)
-            throw new globalThis.Error("The parameter 'search' cannot be null.");
-        else if (search !== undefined)
-            url_ += "Search=" + encodeURIComponent("" + search) + "&";
         if (city === null)
             throw new globalThis.Error("The parameter 'city' cannot be null.");
         else if (city !== undefined)
@@ -424,10 +419,10 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'radiusKm' cannot be null.");
         else if (radiusKm !== undefined)
             url_ += "RadiusKm=" + encodeURIComponent("" + radiusKm) + "&";
-        if (category === null)
-            throw new globalThis.Error("The parameter 'category' cannot be null.");
-        else if (category !== undefined)
-            url_ += "Category=" + encodeURIComponent("" + category) + "&";
+        if (categories === null)
+            throw new globalThis.Error("The parameter 'categories' cannot be null.");
+        else if (categories !== undefined)
+            categories && categories.forEach(item => { url_ += "Categories=" + encodeURIComponent("" + item) + "&"; });
         if (tag === null)
             throw new globalThis.Error("The parameter 'tag' cannot be null.");
         else if (tag !== undefined)

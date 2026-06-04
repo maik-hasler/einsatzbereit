@@ -25,14 +25,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				org => org.Id,
 				(vo, org) => new { vo, org });
 
-		if (!string.IsNullOrWhiteSpace(filter.Search))
-		{
-			var search = filter.Search.ToLower();
-			query = query.Where(x =>
-				x.vo.Title.ToLower().Contains(search) ||
-				x.vo.Description.ToLower().Contains(search));
-		}
-
 		if (!string.IsNullOrWhiteSpace(filter.City))
 		{
 			var city = filter.City.ToLower();
@@ -54,8 +46,19 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (filter.DateTo is DateTimeOffset dateTo)
 			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
-		if (!string.IsNullOrWhiteSpace(filter.Category) && Enum.TryParse<Domain.VolunteerOpportunities.Category>(filter.Category, ignoreCase: true, out var cat))
-			query = query.Where(x => x.vo.Category == cat);
+		if (filter.Categories is { Length: > 0 })
+		{
+			var parsedCategories = filter.Categories
+				.Select(c => Enum.TryParse<Domain.VolunteerOpportunities.Category>(c, ignoreCase: true, out var cat)
+					? (Domain.VolunteerOpportunities.Category?)cat
+					: null)
+				.Where(c => c.HasValue)
+				.Select(c => c!.Value)
+				.ToList();
+
+			if (parsedCategories.Count > 0)
+				query = query.Where(x => x.vo.Category.HasValue && parsedCategories.Contains(x.vo.Category.Value));
+		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Tag))
 			query = query.Where(x => x.vo.Tags.Contains(filter.Tag));
