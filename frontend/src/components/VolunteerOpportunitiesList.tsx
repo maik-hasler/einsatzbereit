@@ -230,299 +230,117 @@ function ChipXIcon() {
 	);
 }
 
-function FilterChip({
-	icon,
-	chipLabel,
-	value,
-	ariaLabel,
-	onRemove,
-}: {
-	icon: React.ReactNode;
-	chipLabel: string;
-	value: string;
-	ariaLabel: string;
-	onRemove: () => void;
-}) {
+function CheckMiniIcon() {
 	return (
-		<span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100 py-1 pl-2.5 pr-1 text-xs text-brand-800">
-			<span className="shrink-0 text-brand-500">{icon}</span>
-			<span>
-				<span className="text-brand-600">{chipLabel}:</span>{" "}
-				<strong className="font-semibold">{value}</strong>
-			</span>
-			<button
-				type="button"
-				onClick={onRemove}
-				aria-label={ariaLabel}
-				className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200"
-			>
-				<ChipXIcon />
-			</button>
-		</span>
+		<svg
+			className="h-4 w-4 text-brand-600"
+			viewBox="0 0 20 20"
+			fill="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				fillRule="evenodd"
+				d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+				clipRule="evenodd"
+			/>
+		</svg>
 	);
 }
 
-function FilterSelect({
+function DropdownOption({
+	label,
+	selected,
+	onClick,
+}: {
+	label: string;
+	selected: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+				selected ? "font-medium text-brand-700" : "text-gray-700"
+			}`}
+		>
+			<span className="h-4 w-4 shrink-0">{selected && <CheckMiniIcon />}</span>
+			{label}
+		</button>
+	);
+}
+
+function FilterDropdown({
+	testId,
 	icon,
-	fieldLabel,
-	ariaLabel,
-	value,
-	onChange,
+	label,
+	displayValue,
+	isOpen,
+	onToggle,
+	onClear,
+	clearAriaLabel,
 	children,
 }: {
-	icon?: React.ReactNode;
-	fieldLabel: string;
-	ariaLabel: string;
-	value: string;
-	onChange: (v: string) => void;
+	testId?: string;
+	icon: React.ReactNode;
+	label: string;
+	displayValue: string;
+	isOpen: boolean;
+	onToggle: () => void;
+	onClear: () => void;
+	clearAriaLabel: string;
 	children: React.ReactNode;
 }) {
-	const active = !!value;
+	const active = !!displayValue;
 	return (
-		<div className="flex shrink-0 flex-col gap-1">
-			<span className="flex items-center gap-1 text-xs font-medium text-gray-500">
-				{icon && (
-					<span className="text-gray-400" aria-hidden="true">
-						{icon}
-					</span>
-				)}
-				{fieldLabel}
-			</span>
-			<div className="relative">
-				{icon && (
+		<div className="relative shrink-0">
+			<div
+				role="group"
+				aria-label={label}
+				className={`inline-flex items-stretch overflow-hidden rounded-full border transition-all ${
+					active
+						? "border-brand-500 bg-brand-50"
+						: "border-gray-200 bg-white hover:border-gray-300"
+				}`}
+			>
+				<button
+					type="button"
+					data-testid={testId}
+					onClick={onToggle}
+					aria-expanded={isOpen}
+					className={`flex items-center gap-1.5 whitespace-nowrap py-1.5 text-sm transition-colors ${
+						active
+							? "pl-3 pr-1.5 font-medium text-brand-700"
+							: "px-3 text-gray-600 hover:bg-gray-50"
+					}`}
+				>
 					<span
-						className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${active ? "text-brand-500" : "text-gray-400"}`}
+						className={`shrink-0 ${active ? "text-brand-500" : "text-gray-400"}`}
 						aria-hidden="true"
 					>
 						{icon}
 					</span>
-				)}
-				<select
-					aria-label={ariaLabel}
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					className={`appearance-none cursor-pointer rounded-lg border py-2 ${icon ? "pl-8" : "pl-3"} pr-8 text-sm font-medium transition-colors focus:outline-none ${
-						active
-							? "border-brand-500 bg-brand-50 text-brand-700"
-							: "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-					}`}
-				>
-					{children}
-				</select>
-				<ChevronIcon
-					className={`pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${active ? "text-brand-500" : "text-gray-400"}`}
-				/>
-			</div>
-		</div>
-	);
-}
-
-function ToggleGroup({
-	icon,
-	fieldLabel,
-	ariaGroupLabel,
-	options,
-	value,
-	onChange,
-}: {
-	icon?: React.ReactNode;
-	fieldLabel: string;
-	ariaGroupLabel: string;
-	options: { value: string; label: string }[];
-	value: string;
-	onChange: (v: string) => void;
-}) {
-	return (
-		<div className="flex shrink-0 flex-col gap-1">
-			<span className="flex items-center gap-1 text-xs font-medium text-gray-500">
-				{icon && (
-					<span className="text-gray-400" aria-hidden="true">
-						{icon}
-					</span>
-				)}
-				{fieldLabel}
-			</span>
-			<div
-				role="group"
-				aria-label={ariaGroupLabel}
-				className="inline-flex overflow-hidden rounded-lg border border-gray-200"
-			>
-				{options.map((opt, i) => (
-					<button
-						key={opt.value}
-						type="button"
-						aria-pressed={value === opt.value}
-						onClick={() => onChange(opt.value)}
-						className={`whitespace-nowrap px-3 py-2 text-sm transition-colors ${
-							i > 0 ? "border-l border-gray-200" : ""
-						} ${
-							value === opt.value
-								? "bg-brand-50 font-medium text-brand-700"
-								: "bg-white text-gray-600 hover:bg-gray-50"
-						}`}
-					>
-						{opt.label}
-					</button>
-				))}
-			</div>
-		</div>
-	);
-}
-
-function DateRangePicker({
-	icon,
-	dateFrom,
-	dateTo,
-	onChangeDateFrom,
-	onChangeDateTo,
-	labels,
-}: {
-	dateFrom: string;
-	dateTo: string;
-	onChangeDateFrom: (v: string) => void;
-	onChangeDateTo: (v: string) => void;
-	icon?: React.ReactNode;
-	labels: {
-		fieldLabel: string;
-		anyDate: string;
-		from: string;
-		to: string;
-		clearDates: string;
-		dateFromAriaLabel: string;
-		dateToAriaLabel: string;
-	};
-}) {
-	const [open, setOpen] = useState(false);
-	const wrapperRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		function handleOutside(e: MouseEvent) {
-			if (
-				wrapperRef.current &&
-				!wrapperRef.current.contains(e.target as Node)
-			) {
-				setOpen(false);
-			}
-		}
-		document.addEventListener("mousedown", handleOutside);
-		return () => document.removeEventListener("mousedown", handleOutside);
-	}, []);
-
-	const hasDate = !!(dateFrom || dateTo);
-	const triggerText = !hasDate
-		? labels.anyDate
-		: dateFrom && dateTo
-			? `${dateFrom} - ${dateTo}`
-			: dateFrom
-				? `${labels.from} ${dateFrom}`
-				: `${labels.to} ${dateTo}`;
-
-	return (
-		<div ref={wrapperRef} className="relative flex shrink-0 flex-col gap-1">
-			<span className="flex items-center gap-1 text-xs font-medium text-gray-500">
-				{icon && (
-					<span className="text-gray-400" aria-hidden="true">
-						{icon}
-					</span>
-				)}
-				{labels.fieldLabel}
-			</span>
-			<button
-				type="button"
-				onClick={() => setOpen((o) => !o)}
-				className={`flex items-center gap-2 rounded-lg border py-2 pl-3 pr-2.5 text-sm font-medium transition-colors focus:outline-none ${
-					hasDate
-						? "border-brand-500 bg-brand-50 text-brand-700"
-						: "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-				}`}
-			>
-				<CalendarIcon
-					className={`h-4 w-4 shrink-0 ${hasDate ? "text-brand-500" : "text-gray-400"}`}
-				/>
-				<span>{triggerText}</span>
-				<ChevronIcon
-					className={`h-3.5 w-3.5 ${hasDate ? "text-brand-500" : "text-gray-400"}`}
-					open={open}
-				/>
-			</button>
-
-			{open && (
-				<div className="absolute top-full z-20 mt-1.5 w-64 rounded-xl border border-gray-200 bg-white shadow-lg">
-					<div className="flex flex-col gap-4 p-4">
-						<div>
-							<div className="mb-1.5 flex items-center justify-between">
-								<span className="text-xs font-medium text-gray-500">
-									{labels.from}
-								</span>
-								{dateFrom && (
-									<button
-										type="button"
-										onClick={() => onChangeDateFrom("")}
-										className="text-xs text-gray-400 hover:text-gray-600"
-										aria-label={labels.dateFromAriaLabel}
-									>
-										&times;
-									</button>
-								)}
-							</div>
-							<input
-								type="date"
-								aria-label={labels.dateFromAriaLabel}
-								value={dateFrom}
-								max={dateTo || undefined}
-								onChange={(e) => onChangeDateFrom(e.target.value)}
-								className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
-									dateFrom
-										? "border-brand-500 bg-brand-50 text-brand-700"
-										: "border-gray-200 bg-white text-gray-700 focus:border-brand-500"
-								}`}
-							/>
-						</div>
-						<div>
-							<div className="mb-1.5 flex items-center justify-between">
-								<span className="text-xs font-medium text-gray-500">
-									{labels.to}
-								</span>
-								{dateTo && (
-									<button
-										type="button"
-										onClick={() => onChangeDateTo("")}
-										className="text-xs text-gray-400 hover:text-gray-600"
-										aria-label={labels.dateToAriaLabel}
-									>
-										&times;
-									</button>
-								)}
-							</div>
-							<input
-								type="date"
-								aria-label={labels.dateToAriaLabel}
-								value={dateTo}
-								min={dateFrom || undefined}
-								onChange={(e) => onChangeDateTo(e.target.value)}
-								className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
-									dateTo
-										? "border-brand-500 bg-brand-50 text-brand-700"
-										: "border-gray-200 bg-white text-gray-700 focus:border-brand-500"
-								}`}
-							/>
-						</div>
-					</div>
-					{hasDate && (
-						<div className="border-t border-gray-100 px-4 py-3">
-							<button
-								type="button"
-								onClick={() => {
-									onChangeDateFrom("");
-									onChangeDateTo("");
-									setOpen(false);
-								}}
-								className="w-full rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200"
-							>
-								{labels.clearDates}
-							</button>
-						</div>
+					<span>{active ? displayValue : label}</span>
+					{!active && (
+						<ChevronIcon
+							className={`h-3 w-3 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+						/>
 					)}
+				</button>
+				{active && (
+					<button
+						type="button"
+						onClick={onClear}
+						aria-label={clearAriaLabel}
+						className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
+					>
+						<ChipXIcon />
+					</button>
+				)}
+			</div>
+			{isOpen && (
+				<div className="absolute left-0 top-full z-20 mt-1.5 min-w-[10rem] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+					{children}
 				</div>
 			)}
 		</div>
@@ -547,6 +365,7 @@ export default function VolunteerOpportunitiesList({
 
 	const [searchInput, setSearchInput] = useState(search);
 	const [cityInput, setCityInput] = useState(city);
+	const [openFilter, setOpenFilter] = useState<string | null>(null);
 	const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -554,6 +373,7 @@ export default function VolunteerOpportunitiesList({
 	const cityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const cityWrapperRef = useRef<HTMLDivElement>(null);
+	const filterBarRef = useRef<HTMLDivElement>(null);
 
 	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
 	const isMap = view === "map";
@@ -626,6 +446,19 @@ export default function VolunteerOpportunitiesList({
 				!cityWrapperRef.current.contains(e.target as Node)
 			) {
 				setShowSuggestions(false);
+			}
+		}
+		document.addEventListener("mousedown", handleOutside);
+		return () => document.removeEventListener("mousedown", handleOutside);
+	}, []);
+
+	useEffect(() => {
+		function handleOutside(e: MouseEvent) {
+			if (
+				filterBarRef.current &&
+				!filterBarRef.current.contains(e.target as Node)
+			) {
+				setOpenFilter(null);
 			}
 		}
 		document.addEventListener("mousedown", handleOutside);
@@ -820,24 +653,6 @@ export default function VolunteerOpportunitiesList({
 		setShowSuggestions(false);
 	}
 
-	const occurrenceOptions = [
-		{ value: "", label: t("opportunities.all") },
-		{ value: "OneTime", label: t("opportunities.oneTime") },
-		{ value: "Recurring", label: t("opportunities.recurring") },
-	];
-
-	const typeOptions = [
-		{ value: "", label: t("opportunities.all") },
-		{ value: "Waitlist", label: t("opportunities.waitlist") },
-		{ value: "IndividualContact", label: t("opportunities.individualContact") },
-	];
-
-	const locationOptions = [
-		{ value: "", label: t("opportunities.all") },
-		{ value: "true", label: t("opportunities.remote") },
-		{ value: "false", label: t("opportunities.onsite") },
-	];
-
 	return (
 		<div>
 			<div className="mb-4 flex items-center justify-between">
@@ -889,13 +704,10 @@ export default function VolunteerOpportunitiesList({
 			</div>
 
 			<div className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm">
-				{/* Always-visible: search + city */}
+				{/* Search + city */}
 				<div className="p-4 pb-3">
 					<div className="flex flex-col gap-3 sm:flex-row">
 						<div className="flex flex-1 flex-col gap-1">
-							<span className="text-xs font-medium text-gray-500">
-								{t("opportunities.filterLabelSearch")}
-							</span>
 							<div className="relative">
 								<SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
@@ -931,9 +743,6 @@ export default function VolunteerOpportunitiesList({
 						</div>
 
 						<div ref={cityWrapperRef} className="flex flex-col gap-1 sm:w-52">
-							<span className="text-xs font-medium text-gray-500">
-								{t("opportunities.filterLabelCity")}
-							</span>
 							<div className="relative">
 								<PinIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
@@ -1008,194 +817,283 @@ export default function VolunteerOpportunitiesList({
 					</div>
 				</div>
 
-				{/* Secondary filter row - always visible */}
-				<div className="border-t border-gray-100">
-					<div className="flex flex-wrap items-end gap-3 px-4 pb-4 pt-3">
-						<FilterSelect
-							icon={<TagIcon className="h-3.5 w-3.5" />}
-							fieldLabel={t("opportunities.filterLabelCategory")}
-							ariaLabel={t("opportunities.allCategories")}
-							value={category}
-							onChange={(v) => updateFilter("category", v)}
-						>
-							<option value="">{t("opportunities.allCategories")}</option>
-							{(
-								[
-									"Social",
-									"Environment",
-									"Sport",
-									"Education",
-									"DisasterRelief",
-									"Health",
-									"Animals",
-									"Culture",
-									"Technology",
-									"Other",
-								] as const
-							).map((c) => (
-								<option key={c} value={c}>
-									{t(`opportunities.category.${c}`)}
-								</option>
-							))}
-						</FilterSelect>
-
-						<ToggleGroup
-							icon={<UsersIcon className="h-3.5 w-3.5" />}
-							fieldLabel={t("opportunities.filterLabelType")}
-							ariaGroupLabel={t("opportunities.allTypes")}
-							options={typeOptions}
-							value={participationType}
-							onChange={(v) => updateFilter("participationType", v)}
-						/>
-
-						<ToggleGroup
-							icon={<GlobeIcon className="h-3.5 w-3.5" />}
-							fieldLabel={t("opportunities.filterLabelLocation")}
-							ariaGroupLabel={t("opportunities.allLocations")}
-							options={locationOptions}
-							value={isRemoteParam}
-							onChange={(v) => updateFilter("isRemote", v)}
-						/>
-
-						<ToggleGroup
-							icon={<ClockIcon className="h-3.5 w-3.5" />}
-							fieldLabel={t("opportunities.filterLabelFrequency")}
-							ariaGroupLabel={t("opportunities.allFrequencies")}
-							options={occurrenceOptions}
-							value={occurrence}
-							onChange={(v) => updateFilter("occurrence", v)}
-						/>
-
-						<DateRangePicker
-							icon={<CalendarIcon className="h-3.5 w-3.5" />}
-							dateFrom={dateFrom}
-							dateTo={dateTo}
-							onChangeDateFrom={(v) => updateFilter("dateFrom", v)}
-							onChangeDateTo={(v) => updateFilter("dateTo", v)}
-							labels={{
-								fieldLabel: t("opportunities.filterLabelDateRange"),
-								anyDate: t("opportunities.anyDate"),
-								from: t("opportunities.dateFromLabel"),
-								to: t("opportunities.dateToLabel"),
-								clearDates: t("opportunities.clearDateRange"),
-								dateFromAriaLabel: t("opportunities.dateFromLabel"),
-								dateToAriaLabel: t("opportunities.dateToLabel"),
+				{/* Filter pills */}
+				<div
+					ref={filterBarRef}
+					className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3"
+				>
+					<FilterDropdown
+						icon={<TagIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelCategory")}
+						displayValue={
+							category ? t(`opportunities.category.${category}`) : ""
+						}
+						isOpen={openFilter === "category"}
+						onToggle={() =>
+							setOpenFilter((f) => (f === "category" ? null : "category"))
+						}
+						onClear={() => updateFilter("category", "")}
+						clearAriaLabel={t("opportunities.clearCategory")}
+					>
+						<DropdownOption
+							label={t("opportunities.all")}
+							selected={!category}
+							onClick={() => {
+								updateFilter("category", "");
+								setOpenFilter(null);
 							}}
 						/>
-					</div>
-				</div>
+						{(
+							[
+								"Social",
+								"Environment",
+								"Sport",
+								"Education",
+								"DisasterRelief",
+								"Health",
+								"Animals",
+								"Culture",
+								"Technology",
+								"Other",
+							] as const
+						).map((c) => (
+							<DropdownOption
+								key={c}
+								label={t(`opportunities.category.${c}`)}
+								selected={category === c}
+								onClick={() => {
+									updateFilter("category", c);
+									setOpenFilter(null);
+								}}
+							/>
+						))}
+					</FilterDropdown>
 
-				{/* Active filter chips */}
-				{hasFilters && (
-					<div className="flex flex-wrap items-center gap-1.5 border-t border-gray-100 px-4 py-3">
-						{search && (
-							<FilterChip
-								icon={<SearchIcon />}
-								chipLabel={t("opportunities.filterLabelSearch")}
-								value={search}
-								ariaLabel={t("opportunities.clearSearch")}
-								onRemove={() => {
-									setSearchInput("");
-									updateFilter("search", "");
-								}}
-							/>
-						)}
-						{city && (
-							<FilterChip
-								icon={<PinIcon />}
-								chipLabel={t("opportunities.filterLabelCity")}
-								value={city}
-								ariaLabel={t("opportunities.clearCity")}
-								onRemove={() => {
-									setCityInput("");
-									updateFilter("city", "");
-								}}
-							/>
-						)}
-						{occurrence && (
-							<FilterChip
-								icon={<ClockIcon />}
-								chipLabel={t("opportunities.filterLabelFrequency")}
-								value={
-									occurrence === "OneTime"
-										? t("opportunities.oneTime")
-										: t("opportunities.recurring")
-								}
-								ariaLabel={t("opportunities.clearOccurrence")}
-								onRemove={() => updateFilter("occurrence", "")}
-							/>
-						)}
-						{participationType && (
-							<FilterChip
-								icon={<UsersIcon />}
-								chipLabel={t("opportunities.filterLabelType")}
-								value={
-									participationType === "Waitlist"
-										? t("opportunities.waitlist")
-										: t("opportunities.individualContact")
-								}
-								ariaLabel={t("opportunities.clearType")}
-								onRemove={() => updateFilter("participationType", "")}
-							/>
-						)}
-						{isRemoteParam && (
-							<FilterChip
-								icon={<GlobeIcon />}
-								chipLabel={t("opportunities.filterLabelLocation")}
-								value={
-									isRemoteParam === "true"
-										? t("opportunities.remote")
-										: t("opportunities.onsite")
-								}
-								ariaLabel={t("opportunities.clearLocation")}
-								onRemove={() => updateFilter("isRemote", "")}
-							/>
-						)}
-						{dateFrom && (
-							<FilterChip
-								icon={<CalendarIcon />}
-								chipLabel={t("opportunities.dateFromLabel")}
-								value={dateFrom}
-								ariaLabel={t("opportunities.clearDateFrom")}
-								onRemove={() => updateFilter("dateFrom", "")}
-							/>
-						)}
-						{dateTo && (
-							<FilterChip
-								icon={<CalendarIcon />}
-								chipLabel={t("opportunities.dateToLabel")}
-								value={dateTo}
-								ariaLabel={t("opportunities.clearDateTo")}
-								onRemove={() => updateFilter("dateTo", "")}
-							/>
-						)}
-						{category && (
-							<FilterChip
-								icon={<TagIcon />}
-								chipLabel={t("opportunities.filterLabelCategory")}
-								value={t(`opportunities.category.${category}`)}
-								ariaLabel={t("opportunities.clearCategory")}
-								onRemove={() => updateFilter("category", "")}
-							/>
-						)}
-						{tag && (
-							<FilterChip
-								icon={<HashIcon />}
-								chipLabel={t("opportunities.filterLabelTag")}
-								value={tag}
-								ariaLabel={t("opportunities.clearTag")}
-								onRemove={() => updateFilter("tag", "")}
-							/>
-						)}
+					<FilterDropdown
+						testId="filter-type"
+						icon={<UsersIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelType")}
+						displayValue={
+							participationType === "Waitlist"
+								? t("opportunities.waitlist")
+								: participationType === "IndividualContact"
+									? t("opportunities.individualContact")
+									: ""
+						}
+						isOpen={openFilter === "type"}
+						onToggle={() =>
+							setOpenFilter((f) => (f === "type" ? null : "type"))
+						}
+						onClear={() => updateFilter("participationType", "")}
+						clearAriaLabel={t("opportunities.clearType")}
+					>
+						<DropdownOption
+							label={t("opportunities.all")}
+							selected={!participationType}
+							onClick={() => {
+								updateFilter("participationType", "");
+								setOpenFilter(null);
+							}}
+						/>
+						<DropdownOption
+							label={t("opportunities.waitlist")}
+							selected={participationType === "Waitlist"}
+							onClick={() => {
+								updateFilter("participationType", "Waitlist");
+								setOpenFilter(null);
+							}}
+						/>
+						<DropdownOption
+							label={t("opportunities.individualContact")}
+							selected={participationType === "IndividualContact"}
+							onClick={() => {
+								updateFilter("participationType", "IndividualContact");
+								setOpenFilter(null);
+							}}
+						/>
+					</FilterDropdown>
+
+					<FilterDropdown
+						icon={<GlobeIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelLocation")}
+						displayValue={
+							isRemoteParam === "true"
+								? t("opportunities.remote")
+								: isRemoteParam === "false"
+									? t("opportunities.onsite")
+									: ""
+						}
+						isOpen={openFilter === "location"}
+						onToggle={() =>
+							setOpenFilter((f) => (f === "location" ? null : "location"))
+						}
+						onClear={() => updateFilter("isRemote", "")}
+						clearAriaLabel={t("opportunities.clearLocation")}
+					>
+						<DropdownOption
+							label={t("opportunities.all")}
+							selected={!isRemoteParam}
+							onClick={() => {
+								updateFilter("isRemote", "");
+								setOpenFilter(null);
+							}}
+						/>
+						<DropdownOption
+							label={t("opportunities.remote")}
+							selected={isRemoteParam === "true"}
+							onClick={() => {
+								updateFilter("isRemote", "true");
+								setOpenFilter(null);
+							}}
+						/>
+						<DropdownOption
+							label={t("opportunities.onsite")}
+							selected={isRemoteParam === "false"}
+							onClick={() => {
+								updateFilter("isRemote", "false");
+								setOpenFilter(null);
+							}}
+						/>
+					</FilterDropdown>
+
+					<FilterDropdown
+						testId="filter-frequency"
+						icon={<ClockIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelFrequency")}
+						displayValue={
+							occurrence === "OneTime"
+								? t("opportunities.oneTime")
+								: occurrence === "Recurring"
+									? t("opportunities.recurring")
+									: ""
+						}
+						isOpen={openFilter === "frequency"}
+						onToggle={() =>
+							setOpenFilter((f) => (f === "frequency" ? null : "frequency"))
+						}
+						onClear={() => updateFilter("occurrence", "")}
+						clearAriaLabel={t("opportunities.clearOccurrence")}
+					>
+						<DropdownOption
+							label={t("opportunities.all")}
+							selected={!occurrence}
+							onClick={() => {
+								updateFilter("occurrence", "");
+								setOpenFilter(null);
+							}}
+						/>
+						<DropdownOption
+							label={t("opportunities.oneTime")}
+							selected={occurrence === "OneTime"}
+							onClick={() => {
+								updateFilter("occurrence", "OneTime");
+								setOpenFilter(null);
+							}}
+						/>
+						<DropdownOption
+							label={t("opportunities.recurring")}
+							selected={occurrence === "Recurring"}
+							onClick={() => {
+								updateFilter("occurrence", "Recurring");
+								setOpenFilter(null);
+							}}
+						/>
+					</FilterDropdown>
+
+					<FilterDropdown
+						icon={<CalendarIcon className="h-3.5 w-3.5" />}
+						label={t("opportunities.filterLabelDateRange")}
+						displayValue={
+							dateFrom && dateTo
+								? `${dateFrom} – ${dateTo}`
+								: dateFrom
+									? `≥ ${dateFrom}`
+									: dateTo
+										? `≤ ${dateTo}`
+										: ""
+						}
+						isOpen={openFilter === "date"}
+						onToggle={() =>
+							setOpenFilter((f) => (f === "date" ? null : "date"))
+						}
+						onClear={() => {
+							updateFilter("dateFrom", "");
+							updateFilter("dateTo", "");
+						}}
+						clearAriaLabel={t("opportunities.clearDateRange")}
+					>
+						<div className="flex w-60 flex-col gap-3 p-4">
+							<div>
+								<span className="mb-1.5 block text-xs font-medium text-gray-500">
+									{t("opportunities.dateFromLabel")}
+								</span>
+								<input
+									type="date"
+									aria-label={t("opportunities.dateFromLabel")}
+									value={dateFrom}
+									max={dateTo || undefined}
+									onChange={(e) => updateFilter("dateFrom", e.target.value)}
+									className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none ${
+										dateFrom
+											? "border-brand-500 bg-brand-50 text-brand-700"
+											: "border-gray-200 text-gray-700 focus:border-brand-500"
+									}`}
+								/>
+							</div>
+							<div>
+								<span className="mb-1.5 block text-xs font-medium text-gray-500">
+									{t("opportunities.dateToLabel")}
+								</span>
+								<input
+									type="date"
+									aria-label={t("opportunities.dateToLabel")}
+									value={dateTo}
+									min={dateFrom || undefined}
+									onChange={(e) => updateFilter("dateTo", e.target.value)}
+									className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none ${
+										dateTo
+											? "border-brand-500 bg-brand-50 text-brand-700"
+											: "border-gray-200 text-gray-700 focus:border-brand-500"
+									}`}
+								/>
+							</div>
+						</div>
+					</FilterDropdown>
+
+					{tag && (
+						<div
+							role="group"
+							aria-label={`${t("opportunities.filterLabelTag")}: ${tag}`}
+							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-brand-50"
+						>
+							<span className="flex items-center gap-1.5 py-1.5 pl-3 pr-1.5 text-sm font-medium text-brand-700 whitespace-nowrap">
+								<HashIcon
+									className="h-3.5 w-3.5 shrink-0 text-brand-500"
+									aria-hidden="true"
+								/>
+								<span>#{tag}</span>
+							</span>
+							<button
+								type="button"
+								onClick={() => updateFilter("tag", "")}
+								aria-label={t("opportunities.clearTag")}
+								className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
+							>
+								<ChipXIcon />
+							</button>
+						</div>
+					)}
+
+					{hasFilters && (
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="ml-1 text-xs font-medium text-gray-400 underline hover:text-gray-600"
+							className="ml-auto text-xs font-medium text-gray-400 underline hover:text-gray-600"
 						>
 							{t("opportunities.clearFilters")}
 						</button>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 
 			{isMap && (
