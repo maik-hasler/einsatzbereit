@@ -263,12 +263,14 @@ function FilterChip({
 }
 
 function FilterSelect({
+	icon,
 	fieldLabel,
 	ariaLabel,
 	value,
 	onChange,
 	children,
 }: {
+	icon?: React.ReactNode;
 	fieldLabel: string;
 	ariaLabel: string;
 	value: string;
@@ -277,14 +279,29 @@ function FilterSelect({
 }) {
 	const active = !!value;
 	return (
-		<div className="flex flex-col gap-1">
-			<span className="text-xs font-medium text-gray-500">{fieldLabel}</span>
+		<div className="flex shrink-0 flex-col gap-1">
+			<span className="flex items-center gap-1 text-xs font-medium text-gray-500">
+				{icon && (
+					<span className="text-gray-400" aria-hidden="true">
+						{icon}
+					</span>
+				)}
+				{fieldLabel}
+			</span>
 			<div className="relative">
+				{icon && (
+					<span
+						className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${active ? "text-brand-500" : "text-gray-400"}`}
+						aria-hidden="true"
+					>
+						{icon}
+					</span>
+				)}
 				<select
 					aria-label={ariaLabel}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
-					className={`appearance-none cursor-pointer rounded-lg border py-2 pl-3 pr-8 text-sm font-medium transition-colors focus:outline-none ${
+					className={`appearance-none cursor-pointer rounded-lg border py-2 ${icon ? "pl-8" : "pl-3"} pr-8 text-sm font-medium transition-colors focus:outline-none ${
 						active
 							? "border-brand-500 bg-brand-50 text-brand-700"
 							: "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
@@ -301,12 +318,14 @@ function FilterSelect({
 }
 
 function ToggleGroup({
+	icon,
 	fieldLabel,
 	ariaGroupLabel,
 	options,
 	value,
 	onChange,
 }: {
+	icon?: React.ReactNode;
 	fieldLabel: string;
 	ariaGroupLabel: string;
 	options: { value: string; label: string }[];
@@ -314,8 +333,15 @@ function ToggleGroup({
 	onChange: (v: string) => void;
 }) {
 	return (
-		<div className="flex flex-col gap-1">
-			<span className="text-xs font-medium text-gray-500">{fieldLabel}</span>
+		<div className="flex shrink-0 flex-col gap-1">
+			<span className="flex items-center gap-1 text-xs font-medium text-gray-500">
+				{icon && (
+					<span className="text-gray-400" aria-hidden="true">
+						{icon}
+					</span>
+				)}
+				{fieldLabel}
+			</span>
 			<div
 				role="group"
 				aria-label={ariaGroupLabel}
@@ -354,6 +380,7 @@ function DateRangePicker({
 	dateTo: string;
 	onChangeDateFrom: (v: string) => void;
 	onChangeDateTo: (v: string) => void;
+	icon?: React.ReactNode;
 	labels: {
 		fieldLabel: string;
 		anyDate: string;
@@ -390,8 +417,13 @@ function DateRangePicker({
 				: `${labels.to} ${dateTo}`;
 
 	return (
-		<div ref={wrapperRef} className="relative flex flex-col gap-1">
-			<span className="text-xs font-medium text-gray-500">
+		<div ref={wrapperRef} className="relative flex shrink-0 flex-col gap-1">
+			<span className="flex items-center gap-1 text-xs font-medium text-gray-500">
+				{icon && (
+					<span className="text-gray-400" aria-hidden="true">
+						{icon}
+					</span>
+				)}
 				{labels.fieldLabel}
 			</span>
 			<button
@@ -514,7 +546,6 @@ export default function VolunteerOpportunitiesList({
 
 	const [searchInput, setSearchInput] = useState(search);
 	const [cityInput, setCityInput] = useState(city);
-	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -522,18 +553,6 @@ export default function VolunteerOpportunitiesList({
 	const cityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const cityWrapperRef = useRef<HTMLDivElement>(null);
-
-	const activeFilterCount = [
-		search,
-		city,
-		occurrence,
-		participationType,
-		isRemoteParam,
-		dateFrom,
-		dateTo,
-		category,
-		tag,
-	].filter(Boolean).length;
 
 	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
 	const isMap = view === "map";
@@ -988,42 +1007,11 @@ export default function VolunteerOpportunitiesList({
 					</div>
 				</div>
 
-				{/* Collapsible filter row */}
+				{/* Secondary filter row - always visible */}
 				<div className="border-t border-gray-100">
-					<button
-						type="button"
-						onClick={() => setFiltersOpen((o) => !o)}
-						className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 sm:hidden"
-					>
-						<span className="flex items-center gap-2">
-							<svg
-								className="h-4 w-4 text-brand-600"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="2"
-								stroke="currentColor"
-								aria-hidden="true"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25"
-								/>
-							</svg>
-							{t("opportunities.filterToggle")}
-							{activeFilterCount > 0 && (
-								<span className="rounded-full bg-brand-500 px-1.5 py-0.5 text-xs font-medium text-white">
-									{activeFilterCount}
-								</span>
-							)}
-						</span>
-						<ChevronIcon className="h-4 w-4 text-gray-400" open={filtersOpen} />
-					</button>
-
-					<div
-						className={`flex flex-wrap items-end gap-3 px-4 pb-4 pt-3 ${filtersOpen ? "" : "max-sm:hidden"}`}
-					>
+					<div className="flex flex-wrap items-end gap-3 px-4 pb-4 pt-3">
 						<FilterSelect
+							icon={<TagIcon className="h-3.5 w-3.5" />}
 							fieldLabel={t("opportunities.filterLabelCategory")}
 							ariaLabel={t("opportunities.allCategories")}
 							value={category}
@@ -1051,6 +1039,7 @@ export default function VolunteerOpportunitiesList({
 						</FilterSelect>
 
 						<ToggleGroup
+							icon={<UsersIcon className="h-3.5 w-3.5" />}
 							fieldLabel={t("opportunities.filterLabelType")}
 							ariaGroupLabel={t("opportunities.allTypes")}
 							options={typeOptions}
@@ -1059,6 +1048,7 @@ export default function VolunteerOpportunitiesList({
 						/>
 
 						<ToggleGroup
+							icon={<GlobeIcon className="h-3.5 w-3.5" />}
 							fieldLabel={t("opportunities.filterLabelLocation")}
 							ariaGroupLabel={t("opportunities.allLocations")}
 							options={locationOptions}
@@ -1067,6 +1057,7 @@ export default function VolunteerOpportunitiesList({
 						/>
 
 						<ToggleGroup
+							icon={<ClockIcon className="h-3.5 w-3.5" />}
 							fieldLabel={t("opportunities.filterLabelFrequency")}
 							ariaGroupLabel={t("opportunities.allFrequencies")}
 							options={occurrenceOptions}
@@ -1075,6 +1066,7 @@ export default function VolunteerOpportunitiesList({
 						/>
 
 						<DateRangePicker
+							icon={<CalendarIcon className="h-3.5 w-3.5" />}
 							dateFrom={dateFrom}
 							dateTo={dateTo}
 							onChangeDateFrom={(v) => updateFilter("dateFrom", v)}
