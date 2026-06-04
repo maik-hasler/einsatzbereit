@@ -507,42 +507,6 @@ function MiniCalendar({
 	);
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function FilterChip({
-	icon,
-	chipLabel,
-	value,
-	ariaLabel,
-	onRemove,
-}: {
-	icon: React.ReactNode;
-	chipLabel: string;
-	value: string;
-	ariaLabel: string;
-	onRemove: () => void;
-}) {
-	return (
-		<span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100 py-1 pl-2.5 pr-1 text-xs text-brand-800">
-			<span className="shrink-0 text-brand-500" aria-hidden="true">
-				{icon}
-			</span>
-			<span>
-				<span className="text-brand-600">{chipLabel}:</span>{" "}
-				<strong className="font-semibold">{value}</strong>
-			</span>
-			<button
-				type="button"
-				onClick={onRemove}
-				aria-label={ariaLabel}
-				className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200"
-			>
-				<ChipXIcon />
-			</button>
-		</span>
-	);
-}
-
 function DropdownOption({
 	label,
 	selected,
@@ -556,26 +520,24 @@ function DropdownOption({
 		<button
 			type="button"
 			onClick={onClick}
-			className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
+			className={`flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
 				selected ? "font-medium text-brand-700" : "text-gray-700"
 			}`}
 		>
-			<span className="h-4 w-4 shrink-0">
-				{selected && (
-					<svg
-						className="h-4 w-4 text-brand-600"
-						viewBox="0 0 20 20"
-						fill="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							fillRule="evenodd"
-							d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-							clipRule="evenodd"
-						/>
-					</svg>
-				)}
-			</span>
+			{selected && (
+				<svg
+					className="h-4 w-4 shrink-0 text-brand-600"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						fillRule="evenodd"
+						d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+						clipRule="evenodd"
+					/>
+				</svg>
+			)}
 			{label}
 		</button>
 	);
@@ -635,8 +597,18 @@ function FilterDropdown({
 	children: React.ReactNode;
 }) {
 	const active = !!displayValue;
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [alignRight, setAlignRight] = useState(false);
+
+	useEffect(() => {
+		if (isOpen && containerRef.current) {
+			const rect = containerRef.current.getBoundingClientRect();
+			setAlignRight(rect.left + 300 > window.innerWidth - 8);
+		}
+	}, [isOpen]);
+
 	return (
-		<div className="relative shrink-0">
+		<div ref={containerRef} className="relative shrink-0">
 			<div
 				role="group"
 				aria-label={label}
@@ -682,7 +654,9 @@ function FilterDropdown({
 				)}
 			</div>
 			{isOpen && (
-				<div className="absolute left-0 top-full z-20 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+				<div
+					className={`absolute ${alignRight ? "right-0" : "left-0"} top-full z-20 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl`}
+				>
 					{children}
 				</div>
 			)}
@@ -1444,91 +1418,6 @@ export default function VolunteerOpportunitiesList({
 						</button>
 					)}
 				</div>
-
-				{/* Active filter chips */}
-				{hasFilters && (
-					<div className="mb-3 flex flex-wrap items-center gap-1.5">
-						{hasLocation && (
-							<FilterChip
-								icon={<PinIcon />}
-								chipLabel={t("opportunities.filterLabelLocation")}
-								value={locationDisplayValue}
-								ariaLabel={t("opportunities.clearLocation")}
-								onRemove={clearLocation}
-							/>
-						)}
-						{selectedCategories.length > 0 && (
-							<FilterChip
-								icon={<TagIcon />}
-								chipLabel={t("opportunities.filterLabelCategory")}
-								value={categoryDisplayValue}
-								ariaLabel={t("opportunities.clearCategory")}
-								onRemove={() => {
-									const params = new URLSearchParams(window.location.search);
-									params.delete("categories");
-									setSearchParams(params, { replace: true });
-								}}
-							/>
-						)}
-						{participationType && (
-							<FilterChip
-								icon={<UsersIcon />}
-								chipLabel={t("opportunities.filterLabelType")}
-								value={
-									participationType === "Waitlist"
-										? t("opportunities.waitlist")
-										: t("opportunities.individualContact")
-								}
-								ariaLabel={t("opportunities.clearType")}
-								onRemove={() => updateFilter("participationType", "")}
-							/>
-						)}
-						{isRemoteParam && (
-							<FilterChip
-								icon={<GlobeIcon />}
-								chipLabel={t("opportunities.filterLabelRemote")}
-								value={
-									isRemoteParam === "true"
-										? t("opportunities.remote")
-										: t("opportunities.onsite")
-								}
-								ariaLabel={t("opportunities.clearLocation")}
-								onRemove={() => updateFilter("isRemote", "")}
-							/>
-						)}
-						{occurrence && (
-							<FilterChip
-								icon={<ClockIcon />}
-								chipLabel={t("opportunities.filterLabelFrequency")}
-								value={
-									occurrence === "OneTime"
-										? t("opportunities.oneTime")
-										: t("opportunities.recurring")
-								}
-								ariaLabel={t("opportunities.clearOccurrence")}
-								onRemove={() => updateFilter("occurrence", "")}
-							/>
-						)}
-						{(dateFrom || dateTo) && (
-							<FilterChip
-								icon={<CalendarIcon />}
-								chipLabel={t("opportunities.filterLabelDateRange")}
-								value={dateDisplayValue}
-								ariaLabel={t("opportunities.clearDateRange")}
-								onRemove={clearDateRange}
-							/>
-						)}
-						{tag && (
-							<FilterChip
-								icon={<HashIcon />}
-								chipLabel={t("opportunities.filterLabelTag")}
-								value={`#${tag}`}
-								ariaLabel={t("opportunities.clearTag")}
-								onRemove={() => updateFilter("tag", "")}
-							/>
-						)}
-					</div>
-				)}
 			</div>
 
 			{isMap && (
