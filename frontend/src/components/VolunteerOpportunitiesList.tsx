@@ -34,13 +34,15 @@ function ChipCloseIcon() {
 	);
 }
 
-interface FilterChipProps {
+function FilterChip({
+	label,
+	ariaLabel,
+	onRemove,
+}: {
 	label: string;
 	ariaLabel: string;
 	onRemove: () => void;
-}
-
-function FilterChip({ label, ariaLabel, onRemove }: FilterChipProps) {
+}) {
 	return (
 		<span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-800">
 			{label}
@@ -53,6 +55,55 @@ function FilterChip({ label, ariaLabel, onRemove }: FilterChipProps) {
 				<ChipCloseIcon />
 			</button>
 		</span>
+	);
+}
+
+function FilterSelect({
+	fieldLabel,
+	ariaLabel,
+	value,
+	onChange,
+	children,
+}: {
+	fieldLabel: string;
+	ariaLabel: string;
+	value: string;
+	onChange: (v: string) => void;
+	children: React.ReactNode;
+}) {
+	const active = !!value;
+	return (
+		<div className="flex flex-col gap-1">
+			<span className="text-xs font-medium text-gray-500">{fieldLabel}</span>
+			<div className="relative">
+				<select
+					aria-label={ariaLabel}
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+					className={`appearance-none cursor-pointer rounded-lg border py-2 pl-3 pr-8 text-sm font-medium transition-colors focus:outline-none ${
+						active
+							? "border-brand-500 bg-brand-50 text-brand-700"
+							: "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+					}`}
+				>
+					{children}
+				</select>
+				<svg
+					className={`pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${active ? "text-brand-500" : "text-gray-400"}`}
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth="2.5"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="m19.5 8.25-7.5 7.5-7.5-7.5"
+					/>
+				</svg>
+			</div>
+		</div>
 	);
 }
 
@@ -293,10 +344,12 @@ export default function VolunteerOpportunitiesList({
 		setBounds(next);
 	}
 
-	const inputClass =
-		"rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none";
-	const selectClass =
-		"rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none";
+	const dateInputClass = (active: boolean) =>
+		`rounded-lg border py-2 pl-3 pr-3 text-sm focus:outline-none ${
+			active
+				? "border-brand-500 bg-brand-50 text-brand-700"
+				: "border-gray-200 bg-white text-gray-600"
+		}`;
 
 	return (
 		<div>
@@ -348,12 +401,124 @@ export default function VolunteerOpportunitiesList({
 				</div>
 			</div>
 
-			<div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-				<div className="mb-3 sm:hidden">
+			<div className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm">
+				{/* Search + city row - always visible */}
+				<div className="p-4 pb-3">
+					<div className="flex flex-col gap-3 sm:flex-row">
+						<div className="flex flex-1 flex-col gap-1">
+							<span className="text-xs font-medium text-gray-500">
+								{t("opportunities.filterLabelSearch")}
+							</span>
+							<div className="relative">
+								<svg
+									className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="2"
+									stroke="currentColor"
+									aria-hidden="true"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+									/>
+								</svg>
+								<input
+									type="text"
+									aria-label={t("opportunities.searchPlaceholder")}
+									placeholder={t("opportunities.searchPlaceholder")}
+									value={searchInput}
+									onChange={(e) => {
+										const val = e.target.value;
+										setSearchInput(val);
+										if (searchDebounceRef.current)
+											clearTimeout(searchDebounceRef.current);
+										searchDebounceRef.current = setTimeout(() => {
+											updateFilter("search", val);
+										}, 400);
+									}}
+									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
+								/>
+								{searchInput && (
+									<button
+										type="button"
+										onClick={() => {
+											setSearchInput("");
+											updateFilter("search", "");
+										}}
+										aria-label={t("opportunities.clearSearch")}
+										className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+									>
+										&times;
+									</button>
+								)}
+							</div>
+						</div>
+						<div className="flex flex-col gap-1 sm:w-44">
+							<span className="text-xs font-medium text-gray-500">
+								{t("opportunities.filterLabelCity")}
+							</span>
+							<div className="relative">
+								<svg
+									className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="2"
+									stroke="currentColor"
+									aria-hidden="true"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+									/>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+									/>
+								</svg>
+								<input
+									type="text"
+									aria-label={t("opportunities.cityPlaceholder")}
+									placeholder={t("opportunities.cityPlaceholder")}
+									value={cityInput}
+									onChange={(e) => {
+										const val = e.target.value;
+										setCityInput(val);
+										if (cityDebounceRef.current)
+											clearTimeout(cityDebounceRef.current);
+										cityDebounceRef.current = setTimeout(() => {
+											updateFilter("city", val);
+										}, 400);
+									}}
+									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
+								/>
+								{cityInput && (
+									<button
+										type="button"
+										onClick={() => {
+											setCityInput("");
+											updateFilter("city", "");
+										}}
+										aria-label={t("opportunities.clearCity")}
+										className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+									>
+										&times;
+									</button>
+								)}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Additional filters - collapsible on mobile */}
+				<div className="border-t border-gray-100">
 					<button
 						type="button"
 						onClick={() => setFiltersOpen((o) => !o)}
-						className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+						className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 sm:hidden"
 					>
 						<span className="flex items-center gap-2">
 							<svg
@@ -392,151 +557,102 @@ export default function VolunteerOpportunitiesList({
 							/>
 						</svg>
 					</button>
-				</div>
 
-				<div
-					className={`flex flex-wrap gap-2 ${filtersOpen ? "" : "max-sm:hidden"}`}
-				>
-					<div className="relative">
-						<input
-							type="text"
-							aria-label={t("opportunities.searchPlaceholder")}
-							placeholder={t("opportunities.searchPlaceholder")}
-							value={searchInput}
-							onChange={(e) => {
-								const val = e.target.value;
-								setSearchInput(val);
-								if (searchDebounceRef.current)
-									clearTimeout(searchDebounceRef.current);
-								searchDebounceRef.current = setTimeout(() => {
-									updateFilter("search", val);
-								}, 400);
-							}}
-							className={`${inputClass} pr-7`}
-						/>
-						{searchInput && (
-							<button
-								type="button"
-								onClick={() => {
-									setSearchInput("");
-									updateFilter("search", "");
-								}}
-								aria-label={t("opportunities.clearSearch")}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-							>
-								&times;
-							</button>
-						)}
-					</div>
-					<div className="relative">
-						<input
-							type="text"
-							aria-label={t("opportunities.cityPlaceholder")}
-							placeholder={t("opportunities.cityPlaceholder")}
-							value={cityInput}
-							onChange={(e) => {
-								const val = e.target.value;
-								setCityInput(val);
-								if (cityDebounceRef.current)
-									clearTimeout(cityDebounceRef.current);
-								cityDebounceRef.current = setTimeout(() => {
-									updateFilter("city", val);
-								}, 400);
-							}}
-							className={`${inputClass} pr-7`}
-						/>
-						{cityInput && (
-							<button
-								type="button"
-								onClick={() => {
-									setCityInput("");
-									updateFilter("city", "");
-								}}
-								aria-label={t("opportunities.clearCity")}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-							>
-								&times;
-							</button>
-						)}
-					</div>
-					<select
-						aria-label={t("opportunities.allFrequencies")}
-						value={occurrence}
-						onChange={(e) => updateFilter("occurrence", e.target.value)}
-						className={selectClass}
-					>
-						<option value="">{t("opportunities.allFrequencies")}</option>
-						<option value="OneTime">{t("opportunities.oneTime")}</option>
-						<option value="Recurring">{t("opportunities.recurring")}</option>
-					</select>
-					<select
-						aria-label={t("opportunities.allTypes")}
-						value={participationType}
-						onChange={(e) => updateFilter("participationType", e.target.value)}
-						className={selectClass}
-					>
-						<option value="">{t("opportunities.allTypes")}</option>
-						<option value="Waitlist">{t("opportunities.waitlist")}</option>
-						<option value="IndividualContact">
-							{t("opportunities.individualContact")}
-						</option>
-					</select>
-					<select
-						aria-label={t("opportunities.allLocations")}
-						value={isRemoteParam}
-						onChange={(e) => updateFilter("isRemote", e.target.value)}
-						className={selectClass}
-					>
-						<option value="">{t("opportunities.allLocations")}</option>
-						<option value="true">{t("opportunities.remote")}</option>
-						<option value="false">{t("opportunities.onsite")}</option>
-					</select>
-					<input
-						type="date"
-						aria-label={t("opportunities.dateFromLabel")}
-						value={dateFrom}
-						onChange={(e) => updateFilter("dateFrom", e.target.value)}
-						className={selectClass}
-					/>
-					<input
-						type="date"
-						aria-label={t("opportunities.dateToLabel")}
-						value={dateTo}
-						onChange={(e) => updateFilter("dateTo", e.target.value)}
-						className={selectClass}
-					/>
-					<select
-						aria-label={t("opportunities.allCategories")}
-						value={category}
-						onChange={(e) => updateFilter("category", e.target.value)}
-						className={selectClass}
-					>
-						<option value="">{t("opportunities.allCategories")}</option>
-						{(
-							[
-								"Social",
-								"Environment",
-								"Sport",
-								"Education",
-								"DisasterRelief",
-								"Health",
-								"Animals",
-								"Culture",
-								"Technology",
-								"Other",
-							] as const
-						).map((c) => (
-							<option key={c} value={c}>
-								{t(`opportunities.category.${c}`)}
-							</option>
-						))}
-					</select>
-				</div>
-
-				{hasFilters && (
 					<div
-						className={`mt-3 flex flex-wrap items-center gap-1.5 border-t border-gray-100 pt-3 ${filtersOpen ? "" : "max-sm:hidden"}`}
+						className={`flex flex-wrap items-end gap-3 px-4 pb-4 pt-3 ${filtersOpen ? "" : "max-sm:hidden"}`}
 					>
+						<FilterSelect
+							fieldLabel={t("opportunities.filterLabelCategory")}
+							ariaLabel={t("opportunities.allCategories")}
+							value={category}
+							onChange={(v) => updateFilter("category", v)}
+						>
+							<option value="">{t("opportunities.allCategories")}</option>
+							{(
+								[
+									"Social",
+									"Environment",
+									"Sport",
+									"Education",
+									"DisasterRelief",
+									"Health",
+									"Animals",
+									"Culture",
+									"Technology",
+									"Other",
+								] as const
+							).map((c) => (
+								<option key={c} value={c}>
+									{t(`opportunities.category.${c}`)}
+								</option>
+							))}
+						</FilterSelect>
+
+						<FilterSelect
+							fieldLabel={t("opportunities.filterLabelType")}
+							ariaLabel={t("opportunities.allTypes")}
+							value={participationType}
+							onChange={(v) => updateFilter("participationType", v)}
+						>
+							<option value="">{t("opportunities.allTypes")}</option>
+							<option value="Waitlist">{t("opportunities.waitlist")}</option>
+							<option value="IndividualContact">
+								{t("opportunities.individualContact")}
+							</option>
+						</FilterSelect>
+
+						<FilterSelect
+							fieldLabel={t("opportunities.filterLabelLocation")}
+							ariaLabel={t("opportunities.allLocations")}
+							value={isRemoteParam}
+							onChange={(v) => updateFilter("isRemote", v)}
+						>
+							<option value="">{t("opportunities.allLocations")}</option>
+							<option value="true">{t("opportunities.remote")}</option>
+							<option value="false">{t("opportunities.onsite")}</option>
+						</FilterSelect>
+
+						<FilterSelect
+							fieldLabel={t("opportunities.filterLabelFrequency")}
+							ariaLabel={t("opportunities.allFrequencies")}
+							value={occurrence}
+							onChange={(v) => updateFilter("occurrence", v)}
+						>
+							<option value="">{t("opportunities.allFrequencies")}</option>
+							<option value="OneTime">{t("opportunities.oneTime")}</option>
+							<option value="Recurring">{t("opportunities.recurring")}</option>
+						</FilterSelect>
+
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-gray-500">
+								{t("opportunities.filterLabelDateRange")}
+							</span>
+							<div className="flex items-center gap-2">
+								<input
+									type="date"
+									aria-label={t("opportunities.dateFromLabel")}
+									value={dateFrom}
+									onChange={(e) => updateFilter("dateFrom", e.target.value)}
+									className={dateInputClass(!!dateFrom)}
+								/>
+								<span className="text-xs text-gray-400" aria-hidden="true">
+									-
+								</span>
+								<input
+									type="date"
+									aria-label={t("opportunities.dateToLabel")}
+									value={dateTo}
+									onChange={(e) => updateFilter("dateTo", e.target.value)}
+									className={dateInputClass(!!dateTo)}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Active filter chips */}
+				{hasFilters && (
+					<div className="flex flex-wrap items-center gap-1.5 border-t border-gray-100 px-4 py-3">
 						{search && (
 							<FilterChip
 								label={search}
@@ -621,7 +737,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="ml-1 text-xs font-medium text-gray-500 underline hover:text-gray-700"
+							className="ml-1 text-xs font-medium text-gray-400 underline hover:text-gray-600"
 						>
 							{t("opportunities.clearFilters")}
 						</button>
@@ -678,7 +794,7 @@ export default function VolunteerOpportunitiesList({
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<li
 									key={item.id}
-									className="relative rounded border hover:bg-gray-50 transition-colors"
+									className="relative rounded border transition-colors hover:bg-gray-50"
 								>
 									<Link
 										to={`/volunteer-opportunities/${item.id}`}
@@ -703,7 +819,7 @@ export default function VolunteerOpportunitiesList({
 													{item.description}
 												</p>
 											</div>
-											<div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+											<div className="ml-2 flex shrink-0 flex-col items-end gap-1">
 												<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
 													{formatOccurrence(item.occurrence, t)}
 												</span>

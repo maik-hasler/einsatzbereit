@@ -84,6 +84,13 @@
       "clearDateTo": "Bis-Datum löschen",
       "clearCategory": "Kategoriefilter löschen",
       "clearTag": "Tag-Filter löschen",
+      "filterLabelSearch": "Suche",
+      "filterLabelCity": "Stadt",
+      "filterLabelCategory": "Kategorie",
+      "filterLabelType": "Typ",
+      "filterLabelLocation": "Standort",
+      "filterLabelFrequency": "Häufigkeit",
+      "filterLabelDateRange": "Datumsbereich",
       "allCategories": "Alle Kategorien",
       "category": {
         "Social": "Soziales",
