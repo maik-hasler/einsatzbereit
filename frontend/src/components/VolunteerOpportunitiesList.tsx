@@ -270,6 +270,40 @@ function DropdownOption({
 	);
 }
 
+function FilterChip({
+	icon,
+	chipLabel,
+	value,
+	ariaLabel,
+	onRemove,
+}: {
+	icon: React.ReactNode;
+	chipLabel: string;
+	value: string;
+	ariaLabel: string;
+	onRemove: () => void;
+}) {
+	return (
+		<span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100 py-1 pl-2.5 pr-1 text-xs text-brand-800">
+			<span className="shrink-0 text-brand-500" aria-hidden="true">
+				{icon}
+			</span>
+			<span>
+				<span className="text-brand-600">{chipLabel}:</span>{" "}
+				<strong className="font-semibold">{value}</strong>
+			</span>
+			<button
+				type="button"
+				onClick={onRemove}
+				aria-label={ariaLabel}
+				className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200"
+			>
+				<ChipXIcon />
+			</button>
+		</span>
+	);
+}
+
 function FilterDropdown({
 	testId,
 	icon,
@@ -1094,6 +1128,111 @@ export default function VolunteerOpportunitiesList({
 						</button>
 					)}
 				</div>
+
+				{/* Active filter chips */}
+				{hasFilters && (
+					<div className="flex flex-wrap items-center gap-1.5 border-t border-gray-100 px-4 py-2.5">
+						{search && (
+							<FilterChip
+								icon={<SearchIcon />}
+								chipLabel={t("opportunities.filterLabelSearch")}
+								value={search}
+								ariaLabel={t("opportunities.clearSearch")}
+								onRemove={() => {
+									setSearchInput("");
+									updateFilter("search", "");
+								}}
+							/>
+						)}
+						{city && (
+							<FilterChip
+								icon={<PinIcon />}
+								chipLabel={t("opportunities.filterLabelCity")}
+								value={city}
+								ariaLabel={t("opportunities.clearCity")}
+								onRemove={() => {
+									setCityInput("");
+									updateFilter("city", "");
+								}}
+							/>
+						)}
+						{category && (
+							<FilterChip
+								icon={<TagIcon />}
+								chipLabel={t("opportunities.filterLabelCategory")}
+								value={t(`opportunities.category.${category}`)}
+								ariaLabel={t("opportunities.clearCategory")}
+								onRemove={() => updateFilter("category", "")}
+							/>
+						)}
+						{participationType && (
+							<FilterChip
+								icon={<UsersIcon />}
+								chipLabel={t("opportunities.filterLabelType")}
+								value={
+									participationType === "Waitlist"
+										? t("opportunities.waitlist")
+										: t("opportunities.individualContact")
+								}
+								ariaLabel={t("opportunities.clearType")}
+								onRemove={() => updateFilter("participationType", "")}
+							/>
+						)}
+						{isRemoteParam && (
+							<FilterChip
+								icon={<GlobeIcon />}
+								chipLabel={t("opportunities.filterLabelLocation")}
+								value={
+									isRemoteParam === "true"
+										? t("opportunities.remote")
+										: t("opportunities.onsite")
+								}
+								ariaLabel={t("opportunities.clearLocation")}
+								onRemove={() => updateFilter("isRemote", "")}
+							/>
+						)}
+						{occurrence && (
+							<FilterChip
+								icon={<ClockIcon />}
+								chipLabel={t("opportunities.filterLabelFrequency")}
+								value={
+									occurrence === "OneTime"
+										? t("opportunities.oneTime")
+										: t("opportunities.recurring")
+								}
+								ariaLabel={t("opportunities.clearOccurrence")}
+								onRemove={() => updateFilter("occurrence", "")}
+							/>
+						)}
+						{(dateFrom || dateTo) && (
+							<FilterChip
+								icon={<CalendarIcon />}
+								chipLabel={t("opportunities.filterLabelDateRange")}
+								value={
+									dateFrom && dateTo
+										? `${dateFrom} - ${dateTo}`
+										: dateFrom
+											? `>= ${dateFrom}`
+											: `<= ${dateTo}`
+								}
+								ariaLabel={t("opportunities.clearDateRange")}
+								onRemove={() => {
+									updateFilter("dateFrom", "");
+									updateFilter("dateTo", "");
+								}}
+							/>
+						)}
+						{tag && (
+							<FilterChip
+								icon={<HashIcon />}
+								chipLabel={t("opportunities.filterLabelTag")}
+								value={`#${tag}`}
+								ariaLabel={t("opportunities.clearTag")}
+								onRemove={() => updateFilter("tag", "")}
+							/>
+						)}
+					</div>
+				)}
 			</div>
 
 			{isMap && (
