@@ -370,6 +370,7 @@ function ToggleGroup({
 }
 
 function DateRangePicker({
+	icon,
 	dateFrom,
 	dateTo,
 	onChangeDateFrom,
