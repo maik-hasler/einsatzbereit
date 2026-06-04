@@ -722,8 +722,6 @@ export default function VolunteerOpportunitiesList({
 		CitySuggestion[]
 	>([]);
 	const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-	const [locationLocating, setLocationLocating] = useState(false);
-	const [locationError, setLocationError] = useState<string | null>(null);
 
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
@@ -1039,33 +1037,6 @@ export default function VolunteerOpportunitiesList({
 		setOpenFilter(null);
 	}
 
-	function handleUseMyLocation() {
-		if (!navigator.geolocation) {
-			setLocationError(t("opportunities.locationNotSupported"));
-			return;
-		}
-		setLocationLocating(true);
-		setLocationError(null);
-		navigator.geolocation.getCurrentPosition(
-			(pos) => {
-				setLocationLocating(false);
-				const currentRadius = searchParams.get("radius") || "10";
-				const params = new URLSearchParams(window.location.search);
-				params.delete("city");
-				params.set("lat", pos.coords.latitude.toString());
-				params.set("lng", pos.coords.longitude.toString());
-				params.set("radius", currentRadius);
-				setSearchParams(params, { replace: true });
-				setLocationCityInput("");
-				setOpenFilter(null);
-			},
-			() => {
-				setLocationLocating(false);
-				setLocationError(t("opportunities.locationError"));
-			},
-		);
-	}
-
 	function handleBoundsChange(next: OpportunityBounds) {
 		setBounds(next);
 	}
@@ -1081,11 +1052,7 @@ export default function VolunteerOpportunitiesList({
 		tag
 	);
 
-	const locationDisplayValue = hasLocation
-		? city
-			? `${city} · ${radius} km`
-			: `${t("opportunities.myLocation")} · ${radius} km`
-		: "";
+	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : "";
 
 	const categoryDisplayValue =
 		selectedCategories.length === 0
@@ -1169,7 +1136,6 @@ export default function VolunteerOpportunitiesList({
 								setLocationCityInput(city);
 								setLocationSuggestions([]);
 								setShowLocationSuggestions(false);
-								setLocationError(null);
 							}
 							setOpenFilter((f) => (f === "location" ? null : "location"));
 						}}
@@ -1239,28 +1205,6 @@ export default function VolunteerOpportunitiesList({
 									</ul>
 								)}
 							</div>
-
-							<div className="mb-3 flex items-center gap-2 text-xs text-gray-400">
-								<div className="flex-1 border-t border-gray-100" />
-								{t("opportunities.orLabel")}
-								<div className="flex-1 border-t border-gray-100" />
-							</div>
-
-							<button
-								type="button"
-								onClick={handleUseMyLocation}
-								disabled={locationLocating}
-								className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-							>
-								<PinIcon className="h-4 w-4" />
-								{locationLocating
-									? t("opportunities.locating")
-									: t("opportunities.useMyLocation")}
-							</button>
-
-							{locationError && (
-								<p className="mb-3 text-xs text-red-500">{locationError}</p>
-							)}
 
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
 								{t("opportunities.radiusLabel")}
