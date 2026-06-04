@@ -1005,7 +1005,7 @@ export default function VolunteerOpportunitiesList({
 						label={t("opportunities.filterLabelDateRange")}
 						displayValue={
 							dateFrom && dateTo
-								? `${dateFrom} – ${dateTo}`
+								? `${dateFrom} - ${dateTo}`
 								: dateFrom
 									? `≥ ${dateFrom}`
 									: dateTo
