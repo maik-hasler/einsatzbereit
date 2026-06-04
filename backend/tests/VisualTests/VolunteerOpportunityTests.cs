@@ -74,7 +74,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByLabel("All frequencies").SelectOptionAsync("OneTime");
+		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*occurrence=OneTime"));
 	}
@@ -87,7 +87,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByLabel("All types").SelectOptionAsync("Waitlist");
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Waitlist" }).ClickAsync();
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=Waitlist"));
 	}
