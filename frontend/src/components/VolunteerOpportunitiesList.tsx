@@ -286,6 +286,44 @@ function ChipXIcon() {
 	);
 }
 
+function ViewListIcon() {
+	return (
+		<svg
+			className="h-4 w-4"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth="2"
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M3.75 5.25h16.5M3.75 12h16.5m-16.5 6.75h16.5"
+			/>
+		</svg>
+	);
+}
+
+function ViewMapIcon() {
+	return (
+		<svg
+			className="h-4 w-4"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth="2"
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M9 6.75V15m6-6v8.25m-8.25 0h10.5a2.25 2.25 0 0 0 2.25-2.25V8.25a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 8.25v5.25a2.25 2.25 0 0 0 2.25 2.25Z"
+			/>
+		</svg>
+	);
+}
+
 function CheckMiniIcon() {
 	return (
 		<svg
@@ -1048,51 +1086,50 @@ export default function VolunteerOpportunitiesList({
 
 	return (
 		<div>
-			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-xl font-semibold text-gray-900">
-					{t("opportunities.currentNeeds")}
-				</h2>
-				<div className="flex items-center gap-2">
-					<div
-						role="group"
-						className="inline-flex overflow-hidden rounded-lg border border-gray-200"
-					>
-						<button
-							type="button"
-							data-testid="view-toggle-list"
-							aria-pressed={!isMap}
-							onClick={() => setView("list")}
-							className={
-								!isMap
-									? "bg-brand-800 px-3 py-1.5 text-sm font-medium text-white"
-									: "px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-700"
-							}
-						>
-							{t("opportunities.view.list")}
-						</button>
-						<button
-							type="button"
-							data-testid="view-toggle-map"
-							aria-pressed={isMap}
-							onClick={() => setView("map")}
-							className={
-								isMap
-									? "bg-brand-800 px-3 py-1.5 text-sm font-medium text-white"
-									: "border-l border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-brand-50 hover:text-brand-700"
-							}
-						>
-							{t("opportunities.view.map")}
-						</button>
-					</div>
+			<div className="mb-4">
+				<div className="mb-3 flex items-start justify-between gap-2">
+					<h2 className="text-xl font-bold text-gray-900">
+						{t("opportunities.currentNeeds")}
+					</h2>
 					{canCreateOpportunity && (
 						<button
 							onClick={() => setShowModal(true)}
 							data-testid="create-opportunity-btn"
-							className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none"
+							className="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none"
 						>
 							{t("opportunities.createNeed")}
 						</button>
 					)}
+				</div>
+				<div role="group" className="inline-flex rounded-lg bg-gray-100 p-0.5">
+					<button
+						type="button"
+						data-testid="view-toggle-list"
+						aria-pressed={!isMap}
+						onClick={() => setView("list")}
+						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+							!isMap
+								? "bg-white text-gray-900 shadow-sm"
+								: "text-gray-500 hover:text-gray-700"
+						}`}
+					>
+						<ViewListIcon />
+						{t("opportunities.view.list")}
+					</button>
+					<button
+						type="button"
+						data-testid="view-toggle-map"
+						aria-pressed={isMap}
+						onClick={() => setView("map")}
+						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+							isMap
+								? "bg-white text-gray-900 shadow-sm"
+								: "text-gray-500 hover:text-gray-700"
+						}`}
+					>
+						<ViewMapIcon />
+						{t("opportunities.view.map")}
+					</button>
 				</div>
 			</div>
 
@@ -1472,64 +1509,70 @@ export default function VolunteerOpportunitiesList({
 								return (
 									<li
 										key={item.id}
-										className="relative rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-sm"
+										className="relative overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-gray-200 hover:shadow-md"
 									>
 										<Link
 											to={`/volunteer-opportunities/${item.id}`}
-											className="absolute inset-0 rounded-lg"
+											className="absolute inset-0"
 											aria-label={item.title}
 										/>
 										<div className="p-4">
-											<div className="flex items-start justify-between gap-3">
-												<div className="min-w-0 flex-1">
-													<strong className="block text-sm font-semibold leading-snug text-gray-900">
-														{item.title}
-													</strong>
-													<p className="mt-0.5 text-xs text-gray-500">
-														<Link
-															to={`/organizations/${item.organizationId}`}
-															className="relative z-10 hover:underline"
-														>
-															{item.organizationName}
-														</Link>
-													</p>
-												</div>
-												<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-													{formatOccurrence(item.occurrence, t)}
-												</span>
-											</div>
-											<div className="mt-2 flex items-center justify-between gap-4 text-xs text-gray-500">
-												<div className="flex items-center gap-2">
-													{item.isRemote ? (
-														<span>{t("opportunities.remote")}</span>
-													) : (
-														item.city && <span>{item.city}</span>
-													)}
+											<div className="mb-2.5 flex items-center justify-between gap-2">
+												<div className="flex min-w-0 items-center gap-1.5">
 													{item.category && (
-														<span className="rounded-full bg-green-50 px-2 py-0.5 text-green-700">
+														<span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
 															{t(`opportunities.category.${item.category}`)}
 														</span>
 													)}
+													<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+														{formatOccurrence(item.occurrence, t)}
+													</span>
 												</div>
 												{spotsLeft !== null &&
 													(spotsLeft <= 0 ? (
-														<span className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-700">
+														<span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
 															{t("opportunities.full")}
 														</span>
 													) : spotsLeft <= 3 ? (
-														<span className="rounded-full bg-orange-100 px-2 py-0.5 font-medium text-orange-700">
+														<span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
 															{t("opportunities.spotsLeft", {
 																count: spotsLeft,
 															})}
 														</span>
 													) : (
-														<span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
+														<span className="shrink-0 rounded-full bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
 															{t("opportunities.spotsLeft", {
 																count: spotsLeft,
 															})}
 														</span>
 													))}
 											</div>
+											<strong className="block text-[15px] font-semibold leading-snug text-gray-900">
+												{item.title}
+											</strong>
+											<p className="mt-0.5 text-xs text-gray-400">
+												<Link
+													to={`/organizations/${item.organizationId}`}
+													className="relative z-10 hover:underline"
+												>
+													{item.organizationName}
+												</Link>
+											</p>
+											{(item.isRemote || item.city) && (
+												<p className="mt-2 flex items-center gap-1 text-xs text-gray-400">
+													{item.isRemote ? (
+														<>
+															<GlobeIcon className="h-3 w-3 shrink-0" />
+															<span>{t("opportunities.remote")}</span>
+														</>
+													) : (
+														<>
+															<PinIcon className="h-3 w-3 shrink-0" />
+															<span>{item.city}</span>
+														</>
+													)}
+												</p>
+											)}
 										</div>
 									</li>
 								);

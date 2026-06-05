@@ -50,8 +50,8 @@
       "benefitsLabel": "Plattform-Vorteile"
     },
     "opportunities": {
-      "currentNeeds": "Aktuelle Bedarfe",
-      "createNeed": "+ Bedarf erstellen",
+      "currentNeeds": "Aktuelle Einsaetze",
+      "createNeed": "+ Einsatz erstellen",
       "searchPlaceholder": "Suche…",
       "cityPlaceholder": "Stadt…",
       "allFrequencies": "Alle Häufigkeiten",
@@ -62,7 +62,7 @@
       "individualContact": "Einzelkontakt",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
-      "noResults": "Keine Bedarfe gefunden.",
+      "noResults": "Keine Einsaetze gefunden.",
       "noResultsWithFilters": "Passe deine Filter an oder setze sie zurück.",
       "noResultsWithSearch": "Versuche einen anderen Suchbegriff.",
       "loadMore": "Mehr laden",
