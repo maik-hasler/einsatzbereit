@@ -1110,7 +1110,7 @@ export default function VolunteerOpportunitiesList({
 						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
 							!isMap
 								? "bg-white text-gray-900 shadow-sm"
-								: "text-gray-500 hover:text-gray-700"
+								: "text-gray-600 hover:text-gray-800"
 						}`}
 					>
 						<ViewListIcon />
@@ -1124,7 +1124,7 @@ export default function VolunteerOpportunitiesList({
 						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
 							isMap
 								? "bg-white text-gray-900 shadow-sm"
-								: "text-gray-500 hover:text-gray-700"
+								: "text-gray-600 hover:text-gray-800"
 						}`}
 					>
 						<ViewMapIcon />
