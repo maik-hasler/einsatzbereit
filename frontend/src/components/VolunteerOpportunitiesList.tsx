@@ -1101,16 +1101,16 @@ export default function VolunteerOpportunitiesList({
 						</button>
 					)}
 				</div>
-				<div role="group" className="inline-flex rounded-lg bg-gray-100 p-0.5">
+				<div role="group" className="flex items-center gap-2">
 					<button
 						type="button"
 						data-testid="view-toggle-list"
 						aria-pressed={!isMap}
 						onClick={() => setView("list")}
-						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+						className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
 							!isMap
-								? "bg-white text-gray-900 shadow-sm"
-								: "text-gray-600 hover:text-gray-800"
+								? "border-brand-500 bg-brand-50 text-brand-700"
+								: "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800"
 						}`}
 					>
 						<ViewListIcon />
@@ -1121,10 +1121,10 @@ export default function VolunteerOpportunitiesList({
 						data-testid="view-toggle-map"
 						aria-pressed={isMap}
 						onClick={() => setView("map")}
-						className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+						className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
 							isMap
-								? "bg-white text-gray-900 shadow-sm"
-								: "text-gray-600 hover:text-gray-800"
+								? "border-brand-500 bg-brand-50 text-brand-700"
+								: "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800"
 						}`}
 					>
 						<ViewMapIcon />
@@ -1449,8 +1449,9 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="ml-auto text-xs font-medium text-gray-400 underline hover:text-gray-600"
+							className="ml-auto flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 hover:border-red-300"
 						>
+							<ChipXIcon />
 							{t("opportunities.clearFilters")}
 						</button>
 					)}
