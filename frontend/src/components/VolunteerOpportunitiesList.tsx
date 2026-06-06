@@ -286,6 +286,24 @@ function ChipXIcon() {
 	);
 }
 
+function BroomIcon() {
+	return (
+		<svg
+			className="h-3.5 w-3.5"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.5"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M3 3 L16 16" />
+			<path d="M16 16 L21 13 L22 20 L11 22 Z" />
+		</svg>
+	);
+}
+
 function ViewListIcon() {
 	return (
 		<svg
@@ -1104,35 +1122,50 @@ export default function VolunteerOpportunitiesList({
 			{/* Filter bar - view toggle + filters in one unified row */}
 			<div ref={filterBarRef} className="mb-2">
 				<div className="flex flex-wrap items-center gap-2 pb-3">
-					{/* View toggle pills */}
-					<button
-						type="button"
-						data-testid="view-toggle-list"
-						aria-pressed={!isMap}
-						onClick={() => setView("list")}
-						className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
-							!isMap
-								? "border-brand-500 bg-brand-50 text-brand-700"
-								: "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800"
-						}`}
-					>
-						<ViewListIcon />
-						{t("opportunities.view.list")}
-					</button>
-					<button
-						type="button"
-						data-testid="view-toggle-map"
-						aria-pressed={isMap}
-						onClick={() => setView("map")}
-						className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
-							isMap
-								? "border-brand-500 bg-brand-50 text-brand-700"
-								: "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-800"
-						}`}
-					>
-						<ViewMapIcon />
-						{t("opportunities.view.map")}
-					</button>
+					{/* View toggle: single pill with diagonal split */}
+					<div className="inline-flex items-stretch overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
+						<button
+							type="button"
+							data-testid="view-toggle-list"
+							aria-pressed={!isMap}
+							onClick={() => setView("list")}
+							className={`flex items-center gap-1.5 py-1.5 pl-3 pr-4 transition-colors ${
+								!isMap
+									? "bg-brand-50 text-brand-700"
+									: "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+							}`}
+						>
+							<ViewListIcon />
+							{t("opportunities.view.list")}
+						</button>
+						{/* Diagonal separator */}
+						<div
+							className="relative w-3 shrink-0 self-stretch"
+							aria-hidden="true"
+						>
+							<div
+								className={`absolute inset-0 ${!isMap ? "bg-brand-50" : "bg-white"}`}
+							/>
+							<div
+								className="absolute inset-y-0 left-1/2 w-px bg-gray-200"
+								style={{ transform: "skewX(-12deg)" }}
+							/>
+						</div>
+						<button
+							type="button"
+							data-testid="view-toggle-map"
+							aria-pressed={isMap}
+							onClick={() => setView("map")}
+							className={`flex items-center gap-1.5 py-1.5 pl-4 pr-3 transition-colors ${
+								isMap
+									? "bg-brand-50 text-brand-700"
+									: "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+							}`}
+						>
+							<ViewMapIcon />
+							{t("opportunities.view.map")}
+						</button>
+					</div>
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<PinIcon className="h-3.5 w-3.5" />}
@@ -1446,9 +1479,9 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-100"
+							className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-100"
 						>
-							<ChipXIcon />
+							<BroomIcon />
 							{t("opportunities.clearFilters")}
 						</button>
 					)}
