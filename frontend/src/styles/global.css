@@ -1,6 +1,39 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/* ── Leaflet popup overrides ─────────────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+	border-radius: 0.75rem;
+	box-shadow:
+		0 4px 16px -2px rgb(0 0 0 / 0.1),
+		0 2px 4px -1px rgb(0 0 0 / 0.06);
+	border: 1px solid rgb(229 231 235);
+	padding: 0;
+	overflow: hidden;
+}
+
+.leaflet-popup-content {
+	margin: 0;
+	min-width: 180px;
+}
+
+.leaflet-popup-tip {
+	background: white;
+	box-shadow: none;
+}
+
+.leaflet-popup-close-button {
+	color: rgb(156 163 175);
+	padding: 6px 8px 0 0;
+	font-size: 18px;
+	line-height: 1;
+}
+
+.leaflet-popup-close-button:hover {
+	color: rgb(55 65 81);
+	background: none;
+}
+
 /*
  * Brand-Farbpalette - hier ändern, um die gesamte App umzufärben.
  * Aktuell: Helles Grün (Tailwind green). Tausche die Hex-Werte

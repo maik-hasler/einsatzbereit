@@ -8,23 +8,25 @@ import {
 	Popup,
 	useMapEvents,
 } from "react-leaflet";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png?url";
-import markerIcon from "leaflet/dist/images/marker-icon.png?url";
-import markerShadow from "leaflet/dist/images/marker-shadow.png?url";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import type { OpportunityBounds } from "../hooks/useOpportunityFilters";
-
-L.Icon.Default.mergeOptions({
-	iconRetinaUrl: markerIcon2x,
-	iconUrl: markerIcon,
-	shadowUrl: markerShadow,
-});
 
 const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 const DEFAULT_CENTER: [number, number] = [51.1657, 10.4515];
 const DEFAULT_ZOOM = 6;
 const BOUNDS_EPSILON = 1e-4;
+
+const brandMarker = L.divIcon({
+	html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36" style="display:block">
+    <path d="M14 1C7.9 1 3 5.9 3 12c0 8.5 11 23 11 23S25 20.5 25 12C25 5.9 20.1 1 14 1z" fill="#2d8a5e" stroke="white" stroke-width="1.5"/>
+    <circle cx="14" cy="12" r="5" fill="white"/>
+  </svg>`,
+	className: "",
+	iconSize: [28, 36],
+	iconAnchor: [14, 36],
+	popupAnchor: [0, -38],
+});
 
 interface Props {
 	items: VolunteerOpportunitySummary[];
@@ -102,7 +104,7 @@ export default function OpportunityMap({
 	return (
 		<div
 			data-testid="opportunity-map"
-			className="isolate h-[500px] w-full overflow-hidden rounded border"
+			className="isolate h-[500px] w-full overflow-hidden rounded-xl border border-gray-200 shadow-sm"
 		>
 			<MapContainer
 				center={initialView.current.center}
@@ -113,18 +115,29 @@ export default function OpportunityMap({
 				<TileLayer attribution={attribution} url={TILE_URL} />
 				<BoundsWatcher onBoundsChange={onBoundsChange} />
 				{pins.map((item) => (
-					<Marker key={item.id} position={[item.latitude, item.longitude]}>
+					<Marker
+						key={item.id}
+						position={[item.latitude, item.longitude]}
+						icon={brandMarker}
+					>
 						<Popup>
-							<strong>{item.title}</strong>
-							<div className="mt-1 text-xs text-gray-600">
-								{item.organizationName}
+							<div className="p-3 pr-6">
+								<p className="text-sm font-semibold leading-snug text-gray-900">
+									{item.title}
+								</p>
+								<p className="mt-0.5 text-xs text-gray-500">
+									{item.organizationName}
+								</p>
+								{item.city && (
+									<p className="mt-1 text-xs text-gray-400">{item.city}</p>
+								)}
+								<a
+									href={`/volunteer-opportunities/${item.id}`}
+									className="mt-2 block text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline"
+								>
+									{t("map.popup.viewDetails")} &rarr;
+								</a>
 							</div>
-							<a
-								href={`/volunteer-opportunities/${item.id}`}
-								className="mt-2 inline-block text-sm text-blue-600 hover:underline"
-							>
-								{t("map.popup.viewDetails")}
-							</a>
 						</Popup>
 					</Marker>
 				))}
