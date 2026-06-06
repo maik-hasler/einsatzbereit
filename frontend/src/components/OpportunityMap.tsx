@@ -11,8 +11,7 @@ import {
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import type { OpportunityBounds } from "../hooks/useOpportunityFilters";
 
-const TILE_URL =
-	"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 const DEFAULT_CENTER: [number, number] = [51.1657, 10.4515];
 const DEFAULT_ZOOM = 6;
