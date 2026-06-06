@@ -47,7 +47,14 @@
       "volunteerBenefit2": "Sign up for a single engagement or join the waitlist",
       "volunteerBenefit3": "Track all your engagements in one place",
       "volunteerCta": "Browse opportunities",
-      "benefitsLabel": "Platform benefits"
+      "benefitsLabel": "Platform benefits",
+      "howItWorksTitle": "How it works",
+      "step1Title": "Browse",
+      "step1Desc": "Explore local volunteer opportunities near you - no sign-up required.",
+      "step2Title": "Sign up",
+      "step2Desc": "Apply for a spot or join the waitlist with just a few taps.",
+      "step3Title": "Make an impact",
+      "step3Desc": "Show up and make a real difference in your community."
     },
     "opportunities": {
       "currentNeeds": "Current Opportunities",

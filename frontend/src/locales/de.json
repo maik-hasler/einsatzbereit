@@ -47,7 +47,14 @@
       "volunteerBenefit2": "Für einen einmaligen Einsatz anmelden oder auf die Warteliste setzen lassen",
       "volunteerBenefit3": "Alle deine Engagements an einem Ort verwalten",
       "volunteerCta": "Einsätze durchsuchen",
-      "benefitsLabel": "Plattform-Vorteile"
+      "benefitsLabel": "Plattform-Vorteile",
+      "howItWorksTitle": "So funktioniert es",
+      "step1Title": "Stöbern",
+      "step1Desc": "Durchsuche lokale Einsätze in deiner Nähe - ganz ohne Registrierung.",
+      "step2Title": "Anmelden",
+      "step2Desc": "Trage dich für einen Einsatz ein oder setze dich auf die Warteliste - in Sekunden.",
+      "step3Title": "Wirken",
+      "step3Desc": "Erscheine vor Ort und mache einen echten Unterschied in deiner Gemeinschaft."
     },
     "opportunities": {
       "currentNeeds": "Aktuelle Einsaetze",
