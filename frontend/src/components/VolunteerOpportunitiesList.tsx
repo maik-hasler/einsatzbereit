@@ -298,8 +298,16 @@ function BroomIcon() {
 			strokeLinejoin="round"
 			aria-hidden="true"
 		>
-			<path d="M3 3 L16 16" />
-			<path d="M16 16 L21 13 L22 20 L11 22 Z" />
+			{/* handle */}
+			<path d="M4 4 L13 13" />
+			{/* head bar */}
+			<path d="M10 14 L16 9" />
+			{/* bristles */}
+			<path d="M10 14 L8 21" />
+			<path d="M13 12 L12 21" />
+			<path d="M16 9 L16 20" />
+			{/* bottom edge */}
+			<path d="M8 21 L16 20" />
 		</svg>
 	);
 }
@@ -1122,44 +1130,38 @@ export default function VolunteerOpportunitiesList({
 			{/* Filter bar - view toggle + filters in one unified row */}
 			<div ref={filterBarRef} className="mb-2">
 				<div className="flex flex-wrap items-center gap-2 pb-3">
-					{/* View toggle: single pill with diagonal split */}
-					<div className="inline-flex items-stretch overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
+					{/* View toggle: single pill with clip-path diagonal split */}
+					<div className="relative inline-flex items-stretch overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
+						{/* Active-half background — clip-path creates the diagonal edge */}
+						<div
+							aria-hidden="true"
+							className="pointer-events-none absolute inset-0 bg-brand-50"
+							style={{
+								clipPath: !isMap
+									? "polygon(0 0, calc(50% + 12px) 0, calc(50% - 12px) 100%, 0 100%)"
+									: "polygon(calc(50% + 12px) 0, 100% 0, 100% 100%, calc(50% - 12px) 100%)",
+								transition: "clip-path 0.15s ease",
+							}}
+						/>
 						<button
 							type="button"
 							data-testid="view-toggle-list"
 							aria-pressed={!isMap}
 							onClick={() => setView("list")}
-							className={`flex items-center gap-1.5 py-1.5 pl-3 pr-4 transition-colors ${
-								!isMap
-									? "bg-brand-50 text-brand-700"
-									: "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+							className={`relative z-10 flex items-center gap-1.5 py-1.5 pl-3 pr-5 transition-colors ${
+								!isMap ? "text-brand-700" : "text-gray-600 hover:text-gray-800"
 							}`}
 						>
 							<ViewListIcon />
 							{t("opportunities.view.list")}
 						</button>
-						{/* Diagonal separator */}
-						<div
-							className="relative w-3 shrink-0 self-stretch"
-							aria-hidden="true"
-						>
-							<div
-								className={`absolute inset-0 ${!isMap ? "bg-brand-50" : "bg-white"}`}
-							/>
-							<div
-								className="absolute inset-y-0 left-1/2 w-px bg-gray-200"
-								style={{ transform: "skewX(-12deg)" }}
-							/>
-						</div>
 						<button
 							type="button"
 							data-testid="view-toggle-map"
 							aria-pressed={isMap}
 							onClick={() => setView("map")}
-							className={`flex items-center gap-1.5 py-1.5 pl-4 pr-3 transition-colors ${
-								isMap
-									? "bg-brand-50 text-brand-700"
-									: "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+							className={`relative z-10 flex items-center gap-1.5 py-1.5 pl-5 pr-3 transition-colors ${
+								isMap ? "text-brand-700" : "text-gray-600 hover:text-gray-800"
 							}`}
 						>
 							<ViewMapIcon />
