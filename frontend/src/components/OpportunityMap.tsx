@@ -18,10 +18,7 @@ const DEFAULT_ZOOM = 6;
 const BOUNDS_EPSILON = 1e-4;
 
 const brandMarker = L.divIcon({
-	html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36" style="display:block">
-    <path d="M14 1C7.9 1 3 5.9 3 12c0 8.5 11 23 11 23S25 20.5 25 12C25 5.9 20.1 1 14 1z" fill="#2d8a5e" stroke="white" stroke-width="1.5"/>
-    <circle cx="14" cy="12" r="5" fill="white"/>
-  </svg>`,
+	html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="28" height="36" style="display:block"><path d="M14 1C7.9 1 3 5.9 3 12c0 8.5 11 23 11 23S25 20.5 25 12C25 5.9 20.1 1 14 1z" fill="#2d8a5e" stroke="white" stroke-width="1.5"/><circle cx="14" cy="12" r="5" fill="white"/></svg>',
 	className: "",
 	iconSize: [28, 36],
 	iconAnchor: [14, 36],
