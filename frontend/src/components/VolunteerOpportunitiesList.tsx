@@ -293,21 +293,15 @@ function BroomIcon() {
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="1.5"
+			strokeWidth="2"
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			aria-hidden="true"
 		>
-			{/* handle */}
-			<path d="M4 4 L13 13" />
-			{/* head bar */}
-			<path d="M10 14 L16 9" />
-			{/* bristles */}
-			<path d="M10 14 L8 21" />
-			<path d="M13 12 L12 21" />
-			<path d="M16 9 L16 20" />
-			{/* bottom edge */}
-			<path d="M8 21 L16 20" />
+			<path d="m13 11 9-9" />
+			<path d="M14.6 12.6c.8.8.9 2.1.2 3L10 22l-8-8 6.4-4.8c.9-.7 2.2-.6 3 .2Z" />
+			<path d="m6.8 10.4 6.8 6.8" />
+			<path d="m5 17 1.4-1.4" />
 		</svg>
 	);
 }
@@ -1130,26 +1124,17 @@ export default function VolunteerOpportunitiesList({
 			{/* Filter bar - view toggle + filters in one unified row */}
 			<div ref={filterBarRef} className="mb-2">
 				<div className="flex flex-wrap items-center gap-2 pb-3">
-					{/* View toggle: single pill with clip-path diagonal split */}
-					<div className="relative inline-flex items-stretch overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
-						{/* Active-half background - clip-path creates the diagonal edge */}
-						<div
-							aria-hidden="true"
-							className="pointer-events-none absolute inset-0 bg-brand-50"
-							style={{
-								clipPath: !isMap
-									? "polygon(0 0, calc(50% + 12px) 0, calc(50% - 12px) 100%, 0 100%)"
-									: "polygon(calc(50% + 12px) 0, 100% 0, 100% 100%, calc(50% - 12px) 100%)",
-								transition: "clip-path 0.15s ease",
-							}}
-						/>
+					{/* View toggle: iOS-style segmented control */}
+					<div className="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100/60 p-0.5 text-sm font-medium">
 						<button
 							type="button"
 							data-testid="view-toggle-list"
 							aria-pressed={!isMap}
 							onClick={() => setView("list")}
-							className={`relative z-10 flex items-center gap-1.5 py-1.5 pl-3 pr-5 transition-colors ${
-								!isMap ? "text-brand-700" : "text-gray-600 hover:text-gray-800"
+							className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
+								!isMap
+									? "bg-brand-50 text-brand-700"
+									: "text-gray-600 hover:text-gray-800"
 							}`}
 						>
 							<ViewListIcon />
@@ -1160,8 +1145,10 @@ export default function VolunteerOpportunitiesList({
 							data-testid="view-toggle-map"
 							aria-pressed={isMap}
 							onClick={() => setView("map")}
-							className={`relative z-10 flex items-center gap-1.5 py-1.5 pl-5 pr-3 transition-colors ${
-								isMap ? "text-brand-700" : "text-gray-600 hover:text-gray-800"
+							className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
+								isMap
+									? "bg-brand-50 text-brand-700"
+									: "text-gray-600 hover:text-gray-800"
 							}`}
 						>
 							<ViewMapIcon />
