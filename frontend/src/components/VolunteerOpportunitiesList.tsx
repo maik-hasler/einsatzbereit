@@ -1086,22 +1086,25 @@ export default function VolunteerOpportunitiesList({
 
 	return (
 		<div>
-			<div className="mb-4">
-				<div className="mb-3 flex items-start justify-between gap-2">
-					<h2 className="text-xl font-bold text-gray-900">
-						{t("opportunities.currentNeeds")}
-					</h2>
-					{canCreateOpportunity && (
-						<button
-							onClick={() => setShowModal(true)}
-							data-testid="create-opportunity-btn"
-							className="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none"
-						>
-							{t("opportunities.createNeed")}
-						</button>
-					)}
-				</div>
-				<div role="group" className="flex items-center gap-2">
+			<div className="mb-3 flex items-start justify-between gap-2">
+				<h2 className="text-xl font-bold text-gray-900">
+					{t("opportunities.currentNeeds")}
+				</h2>
+				{canCreateOpportunity && (
+					<button
+						onClick={() => setShowModal(true)}
+						data-testid="create-opportunity-btn"
+						className="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none"
+					>
+						{t("opportunities.createNeed")}
+					</button>
+				)}
+			</div>
+
+			{/* Filter bar - view toggle + filters in one unified row */}
+			<div ref={filterBarRef} className="mb-2">
+				<div className="flex flex-wrap items-center gap-2 pb-3">
+					{/* View toggle pills */}
 					<button
 						type="button"
 						data-testid="view-toggle-list"
@@ -1130,12 +1133,7 @@ export default function VolunteerOpportunitiesList({
 						<ViewMapIcon />
 						{t("opportunities.view.map")}
 					</button>
-				</div>
-			</div>
-
-			{/* Filter bar - no card wrapper, inline on page */}
-			<div ref={filterBarRef} className="mb-2">
-				<div className="flex flex-wrap items-center gap-2 pb-3">
+					<div className="h-5 w-px bg-gray-200" aria-hidden="true" />
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<PinIcon className="h-3.5 w-3.5" />}
