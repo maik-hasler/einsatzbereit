@@ -1133,7 +1133,6 @@ export default function VolunteerOpportunitiesList({
 						<ViewMapIcon />
 						{t("opportunities.view.map")}
 					</button>
-					<div className="h-5 w-px bg-gray-200" aria-hidden="true" />
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<PinIcon className="h-3.5 w-3.5" />}
