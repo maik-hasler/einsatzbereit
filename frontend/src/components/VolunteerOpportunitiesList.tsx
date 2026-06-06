@@ -1132,7 +1132,7 @@ export default function VolunteerOpportunitiesList({
 				<div className="flex flex-wrap items-center gap-2 pb-3">
 					{/* View toggle: single pill with clip-path diagonal split */}
 					<div className="relative inline-flex items-stretch overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
-						{/* Active-half background — clip-path creates the diagonal edge */}
+						{/* Active-half background - clip-path creates the diagonal edge */}
 						<div
 							aria-hidden="true"
 							className="pointer-events-none absolute inset-0 bg-brand-50"
