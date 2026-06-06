@@ -1124,17 +1124,17 @@ export default function VolunteerOpportunitiesList({
 			{/* Filter bar - view toggle + filters in one unified row */}
 			<div ref={filterBarRef} className="mb-2">
 				<div className="flex flex-wrap items-center gap-2 pb-3">
-					{/* View toggle: iOS-style segmented control */}
-					<div className="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100/60 p-0.5 text-sm font-medium">
+					{/* View toggle */}
+					<div className="inline-flex items-center overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
 						<button
 							type="button"
 							data-testid="view-toggle-list"
 							aria-pressed={!isMap}
 							onClick={() => setView("list")}
-							className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
+							className={`flex items-center gap-1.5 px-3 py-1.5 transition-all ${
 								!isMap
 									? "bg-brand-50 text-brand-700"
-									: "text-gray-600 hover:text-gray-800"
+									: "text-gray-600 hover:bg-gray-50"
 							}`}
 						>
 							<ViewListIcon />
@@ -1145,10 +1145,10 @@ export default function VolunteerOpportunitiesList({
 							data-testid="view-toggle-map"
 							aria-pressed={isMap}
 							onClick={() => setView("map")}
-							className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
+							className={`flex items-center gap-1.5 px-3 py-1.5 transition-all ${
 								isMap
 									? "bg-brand-50 text-brand-700"
-									: "text-gray-600 hover:text-gray-800"
+									: "text-gray-600 hover:bg-gray-50"
 							}`}
 						>
 							<ViewMapIcon />
