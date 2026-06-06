@@ -288,7 +288,7 @@ export default function HomePage() {
 						</ul>
 						<Link
 							to="#opportunities"
-							className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+							className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-800"
 						>
 							{t("landing.volunteerCta")}
 							<ArrowRightIcon />
