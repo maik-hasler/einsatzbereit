@@ -1446,7 +1446,7 @@ export default function VolunteerOpportunitiesList({
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="ml-auto flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 hover:border-red-300"
+							className="flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-100"
 						>
 							<ChipXIcon />
 							{t("opportunities.clearFilters")}
