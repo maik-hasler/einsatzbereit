@@ -147,6 +147,7 @@ export default function HomePage() {
 
 	const heroTitleId = useId();
 	const howItWorksTitleId = useId();
+	const missionTitleId = useId();
 	const volunteerTitleId = useId();
 	const ngoTitleId = useId();
 
@@ -177,14 +178,39 @@ export default function HomePage() {
 		},
 	];
 
+	const stats = [
+		{
+			id: "time",
+			value: t("landing.heroStat1Value"),
+			label: t("landing.heroStat1Label"),
+		},
+		{
+			id: "cost",
+			value: t("landing.heroStat2Value"),
+			label: t("landing.heroStat2Label"),
+		},
+		{
+			id: "oss",
+			value: t("landing.heroStat3Value"),
+			label: t("landing.heroStat3Label"),
+		},
+	];
+
 	return (
 		<>
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="-mx-4 -mt-16 mb-20 bg-brand-800 px-4 py-28 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+				className="-mx-4 -mt-16 mb-20 bg-brand-800 px-4 py-24 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
 			>
 				<div className="mx-auto max-w-3xl text-center">
+					<div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-brand-100">
+						<span
+							className="h-1.5 w-1.5 rounded-full bg-accent-400"
+							aria-hidden="true"
+						/>
+						{t("landing.heroTagline")}
+					</div>
 					<h1
 						id={heroTitleId}
 						className="mb-5 text-5xl font-bold tracking-tight text-white sm:text-6xl"
@@ -210,6 +236,16 @@ export default function HomePage() {
 								{t("landing.heroCtaOrg")}
 							</button>
 						)}
+					</div>
+					<div className="mt-12 grid grid-cols-3 gap-6 border-t border-white/10 pt-10">
+						{stats.map(({ id, value, label }) => (
+							<div key={id} className="text-center">
+								<div className="text-2xl font-bold text-white sm:text-3xl">
+									{value}
+								</div>
+								<div className="mt-1 text-sm text-brand-200">{label}</div>
+							</div>
+						))}
 					</div>
 				</div>
 			</section>
@@ -244,6 +280,24 @@ export default function HomePage() {
 							<p className="text-sm leading-relaxed text-gray-500">{desc}</p>
 						</div>
 					))}
+				</div>
+			</section>
+
+			{/* Mission */}
+			<section aria-labelledby={missionTitleId} className="mb-20">
+				<div className="overflow-hidden rounded-2xl bg-brand-800 px-8 py-12 text-center sm:px-16">
+					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
+						{t("landing.missionLabel")}
+					</p>
+					<h2
+						id={missionTitleId}
+						className="mb-5 text-2xl font-bold text-white sm:text-3xl"
+					>
+						{t("landing.missionTitle")}
+					</h2>
+					<p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-100">
+						{t("landing.missionText")}
+					</p>
 				</div>
 			</section>
 
@@ -299,8 +353,13 @@ export default function HomePage() {
 				{/* Organisations */}
 				<div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 					<div className="border-b border-gray-100 bg-gray-50 px-6 py-5">
-						<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gray-200 text-gray-600">
-							<BuildingOfficeIcon />
+						<div className="mb-3 flex items-start justify-between">
+							<div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gray-200 text-gray-600">
+								<BuildingOfficeIcon />
+							</div>
+							<span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
+								{t("landing.openSourceBadge")}
+							</span>
 						</div>
 						<h2 id={ngoTitleId} className="text-xl font-semibold text-gray-900">
 							{t("landing.ngoTitle")}
