@@ -225,10 +225,7 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			<div
-				className="my-12 flex items-center"
-				aria-hidden="true"
-			>
+			<div className="my-12 flex items-center" aria-hidden="true">
 				<div className="h-px flex-1 bg-gray-100" />
 				<div className="mx-4 h-1.5 w-1.5 rounded-full bg-brand-300" />
 				<div className="h-px flex-1 bg-gray-100" />
