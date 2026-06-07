@@ -1,6 +1,39 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+html {
+	scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@keyframes fade-up {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.animate-fade-up {
+		animation: fade-up 0.55s ease-out both;
+	}
+	.animate-fade-up-d1 {
+		animation: fade-up 0.55s ease-out 0.12s both;
+	}
+	.animate-fade-up-d2 {
+		animation: fade-up 0.55s ease-out 0.24s both;
+	}
+	.animate-fade-up-d3 {
+		animation: fade-up 0.55s ease-out 0.36s both;
+	}
+	.animate-fade-up-d4 {
+		animation: fade-up 0.55s ease-out 0.48s both;
+	}
+}
+
 /* ── Leaflet tile filter: desaturate OSM tiles for a clean modern look ───── */
 .leaflet-tile-pane {
 	filter: grayscale(1) brightness(1.05) contrast(0.9);

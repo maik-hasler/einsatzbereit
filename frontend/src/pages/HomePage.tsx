@@ -127,7 +127,7 @@ export default function HomePage() {
 				className="-mx-4 -mt-16 mb-20 bg-brand-800 px-4 py-24 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
 			>
 				<div className="mx-auto max-w-3xl text-center">
-					<div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-brand-100">
+					<div className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-brand-100">
 						<span
 							className="h-1.5 w-1.5 rounded-full bg-accent-400"
 							aria-hidden="true"
@@ -136,14 +136,14 @@ export default function HomePage() {
 					</div>
 					<h1
 						id={heroTitleId}
-						className="mb-5 text-5xl font-bold tracking-tight text-white sm:text-6xl"
+						className="animate-fade-up-d1 mb-5 text-5xl font-bold tracking-tight text-white sm:text-6xl"
 					>
 						{t("landing.heroTitle")}
 					</h1>
-					<p className="mb-10 text-xl leading-relaxed text-brand-100">
+					<p className="animate-fade-up-d2 mb-10 text-xl leading-relaxed text-brand-100">
 						{t("landing.heroSubtitle")}
 					</p>
-					<div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+					<div className="animate-fade-up-d3 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 						<a
 							href="#opportunities"
 							className="rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
@@ -160,7 +160,7 @@ export default function HomePage() {
 							</button>
 						)}
 					</div>
-					<div className="mt-12 grid grid-cols-3 gap-6 border-t border-white/10 pt-10">
+					<div className="animate-fade-up-d4 mt-12 grid grid-cols-3 gap-6 border-t border-white/10 pt-10">
 						{stats.map(({ id, value, label }) => (
 							<div key={id} className="text-center">
 								<div className="text-2xl font-bold text-white sm:text-3xl">
@@ -183,7 +183,16 @@ export default function HomePage() {
 				</h2>
 				<div className="grid gap-10 sm:grid-cols-3">
 					{steps.map(({ step, icon, title, desc }) => (
-						<div key={step} className="flex flex-col items-center text-center">
+						<div
+							key={step}
+							className={`flex flex-col items-center text-center ${
+								step === 1
+									? "animate-fade-up"
+									: step === 2
+										? "animate-fade-up-d1"
+										: "animate-fade-up-d2"
+							}`}
+						>
 							<div className="relative mb-5">
 								<span
 									className="select-none text-8xl font-black leading-none text-brand-100"
@@ -208,7 +217,7 @@ export default function HomePage() {
 
 			{/* Mission */}
 			<section aria-labelledby={missionTitleId} className="mb-20">
-				<div className="overflow-hidden rounded-2xl bg-brand-800 px-8 py-12 text-center sm:px-16">
+				<div className="animate-fade-up overflow-hidden rounded-2xl bg-brand-800 px-8 py-12 text-center sm:px-16">
 					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
 						{t("landing.missionLabel")}
 					</p>

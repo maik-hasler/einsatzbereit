@@ -1106,9 +1106,22 @@ export default function VolunteerOpportunitiesList({
 
 	return (
 		<div>
-			<h2 className="mb-3 text-xl font-bold text-gray-900">
-				{t("opportunities.currentNeeds")}
-			</h2>
+			<div className="mb-4 flex items-center justify-between">
+				<h2 className="text-xl font-bold text-gray-900">
+					{t("opportunities.currentNeeds")}
+				</h2>
+				{canCreateOpportunity && (
+					<button
+						type="button"
+						onClick={() => setShowModal(true)}
+						data-testid="create-opportunity-btn"
+						className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 focus:outline-none"
+					>
+						<span aria-hidden="true">+</span>
+						{t("opportunities.createNeed")}
+					</button>
+				)}
+			</div>
 
 			{/* Filter bar - view toggle + filters in one unified row */}
 			<div ref={filterBarRef} className="mb-2">
@@ -1461,16 +1474,6 @@ export default function VolunteerOpportunitiesList({
 						>
 							<BroomIcon />
 							{t("opportunities.clearFilters")}
-						</button>
-					)}
-					{canCreateOpportunity && (
-						<button
-							type="button"
-							onClick={() => setShowModal(true)}
-							data-testid="create-opportunity-btn"
-							className="ml-auto shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none"
-						>
-							{t("opportunities.createNeed")}
 						</button>
 					)}
 				</div>
