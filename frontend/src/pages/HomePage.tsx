@@ -1,7 +1,6 @@
 import { useId } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
 import { usePageTitle } from "../hooks/usePageTitle";
 
@@ -145,12 +144,12 @@ export default function HomePage() {
 						{t("landing.heroSubtitle")}
 					</p>
 					<div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-						<Link
-							to="#opportunities"
+						<a
+							href="#opportunities"
 							className="rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
 						>
 							{t("landing.heroCta")}
-						</Link>
+						</a>
 						{!auth.isAuthenticated && (
 							<button
 								type="button"
@@ -222,12 +221,12 @@ export default function HomePage() {
 					<p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-100">
 						{t("landing.missionText")}
 					</p>
-					<Link
-						to="#opportunities"
+					<a
+						href="#opportunities"
 						className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
 					>
 						{t("landing.missionCta")}
-					</Link>
+					</a>
 				</div>
 			</section>
 
