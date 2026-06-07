@@ -64,80 +64,6 @@ function SparklesIcon() {
 	);
 }
 
-function UsersGroupIcon() {
-	return (
-		<svg
-			className="h-7 w-7"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
-			/>
-		</svg>
-	);
-}
-
-function BuildingOfficeIcon() {
-	return (
-		<svg
-			className="h-7 w-7"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
-			/>
-		</svg>
-	);
-}
-
-function CheckIcon() {
-	return (
-		<svg
-			className="mt-0.5 h-5 w-5 shrink-0 text-brand-500"
-			viewBox="0 0 20 20"
-			fill="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				fillRule="evenodd"
-				d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-				clipRule="evenodd"
-			/>
-		</svg>
-	);
-}
-
-function ArrowRightIcon() {
-	return (
-		<svg
-			className="h-4 w-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="2"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-			/>
-		</svg>
-	);
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -148,8 +74,6 @@ export default function HomePage() {
 	const heroTitleId = useId();
 	const howItWorksTitleId = useId();
 	const missionTitleId = useId();
-	const volunteerTitleId = useId();
-	const ngoTitleId = useId();
 
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
@@ -284,7 +208,7 @@ export default function HomePage() {
 			</section>
 
 			{/* Mission */}
-			<section aria-labelledby={missionTitleId} className="mb-20">
+			<section aria-labelledby={missionTitleId} className="mb-10">
 				<div className="overflow-hidden rounded-2xl bg-brand-800 px-8 py-12 text-center sm:px-16">
 					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
 						{t("landing.missionLabel")}
@@ -301,100 +225,13 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* For volunteers + organisations */}
-			<section
-				aria-label={t("landing.benefitsLabel")}
-				className="mb-20 grid gap-6 sm:grid-cols-2"
-			>
-				{/* Volunteers */}
-				<div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-					<div className="border-b border-brand-100 bg-brand-50 px-6 py-5">
-						<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-600">
-							<UsersGroupIcon />
-						</div>
-						<h2
-							id={volunteerTitleId}
-							className="text-xl font-semibold text-gray-900"
-						>
-							{t("landing.volunteerTitle")}
-						</h2>
-						<p className="mt-1 text-sm text-gray-600">
-							{t("landing.volunteerSubtitle")}
-						</p>
-					</div>
-					<div className="px-6 py-5">
-						<ul
-							aria-labelledby={volunteerTitleId}
-							className="space-y-3 text-sm text-gray-700"
-						>
-							{(
-								[
-									"volunteerBenefit1",
-									"volunteerBenefit2",
-									"volunteerBenefit3",
-								] as const
-							).map((key) => (
-								<li key={key} className="flex gap-3">
-									<CheckIcon />
-									<span>{t(`landing.${key}`)}</span>
-								</li>
-							))}
-						</ul>
-						<Link
-							to="#opportunities"
-							className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-800"
-						>
-							{t("landing.volunteerCta")}
-							<ArrowRightIcon />
-						</Link>
-					</div>
-				</div>
+			{/* Bridge into opportunities */}
+			<div className="-mx-4 mb-8 border-t border-brand-100 bg-brand-50 px-4 py-6 text-center sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+				<p className="text-sm font-medium text-brand-800">
+					{t("landing.opportunitiesHint")}
+				</p>
+			</div>
 
-				{/* Organisations */}
-				<div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-					<div className="border-b border-gray-100 bg-gray-50 px-6 py-5">
-						<div className="mb-3 flex items-start justify-between">
-							<div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gray-200 text-gray-600">
-								<BuildingOfficeIcon />
-							</div>
-							<span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
-								{t("landing.openSourceBadge")}
-							</span>
-						</div>
-						<h2 id={ngoTitleId} className="text-xl font-semibold text-gray-900">
-							{t("landing.ngoTitle")}
-						</h2>
-						<p className="mt-1 text-sm text-gray-600">
-							{t("landing.ngoSubtitle")}
-						</p>
-					</div>
-					<div className="px-6 py-5">
-						<ul
-							aria-labelledby={ngoTitleId}
-							className="space-y-3 text-sm text-gray-700"
-						>
-							{(["ngoBenefit1", "ngoBenefit2", "ngoBenefit3"] as const).map(
-								(key) => (
-									<li key={key} className="flex gap-3">
-										<CheckIcon />
-										<span>{t(`landing.${key}`)}</span>
-									</li>
-								),
-							)}
-						</ul>
-						<button
-							type="button"
-							onClick={() => void auth.signinRedirect()}
-							className="mt-6 inline-flex items-center gap-2 rounded-lg border border-gray-800 px-5 py-2.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-800 hover:text-white"
-						>
-							{t("landing.ngoCta")}
-							<ArrowRightIcon />
-						</button>
-					</div>
-				</div>
-			</section>
-
-			{/* Opportunity list */}
 			<div id="opportunities">
 				<VolunteerOpportunitiesList
 					canCreateOpportunity={canCreateOpportunity}
