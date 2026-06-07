@@ -208,7 +208,7 @@ export default function HomePage() {
 			</section>
 
 			{/* Mission */}
-			<section aria-labelledby={missionTitleId} className="mb-0">
+			<section aria-labelledby={missionTitleId} className="mb-20">
 				<div className="overflow-hidden rounded-2xl bg-brand-800 px-8 py-12 text-center sm:px-16">
 					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
 						{t("landing.missionLabel")}
@@ -222,14 +222,14 @@ export default function HomePage() {
 					<p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-100">
 						{t("landing.missionText")}
 					</p>
+					<Link
+						to="#opportunities"
+						className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
+					>
+						{t("landing.missionCta")}
+					</Link>
 				</div>
 			</section>
-
-			<div className="my-12 flex items-center" aria-hidden="true">
-				<div className="h-px flex-1 bg-gray-100" />
-				<div className="mx-4 h-1.5 w-1.5 rounded-full bg-brand-300" />
-				<div className="h-px flex-1 bg-gray-100" />
-			</div>
 
 			<div id="opportunities">
 				<VolunteerOpportunitiesList
