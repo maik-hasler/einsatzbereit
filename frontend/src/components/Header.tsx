@@ -1,7 +1,7 @@
 import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useLocation } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
@@ -17,6 +17,7 @@ export default function Header() {
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
@@ -34,10 +35,12 @@ export default function Header() {
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		const onScroll = () => setScrolled(window.scrollY > 8);
+		const onScroll = () => setScrolled(window.scrollY > 100);
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
+
+	const isTransparent = location.pathname === "/" && !scrolled && !isLoggedIn;
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
@@ -106,17 +109,23 @@ export default function Header() {
 
 	return (
 		<header
-			className={`sticky top-0 z-40 transition-all duration-200 ${
-				scrolled
-					? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
-					: "border-b border-gray-200 bg-white"
+			className={`sticky top-0 z-40 transition-all duration-300 ${
+				isTransparent
+					? "border-b border-transparent bg-transparent"
+					: scrolled
+						? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
+						: "border-b border-gray-200 bg-white"
 			}`}
 		>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
 					<Link to="/" className="flex items-center">
-						<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
+						<img
+							src="/logo.svg"
+							alt={t("brand.name")}
+							className={`h-8 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
+						/>
 					</Link>
 
 					{/* Desktop Nav */}
@@ -352,28 +361,30 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
+									className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+									className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:border-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 								>
 									{t("nav.register")}
 								</button>
 							</div>
 						)}
-						<div className="w-px h-6 bg-gray-200" />
-						<LanguageSelector />
+						<div
+							className={`w-px h-6 ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
+						/>
+						<LanguageSelector transparent={isTransparent} />
 					</nav>
 
 					{/* Mobile Menu Button */}
 					<button
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
-						className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+						className={`md:hidden inline-flex items-center justify-center p-2 rounded-lg transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
 						aria-label={t("nav.openMenu")}
 						aria-expanded={mobileOpen}
 					>

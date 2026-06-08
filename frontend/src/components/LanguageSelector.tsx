@@ -8,7 +8,11 @@ const LANGUAGES = [
 
 type LangCode = (typeof LANGUAGES)[number]["code"];
 
-export default function LanguageSelector() {
+export default function LanguageSelector({
+	transparent = false,
+}: {
+	transparent?: boolean;
+}) {
 	const { i18n, t } = useTranslation();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
@@ -36,12 +40,12 @@ export default function LanguageSelector() {
 				aria-haspopup="listbox"
 				aria-expanded={open}
 				aria-label={t("language.switchLanguage")}
-				className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
 				<span>{current.flag}</span>
 				<span className="font-medium">{current.label}</span>
 				<svg
-					className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+					className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
 					fill="none"
 					viewBox="0 0 24 24"
 					strokeWidth="2.5"

@@ -124,7 +124,7 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="relative mb-20 overflow-hidden rounded-3xl bg-brand-800 px-6 pb-10 pt-12 sm:-mx-6 sm:rounded-none sm:px-6 sm:pb-20 sm:pt-24 lg:-mx-8 lg:px-8"
+				className="relative mb-20 overflow-hidden bg-brand-800 -mx-4 -mt-20 px-4 pb-10 pt-20 sm:-mx-6 sm:-mt-[6.5rem] sm:px-6 sm:pb-20 sm:pt-28 lg:-mx-8 lg:-mt-32 lg:px-8 lg:pt-32"
 			>
 				{/* Decorative glow blobs */}
 				<div
@@ -187,11 +187,8 @@ export default function HomePage() {
 					</div>
 				</div>
 
-				{/* Wave bottom edge - desktop only */}
-				<div
-					aria-hidden="true"
-					className="absolute bottom-0 left-0 right-0 hidden sm:block"
-				>
+				{/* Wave bottom edge */}
+				<div aria-hidden="true" className="absolute bottom-0 left-0 right-0">
 					<svg
 						viewBox="0 0 1440 56"
 						preserveAspectRatio="none"
