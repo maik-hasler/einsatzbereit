@@ -1106,8 +1106,8 @@ export default function VolunteerOpportunitiesList({
 
 	return (
 		<div>
-			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-xl font-bold text-gray-900">
+			<div className="mb-6 flex items-center justify-between">
+				<h2 className="text-2xl font-bold text-gray-900">
 					{t("opportunities.currentNeeds")}
 				</h2>
 				{canCreateOpportunity && (
@@ -1115,7 +1115,7 @@ export default function VolunteerOpportunitiesList({
 						type="button"
 						onClick={() => setShowModal(true)}
 						data-testid="create-opportunity-btn"
-						className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 focus:outline-none"
+						className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none"
 					>
 						<span aria-hidden="true">+</span>
 						{t("opportunities.createNeed")}
@@ -1522,7 +1522,7 @@ export default function VolunteerOpportunitiesList({
 							/>
 						)
 					) : (
-						<ul className={isMap ? "mt-4 space-y-2" : "space-y-2"}>
+						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
 							{items.map((item: VolunteerOpportunitySummary) => {
 								const spotsLeft =
 									item.totalMaxParticipants > 0
@@ -1531,14 +1531,14 @@ export default function VolunteerOpportunitiesList({
 								return (
 									<li
 										key={item.id}
-										className="relative overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-gray-200 hover:shadow-md"
+										className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:border-brand-100 hover:shadow-lg"
 									>
 										<Link
 											to={`/volunteer-opportunities/${item.id}`}
 											className="absolute inset-0"
 											aria-label={item.title}
 										/>
-										<div className="p-4">
+										<div className="p-5">
 											<div className="mb-2.5 flex items-center justify-between gap-2">
 												<div className="flex min-w-0 items-center gap-1.5">
 													{item.category && (
@@ -1569,7 +1569,7 @@ export default function VolunteerOpportunitiesList({
 														</span>
 													))}
 											</div>
-											<strong className="block text-[15px] font-semibold leading-snug text-gray-900">
+											<strong className="block text-base font-semibold leading-snug text-gray-900">
 												{item.title}
 											</strong>
 											<p className="mt-0.5 text-xs text-gray-400">
@@ -1603,11 +1603,11 @@ export default function VolunteerOpportunitiesList({
 					)}
 
 					{!isMap && items.length > 0 && page < pageCount && (
-						<div className="mt-4 flex justify-center">
+						<div className="mt-8 flex justify-center">
 							<button
 								onClick={() => setPage((p) => p + 1)}
 								disabled={loadingMore}
-								className="rounded px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-40"
+								className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
 							>
 								{loadingMore
 									? t("opportunities.loading")
