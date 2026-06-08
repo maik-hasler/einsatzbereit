@@ -124,7 +124,7 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="relative mb-20 overflow-hidden rounded-3xl bg-brand-800 px-6 pb-10 pt-12 sm:px-16 sm:pb-16 sm:pt-20"
+				className="relative mb-20 overflow-hidden rounded-3xl bg-brand-800 px-6 pb-10 pt-12 sm:-mx-6 sm:rounded-none sm:px-6 sm:pb-20 sm:pt-24 lg:-mx-8 lg:px-8"
 			>
 				{/* Decorative glow blobs */}
 				<div
@@ -137,7 +137,7 @@ export default function HomePage() {
 				/>
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute bottom-0 left-1/2 h-56 w-[500px] -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
+					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-[500px] -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
 				/>
 
 				{/* Content */}
@@ -185,6 +185,20 @@ export default function HomePage() {
 							</div>
 						))}
 					</div>
+				</div>
+
+				{/* Wave bottom edge - desktop only */}
+				<div
+					aria-hidden="true"
+					className="absolute bottom-0 left-0 right-0 hidden sm:block"
+				>
+					<svg
+						viewBox="0 0 1440 56"
+						preserveAspectRatio="none"
+						className="block h-14 w-full fill-white"
+					>
+						<path d="M0,28 C360,56 1080,0 1440,28 L1440,56 L0,56 Z" />
+					</svg>
 				</div>
 			</section>
 
