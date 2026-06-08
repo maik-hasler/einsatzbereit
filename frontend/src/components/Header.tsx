@@ -111,7 +111,7 @@ export default function Header() {
 		<header
 			className={`sticky top-0 z-40 transition-all duration-300 ${
 				isTransparent
-					? "border-b border-transparent bg-transparent"
+					? "border-b-0 bg-transparent"
 					: scrolled
 						? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
 						: "border-b border-gray-200 bg-white"
@@ -423,7 +423,9 @@ export default function Header() {
 
 			{/* Mobile Menu - absolute overlay so it doesn't push content down */}
 			{mobileOpen && (
-				<div className="absolute left-0 right-0 top-full border-t border-gray-100 bg-white shadow-lg md:hidden">
+				<div
+					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800/95 backdrop-blur-sm" : "border-gray-100 bg-white"}`}
+				>
 					<div className="px-4 py-4 space-y-2">
 						<div className="pb-2">
 							<LanguageSelector />
@@ -565,14 +567,14 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
+									className={`block w-full text-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+									className={`block w-full text-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 								>
 									{t("nav.register")}
 								</button>

@@ -3,6 +3,7 @@
 
 html {
 	scroll-behavior: smooth;
+	overflow-x: clip;
 }
 
 @media (prefers-reduced-motion: no-preference) {

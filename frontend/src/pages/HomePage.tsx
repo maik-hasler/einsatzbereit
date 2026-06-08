@@ -124,7 +124,8 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="relative mb-20 overflow-hidden bg-brand-800 -mx-4 -mt-20 px-4 pb-10 pt-20 sm:-mx-6 sm:-mt-[6.5rem] sm:px-6 sm:pb-20 sm:pt-28 lg:-mx-8 lg:-mt-32 lg:px-8 lg:pt-32"
+				className="relative mb-20 -mt-20 overflow-hidden bg-brand-800 sm:-mt-[6.5rem] lg:-mt-32"
+				style={{ left: "50%", width: "100vw", marginLeft: "-50vw" }}
 			>
 				{/* Decorative glow blobs */}
 				<div
@@ -140,50 +141,197 @@ export default function HomePage() {
 					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-[500px] -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
 				/>
 
-				{/* Content */}
-				<div className="relative mx-auto max-w-3xl text-center">
-					<div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-brand-100 sm:mb-8 sm:px-4 sm:py-1.5 sm:text-sm">
-						<span
-							className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400"
-							aria-hidden="true"
-						/>
-						{t("landing.heroTagline")}
-					</div>
-					<h1
-						id={heroTitleId}
-						className="animate-fade-up-d1 mb-4 text-3xl font-bold tracking-tight text-white sm:mb-5 sm:text-5xl lg:text-6xl"
-					>
-						{t("landing.heroTitle")}
-					</h1>
-					<p className="animate-fade-up-d2 mb-7 text-sm leading-relaxed text-brand-100 sm:mb-10 sm:text-xl">
-						{t("landing.heroSubtitle")}
-					</p>
-					<div className="animate-fade-up-d3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-						<a
-							href="#opportunities"
-							className="w-full rounded-xl bg-white px-8 py-3 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50 sm:w-auto sm:py-3.5"
-						>
-							{t("landing.heroCta")}
-						</a>
-						{!auth.isAuthenticated && (
-							<button
-								type="button"
-								onClick={() => void auth.signinRedirect()}
-								className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+				{/* Content grid */}
+				<div className="relative mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
+					{/* Left feature cards — xl+ only */}
+					<div className="hidden xl:flex xl:flex-col xl:gap-3">
+						<div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+							<div
+								aria-hidden="true"
+								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								{t("landing.heroCtaOrg")}
-							</button>
-						)}
-					</div>
-					<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
-						{stats.map(({ id, value, label }) => (
-							<div key={id} className="text-center">
-								<div className="text-2xl font-bold text-white sm:text-3xl">
-									{value}
-								</div>
-								<div className="mt-1 text-sm text-brand-200">{label}</div>
+								<svg
+									className="h-4 w-4 text-white"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+									/>
+								</svg>
 							</div>
-						))}
+							<div>
+								<p className="text-sm font-semibold text-white">
+									{t("landing.heroLeftCard1Label")}
+								</p>
+								<p className="text-xs text-brand-200">
+									{t("landing.heroLeftCard1Desc")}
+								</p>
+							</div>
+						</div>
+						<div className="ml-4 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+							<div
+								aria-hidden="true"
+								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
+							>
+								<svg
+									className="h-4 w-4 text-white"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+									/>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+									/>
+								</svg>
+							</div>
+							<div>
+								<p className="text-sm font-semibold text-white">
+									{t("landing.heroLeftCard2Label")}
+								</p>
+								<p className="text-xs text-brand-200">
+									{t("landing.heroLeftCard2Desc")}
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+							<div
+								aria-hidden="true"
+								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
+							>
+								<svg
+									className="h-4 w-4 text-white"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="m4.5 12.75 6 6 9-13.5"
+									/>
+								</svg>
+							</div>
+							<div>
+								<p className="text-sm font-semibold text-white">
+									{t("landing.heroLeftCard3Label")}
+								</p>
+								<p className="text-xs text-brand-200">
+									{t("landing.heroLeftCard3Desc")}
+								</p>
+							</div>
+						</div>
+					</div>
+
+					{/* Center hero content */}
+					<div className="text-center">
+						<div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-brand-100 sm:mb-8 sm:px-4 sm:py-1.5 sm:text-sm">
+							<span
+								className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400"
+								aria-hidden="true"
+							/>
+							{t("landing.heroTagline")}
+						</div>
+						<h1
+							id={heroTitleId}
+							className="animate-fade-up-d1 mb-4 text-3xl font-bold tracking-tight text-white sm:mb-5 sm:text-5xl lg:text-6xl"
+						>
+							{t("landing.heroTitle")}
+						</h1>
+						<p className="animate-fade-up-d2 mb-7 text-sm leading-relaxed text-brand-100 sm:mb-10 sm:text-xl">
+							{t("landing.heroSubtitle")}
+						</p>
+						<div className="animate-fade-up-d3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+							<a
+								href="#opportunities"
+								className="w-full rounded-xl bg-white px-8 py-3 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50 sm:w-auto sm:py-3.5"
+							>
+								{t("landing.heroCta")}
+							</a>
+							{!auth.isAuthenticated && (
+								<button
+									type="button"
+									onClick={() => void auth.signinRedirect()}
+									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+								>
+									{t("landing.heroCtaOrg")}
+								</button>
+							)}
+						</div>
+						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
+							{stats.map(({ id, value, label }) => (
+								<div key={id} className="text-center">
+									<div className="text-2xl font-bold text-white sm:text-3xl">
+										{value}
+									</div>
+									<div className="mt-1 text-sm text-brand-200">{label}</div>
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Right org card — xl+ only */}
+					<div className="hidden xl:flex xl:flex-col xl:gap-3">
+						<div className="rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
+							<div className="mb-3 flex items-center gap-2">
+								<svg
+									aria-hidden="true"
+									className="h-4 w-4 text-brand-200"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21"
+									/>
+								</svg>
+								<p className="text-sm font-semibold text-white">
+									{t("landing.heroRightCardTitle")}
+								</p>
+							</div>
+							<ul className="space-y-2.5">
+								{(
+									[
+										"landing.heroRightCard1",
+										"landing.heroRightCard2",
+										"landing.heroRightCard3",
+									] as const
+								).map((key) => (
+									<li key={key} className="flex items-center gap-2 text-sm">
+										<span
+											className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400"
+											aria-hidden="true"
+										/>
+										<span className="text-brand-100">{t(key)}</span>
+									</li>
+								))}
+							</ul>
+						</div>
+						<div className="mr-4 flex items-center gap-2.5 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+							<span
+								className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent-400"
+								aria-hidden="true"
+							/>
+							<p className="text-sm text-brand-100">
+								{t("landing.heroRightCardActive")}
+							</p>
+						</div>
 					</div>
 				</div>
 

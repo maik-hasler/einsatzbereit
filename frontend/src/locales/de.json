@@ -66,7 +66,18 @@
       "step2Title": "Anmelden",
       "step2Desc": "Trage dich für einen Einsatz ein oder setze dich auf die Warteliste - in Sekunden.",
       "step3Title": "Wirken",
-      "step3Desc": "Erscheine vor Ort und mache einen echten Unterschied in deiner Gemeinschaft."
+      "step3Desc": "Erscheine vor Ort und mache einen echten Unterschied in deiner Gemeinschaft.",
+      "heroLeftCard1Label": "Mikro-Ehrenamt",
+      "heroLeftCard1Desc": "2-3 Std. pro Einsatz",
+      "heroLeftCard2Label": "Lokal & flexibel",
+      "heroLeftCard2Desc": "Einsätze in der Nähe",
+      "heroLeftCard3Label": "Null Bürokratie",
+      "heroLeftCard3Desc": "In Sekunden anmelden",
+      "heroRightCardTitle": "Für Organisationen",
+      "heroRightCard1": "In Minuten veröffentlichen",
+      "heroRightCard2": "Freiwillige einfach verwalten",
+      "heroRightCard3": "Kostenlos & Open Source",
+      "heroRightCardActive": "Jetzt Einsätze verfügbar"
     },
     "opportunities": {
       "currentNeeds": "Aktuelle Einsaetze",
@@ -275,14 +286,6 @@
       "cancelledEngagementsDesc": "Insgesamt abgesagt über alle Einsätze",
       "viewOpportunities": "Einsätze anzeigen →",
       "viewEngagements": "Engagements anzeigen →"
-    },
-    "orgEngagements": {
-      "title": "Bewerbungen",
-      "loading": "Wird geladen…",
-      "error": "Fehler: {{message}}",
-      "noOpportunities": "Keine offenen Einsatzmöglichkeiten",
-      "noOpportunitiesHint": "Erstelle eine Einsatzmöglichkeit, um Bewerbungen zu erhalten.",
-      "manageEngagements": "Bewerbungen verwalten →"
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",

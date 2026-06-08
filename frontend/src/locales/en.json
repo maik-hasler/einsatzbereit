@@ -66,7 +66,18 @@
       "step2Title": "Sign up",
       "step2Desc": "Apply for a spot or join the waitlist with just a few taps.",
       "step3Title": "Make an impact",
-      "step3Desc": "Show up and make a real difference in your community."
+      "step3Desc": "Show up and make a real difference in your community.",
+      "heroLeftCard1Label": "Micro-volunteering",
+      "heroLeftCard1Desc": "2-3 hours per deployment",
+      "heroLeftCard2Label": "Local & flexible",
+      "heroLeftCard2Desc": "Opportunities near you",
+      "heroLeftCard3Label": "Zero bureaucracy",
+      "heroLeftCard3Desc": "Sign up in seconds",
+      "heroRightCardTitle": "For organisations",
+      "heroRightCard1": "Publish in minutes",
+      "heroRightCard2": "Manage volunteers easily",
+      "heroRightCard3": "Free & open source",
+      "heroRightCardActive": "Opportunities available now"
     },
     "opportunities": {
       "currentNeeds": "Current Opportunities",
