@@ -142,26 +142,26 @@ export default function HomePage() {
 
 				{/* Content */}
 				<div className="relative mx-auto max-w-3xl text-center">
-					<div className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-brand-100">
+					<div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-brand-100 sm:mb-8 sm:px-4 sm:py-1.5 sm:text-sm">
 						<span
-							className="h-1.5 w-1.5 rounded-full bg-accent-400"
+							className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400"
 							aria-hidden="true"
 						/>
 						{t("landing.heroTagline")}
 					</div>
 					<h1
 						id={heroTitleId}
-						className="animate-fade-up-d1 mb-5 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
+						className="animate-fade-up-d1 mb-4 text-3xl font-bold tracking-tight text-white sm:mb-5 sm:text-5xl lg:text-6xl"
 					>
 						{t("landing.heroTitle")}
 					</h1>
-					<p className="animate-fade-up-d2 mb-10 text-xl leading-relaxed text-brand-100">
+					<p className="animate-fade-up-d2 mb-7 text-sm leading-relaxed text-brand-100 sm:mb-10 sm:text-xl">
 						{t("landing.heroSubtitle")}
 					</p>
-					<div className="animate-fade-up-d3 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+					<div className="animate-fade-up-d3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
 						<a
 							href="#opportunities"
-							className="rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
+							className="w-full rounded-xl bg-white px-8 py-3 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50 sm:w-auto sm:py-3.5"
 						>
 							{t("landing.heroCta")}
 						</a>
@@ -169,13 +169,13 @@ export default function HomePage() {
 							<button
 								type="button"
 								onClick={() => void auth.signinRedirect()}
-								className="rounded-xl border border-white/50 px-8 py-3.5 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700"
+								className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
 							>
 								{t("landing.heroCtaOrg")}
 							</button>
 						)}
 					</div>
-					<div className="animate-fade-up-d4 mt-12 grid grid-cols-3 gap-6 border-t border-white/10 pt-10">
+					<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
 						{stats.map(({ id, value, label }) => (
 							<div key={id} className="text-center">
 								<div className="text-2xl font-bold text-white sm:text-3xl">
