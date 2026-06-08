@@ -112,9 +112,6 @@ export default function Header() {
 					: "border-b border-gray-200 bg-white"
 			}`}
 		>
-			{/* Accent bar */}
-			<div className="h-1 bg-brand-800" />
-
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
@@ -413,9 +410,9 @@ export default function Header() {
 				</div>
 			</div>
 
-			{/* Mobile Menu */}
+			{/* Mobile Menu - absolute overlay so it doesn't push content down */}
 			{mobileOpen && (
-				<div className="md:hidden border-t border-gray-100">
+				<div className="absolute left-0 right-0 top-full border-t border-gray-100 bg-white shadow-lg md:hidden">
 					<div className="px-4 py-4 space-y-2">
 						<div className="pb-2">
 							<LanguageSelector />

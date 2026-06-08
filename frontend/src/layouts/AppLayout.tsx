@@ -25,7 +25,7 @@ function AppLayoutInner() {
 		<div className="min-h-screen flex flex-col">
 			<Header />
 			<ToolbarStrip />
-			<main className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 flex-1 w-full">
+			<main className="mx-auto max-w-7xl px-4 pb-16 pt-4 flex-1 w-full sm:px-6 sm:pt-10 lg:px-8 lg:pt-16">
 				<Outlet />
 			</main>
 			<Footer />

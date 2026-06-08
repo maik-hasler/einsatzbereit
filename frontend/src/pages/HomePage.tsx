@@ -124,7 +124,7 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="relative mb-20 overflow-hidden rounded-3xl bg-brand-800 px-8 pb-16 pt-20 sm:px-16"
+				className="relative mb-20 overflow-hidden rounded-3xl bg-brand-800 px-6 pb-10 pt-12 sm:px-16 sm:pb-16 sm:pt-20"
 			>
 				{/* Decorative glow blobs */}
 				<div
@@ -151,7 +151,7 @@ export default function HomePage() {
 					</div>
 					<h1
 						id={heroTitleId}
-						className="animate-fade-up-d1 mb-5 text-5xl font-bold tracking-tight text-white sm:text-6xl"
+						className="animate-fade-up-d1 mb-5 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
 					>
 						{t("landing.heroTitle")}
 					</h1>
