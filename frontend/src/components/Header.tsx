@@ -28,9 +28,16 @@ export default function Header() {
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [notifOpen, setNotifOpen] = useState(false);
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
+	const [scrolled, setScrolled] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const notifRef = useRef<HTMLDivElement>(null);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const onScroll = () => setScrolled(window.scrollY > 8);
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
@@ -98,7 +105,13 @@ export default function Header() {
 	const unreadCount = notifications.filter((n) => !n.isRead).length;
 
 	return (
-		<header className="bg-white border-b border-gray-200">
+		<header
+			className={`sticky top-0 z-40 transition-all duration-200 ${
+				scrolled
+					? "bg-white/95 shadow-md backdrop-blur-sm"
+					: "border-b border-gray-200 bg-white"
+			}`}
+		>
 			{/* Accent bar */}
 			<div className="h-1 bg-brand-800" />
 

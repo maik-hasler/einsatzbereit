@@ -124,9 +124,24 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="-mx-4 -mt-16 mb-20 bg-brand-800 px-4 py-24 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+				className="-mx-4 -mt-16 relative mb-20 overflow-hidden bg-brand-800 px-4 pb-28 pt-24 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
 			>
-				<div className="mx-auto max-w-3xl text-center">
+				{/* Decorative glow blobs */}
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-brand-700 opacity-60 blur-3xl"
+				/>
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute -right-32 top-0 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
+				/>
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-[500px] -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
+				/>
+
+				{/* Content */}
+				<div className="relative mx-auto max-w-3xl text-center">
 					<div className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-brand-100">
 						<span
 							className="h-1.5 w-1.5 rounded-full bg-accent-400"
@@ -170,6 +185,17 @@ export default function HomePage() {
 							</div>
 						))}
 					</div>
+				</div>
+
+				{/* Wave bottom edge */}
+				<div aria-hidden="true" className="absolute bottom-0 left-0 right-0">
+					<svg
+						viewBox="0 0 1440 56"
+						preserveAspectRatio="none"
+						className="block h-14 w-full fill-white"
+					>
+						<path d="M0,28 C360,56 1080,0 1440,28 L1440,56 L0,56 Z" />
+					</svg>
 				</div>
 			</section>
 
