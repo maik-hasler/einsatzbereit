@@ -81,6 +81,7 @@
     },
     "opportunities": {
       "currentNeeds": "Current Opportunities",
+      "subtitle": "Find a cause near you and lend a hand - most take just a few hours.",
       "createNeed": "+ Create opportunity",
       "searchPlaceholder": "Search…",
       "cityPlaceholder": "City…",
@@ -165,10 +166,12 @@
       "back": "← Back",
       "filterToggle": "Filter",
       "full": "Full",
-      "spotsLeft": "{{count}} spot left",
-      "spotsLeft_plural": "{{count}} spots left",
-      "fewSpotsLeft": "Only {{count}} spot left!",
-      "fewSpotsLeft_plural": "Only {{count}} spots left!",
+      "spotsLeft": "{{count}} spots left",
+      "spotsLeft_one": "{{count}} spot left",
+      "spotsLeft_other": "{{count}} spots left",
+      "fewSpotsLeft": "Only {{count}} spots left!",
+      "fewSpotsLeft_one": "Only {{count}} spot left!",
+      "fewSpotsLeft_other": "Only {{count}} spots left!",
       "noSpotsLeft": "This opportunity is currently full."
     },
     "createOpportunity": {

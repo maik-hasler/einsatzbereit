@@ -65,6 +65,13 @@ function fmtShortDate(iso: string): string {
 	}).format(d);
 }
 
+function orgInitials(name: string): string {
+	const parts = name.trim().split(/\s+/).filter(Boolean);
+	if (parts.length === 0) return "?";
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 // ── Icons ────────────────────────────────────────────────────────────────────
 
 function PinIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
@@ -359,6 +366,133 @@ function CheckMiniIcon() {
 			<path d="M1.5 5.5l2.5 2.5 4.5-5" />
 		</svg>
 	);
+}
+
+// ── Category glyph (decorative banner icon) ──────────────────────────────────
+
+function CategoryGlyph({
+	category,
+	className = "h-10 w-10",
+}: {
+	category: string | undefined;
+	className?: string;
+}) {
+	const svgProps = {
+		className,
+		fill: "none" as const,
+		viewBox: "0 0 24 24",
+		strokeWidth: 1.5,
+		stroke: "currentColor",
+		"aria-hidden": true,
+	};
+
+	switch (category) {
+		case "Social":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+					/>
+				</svg>
+			);
+		case "Environment":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+					/>
+				</svg>
+			);
+		case "Sport":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0"
+					/>
+				</svg>
+			);
+		case "Education":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"
+					/>
+				</svg>
+			);
+		case "DisasterRelief":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
+					/>
+				</svg>
+			);
+		case "Health":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+					/>
+				</svg>
+			);
+		case "Animals":
+			return (
+				<svg
+					className={className}
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					aria-hidden="true"
+				>
+					<ellipse cx="12" cy="16" rx="4" ry="3.2" />
+					<circle cx="6.5" cy="11" r="1.9" />
+					<circle cx="17.5" cy="11" r="1.9" />
+					<circle cx="9" cy="7" r="1.9" />
+					<circle cx="15" cy="7" r="1.9" />
+				</svg>
+			);
+		case "Culture":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553z"
+					/>
+				</svg>
+			);
+		case "Technology":
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25"
+					/>
+				</svg>
+			);
+		default:
+			return (
+				<svg {...svgProps}>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"
+					/>
+				</svg>
+			);
+	}
 }
 
 // ── MiniCalendar ─────────────────────────────────────────────────────────────
@@ -673,7 +807,7 @@ function FilterDropdown({
 				className={`inline-flex items-stretch overflow-hidden rounded-full border transition-all ${
 					active
 						? "border-brand-500 bg-brand-50"
-						: "border-gray-200 bg-white hover:border-gray-300"
+						: "border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/50"
 				}`}
 			>
 				<button
@@ -688,7 +822,7 @@ function FilterDropdown({
 					}`}
 				>
 					<span
-						className={`shrink-0 ${active ? "text-brand-500" : "text-gray-400"}`}
+						className={`shrink-0 ${active ? "text-brand-500" : "text-brand-400"}`}
 						aria-hidden="true"
 					>
 						{icon}
@@ -1106,18 +1240,20 @@ export default function VolunteerOpportunitiesList({
 
 	return (
 		<div>
-			<div className="mb-6 flex items-center justify-between">
-				<h2 className="text-2xl font-bold text-gray-900">
+			<div className="mb-8 text-center">
+				<h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
 					{t("opportunities.currentNeeds")}
 				</h2>
+				<p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
+					{t("opportunities.subtitle")}
+				</p>
 				{canCreateOpportunity && (
 					<button
 						type="button"
 						onClick={() => setShowModal(true)}
 						data-testid="create-opportunity-btn"
-						className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none"
+						className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none"
 					>
-						<span aria-hidden="true">+</span>
 						{t("opportunities.createNeed")}
 					</button>
 				)}
@@ -1125,7 +1261,7 @@ export default function VolunteerOpportunitiesList({
 
 			{/* Filter bar - view toggle + filters in one unified row */}
 			<div ref={filterBarRef} className="mb-2">
-				<div className="flex flex-wrap items-center gap-2 pb-3">
+				<div className="flex flex-wrap items-center justify-center gap-2 pb-3">
 					{/* View toggle */}
 					<div className="inline-flex items-center overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
 						<button
@@ -1531,70 +1667,100 @@ export default function VolunteerOpportunitiesList({
 								return (
 									<li
 										key={item.id}
-										className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:border-brand-100 hover:shadow-lg"
+										className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg"
 									>
 										<Link
 											to={`/volunteer-opportunities/${item.id}`}
-											className="absolute inset-0"
+											className="absolute inset-0 z-10"
 											aria-label={item.title}
 										/>
-										<div className="p-5">
-											<div className="mb-2.5 flex items-center justify-between gap-2">
-												<div className="flex min-w-0 items-center gap-1.5">
-													{item.category && (
-														<span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-															{t(`opportunities.category.${item.category}`)}
-														</span>
-													)}
+										<div className="flex flex-col sm:flex-row">
+											{/* Category banner */}
+											<div className="relative flex h-24 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-brand-500 to-brand-800 sm:h-auto sm:w-36 lg:w-44">
+												<div
+													aria-hidden="true"
+													className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl"
+												/>
+												<div
+													aria-hidden="true"
+													className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-black/10 blur-xl"
+												/>
+												<CategoryGlyph
+													category={item.category}
+													className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
+												/>
+												<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-white/80">
+													{item.category
+														? t(`opportunities.category.${item.category}`)
+														: t("opportunities.category.Other")}
+												</span>
+											</div>
+
+											{/* Content */}
+											<div className="min-w-0 flex-1 p-4 sm:p-5">
+												<div className="mb-2 flex items-center gap-2">
 													<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
 														{formatOccurrence(item.occurrence, t)}
 													</span>
+													{spotsLeft !== null &&
+														(spotsLeft <= 0 ? (
+															<span className="ml-auto shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+																{t("opportunities.full")}
+															</span>
+														) : spotsLeft <= 3 ? (
+															<span className="ml-auto shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+																{t("opportunities.spotsLeft", {
+																	count: spotsLeft,
+																})}
+															</span>
+														) : (
+															<span className="ml-auto shrink-0 rounded-full bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+																{t("opportunities.spotsLeft", {
+																	count: spotsLeft,
+																})}
+															</span>
+														))}
 												</div>
-												{spotsLeft !== null &&
-													(spotsLeft <= 0 ? (
-														<span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-															{t("opportunities.full")}
+												<h3 className="text-base font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
+													{item.title}
+												</h3>
+												{item.description && (
+													<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500">
+														{item.description}
+													</p>
+												)}
+												<div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
+													<Link
+														to={`/organizations/${item.organizationId}`}
+														className="group/org relative z-20 inline-flex items-center gap-2"
+													>
+														<span
+															aria-hidden="true"
+															className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700"
+														>
+															{orgInitials(item.organizationName)}
 														</span>
-													) : spotsLeft <= 3 ? (
-														<span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-															{t("opportunities.spotsLeft", {
-																count: spotsLeft,
-															})}
+														<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
+															{item.organizationName}
 														</span>
-													) : (
-														<span className="shrink-0 rounded-full bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
-															{t("opportunities.spotsLeft", {
-																count: spotsLeft,
-															})}
+													</Link>
+													{(item.isRemote || item.city) && (
+														<span className="ml-auto flex items-center gap-1 text-xs text-gray-400">
+															{item.isRemote ? (
+																<>
+																	<GlobeIcon className="h-3.5 w-3.5 shrink-0" />
+																	<span>{t("opportunities.remote")}</span>
+																</>
+															) : (
+																<>
+																	<PinIcon className="h-3.5 w-3.5 shrink-0" />
+																	<span>{item.city}</span>
+																</>
+															)}
 														</span>
-													))}
-											</div>
-											<strong className="block text-base font-semibold leading-snug text-gray-900">
-												{item.title}
-											</strong>
-											<p className="mt-0.5 text-xs text-gray-400">
-												<Link
-													to={`/organizations/${item.organizationId}`}
-													className="relative z-10 hover:underline"
-												>
-													{item.organizationName}
-												</Link>
-											</p>
-											{(item.isRemote || item.city) && (
-												<p className="mt-2 flex items-center gap-1 text-xs text-gray-400">
-													{item.isRemote ? (
-														<>
-															<GlobeIcon className="h-3 w-3 shrink-0" />
-															<span>{t("opportunities.remote")}</span>
-														</>
-													) : (
-														<>
-															<PinIcon className="h-3 w-3 shrink-0" />
-															<span>{item.city}</span>
-														</>
 													)}
-												</p>
-											)}
+												</div>
+											</div>
 										</div>
 									</li>
 								);
