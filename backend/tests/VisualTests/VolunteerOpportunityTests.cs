@@ -86,6 +86,41 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task HomePage_OpportunitiesSection_IsCenteredWithStyledCards()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Section heading is rendered and centre-aligned (matches "How it works").
+		var heading = Page
+			.GetByRole(AriaRole.Heading, new() { Name = "Current Opportunities" })
+			.First;
+		await Expect(heading).ToBeVisibleAsync();
+		var textAlign = await heading.EvaluateAsync<string>(
+			"el => getComputedStyle(el).textAlign");
+		textAlign.Should().Be("center");
+
+		// Subtitle line is present below the heading.
+		await Expect(Page.GetByText(new Regex("lend a hand", RegexOptions.IgnoreCase)))
+			.ToBeVisibleAsync();
+
+		// If opportunities are seeded, each card carries the redesigned visuals:
+		// a clickable organisation link and the brand-gradient category banner.
+		var firstCard = Page
+			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
+			.First;
+		if (await firstCard.CountAsync() == 0)
+			return; // no opportunities seeded, skip card-specific checks
+
+		await Expect(firstCard.Locator("a[href*='/organizations/']"))
+			.ToBeVisibleAsync();
+		(await firstCard.Locator("[class*='from-brand-500']").CountAsync())
+			.Should().BeGreaterThan(0);
+	}
+
+	[Test]
 	public async Task DetailPage_ShowsBreadcrumbAndShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
