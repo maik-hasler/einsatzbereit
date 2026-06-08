@@ -143,7 +143,7 @@ export default function HomePage() {
 
 				{/* Content grid */}
 				<div className="relative mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
-					{/* Left feature cards — xl+ only */}
+					{/* Left feature cards - xl+ only */}
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
 						<div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
 							<div
@@ -283,7 +283,7 @@ export default function HomePage() {
 						</div>
 					</div>
 
-					{/* Right org card — xl+ only */}
+					{/* Right org card - xl+ only */}
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
 						<div className="rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
 							<div className="mb-3 flex items-center gap-2">
