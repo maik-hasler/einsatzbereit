@@ -43,13 +43,24 @@ async function main() {
 
 		await page.waitForSelector("main", { timeout: 10000 });
 
+		// Wait for OrganizationSwitcher to auto-set the active-org cookie, then
+		// reload so VolunteerOpportunitiesList re-renders with activeOrgId != null.
+		try {
+			await page.waitForFunction(
+				() => document.cookie.includes("active-org="),
+				{ timeout: 8000 },
+			);
+			console.log("OK  active-org cookie set by OrganizationSwitcher");
+			await page.reload({ waitUntil: "networkidle" });
+		} catch {
+			console.log("WARN  active-org cookie not set - olaf may have no org");
+		}
+
 		// --- Open the create-opportunity wizard ---
-		const createBtn = page.getByRole("button", {
-			name: /create opportunity|einsatz erstellen/i,
-		});
+		const createBtn = page.getByTestId("create-opportunity-btn");
 		if ((await createBtn.count()) === 0) {
 			console.log(
-				"WARN  Create button not visible (no org selected?) - skipping wizard checks",
+				"WARN  Create button not visible (no org / not organisator) - skipping wizard checks",
 			);
 			return;
 		}
