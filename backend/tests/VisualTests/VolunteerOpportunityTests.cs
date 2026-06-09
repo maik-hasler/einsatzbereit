@@ -121,6 +121,56 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task CreateWizard_HasGradientHeaderAndStepNavigation()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Create button only appears when an org is active.
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		if (await createBtn.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await createBtn.First.ClickAsync();
+
+		// Dialog must open.
+		var dialog = Page.Locator("[role='dialog']");
+		await Expect(dialog).ToBeVisibleAsync();
+
+		// Step 1 content visible.
+		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
+
+		// Gradient header present (from-brand-600 class).
+		var header = dialog.Locator("[class*='from-brand-600']").First;
+		await Expect(header).ToBeVisibleAsync();
+
+		// Next button disabled when title/description are empty.
+		var nextBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Next" });
+		await Expect(nextBtn).ToBeDisabledAsync();
+
+		// Fill required fields.
+		await Page.Locator("#opportunity-title").FillAsync("Wizard CI Test");
+		await Page.Locator("#opportunity-description").FillAsync("Automated visual test verifying the wizard.");
+
+		// Next now enabled.
+		await Expect(nextBtn).ToBeEnabledAsync();
+		await nextBtn.ClickAsync();
+
+		// Step 2: location.
+		await Expect(Page.GetByTestId("wizard-step-2")).ToBeVisibleAsync();
+
+		// Hint card present.
+		var hint = Page.GetByTestId("wizard-step-2").Locator("[class*='bg-brand-50']").First;
+		await Expect(hint).ToBeVisibleAsync();
+
+		// Close with Escape.
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(dialog).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task DetailPage_ShowsBreadcrumbAndShareButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
