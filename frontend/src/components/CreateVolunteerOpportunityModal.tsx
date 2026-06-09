@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type {
-	AddressDto,
-	CreateVolunteerOpportunityRequest,
-} from "../client/api-client";
+import type { AddressDto } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { dispatchToast } from "../lib/toastBus";
 
 const TOTAL_STEPS = 4;
+const MAX_BANNER_BYTES = 2 * 1024 * 1024;
+const BANNER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 interface Props {
 	organizationId: string;
@@ -19,6 +21,20 @@ interface PendingTimeSlot {
 	startDateTime: string;
 	endDateTime: string;
 	maxParticipants: number;
+}
+
+interface OpportunityForm {
+	title: string;
+	description: string;
+	street: string;
+	houseNumber: string;
+	zipCode: string;
+	city: string;
+	occurrence: string;
+	participationType: string;
+	checkInMethod: string;
+	category: string | undefined;
+	tags: string[];
 }
 
 type ValidationErrors = Partial<
@@ -35,54 +51,168 @@ function errorStepsFromErrs(errs: ValidationErrors): Set<number> {
 	return s;
 }
 
-function StepDots({
-	current,
-	total,
-	errorSteps,
-	onStepClick,
-	stepLabel,
-}: {
-	current: number;
-	total: number;
-	errorSteps: Set<number>;
-	onStepClick: (n: number) => void;
-	stepLabel: (n: number) => string;
-}) {
-	return (
-		<div className="flex items-center gap-2">
-			{Array.from({ length: total }).map((_, i) => {
-				const n = i + 1;
-				const isActive = n === current;
-				const hasError = errorSteps.has(n);
-				const isPast = n < current;
-				return (
-					<button
-						key={n}
-						type="button"
-						onClick={() => onStepClick(n)}
-						aria-label={stepLabel(n)}
-						aria-current={isActive ? "step" : undefined}
-						className={
-							isActive
-								? "h-2.5 w-2.5 rounded-full bg-white shadow"
-								: hasError
-									? "h-2 w-2 rounded-full bg-red-300 transition-colors hover:bg-red-200"
-									: isPast
-										? "h-2 w-2 rounded-full bg-white/60 transition-colors hover:bg-white/80"
-										: "h-2 w-2 rounded-full bg-white/25 transition-colors hover:bg-white/40"
-						}
-					/>
-				);
-			})}
-		</div>
-	);
-}
-
 function RequiredMark() {
 	return (
 		<span className="ml-0.5 text-red-400" aria-hidden="true">
 			*
 		</span>
+	);
+}
+
+/**
+ * Combined progress bar + step labels. Each segment is a button, so the
+ * stepper itself is the navigation - steps can be visited in any order.
+ */
+function Stepper({
+	current,
+	errorSteps,
+	onStepClick,
+	steps,
+	stepLabel,
+}: {
+	current: number;
+	errorSteps: Set<number>;
+	onStepClick: (n: number) => void;
+	steps: string[];
+	stepLabel: (n: number, label: string) => string;
+}) {
+	return (
+		<ol className="mt-4 flex items-stretch gap-1.5">
+			{steps.map((label, i) => {
+				const n = i + 1;
+				const isActive = n === current;
+				const hasError = errorSteps.has(n);
+				const isDone = n < current;
+				return (
+					<li key={label} className="min-w-0 flex-1">
+						<button
+							type="button"
+							onClick={() => onStepClick(n)}
+							aria-current={isActive ? "step" : undefined}
+							aria-label={stepLabel(n, label)}
+							data-testid={`wizard-stepper-${n}`}
+							className="group flex w-full flex-col gap-1.5 rounded-md px-0.5 pb-1 text-left"
+						>
+							<span
+								aria-hidden="true"
+								className={`h-1 w-full rounded-full transition-colors ${
+									hasError
+										? "bg-red-400"
+										: isActive || isDone
+											? "bg-brand-600"
+											: "bg-gray-200 group-hover:bg-brand-200"
+								}`}
+							/>
+							<span
+								className={`truncate text-[11px] font-semibold sm:text-xs ${
+									hasError
+										? "text-red-600"
+										: isActive
+											? "text-brand-700"
+											: isDone
+												? "text-gray-700"
+												: "text-gray-400 group-hover:text-gray-600"
+								}`}
+							>
+								{label}
+							</span>
+						</button>
+					</li>
+				);
+			})}
+		</ol>
+	);
+}
+
+/** Material-style text field with a floating label. */
+function FloatingField({
+	id,
+	label,
+	value,
+	onChange,
+	required = false,
+	error,
+	maxLength,
+	multiline = false,
+	rows = 5,
+	showCount = false,
+	wrapperClassName,
+	inputMode,
+	pattern,
+}: {
+	id: string;
+	label: string;
+	value: string;
+	onChange: (value: string) => void;
+	required?: boolean;
+	error?: string;
+	maxLength?: number;
+	multiline?: boolean;
+	rows?: number;
+	showCount?: boolean;
+	wrapperClassName?: string;
+	inputMode?: "numeric";
+	pattern?: string;
+}) {
+	const { t } = useTranslation();
+	const fieldClass = `peer w-full rounded-xl border bg-white px-4 pb-2 pt-5 text-sm text-gray-900 shadow-sm transition focus:outline-none focus:ring-2 ${
+		error
+			? "border-red-300 focus:border-red-400 focus:ring-red-400/30"
+			: "border-gray-200 focus:border-brand-400 focus:ring-brand-400/30"
+	}`;
+	const labelClass = `pointer-events-none absolute left-4 top-1.5 text-[11px] font-medium transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-400 peer-focus:top-1.5 peer-focus:text-[11px] peer-focus:font-medium ${
+		error
+			? "text-red-500 peer-focus:text-red-500"
+			: "text-gray-500 peer-focus:text-brand-600"
+	}`;
+
+	return (
+		<div className={wrapperClassName}>
+			<div className="relative">
+				{multiline ? (
+					<textarea
+						id={id}
+						rows={rows}
+						maxLength={maxLength}
+						value={value}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder=" "
+						className={fieldClass}
+					/>
+				) : (
+					<input
+						id={id}
+						type="text"
+						maxLength={maxLength}
+						value={value}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder=" "
+						inputMode={inputMode}
+						pattern={pattern}
+						className={fieldClass}
+					/>
+				)}
+				<label htmlFor={id} className={labelClass}>
+					{label}
+					{required && <RequiredMark />}
+				</label>
+			</div>
+			{error ? (
+				<p className="mt-1 text-xs text-red-600" role="alert">
+					{error}
+				</p>
+			) : (
+				showCount &&
+				maxLength !== undefined && (
+					<p className="mt-1 text-right text-xs text-gray-400">
+						{t("createOpportunity.charCount", {
+							current: value.length,
+							max: maxLength,
+						})}
+					</p>
+				)
+			)}
+		</div>
 	);
 }
 
@@ -94,10 +224,9 @@ export default function CreateVolunteerOpportunityModal({
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const [step, setStep] = useState(1);
-	const [form, setForm] = useState<CreateVolunteerOpportunityRequest>({
+	const [form, setForm] = useState<OpportunityForm>({
 		title: "",
 		description: "",
-		organizationId,
 		street: "",
 		houseNumber: "",
 		zipCode: "",
@@ -109,12 +238,18 @@ export default function CreateVolunteerOpportunityModal({
 		tags: [],
 	});
 	const [tagsInput, setTagsInput] = useState("");
-	const [loading, setLoading] = useState(false);
+	const [submitting, setSubmitting] = useState<"draft" | "publish" | null>(
+		null,
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
 		{},
 	);
 	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
+
+	const [bannerFile, setBannerFile] = useState<File | null>(null);
+	const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+	const [bannerError, setBannerError] = useState<string | null>(null);
 
 	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
 	const [newSlot, setNewSlot] = useState({
@@ -152,6 +287,21 @@ export default function CreateVolunteerOpportunityModal({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
+	// Revoke stale object URLs (on replace and on unmount)
+	useEffect(() => {
+		return () => {
+			if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+		};
+	}, [bannerPreview]);
+
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose();
+		}
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [onClose]);
+
 	function applyOrgAddress() {
 		if (!orgAddress) return;
 		setForm((f) => ({
@@ -171,7 +321,8 @@ export default function CreateVolunteerOpportunityModal({
 		});
 	}
 
-	function clearError(field: keyof ValidationErrors) {
+	function setField(field: keyof ValidationErrors, value: string) {
+		setForm((f) => ({ ...f, [field]: value }));
 		setValidationErrors((prev) => {
 			if (!prev[field]) return prev;
 			return Object.fromEntries(
@@ -180,7 +331,7 @@ export default function CreateVolunteerOpportunityModal({
 		});
 	}
 
-	function validate(): ValidationErrors {
+	function validateForPublish(): ValidationErrors {
 		const req = t("createOpportunity.fieldRequired");
 		const errs: ValidationErrors = {};
 		if (!form.title.trim()) errs.title = req;
@@ -190,6 +341,35 @@ export default function CreateVolunteerOpportunityModal({
 		if (!form.zipCode.trim()) errs.zipCode = req;
 		if (!form.city.trim()) errs.city = req;
 		return errs;
+	}
+
+	function validateForDraft(): ValidationErrors {
+		const errs: ValidationErrors = {};
+		if (!form.title.trim()) errs.title = t("createOpportunity.fieldRequired");
+		return errs;
+	}
+
+	function handleBannerChange(e: ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file) return;
+		if (!BANNER_TYPES.includes(file.type)) {
+			setBannerError(t("createOpportunity.bannerWrongType"));
+			return;
+		}
+		if (file.size > MAX_BANNER_BYTES) {
+			setBannerError(t("createOpportunity.bannerTooLarge"));
+			return;
+		}
+		setBannerError(null);
+		setBannerFile(file);
+		setBannerPreview(URL.createObjectURL(file));
+	}
+
+	function removeBanner() {
+		setBannerFile(null);
+		setBannerPreview(null);
+		setBannerError(null);
 	}
 
 	function handleAddSlot() {
@@ -217,32 +397,43 @@ export default function CreateVolunteerOpportunityModal({
 		setPendingSlots((prev) => prev.filter((s) => s.id !== id));
 	}
 
-	useEffect(() => {
-		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === "Escape") onClose();
-		}
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [onClose]);
-
-	const handleSubmit = async () => {
-		const errs = validate();
+	const submit = async (asDraft: boolean) => {
+		const errs = asDraft ? validateForDraft() : validateForPublish();
 		if (Object.keys(errs).length > 0) {
 			setValidationErrors(errs);
 			if (errs.title ?? errs.description) setStep(1);
 			else setStep(2);
 			return;
 		}
-		setLoading(true);
+		setSubmitting(asDraft ? "draft" : "publish");
 		setError(null);
 		try {
-			const opportunity = await api.createVolunteerOpportunity(form);
+			const opportunity = await api.createVolunteerOpportunity({
+				...form,
+				organizationId,
+				isDraft: asDraft,
+			});
+			if (bannerFile) {
+				try {
+					await api.uploadOpportunityBanner(opportunity.id, {
+						data: bannerFile,
+						fileName: bannerFile.name,
+					});
+				} catch {
+					// The opportunity itself was created - don't fail the flow
+					// just because the banner upload didn't go through.
+					dispatchToast("error", t("createOpportunity.bannerUploadFailed"));
+				}
+			}
 			for (const slot of pendingSlots) {
 				await api.createTimeSlot(opportunity.id, {
 					startDateTime: new Date(slot.startDateTime),
 					endDateTime: new Date(slot.endDateTime),
 					maxParticipants: slot.maxParticipants,
 				});
+			}
+			if (asDraft) {
+				dispatchToast("success", t("createOpportunity.draftSavedToast"));
 			}
 			onSuccess();
 			onClose();
@@ -253,41 +444,28 @@ export default function CreateVolunteerOpportunityModal({
 					: t("createOpportunity.unknownError"),
 			);
 		} finally {
-			setLoading(false);
+			setSubmitting(null);
 		}
 	};
 
 	const isWaitlist = form.participationType === "Waitlist";
 	const errorSteps = errorStepsFromErrs(validationErrors);
 
-	const stepMeta = [
-		{
-			title: t("createOpportunity.step1Title"),
-			subtitle: t("createOpportunity.step1Subtitle"),
-		},
-		{
-			title: t("createOpportunity.step2Title"),
-			subtitle: t("createOpportunity.step2Subtitle"),
-		},
-		{
-			title: t("createOpportunity.step3Title"),
-			subtitle: t("createOpportunity.step3Subtitle"),
-		},
-		{
-			title: t("createOpportunity.step4Title"),
-			subtitle: t("createOpportunity.step4Subtitle"),
-		},
+	const stepTitles = [
+		t("createOpportunity.step1Title"),
+		t("createOpportunity.step2Title"),
+		t("createOpportunity.step3Title"),
+		t("createOpportunity.step4Title"),
 	];
-	const { title: stepTitle, subtitle: stepSubtitle } = stepMeta[step - 1];
+	const stepSubtitles = [
+		t("createOpportunity.step1Subtitle"),
+		t("createOpportunity.step2Subtitle"),
+		t("createOpportunity.step3Subtitle"),
+		t("createOpportunity.step4Subtitle"),
+	];
 
-	const inputBase =
-		"w-full rounded-xl border bg-white px-4 py-2.5 text-sm shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2";
-	const inputNormal = `${inputBase} border-gray-200 focus:border-brand-400 focus:ring-brand-400/30`;
-	const inputError = `${inputBase} border-red-300 focus:border-red-400 focus:ring-red-400/30`;
-
-	function inputClass(field: keyof ValidationErrors) {
-		return validationErrors[field] ? inputError : inputNormal;
-	}
+	const selectClass =
+		"w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
 
 	return (
 		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
@@ -304,31 +482,26 @@ export default function CreateVolunteerOpportunityModal({
 				aria-labelledby="create-opportunity-dialog-title"
 				className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
 			>
-				{/* Gradient header */}
-				<div className="bg-gradient-to-br from-brand-600 to-brand-800 px-6 pb-5 pt-6">
-					<div className="mb-4 flex items-start justify-between gap-4">
-						<div className="min-w-0">
-							<p className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-200">
-								{t("createOpportunity.stepOf", {
-									current: step,
-									total: TOTAL_STEPS,
-								})}
-							</p>
-							<h2
-								id="create-opportunity-dialog-title"
-								className="text-xl font-bold text-white"
-							>
-								{stepTitle}
-							</h2>
-							<p className="mt-1 text-sm leading-relaxed text-brand-100">
-								{stepSubtitle}
-							</p>
-						</div>
+				{/* Brand accent */}
+				<div
+					aria-hidden="true"
+					className="h-1.5 bg-gradient-to-r from-brand-600 to-brand-800"
+				/>
+
+				{/* Compact header with integrated stepper */}
+				<div className="border-b border-gray-100 px-6 pb-4 pt-5">
+					<div className="flex items-center justify-between gap-4">
+						<h2
+							id="create-opportunity-dialog-title"
+							className="text-lg font-bold text-gray-900"
+						>
+							{t("createOpportunity.title")}
+						</h2>
 						<button
 							type="button"
 							onClick={onClose}
 							aria-label={t("createOpportunity.cancel")}
-							className="shrink-0 rounded-lg p-1.5 text-brand-200 transition-colors hover:bg-white/10 hover:text-white"
+							className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
 						>
 							<svg
 								aria-hidden="true"
@@ -346,85 +519,104 @@ export default function CreateVolunteerOpportunityModal({
 							</svg>
 						</button>
 					</div>
-					<StepDots
+					<Stepper
 						current={step}
-						total={TOTAL_STEPS}
 						errorSteps={errorSteps}
 						onStepClick={setStep}
-						stepLabel={(n) =>
-							t("createOpportunity.stepOf", { current: n, total: TOTAL_STEPS })
+						steps={stepTitles}
+						stepLabel={(n, label) =>
+							`${t("createOpportunity.stepOf", { current: n, total: TOTAL_STEPS })}: ${label}`
 						}
 					/>
 				</div>
 
 				{/* Scrollable body */}
 				<div className="max-h-[55vh] overflow-y-auto px-6 py-5">
+					<p className="mb-4 text-sm leading-relaxed text-gray-500">
+						{stepSubtitles[step - 1]}
+					</p>
+
 					{/* Step 1: Basics */}
 					{step === 1 && (
-						<div className="space-y-5" data-testid="wizard-step-1">
+						<div className="space-y-4" data-testid="wizard-step-1">
+							<FloatingField
+								id="opportunity-title"
+								label={t("createOpportunity.fieldTitle")}
+								value={form.title}
+								onChange={(v) => setField("title", v)}
+								required
+								error={validationErrors.title}
+								maxLength={150}
+								showCount
+							/>
+							<FloatingField
+								id="opportunity-description"
+								label={t("createOpportunity.fieldDescription")}
+								value={form.description}
+								onChange={(v) => setField("description", v)}
+								required
+								error={validationErrors.description}
+								maxLength={2000}
+								multiline
+								showCount
+							/>
+
 							<div>
-								<label
-									htmlFor="opportunity-title"
-									className="mb-1.5 block text-sm font-semibold text-gray-800"
-								>
-									{t("createOpportunity.fieldTitle")}
-									<RequiredMark />
-								</label>
-								<input
-									id="opportunity-title"
-									type="text"
-									maxLength={150}
-									value={form.title}
-									onChange={(e) => {
-										setForm((f) => ({ ...f, title: e.target.value }));
-										clearError("title");
-									}}
-									placeholder={t("createOpportunity.titlePlaceholder")}
-									className={inputClass("title")}
-								/>
-								{validationErrors.title ? (
-									<p className="mt-1 text-xs text-red-600" role="alert">
-										{validationErrors.title}
-									</p>
+								<p className="mb-1.5 text-sm font-semibold text-gray-800">
+									{t("createOpportunity.fieldBanner")}
+								</p>
+								{bannerPreview ? (
+									<div className="relative overflow-hidden rounded-xl">
+										<img
+											src={bannerPreview}
+											alt={t("createOpportunity.fieldBanner")}
+											className="h-36 w-full object-cover"
+										/>
+										<button
+											type="button"
+											onClick={removeBanner}
+											className="absolute right-2 top-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
+										>
+											{t("createOpportunity.bannerRemove")}
+										</button>
+									</div>
 								) : (
-									<p className="mt-1 text-right text-xs text-gray-400">
-										{t("createOpportunity.charCount", {
-											current: form.title.length,
-											max: 150,
-										})}
-									</p>
+									<label
+										htmlFor="opportunity-banner"
+										className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition hover:border-brand-300 hover:bg-brand-50"
+									>
+										<svg
+											aria-hidden="true"
+											className="h-6 w-6 text-gray-400"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth={1.5}
+											viewBox="0 0 24 24"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+											/>
+										</svg>
+										<span className="text-sm font-medium text-gray-700">
+											{t("createOpportunity.bannerUpload")}
+										</span>
+										<span className="text-xs text-gray-400">
+											{t("createOpportunity.bannerHint")}
+										</span>
+										<input
+											id="opportunity-banner"
+											type="file"
+											accept="image/jpeg,image/png,image/webp"
+											className="sr-only"
+											onChange={handleBannerChange}
+										/>
+									</label>
 								)}
-							</div>
-							<div>
-								<label
-									htmlFor="opportunity-description"
-									className="mb-1.5 block text-sm font-semibold text-gray-800"
-								>
-									{t("createOpportunity.fieldDescription")}
-									<RequiredMark />
-								</label>
-								<textarea
-									id="opportunity-description"
-									rows={5}
-									maxLength={2000}
-									value={form.description}
-									onChange={(e) => {
-										setForm((f) => ({ ...f, description: e.target.value }));
-										clearError("description");
-									}}
-									placeholder={t("createOpportunity.descriptionPlaceholder")}
-									className={inputClass("description")}
-								/>
-								{validationErrors.description ? (
+								{bannerError && (
 									<p className="mt-1 text-xs text-red-600" role="alert">
-										{validationErrors.description}
-									</p>
-								) : (
-									<p className="mt-1 text-right text-xs text-gray-400">
-										{t("createOpportunity.charCount", {
-											current: form.description.length,
-											max: 2000,
-										})}
+										{bannerError}
 									</p>
 								)}
 							</div>
@@ -434,128 +626,76 @@ export default function CreateVolunteerOpportunityModal({
 					{/* Step 2: Location */}
 					{step === 2 && (
 						<div className="space-y-4" data-testid="wizard-step-2">
-							<div className="flex items-start justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-								<p className="text-sm leading-relaxed text-brand-800">
-									{t("createOpportunity.locationHint")}
-								</p>
-								{orgAddress && (
-									<button
-										type="button"
-										onClick={applyOrgAddress}
-										className="shrink-0 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
-									>
-										{t("createOpportunity.useOrgAddress")}
-									</button>
+							<div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
+								<div className="flex items-start justify-between gap-3">
+									<p className="text-sm leading-relaxed text-brand-800">
+										{t("createOpportunity.locationHint")}
+									</p>
+									{orgAddress && (
+										<button
+											type="button"
+											onClick={applyOrgAddress}
+											className="shrink-0 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
+										>
+											{t("createOpportunity.useOrgAddress")}
+										</button>
+									)}
+								</div>
+								{!orgAddress && (
+									<p className="mt-2 text-xs leading-relaxed text-brand-700">
+										{t("createOpportunity.orgAddressTip")}{" "}
+										<Link
+											to={`/organizations/${organizationId}/settings`}
+											className="font-semibold underline hover:text-brand-900"
+										>
+											{t("createOpportunity.orgSettingsLink")}
+										</Link>
+									</p>
 								)}
 							</div>
 							<div className="grid grid-cols-3 gap-3">
-								<div className="col-span-2">
-									<label
-										htmlFor="opportunity-street"
-										className="mb-1.5 block text-sm font-semibold text-gray-800"
-									>
-										{t("createOpportunity.fieldStreet")}
-										<RequiredMark />
-									</label>
-									<input
-										id="opportunity-street"
-										type="text"
-										maxLength={100}
-										placeholder={t("createOpportunity.streetPlaceholder")}
-										value={form.street}
-										onChange={(e) => {
-											setForm((f) => ({ ...f, street: e.target.value }));
-											clearError("street");
-										}}
-										className={inputClass("street")}
-									/>
-									{validationErrors.street && (
-										<p className="mt-1 text-xs text-red-600" role="alert">
-											{validationErrors.street}
-										</p>
-									)}
-								</div>
-								<div>
-									<label
-										htmlFor="opportunity-house"
-										className="mb-1.5 block text-sm font-semibold text-gray-800"
-									>
-										{t("createOpportunity.fieldNumber")}
-										<RequiredMark />
-									</label>
-									<input
-										id="opportunity-house"
-										type="text"
-										maxLength={10}
-										placeholder="1a"
-										value={form.houseNumber}
-										onChange={(e) => {
-											setForm((f) => ({ ...f, houseNumber: e.target.value }));
-											clearError("houseNumber");
-										}}
-										className={inputClass("houseNumber")}
-									/>
-									{validationErrors.houseNumber && (
-										<p className="mt-1 text-xs text-red-600" role="alert">
-											{validationErrors.houseNumber}
-										</p>
-									)}
-								</div>
+								<FloatingField
+									id="opportunity-street"
+									label={t("createOpportunity.fieldStreet")}
+									value={form.street}
+									onChange={(v) => setField("street", v)}
+									required
+									error={validationErrors.street}
+									maxLength={100}
+									wrapperClassName="col-span-2"
+								/>
+								<FloatingField
+									id="opportunity-house"
+									label={t("createOpportunity.fieldNumber")}
+									value={form.houseNumber}
+									onChange={(v) => setField("houseNumber", v)}
+									required
+									error={validationErrors.houseNumber}
+									maxLength={10}
+								/>
 							</div>
 							<div className="grid grid-cols-3 gap-3">
-								<div>
-									<label
-										htmlFor="opportunity-zip"
-										className="mb-1.5 block text-sm font-semibold text-gray-800"
-									>
-										{t("createOpportunity.fieldZip")}
-										<RequiredMark />
-									</label>
-									<input
-										id="opportunity-zip"
-										type="text"
-										pattern="\d{5}"
-										maxLength={5}
-										placeholder="12345"
-										value={form.zipCode}
-										onChange={(e) => {
-											setForm((f) => ({ ...f, zipCode: e.target.value }));
-											clearError("zipCode");
-										}}
-										className={inputClass("zipCode")}
-									/>
-									{validationErrors.zipCode && (
-										<p className="mt-1 text-xs text-red-600" role="alert">
-											{validationErrors.zipCode}
-										</p>
-									)}
-								</div>
-								<div className="col-span-2">
-									<label
-										htmlFor="opportunity-city"
-										className="mb-1.5 block text-sm font-semibold text-gray-800"
-									>
-										{t("createOpportunity.fieldCity")}
-										<RequiredMark />
-									</label>
-									<input
-										id="opportunity-city"
-										type="text"
-										maxLength={100}
-										placeholder="Berlin"
-										value={form.city}
-										onChange={(e) => {
-											setForm((f) => ({ ...f, city: e.target.value }));
-											clearError("city");
-										}}
-										className={inputClass("city")}
-									/>
-									{validationErrors.city && (
-										<p className="mt-1 text-xs text-red-600" role="alert">
-											{validationErrors.city}
-										</p>
-									)}
-								</div>
+								<FloatingField
+									id="opportunity-zip"
+									label={t("createOpportunity.fieldZip")}
+									value={form.zipCode}
+									onChange={(v) => setField("zipCode", v)}
+									required
+									error={validationErrors.zipCode}
+									maxLength={5}
+									inputMode="numeric"
+									pattern="\d{5}"
+								/>
+								<FloatingField
+									id="opportunity-city"
+									label={t("createOpportunity.fieldCity")}
+									value={form.city}
+									onChange={(v) => setField("city", v)}
+									required
+									error={validationErrors.city}
+									maxLength={100}
+									wrapperClassName="col-span-2"
+								/>
 							</div>
 						</div>
 					)}
@@ -703,7 +843,7 @@ export default function CreateVolunteerOpportunityModal({
 											category: e.target.value || undefined,
 										}))
 									}
-									className={inputNormal}
+									className={selectClass}
 								>
 									<option value="">
 										{t("createOpportunity.fieldCategoryNone")}
@@ -730,30 +870,22 @@ export default function CreateVolunteerOpportunityModal({
 							</div>
 
 							<div>
-								<label
-									htmlFor="create-tags"
-									className="mb-1.5 block text-sm font-semibold text-gray-800"
-								>
-									{t("createOpportunity.fieldTags")}
-								</label>
-								<input
+								<FloatingField
 									id="create-tags"
-									type="text"
+									label={t("createOpportunity.fieldTags")}
 									value={tagsInput}
-									placeholder={t("createOpportunity.fieldTagsPlaceholder")}
-									onChange={(e) => {
-										setTagsInput(e.target.value);
+									onChange={(v) => {
+										setTagsInput(v);
 										setForm((f) => ({
 											...f,
-											tags: e.target.value
+											tags: v
 												.split(",")
 												.map((s) => s.trim())
 												.filter((s) => s.length > 0),
 										}));
 									}}
-									className={inputNormal}
 								/>
-								{form.tags && form.tags.length > 0 && (
+								{form.tags.length > 0 && (
 									<div className="mt-2 flex flex-wrap gap-1.5">
 										{form.tags.map((tag) => (
 											<span
@@ -898,39 +1030,53 @@ export default function CreateVolunteerOpportunityModal({
 				</div>
 
 				{/* Footer navigation */}
-				<div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-6 py-4">
+				<div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
 					<button
 						type="button"
 						data-testid="modal-cancel"
 						onClick={() => (step > 1 ? setStep((s) => s - 1) : onClose())}
-						className="rounded-xl border border-gray-200 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+						className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
 					>
 						{step === 1
 							? t("createOpportunity.cancel")
 							: t("createOpportunity.back")}
 					</button>
 
-					{step < TOTAL_STEPS ? (
+					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							onClick={() => setStep((s) => s + 1)}
-							className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+							data-testid="modal-save-draft"
+							disabled={submitting !== null}
+							onClick={() => void submit(true)}
+							className="rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-40"
 						>
-							{t("createOpportunity.next")}
+							{submitting === "draft"
+								? t("createOpportunity.savingDraft")
+								: t("createOpportunity.saveDraft")}
 						</button>
-					) : (
-						<button
-							type="button"
-							disabled={loading}
-							data-testid="modal-submit"
-							onClick={handleSubmit}
-							className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-40"
-						>
-							{loading
-								? t("createOpportunity.creating")
-								: t("createOpportunity.submit")}
-						</button>
-					)}
+						{step < TOTAL_STEPS ? (
+							<button
+								type="button"
+								data-testid="modal-next"
+								onClick={() => setStep((s) => s + 1)}
+								className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+							>
+								{t("createOpportunity.next")}
+							</button>
+						) : (
+							<button
+								type="button"
+								disabled={submitting !== null}
+								data-testid="modal-submit"
+								onClick={() => void submit(false)}
+								className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-40"
+							>
+								{submitting === "publish"
+									? t("createOpportunity.creating")
+									: t("createOpportunity.publish")}
+							</button>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

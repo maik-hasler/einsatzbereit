@@ -172,7 +172,12 @@
       "fewSpotsLeft": "Only {{count}} spots left!",
       "fewSpotsLeft_one": "Only {{count}} spot left!",
       "fewSpotsLeft_other": "Only {{count}} spots left!",
-      "noSpotsLeft": "This opportunity is currently full."
+      "noSpotsLeft": "This opportunity is currently full.",
+      "draftBadge": "Draft",
+      "draftNotice": "This opportunity is a draft and not publicly visible yet.",
+      "publish": "Publish",
+      "publishing": "Publishing…",
+      "publishSuccess": "Opportunity published."
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -211,7 +216,20 @@
       "cancel": "Cancel",
       "unknownError": "Unknown error",
       "fieldRequired": "Required",
-      "useOrgAddress": "Use organization address"
+      "useOrgAddress": "Use organization address",
+      "publish": "Publish",
+      "saveDraft": "Save as draft",
+      "savingDraft": "Saving…",
+      "draftSavedToast": "Draft saved. You can find it on your organization dashboard.",
+      "fieldBanner": "Banner image (optional)",
+      "bannerUpload": "Upload image",
+      "bannerHint": "JPG, PNG or WebP, max. 2 MB",
+      "bannerRemove": "Remove",
+      "bannerTooLarge": "The image is too large (max. 2 MB).",
+      "bannerWrongType": "Only JPG, PNG or WebP images are allowed.",
+      "bannerUploadFailed": "The opportunity was created, but the banner image could not be uploaded.",
+      "orgAddressTip": "Tip: Save a default address in your organization settings and it will be pre-filled here automatically.",
+      "orgSettingsLink": "Open organization settings"
     },
     "checkInMethod": {
       "none": "None (automatic)",
@@ -305,7 +323,9 @@
       "cancelledEngagements": "Cancelled Engagements",
       "cancelledEngagementsDesc": "Total cancelled across all opportunities",
       "viewOpportunities": "View opportunities →",
-      "viewEngagements": "View engagements →"
+      "viewEngagements": "View engagements →",
+      "draftsTitle": "Drafts",
+      "draftsDesc": "These opportunities are not publicly visible yet. Open a draft to edit or publish it."
     },
     "orgSettings": {
       "title": "Edit Organisation",

@@ -29,6 +29,12 @@ public sealed class VolunteerOpportunity
 
 	public List<string> Tags { get; private set; } = [];
 
+	public OpportunityStatus Status { get; private set; }
+
+	public byte[]? BannerImage { get; private set; }
+
+	public string? BannerImageContentType { get; private set; }
+
 	public string? CheckInPin { get; private set; }
 
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
@@ -52,7 +58,8 @@ public sealed class VolunteerOpportunity
 		ParticipationType participationType,
 		CheckInMethod checkInMethod,
 		Category? category,
-		List<string> tags)
+		List<string> tags,
+		OpportunityStatus status)
 		: base(id)
 	{
 		OrganizationId = organizationId;
@@ -65,6 +72,7 @@ public sealed class VolunteerOpportunity
 		CheckInMethod = checkInMethod;
 		Category = category;
 		Tags = tags;
+		Status = status;
 		if (checkInMethod == CheckInMethod.PINCode)
 			CheckInPin = GeneratePin();
 	}
@@ -82,16 +90,14 @@ public sealed class VolunteerOpportunity
 		ParticipationType participationType,
 		CheckInMethod checkInMethod,
 		Category? category = null,
-		List<string>? tags = null)
+		List<string>? tags = null,
+		OpportunityStatus status = OpportunityStatus.Published)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
 
-		if (string.IsNullOrWhiteSpace(description))
-			throw new DomainException("Description must not be empty.");
-
-		if (!isRemote && address is null)
-			throw new DomainException("Address is required for non-remote opportunities.");
+		if (status == OpportunityStatus.Published)
+			EnsurePublishable(description, isRemote, address);
 
 		return new VolunteerOpportunity(
 			new VolunteerOpportunityId(Guid.CreateVersion7()),
@@ -104,7 +110,42 @@ public sealed class VolunteerOpportunity
 			participationType,
 			checkInMethod,
 			category,
-			tags ?? []);
+			tags ?? [],
+			status);
+	}
+
+	private static void EnsurePublishable(
+		string description,
+		bool isRemote,
+		Address? address)
+	{
+		if (string.IsNullOrWhiteSpace(description))
+			throw new DomainException("Description must not be empty.");
+
+		if (!isRemote && address is null)
+			throw new DomainException("Address is required for non-remote opportunities.");
+	}
+
+	public void Publish()
+	{
+		if (Status == OpportunityStatus.Published)
+			throw new DomainException("Opportunity is already published.");
+
+		EnsurePublishable(Description, IsRemote, Address);
+
+		Status = OpportunityStatus.Published;
+	}
+
+	public void SetBannerImage(byte[] content, string contentType)
+	{
+		if (content.Length == 0)
+			throw new DomainException("Banner image must not be empty.");
+
+		if (string.IsNullOrWhiteSpace(contentType))
+			throw new DomainException("Banner image content type must not be empty.");
+
+		BannerImage = content;
+		BannerImageContentType = contentType;
 	}
 
 	public void Update(
@@ -121,11 +162,8 @@ public sealed class VolunteerOpportunity
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
 
-		if (string.IsNullOrWhiteSpace(description))
-			throw new DomainException("Description must not be empty.");
-
-		if (!isRemote && address is null)
-			throw new DomainException("Address is required for non-remote opportunities.");
+		if (Status == OpportunityStatus.Published)
+			EnsurePublishable(description, isRemote, address);
 
 		Title = title;
 		Description = description;

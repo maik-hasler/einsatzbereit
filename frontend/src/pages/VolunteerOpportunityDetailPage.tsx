@@ -18,6 +18,7 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
+import { runtimeConfig } from "../lib/runtimeConfig";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -37,6 +38,7 @@ export default function VolunteerOpportunityDetailPage() {
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [publishing, setPublishing] = useState(false);
 
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
@@ -110,9 +112,53 @@ export default function VolunteerOpportunityDetailPage() {
 		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
 
 	const isAuthenticated = auth.isAuthenticated;
+	const isOwner = isOrganisator && opportunity.organizationId === activeOrgId;
+	const isDraft = opportunity.status === "Draft";
+
+	async function handlePublish() {
+		if (!opportunityId) return;
+		setPublishing(true);
+		try {
+			await api.publishVolunteerOpportunity(opportunityId);
+			dispatchToast("success", t("opportunities.publishSuccess"));
+			load();
+		} catch (err) {
+			dispatchToast("error", getApiErrorMessage(err, t("error.serverError")));
+		} finally {
+			setPublishing(false);
+		}
+	}
 
 	return (
 		<div className="max-w-2xl">
+			{opportunity.hasBannerImage && (
+				<img
+					src={`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${opportunity.id}/banner`}
+					alt=""
+					className="mb-4 h-48 w-full rounded-2xl object-cover sm:h-64"
+				/>
+			)}
+
+			{isDraft && (
+				<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+					<p className="text-sm text-amber-800">
+						{t("opportunities.draftNotice")}
+					</p>
+					{isOwner && (
+						<button
+							onClick={() => void handlePublish()}
+							disabled={publishing}
+							data-testid="publish-opportunity"
+							className="shrink-0 rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
+						>
+							{publishing
+								? t("opportunities.publishing")
+								: t("opportunities.publish")}
+						</button>
+					)}
+				</div>
+			)}
+
 			<div className="mb-1 flex items-start justify-between gap-4">
 				<h1 className="text-2xl font-bold text-gray-900">
 					{opportunity.title}
@@ -140,7 +186,7 @@ export default function VolunteerOpportunityDetailPage() {
 						</svg>
 						<span className="hidden sm:inline">{t("opportunities.share")}</span>
 					</button>
-					{isOrganisator && opportunity.organizationId === activeOrgId && (
+					{isOwner && (
 						<>
 							<button
 								onClick={() => setShowEdit(true)}
@@ -236,7 +282,7 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				)}
 
-			{isOrganisator && opportunity.organizationId === activeOrgId && (
+			{isOwner && (
 				<div className="mb-6">
 					<button
 						onClick={() =>
@@ -252,6 +298,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{isAuthenticated &&
 				!isOrganisator &&
 				!signedUp &&
+				!isDraft &&
 				(() => {
 					const totalMax = opportunity.timeSlots.reduce(
 						(sum, ts) => sum + ts.maxParticipants,
@@ -288,7 +335,7 @@ export default function VolunteerOpportunityDetailPage() {
 					);
 				})()}
 
-			{!isAuthenticated && (
+			{!isAuthenticated && !isDraft && (
 				<p className="text-sm text-gray-500">
 					<Trans
 						i18nKey="opportunities.loginToApply"

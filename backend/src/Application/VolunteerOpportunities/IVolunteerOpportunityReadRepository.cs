@@ -1,6 +1,8 @@
 using Application.Common.Pagination;
+using Application.VolunteerOpportunities.GetOpportunityBanner.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
+using Domain.VolunteerOpportunities;
 
 namespace Application.VolunteerOpportunities;
 
@@ -16,5 +18,10 @@ public interface IVolunteerOpportunityReadRepository
 
 	ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
 		Guid organizationId,
+		OpportunityStatus? status = null,
+		CancellationToken cancellationToken = default);
+
+	ValueTask<OpportunityBannerDto?> GetBannerAsync(
+		Guid opportunityId,
 		CancellationToken cancellationToken = default);
 }

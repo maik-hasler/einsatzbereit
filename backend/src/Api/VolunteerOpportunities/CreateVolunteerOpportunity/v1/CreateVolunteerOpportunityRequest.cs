@@ -12,4 +12,5 @@ public sealed record CreateVolunteerOpportunityRequest(
 	string ParticipationType,
 	string CheckInMethod,
 	string? Category,
-	IReadOnlyList<string>? Tags);
+	IReadOnlyList<string>? Tags,
+	bool? IsDraft);

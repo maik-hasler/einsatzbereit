@@ -172,7 +172,12 @@
       "fewSpotsLeft": "Nur noch {{count}} Plätze!",
       "fewSpotsLeft_one": "Nur noch {{count}} Platz!",
       "fewSpotsLeft_other": "Nur noch {{count}} Plätze!",
-      "noSpotsLeft": "Dieser Bedarf ist aktuell ausgebucht."
+      "noSpotsLeft": "Dieser Bedarf ist aktuell ausgebucht.",
+      "draftBadge": "Entwurf",
+      "draftNotice": "Dieser Bedarf ist ein Entwurf und noch nicht öffentlich sichtbar.",
+      "publish": "Veröffentlichen",
+      "publishing": "Wird veröffentlicht…",
+      "publishSuccess": "Bedarf veröffentlicht."
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",
@@ -211,7 +216,20 @@
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
       "fieldRequired": "Pflichtfeld",
-      "useOrgAddress": "Adresse der Organisation übernehmen"
+      "useOrgAddress": "Adresse der Organisation übernehmen",
+      "publish": "Veröffentlichen",
+      "saveDraft": "Als Entwurf speichern",
+      "savingDraft": "Wird gespeichert…",
+      "draftSavedToast": "Entwurf gespeichert. Du findest ihn im Organisations-Dashboard.",
+      "fieldBanner": "Bannerbild (optional)",
+      "bannerUpload": "Bild hochladen",
+      "bannerHint": "JPG, PNG oder WebP, max. 2 MB",
+      "bannerRemove": "Entfernen",
+      "bannerTooLarge": "Das Bild ist zu groß (max. 2 MB).",
+      "bannerWrongType": "Nur JPG-, PNG- oder WebP-Bilder sind erlaubt.",
+      "bannerUploadFailed": "Der Bedarf wurde erstellt, aber das Bannerbild konnte nicht hochgeladen werden.",
+      "orgAddressTip": "Tipp: Hinterlege eine Standard-Adresse in den Organisationseinstellungen - sie wird hier automatisch vorausgefüllt.",
+      "orgSettingsLink": "Zu den Organisationseinstellungen"
     },
     "checkInMethod": {
       "none": "Keine (automatisch)",
@@ -305,7 +323,9 @@
       "cancelledEngagements": "Abgesagte Engagements",
       "cancelledEngagementsDesc": "Insgesamt abgesagt über alle Einsätze",
       "viewOpportunities": "Einsätze anzeigen →",
-      "viewEngagements": "Engagements anzeigen →"
+      "viewEngagements": "Engagements anzeigen →",
+      "draftsTitle": "Entwürfe",
+      "draftsDesc": "Diese Bedarfe sind noch nicht öffentlich sichtbar. Öffne einen Entwurf, um ihn zu bearbeiten oder zu veröffentlichen."
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",

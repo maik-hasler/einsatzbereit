@@ -20,4 +20,6 @@ public sealed record VolunteerOpportunitySummary(
 	IReadOnlyList<string> Tags,
 	DateTimeOffset CreatedOn,
 	int TotalMaxParticipants,
-	int CurrentParticipantCount);
+	int CurrentParticipantCount,
+	string Status,
+	bool HasBannerImage);

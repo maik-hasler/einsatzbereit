@@ -21,7 +21,9 @@ public sealed record VolunteerOpportunityDetails(
 	string? CheckInPin,
 	IReadOnlyList<TimeSlotDetail> TimeSlots,
 	DateTimeOffset CreatedOn,
-	int CurrentParticipantCount);
+	int CurrentParticipantCount,
+	string Status,
+	bool HasBannerImage);
 
 public sealed record TimeSlotDetail(
 	Guid Id,

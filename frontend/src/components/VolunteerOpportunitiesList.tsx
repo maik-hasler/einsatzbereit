@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
 import OpportunityMap from "./OpportunityMap";
@@ -1675,25 +1676,35 @@ export default function VolunteerOpportunitiesList({
 											aria-label={item.title}
 										/>
 										<div className="flex flex-col sm:flex-row">
-											{/* Category banner */}
+											{/* Banner image or category banner */}
 											<div className="relative flex h-24 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-brand-500 to-brand-800 sm:h-auto sm:w-36 lg:w-44">
-												<div
-													aria-hidden="true"
-													className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl"
-												/>
-												<div
-													aria-hidden="true"
-													className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-black/10 blur-xl"
-												/>
-												<CategoryGlyph
-													category={item.category}
-													className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
-												/>
-												<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-white/80">
-													{item.category
-														? t(`opportunities.category.${item.category}`)
-														: t("opportunities.category.Other")}
-												</span>
+												{item.hasBannerImage ? (
+													<img
+														src={`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${item.id}/banner`}
+														alt=""
+														className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+													/>
+												) : (
+													<>
+														<div
+															aria-hidden="true"
+															className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl"
+														/>
+														<div
+															aria-hidden="true"
+															className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-black/10 blur-xl"
+														/>
+														<CategoryGlyph
+															category={item.category}
+															className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
+														/>
+														<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-white/80">
+															{item.category
+																? t(`opportunities.category.${item.category}`)
+																: t("opportunities.category.Other")}
+														</span>
+													</>
+												)}
 											</div>
 
 											{/* Content */}

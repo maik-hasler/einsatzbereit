@@ -6,6 +6,141 @@
     "version": "v1"
   },
   "paths": {
+    "/v1/volunteer-opportunities/{opportunityId}/banner": {
+      "put": {
+        "tags": [
+          "UploadOpportunityBannerEndpoint"
+        ],
+        "operationId": "UploadOpportunityBanner",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "GetOpportunityBannerEndpoint"
+        ],
+        "operationId": "GetOpportunityBanner",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities/{opportunityId}": {
       "put": {
         "tags": [
@@ -365,6 +500,80 @@
         }
       }
     },
+    "/v1/volunteer-opportunities/{opportunityId}/publish": {
+      "post": {
+        "tags": [
+          "PublishVolunteerOpportunityEndpoint"
+        ],
+        "operationId": "PublishVolunteerOpportunity",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities": {
       "get": {
         "tags": [
@@ -609,6 +818,70 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/organizations/{organizationId}/opportunity-drafts": {
+      "get": {
+        "tags": [
+          "GetOrganizationOpportunityDraftsEndpoint"
+        ],
+        "operationId": "GetOrganizationOpportunityDrafts",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VolunteerOpportunitySummary"
+                  }
                 }
               }
             }
@@ -2497,7 +2770,8 @@
           "participationType",
           "checkInMethod",
           "category",
-          "tags"
+          "tags",
+          "isDraft"
         ],
         "type": "object",
         "properties": {
@@ -2546,6 +2820,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "isDraft": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -2567,7 +2847,8 @@
           "checkInMethod",
           "category",
           "tags",
-          "createdOn"
+          "createdOn",
+          "status"
         ],
         "type": "object",
         "properties": {
@@ -2654,6 +2935,9 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "status": {
+            "type": "string"
           }
         }
       },
@@ -3609,7 +3893,9 @@
           "checkInPin",
           "timeSlots",
           "createdOn",
-          "currentParticipantCount"
+          "currentParticipantCount",
+          "status",
+          "hasBannerImage"
         ],
         "type": "object",
         "properties": {
@@ -3719,6 +4005,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "hasBannerImage": {
+            "type": "boolean"
           }
         }
       },
@@ -3743,7 +4035,9 @@
           "tags",
           "createdOn",
           "totalMaxParticipants",
-          "currentParticipantCount"
+          "currentParticipantCount",
+          "status",
+          "hasBannerImage"
         ],
         "type": "object",
         "properties": {
@@ -3849,12 +4143,24 @@
               "string"
             ],
             "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "hasBannerImage": {
+            "type": "boolean"
           }
         }
       }
     }
   },
   "tags": [
+    {
+      "name": "UploadOpportunityBannerEndpoint"
+    },
+    {
+      "name": "GetOpportunityBannerEndpoint"
+    },
     {
       "name": "UpdateVolunteerOpportunityEndpoint"
     },
@@ -3871,10 +4177,16 @@
       "name": "DeleteTimeSlotEndpoint"
     },
     {
+      "name": "PublishVolunteerOpportunityEndpoint"
+    },
+    {
       "name": "GetVolunteerOpportunitiesEndpoint"
     },
     {
       "name": "CreateVolunteerOpportunityEndpoint"
+    },
+    {
+      "name": "GetOrganizationOpportunityDraftsEndpoint"
     },
     {
       "name": "CreateTimeSlotEndpoint"

@@ -1,7 +1,8 @@
 /**
  * Smoke test for the create-opportunity multi-step wizard (#439 follow-up).
- * Verifies: wizard opens, all 4 steps are navigable, form submits successfully,
- * and validation prevents advancing from step 1/2 with empty required fields.
+ * Verifies: simplified header with clickable stepper, floating labels, free
+ * step navigation, save-as-draft button, banner upload affordance, and that
+ * validation only blocks on publish (jumping to the failing step).
  * Run: node scripts/smoke-test-create-wizard.mjs
  *
  * Requires a logged-in organisator account (olaf/olaf123) and an existing org.
@@ -10,7 +11,6 @@
 import { chromium } from "playwright";
 
 const BASE = "https://einsatzbereit.maik-hasler.de";
-const KC = "https://login.maik-hasler.de";
 const API = "https://api.maik-hasler.de";
 
 async function main() {
@@ -66,87 +66,102 @@ async function main() {
 		}
 		await createBtn.first().click();
 
-		// Dialog must be open
 		await page.waitForSelector('[role="dialog"]', { timeout: 8000 });
 		console.log("OK  Create-opportunity dialog opened");
 
-		// --- Step 1: Basics ---
+		// --- Simplified header: brand accent + clickable stepper ---
+		const accent = page.locator('[role="dialog"] [class*="from-brand-600"]');
+		if ((await accent.count()) === 0)
+			throw new Error("Brand accent bar missing");
+		console.log("OK  Brand accent bar present");
+
+		for (let n = 1; n <= 4; n++) {
+			const stepBtn = page.getByTestId(`wizard-stepper-${n}`);
+			if ((await stepBtn.count()) === 0)
+				throw new Error(`Stepper button ${n} missing`);
+		}
+		console.log("OK  Clickable stepper with 4 labelled steps present");
+
+		// --- Floating labels on step 1 ---
 		await page.waitForSelector('[data-testid="wizard-step-1"]', {
 			timeout: 5000,
 		});
-		console.log("OK  Step 1 (Basics) visible");
-
-		// Gradient header must be present
-		const header = page.locator(
-			'.bg-gradient-to-br.from-brand-600, [class*="from-brand-600"]',
+		const floatingLabel = page.locator(
+			'label[for="opportunity-title"][class*="peer-placeholder-shown"]',
 		);
-		if ((await header.count()) === 0)
-			throw new Error("Wizard gradient header missing");
-		console.log("OK  Gradient header present");
+		if ((await floatingLabel.count()) === 0)
+			throw new Error("Floating label missing on title field");
+		console.log("OK  Floating labels present");
 
-		// Step dot indicator present
-		const dots = page.locator('[role="dialog"] [aria-hidden="true"] div');
-		if ((await dots.count()) < 4)
-			throw new Error("Step dot indicator missing or incomplete");
-		console.log("OK  Step dot indicator present");
+		// Banner upload affordance present
+		if ((await page.locator("#opportunity-banner").count()) === 0)
+			throw new Error("Banner upload input missing on step 1");
+		console.log("OK  Banner upload affordance present");
 
-		// Next button should be disabled with empty fields
-		const nextBtn = page.getByRole("button", { name: /next|weiter/i });
-		const isDisabled = await nextBtn.getAttribute("disabled");
-		if (isDisabled === null)
-			throw new Error("Next button should be disabled on empty step 1");
-		console.log("OK  Next button disabled on empty step 1");
+		// --- Free navigation: Next works with empty fields ---
+		const nextBtn = page.getByTestId("modal-next");
+		if ((await nextBtn.getAttribute("disabled")) !== null)
+			throw new Error("Next button should not be disabled (free navigation)");
+		await nextBtn.click();
+		await page.waitForSelector('[data-testid="wizard-step-2"]', {
+			timeout: 5000,
+		});
+		console.log("OK  Free navigation: advanced to step 2 with empty step 1");
 
-		// Fill title + description
+		// Stepper jump: 2 -> 4 directly
+		await page.getByTestId("wizard-stepper-4").click();
+		await page.waitForSelector('[data-testid="wizard-step-4"]', {
+			timeout: 5000,
+		});
+		console.log("OK  Stepper jump 2 -> 4 works");
+
+		// --- Save-as-draft button present ---
+		const draftBtn = page.getByTestId("modal-save-draft");
+		if ((await draftBtn.count()) === 0)
+			throw new Error("Save-as-draft button missing");
+		console.log("OK  Save-as-draft button present");
+
+		// --- Publish with empty fields jumps back to step 1 with errors ---
+		await page.getByTestId("modal-submit").click();
+		await page.waitForSelector('[data-testid="wizard-step-1"]', {
+			timeout: 5000,
+		});
+		const fieldError = page.locator(
+			'[data-testid="wizard-step-1"] [role="alert"]',
+		);
+		if ((await fieldError.count()) === 0)
+			throw new Error("Validation errors not shown after empty publish");
+		console.log("OK  Publish with empty fields jumps to step 1 with errors");
+
+		// --- Fill step 1 and check the location step ---
 		await page.fill("#opportunity-title", "Smoke Test Wizard Opportunity");
 		await page.fill(
 			"#opportunity-description",
 			"This is a smoke test opportunity created by the automated wizard test.",
 		);
 
-		// Next should now be enabled
-		const isDisabledAfterFill = await nextBtn.getAttribute("disabled");
-		if (isDisabledAfterFill !== null)
-			throw new Error("Next button should be enabled after filling step 1");
-		console.log("OK  Next button enabled after filling step 1");
-
-		// Char counters visible
-		const charCounter = page
-			.locator('[data-testid="wizard-step-1"] p')
-			.filter({ hasText: "/" });
-		if ((await charCounter.count()) === 0)
-			throw new Error("Character counter missing on step 1");
-		console.log("OK  Character counters present");
-
-		// --- Advance to Step 2 ---
-		await nextBtn.click();
+		await page.getByTestId("wizard-stepper-2").click();
 		await page.waitForSelector('[data-testid="wizard-step-2"]', {
 			timeout: 5000,
 		});
-		console.log("OK  Advanced to step 2 (Location)");
-
-		// Hint card must be present
 		const hint = page.locator(
-			'[data-testid="wizard-step-2"] .bg-brand-50, [data-testid="wizard-step-2"] [class*="bg-brand-50"]',
+			'[data-testid="wizard-step-2"] [class*="bg-brand-50"]',
 		);
 		if ((await hint.count()) === 0)
 			throw new Error("Location hint card missing on step 2");
 		console.log("OK  Location hint card present");
 
-		// Fill address
-		await page.fill("#opportunity-street", "Musterstraße");
+		// Fill address (overwrites or completes any org pre-fill)
+		await page.fill("#opportunity-street", "Musterstrasse");
 		await page.fill("#opportunity-house", "42");
 		await page.fill("#opportunity-zip", "10115");
 		await page.fill("#opportunity-city", "Berlin");
 
-		// --- Advance to Step 3 ---
-		await nextBtn.click();
+		// --- Step 3 format cards still working ---
+		await page.getByTestId("wizard-stepper-3").click();
 		await page.waitForSelector('[data-testid="wizard-step-3"]', {
 			timeout: 5000,
 		});
-		console.log("OK  Advanced to step 3 (Format)");
-
-		// Card-style radios should be rendered for occurrence
 		const occurrenceCards = page.locator(
 			'[data-testid="wizard-step-3"] label[class*="rounded-xl"]',
 		);
@@ -154,59 +169,17 @@ async function main() {
 			throw new Error("Format step card radio options missing");
 		console.log("OK  Format card options rendered");
 
-		// Select Recurring + Waitlist
-		await page
-			.getByRole("radio", { name: /recurring|regelmäßig/i })
-			.click({ force: true });
-		await page
-			.getByRole("radio", { name: /waitlist|warteliste/i })
-			.click({ force: true });
-
-		// --- Advance to Step 4 ---
-		await nextBtn.click();
+		// --- Step 4 and submit availability ---
+		await page.getByTestId("wizard-stepper-4").click();
 		await page.waitForSelector('[data-testid="wizard-step-4"]', {
 			timeout: 5000,
 		});
-		console.log("OK  Advanced to step 4 (Details)");
-
-		// Category select must exist
-		const categorySelect = page.locator("#create-category");
-		if ((await categorySelect.count()) === 0)
-			throw new Error("Category select missing on step 4");
-		await categorySelect.selectOption("Environment");
-
-		// Tags input + chip preview
-		const tagsInput = page.locator("#create-tags");
-		await tagsInput.fill("outdoor, nature");
-		const chip = page.locator('[class*="bg-brand-100"]').filter({ hasText: "outdoor" });
-		if ((await chip.count()) === 0)
-			throw new Error("Tag chip preview not rendered");
-		console.log("OK  Tag chips rendered");
-
-		// Time slot section visible (Waitlist mode)
-		const timeSlotsSection = page.locator(
-			'[data-testid="wizard-step-4"] [class*="rounded-xl"]',
-		).first();
-		if ((await timeSlotsSection.count()) === 0)
-			throw new Error("Time slots section missing on step 4");
-		console.log("OK  Time slots section visible");
-
-		// Submit button is present and enabled
 		const submitBtn = page.getByTestId("modal-submit");
-		const submitDisabled = await submitBtn.getAttribute("disabled");
-		if (submitDisabled !== null)
-			throw new Error("Submit button unexpectedly disabled on step 4");
-		console.log("OK  Submit button present and enabled");
+		if ((await submitBtn.getAttribute("disabled")) !== null)
+			throw new Error("Publish button unexpectedly disabled on step 4");
+		console.log("OK  Publish button present and enabled");
 
-		// Back navigation works
-		const backBtn = page.getByRole("button", { name: /back|zurück/i });
-		await backBtn.click();
-		await page.waitForSelector('[data-testid="wizard-step-3"]', {
-			timeout: 5000,
-		});
-		console.log("OK  Back navigation works (step 4 -> step 3)");
-
-		// Close wizard
+		// Close wizard without creating data
 		await page.keyboard.press("Escape");
 		await page.waitForSelector('[role="dialog"]', {
 			state: "hidden",

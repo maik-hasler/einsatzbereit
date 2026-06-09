@@ -62,11 +62,24 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			category = parsedCategory;
 		}
 
-		var address = new Address(
-			request.Street,
-			request.HouseNumber,
-			request.ZipCode,
-			request.City);
+		var status = request.IsDraft == true
+			? OpportunityStatus.Draft
+			: OpportunityStatus.Published;
+
+		// Drafts may be saved without an address; published opportunities require one.
+		var hasAnyAddressField =
+			!string.IsNullOrWhiteSpace(request.Street) ||
+			!string.IsNullOrWhiteSpace(request.HouseNumber) ||
+			!string.IsNullOrWhiteSpace(request.ZipCode) ||
+			!string.IsNullOrWhiteSpace(request.City);
+
+		var address = status == OpportunityStatus.Draft && !hasAnyAddressField
+			? null
+			: new Address(
+				request.Street,
+				request.HouseNumber,
+				request.ZipCode,
+				request.City);
 
 		var command = new CreateVolunteerOpportunityCommand(
 			request.Title,
@@ -78,7 +91,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			participationType,
 			checkInMethod,
 			category,
-			[.. request.Tags ?? []]);
+			[.. request.Tags ?? []],
+			status);
 
 		var opportunity = await sender.Send(command, cancellationToken);
 
@@ -99,7 +113,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			opportunity.CheckInMethod.ToString(),
 			opportunity.Category?.ToString(),
 			opportunity.Tags,
-			opportunity.CreatedOn);
+			opportunity.CreatedOn,
+			opportunity.Status.ToString());
 
 		return Results.Ok(response);
 	}

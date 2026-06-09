@@ -1,5 +1,6 @@
 using Application.Common.Pagination;
 using Application.VolunteerOpportunities;
+using Application.VolunteerOpportunities.GetOpportunityBanner.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Domain.Engagements;
@@ -19,6 +20,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		CancellationToken cancellationToken = default)
 	{
 		var query = dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.Status == OpportunityStatus.Published)
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
@@ -96,7 +98,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
 				dbContext.EngagementsQuery.Count(e =>
 					e.OpportunityId == x.vo.Id &&
-					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))));
+					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
+				x.vo.Status.ToString(),
+				x.vo.BannerImageContentType != null));
 
 		if (filter.HasRadius)
 		{
@@ -162,7 +166,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CheckInPin,
-				x.vo.CreatedOn
+				x.vo.CreatedOn,
+				x.vo.Status,
+				HasBannerImage = x.vo.BannerImageContentType != null
 			})
 			.FirstOrDefaultAsync(cancellationToken);
 
@@ -207,17 +213,25 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.CheckInPin,
 			timeSlots,
 			result.CreatedOn,
-			currentParticipantCount);
+			currentParticipantCount,
+			result.Status.ToString(),
+			result.HasBannerImage);
 	}
 
 	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
 		Guid organizationId,
+		OpportunityStatus? status = null,
 		CancellationToken cancellationToken = default)
 	{
 		var organizationId_ = new OrganizationId(organizationId);
 
-		return await dbContext.VolunteerOpportunitiesQuery
-			.Where(vo => vo.OrganizationId == organizationId_)
+		var orgQuery = dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.OrganizationId == organizationId_);
+
+		if (status is OpportunityStatus s)
+			orgQuery = orgQuery.Where(vo => vo.Status == s);
+
+		return await orgQuery
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
@@ -246,7 +260,26 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
 				dbContext.EngagementsQuery.Count(e =>
 					e.OpportunityId == x.vo.Id &&
-					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))))
+					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
+				x.vo.Status.ToString(),
+				x.vo.BannerImageContentType != null))
 			.ToListAsync(cancellationToken);
+	}
+
+	public async ValueTask<OpportunityBannerDto?> GetBannerAsync(
+		Guid opportunityId,
+		CancellationToken cancellationToken = default)
+	{
+		var opportunityId_ = new VolunteerOpportunityId(opportunityId);
+
+		var banner = await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.Id == opportunityId_ && vo.BannerImage != null && vo.BannerImageContentType != null)
+			.Select(vo => new { vo.BannerImage, vo.BannerImageContentType })
+			.FirstOrDefaultAsync(cancellationToken);
+
+		if (banner?.BannerImage is null || banner.BannerImageContentType is null)
+			return null;
+
+		return new OpportunityBannerDto(banner.BannerImage, banner.BannerImageContentType);
 	}
 }

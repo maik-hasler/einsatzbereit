@@ -121,7 +121,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task CreateWizard_HasGradientHeaderAndStepNavigation()
+	public async Task CreateWizard_HasStepperFreeNavigationAndDraftButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -149,26 +149,37 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Step 1 content visible.
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
 
-		// Gradient header present (from-brand-600 class).
-		var header = dialog.Locator("[class*='from-brand-600']").First;
-		await Expect(header).ToBeVisibleAsync();
+		// Brand accent bar present (from-brand-600 class).
+		var accent = dialog.Locator("[class*='from-brand-600']").First;
+		await Expect(accent).ToBeVisibleAsync();
 
-		// Next button disabled when title/description are empty.
-		var nextBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Next" });
-		await Expect(nextBtn).ToBeDisabledAsync();
+		// Clickable stepper with 4 labelled steps.
+		for (var n = 1; n <= 4; n++)
+			await Expect(Page.GetByTestId($"wizard-stepper-{n}")).ToBeVisibleAsync();
 
-		// Fill required fields.
-		await Page.Locator("#opportunity-title").FillAsync("Wizard CI Test");
-		await Page.Locator("#opportunity-description").FillAsync("Automated visual test verifying the wizard.");
+		// Save-as-draft action is always available.
+		await Expect(Page.GetByTestId("modal-save-draft")).ToBeVisibleAsync();
 
-		// Next now enabled.
+		// Free navigation: Next is enabled even with empty required fields.
+		var nextBtn = Page.GetByTestId("modal-next");
 		await Expect(nextBtn).ToBeEnabledAsync();
 		await nextBtn.ClickAsync();
-
-		// Step 2: location.
 		await Expect(Page.GetByTestId("wizard-step-2")).ToBeVisibleAsync();
 
-		// Hint card present.
+		// Stepper jumps directly to any step (2 -> 4).
+		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		await Expect(Page.GetByTestId("wizard-step-4")).ToBeVisibleAsync();
+
+		// Jump back to step 1 and check the floating-label title field.
+		await Page.GetByTestId("wizard-stepper-1").ClickAsync();
+		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
+		await Page.Locator("#opportunity-title").FillAsync("Wizard CI Test");
+
+		// Banner upload affordance present on step 1.
+		await Expect(Page.Locator("#opportunity-banner")).ToBeAttachedAsync();
+
+		// Step 2 hint card present.
+		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		var hint = Page.GetByTestId("wizard-step-2").Locator("[class*='bg-brand-50']").First;
 		await Expect(hint).ToBeVisibleAsync();
 
