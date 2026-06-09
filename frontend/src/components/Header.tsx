@@ -40,7 +40,7 @@ export default function Header() {
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
 
-	const isTransparent = location.pathname === "/" && !scrolled && !isLoggedIn;
+	const isTransparent = location.pathname === "/" && !scrolled;
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {

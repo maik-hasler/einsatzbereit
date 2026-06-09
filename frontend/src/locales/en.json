@@ -209,7 +209,9 @@
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "fieldRequired": "Required",
+      "useOrgAddress": "Use organization address"
     },
     "checkInMethod": {
       "none": "None (automatic)",

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { CreateVolunteerOpportunityRequest } from "../client/api-client";
+import type {
+	AddressDto,
+	CreateVolunteerOpportunityRequest,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 
 const TOTAL_STEPS = 4;
@@ -18,22 +21,68 @@ interface PendingTimeSlot {
 	maxParticipants: number;
 }
 
-function StepDots({ current, total }: { current: number; total: number }) {
+type ValidationErrors = Partial<
+	Record<
+		"title" | "description" | "street" | "houseNumber" | "zipCode" | "city",
+		string
+	>
+>;
+
+function errorStepsFromErrs(errs: ValidationErrors): Set<number> {
+	const s = new Set<number>();
+	if (errs.title ?? errs.description) s.add(1);
+	if (errs.street ?? errs.houseNumber ?? errs.zipCode ?? errs.city) s.add(2);
+	return s;
+}
+
+function StepDots({
+	current,
+	total,
+	errorSteps,
+	onStepClick,
+	stepLabel,
+}: {
+	current: number;
+	total: number;
+	errorSteps: Set<number>;
+	onStepClick: (n: number) => void;
+	stepLabel: (n: number) => string;
+}) {
 	return (
-		<div className="flex items-center gap-2" aria-hidden="true">
-			{Array.from({ length: total }).map((_, i) => (
-				<div
-					key={i}
-					className={
-						i + 1 === current
-							? "h-2.5 w-2.5 rounded-full bg-white shadow"
-							: i + 1 < current
-								? "h-2 w-2 rounded-full bg-white/60"
-								: "h-2 w-2 rounded-full bg-white/25"
-					}
-				/>
-			))}
+		<div className="flex items-center gap-2">
+			{Array.from({ length: total }).map((_, i) => {
+				const n = i + 1;
+				const isActive = n === current;
+				const hasError = errorSteps.has(n);
+				const isPast = n < current;
+				return (
+					<button
+						key={n}
+						type="button"
+						onClick={() => onStepClick(n)}
+						aria-label={stepLabel(n)}
+						aria-current={isActive ? "step" : undefined}
+						className={
+							isActive
+								? "h-2.5 w-2.5 rounded-full bg-white shadow"
+								: hasError
+									? "h-2 w-2 rounded-full bg-red-300 transition-colors hover:bg-red-200"
+									: isPast
+										? "h-2 w-2 rounded-full bg-white/60 transition-colors hover:bg-white/80"
+										: "h-2 w-2 rounded-full bg-white/25 transition-colors hover:bg-white/40"
+						}
+					/>
+				);
+			})}
 		</div>
+	);
+}
+
+function RequiredMark() {
+	return (
+		<span className="ml-0.5 text-red-400" aria-hidden="true">
+			*
+		</span>
 	);
 }
 
@@ -62,6 +111,10 @@ export default function CreateVolunteerOpportunityModal({
 	const [tagsInput, setTagsInput] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+		{},
+	);
+	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
 
 	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
 	const [newSlot, setNewSlot] = useState({
@@ -70,6 +123,74 @@ export default function CreateVolunteerOpportunityModal({
 		maxParticipants: 1,
 	});
 	const [slotError, setSlotError] = useState<string | null>(null);
+
+	// Pre-fill address from org details
+	useEffect(() => {
+		let cancelled = false;
+		api
+			.getOrganizationDetails(organizationId)
+			.then((org) => {
+				if (cancelled || !org.address) return;
+				setOrgAddress(org.address);
+				setForm((f) => {
+					if (!f.street && !f.houseNumber && !f.zipCode && !f.city) {
+						return {
+							...f,
+							street: org.address?.street ?? "",
+							houseNumber: org.address?.houseNumber ?? "",
+							zipCode: org.address?.zipCode ?? "",
+							city: org.address?.city ?? "",
+						};
+					}
+					return f;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [organizationId]);
+
+	function applyOrgAddress() {
+		if (!orgAddress) return;
+		setForm((f) => ({
+			...f,
+			street: orgAddress.street,
+			houseNumber: orgAddress.houseNumber,
+			zipCode: orgAddress.zipCode,
+			city: orgAddress.city,
+		}));
+		setValidationErrors((prev) => {
+			const next = { ...prev };
+			delete next.street;
+			delete next.houseNumber;
+			delete next.zipCode;
+			delete next.city;
+			return next;
+		});
+	}
+
+	function clearError(field: keyof ValidationErrors) {
+		setValidationErrors((prev) => {
+			if (!prev[field]) return prev;
+			return Object.fromEntries(
+				Object.entries(prev).filter(([k]) => k !== field),
+			) as ValidationErrors;
+		});
+	}
+
+	function validate(): ValidationErrors {
+		const req = t("createOpportunity.fieldRequired");
+		const errs: ValidationErrors = {};
+		if (!form.title.trim()) errs.title = req;
+		if (!form.description.trim()) errs.description = req;
+		if (!form.street.trim()) errs.street = req;
+		if (!form.houseNumber.trim()) errs.houseNumber = req;
+		if (!form.zipCode.trim()) errs.zipCode = req;
+		if (!form.city.trim()) errs.city = req;
+		return errs;
+	}
 
 	function handleAddSlot() {
 		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
@@ -104,20 +225,14 @@ export default function CreateVolunteerOpportunityModal({
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [onClose]);
 
-	function canAdvance(): boolean {
-		if (step === 1)
-			return form.title.trim().length > 0 && form.description.trim().length > 0;
-		if (step === 2)
-			return (
-				form.street.trim().length > 0 &&
-				form.houseNumber.trim().length > 0 &&
-				form.zipCode.trim().length > 0 &&
-				form.city.trim().length > 0
-			);
-		return true;
-	}
-
 	const handleSubmit = async () => {
+		const errs = validate();
+		if (Object.keys(errs).length > 0) {
+			setValidationErrors(errs);
+			if (errs.title ?? errs.description) setStep(1);
+			else setStep(2);
+			return;
+		}
 		setLoading(true);
 		setError(null);
 		try {
@@ -143,6 +258,7 @@ export default function CreateVolunteerOpportunityModal({
 	};
 
 	const isWaitlist = form.participationType === "Waitlist";
+	const errorSteps = errorStepsFromErrs(validationErrors);
 
 	const stepMeta = [
 		{
@@ -164,8 +280,14 @@ export default function CreateVolunteerOpportunityModal({
 	];
 	const { title: stepTitle, subtitle: stepSubtitle } = stepMeta[step - 1];
 
-	const inputClass =
-		"w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm transition placeholder:text-gray-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
+	const inputBase =
+		"w-full rounded-xl border bg-white px-4 py-2.5 text-sm shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2";
+	const inputNormal = `${inputBase} border-gray-200 focus:border-brand-400 focus:ring-brand-400/30`;
+	const inputError = `${inputBase} border-red-300 focus:border-red-400 focus:ring-red-400/30`;
+
+	function inputClass(field: keyof ValidationErrors) {
+		return validationErrors[field] ? inputError : inputNormal;
+	}
 
 	return (
 		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
@@ -224,7 +346,15 @@ export default function CreateVolunteerOpportunityModal({
 							</svg>
 						</button>
 					</div>
-					<StepDots current={step} total={TOTAL_STEPS} />
+					<StepDots
+						current={step}
+						total={TOTAL_STEPS}
+						errorSteps={errorSteps}
+						onStepClick={setStep}
+						stepLabel={(n) =>
+							t("createOpportunity.stepOf", { current: n, total: TOTAL_STEPS })
+						}
+					/>
 				</div>
 
 				{/* Scrollable body */}
@@ -238,24 +368,32 @@ export default function CreateVolunteerOpportunityModal({
 									className="mb-1.5 block text-sm font-semibold text-gray-800"
 								>
 									{t("createOpportunity.fieldTitle")}
+									<RequiredMark />
 								</label>
 								<input
 									id="opportunity-title"
 									type="text"
 									maxLength={150}
 									value={form.title}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, title: e.target.value }))
-									}
+									onChange={(e) => {
+										setForm((f) => ({ ...f, title: e.target.value }));
+										clearError("title");
+									}}
 									placeholder={t("createOpportunity.titlePlaceholder")}
-									className={inputClass}
+									className={inputClass("title")}
 								/>
-								<p className="mt-1 text-right text-xs text-gray-400">
-									{t("createOpportunity.charCount", {
-										current: form.title.length,
-										max: 150,
-									})}
-								</p>
+								{validationErrors.title ? (
+									<p className="mt-1 text-xs text-red-600" role="alert">
+										{validationErrors.title}
+									</p>
+								) : (
+									<p className="mt-1 text-right text-xs text-gray-400">
+										{t("createOpportunity.charCount", {
+											current: form.title.length,
+											max: 150,
+										})}
+									</p>
+								)}
 							</div>
 							<div>
 								<label
@@ -263,24 +401,32 @@ export default function CreateVolunteerOpportunityModal({
 									className="mb-1.5 block text-sm font-semibold text-gray-800"
 								>
 									{t("createOpportunity.fieldDescription")}
+									<RequiredMark />
 								</label>
 								<textarea
 									id="opportunity-description"
 									rows={5}
 									maxLength={2000}
 									value={form.description}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, description: e.target.value }))
-									}
+									onChange={(e) => {
+										setForm((f) => ({ ...f, description: e.target.value }));
+										clearError("description");
+									}}
 									placeholder={t("createOpportunity.descriptionPlaceholder")}
-									className={inputClass}
+									className={inputClass("description")}
 								/>
-								<p className="mt-1 text-right text-xs text-gray-400">
-									{t("createOpportunity.charCount", {
-										current: form.description.length,
-										max: 2000,
-									})}
-								</p>
+								{validationErrors.description ? (
+									<p className="mt-1 text-xs text-red-600" role="alert">
+										{validationErrors.description}
+									</p>
+								) : (
+									<p className="mt-1 text-right text-xs text-gray-400">
+										{t("createOpportunity.charCount", {
+											current: form.description.length,
+											max: 2000,
+										})}
+									</p>
+								)}
 							</div>
 						</div>
 					)}
@@ -288,10 +434,19 @@ export default function CreateVolunteerOpportunityModal({
 					{/* Step 2: Location */}
 					{step === 2 && (
 						<div className="space-y-4" data-testid="wizard-step-2">
-							<div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
+							<div className="flex items-start justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
 								<p className="text-sm leading-relaxed text-brand-800">
 									{t("createOpportunity.locationHint")}
 								</p>
+								{orgAddress && (
+									<button
+										type="button"
+										onClick={applyOrgAddress}
+										className="shrink-0 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
+									>
+										{t("createOpportunity.useOrgAddress")}
+									</button>
+								)}
 							</div>
 							<div className="grid grid-cols-3 gap-3">
 								<div className="col-span-2">
@@ -300,6 +455,7 @@ export default function CreateVolunteerOpportunityModal({
 										className="mb-1.5 block text-sm font-semibold text-gray-800"
 									>
 										{t("createOpportunity.fieldStreet")}
+										<RequiredMark />
 									</label>
 									<input
 										id="opportunity-street"
@@ -307,11 +463,17 @@ export default function CreateVolunteerOpportunityModal({
 										maxLength={100}
 										placeholder={t("createOpportunity.streetPlaceholder")}
 										value={form.street}
-										onChange={(e) =>
-											setForm((f) => ({ ...f, street: e.target.value }))
-										}
-										className={inputClass}
+										onChange={(e) => {
+											setForm((f) => ({ ...f, street: e.target.value }));
+											clearError("street");
+										}}
+										className={inputClass("street")}
 									/>
+									{validationErrors.street && (
+										<p className="mt-1 text-xs text-red-600" role="alert">
+											{validationErrors.street}
+										</p>
+									)}
 								</div>
 								<div>
 									<label
@@ -319,6 +481,7 @@ export default function CreateVolunteerOpportunityModal({
 										className="mb-1.5 block text-sm font-semibold text-gray-800"
 									>
 										{t("createOpportunity.fieldNumber")}
+										<RequiredMark />
 									</label>
 									<input
 										id="opportunity-house"
@@ -326,11 +489,17 @@ export default function CreateVolunteerOpportunityModal({
 										maxLength={10}
 										placeholder="1a"
 										value={form.houseNumber}
-										onChange={(e) =>
-											setForm((f) => ({ ...f, houseNumber: e.target.value }))
-										}
-										className={inputClass}
+										onChange={(e) => {
+											setForm((f) => ({ ...f, houseNumber: e.target.value }));
+											clearError("houseNumber");
+										}}
+										className={inputClass("houseNumber")}
 									/>
+									{validationErrors.houseNumber && (
+										<p className="mt-1 text-xs text-red-600" role="alert">
+											{validationErrors.houseNumber}
+										</p>
+									)}
 								</div>
 							</div>
 							<div className="grid grid-cols-3 gap-3">
@@ -340,6 +509,7 @@ export default function CreateVolunteerOpportunityModal({
 										className="mb-1.5 block text-sm font-semibold text-gray-800"
 									>
 										{t("createOpportunity.fieldZip")}
+										<RequiredMark />
 									</label>
 									<input
 										id="opportunity-zip"
@@ -348,11 +518,17 @@ export default function CreateVolunteerOpportunityModal({
 										maxLength={5}
 										placeholder="12345"
 										value={form.zipCode}
-										onChange={(e) =>
-											setForm((f) => ({ ...f, zipCode: e.target.value }))
-										}
-										className={inputClass}
+										onChange={(e) => {
+											setForm((f) => ({ ...f, zipCode: e.target.value }));
+											clearError("zipCode");
+										}}
+										className={inputClass("zipCode")}
 									/>
+									{validationErrors.zipCode && (
+										<p className="mt-1 text-xs text-red-600" role="alert">
+											{validationErrors.zipCode}
+										</p>
+									)}
 								</div>
 								<div className="col-span-2">
 									<label
@@ -360,6 +536,7 @@ export default function CreateVolunteerOpportunityModal({
 										className="mb-1.5 block text-sm font-semibold text-gray-800"
 									>
 										{t("createOpportunity.fieldCity")}
+										<RequiredMark />
 									</label>
 									<input
 										id="opportunity-city"
@@ -367,11 +544,17 @@ export default function CreateVolunteerOpportunityModal({
 										maxLength={100}
 										placeholder="Berlin"
 										value={form.city}
-										onChange={(e) =>
-											setForm((f) => ({ ...f, city: e.target.value }))
-										}
-										className={inputClass}
+										onChange={(e) => {
+											setForm((f) => ({ ...f, city: e.target.value }));
+											clearError("city");
+										}}
+										className={inputClass("city")}
 									/>
+									{validationErrors.city && (
+										<p className="mt-1 text-xs text-red-600" role="alert">
+											{validationErrors.city}
+										</p>
+									)}
 								</div>
 							</div>
 						</div>
@@ -520,7 +703,7 @@ export default function CreateVolunteerOpportunityModal({
 											category: e.target.value || undefined,
 										}))
 									}
-									className={inputClass}
+									className={inputNormal}
 								>
 									<option value="">
 										{t("createOpportunity.fieldCategoryNone")}
@@ -568,7 +751,7 @@ export default function CreateVolunteerOpportunityModal({
 												.filter((s) => s.length > 0),
 										}));
 									}}
-									className={inputClass}
+									className={inputNormal}
 								/>
 								{form.tags && form.tags.length > 0 && (
 									<div className="mt-2 flex flex-wrap gap-1.5">
@@ -730,9 +913,8 @@ export default function CreateVolunteerOpportunityModal({
 					{step < TOTAL_STEPS ? (
 						<button
 							type="button"
-							disabled={!canAdvance()}
 							onClick={() => setStep((s) => s + 1)}
-							className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-40"
+							className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
 						>
 							{t("createOpportunity.next")}
 						</button>

@@ -209,7 +209,9 @@
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
-      "unknownError": "Unbekannter Fehler"
+      "unknownError": "Unbekannter Fehler",
+      "fieldRequired": "Pflichtfeld",
+      "useOrgAddress": "Adresse der Organisation übernehmen"
     },
     "checkInMethod": {
       "none": "Keine (automatisch)",
