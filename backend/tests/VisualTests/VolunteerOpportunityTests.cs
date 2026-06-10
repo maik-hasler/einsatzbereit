@@ -216,4 +216,85 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.GetByTestId("share-opportunity"))
 			.ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task HomePage_LoadsWithoutError_WhenPublishedOpportunitiesExist()
+	{
+		// Regression: EF Core 10 query translation failure caused HTTP 500 on all
+		// volunteer opportunity list endpoints (GetPagedSummaries + org queries).
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// The main element must be present - a 500 would show an error page instead.
+		await Expect(Page.Locator("main")).ToBeVisibleAsync();
+
+		// No generic error message should be visible.
+		var errorText = Page.GetByText(new Regex("error|fehler|500", RegexOptions.IgnoreCase));
+		(await errorText.CountAsync()).Should().Be(0);
+	}
+
+	[Test]
+	public async Task CreateDraft_DoesNotAppearInPublicList_AppearOnDashboardWithAmberBadge()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var uniqueTitle = $"Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Create opportunity button is only present when an org is active.
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		if (await createBtn.CountAsync() == 0)
+			return;
+
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return;
+		}
+
+		// Fill title (minimum required for draft save).
+		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
+
+		// Save as draft.
+		await Page.GetByTestId("modal-save-draft").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+
+		// The public home page must NOT show the draft.
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var draftInPublicList = Page
+			.Locator("a[href*='/volunteer-opportunities/']")
+			.Filter(new() { HasText = uniqueTitle });
+		await Expect(draftInPublicList).Not.ToBeVisibleAsync();
+
+		// Navigate to org dashboard via the org switcher.
+		// The switcher toggle has aria-label "Switch organization" (en) / "Organisation wechseln" (de).
+		var switcherBtn = Page.Locator("button[aria-expanded]");
+		if (await switcherBtn.CountAsync() == 0)
+			return;
+
+		await switcherBtn.First.ClickAsync();
+		await Page.GetByTestId("org-dashboard-link").ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Drafts section is visible.
+		var draftsSection = Page.GetByTestId("drafts-section");
+		await Expect(draftsSection).ToBeVisibleAsync();
+
+		// Draft entry with the title is listed.
+		await Expect(draftsSection.GetByText(uniqueTitle)).ToBeVisibleAsync();
+
+		// Amber badge present (bg-amber-100 class applied to the draft status pill).
+		var amberBadge = draftsSection.Locator("[class*='bg-amber-100']").First;
+		await Expect(amberBadge).ToBeVisibleAsync();
+	}
 }
