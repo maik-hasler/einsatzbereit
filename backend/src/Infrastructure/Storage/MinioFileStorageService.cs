@@ -92,17 +92,7 @@ internal sealed class MinioFileStorageService : IFileStorageService
 					cancellationToken);
 			}
 
-			var policy = $$"""
-				{
-				  "Version": "2012-10-17",
-				  "Statement": [{
-				    "Effect": "Allow",
-				    "Principal": "*",
-				    "Action": ["s3:GetObject"],
-				    "Resource": ["arn:aws:s3:::{{_settings.BucketName}}/*"]
-				  }]
-				}
-				""";
+			var policy = $"{{\"Version\":\"2012-10-17\",\"Statement\":[{{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::{_settings.BucketName}/*\"]}}]}}";
 
 			await _minio.SetPolicyAsync(
 				new SetPolicyArgs()
