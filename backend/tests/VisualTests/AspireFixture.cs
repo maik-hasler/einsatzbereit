@@ -35,7 +35,12 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 	private async Task WaitForBackendReadyAsync()
 	{
-		using var client = _app.CreateHttpClient("backend");
+		var backendEndpoint = _app.GetEndpoint("backend", "http");
+		using var client = new HttpClient
+		{
+			BaseAddress = backendEndpoint,
+			Timeout = TimeSpan.FromSeconds(5)
+		};
 		var deadline = DateTime.UtcNow.AddSeconds(120);
 		while (DateTime.UtcNow < deadline)
 		{
@@ -45,7 +50,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 				if (response.IsSuccessStatusCode)
 					return;
 			}
-			catch (HttpRequestException)
+			catch (Exception)
 			{
 			}
 			await Task.Delay(1000);
