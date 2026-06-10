@@ -63,6 +63,7 @@ public class IntegrationTestFixture
 		{
 			DbAdapter = DbAdapter.Postgres,
 			SchemasToInclude = ["public"],
+			TablesToIgnore = ["__EFMigrationsHistory"],
 		});
 
 		await _respawner.ResetAsync(conn);
