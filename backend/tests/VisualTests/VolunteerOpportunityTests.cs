@@ -91,13 +91,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Section heading is rendered and centre-aligned (matches "How it works").
 		var heading = Page
 			.GetByRole(AriaRole.Heading, new() { Name = "Current Opportunities" })
 			.First;
-		await Expect(heading).ToBeVisibleAsync();
+		await Expect(heading).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var textAlign = await heading.EvaluateAsync<string>(
 			"el => getComputedStyle(el).textAlign");
 		textAlign.Should().Be("center");
@@ -126,7 +125,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Create button only appears when an org is active.
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
@@ -242,7 +241,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var uniqueTitle = $"Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Create opportunity button is only present when an org is active.
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
@@ -269,7 +268,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		// The public home page must NOT show the draft.
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var draftInPublicList = Page
 			.Locator("a[href*='/volunteer-opportunities/']")
@@ -284,7 +283,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await switcherBtn.First.ClickAsync();
 		await Page.GetByTestId("org-dashboard-link").ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Drafts section is visible.
 		var draftsSection = Page.GetByTestId("drafts-section");

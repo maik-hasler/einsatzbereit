@@ -14,11 +14,10 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/achievements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var shareBtn = Page.GetByRole(AriaRole.Button,
 			new() { Name = "Share achievements" });
-		await Expect(shareBtn).ToBeVisibleAsync();
+		await Expect(shareBtn).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await shareBtn.ClickAsync();
 
 		var dialog = Page.Locator("[role=\"dialog\"]");
@@ -43,11 +42,10 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/achievements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByRole(AriaRole.Button,
-			new() { Name = "Share achievements" })
-			.ClickAsync();
+		var shareBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Share achievements" });
+		await Expect(shareBtn).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await shareBtn.ClickAsync();
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeVisibleAsync();
 
@@ -64,11 +62,10 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/achievements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByRole(AriaRole.Button,
-			new() { Name = "Share achievements" })
-			.ClickAsync();
+		var shareBtn2 = Page.GetByRole(AriaRole.Button, new() { Name = "Share achievements" });
+		await Expect(shareBtn2).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await shareBtn2.ClickAsync();
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeVisibleAsync();
 

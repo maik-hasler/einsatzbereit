@@ -30,6 +30,28 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		}
 
 		await WaitForRealmReadyAsync();
+		await WaitForBackendReadyAsync();
+	}
+
+	private async Task WaitForBackendReadyAsync()
+	{
+		using var client = _app.CreateHttpClient("backend");
+		var deadline = DateTime.UtcNow.AddSeconds(120);
+		while (DateTime.UtcNow < deadline)
+		{
+			try
+			{
+				var response = await client.GetAsync("/health");
+				if (response.IsSuccessStatusCode)
+					return;
+			}
+			catch (HttpRequestException)
+			{
+			}
+			await Task.Delay(1000);
+		}
+
+		throw new TimeoutException("Backend did not become healthy in time.");
 	}
 
 	private async Task WaitForRealmReadyAsync()

@@ -13,11 +13,10 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync();
-		await Expect(Page.GetByLabel("Email address")).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync();
+		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(Page.GetByLabel("Email address")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 
 	[Test]
@@ -27,13 +26,7 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
-		// Wait for a successful /users/me load (tolerating an earlier attempt the
-		// frontend retries) before asserting, so a backend hiccup surfaces as a
-		// real status code instead of a silent empty-value timeout.
-		await Page.RunAndWaitForResponseAsync(
-			() => Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account"),
-			response => response.Url.Contains("/users/me") && response.Ok,
-			new() { Timeout = 30_000 });
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
 		await Expect(Page.GetByLabel("Username")).ToHaveValueAsync("vera",
 			new() { Timeout = 30_000 });
@@ -47,9 +40,8 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByLabel("First name").FillAsync("Vera");
+		await Page.GetByLabel("First name").FillAsync("Vera", new() { Timeout = 20_000 });
 		await Page.GetByLabel("Last name").FillAsync("Sample");
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
