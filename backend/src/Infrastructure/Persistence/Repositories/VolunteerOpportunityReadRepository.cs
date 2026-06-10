@@ -73,7 +73,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Address.Latitude >= box.South && x.vo.Address.Latitude <= box.North &&
 				x.vo.Address.Longitude >= box.West && x.vo.Address.Longitude <= box.East);
 
-		var dbQuery = query
+		var baseQuery = query
 			.OrderByDescending(x => x.vo.CreatedOn)
 			.Select(x => new
 			{
@@ -95,17 +95,13 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
-				MaxParticipants = x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
-				ParticipantCount = dbContext.EngagementsQuery.Count(e =>
-					e.OpportunityId == x.vo.Id &&
-					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
 				x.vo.Status,
 				x.vo.BannerImageUrl,
 			});
 
 		if (filter.HasRadius)
 		{
-			var candidates = await dbQuery.ToListAsync(cancellationToken);
+			var candidates = await baseQuery.ToListAsync(cancellationToken);
 
 			var centerLat = filter.CenterLatitude!.Value;
 			var centerLon = filter.CenterLongitude!.Value;
@@ -120,33 +116,49 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var page = matched
 				.Skip((filter.PageNumber - 1) * filter.PageSize)
 				.Take(filter.PageSize)
+				.ToList();
+
+			var pageGuids = page.Select(x => x.Id).ToList();
+			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
+
+			var summaries = page
 				.Select(x => new VolunteerOpportunitySummary(
 					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 					x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 					x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
-					x.MaxParticipants, x.ParticipantCount, x.Status.ToString(), x.BannerImageUrl))
+					maxPMap.GetValueOrDefault(x.Id, 0),
+					partCountMap.GetValueOrDefault(x.Id, 0),
+					x.Status.ToString(), x.BannerImageUrl))
 				.ToList();
 
-			return new PagedList<VolunteerOpportunitySummary>(page, matched.Count, filter.PageNumber, filter.PageSize);
+			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
 		}
 
 		var total = await query.CountAsync(cancellationToken);
-		var rows = await dbQuery
+		var rows = await baseQuery
 			.Skip((filter.PageNumber - 1) * filter.PageSize)
 			.Take(filter.PageSize)
 			.ToListAsync(cancellationToken);
 
-		var summaries = rows
+		if (rows.Count == 0)
+			return new PagedList<VolunteerOpportunitySummary>([], total, filter.PageNumber, filter.PageSize);
+
+		var guids = rows.Select(x => x.Id).ToList();
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+
+		var result = rows
 			.Select(x => new VolunteerOpportunitySummary(
 				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
-				x.MaxParticipants, x.ParticipantCount, x.Status.ToString(), x.BannerImageUrl))
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
+				participantCountMap.GetValueOrDefault(x.Id, 0),
+				x.Status.ToString(), x.BannerImageUrl))
 			.ToList();
 
-		return new PagedList<VolunteerOpportunitySummary>(summaries, total, filter.PageNumber, filter.PageSize);
+		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
 	}
 
 	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter)
@@ -158,6 +170,37 @@ internal sealed class VolunteerOpportunityReadRepository(
 			return new GeoBoundingBox(filter.South!.Value, filter.North!.Value, filter.West!.Value, filter.East!.Value);
 
 		return null;
+	}
+
+	private async Task<(Dictionary<Guid, int> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>
+		LoadParticipantStatsAsync(
+			List<Guid> opportunityGuids,
+			CancellationToken cancellationToken)
+	{
+		var opportunityIds = opportunityGuids
+			.Select(g => new VolunteerOpportunityId(g))
+			.ToList();
+
+		var maxParticipants = await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => opportunityIds.Contains(vo.Id))
+			.Select(vo => new
+			{
+				OpportunityId = vo.Id.Value,
+				MaxParticipants = vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
+			})
+			.ToListAsync(cancellationToken);
+
+		var participantCounts = await dbContext.EngagementsQuery
+			.Where(e => opportunityIds.Contains(e.OpportunityId) &&
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.GroupBy(e => e.OpportunityId)
+			.Select(g => new { OpportunityId = g.Key.Value, Count = g.Count() })
+			.ToListAsync(cancellationToken);
+
+		return (
+			maxParticipants.ToDictionary(x => x.OpportunityId, x => x.MaxParticipants),
+			participantCounts.ToDictionary(x => x.OpportunityId, x => x.Count)
+		);
 	}
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
@@ -280,14 +323,16 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
-				MaxParticipants = x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
-				ParticipantCount = dbContext.EngagementsQuery.Count(e =>
-					e.OpportunityId == x.vo.Id &&
-					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
 				x.vo.Status,
 				x.vo.BannerImageUrl,
 			})
 			.ToListAsync(cancellationToken);
+
+		if (rows.Count == 0)
+			return [];
+
+		var guids = rows.Select(x => x.Id).ToList();
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		return rows
 			.Select(x => new VolunteerOpportunitySummary(
@@ -295,7 +340,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
-				x.MaxParticipants, x.ParticipantCount, x.Status.ToString(), x.BannerImageUrl))
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
+				participantCountMap.GetValueOrDefault(x.Id, 0),
+				x.Status.ToString(), x.BannerImageUrl))
 			.ToList();
 	}
 

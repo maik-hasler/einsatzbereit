@@ -20,16 +20,7 @@ internal sealed class ApplicationDbContextInitializer(
 	public async ValueTask MigrateAsync(
 		CancellationToken cancellationToken = default)
 	{
-		try
-		{
-			await dbContext.Database.MigrateAsync(cancellationToken);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(
-				ex,
-				"An exception occurred while migrating the database");
-		}
+		await dbContext.Database.MigrateAsync(cancellationToken);
 	}
 
 	public async ValueTask SeedAsync(
