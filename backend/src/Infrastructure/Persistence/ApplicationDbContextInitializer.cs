@@ -20,7 +20,25 @@ internal sealed class ApplicationDbContextInitializer(
 	public async ValueTask MigrateAsync(
 		CancellationToken cancellationToken = default)
 	{
-		await dbContext.Database.MigrateAsync(cancellationToken);
+		const int maxAttempts = 5;
+		for (var attempt = 1; attempt <= maxAttempts; attempt++)
+		{
+			try
+			{
+				await dbContext.Database.MigrateAsync(cancellationToken);
+				return;
+			}
+			catch (Exception ex) when (attempt < maxAttempts)
+			{
+				logger.LogWarning(
+					ex,
+					"Database migration attempt {Attempt}/{Max} failed, retrying in {Delay}s...",
+					attempt,
+					maxAttempts,
+					attempt * 3);
+				await Task.Delay(TimeSpan.FromSeconds(attempt * 3), cancellationToken);
+			}
+		}
 	}
 
 	public async ValueTask SeedAsync(
