@@ -3,8 +3,11 @@ using System.Text.Json.Nodes;
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
-	.WithDataVolume()
 	.WithPgAdmin();
+
+// Skip persistent volume in test environments to avoid stale migration state
+if (builder.Environment.EnvironmentName != "Testing")
+	postgres.WithDataVolume();
 
 var mailpit = builder.AddContainer("mailpit", "ghcr.io/axllent/mailpit", "latest")
 	.WithHttpEndpoint(port: 1080, targetPort: 8025, name: "webui", isProxied: false)
