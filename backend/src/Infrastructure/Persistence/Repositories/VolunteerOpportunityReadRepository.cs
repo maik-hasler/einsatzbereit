@@ -73,37 +73,39 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Address.Latitude >= box.South && x.vo.Address.Latitude <= box.North &&
 				x.vo.Address.Longitude >= box.West && x.vo.Address.Longitude <= box.East);
 
-		var projected = query
+		var dbQuery = query
 			.OrderByDescending(x => x.vo.CreatedOn)
-			.Select(x => new VolunteerOpportunitySummary(
-				x.vo.Id.Value,
+			.Select(x => new
+			{
+				Id = x.vo.Id.Value,
 				x.vo.Title,
 				x.vo.Description,
-				x.vo.OrganizationId.Value,
-				x.org.Name,
-				x.vo.Address != null ? x.vo.Address.Street : null,
-				x.vo.Address != null ? x.vo.Address.HouseNumber : null,
-				x.vo.Address != null ? x.vo.Address.ZipCode : null,
-				x.vo.Address != null ? x.vo.Address.City : null,
-				x.vo.Address != null ? x.vo.Address.Latitude : null,
-				x.vo.Address != null ? x.vo.Address.Longitude : null,
+				OrganizationId = x.vo.OrganizationId.Value,
+				OrgName = x.org.Name,
+				Street = x.vo.Address != null ? x.vo.Address.Street : null,
+				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
+				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
+				City = x.vo.Address != null ? x.vo.Address.City : null,
+				Latitude = x.vo.Address != null ? x.vo.Address.Latitude : null,
+				Longitude = x.vo.Address != null ? x.vo.Address.Longitude : null,
 				x.vo.IsRemote,
-				x.vo.Occurrence.ToString(),
-				x.vo.ParticipationType.ToString(),
-				x.vo.CheckInMethod.ToString(),
-				x.vo.Category != null ? x.vo.Category.ToString() : null,
+				x.vo.Occurrence,
+				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
+				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
-				x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
-				dbContext.EngagementsQuery.Count(e =>
+				MaxParticipants = x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
+				ParticipantCount = dbContext.EngagementsQuery.Count(e =>
 					e.OpportunityId == x.vo.Id &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
-				x.vo.Status.ToString(),
-				x.vo.BannerImageUrl));
+				x.vo.Status,
+				x.vo.BannerImageUrl,
+			});
 
 		if (filter.HasRadius)
 		{
-			var candidates = await projected.ToListAsync(cancellationToken);
+			var candidates = await dbQuery.ToListAsync(cancellationToken);
 
 			var centerLat = filter.CenterLatitude!.Value;
 			var centerLon = filter.CenterLongitude!.Value;
@@ -118,12 +120,33 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var page = matched
 				.Skip((filter.PageNumber - 1) * filter.PageSize)
 				.Take(filter.PageSize)
+				.Select(x => new VolunteerOpportunitySummary(
+					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
+					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
+					x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
+					x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
+					x.MaxParticipants, x.ParticipantCount, x.Status.ToString(), x.BannerImageUrl))
 				.ToList();
 
 			return new PagedList<VolunteerOpportunitySummary>(page, matched.Count, filter.PageNumber, filter.PageSize);
 		}
 
-		return await projected.ToPagedListAsync(filter.PageNumber, filter.PageSize, cancellationToken);
+		var total = await query.CountAsync(cancellationToken);
+		var rows = await dbQuery
+			.Skip((filter.PageNumber - 1) * filter.PageSize)
+			.Take(filter.PageSize)
+			.ToListAsync(cancellationToken);
+
+		var summaries = rows
+			.Select(x => new VolunteerOpportunitySummary(
+				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
+				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
+				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
+				x.MaxParticipants, x.ParticipantCount, x.Status.ToString(), x.BannerImageUrl))
+			.ToList();
+
+		return new PagedList<VolunteerOpportunitySummary>(summaries, total, filter.PageNumber, filter.PageSize);
 	}
 
 	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter)
@@ -230,39 +253,50 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (status is OpportunityStatus s)
 			orgQuery = orgQuery.Where(vo => vo.Status == s);
 
-		return await orgQuery
+		var rows = await orgQuery
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
 				org => org.Id,
 				(vo, org) => new { vo, org })
 			.OrderByDescending(x => x.vo.CreatedOn)
-			.Select(x => new VolunteerOpportunitySummary(
-				x.vo.Id.Value,
+			.Select(x => new
+			{
+				Id = x.vo.Id.Value,
 				x.vo.Title,
 				x.vo.Description,
-				x.vo.OrganizationId.Value,
-				x.org.Name,
-				x.vo.Address != null ? x.vo.Address.Street : null,
-				x.vo.Address != null ? x.vo.Address.HouseNumber : null,
-				x.vo.Address != null ? x.vo.Address.ZipCode : null,
-				x.vo.Address != null ? x.vo.Address.City : null,
-				x.vo.Address != null ? x.vo.Address.Latitude : null,
-				x.vo.Address != null ? x.vo.Address.Longitude : null,
+				OrganizationId = x.vo.OrganizationId.Value,
+				OrgName = x.org.Name,
+				Street = x.vo.Address != null ? x.vo.Address.Street : null,
+				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
+				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
+				City = x.vo.Address != null ? x.vo.Address.City : null,
+				Latitude = x.vo.Address != null ? x.vo.Address.Latitude : null,
+				Longitude = x.vo.Address != null ? x.vo.Address.Longitude : null,
 				x.vo.IsRemote,
-				x.vo.Occurrence.ToString(),
-				x.vo.ParticipationType.ToString(),
-				x.vo.CheckInMethod.ToString(),
-				x.vo.Category != null ? x.vo.Category.ToString() : null,
+				x.vo.Occurrence,
+				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
+				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
-				x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
-				dbContext.EngagementsQuery.Count(e =>
+				MaxParticipants = x.vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
+				ParticipantCount = dbContext.EngagementsQuery.Count(e =>
 					e.OpportunityId == x.vo.Id &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
-				x.vo.Status.ToString(),
-				x.vo.BannerImageUrl))
+				x.vo.Status,
+				x.vo.BannerImageUrl,
+			})
 			.ToListAsync(cancellationToken);
+
+		return rows
+			.Select(x => new VolunteerOpportunitySummary(
+				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
+				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
+				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
+				x.MaxParticipants, x.ParticipantCount, x.Status.ToString(), x.BannerImageUrl))
+			.ToList();
 	}
 
 	public async ValueTask<string?> GetBannerUrlAsync(
