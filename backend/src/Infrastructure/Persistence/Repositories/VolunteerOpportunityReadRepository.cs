@@ -1,6 +1,5 @@
 using Application.Common.Pagination;
 using Application.VolunteerOpportunities;
-using Application.VolunteerOpportunities.GetOpportunityBanner.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Domain.Engagements;
@@ -100,7 +99,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 					e.OpportunityId == x.vo.Id &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
 				x.vo.Status.ToString(),
-				x.vo.BannerImageContentType != null));
+				x.vo.BannerImageUrl));
 
 		if (filter.HasRadius)
 		{
@@ -168,7 +167,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.CheckInPin,
 				x.vo.CreatedOn,
 				x.vo.Status,
-				HasBannerImage = x.vo.BannerImageContentType != null
+				BannerImageUrl = x.vo.BannerImageUrl
 			})
 			.FirstOrDefaultAsync(cancellationToken);
 
@@ -215,7 +214,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.CreatedOn,
 			currentParticipantCount,
 			result.Status.ToString(),
-			result.HasBannerImage);
+			result.BannerImageUrl);
 	}
 
 	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
@@ -262,24 +261,19 @@ internal sealed class VolunteerOpportunityReadRepository(
 					e.OpportunityId == x.vo.Id &&
 					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
 				x.vo.Status.ToString(),
-				x.vo.BannerImageContentType != null))
+				x.vo.BannerImageUrl))
 			.ToListAsync(cancellationToken);
 	}
 
-	public async ValueTask<OpportunityBannerDto?> GetBannerAsync(
+	public async ValueTask<string?> GetBannerUrlAsync(
 		Guid opportunityId,
 		CancellationToken cancellationToken = default)
 	{
 		var opportunityId_ = new VolunteerOpportunityId(opportunityId);
 
-		var banner = await dbContext.VolunteerOpportunitiesQuery
-			.Where(vo => vo.Id == opportunityId_ && vo.BannerImage != null && vo.BannerImageContentType != null)
-			.Select(vo => new { vo.BannerImage, vo.BannerImageContentType })
+		return await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.Id == opportunityId_)
+			.Select(vo => vo.BannerImageUrl)
 			.FirstOrDefaultAsync(cancellationToken);
-
-		if (banner?.BannerImage is null || banner.BannerImageContentType is null)
-			return null;
-
-		return new OpportunityBannerDto(banner.BannerImage, banner.BannerImageContentType);
 	}
 }

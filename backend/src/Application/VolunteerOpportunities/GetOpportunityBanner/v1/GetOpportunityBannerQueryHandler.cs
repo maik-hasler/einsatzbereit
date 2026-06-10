@@ -4,10 +4,10 @@ namespace Application.VolunteerOpportunities.GetOpportunityBanner.v1;
 
 internal sealed class GetOpportunityBannerQueryHandler(
 	IVolunteerOpportunityReadRepository readRepository)
-	: IQueryHandler<GetOpportunityBannerQuery, OpportunityBannerDto?>
+	: IQueryHandler<GetOpportunityBannerQuery, string?>
 {
-	public async ValueTask<OpportunityBannerDto?> Handle(
+	public async ValueTask<string?> Handle(
 		GetOpportunityBannerQuery request,
 		CancellationToken cancellationToken = default) =>
-		await readRepository.GetBannerAsync(request.OpportunityId, cancellationToken);
+		await readRepository.GetBannerUrlAsync(request.OpportunityId, cancellationToken);
 }

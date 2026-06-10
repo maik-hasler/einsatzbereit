@@ -6,7 +6,6 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
-import { runtimeConfig } from "../lib/runtimeConfig";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
 import OpportunityMap from "./OpportunityMap";
@@ -1678,9 +1677,9 @@ export default function VolunteerOpportunitiesList({
 										<div className="flex flex-col sm:flex-row">
 											{/* Banner image or category banner */}
 											<div className="relative flex h-24 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-brand-500 to-brand-800 sm:h-auto sm:w-36 lg:w-44">
-												{item.hasBannerImage ? (
+												{item.bannerImageUrl ? (
 													<img
-														src={`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${item.id}/banner`}
+														src={item.bannerImageUrl}
 														alt=""
 														className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 													/>

@@ -18,7 +18,6 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
-import { runtimeConfig } from "../lib/runtimeConfig";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -131,9 +130,9 @@ export default function VolunteerOpportunityDetailPage() {
 
 	return (
 		<div className="max-w-2xl">
-			{opportunity.hasBannerImage && (
+			{opportunity.bannerImageUrl && (
 				<img
-					src={`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${opportunity.id}/banner`}
+					src={opportunity.bannerImageUrl}
 					alt=""
 					className="mb-4 h-48 w-full rounded-2xl object-cover sm:h-64"
 				/>

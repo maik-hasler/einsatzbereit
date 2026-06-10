@@ -12,7 +12,7 @@ internal sealed class GetOpportunityBannerEndpoint
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
 		app.MapGet("/volunteer-opportunities/{opportunityId:guid}/banner", GetOpportunityBannerAsync)
 			.WithName("GetOpportunityBanner")
-			.Produces(StatusCodes.Status200OK)
+			.Produces(StatusCodes.Status302Found)
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
@@ -22,18 +22,12 @@ internal sealed class GetOpportunityBannerEndpoint
 	private static async Task<IResult> GetOpportunityBannerAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
-		HttpContext httpContext,
 		CancellationToken cancellationToken)
 	{
-		var banner = await sender.Send(
+		var url = await sender.Send(
 			new GetOpportunityBannerQuery(opportunityId),
 			cancellationToken);
 
-		if (banner is null)
-			return Results.NotFound();
-
-		httpContext.Response.Headers.CacheControl = "public, max-age=300";
-
-		return Results.File(banner.Content, banner.ContentType);
+		return url is null ? Results.NotFound() : Results.Redirect(url);
 	}
 }

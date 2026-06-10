@@ -31,9 +31,7 @@ public sealed class VolunteerOpportunity
 
 	public OpportunityStatus Status { get; private set; }
 
-	public byte[]? BannerImage { get; private set; }
-
-	public string? BannerImageContentType { get; private set; }
+	public string? BannerImageUrl { get; private set; }
 
 	public string? CheckInPin { get; private set; }
 
@@ -136,16 +134,12 @@ public sealed class VolunteerOpportunity
 		Status = OpportunityStatus.Published;
 	}
 
-	public void SetBannerImage(byte[] content, string contentType)
+	public void SetBannerImageUrl(string url)
 	{
-		if (content.Length == 0)
-			throw new DomainException("Banner image must not be empty.");
+		if (string.IsNullOrWhiteSpace(url))
+			throw new DomainException("Banner image URL must not be empty.");
 
-		if (string.IsNullOrWhiteSpace(contentType))
-			throw new DomainException("Banner image content type must not be empty.");
-
-		BannerImage = content;
-		BannerImageContentType = contentType;
+		BannerImageUrl = url;
 	}
 
 	public void Update(

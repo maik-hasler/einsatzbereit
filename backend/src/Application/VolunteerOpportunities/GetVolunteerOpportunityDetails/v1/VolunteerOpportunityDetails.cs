@@ -23,7 +23,7 @@ public sealed record VolunteerOpportunityDetails(
 	DateTimeOffset CreatedOn,
 	int CurrentParticipantCount,
 	string Status,
-	bool HasBannerImage);
+	string? BannerImageUrl);
 
 public sealed record TimeSlotDetail(
 	Guid Id,

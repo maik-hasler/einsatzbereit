@@ -22,4 +22,4 @@ public sealed record VolunteerOpportunitySummary(
 	int TotalMaxParticipants,
 	int CurrentParticipantCount,
 	string Status,
-	bool HasBannerImage);
+	string? BannerImageUrl);

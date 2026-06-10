@@ -1,5 +1,4 @@
 using Application.Common.Pagination;
-using Application.VolunteerOpportunities.GetOpportunityBanner.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Domain.VolunteerOpportunities;
@@ -21,7 +20,7 @@ public interface IVolunteerOpportunityReadRepository
 		OpportunityStatus? status = null,
 		CancellationToken cancellationToken = default);
 
-	ValueTask<OpportunityBannerDto?> GetBannerAsync(
+	ValueTask<string?> GetBannerUrlAsync(
 		Guid opportunityId,
 		CancellationToken cancellationToken = default);
 }
