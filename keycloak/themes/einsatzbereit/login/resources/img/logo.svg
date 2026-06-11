@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 276 56" fill="none">
+  <style>
+    :root {
+      --eb-primary: #3EAF78;
+      --eb-dark:    #1A3C2B;
+    }
+    .m { stroke: var(--eb-primary, #3EAF78); fill: none; }
+    .w { fill:   var(--eb-primary, #3EAF78); }
+  </style>
+
+  <circle class="m" cx="28" cy="28" r="24" stroke-width="1.4"/>
+  <circle class="m" cx="28" cy="15" r="3"  stroke-width="1.4"/>
+  <path   class="m" d="M18,17 L28,24 L38,17"
+          stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <line   class="m" x1="28" y1="18" x2="28" y2="31"
+          stroke-width="1.4" stroke-linecap="round"/>
+  <path   class="m" d="M20,42 L28,31 L36,42"
+          stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text class="w" x="66" y="33"
+        font-family="'Inter', system-ui, -apple-system, sans-serif"
+        font-size="16" font-weight="200" letter-spacing="0.20em">EINSATZBEREIT</text>
+</svg>

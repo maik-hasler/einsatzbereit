@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>${msg("loginTitle", realm.displayName!'Einsatzbereit')}</title>
-	<link rel="icon" type="image/x-icon" href="${url.resourcesPath}/img/favicon.ico">
+	<link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/logo.svg">
 	<link rel="stylesheet" href="${url.resourcesPath}/css/einsatzbereit.css">
 	<#if properties.stylesCommon?has_content>
 		<#list properties.stylesCommon?split(' ') as style>
@@ -15,10 +15,6 @@
 </head>
 <body>
 <div class="auth-page">
-
-	<div class="auth-bg" aria-hidden="true">
-		<div class="auth-bg-grid"></div>
-	</div>
 
 	<div class="top-controls">
 		<#if realm.internationalizationEnabled && locale.supported?has_content>
@@ -40,11 +36,7 @@
 		<div class="auth-card">
 
 			<div class="auth-brand">
-				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:0.5rem;flex-shrink:0;">
-					<circle cx="12" cy="12" r="11" fill="#226947"/>
-					<path d="M7 12l3.5 3.5L17 8.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-				</svg>
-				<span class="auth-brand-name">Einsatzbereit</span>
+				<img src="${url.resourcesPath}/img/logo.svg" alt="Einsatzbereit" class="auth-logo">
 			</div>
 
 			<div class="card-header">
