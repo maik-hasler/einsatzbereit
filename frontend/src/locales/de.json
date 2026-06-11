@@ -325,7 +325,8 @@
       "viewOpportunities": "Einsätze anzeigen →",
       "viewEngagements": "Engagements anzeigen →",
       "draftsTitle": "Entwürfe",
-      "draftsDesc": "Diese Bedarfe sind noch nicht öffentlich sichtbar. Öffne einen Entwurf, um ihn zu bearbeiten oder zu veröffentlichen."
+      "draftsDesc": "Diese Bedarfe sind noch nicht öffentlich sichtbar. Öffne einen Entwurf, um ihn zu bearbeiten oder zu veröffentlichen.",
+      "unnamedDraft": "Unbenannter Entwurf"
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",

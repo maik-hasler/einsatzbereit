@@ -2776,26 +2776,44 @@
         "type": "object",
         "properties": {
           "title": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "description": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizationId": {
             "type": "string",
             "format": "uuid"
           },
           "street": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "houseNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "zipCode": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "city": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "occurrence": {
             "type": "string"
@@ -3490,7 +3508,10 @@
             "type": "string"
           },
           "description": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "street": {
             "type": [
@@ -3813,10 +3834,16 @@
         "type": "object",
         "properties": {
           "title": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "description": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "isRemote": {
             "type": "boolean"
@@ -3907,7 +3934,10 @@
             "type": "string"
           },
           "description": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizationId": {
             "type": "string",
@@ -4052,7 +4082,10 @@
             "type": "string"
           },
           "description": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizationId": {
             "type": "string",

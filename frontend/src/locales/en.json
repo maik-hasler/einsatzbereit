@@ -325,7 +325,8 @@
       "viewOpportunities": "View opportunities →",
       "viewEngagements": "View engagements →",
       "draftsTitle": "Drafts",
-      "draftsDesc": "These opportunities are not publicly visible yet. Open a draft to edit or publish it."
+      "draftsDesc": "These opportunities are not publicly visible yet. Open a draft to edit or publish it.",
+      "unnamedDraft": "Unnamed Draft"
     },
     "orgSettings": {
       "title": "Edit Organisation",

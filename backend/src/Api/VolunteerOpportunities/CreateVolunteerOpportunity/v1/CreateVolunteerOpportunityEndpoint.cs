@@ -76,14 +76,18 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 		var address = status == OpportunityStatus.Draft && !hasAnyAddressField
 			? null
 			: new Address(
-				request.Street,
-				request.HouseNumber,
-				request.ZipCode,
-				request.City);
+				request.Street ?? string.Empty,
+				request.HouseNumber ?? string.Empty,
+				request.ZipCode ?? string.Empty,
+				request.City ?? string.Empty);
+
+		var title = status == OpportunityStatus.Draft && string.IsNullOrWhiteSpace(request.Title)
+			? "Unbenannt"
+			: request.Title ?? string.Empty;
 
 		var command = new CreateVolunteerOpportunityCommand(
-			request.Title,
-			request.Description,
+			title,
+			request.Description ?? string.Empty,
 			new OrganizationId(request.OrganizationId),
 			false,
 			address,

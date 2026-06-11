@@ -1,8 +1,8 @@
 namespace Api.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 
 public sealed record UpdateVolunteerOpportunityRequest(
-	string Title,
-	string Description,
+	string? Title,
+	string? Description,
 	bool IsRemote,
 	string? Street,
 	string? HouseNumber,

@@ -343,12 +343,6 @@ export default function CreateVolunteerOpportunityModal({
 		return errs;
 	}
 
-	function validateForDraft(): ValidationErrors {
-		const errs: ValidationErrors = {};
-		if (!form.title.trim()) errs.title = t("createOpportunity.fieldRequired");
-		return errs;
-	}
-
 	function handleBannerChange(e: ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		e.target.value = "";
@@ -398,7 +392,7 @@ export default function CreateVolunteerOpportunityModal({
 	}
 
 	const submit = async (asDraft: boolean) => {
-		const errs = asDraft ? validateForDraft() : validateForPublish();
+		const errs = asDraft ? {} : validateForPublish();
 		if (Object.keys(errs).length > 0) {
 			setValidationErrors(errs);
 			if (errs.title ?? errs.description) setStep(1);

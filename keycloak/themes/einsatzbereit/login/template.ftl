@@ -40,6 +40,10 @@
 		<div class="auth-card">
 
 			<div class="auth-brand">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:0.5rem;flex-shrink:0;">
+					<circle cx="12" cy="12" r="11" fill="#226947"/>
+					<path d="M7 12l3.5 3.5L17 8.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
 				<span class="auth-brand-name">Einsatzbereit</span>
 			</div>
 

@@ -181,12 +181,12 @@ export default function OrganizationDashboardPage() {
 								<Link
 									to={`/volunteer-opportunities/${draft.id}`}
 									className="absolute inset-0"
-									aria-label={draft.title}
+									aria-label={draft.title || t("orgDashboard.unnamedDraft")}
 								/>
 								<div className="flex items-center justify-between gap-3">
 									<div className="min-w-0">
 										<p className="truncate text-sm font-semibold text-gray-900">
-											{draft.title}
+											{draft.title || t("orgDashboard.unnamedDraft")}
 										</p>
 										{draft.description && (
 											<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
