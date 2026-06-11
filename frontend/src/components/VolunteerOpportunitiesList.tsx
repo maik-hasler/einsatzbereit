@@ -1629,7 +1629,7 @@ export default function VolunteerOpportunitiesList({
 				</p>
 			)}
 			{error && (
-				<p className="text-red-600">
+				<p className="text-red-600" data-testid="opportunities-error">
 					{t("opportunities.error", { message: error })}
 				</p>
 			)}

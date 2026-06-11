@@ -383,7 +383,7 @@ export default function HomePage() {
 							<h3 className="mb-2 text-base font-semibold text-gray-900">
 								{title}
 							</h3>
-							<p className="text-sm leading-relaxed text-gray-500">{desc}</p>
+							<p className="text-sm leading-relaxed text-gray-600">{desc}</p>
 						</div>
 					))}
 				</div>

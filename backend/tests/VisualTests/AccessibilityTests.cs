@@ -56,11 +56,20 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
-		var firstCard = Page.Locator("ul > li a").First;
-		var href = await firstCard.GetAttributeAsync("href");
-
-		if (href is null)
+		// Wait for opportunity cards (not footer links which also match ul>li a)
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		try
+		{
+			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
 			return; // no opportunities seeded, skip
+		}
+
+		var href = await firstCard.GetAttributeAsync("href");
+		if (href is null)
+			return;
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

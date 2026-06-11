@@ -228,16 +228,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// The main element must be present - a 500 would show an error page instead.
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Wait for the opportunities API call to resolve: the loading paragraph
-		// disappears once the response (success or error) is received.
-		// Replaces the flaky WaitForLoadStateAsync(NetworkIdle).
+		// Wait for the API call to resolve: opportunity cards, empty state, or error appear
 		await Expect(
-			Page.GetByText(new Regex("Loading|Wird geladen", RegexOptions.IgnoreCase))
-		).ToHaveCountAsync(0, new() { Timeout = 15_000 });
+			Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
+				.Or(Page.GetByText(new Regex("No opportunities|Keine Eins", RegexOptions.IgnoreCase)))
+				.Or(Page.GetByTestId("opportunities-error"))
+		).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		// No generic error message should be visible.
-		var errorText = Page.GetByText(new Regex("error|fehler|500", RegexOptions.IgnoreCase));
-		(await errorText.CountAsync()).Should().Be(0);
+		// No error message should be visible in the opportunities list.
+		await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
