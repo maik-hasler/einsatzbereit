@@ -2422,13 +2422,13 @@ export interface CreateTimeSlotResponse {
 }
 
 export interface CreateVolunteerOpportunityRequest {
-    title: string;
-    description: string;
+    title: string | undefined;
+    description: string | undefined;
     organizationId: string;
-    street: string;
-    houseNumber: string;
-    zipCode: string;
-    city: string;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
     occurrence: string;
     participationType: string;
     checkInMethod: string;
@@ -2608,7 +2608,7 @@ export interface PublicAddressDto {
 export interface PublicOpportunitySummaryDto {
     id: string;
     title: string;
-    description: string;
+    description: string | undefined;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;
@@ -2690,8 +2690,8 @@ export interface UpdateUserProfileRequest {
 }
 
 export interface UpdateVolunteerOpportunityRequest {
-    title: string;
-    description: string;
+    title: string | undefined;
+    description: string | undefined;
     isRemote: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
@@ -2709,7 +2709,7 @@ export interface UpdateVolunteerOpportunityRequest {
 export interface VolunteerOpportunityDetails {
     id: string;
     title: string;
-    description: string;
+    description: string | undefined;
     organizationId: string;
     organizationName: string;
     street: string | undefined;
@@ -2737,7 +2737,7 @@ export interface VolunteerOpportunityDetails {
 export interface VolunteerOpportunitySummary {
     id: string;
     title: string;
-    description: string;
+    description: string | undefined;
     organizationId: string;
     organizationName: string;
     street: string | undefined;

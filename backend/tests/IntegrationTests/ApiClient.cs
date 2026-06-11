@@ -4838,32 +4838,26 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string? Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; } = default!;
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid OrganizationId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Street { get; set; } = default!;
+        public string? Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string HouseNumber { get; set; } = default!;
+        public string? HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ZipCode { get; set; } = default!;
+        public string? ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string City { get; set; } = default!;
+        public string? City { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("occurrence")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -5464,8 +5458,7 @@ namespace IntegrationTests
         public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; } = default!;
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         public string? Street { get; set; } = default!;
@@ -5735,12 +5728,10 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Title { get; set; } = default!;
+        public string? Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; } = default!;
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
         public bool IsRemote { get; set; } = default!;
@@ -5799,8 +5790,7 @@ namespace IntegrationTests
         public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; } = default!;
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -5899,8 +5889,7 @@ namespace IntegrationTests
         public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Description { get; set; } = default!;
+        public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
