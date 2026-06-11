@@ -223,6 +223,24 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// volunteer opportunity list endpoints (GetPagedSummaries + org queries).
 		var frontend = Fixture.GetEndpoint("frontend");
 
+		// Verify the backend endpoint works directly before involving the browser.
+		// This surfaces the actual HTTP status code if the backend is misbehaving.
+		var backendEndpoint = Fixture.GetEndpoint("backend");
+		using var httpClient = new HttpClient { BaseAddress = backendEndpoint };
+		var directResponse = await httpClient.GetAsync(
+			"/v1/volunteer-opportunities?PageNumber=1&PageSize=1");
+		var directBody = await directResponse.Content.ReadAsStringAsync();
+		directResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.OK,
+			$"Backend /v1/volunteer-opportunities returned {(int)directResponse.StatusCode}: {directBody}");
+
+		// Capture API response statuses from the browser to diagnose browser-layer failures.
+		var apiResponseStatuses = new System.Collections.Concurrent.ConcurrentBag<(string Url, int Status)>();
+		Page.Response += (_, response) =>
+		{
+			if (response.Url.Contains("volunteer-opportunities"))
+				apiResponseStatuses.Add((response.Url, response.Status));
+		};
+
 		await Page.GotoAsync(frontend.ToString());
 
 		// The main element must be present - a 500 would show an error page instead.
@@ -236,7 +254,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		// No error message should be visible in the opportunities list.
-		await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
+		var capturedStatuses = string.Join(", ", apiResponseStatuses.Select(r => $"{r.Url} -> HTTP {r.Status}"));
+		var errorLocator = Page.GetByTestId("opportunities-error");
+		if (await errorLocator.IsVisibleAsync())
+		{
+			var errorText = await errorLocator.InnerTextAsync();
+			throw new Exception(
+				$"Opportunities error is visible: '{errorText}'. " +
+				$"Browser API calls: [{capturedStatuses}]");
+		}
 	}
 
 	[Test]

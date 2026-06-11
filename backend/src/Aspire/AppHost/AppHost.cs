@@ -103,15 +103,13 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 
-// In test environments, raise rate limits so parallel VisualTests (all sharing the
-// same loopback IP) don't exhaust the default 60 req/min anonymous quota and receive
-// 429 responses that the NSwag client surfaces as "An unexpected server error occurred."
-if (isTestEnv)
-{
-	backend
-		.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", "100000")
-		.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "100000")
-		.WithEnvironment("RateLimiting__Write__PermitLimit", "100000");
-}
+// Raise rate limits: parallel VisualTests (all sharing the same loopback IP) easily
+// exhaust the default 60 req/min anonymous quota, and React StrictMode double-invokes
+// effects in dev mode, doubling API calls. The AppHost is never used in production, so
+// high limits here are always safe.
+backend
+	.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", "100000")
+	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "100000")
+	.WithEnvironment("RateLimiting__Write__PermitLimit", "100000");
 
 builder.Build().Run();
