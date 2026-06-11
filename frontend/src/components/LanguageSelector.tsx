@@ -63,7 +63,7 @@ export default function LanguageSelector({
 				<ul
 					role="listbox"
 					aria-label={t("language.switchLanguage")}
-					className="absolute right-0 top-full z-50 mt-1 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+					className={`absolute left-0 top-full z-50 mt-1 w-36 rounded-lg border py-1 shadow-lg ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
 				>
 					{LANGUAGES.map((lang) => (
 						<li
@@ -78,15 +78,21 @@ export default function LanguageSelector({
 									setOpen(false);
 								}}
 								className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-									lang.code === currentCode
-										? "bg-brand-50 font-medium text-brand-700"
-										: "text-gray-700 hover:bg-gray-50"
+									transparent
+										? lang.code === currentCode
+											? "bg-white/15 font-medium text-white"
+											: "text-white/80 hover:bg-white/10 hover:text-white"
+										: lang.code === currentCode
+											? "bg-brand-50 font-medium text-brand-700"
+											: "text-gray-700 hover:bg-gray-50"
 								}`}
 							>
 								<span>{lang.flag}</span>
 								<span>{lang.label}</span>
 								{lang.code === currentCode && (
-									<span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-500" />
+									<span
+										className={`ml-auto h-1.5 w-1.5 rounded-full ${transparent ? "bg-white/60" : "bg-brand-500"}`}
+									/>
 								)}
 							</button>
 						</li>

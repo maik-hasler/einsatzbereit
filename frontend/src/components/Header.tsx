@@ -442,7 +442,7 @@ export default function Header() {
 					)}
 					<div className="relative px-4 py-4 space-y-2">
 						<div className="pb-2">
-							<LanguageSelector />
+							<LanguageSelector transparent={isTransparent} />
 						</div>
 						{isLoggedIn ? (
 							<div className="space-y-1">
