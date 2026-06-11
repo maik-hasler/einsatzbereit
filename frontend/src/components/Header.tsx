@@ -424,7 +424,7 @@ export default function Header() {
 			{/* Mobile Menu - absolute overlay so it doesn't push content down */}
 			{mobileOpen && (
 				<div
-					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800/95 backdrop-blur-sm" : "border-gray-100 bg-white"}`}
+					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
 				>
 					<div className="px-4 py-4 space-y-2">
 						<div className="pb-2">
@@ -436,7 +436,9 @@ export default function Header() {
 									<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
 										{initials}
 									</div>
-									<span className="text-sm font-medium text-gray-700">
+									<span
+										className={`text-sm font-medium ${isTransparent ? "text-white/90" : "text-gray-700"}`}
+									>
 										{displayName}
 									</span>
 								</div>
@@ -449,7 +451,7 @@ export default function Header() {
 										e.stopPropagation();
 										setNotifOpen((o) => !o);
 									}}
-									className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("notifications.bellLabel")}
 									{unreadCount > 0 && (
@@ -536,28 +538,28 @@ export default function Header() {
 								<Link
 									to="/my-engagements"
 									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("nav.myEngagements")}
 								</Link>
 								<Link
 									to="/profile"
 									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("nav.myProfile")}
 								</Link>
 								<Link
 									to="/achievements"
 									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("nav.myAchievements")}
 								</Link>
 								<button
 									type="button"
 									onClick={() => auth.signoutRedirect()}
-									className="block w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+									className={`block w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-red-400 hover:bg-white/10 hover:text-red-300" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
 								>
 									{t("nav.signOut")}
 								</button>
