@@ -103,13 +103,4 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 
-// Raise rate limits: parallel VisualTests (all sharing the same loopback IP) easily
-// exhaust the default 60 req/min anonymous quota, and React StrictMode double-invokes
-// effects in dev mode, doubling API calls. The AppHost is never used in production, so
-// high limits here are always safe.
-backend
-	.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", "100000")
-	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "100000")
-	.WithEnvironment("RateLimiting__Write__PermitLimit", "100000");
-
 builder.Build().Run();
