@@ -1,6 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 	</PropertyGroup>
 	<ItemGroup>
 		<!-- API -->
@@ -30,6 +31,9 @@
 		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.15.2]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.15.1]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.15.1]" />
+		<!-- Transitive pinning: override vulnerable transitive deps -->
+		<PackageVersion Include="MessagePack" Version="2.5.302" />
+		<PackageVersion Include="MessagePack.Annotations" Version="2.5.302" />
 		<!-- Aspire: AppHost + Tests -->
 		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.3.5]" />
 		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.3.5]" />
