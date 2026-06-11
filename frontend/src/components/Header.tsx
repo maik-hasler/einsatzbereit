@@ -110,11 +110,13 @@ export default function Header() {
 	return (
 		<header
 			className={`sticky top-0 z-40 transition-all duration-300 ${
-				isTransparent
-					? "border-b-0 bg-transparent"
-					: scrolled
-						? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
-						: "border-b border-gray-200 bg-white"
+				isTransparent && mobileOpen
+					? "border-b-0 bg-brand-800"
+					: isTransparent
+						? "border-b-0 bg-transparent"
+						: scrolled
+							? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
+							: "border-b border-gray-200 bg-white"
 			}`}
 		>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -424,9 +426,21 @@ export default function Header() {
 			{/* Mobile Menu - absolute overlay so it doesn't push content down */}
 			{mobileOpen && (
 				<div
-					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
+					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg overflow-hidden ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
 				>
-					<div className="px-4 py-4 space-y-2">
+					{isTransparent && (
+						<>
+							<div
+								className="pointer-events-none absolute -left-20 -top-10 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
+								aria-hidden="true"
+							/>
+							<div
+								className="pointer-events-none absolute -right-16 -top-8 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl"
+								aria-hidden="true"
+							/>
+						</>
+					)}
+					<div className="relative px-4 py-4 space-y-2">
 						<div className="pb-2">
 							<LanguageSelector />
 						</div>
