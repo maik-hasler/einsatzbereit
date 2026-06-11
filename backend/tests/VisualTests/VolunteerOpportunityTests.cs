@@ -224,10 +224,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// The main element must be present - a 500 would show an error page instead.
-		await Expect(Page.Locator("main")).ToBeVisibleAsync();
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Wait for the opportunities API call to resolve: the loading paragraph
+		// disappears once the response (success or error) is received.
+		// Replaces the flaky WaitForLoadStateAsync(NetworkIdle).
+		await Expect(
+			Page.GetByText(new Regex("Loading|Wird geladen", RegexOptions.IgnoreCase))
+		).ToHaveCountAsync(0, new() { Timeout = 15_000 });
 
 		// No generic error message should be visible.
 		var errorText = Page.GetByText(new Regex("error|fehler|500", RegexOptions.IgnoreCase));
