@@ -6,7 +6,9 @@ var postgres = builder.AddPostgres("postgres")
 	.WithPgAdmin();
 
 // Skip persistent volume in test environments to avoid stale migration state
-if (builder.Environment.EnvironmentName != "Testing")
+var isTestEnv = builder.Environment.EnvironmentName == "Testing";
+
+if (!isTestEnv)
 	postgres.WithDataVolume();
 
 var mailpit = builder.AddContainer("mailpit", "ghcr.io/axllent/mailpit", "latest")
@@ -100,5 +102,16 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"));
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
+
+// In test environments, raise rate limits so parallel VisualTests (all sharing the
+// same loopback IP) don't exhaust the default 60 req/min anonymous quota and receive
+// 429 responses that the NSwag client surfaces as "An unexpected server error occurred."
+if (isTestEnv)
+{
+	backend
+		.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", "100000")
+		.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "100000")
+		.WithEnvironment("RateLimiting__Write__PermitLimit", "100000");
+}
 
 builder.Build().Run();

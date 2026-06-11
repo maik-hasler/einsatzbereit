@@ -229,21 +229,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Wait for the API call to resolve: opportunity cards, empty state, or error appear
-		var resolvedLocator =
+		await Expect(
 			Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 				.Or(Page.GetByText(new Regex("No opportunities|Keine Eins", RegexOptions.IgnoreCase)))
-				.Or(Page.GetByTestId("opportunities-error"));
-
-		await Expect(resolvedLocator).ToBeVisibleAsync(new() { Timeout = 30_000 });
-
-		// If the backend returned a transient startup 500, reload once and wait again.
-		// This can happen when Docker image caches cause Aspire to start fast but the
-		// backend isn't fully initialized on the very first request.
-		if (await Page.GetByTestId("opportunities-error").IsVisibleAsync())
-		{
-			await Page.ReloadAsync();
-			await Expect(resolvedLocator).ToBeVisibleAsync(new() { Timeout = 30_000 });
-		}
+				.Or(Page.GetByTestId("opportunities-error"))
+		).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		// No error message should be visible in the opportunities list.
 		await Expect(Page.GetByTestId("opportunities-error")).Not.ToBeVisibleAsync();
