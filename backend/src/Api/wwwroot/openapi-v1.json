@@ -2762,6 +2762,7 @@
           "title",
           "description",
           "organizationId",
+          "isRemote",
           "street",
           "houseNumber",
           "zipCode",
@@ -2790,6 +2791,9 @@
           "organizationId": {
             "type": "string",
             "format": "uuid"
+          },
+          "isRemote": {
+            "type": "boolean"
           },
           "street": {
             "type": [

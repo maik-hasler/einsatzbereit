@@ -229,7 +229,12 @@
       "bannerWrongType": "Only JPG, PNG or WebP images are allowed.",
       "bannerUploadFailed": "The opportunity was created, but the banner image could not be uploaded.",
       "orgAddressTip": "Tip: Save a default address in your organization settings and it will be pre-filled here automatically.",
-      "orgSettingsLink": "Open organization settings"
+      "orgSettingsLink": "Open organization settings",
+      "fieldRemote": "Remote (no location required)",
+      "fieldRemoteHint": "This opportunity takes place online or at a flexible location.",
+      "editTitle": "Edit opportunity",
+      "save": "Save",
+      "saving": "Saving..."
     },
     "checkInMethod": {
       "none": "None (automatic)",

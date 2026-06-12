@@ -229,7 +229,12 @@
       "bannerWrongType": "Nur JPG-, PNG- oder WebP-Bilder sind erlaubt.",
       "bannerUploadFailed": "Der Bedarf wurde erstellt, aber das Bannerbild konnte nicht hochgeladen werden.",
       "orgAddressTip": "Tipp: Hinterlege eine Standard-Adresse in den Organisationseinstellungen - sie wird hier automatisch vorausgefüllt.",
-      "orgSettingsLink": "Zu den Organisationseinstellungen"
+      "orgSettingsLink": "Zu den Organisationseinstellungen",
+      "fieldRemote": "Remote (kein Standort erforderlich)",
+      "fieldRemoteHint": "Der Einsatz findet online oder an einem flexiblen Ort statt.",
+      "editTitle": "Bedarf bearbeiten",
+      "save": "Speichern",
+      "saving": "Wird gespeichert..."
     },
     "checkInMethod": {
       "none": "Keine (automatisch)",

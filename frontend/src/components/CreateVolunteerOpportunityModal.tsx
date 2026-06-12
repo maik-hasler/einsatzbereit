@@ -2,9 +2,14 @@ import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { AddressDto } from "../client/api-client";
+import type {
+	AddressDto,
+	TimeSlotDetail,
+	VolunteerOpportunityDetails,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { dispatchToast } from "../lib/toastBus";
+import { getApiErrorMessage } from "../lib/apiError";
 
 const TOTAL_STEPS = 4;
 const MAX_BANNER_BYTES = 2 * 1024 * 1024;
@@ -14,6 +19,8 @@ interface Props {
 	organizationId: string;
 	onClose: () => void;
 	onSuccess: () => void;
+	/** When provided the modal operates in edit mode. */
+	initialOpportunity?: VolunteerOpportunityDetails;
 }
 
 interface PendingTimeSlot {
@@ -26,6 +33,7 @@ interface PendingTimeSlot {
 interface OpportunityForm {
 	title: string;
 	description: string;
+	isRemote: boolean;
 	street: string;
 	houseNumber: string;
 	zipCode: string;
@@ -44,10 +52,17 @@ type ValidationErrors = Partial<
 	>
 >;
 
-function errorStepsFromErrs(errs: ValidationErrors): Set<number> {
+function errorStepsFromErrs(
+	errs: ValidationErrors,
+	isRemote: boolean,
+): Set<number> {
 	const s = new Set<number>();
 	if (errs.title ?? errs.description) s.add(1);
-	if (errs.street ?? errs.houseNumber ?? errs.zipCode ?? errs.city) s.add(2);
+	if (
+		!isRemote &&
+		(errs.street ?? errs.houseNumber ?? errs.zipCode ?? errs.city)
+	)
+		s.add(2);
 	return s;
 }
 
@@ -59,10 +74,6 @@ function RequiredMark() {
 	);
 }
 
-/**
- * Combined progress bar + step labels. Each segment is a button, so the
- * stepper itself is the navigation - steps can be visited in any order.
- */
 function Stepper({
 	current,
 	errorSteps,
@@ -124,7 +135,7 @@ function Stepper({
 	);
 }
 
-/** Material-style text field with a floating label. */
+/** Text field with a floating label. */
 function FloatingField({
 	id,
 	label,
@@ -216,28 +227,57 @@ function FloatingField({
 	);
 }
 
+function formFromOpportunity(
+	opp: VolunteerOpportunityDetails,
+): OpportunityForm {
+	return {
+		title: opp.title ?? "",
+		description: opp.description ?? "",
+		isRemote: opp.isRemote,
+		street: opp.street ?? "",
+		houseNumber: opp.houseNumber ?? "",
+		zipCode: opp.zipCode ?? "",
+		city: opp.city ?? "",
+		occurrence: opp.occurrence,
+		participationType: opp.participationType,
+		checkInMethod: opp.checkInMethod,
+		category: opp.category ?? undefined,
+		tags: opp.tags ?? [],
+	};
+}
+
 export default function CreateVolunteerOpportunityModal({
 	organizationId,
 	onClose,
 	onSuccess,
+	initialOpportunity,
 }: Props) {
 	const api = useApiClient();
 	const { t } = useTranslation();
+	const isEditMode = initialOpportunity !== undefined;
+
 	const [step, setStep] = useState(1);
-	const [form, setForm] = useState<OpportunityForm>({
-		title: "",
-		description: "",
-		street: "",
-		houseNumber: "",
-		zipCode: "",
-		city: "",
-		occurrence: "OneTime",
-		participationType: "Waitlist",
-		checkInMethod: "None",
-		category: undefined,
-		tags: [],
-	});
-	const [tagsInput, setTagsInput] = useState("");
+	const [form, setForm] = useState<OpportunityForm>(
+		initialOpportunity
+			? formFromOpportunity(initialOpportunity)
+			: {
+					title: "",
+					description: "",
+					isRemote: false,
+					street: "",
+					houseNumber: "",
+					zipCode: "",
+					city: "",
+					occurrence: "OneTime",
+					participationType: "Waitlist",
+					checkInMethod: "None",
+					category: undefined,
+					tags: [],
+				},
+	);
+	const [tagsInput, setTagsInput] = useState(
+		initialOpportunity ? (initialOpportunity.tags ?? []).join(", ") : "",
+	);
 	const [submitting, setSubmitting] = useState<"draft" | "publish" | null>(
 		null,
 	);
@@ -247,20 +287,27 @@ export default function CreateVolunteerOpportunityModal({
 	);
 	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
 
+	// Banner (create mode only)
 	const [bannerFile, setBannerFile] = useState<File | null>(null);
 	const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 	const [bannerError, setBannerError] = useState<string | null>(null);
 
+	// Time slots: pending = not yet persisted (create mode); existing = already saved (edit mode)
 	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
+	const [existingSlots, setExistingSlots] = useState<TimeSlotDetail[]>(
+		initialOpportunity?.timeSlots ?? [],
+	);
 	const [newSlot, setNewSlot] = useState({
 		startDateTime: "",
 		endDateTime: "",
 		maxParticipants: 1,
 	});
 	const [slotError, setSlotError] = useState<string | null>(null);
+	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
+	const [addingSlot, setAddingSlot] = useState(false);
 
-	// Pre-fill address from org details
 	useEffect(() => {
+		if (isEditMode) return;
 		let cancelled = false;
 		api
 			.getOrganizationDetails(organizationId)
@@ -285,9 +332,8 @@ export default function CreateVolunteerOpportunityModal({
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
+	}, [organizationId, isEditMode]);
 
-	// Revoke stale object URLs (on replace and on unmount)
 	useEffect(() => {
 		return () => {
 			if (bannerPreview) URL.revokeObjectURL(bannerPreview);
@@ -336,10 +382,12 @@ export default function CreateVolunteerOpportunityModal({
 		const errs: ValidationErrors = {};
 		if (!form.title.trim()) errs.title = req;
 		if (!form.description.trim()) errs.description = req;
-		if (!form.street.trim()) errs.street = req;
-		if (!form.houseNumber.trim()) errs.houseNumber = req;
-		if (!form.zipCode.trim()) errs.zipCode = req;
-		if (!form.city.trim()) errs.city = req;
+		if (!form.isRemote) {
+			if (!form.street.trim()) errs.street = req;
+			if (!form.houseNumber.trim()) errs.houseNumber = req;
+			if (!form.zipCode.trim()) errs.zipCode = req;
+			if (!form.city.trim()) errs.city = req;
+		}
 		return errs;
 	}
 
@@ -366,7 +414,7 @@ export default function CreateVolunteerOpportunityModal({
 		setBannerError(null);
 	}
 
-	function handleAddSlot() {
+	async function handleAddSlot() {
 		if (!newSlot.startDateTime || !newSlot.endDateTime) return;
 		setSlotError(null);
 		const start = new Date(newSlot.startDateTime);
@@ -375,20 +423,59 @@ export default function CreateVolunteerOpportunityModal({
 			setSlotError(t("timeSlots.addError"));
 			return;
 		}
-		setPendingSlots((prev) => [
-			...prev,
-			{
-				id: crypto.randomUUID(),
-				startDateTime: newSlot.startDateTime,
-				endDateTime: newSlot.endDateTime,
-				maxParticipants: newSlot.maxParticipants,
-			},
-		]);
+
+		if (isEditMode && initialOpportunity) {
+			setAddingSlot(true);
+			try {
+				const response = await api.createTimeSlot(initialOpportunity.id, {
+					startDateTime: start,
+					endDateTime: end,
+					maxParticipants: newSlot.maxParticipants,
+				});
+				setExistingSlots((prev) => [
+					...prev,
+					{
+						id: response.id,
+						startDateTime: response.startDateTime,
+						endDateTime: response.endDateTime,
+						maxParticipants: response.maxParticipants,
+					},
+				]);
+			} catch {
+				setSlotError(t("timeSlots.addError"));
+			} finally {
+				setAddingSlot(false);
+			}
+		} else {
+			setPendingSlots((prev) => [
+				...prev,
+				{
+					id: crypto.randomUUID(),
+					startDateTime: newSlot.startDateTime,
+					endDateTime: newSlot.endDateTime,
+					maxParticipants: newSlot.maxParticipants,
+				},
+			]);
+		}
 		setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 	}
 
 	function handleRemovePendingSlot(id: string) {
 		setPendingSlots((prev) => prev.filter((s) => s.id !== id));
+	}
+
+	async function handleRemoveExistingSlot(timeSlotId: string) {
+		if (!initialOpportunity) return;
+		setRemovingSlotId(timeSlotId);
+		setSlotError(null);
+		try {
+			await api.deleteTimeSlot(initialOpportunity.id, timeSlotId);
+			setExistingSlots((prev) => prev.filter((s) => s.id !== timeSlotId));
+		} catch {
+			setSlotError(t("timeSlots.removeError"));
+		} finally {
+			setRemovingSlotId(null);
+		}
 	}
 
 	const submit = async (asDraft: boolean) => {
@@ -402,40 +489,69 @@ export default function CreateVolunteerOpportunityModal({
 		setSubmitting(asDraft ? "draft" : "publish");
 		setError(null);
 		try {
-			const opportunity = await api.createVolunteerOpportunity({
-				...form,
-				organizationId,
-				isDraft: asDraft,
-			});
-			if (bannerFile) {
-				try {
-					await api.uploadOpportunityBanner(opportunity.id, {
-						data: bannerFile,
-						fileName: bannerFile.name,
-					});
-				} catch {
-					// The opportunity itself was created - don't fail the flow
-					// just because the banner upload didn't go through.
-					dispatchToast("error", t("createOpportunity.bannerUploadFailed"));
-				}
-			}
-			for (const slot of pendingSlots) {
-				await api.createTimeSlot(opportunity.id, {
-					startDateTime: new Date(slot.startDateTime),
-					endDateTime: new Date(slot.endDateTime),
-					maxParticipants: slot.maxParticipants,
+			if (isEditMode && initialOpportunity) {
+				await api.updateVolunteerOpportunity(initialOpportunity.id, {
+					title: form.title,
+					description: form.description,
+					isRemote: form.isRemote,
+					street: form.isRemote ? undefined : form.street,
+					houseNumber: form.isRemote ? undefined : form.houseNumber,
+					zipCode: form.isRemote ? undefined : form.zipCode,
+					city: form.isRemote ? undefined : form.city,
+					occurrence: form.occurrence,
+					participationType: form.participationType,
+					checkInMethod: form.checkInMethod,
+					category: form.category || undefined,
+					tags: form.tags,
 				});
-			}
-			if (asDraft) {
-				dispatchToast("success", t("createOpportunity.draftSavedToast"));
+			} else {
+				const opportunity = await api.createVolunteerOpportunity({
+					title: form.title,
+					description: form.description,
+					organizationId,
+					isRemote: form.isRemote,
+					street: form.isRemote ? undefined : form.street,
+					houseNumber: form.isRemote ? undefined : form.houseNumber,
+					zipCode: form.isRemote ? undefined : form.zipCode,
+					city: form.isRemote ? undefined : form.city,
+					occurrence: form.occurrence,
+					participationType: form.participationType,
+					checkInMethod: form.checkInMethod,
+					category: form.category,
+					tags: form.tags,
+					isDraft: asDraft,
+				});
+				if (bannerFile) {
+					try {
+						await api.uploadOpportunityBanner(opportunity.id, {
+							data: bannerFile,
+							fileName: bannerFile.name,
+						});
+					} catch {
+						dispatchToast("error", t("createOpportunity.bannerUploadFailed"));
+					}
+				}
+				for (const slot of pendingSlots) {
+					await api.createTimeSlot(opportunity.id, {
+						startDateTime: new Date(slot.startDateTime),
+						endDateTime: new Date(slot.endDateTime),
+						maxParticipants: slot.maxParticipants,
+					});
+				}
+				if (asDraft) {
+					dispatchToast("success", t("createOpportunity.draftSavedToast"));
+				}
 			}
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
 			setError(
-				err instanceof Error
-					? err.message
-					: t("createOpportunity.unknownError"),
+				getApiErrorMessage(
+					err,
+					isEditMode
+						? t("editOpportunity.unknownError")
+						: t("createOpportunity.unknownError"),
+				),
 			);
 		} finally {
 			setSubmitting(null);
@@ -443,7 +559,7 @@ export default function CreateVolunteerOpportunityModal({
 	};
 
 	const isWaitlist = form.participationType === "Waitlist";
-	const errorSteps = errorStepsFromErrs(validationErrors);
+	const errorSteps = errorStepsFromErrs(validationErrors, form.isRemote);
 
 	const stepTitles = [
 		t("createOpportunity.step1Title"),
@@ -460,6 +576,25 @@ export default function CreateVolunteerOpportunityModal({
 
 	const selectClass =
 		"w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
+
+	const dateInputClass =
+		"w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
+
+	const allTimeSlots = isEditMode
+		? existingSlots.map((s) => ({
+				id: s.id,
+				startDateTime:
+					s.startDateTime instanceof Date
+						? s.startDateTime.toISOString()
+						: String(s.startDateTime),
+				endDateTime:
+					s.endDateTime instanceof Date
+						? s.endDateTime.toISOString()
+						: String(s.endDateTime),
+				maxParticipants: s.maxParticipants,
+				persisted: true as const,
+			}))
+		: pendingSlots.map((s) => ({ ...s, persisted: false as const }));
 
 	return (
 		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
@@ -482,14 +617,16 @@ export default function CreateVolunteerOpportunityModal({
 					className="h-1.5 bg-gradient-to-r from-brand-600 to-brand-800"
 				/>
 
-				{/* Compact header with integrated stepper */}
+				{/* Header + stepper */}
 				<div className="border-b border-gray-100 px-6 pb-4 pt-5">
 					<div className="flex items-center justify-between gap-4">
 						<h2
 							id="create-opportunity-dialog-title"
 							className="text-lg font-bold text-gray-900"
 						>
-							{t("createOpportunity.title")}
+							{isEditMode
+								? t("createOpportunity.editTitle")
+								: t("createOpportunity.title")}
 						</h2>
 						<button
 							type="button"
@@ -555,142 +692,180 @@ export default function CreateVolunteerOpportunityModal({
 								showCount
 							/>
 
-							<div>
-								<p className="mb-1.5 text-sm font-semibold text-gray-800">
-									{t("createOpportunity.fieldBanner")}
-								</p>
-								{bannerPreview ? (
-									<div className="relative overflow-hidden rounded-xl">
-										<img
-											src={bannerPreview}
-											alt={t("createOpportunity.fieldBanner")}
-											className="h-36 w-full object-cover"
-										/>
-										<button
-											type="button"
-											onClick={removeBanner}
-											className="absolute right-2 top-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
-										>
-											{t("createOpportunity.bannerRemove")}
-										</button>
-									</div>
-								) : (
-									<label
-										htmlFor="opportunity-banner"
-										className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition hover:border-brand-300 hover:bg-brand-50"
-									>
-										<svg
-											aria-hidden="true"
-											className="h-6 w-6 text-gray-400"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth={1.5}
-											viewBox="0 0 24 24"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-											/>
-										</svg>
-										<span className="text-sm font-medium text-gray-700">
-											{t("createOpportunity.bannerUpload")}
-										</span>
-										<span className="text-xs text-gray-400">
-											{t("createOpportunity.bannerHint")}
-										</span>
-										<input
-											id="opportunity-banner"
-											type="file"
-											accept="image/jpeg,image/png,image/webp"
-											className="sr-only"
-											onChange={handleBannerChange}
-										/>
-									</label>
-								)}
-								{bannerError && (
-									<p className="mt-1 text-xs text-red-600" role="alert">
-										{bannerError}
+							{!isEditMode && (
+								<div>
+									<p className="mb-1.5 text-sm font-semibold text-gray-800">
+										{t("createOpportunity.fieldBanner")}
 									</p>
-								)}
-							</div>
+									{bannerPreview ? (
+										<div className="relative overflow-hidden rounded-xl">
+											<img
+												src={bannerPreview}
+												alt={t("createOpportunity.fieldBanner")}
+												className="h-36 w-full object-cover"
+											/>
+											<button
+												type="button"
+												onClick={removeBanner}
+												className="absolute right-2 top-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
+											>
+												{t("createOpportunity.bannerRemove")}
+											</button>
+										</div>
+									) : (
+										<label
+											htmlFor="opportunity-banner"
+											className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition hover:border-brand-300 hover:bg-brand-50"
+										>
+											<svg
+												aria-hidden="true"
+												className="h-6 w-6 text-gray-400"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth={1.5}
+												viewBox="0 0 24 24"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+												/>
+											</svg>
+											<span className="text-sm font-medium text-gray-700">
+												{t("createOpportunity.bannerUpload")}
+											</span>
+											<span className="text-xs text-gray-400">
+												{t("createOpportunity.bannerHint")}
+											</span>
+											<input
+												id="opportunity-banner"
+												type="file"
+												accept="image/jpeg,image/png,image/webp"
+												className="sr-only"
+												onChange={handleBannerChange}
+											/>
+										</label>
+									)}
+									{bannerError && (
+										<p className="mt-1 text-xs text-red-600" role="alert">
+											{bannerError}
+										</p>
+									)}
+								</div>
+							)}
 						</div>
 					)}
 
 					{/* Step 2: Location */}
 					{step === 2 && (
 						<div className="space-y-4" data-testid="wizard-step-2">
-							<div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-								<div className="flex items-start justify-between gap-3">
-									<p className="text-sm leading-relaxed text-brand-800">
-										{t("createOpportunity.locationHint")}
-									</p>
-									{orgAddress && (
-										<button
-											type="button"
-											onClick={applyOrgAddress}
-											className="shrink-0 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
-										>
-											{t("createOpportunity.useOrgAddress")}
-										</button>
-									)}
-								</div>
-								{!orgAddress && (
-									<p className="mt-2 text-xs leading-relaxed text-brand-700">
-										{t("createOpportunity.orgAddressTip")}{" "}
-										<Link
-											to={`/organizations/${organizationId}/settings`}
-											className="font-semibold underline hover:text-brand-900"
-										>
-											{t("createOpportunity.orgSettingsLink")}
-										</Link>
-									</p>
-								)}
-							</div>
-							<div className="grid grid-cols-3 gap-3">
-								<FloatingField
-									id="opportunity-street"
-									label={t("createOpportunity.fieldStreet")}
-									value={form.street}
-									onChange={(v) => setField("street", v)}
-									required
-									error={validationErrors.street}
-									maxLength={100}
-									wrapperClassName="col-span-2"
+							{/* Remote toggle */}
+							<label
+								htmlFor="opportunity-remote"
+								className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 transition hover:border-brand-200 hover:bg-brand-50 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
+							>
+								<input
+									type="checkbox"
+									id="opportunity-remote"
+									checked={form.isRemote}
+									onChange={(e) => {
+										setForm((f) => ({ ...f, isRemote: e.target.checked }));
+										if (e.target.checked) {
+											setValidationErrors((prev) => {
+												const next = { ...prev };
+												delete next.street;
+												delete next.houseNumber;
+												delete next.zipCode;
+												delete next.city;
+												return next;
+											});
+										}
+									}}
+									className="mt-0.5 h-4 w-4 accent-brand-600"
 								/>
-								<FloatingField
-									id="opportunity-house"
-									label={t("createOpportunity.fieldNumber")}
-									value={form.houseNumber}
-									onChange={(v) => setField("houseNumber", v)}
-									required
-									error={validationErrors.houseNumber}
-									maxLength={10}
-								/>
-							</div>
-							<div className="grid grid-cols-3 gap-3">
-								<FloatingField
-									id="opportunity-zip"
-									label={t("createOpportunity.fieldZip")}
-									value={form.zipCode}
-									onChange={(v) => setField("zipCode", v)}
-									required
-									error={validationErrors.zipCode}
-									maxLength={5}
-									inputMode="numeric"
-									pattern="\d{5}"
-								/>
-								<FloatingField
-									id="opportunity-city"
-									label={t("createOpportunity.fieldCity")}
-									value={form.city}
-									onChange={(v) => setField("city", v)}
-									required
-									error={validationErrors.city}
-									maxLength={100}
-									wrapperClassName="col-span-2"
-								/>
-							</div>
+								<span className="text-sm font-medium text-gray-800">
+									{t("createOpportunity.fieldRemote")}
+									<span className="mt-0.5 block text-xs font-normal text-gray-500">
+										{t("createOpportunity.fieldRemoteHint")}
+									</span>
+								</span>
+							</label>
+
+							{!form.isRemote && (
+								<>
+									<div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
+										<div className="flex items-start justify-between gap-3">
+											<p className="text-sm leading-relaxed text-brand-800">
+												{t("createOpportunity.locationHint")}
+											</p>
+											{orgAddress && !isEditMode && (
+												<button
+													type="button"
+													onClick={applyOrgAddress}
+													className="shrink-0 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100"
+												>
+													{t("createOpportunity.useOrgAddress")}
+												</button>
+											)}
+										</div>
+										{!orgAddress && !isEditMode && (
+											<p className="mt-2 text-xs leading-relaxed text-brand-700">
+												{t("createOpportunity.orgAddressTip")}{" "}
+												<Link
+													to={`/organizations/${organizationId}/settings`}
+													className="font-semibold underline hover:text-brand-900"
+												>
+													{t("createOpportunity.orgSettingsLink")}
+												</Link>
+											</p>
+										)}
+									</div>
+									<div className="grid grid-cols-3 gap-3">
+										<FloatingField
+											id="opportunity-street"
+											label={t("createOpportunity.fieldStreet")}
+											value={form.street}
+											onChange={(v) => setField("street", v)}
+											required
+											error={validationErrors.street}
+											maxLength={100}
+											wrapperClassName="col-span-2"
+										/>
+										<FloatingField
+											id="opportunity-house"
+											label={t("createOpportunity.fieldNumber")}
+											value={form.houseNumber}
+											onChange={(v) => setField("houseNumber", v)}
+											required
+											error={validationErrors.houseNumber}
+											maxLength={10}
+										/>
+									</div>
+									<div className="grid grid-cols-3 gap-3">
+										<FloatingField
+											id="opportunity-zip"
+											label={t("createOpportunity.fieldZip")}
+											value={form.zipCode}
+											onChange={(v) => setField("zipCode", v)}
+											required
+											error={validationErrors.zipCode}
+											maxLength={5}
+											inputMode="numeric"
+											pattern="\d{5}"
+										/>
+										<FloatingField
+											id="opportunity-city"
+											label={t("createOpportunity.fieldCity")}
+											value={form.city}
+											onChange={(v) => setField("city", v)}
+											required
+											error={validationErrors.city}
+											maxLength={100}
+											wrapperClassName="col-span-2"
+										/>
+									</div>
+								</>
+							)}
 						</div>
 					)}
 
@@ -899,13 +1074,13 @@ export default function CreateVolunteerOpportunityModal({
 										{t("timeSlots.sectionTitle")}
 									</p>
 
-									{pendingSlots.length === 0 ? (
+									{allTimeSlots.length === 0 ? (
 										<p className="text-xs text-gray-400">
 											{t("timeSlots.noSlots")}
 										</p>
 									) : (
 										<ul className="mb-3 space-y-2">
-											{pendingSlots.map((slot) => (
+											{allTimeSlots.map((slot) => (
 												<li
 													key={slot.id}
 													className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
@@ -917,25 +1092,34 @@ export default function CreateVolunteerOpportunityModal({
 													</span>
 													<button
 														type="button"
-														onClick={() => handleRemovePendingSlot(slot.id)}
-														className="ml-2 text-xs text-red-600 hover:underline"
+														disabled={
+															slot.persisted && removingSlotId === slot.id
+														}
+														onClick={() =>
+															slot.persisted
+																? handleRemoveExistingSlot(slot.id)
+																: handleRemovePendingSlot(slot.id)
+														}
+														className="ml-2 text-xs text-red-600 hover:underline disabled:opacity-50"
 													>
-														{t("timeSlots.removeButton")}
+														{slot.persisted && removingSlotId === slot.id
+															? t("timeSlots.removing")
+															: t("timeSlots.removeButton")}
 													</button>
 												</li>
 											))}
 										</ul>
 									)}
 
-									<div className="space-y-2 border-t border-gray-200 pt-3">
+									<div className="space-y-3 border-t border-gray-200 pt-3">
 										<p className="text-xs font-semibold text-gray-700">
 											{t("timeSlots.addTitle")}
 										</p>
-										<div className="grid grid-cols-2 gap-2">
+										<div className="grid grid-cols-2 gap-3">
 											<div>
 												<label
 													htmlFor="slot-start"
-													className="mb-1 block text-xs text-gray-600"
+													className="mb-1 block text-xs font-medium text-gray-600"
 												>
 													{t("timeSlots.fieldStart")}
 												</label>
@@ -943,24 +1127,29 @@ export default function CreateVolunteerOpportunityModal({
 													id="slot-start"
 													type="datetime-local"
 													value={newSlot.startDateTime}
-													min={new Date(
-														Date.now() - new Date().getTimezoneOffset() * 60000,
-													)
-														.toISOString()
-														.slice(0, 16)}
+													min={
+														!isEditMode
+															? new Date(
+																	Date.now() -
+																		new Date().getTimezoneOffset() * 60000,
+																)
+																	.toISOString()
+																	.slice(0, 16)
+															: undefined
+													}
 													onChange={(e) =>
 														setNewSlot((s) => ({
 															...s,
 															startDateTime: e.target.value,
 														}))
 													}
-													className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400/30"
+													className={dateInputClass}
 												/>
 											</div>
 											<div>
 												<label
 													htmlFor="slot-end"
-													className="mb-1 block text-xs text-gray-600"
+													className="mb-1 block text-xs font-medium text-gray-600"
 												>
 													{t("timeSlots.fieldEnd")}
 												</label>
@@ -974,14 +1163,14 @@ export default function CreateVolunteerOpportunityModal({
 															endDateTime: e.target.value,
 														}))
 													}
-													className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400/30"
+													className={dateInputClass}
 												/>
 											</div>
 										</div>
 										<div>
 											<label
 												htmlFor="slot-max"
-												className="mb-1 block text-xs text-gray-600"
+												className="mb-1 block text-xs font-medium text-gray-600"
 											>
 												{t("timeSlots.fieldMaxParticipants")}
 											</label>
@@ -996,7 +1185,7 @@ export default function CreateVolunteerOpportunityModal({
 														maxParticipants: parseInt(e.target.value, 10) || 1,
 													}))
 												}
-												className="w-24 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400/30"
+												className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
 											/>
 										</div>
 										{slotError && (
@@ -1004,11 +1193,17 @@ export default function CreateVolunteerOpportunityModal({
 										)}
 										<button
 											type="button"
-											disabled={!newSlot.startDateTime || !newSlot.endDateTime}
-											onClick={handleAddSlot}
+											disabled={
+												addingSlot ||
+												!newSlot.startDateTime ||
+												!newSlot.endDateTime
+											}
+											onClick={() => void handleAddSlot()}
 											className="rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
 										>
-											{t("timeSlots.addButton")}
+											{addingSlot
+												? t("timeSlots.adding")
+												: t("timeSlots.addButton")}
 										</button>
 									</div>
 								</div>
@@ -1037,17 +1232,19 @@ export default function CreateVolunteerOpportunityModal({
 					</button>
 
 					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							data-testid="modal-save-draft"
-							disabled={submitting !== null}
-							onClick={() => void submit(true)}
-							className="rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-40"
-						>
-							{submitting === "draft"
-								? t("createOpportunity.savingDraft")
-								: t("createOpportunity.saveDraft")}
-						</button>
+						{!isEditMode && (
+							<button
+								type="button"
+								data-testid="modal-save-draft"
+								disabled={submitting !== null}
+								onClick={() => void submit(true)}
+								className="rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-40"
+							>
+								{submitting === "draft"
+									? t("createOpportunity.savingDraft")
+									: t("createOpportunity.saveDraft")}
+							</button>
+						)}
 						{step < TOTAL_STEPS ? (
 							<button
 								type="button"
@@ -1066,8 +1263,12 @@ export default function CreateVolunteerOpportunityModal({
 								className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-40"
 							>
 								{submitting === "publish"
-									? t("createOpportunity.creating")
-									: t("createOpportunity.publish")}
+									? isEditMode
+										? t("createOpportunity.saving")
+										: t("createOpportunity.creating")
+									: isEditMode
+										? t("createOpportunity.save")
+										: t("createOpportunity.publish")}
 							</button>
 						)}
 					</div>

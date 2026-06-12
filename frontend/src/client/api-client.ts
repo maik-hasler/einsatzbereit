@@ -2425,6 +2425,7 @@ export interface CreateVolunteerOpportunityRequest {
     title: string | undefined;
     description: string | undefined;
     organizationId: string;
+    isRemote: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;

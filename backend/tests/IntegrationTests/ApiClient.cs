@@ -4847,6 +4847,9 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid OrganizationId { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("isRemote")]
+        public bool IsRemote { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         public string? Street { get; set; } = default!;
 

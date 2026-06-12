@@ -78,6 +78,33 @@ html {
  * Aktuell: Helles Grün (Tailwind green). Tausche die Hex-Werte
  * gegen eine andere Palette und alles passt sich an.
  */
+/* ── datetime-local / date / time input normalization ────────────────────── */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+	color-scheme: light;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+	opacity: 0.5;
+	cursor: pointer;
+	border-radius: 2px;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+	opacity: 1;
+}
+
+/* ── number input: hide spin buttons on non-focus for cleaner look ────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+	opacity: 0.5;
+}
+
 @theme {
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;

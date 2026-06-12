@@ -11,7 +11,7 @@ import {
 } from "../lib/format";
 import { getActiveOrgId } from "../lib/activeOrg";
 import SignUpModal from "../components/SignUpModal";
-import EditVolunteerOpportunityModal from "../components/EditVolunteerOpportunityModal";
+import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -367,8 +367,9 @@ export default function VolunteerOpportunityDetailPage() {
 			)}
 
 			{showEdit && (
-				<EditVolunteerOpportunityModal
-					opportunity={opportunity}
+				<CreateVolunteerOpportunityModal
+					organizationId={opportunity.organizationId}
+					initialOpportunity={opportunity}
 					onClose={() => setShowEdit(false)}
 					onSuccess={load}
 				/>

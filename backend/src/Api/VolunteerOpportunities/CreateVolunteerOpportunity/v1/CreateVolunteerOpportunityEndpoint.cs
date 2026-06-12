@@ -66,14 +66,14 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			? OpportunityStatus.Draft
 			: OpportunityStatus.Published;
 
-		// Drafts may be saved without an address; published opportunities require one.
+		// Remote opportunities have no address. Drafts may omit address fields too.
 		var hasAnyAddressField =
 			!string.IsNullOrWhiteSpace(request.Street) ||
 			!string.IsNullOrWhiteSpace(request.HouseNumber) ||
 			!string.IsNullOrWhiteSpace(request.ZipCode) ||
 			!string.IsNullOrWhiteSpace(request.City);
 
-		var address = status == OpportunityStatus.Draft && !hasAnyAddressField
+		var address = request.IsRemote || (status == OpportunityStatus.Draft && !hasAnyAddressField)
 			? null
 			: new Address(
 				request.Street ?? string.Empty,
@@ -89,7 +89,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			title,
 			request.Description ?? string.Empty,
 			new OrganizationId(request.OrganizationId),
-			false,
+			request.IsRemote,
 			address,
 			occurrence,
 			participationType,

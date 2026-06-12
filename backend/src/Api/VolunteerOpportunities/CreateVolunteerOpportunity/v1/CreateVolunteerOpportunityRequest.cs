@@ -4,6 +4,7 @@ public sealed record CreateVolunteerOpportunityRequest(
 	string? Title,
 	string? Description,
 	Guid OrganizationId,
+	bool IsRemote,
 	string? Street,
 	string? HouseNumber,
 	string? ZipCode,
