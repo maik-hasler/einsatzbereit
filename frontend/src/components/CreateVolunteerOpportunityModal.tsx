@@ -597,7 +597,7 @@ export default function CreateVolunteerOpportunityModal({
 		: pendingSlots.map((s) => ({ ...s, persisted: false as const }));
 
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+		<div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden p-3 sm:p-4">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -609,7 +609,7 @@ export default function CreateVolunteerOpportunityModal({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="create-opportunity-dialog-title"
-				className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				className="relative z-10 flex min-w-0 w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
 			>
 				{/* Brand accent */}
 				<div
@@ -820,7 +820,7 @@ export default function CreateVolunteerOpportunityModal({
 											</p>
 										)}
 									</div>
-									<div className="grid grid-cols-3 gap-3">
+									<div className="grid grid-cols-[1fr_5rem] gap-3">
 										<FloatingField
 											id="opportunity-street"
 											label={t("createOpportunity.fieldStreet")}
@@ -829,7 +829,6 @@ export default function CreateVolunteerOpportunityModal({
 											required
 											error={validationErrors.street}
 											maxLength={100}
-											wrapperClassName="col-span-2"
 										/>
 										<FloatingField
 											id="opportunity-house"
@@ -841,7 +840,7 @@ export default function CreateVolunteerOpportunityModal({
 											maxLength={10}
 										/>
 									</div>
-									<div className="grid grid-cols-3 gap-3">
+									<div className="grid grid-cols-[5rem_1fr] gap-3">
 										<FloatingField
 											id="opportunity-zip"
 											label={t("createOpportunity.fieldZip")}
@@ -861,7 +860,6 @@ export default function CreateVolunteerOpportunityModal({
 											required
 											error={validationErrors.city}
 											maxLength={100}
-											wrapperClassName="col-span-2"
 										/>
 									</div>
 								</>

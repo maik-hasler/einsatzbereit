@@ -847,7 +847,7 @@ function FilterDropdown({
 			</div>
 			{isOpen && (
 				<div
-					className={`absolute ${alignRight ? "right-0" : "left-0"} top-full z-20 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl`}
+					className={`absolute ${alignRight ? "right-0" : "left-0"} top-full z-[200] mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl`}
 				>
 					{children}
 				</div>
