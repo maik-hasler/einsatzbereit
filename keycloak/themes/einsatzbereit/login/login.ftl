@@ -11,19 +11,8 @@
 			<form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
 				<#-- Username / Email -->
-				<div class="${properties.kcFormGroupClass!}">
-					<div class="${properties.kcLabelWrapperClass!}">
-						<label for="username" class="${properties.kcLabelClass!}">
-							<#if !realm.loginWithEmailAllowed>
-								${msg("username")}
-							<#elseif !realm.registrationEmailAsUsername>
-								${msg("usernameOrEmail")}
-							<#else>
-								${msg("email")}
-							</#if>
-						</label>
-					</div>
-					<div class="${properties.kcInputWrapperClass!}">
+				<div class="form-group">
+					<div class="form-field">
 						<input
 							tabindex="2"
 							id="username"
@@ -34,21 +23,28 @@
 							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
 							autocomplete="username"
 							autofocus
+							placeholder=" "
 						/>
-						<#if messagesPerField.existsError('username','password')>
-							<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-								${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
-							</span>
-						</#if>
+						<label for="username" class="${properties.kcLabelClass!}">
+							<#if !realm.loginWithEmailAllowed>
+								${msg("username")}
+							<#elseif !realm.registrationEmailAsUsername>
+								${msg("usernameOrEmail")}
+							<#else>
+								${msg("email")}
+							</#if>
+						</label>
 					</div>
+					<#if messagesPerField.existsError('username','password')>
+						<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+							${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
+						</span>
+					</#if>
 				</div>
 
 				<#-- Password -->
-				<div class="${properties.kcFormGroupClass!}">
-					<div class="${properties.kcLabelWrapperClass!}">
-						<label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
-					</div>
-					<div class="${properties.kcInputWrapperClass!} ${properties.kcInputGroup!}">
+				<div class="form-group">
+					<div class="form-field form-field--with-toggle">
 						<input
 							tabindex="3"
 							id="password"
@@ -57,7 +53,9 @@
 							type="password"
 							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
 							autocomplete="current-password"
+							placeholder=" "
 						/>
+						<label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
 						<#if properties.kcFormPasswordVisibilityButtonClass?has_content>
 							<button
 								class="${properties.kcFormPasswordVisibilityButtonClass!}"

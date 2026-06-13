@@ -1,8 +1,8 @@
 (function () {
 	function checkValue(input) {
-		var group = input.closest('.form-group');
-		if (group) {
-			group.classList.toggle('has-value', input.value !== '');
+		var field = input.closest('.form-field');
+		if (field) {
+			field.classList.toggle('has-value', input.value !== '');
 		}
 	}
 
