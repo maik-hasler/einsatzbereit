@@ -5,6 +5,7 @@
 	--brand-600:  #2d8a5e;
 	--brand-700:  #226947;
 	--brand-800:  #1a3c2b;
+	--brand-900:  #0f2219;
 
 	--background:  var(--brand-50);
 	--card:        #ffffff;
@@ -181,7 +182,7 @@ a { color: inherit; }
 	border-top: 1px solid var(--border);
 }
 .card-footer a {
-	color: var(--brand-700);
+	color: var(--brand-600);
 	font-weight: 500;
 	text-decoration: none;
 	text-underline-offset: 3px;
@@ -210,7 +211,7 @@ a { color: inherit; }
 .alert-success {
 	background: rgb(62 175 120 / 0.08);
 	border-color: rgb(62 175 120 / 0.3);
-	color: var(--brand-700);
+	color: var(--brand-600);
 }
 .alert-info {
 	background: rgb(59 130 246 / 0.07);
@@ -340,7 +341,13 @@ a { color: inherit; }
 	flex-wrap: wrap;
 	gap: 0.5rem;
 }
-.form-options { display: flex; align-items: center; }
+.form-options {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	width: 100%;
+}
 .form-options label {
 	display: flex;
 	align-items: center;
@@ -349,10 +356,14 @@ a { color: inherit; }
 	color: var(--foreground);
 	cursor: pointer;
 }
+.form-options-wrapper {
+	display: flex;
+	align-items: center;
+}
 .form-options input[type="checkbox"] {
 	width: 1rem;
 	height: 1rem;
-	accent-color: var(--brand-700);
+	accent-color: var(--brand-600);
 	cursor: pointer;
 }
 .form-options-wrapper a,
@@ -406,15 +417,15 @@ a { color: inherit; }
 }
 
 .btn-primary {
-	background: var(--brand-700);
+	background: var(--brand-600);
 	color: #ffffff;
 	padding: 0.5rem 1rem;
 }
-.btn-primary:hover { background: var(--brand-800); }
+.btn-primary:hover { background: var(--brand-700); }
 
 .btn-secondary {
 	background: var(--brand-50);
-	color: var(--brand-700);
+	color: var(--brand-600);
 	padding: 0.5rem 1rem;
 	border: 1px solid var(--border);
 }
@@ -437,7 +448,7 @@ label > span.required { color: var(--destructive); margin-left: 0.125rem; }
 }
 #kc-info-message a,
 #kc-error-message a {
-	color: var(--brand-700);
+	color: var(--brand-600);
 	font-weight: 500;
 	text-decoration: underline;
 	text-underline-offset: 3px;
