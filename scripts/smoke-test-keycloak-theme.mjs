@@ -75,11 +75,9 @@ assert(
 	labelPosition !== null && labelPosition !== 'absolute'
 );
 
-// Inputs
+// Username input on step 1 (live KC uses two-step login: username then password)
 const usernameInput = await page.$('#username');
-const passwordInput = await page.$('#password');
-assert('Username input present', usernameInput !== null);
-assert('Password input present', passwordInput !== null);
+assert('Username input present on step 1', usernameInput !== null);
 
 // Auth card has a border (branded, not plain)
 const cardBorder = await page.evaluate(() => {
@@ -89,23 +87,30 @@ const cardBorder = await page.evaluate(() => {
 assert(`Auth card has border - got: ${cardBorder}`, cardBorder === 'solid');
 
 console.log('\n[3] Login page button color (must be green, not dark/black)');
-// Primary button background should be brand-600 (#2d8a5e = rgb(45, 138, 94))
 const btnBg = await page.evaluate(() => {
 	const btn = document.querySelector('.btn-primary');
 	return btn ? getComputedStyle(btn).backgroundColor : null;
 });
-// brand-600 = #2d8a5e = rgb(45, 138, 94)
-// Accept either brand-600 (45,138,94) or brand-500 (62,175,120) - both clearly green
-// The green channel must be dominant (>100) and much larger than red channel
+// brand-600 = #2d8a5e = rgb(45, 138, 94) - green channel must dominate red
 const btnBgParsed = btnBg?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
 const isGreen = btnBgParsed
 	? parseInt(btnBgParsed[2]) > 80 && parseInt(btnBgParsed[2]) > parseInt(btnBgParsed[1]) * 1.5
 	: false;
 assert(`Primary button is visibly green - got: ${btnBg}`, isGreen);
 
-console.log('\n[4] Forgot password link');
+// ── Step 2: advance to password page ─────────────────────────────────────────
+console.log('\n[4] Login step 2 - password page');
+if (usernameInput) {
+	await page.fill('#username', 'vera');
+	await page.click('input[type="submit"]');
+	await page.waitForLoadState('networkidle');
+}
+
+const passwordInput = await page.$('#password');
+assert('Password input present on step 2', passwordInput !== null);
+
 const forgotLink = await page.$('a[href*="reset-credentials"]');
-assert('Forgot password link present', forgotLink !== null);
+assert('Forgot password link present on step 2', forgotLink !== null);
 
 // ── Password reset page ───────────────────────────────────────────────────────
 console.log('\n[5] Password reset page');
@@ -113,15 +118,14 @@ if (forgotLink) {
 	await forgotLink.click();
 	await page.waitForLoadState('networkidle');
 
-	const resetInput  = await page.$('#username');
-	const submitBtn   = await page.$('input[type="submit"]');
-	const backLink    = await page.$('a[href*="openid-connect/auth"]');
+	const resetInput = await page.$('#username');
+	const submitBtn  = await page.$('input[type="submit"]');
+	const backLink   = await page.$('.card-footer a');
 
 	assert('Reset page has email/username input', resetInput !== null);
 	assert('Reset page has submit button', submitBtn !== null);
 	assert('Reset page has back-to-login link', backLink !== null);
 
-	// Back to login
 	await page.goto(loginUrl);
 	await page.waitForLoadState('networkidle');
 }
