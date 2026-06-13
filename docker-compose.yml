@@ -57,6 +57,7 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_SPI_REALM_IMPORTER_FILE_IMPORT_BEHAVIOR: OVERWRITE_EXISTING
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
