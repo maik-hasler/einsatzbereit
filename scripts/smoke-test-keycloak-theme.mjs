@@ -2,19 +2,21 @@
  * Smoke test: Keycloak login theme redesign
  *
  * Verifies on the live staging environment:
- *  1. Login page loads without errors
- *  2. Real brand logo is present (img tag pointing to logo.svg)
- *  3. Page background is the brand-50 green tint (not pure white)
- *  4. Standard label-above-input layout (no floating labels)
- *  5. Registration page loads without first/last name fields
- *  6. Health gate passes
+ *  1. Health gate passes
+ *  2. Login page loads with brand-50 background (no white override from common/keycloak)
+ *  3. Real brand logo present (img.auth-logo pointing to logo.svg)
+ *  4. Label-above-input layout (no floating labels / position:absolute labels)
+ *  5. Primary button is clearly green (not dark / near-black)
+ *  6. Forgot password link present
+ *  7. Password reset page loads and has a submit button
+ *  8. Registration page loads with correct fields and "Already have an account?" link
  */
 
 import { chromium } from 'playwright';
 
-const BASE_URL  = 'https://einsatzbereit.maik-hasler.de';
-const API_URL   = 'https://api.maik-hasler.de';
-const KC_URL    = 'https://login.maik-hasler.de/realms/einsatzbereit';
+const BASE_URL = 'https://einsatzbereit.maik-hasler.de';
+const API_URL  = 'https://api.maik-hasler.de';
+const KC_URL   = 'https://login.maik-hasler.de/realms/einsatzbereit';
 
 let passed = 0;
 let failed = 0;
@@ -41,55 +43,93 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ ignoreHTTPSErrors: true });
 const page    = await context.newPage();
 
+const loginUrl = `${KC_URL}/protocol/openid-connect/auth?client_id=frontend&redirect_uri=${encodeURIComponent(BASE_URL + '/callback')}&response_type=code&scope=openid`;
+
 // ── Login page ────────────────────────────────────────────────────────────────
-console.log('\n[2] Keycloak login page');
-await page.goto(`${KC_URL}/protocol/openid-connect/auth?client_id=frontend&redirect_uri=${encodeURIComponent(BASE_URL + '/callback')}&response_type=code&scope=openid`);
+console.log('\n[2] Login page structure');
+await page.goto(loginUrl);
 await page.waitForLoadState('networkidle');
 
-// Logo - should be an <img> with src ending in logo.svg, not an inline SVG
+// Logo
 const logoImg = await page.$('img.auth-logo');
-assert('Logo is an <img> element with class auth-logo', logoImg !== null);
+assert('Logo is <img class="auth-logo">', logoImg !== null);
 if (logoImg) {
 	const src = await logoImg.getAttribute('src');
 	assert('Logo src points to logo.svg', src?.includes('logo.svg') ?? false);
 }
 
-// Background color should be brand-50 (#f0faf5), not pure white
-const bgColor = await page.evaluate(() => {
-	return getComputedStyle(document.body).backgroundColor;
-});
-// #f0faf5 = rgb(240, 250, 245)
+// Background color should be brand-50 (#f0faf5 = rgb(240, 250, 245))
+const bgColor = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 assert(
-	`Page background is brand-50 (rgb(240, 250, 245)), got: ${bgColor}`,
+	`Page background is brand-50 rgb(240, 250, 245) - got: ${bgColor}`,
 	bgColor === 'rgb(240, 250, 245)'
 );
 
-// Standard label-above-input: label should NOT be position:absolute (no floating labels)
+// Labels must be static/relative - not absolute (floating label pattern)
 const labelPosition = await page.evaluate(() => {
 	const label = document.querySelector('.form-label');
 	return label ? getComputedStyle(label).position : null;
 });
 assert(
-	`Form label is not position:absolute (got: ${labelPosition})`,
-	labelPosition !== 'absolute'
+	`Form label is NOT position:absolute - got: ${labelPosition}`,
+	labelPosition !== null && labelPosition !== 'absolute'
 );
 
-// Username and password inputs exist
+// Inputs
 const usernameInput = await page.$('#username');
 const passwordInput = await page.$('#password');
 assert('Username input present', usernameInput !== null);
 assert('Password input present', passwordInput !== null);
 
-// Card has a visible border (branded card, not plain white on white)
+// Auth card has a border (branded, not plain)
 const cardBorder = await page.evaluate(() => {
 	const card = document.querySelector('.auth-card');
 	return card ? getComputedStyle(card).borderTopStyle : null;
 });
-assert(`Auth card has a border (got: ${cardBorder})`, cardBorder === 'solid');
+assert(`Auth card has border - got: ${cardBorder}`, cardBorder === 'solid');
+
+console.log('\n[3] Login page button color (must be green, not dark/black)');
+// Primary button background should be brand-600 (#2d8a5e = rgb(45, 138, 94))
+const btnBg = await page.evaluate(() => {
+	const btn = document.querySelector('.btn-primary');
+	return btn ? getComputedStyle(btn).backgroundColor : null;
+});
+// brand-600 = #2d8a5e = rgb(45, 138, 94)
+// Accept either brand-600 (45,138,94) or brand-500 (62,175,120) - both clearly green
+// The green channel must be dominant (>100) and much larger than red channel
+const btnBgParsed = btnBg?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+const isGreen = btnBgParsed
+	? parseInt(btnBgParsed[2]) > 80 && parseInt(btnBgParsed[2]) > parseInt(btnBgParsed[1]) * 1.5
+	: false;
+assert(`Primary button is visibly green - got: ${btnBg}`, isGreen);
+
+console.log('\n[4] Forgot password link');
+const forgotLink = await page.$('a[href*="reset-credentials"]');
+assert('Forgot password link present', forgotLink !== null);
+
+// ── Password reset page ───────────────────────────────────────────────────────
+console.log('\n[5] Password reset page');
+if (forgotLink) {
+	await forgotLink.click();
+	await page.waitForLoadState('networkidle');
+
+	const resetInput  = await page.$('#username');
+	const submitBtn   = await page.$('input[type="submit"]');
+	const backLink    = await page.$('a[href*="openid-connect/auth"]');
+
+	assert('Reset page has email/username input', resetInput !== null);
+	assert('Reset page has submit button', submitBtn !== null);
+	assert('Reset page has back-to-login link', backLink !== null);
+
+	// Back to login
+	await page.goto(loginUrl);
+	await page.waitForLoadState('networkidle');
+}
 
 // ── Registration page ─────────────────────────────────────────────────────────
-console.log('\n[3] Registration page - no first/last name fields');
-await page.goto(`${KC_URL}/protocol/openid-connect/registrations?client_id=frontend&redirect_uri=${encodeURIComponent(BASE_URL + '/callback')}&response_type=code&scope=openid`);
+console.log('\n[6] Registration page');
+const regUrl = `${KC_URL}/protocol/openid-connect/registrations?client_id=frontend&redirect_uri=${encodeURIComponent(BASE_URL + '/callback')}&response_type=code&scope=openid`;
+await page.goto(regUrl);
 await page.waitForLoadState('networkidle');
 
 const firstNameField = await page.$('#firstName');
@@ -98,11 +138,25 @@ const emailField     = await page.$('#email');
 const usernameField  = await page.$('#username');
 const regPassword    = await page.$('#password');
 
-assert('firstName field is NOT present on registration form', firstNameField === null);
-assert('lastName field is NOT present on registration form', lastNameField === null);
-assert('email field IS present on registration form', emailField !== null);
-assert('username field IS present on registration form', usernameField !== null);
-assert('password field IS present on registration form', regPassword !== null);
+assert('firstName NOT present (custom register form)', firstNameField === null);
+assert('lastName NOT present (custom register form)', lastNameField === null);
+assert('email field present', emailField !== null);
+assert('username field present', usernameField !== null);
+assert('password field present', regPassword !== null);
+
+// "Already have an account?" link should not show raw message key
+const cardFooter = await page.$('.card-footer');
+if (cardFooter) {
+	const footerText = await cardFooter.innerText();
+	assert(
+		`Card footer does not show raw key "alreadyHaveAccount" - got: "${footerText.trim()}"`,
+		!footerText.includes('alreadyHaveAccount')
+	);
+	assert(
+		'Card footer contains sign-in link',
+		await page.$('.card-footer a') !== null
+	);
+}
 
 await browser.close();
 
