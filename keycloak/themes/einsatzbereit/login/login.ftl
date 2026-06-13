@@ -11,39 +11,37 @@
 			<form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 
 				<#-- Username / Email -->
-				<#if !usernameHidden??>
-					<div class="${properties.kcFormGroupClass!}">
-						<div class="${properties.kcLabelWrapperClass!}">
-							<label for="username" class="${properties.kcLabelClass!}">
-								<#if !realm.loginWithEmailAllowed>
-									${msg("username")}
-								<#elseif !realm.registrationEmailAsUsername>
-									${msg("usernameOrEmail")}
-								<#else>
-									${msg("email")}
-								</#if>
-							</label>
-						</div>
-						<div class="${properties.kcInputWrapperClass!}">
-							<input
-								tabindex="2"
-								id="username"
-								class="${properties.kcInputClass!}"
-								name="username"
-								value="${(login.username!'')}"
-								type="text"
-								aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
-								autocomplete="username"
-								autofocus
-							/>
-							<#if messagesPerField.existsError('username','password')>
-								<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-									${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
-								</span>
+				<div class="${properties.kcFormGroupClass!}">
+					<div class="${properties.kcLabelWrapperClass!}">
+						<label for="username" class="${properties.kcLabelClass!}">
+							<#if !realm.loginWithEmailAllowed>
+								${msg("username")}
+							<#elseif !realm.registrationEmailAsUsername>
+								${msg("usernameOrEmail")}
+							<#else>
+								${msg("email")}
 							</#if>
-						</div>
+						</label>
 					</div>
-				</#if>
+					<div class="${properties.kcInputWrapperClass!}">
+						<input
+							tabindex="2"
+							id="username"
+							class="${properties.kcInputClass!}"
+							name="username"
+							value="${(login.username!'')}"
+							type="text"
+							aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
+							autocomplete="username"
+							autofocus
+						/>
+						<#if messagesPerField.existsError('username','password')>
+							<span id="input-error" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+								${kcSanitize(messagesPerField.getFirstError('username','password'))?no_esc}
+							</span>
+						</#if>
+					</div>
+				</div>
 
 				<#-- Password -->
 				<div class="${properties.kcFormGroupClass!}">
@@ -79,7 +77,7 @@
 				<#-- Remember me + forgot password -->
 				<div id="kc-form-options" class="form-options">
 					<div class="form-options-wrapper">
-						<#if realm.rememberMe && !usernameHidden??>
+						<#if realm.rememberMe>
 							<label>
 								<input tabindex="5" id="rememberMe" name="rememberMe" type="checkbox" <#if login.rememberMe??>checked</#if>>
 								<span>${msg("rememberMe")}</span>

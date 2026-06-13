@@ -3,13 +3,14 @@
  *
  * Verifies on the live staging environment:
  *  1. Health gate passes
- *  2. Login page loads with brand-50 background (no white override from common/keycloak)
+ *  2. Login page loads with brand-50 background
  *  3. Real brand logo present (img.auth-logo pointing to logo.svg)
  *  4. Label-above-input layout (no floating labels / position:absolute labels)
  *  5. Primary button is clearly green (not dark / near-black)
- *  6. Forgot password link present
- *  7. Password reset page loads and has a submit button
- *  8. Registration page loads with correct fields and "Already have an account?" link
+ *  6. Username AND password both present on the same page (single-step login)
+ *  7. Forgot password link present on the login page
+ *  8. Password reset page loads and has a submit button
+ *  9. Registration page loads with correct fields and "Already have an account?" link
  */
 
 import { chromium } from 'playwright';
@@ -75,10 +76,6 @@ assert(
 	labelPosition !== null && labelPosition !== 'absolute'
 );
 
-// Username input on step 1 (live KC uses two-step login: username then password)
-const usernameInput = await page.$('#username');
-assert('Username input present on step 1', usernameInput !== null);
-
 // Auth card has a border (branded, not plain)
 const cardBorder = await page.evaluate(() => {
 	const card = document.querySelector('.auth-card');
@@ -98,19 +95,17 @@ const isGreen = btnBgParsed
 	: false;
 assert(`Primary button is visibly green - got: ${btnBg}`, isGreen);
 
-// ── Step 2: advance to password page ─────────────────────────────────────────
-console.log('\n[4] Login step 2 - password page');
-if (usernameInput) {
-	await page.fill('#username', 'vera');
-	await page.click('input[type="submit"]');
-	await page.waitForLoadState('networkidle');
-}
+// ── Single-step login: both fields on same page ───────────────────────────────
+console.log('\n[4] Single-step login - username and password on same page');
+
+const usernameInput = await page.$('#username');
+assert('Username input present', usernameInput !== null);
 
 const passwordInput = await page.$('#password');
-assert('Password input present on step 2', passwordInput !== null);
+assert('Password input present on same page as username', passwordInput !== null);
 
 const forgotLink = await page.$('a[href*="reset-credentials"]');
-assert('Forgot password link present on step 2', forgotLink !== null);
+assert('Forgot password link present on login page', forgotLink !== null);
 
 // ── Password reset page ───────────────────────────────────────────────────────
 console.log('\n[5] Password reset page');
