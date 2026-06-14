@@ -366,7 +366,7 @@ export default function VolunteerOpportunityDetailPage() {
 											ts.startDateTime as unknown as string,
 											i18n.language,
 										)}
-										{" – "}
+										{" - "}
 										{formatDateTime(
 											ts.endDateTime as unknown as string,
 											i18n.language,
