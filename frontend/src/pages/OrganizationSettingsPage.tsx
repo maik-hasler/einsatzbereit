@@ -361,7 +361,7 @@ export default function OrganizationSettingsPage() {
 						<button
 							type="submit"
 							disabled={saving}
-							className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+							className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
 						>
 							{saving ? t("orgSettings.saving") : t("orgSettings.save")}
 						</button>
@@ -413,7 +413,7 @@ export default function OrganizationSettingsPage() {
 }
 
 const inputClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none";
+	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
 
 const labelClass = "block text-xs text-gray-600";
 
