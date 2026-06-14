@@ -8,7 +8,6 @@ import type {
 	BadgeCatalogEntry,
 	StreakSummary,
 } from "../client/api-client";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import BadgeGrid from "../components/BadgeGrid";
 import ShareAchievementsModal from "../components/ShareAchievementsModal";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -18,11 +17,6 @@ export default function AchievementsPage() {
 	const auth = useAuth();
 	const { t } = useTranslation();
 	usePageTitle(t("achievements.title"));
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("breadcrumb.achievements") },
-	]);
 
 	const [achievements, setAchievements] = useState<AchievementSummary[]>([]);
 	const [catalog, setCatalog] = useState<BadgeCatalogEntry[]>([]);

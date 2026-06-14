@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { MyProfileResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
 import ConfirmDialog from "../components/ConfirmDialog";
 
@@ -16,11 +15,6 @@ export default function ProfilePage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	usePageTitle(t("profile.title"));
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("breadcrumb.profile") },
-	]);
 
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
