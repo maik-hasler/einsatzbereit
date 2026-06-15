@@ -8,18 +8,12 @@ import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
-import OpportunityMap from "./OpportunityMap";
-import {
-	useOpportunityViewFilters,
-	type OpportunityBounds,
-} from "../hooks/useOpportunityFilters";
 
 interface Props {
 	canCreateOpportunity: boolean;
 }
 
 const LIST_PAGE_SIZE = 10;
-const MAP_PAGE_SIZE = 200;
 
 const CATEGORY_VALUES = [
 	"Social",
@@ -309,44 +303,6 @@ function BroomIcon() {
 			<path d="M14.6 12.6c.8.8.9 2.1.2 3L10 22l-8-8 6.4-4.8c.9-.7 2.2-.6 3 .2Z" />
 			<path d="m6.8 10.4 6.8 6.8" />
 			<path d="m5 17 1.4-1.4" />
-		</svg>
-	);
-}
-
-function ViewListIcon() {
-	return (
-		<svg
-			className="h-4 w-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="2"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M3.75 5.25h16.5M3.75 12h16.5m-16.5 6.75h16.5"
-			/>
-		</svg>
-	);
-}
-
-function ViewMapIcon() {
-	return (
-		<svg
-			className="h-4 w-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="2"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M9 6.75V15m6-6v8.25m-8.25 0h10.5a2.25 2.25 0 0 0 2.25-2.25V8.25a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 8.25v5.25a2.25 2.25 0 0 0 2.25 2.25Z"
-			/>
 		</svg>
 	);
 }
@@ -892,9 +848,6 @@ export default function VolunteerOpportunitiesList({
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
 
-	const { view, bounds, setView, setBounds } = useOpportunityViewFilters();
-	const isMap = view === "map";
-
 	const [items, setItems] = useState<VolunteerOpportunitySummary[]>([]);
 	const [page, setPage] = useState(1);
 	const [pageCount, setPageCount] = useState(1);
@@ -976,12 +929,7 @@ export default function VolunteerOpportunitiesList({
 		dateTo,
 		categories: categoriesParam,
 		tag,
-		isMap,
 		refreshKey,
-		bn: bounds?.north,
-		bs: bounds?.south,
-		be: bounds?.east,
-		bw: bounds?.west,
 	});
 
 	useEffect(() => {
@@ -997,11 +945,6 @@ export default function VolunteerOpportunitiesList({
 			prev.dateTo !== dateTo ||
 			prev.categories !== categoriesParam ||
 			prev.tag !== tag ||
-			prev.isMap !== isMap ||
-			prev.bn !== bounds?.north ||
-			prev.bs !== bounds?.south ||
-			prev.be !== bounds?.east ||
-			prev.bw !== bounds?.west ||
 			prev.refreshKey !== refreshKey;
 
 		prevFiltersRef.current = {
@@ -1015,12 +958,7 @@ export default function VolunteerOpportunitiesList({
 			dateTo,
 			categories: categoriesParam,
 			tag,
-			isMap,
 			refreshKey,
-			bn: bounds?.north,
-			bs: bounds?.south,
-			be: bounds?.east,
-			bw: bounds?.west,
 		};
 
 		if (filterChanged) {
@@ -1034,8 +972,6 @@ export default function VolunteerOpportunitiesList({
 		if (page > 1) setLoadingMore(true);
 		else setLoading(true);
 		setError(null);
-
-		const mapBounds = isMap ? bounds : undefined;
 
 		let cancelled = false;
 		const isRemoteBool =
@@ -1054,17 +990,17 @@ export default function VolunteerOpportunitiesList({
 		api
 			.getVolunteerOpportunities(
 				page,
-				isMap ? MAP_PAGE_SIZE : LIST_PAGE_SIZE,
+				LIST_PAGE_SIZE,
 				undefined,
 				occurrence || undefined,
 				participationType || undefined,
 				isRemoteBool,
 				dateFromParsed,
 				dateToParsed,
-				mapBounds?.north,
-				mapBounds?.south,
-				mapBounds?.east,
-				mapBounds?.west,
+				undefined,
+				undefined,
+				undefined,
+				undefined,
 				centerLatitude,
 				centerLongitude,
 				radiusKm,
@@ -1102,11 +1038,6 @@ export default function VolunteerOpportunitiesList({
 		dateTo,
 		categoriesParam,
 		tag,
-		isMap,
-		bounds?.north,
-		bounds?.south,
-		bounds?.east,
-		bounds?.west,
 		refreshKey,
 	]);
 
@@ -1203,10 +1134,6 @@ export default function VolunteerOpportunitiesList({
 		setOpenFilter(null);
 	}
 
-	function handleBoundsChange(next: OpportunityBounds) {
-		setBounds(next);
-	}
-
 	const hasFilters = !!(
 		hasLocation ||
 		occurrence ||
@@ -1259,40 +1186,9 @@ export default function VolunteerOpportunitiesList({
 				)}
 			</div>
 
-			{/* Filter bar - view toggle + filters in one unified row */}
+			{/* Filter bar */}
 			<div ref={filterBarRef} className="mb-2">
 				<div className="flex flex-wrap items-center justify-center gap-2 pb-3">
-					{/* View toggle */}
-					<div className="inline-flex items-center overflow-hidden rounded-full border border-gray-200 bg-white text-sm font-medium">
-						<button
-							type="button"
-							data-testid="view-toggle-list"
-							aria-pressed={!isMap}
-							onClick={() => setView("list")}
-							className={`flex items-center gap-1.5 px-3 py-1.5 transition-all ${
-								!isMap
-									? "bg-brand-50 text-brand-700"
-									: "text-gray-600 hover:bg-gray-50"
-							}`}
-						>
-							<ViewListIcon />
-							{t("opportunities.view.list")}
-						</button>
-						<button
-							type="button"
-							data-testid="view-toggle-map"
-							aria-pressed={isMap}
-							onClick={() => setView("map")}
-							className={`flex items-center gap-1.5 px-3 py-1.5 transition-all ${
-								isMap
-									? "bg-brand-50 text-brand-700"
-									: "text-gray-600 hover:bg-gray-50"
-							}`}
-						>
-							<ViewMapIcon />
-							{t("opportunities.view.map")}
-						</button>
-					</div>
 					{/* Location + Radius */}
 					<FilterDropdown
 						icon={<PinIcon className="h-3.5 w-3.5" />}
@@ -1615,18 +1511,8 @@ export default function VolunteerOpportunitiesList({
 				</div>
 			</div>
 
-			{isMap && (
-				<OpportunityMap
-					items={items}
-					bounds={bounds}
-					onBoundsChange={handleBoundsChange}
-				/>
-			)}
-
 			{loading && items.length === 0 && (
-				<p className={isMap ? "mt-4 text-gray-500" : "text-gray-500"}>
-					{t("opportunities.loading")}
-				</p>
+				<p className="text-gray-500">{t("opportunities.loading")}</p>
 			)}
 			{error && (
 				<p className="text-red-600" data-testid="opportunities-error">
@@ -1637,28 +1523,22 @@ export default function VolunteerOpportunitiesList({
 			{!error && (
 				<>
 					{!loading && items.length === 0 ? (
-						isMap ? (
-							<p className="mt-4 text-gray-500">{t("map.noPinsInView")}</p>
-						) : (
-							<EmptyState
-								title={t("opportunities.noResults")}
-								message={
-									hasFilters
-										? t("opportunities.noResultsWithFilters")
-										: undefined
-								}
-								action={
-									hasFilters
-										? {
-												label: t("opportunities.clearFilters"),
-												onClick: clearFilters,
-											}
-										: undefined
-								}
-							/>
-						)
+						<EmptyState
+							title={t("opportunities.noResults")}
+							message={
+								hasFilters ? t("opportunities.noResultsWithFilters") : undefined
+							}
+							action={
+								hasFilters
+									? {
+											label: t("opportunities.clearFilters"),
+											onClick: clearFilters,
+										}
+									: undefined
+							}
+						/>
 					) : (
-						<ul className={isMap ? "mt-4 space-y-3" : "space-y-3"}>
+						<ul className="space-y-3">
 							{items.map((item: VolunteerOpportunitySummary) => {
 								const spotsLeft =
 									item.totalMaxParticipants > 0
@@ -1778,7 +1658,7 @@ export default function VolunteerOpportunitiesList({
 						</ul>
 					)}
 
-					{!isMap && items.length > 0 && page < pageCount && (
+					{items.length > 0 && page < pageCount && (
 						<div className="mt-8 flex justify-center">
 							<button
 								onClick={() => setPage((p) => p + 1)}
