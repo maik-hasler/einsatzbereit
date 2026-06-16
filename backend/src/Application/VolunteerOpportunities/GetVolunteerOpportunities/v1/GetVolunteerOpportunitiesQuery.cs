@@ -6,7 +6,6 @@ namespace Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 public sealed record GetVolunteerOpportunitiesQuery(
 	int PageNumber,
 	int PageSize,
-	string? Search,
 	string? City,
 	string? Occurrence,
 	string? ParticipationType,
@@ -20,6 +19,6 @@ public sealed record GetVolunteerOpportunitiesQuery(
 	double? CenterLatitude,
 	double? CenterLongitude,
 	double? RadiusKm,
-	string? Category,
+	string[]? Categories,
 	string? Tag)
 	: IQuery<PagedList<VolunteerOpportunitySummary>>;

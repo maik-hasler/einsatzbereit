@@ -49,13 +49,18 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 					"ParticipationType cannot be changed while active engagements exist.");
 		}
 
+		var title = opportunity.Status == OpportunityStatus.Draft
+			&& string.IsNullOrWhiteSpace(request.Title)
+				? "Unbenannt"
+				: request.Title;
+
 		var address = request.Address;
 
 		if (!request.IsRemote && address is not null)
 			address = await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken);
 
 		opportunity.Update(
-			request.Title,
+			title,
 			request.Description,
 			request.IsRemote,
 			address,

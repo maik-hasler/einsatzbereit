@@ -62,23 +62,41 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			category = parsedCategory;
 		}
 
-		var address = new Address(
-			request.Street,
-			request.HouseNumber,
-			request.ZipCode,
-			request.City);
+		var status = request.IsDraft == true
+			? OpportunityStatus.Draft
+			: OpportunityStatus.Published;
+
+		// Remote opportunities have no address. Drafts may omit address fields too.
+		var hasAnyAddressField =
+			!string.IsNullOrWhiteSpace(request.Street) ||
+			!string.IsNullOrWhiteSpace(request.HouseNumber) ||
+			!string.IsNullOrWhiteSpace(request.ZipCode) ||
+			!string.IsNullOrWhiteSpace(request.City);
+
+		var address = request.IsRemote || (status == OpportunityStatus.Draft && !hasAnyAddressField)
+			? null
+			: new Address(
+				request.Street ?? string.Empty,
+				request.HouseNumber ?? string.Empty,
+				request.ZipCode ?? string.Empty,
+				request.City ?? string.Empty);
+
+		var title = status == OpportunityStatus.Draft && string.IsNullOrWhiteSpace(request.Title)
+			? "Unbenannt"
+			: request.Title ?? string.Empty;
 
 		var command = new CreateVolunteerOpportunityCommand(
-			request.Title,
-			request.Description,
+			title,
+			request.Description ?? string.Empty,
 			new OrganizationId(request.OrganizationId),
-			false,
+			request.IsRemote,
 			address,
 			occurrence,
 			participationType,
 			checkInMethod,
 			category,
-			[.. request.Tags ?? []]);
+			[.. request.Tags ?? []],
+			status);
 
 		var opportunity = await sender.Send(command, cancellationToken);
 
@@ -99,7 +117,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			opportunity.CheckInMethod.ToString(),
 			opportunity.Category?.ToString(),
 			opportunity.Tags,
-			opportunity.CreatedOn);
+			opportunity.CreatedOn,
+			opportunity.Status.ToString());
 
 		return Results.Ok(response);
 	}

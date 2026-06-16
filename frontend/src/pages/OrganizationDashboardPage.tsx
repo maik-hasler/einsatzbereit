@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { OrganizationDashboardResponse } from "../client/api-client";
+import type {
+	OrganizationDashboardResponse,
+	VolunteerOpportunitySummary,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import Breadcrumb from "../components/Breadcrumb";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -82,6 +85,7 @@ export default function OrganizationDashboardPage() {
 	const [data, setData] = useState<OrganizationDashboardResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [drafts, setDrafts] = useState<VolunteerOpportunitySummary[]>([]);
 	usePageTitle(data?.name ?? t("orgDashboard.title"));
 
 	useEffect(() => {
@@ -95,6 +99,10 @@ export default function OrganizationDashboardPage() {
 				setError(e instanceof Error ? e.message : String(e)),
 			)
 			.finally(() => setLoading(false));
+		api
+			.getOrganizationOpportunityDrafts(organizationId)
+			.then(setDrafts)
+			.catch(() => {});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
@@ -155,6 +163,46 @@ export default function OrganizationDashboardPage() {
 					color="red"
 				/>
 			</div>
+
+			{drafts.length > 0 && (
+				<section className="mt-8" data-testid="drafts-section">
+					<h2 className="text-lg font-semibold text-gray-900">
+						{t("orgDashboard.draftsTitle")}
+					</h2>
+					<p className="mt-1 text-sm text-gray-500">
+						{t("orgDashboard.draftsDesc")}
+					</p>
+					<ul className="mt-4 space-y-3">
+						{drafts.map((draft) => (
+							<li
+								key={draft.id}
+								className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+							>
+								<Link
+									to={`/volunteer-opportunities/${draft.id}`}
+									className="absolute inset-0"
+									aria-label={draft.title || t("orgDashboard.unnamedDraft")}
+								/>
+								<div className="flex items-center justify-between gap-3">
+									<div className="min-w-0">
+										<p className="truncate text-sm font-semibold text-gray-900">
+											{draft.title || t("orgDashboard.unnamedDraft")}
+										</p>
+										{draft.description && (
+											<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
+												{draft.description}
+											</p>
+										)}
+									</div>
+									<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+										{t("opportunities.draftBadge")}
+									</span>
+								</div>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
 		</div>
 	);
 }

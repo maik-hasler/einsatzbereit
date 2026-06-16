@@ -1,7 +1,7 @@
 import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useLocation } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
@@ -17,6 +17,7 @@ export default function Header() {
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
@@ -28,9 +29,18 @@ export default function Header() {
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [notifOpen, setNotifOpen] = useState(false);
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
+	const [scrolled, setScrolled] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const notifRef = useRef<HTMLDivElement>(null);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const onScroll = () => setScrolled(window.scrollY > 100);
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
+
+	const isTransparent = location.pathname === "/" && !scrolled;
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
@@ -98,15 +108,26 @@ export default function Header() {
 	const unreadCount = notifications.filter((n) => !n.isRead).length;
 
 	return (
-		<header className="bg-white border-b border-gray-200">
-			{/* Accent bar */}
-			<div className="h-1 bg-brand-800" />
-
+		<header
+			className={`sticky top-0 z-40 transition-all duration-300 ${
+				isTransparent && mobileOpen
+					? "border-b-0 bg-brand-800"
+					: isTransparent
+						? "border-b-0 bg-transparent"
+						: scrolled
+							? "border-b border-transparent bg-white/95 shadow-md backdrop-blur-sm"
+							: "border-b border-gray-200 bg-white"
+			}`}
+		>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16">
 					{/* Brand */}
 					<Link to="/" className="flex items-center">
-						<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
+						<img
+							src="/logo.svg"
+							alt={t("brand.name")}
+							className={`h-8 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
+						/>
 					</Link>
 
 					{/* Desktop Nav */}
@@ -342,28 +363,30 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
+									className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+									className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:border-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 								>
 									{t("nav.register")}
 								</button>
 							</div>
 						)}
-						<div className="w-px h-6 bg-gray-200" />
-						<LanguageSelector />
+						<div
+							className={`w-px h-6 ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
+						/>
+						<LanguageSelector transparent={isTransparent} />
 					</nav>
 
 					{/* Mobile Menu Button */}
 					<button
 						type="button"
 						onClick={() => setMobileOpen((o) => !o)}
-						className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+						className={`md:hidden inline-flex items-center justify-center p-2 rounded-lg transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
 						aria-label={t("nav.openMenu")}
 						aria-expanded={mobileOpen}
 					>
@@ -400,12 +423,26 @@ export default function Header() {
 				</div>
 			</div>
 
-			{/* Mobile Menu */}
+			{/* Mobile Menu - absolute overlay so it doesn't push content down */}
 			{mobileOpen && (
-				<div className="md:hidden border-t border-gray-100">
-					<div className="px-4 py-4 space-y-2">
+				<div
+					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg overflow-hidden ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
+				>
+					{isTransparent && (
+						<>
+							<div
+								className="pointer-events-none absolute -left-20 -top-10 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
+								aria-hidden="true"
+							/>
+							<div
+								className="pointer-events-none absolute -right-16 -top-8 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl"
+								aria-hidden="true"
+							/>
+						</>
+					)}
+					<div className="relative px-4 py-4 space-y-2">
 						<div className="pb-2">
-							<LanguageSelector />
+							<LanguageSelector transparent={isTransparent} />
 						</div>
 						{isLoggedIn ? (
 							<div className="space-y-1">
@@ -413,7 +450,9 @@ export default function Header() {
 									<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
 										{initials}
 									</div>
-									<span className="text-sm font-medium text-gray-700">
+									<span
+										className={`text-sm font-medium ${isTransparent ? "text-white/90" : "text-gray-700"}`}
+									>
 										{displayName}
 									</span>
 								</div>
@@ -426,7 +465,7 @@ export default function Header() {
 										e.stopPropagation();
 										setNotifOpen((o) => !o);
 									}}
-									className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("notifications.bellLabel")}
 									{unreadCount > 0 && (
@@ -513,28 +552,28 @@ export default function Header() {
 								<Link
 									to="/my-engagements"
 									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("nav.myEngagements")}
 								</Link>
 								<Link
 									to="/profile"
 									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("nav.myProfile")}
 								</Link>
 								<Link
 									to="/achievements"
 									onClick={() => setMobileOpen(false)}
-									className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+									className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 								>
 									{t("nav.myAchievements")}
 								</Link>
 								<button
 									type="button"
 									onClick={() => auth.signoutRedirect()}
-									className="block w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+									className={`block w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-red-400 hover:bg-white/10 hover:text-red-300" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
 								>
 									{t("nav.signOut")}
 								</button>
@@ -544,14 +583,14 @@ export default function Header() {
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
+									className={`block w-full text-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
 								>
 									{t("nav.signIn")}
 								</button>
 								<button
 									type="button"
 									onClick={() => auth.signinRedirect()}
-									className="block w-full text-center rounded-lg border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+									className={`block w-full text-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 								>
 									{t("nav.register")}
 								</button>

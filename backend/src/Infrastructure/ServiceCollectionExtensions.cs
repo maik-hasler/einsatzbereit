@@ -5,6 +5,7 @@ using Application.Common.Email;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
+using Application.Common.Storage;
 using Application.Engagements;
 using Application.Notifications;
 using Application.Organizations;
@@ -17,6 +18,7 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
 using Infrastructure.Persistence.Repositories;
+using Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,6 +81,9 @@ public static class ServiceCollectionExtensions
 				client.Timeout = TimeSpan.FromSeconds(geocodingOptions.TimeoutSeconds);
 				client.DefaultRequestHeaders.UserAgent.ParseAdd(geocodingOptions.UserAgent);
 			});
+
+		services.ConfigureOptions<StorageSettingsSetup>();
+		services.AddSingleton<IFileStorageService, MinioFileStorageService>();
 
 		services.ConfigureOptions<KeycloakOptionsSetup>();
 

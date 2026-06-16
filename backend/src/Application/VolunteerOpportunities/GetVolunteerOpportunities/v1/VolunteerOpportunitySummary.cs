@@ -3,7 +3,7 @@ namespace Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 public sealed record VolunteerOpportunitySummary(
 	Guid Id,
 	string Title,
-	string Description,
+	string? Description,
 	Guid OrganizationId,
 	string OrganizationName,
 	string? Street,
@@ -20,4 +20,6 @@ public sealed record VolunteerOpportunitySummary(
 	IReadOnlyList<string> Tags,
 	DateTimeOffset CreatedOn,
 	int TotalMaxParticipants,
-	int CurrentParticipantCount);
+	int CurrentParticipantCount,
+	string Status,
+	string? BannerImageUrl);

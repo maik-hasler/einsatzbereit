@@ -204,24 +204,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetVolunteerOpportunities_ShouldFilterByKeyword(
-		CancellationToken cancellationToken)
-	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
-		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
-
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Beach cleanup", "Collect litter", cancellationToken);
-		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Soup kitchen", "Serve meals", cancellationToken);
-
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
-
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, "beach", cancellationToken: cancellationToken);
-
-		result.Items.Should().ContainSingle();
-		result.Items.Single().Title.Should().Be("Beach cleanup");
-	}
-
-	[Test]
 	public async Task GetVolunteerOpportunities_ShouldFilterByIsRemote(
 		CancellationToken cancellationToken)
 	{

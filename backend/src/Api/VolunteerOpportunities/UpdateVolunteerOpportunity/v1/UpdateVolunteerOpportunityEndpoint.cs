@@ -36,17 +36,12 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
 		Address? address = null;
-		if (!request.IsRemote)
-		{
-			if (string.IsNullOrWhiteSpace(request.Street) || string.IsNullOrWhiteSpace(request.HouseNumber) ||
-				string.IsNullOrWhiteSpace(request.ZipCode) || string.IsNullOrWhiteSpace(request.City))
-			{
-				return Results.Problem(
-					"Street, HouseNumber, ZipCode and City are required for non-remote opportunities.",
-					statusCode: StatusCodes.Status400BadRequest);
-			}
-			address = new Address(request.Street, request.HouseNumber, request.ZipCode, request.City);
-		}
+		if (!request.IsRemote && !string.IsNullOrWhiteSpace(request.Street))
+			address = new Address(
+				request.Street ?? string.Empty,
+				request.HouseNumber ?? string.Empty,
+				request.ZipCode ?? string.Empty,
+				request.City ?? string.Empty);
 
 		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence))
 		{
@@ -83,8 +78,8 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId,
-			request.Title,
-			request.Description,
+			request.Title ?? string.Empty,
+			request.Description ?? string.Empty,
 			request.IsRemote,
 			address,
 			occurrence,

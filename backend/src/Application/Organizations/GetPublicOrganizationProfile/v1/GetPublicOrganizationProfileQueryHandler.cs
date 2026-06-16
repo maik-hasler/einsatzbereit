@@ -2,6 +2,7 @@ using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities;
 using Domain.Organizations;
+using Domain.VolunteerOpportunities;
 
 namespace Application.Organizations.GetPublicOrganizationProfile.v1;
 
@@ -21,7 +22,10 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 			return null;
 
 		var opportunities = await volunteerOpportunityReadRepository
-			.GetSummariesByOrganizationAsync(request.OrganizationId, cancellationToken);
+			.GetSummariesByOrganizationAsync(
+				request.OrganizationId,
+				OpportunityStatus.Published,
+				cancellationToken);
 
 		var address = organization.Address is null
 			? null

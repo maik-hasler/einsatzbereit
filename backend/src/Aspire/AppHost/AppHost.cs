@@ -3,12 +3,26 @@ using System.Text.Json.Nodes;
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
-	.WithDataVolume()
 	.WithPgAdmin();
+
+// Skip persistent volume in test environments to avoid stale migration state
+var isTestEnv = builder.Environment.EnvironmentName == "Testing";
+
+if (!isTestEnv)
+	postgres.WithDataVolume();
 
 var mailpit = builder.AddContainer("mailpit", "ghcr.io/axllent/mailpit", "latest")
 	.WithHttpEndpoint(port: 1080, targetPort: 8025, name: "webui", isProxied: false)
 	.WithEndpoint(port: 1025, targetPort: 1025, name: "smtp", scheme: "tcp", isProxied: false);
+
+var minio = builder.AddContainer("minio", "quay.io/minio/minio", "latest")
+	.WithArgs("server", "/data", "--console-address", ":9001")
+	.WithEnvironment("MINIO_ROOT_USER", "minio")
+	.WithEnvironment("MINIO_ROOT_PASSWORD", "minio123")
+	.WithHttpEndpoint(port: 9000, targetPort: 9000, name: "api", isProxied: false)
+	.WithHttpEndpoint(port: 9001, targetPort: 9001, name: "console", isProxied: false);
+
+var minioApiEndpoint = minio.GetEndpoint("api");
 
 var database = postgres.AddDatabase("einsatzbereit");
 
@@ -65,6 +79,7 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithReference(database)
 	.WaitFor(database)
 	.WaitFor(keycloak)
+	.WaitFor(minio)
 	.WithEnvironment("Authentication__Authority",
 		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
 	.WithEnvironment("Authentication__ValidIssuers__0",
@@ -72,7 +87,11 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithEnvironment("Keycloak__BaseUrl",
 		ReferenceExpression.Create($"{keycloakEndpoint}"))
 	.WithEnvironment("Smtp__Host", mailpitSmtpEndpoint.Property(EndpointProperty.Host))
-	.WithEnvironment("Smtp__Port", mailpitSmtpEndpoint.Property(EndpointProperty.Port));
+	.WithEnvironment("Smtp__Port", mailpitSmtpEndpoint.Property(EndpointProperty.Port))
+	.WithEnvironment("Storage__Endpoint", ReferenceExpression.Create($"{minioApiEndpoint}"))
+	.WithEnvironment("Storage__AccessKey", "minio")
+	.WithEnvironment("Storage__SecretKey", "minio123")
+	.WithEnvironment("Storage__BucketName", "einsatzbereit");
 
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()

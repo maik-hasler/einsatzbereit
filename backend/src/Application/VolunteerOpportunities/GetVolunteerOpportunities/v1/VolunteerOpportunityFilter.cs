@@ -3,7 +3,6 @@ namespace Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 public sealed record VolunteerOpportunityFilter(
 	int PageNumber,
 	int PageSize,
-	string? Search = null,
 	string? City = null,
 	string? Occurrence = null,
 	string? ParticipationType = null,
@@ -17,7 +16,7 @@ public sealed record VolunteerOpportunityFilter(
 	double? CenterLatitude = null,
 	double? CenterLongitude = null,
 	double? RadiusKm = null,
-	string? Category = null,
+	string[]? Categories = null,
 	string? Tag = null)
 {
 	public bool HasBoundingBox => North.HasValue && South.HasValue && East.HasValue && West.HasValue;

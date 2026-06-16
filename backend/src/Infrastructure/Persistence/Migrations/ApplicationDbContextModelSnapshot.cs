@@ -335,6 +335,10 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("uuid")
 						.HasColumnName("id");
 
+					b.Property<string>("BannerImageUrl")
+						.HasColumnType("text")
+						.HasColumnName("banner_image_url");
+
 					b.Property<string>("Category")
 						.HasColumnType("text")
 						.HasColumnName("category");
@@ -378,6 +382,11 @@ namespace Infrastructure.Persistence.Migrations
 						.IsRequired()
 						.HasColumnType("text")
 						.HasColumnName("participation_type");
+
+					b.Property<string>("Status")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("status");
 
 					b.PrimitiveCollection<List<string>>("Tags")
 						.IsRequired()

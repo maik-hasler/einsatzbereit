@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import type { PublicOpportunitySummaryDto } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import EmptyState from "../components/EmptyState";
 
 export default function OrganizationEngagementsPage() {
@@ -24,15 +23,6 @@ export default function OrganizationEngagementsPage() {
 			? `${orgName} - ${t("orgEngagements.title")}`
 			: t("orgEngagements.title"),
 	);
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{
-			label: orgName,
-			href: organizationId ? `/organizations/${organizationId}` : "/",
-		},
-		{ label: t("orgEngagements.title") },
-	]);
 
 	useEffect(() => {
 		if (!organizationId) return;
@@ -71,6 +61,27 @@ export default function OrganizationEngagementsPage() {
 
 	return (
 		<div className="mx-auto max-w-2xl">
+			<Link
+				to={organizationId ? `/organizations/${organizationId}` : "/"}
+				className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+			>
+				<svg
+					className="h-4 w-4"
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth="2"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+					/>
+				</svg>
+				{orgName || t("breadcrumb.home")}
+			</Link>
+
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("orgEngagements.title")}
 			</h1>

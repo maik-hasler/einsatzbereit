@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { MyProfileResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { usePageTitle } from "../hooks/usePageTitle";
 import ConfirmDialog from "../components/ConfirmDialog";
 
@@ -16,11 +15,6 @@ export default function ProfilePage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	usePageTitle(t("profile.title"));
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("breadcrumb.profile") },
-	]);
 
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -307,7 +301,7 @@ export default function ProfilePage() {
 					<button
 						type="submit"
 						disabled={saving}
-						className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+						className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
 					>
 						{saving ? t("profile.saving") : t("profile.save")}
 					</button>
@@ -356,10 +350,10 @@ function getInitials(name: string): string {
 }
 
 const inputClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none";
+	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
 
 const textareaClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none resize-y";
+	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none resize-y";
 
 function Field({
 	label,

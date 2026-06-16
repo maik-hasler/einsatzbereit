@@ -99,6 +99,35 @@ builder.Services.AddOpenApi("v1", options =>
 			Version = "v1",
 			Description = "API für die Einsatzbereit-Anwendung"
 		};
+
+		// Inline the IFormFile binary schema instead of a $ref so NSwag emits
+		// its FileParameter helper class in the generated clients.
+		foreach (var pathItem in document.Paths.Values)
+		{
+			if (pathItem.Operations is null)
+				continue;
+
+			foreach (var operation in pathItem.Operations.Values)
+			{
+				if (operation.RequestBody?.Content is not { } content ||
+					!content.TryGetValue("multipart/form-data", out var mediaType) ||
+					mediaType.Schema?.Properties is not { } properties)
+					continue;
+
+				foreach (var propertyName in properties.Keys.ToList())
+				{
+					if (properties[propertyName] is OpenApiSchemaReference { Reference.Id: "IFormFile" })
+						properties[propertyName] = new OpenApiSchema
+						{
+							Type = JsonSchemaType.String,
+							Format = "binary"
+						};
+				}
+			}
+		}
+
+		document.Components?.Schemas?.Remove("IFormFile");
+
 		return Task.CompletedTask;
 	});
 });

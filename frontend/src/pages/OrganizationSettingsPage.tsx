@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import EmptyState from "../components/EmptyState";
 import { usePageTitle } from "../hooks/usePageTitle";
 
@@ -35,15 +34,6 @@ export default function OrganizationSettingsPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	usePageTitle(t("orgSettings.title"));
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{
-			label: org?.name ?? "",
-			href: organizationId ? `/organizations/${organizationId}` : "/",
-		},
-		{ label: t("breadcrumb.settings") },
-	]);
 
 	useEffect(() => {
 		if (!organizationId) return;
@@ -157,6 +147,27 @@ export default function OrganizationSettingsPage() {
 
 	return (
 		<div className="mx-auto max-w-2xl">
+			<Link
+				to={organizationId ? `/organizations/${organizationId}` : "/"}
+				className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+			>
+				<svg
+					className="h-4 w-4"
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth="2"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+					/>
+				</svg>
+				{org.name}
+			</Link>
+
 			<h1 className="mb-1 text-2xl font-bold text-gray-900">{org.name}</h1>
 			<p className="mb-6 text-sm text-gray-500">
 				{t("orgSettings.createdOn", {
@@ -350,7 +361,7 @@ export default function OrganizationSettingsPage() {
 						<button
 							type="submit"
 							disabled={saving}
-							className="rounded-md bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+							className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
 						>
 							{saving ? t("orgSettings.saving") : t("orgSettings.save")}
 						</button>
@@ -402,7 +413,7 @@ export default function OrganizationSettingsPage() {
 }
 
 const inputClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none";
+	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
 
 const labelClass = "block text-xs text-gray-600";
 

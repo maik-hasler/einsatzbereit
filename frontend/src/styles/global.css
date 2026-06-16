@@ -1,11 +1,110 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+html {
+	scroll-behavior: smooth;
+	overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@keyframes fade-up {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.animate-fade-up {
+		animation: fade-up 0.55s ease-out both;
+	}
+	.animate-fade-up-d1 {
+		animation: fade-up 0.55s ease-out 0.12s both;
+	}
+	.animate-fade-up-d2 {
+		animation: fade-up 0.55s ease-out 0.24s both;
+	}
+	.animate-fade-up-d3 {
+		animation: fade-up 0.55s ease-out 0.36s both;
+	}
+	.animate-fade-up-d4 {
+		animation: fade-up 0.55s ease-out 0.48s both;
+	}
+}
+
+/* ── Leaflet tile filter: desaturate OSM tiles for a clean modern look ───── */
+.leaflet-tile-pane {
+	filter: grayscale(1) brightness(1.05) contrast(0.9);
+}
+
+/* ── Leaflet popup overrides ─────────────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+	border-radius: 0.75rem;
+	box-shadow:
+		0 4px 16px -2px rgb(0 0 0 / 0.1),
+		0 2px 4px -1px rgb(0 0 0 / 0.06);
+	border: 1px solid rgb(229 231 235);
+	padding: 0;
+	overflow: hidden;
+}
+
+.leaflet-popup-content {
+	margin: 0;
+	min-width: 180px;
+}
+
+.leaflet-popup-tip {
+	background: white;
+	box-shadow: none;
+}
+
+.leaflet-popup-close-button {
+	color: rgb(156 163 175);
+	padding: 6px 8px 0 0;
+	font-size: 18px;
+	line-height: 1;
+}
+
+.leaflet-popup-close-button:hover {
+	color: rgb(55 65 81);
+	background: none;
+}
+
 /*
  * Brand-Farbpalette - hier ändern, um die gesamte App umzufärben.
  * Aktuell: Helles Grün (Tailwind green). Tausche die Hex-Werte
  * gegen eine andere Palette und alles passt sich an.
  */
+/* ── datetime-local / date / time input normalization ────────────────────── */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+	color-scheme: light;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+	opacity: 0.5;
+	cursor: pointer;
+	border-radius: 2px;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+	opacity: 1;
+}
+
+/* ── number input: hide spin buttons on non-focus for cleaner look ────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+	opacity: 0.5;
+}
+
 @theme {
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;

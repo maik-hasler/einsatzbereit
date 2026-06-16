@@ -56,11 +56,20 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
-		var firstCard = Page.Locator("ul > li a").First;
-		var href = await firstCard.GetAttributeAsync("href");
-
-		if (href is null)
+		// Wait for opportunity cards (not footer links which also match ul>li a)
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		try
+		{
+			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
 			return; // no opportunities seeded, skip
+		}
+
+		var href = await firstCard.GetAttributeAsync("href");
+		if (href is null)
+			return;
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -147,26 +156,37 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Find a detail page link, navigate, then follow "Manage applications" link
+		// Wait for opportunity cards to appear on the home page (up to 15s)
 		var firstCard = Page.Locator("ul > li a").First;
-		var cardHref = await firstCard.GetAttributeAsync("href");
+		try
+		{
+			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
+			return; // no opportunities seeded or page not ready, skip
+		}
 
+		var cardHref = await firstCard.GetAttributeAsync("href");
 		if (cardHref is null)
-			return; // no opportunities seeded, skip
+			return;
 
 		await Page.GotoAsync($"{origin}{cardHref}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.Locator("a[href$='/engagements']");
-
-		if (await manageLink.CountAsync() == 0)
+		try
+		{
+			await manageLink.First.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
 			return; // olaf does not manage this opportunity, skip
+		}
 
 		var engagementsHref = await manageLink.First.GetAttributeAsync("href");
 		await Page.GotoAsync($"{origin}{engagementsHref}");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

@@ -113,43 +113,58 @@ export default function MyEngagementsPage() {
 			{!loading && !error && engagements.length > 0 && (
 				<ul className="space-y-3">
 					{engagements.map((e) => (
-						<li key={e.id} className="rounded border p-4">
-							<div className="flex items-start justify-between gap-2">
+						<li
+							key={e.id}
+							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+						>
+							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0">
 									<button
 										onClick={() =>
 											navigate(`/volunteer-opportunities/${e.opportunityId}`)
 										}
-										className="text-left text-sm font-medium text-gray-900 hover:underline"
+										className="text-left text-sm font-semibold text-gray-900 hover:text-brand-700 transition-colors"
 									>
 										{e.opportunityTitle}
 									</button>
 									{e.message && (
-										<p className="mt-1 truncate text-sm text-gray-500">
+										<p className="mt-1 truncate text-sm text-gray-500 italic">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
-									<p className="mt-1 text-xs text-gray-400">
+									<p className="mt-1.5 text-xs text-gray-400">
 										{t("myEngagements.registeredOn", {
 											date: new Date(e.createdOn).toLocaleDateString(locale),
 										})}
 									</p>
 									{e.isCheckedIn && (
-										<span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+											<svg
+												className="h-3 w-3"
+												fill="currentColor"
+												viewBox="0 0 20 20"
+												aria-hidden="true"
+											>
+												<path
+													fillRule="evenodd"
+													d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+													clipRule="evenodd"
+												/>
+											</svg>
 											{t("checkIn.checkedInLabel")}
 										</span>
 									)}
 								</div>
 								<div className="flex shrink-0 flex-col items-end gap-2">
 									<span
-										className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600"}`}
+										className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600"}`}
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>
 									{e.status === "Confirmed" && !e.isCheckedIn && (
 										<button
 											onClick={() => setCheckInEngagement(e)}
-											className="text-xs rounded bg-brand-800 px-2 py-1 text-white hover:bg-brand-700"
+											className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 transition-colors"
 										>
 											{t("checkIn.buttonLabel")}
 										</button>
@@ -157,7 +172,7 @@ export default function MyEngagementsPage() {
 									{(e.status === "Pending" || e.status === "Confirmed") && (
 										<button
 											onClick={() => setConfirmWithdrawId(e.id)}
-											className="text-xs text-red-600 hover:underline"
+											className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 transition-colors"
 										>
 											{t("myEngagements.withdraw")}
 										</button>

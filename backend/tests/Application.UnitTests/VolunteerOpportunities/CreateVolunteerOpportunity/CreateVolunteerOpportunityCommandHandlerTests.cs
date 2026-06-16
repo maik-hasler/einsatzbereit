@@ -42,7 +42,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			ParticipationType.Waitlist,
 			CheckInMethod.None,
 			null,
-			[]);
+			[],
+			OpportunityStatus.Published);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -73,7 +74,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			ParticipationType.IndividualContact,
 			CheckInMethod.Manual,
 			null,
-			[]);
+			[],
+			OpportunityStatus.Published);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -95,7 +97,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(new GeoCoordinates(52.52, 13.405));
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Published);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -115,7 +117,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns((GeoCoordinates?)null);
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Published);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -135,7 +137,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(Task.FromException<GeoCoordinates?>(new HttpRequestException("boom")));
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Published);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -150,7 +152,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
+			"Title", "Description", TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Published);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);

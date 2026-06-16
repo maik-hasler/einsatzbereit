@@ -5,6 +5,7 @@ import type {
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { getApiErrorMessage } from "../lib/apiError";
 
 interface Props {
 	opportunity: VolunteerOpportunityDetails;
@@ -27,7 +28,7 @@ export default function EditVolunteerOpportunityModal({
 	const { t } = useTranslation();
 
 	const [title, setTitle] = useState(opportunity.title);
-	const [description, setDescription] = useState(opportunity.description);
+	const [description, setDescription] = useState(opportunity.description ?? "");
 	const [isRemote, setIsRemote] = useState(opportunity.isRemote);
 	const [street, setStreet] = useState(opportunity.street ?? "");
 	const [houseNumber, setHouseNumber] = useState(opportunity.houseNumber ?? "");
@@ -81,9 +82,7 @@ export default function EditVolunteerOpportunityModal({
 			onSuccess();
 			onClose();
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : t("editOpportunity.unknownError"),
-			);
+			setError(getApiErrorMessage(err, t("editOpportunity.unknownError")));
 		} finally {
 			setSubmitting(false);
 		}
@@ -168,7 +167,6 @@ export default function EditVolunteerOpportunityModal({
 						<input
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
-							required
 							maxLength={150}
 							className="w-full rounded border px-3 py-2 text-sm"
 						/>
@@ -181,7 +179,6 @@ export default function EditVolunteerOpportunityModal({
 						<textarea
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							required
 							rows={3}
 							maxLength={2000}
 							className="w-full rounded border px-3 py-2 text-sm"
@@ -210,7 +207,6 @@ export default function EditVolunteerOpportunityModal({
 								<input
 									value={street}
 									onChange={(e) => setStreet(e.target.value)}
-									required
 									className="w-full rounded border px-3 py-2 text-sm"
 								/>
 							</div>
@@ -221,7 +217,6 @@ export default function EditVolunteerOpportunityModal({
 								<input
 									value={houseNumber}
 									onChange={(e) => setHouseNumber(e.target.value)}
-									required
 									className="w-full rounded border px-3 py-2 text-sm"
 								/>
 							</div>
@@ -232,7 +227,6 @@ export default function EditVolunteerOpportunityModal({
 								<input
 									value={zipCode}
 									onChange={(e) => setZipCode(e.target.value)}
-									required
 									maxLength={5}
 									className="w-full rounded border px-3 py-2 text-sm"
 								/>
@@ -244,7 +238,6 @@ export default function EditVolunteerOpportunityModal({
 								<input
 									value={city}
 									onChange={(e) => setCity(e.target.value)}
-									required
 									className="w-full rounded border px-3 py-2 text-sm"
 								/>
 							</div>

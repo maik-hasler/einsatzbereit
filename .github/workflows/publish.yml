@@ -307,3 +307,96 @@ jobs:
           done
           echo "::error::API did not report healthy within 5 minutes after deploy."
           exit 1
+
+      - name: Bind single-step Keycloak browser flow
+        env:
+          KC_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KC_ADMIN_PASS: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KC_URL="https://login.maik-hasler.de"
+          KC_REALM="einsatzbereit"
+
+          # Get admin token from master realm
+          TOKEN=$(curl -sf -X POST \
+            "$KC_URL/realms/master/protocol/openid-connect/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "client_id=admin-cli" \
+            --data-urlencode "grant_type=password" \
+            --data-urlencode "username=$KC_ADMIN_USER" \
+            --data-urlencode "password=$KC_ADMIN_PASS" \
+            | jq -r '.access_token')
+          [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ] && { echo "::error::Keycloak admin auth failed"; exit 1; }
+          echo "Admin token acquired."
+
+          # Ensure the single-step flow exists; create it if missing (e.g. first deploy
+          # or realm wipe). Keycloak 26 with organizationsEnabled overrides browserFlow
+          # after every import, so we always re-bind it at the end regardless.
+          FLOW_COUNT=$(curl -sf \
+            -H "Authorization: Bearer $TOKEN" \
+            "$KC_URL/admin/realms/$KC_REALM/authentication/flows" \
+            | jq '[.[] | select(.alias == "einsatzbereit browser")] | length')
+
+          if [ "$FLOW_COUNT" = "0" ]; then
+            echo "Creating einsatzbereit browser flow..."
+
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows" \
+              -d '{"alias":"einsatzbereit browser","providerId":"basic-flow","topLevel":true,"builtIn":false}'
+
+            # Add auth-cookie (set to ALTERNATIVE)
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions/execution" \
+              -d '{"provider":"auth-cookie"}'
+            COOKIE_EXEC=$(curl -sf \
+              -H "Authorization: Bearer $TOKEN" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              | jq '.[] | select(.providerId == "auth-cookie")')
+            curl -sf -X PUT \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              -d "$(echo "$COOKIE_EXEC" | jq '.requirement = "ALTERNATIVE"')"
+
+            # Add sub-flow for the form (set to ALTERNATIVE)
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions/flow" \
+              -d '{"alias":"einsatzbereit browser forms","type":"basic-flow","description":"Username+password form"}'
+            SUBFLOW_EXEC=$(curl -sf \
+              -H "Authorization: Bearer $TOKEN" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              | jq '.[] | select(.authenticationFlow == true and .displayName == "einsatzbereit browser forms")')
+            curl -sf -X PUT \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              -d "$(echo "$SUBFLOW_EXEC" | jq '.requirement = "ALTERNATIVE"')"
+
+            # Add auth-username-password-form to sub-flow (set to REQUIRED)
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions/execution" \
+              -d '{"provider":"auth-username-password-form"}'
+            FORM_EXEC=$(curl -sf \
+              -H "Authorization: Bearer $TOKEN" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions" \
+              | jq '.[] | select(.providerId == "auth-username-password-form")')
+            curl -sf -X PUT \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions" \
+              -d "$(echo "$FORM_EXEC" | jq '.requirement = "REQUIRED"')"
+
+            echo "Flow created."
+          else
+            echo "Flow already exists."
+          fi
+
+          # Always re-bind - Keycloak organizations override this after every import
+          REALM=$(curl -sf -H "Authorization: Bearer $TOKEN" "$KC_URL/admin/realms/$KC_REALM")
+          curl -sf -X PUT \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            "$KC_URL/admin/realms/$KC_REALM" \
+            -d "$(echo "$REALM" | jq '.browserFlow = "einsatzbereit browser"')"
+
+          echo "browserFlow bound to 'einsatzbereit browser'."

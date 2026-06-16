@@ -19,7 +19,7 @@ public sealed record PublicAddressDto(
 public sealed record PublicOpportunitySummaryDto(
 	Guid Id,
 	string Title,
-	string Description,
+	string? Description,
 	string? Street,
 	string? HouseNumber,
 	string? ZipCode,

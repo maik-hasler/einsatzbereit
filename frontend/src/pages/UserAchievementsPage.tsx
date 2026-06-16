@@ -6,7 +6,6 @@ import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
 } from "../client/api-client";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import BadgeGrid from "../components/BadgeGrid";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -16,11 +15,6 @@ export default function UserAchievementsPage() {
 	const { t } = useTranslation();
 
 	usePageTitle(t("achievements.publicTitle"));
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("breadcrumb.userAchievements") },
-	]);
 
 	const [achievements, setAchievements] = useState<AchievementSummary[]>([]);
 	const [catalog, setCatalog] = useState<BadgeCatalogEntry[]>([]);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -8,7 +8,6 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
@@ -51,15 +50,6 @@ export default function EngagementManagementPage() {
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
-
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{
-			label: opportunity?.title || t("breadcrumb.volunteerOpportunities"),
-			href: opportunityId ? `/volunteer-opportunities/${opportunityId}` : "/",
-		},
-		{ label: t("breadcrumb.engagements") },
-	]);
 
 	useEffect(() => {
 		if (!opportunityId) return;
@@ -151,6 +141,31 @@ export default function EngagementManagementPage() {
 
 	return (
 		<>
+			<Link
+				to={
+					opportunityId
+						? `/volunteer-opportunities/${opportunityId}`
+						: "/#opportunities"
+				}
+				className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+			>
+				<svg
+					className="h-4 w-4"
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth="2"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+					/>
+				</svg>
+				{opportunity?.title ?? t("breadcrumb.volunteerOpportunities")}
+			</Link>
+
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("engagementManagement.title")}
 			</h1>

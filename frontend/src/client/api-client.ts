@@ -18,6 +18,127 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param file (optional) 
+     * @return No Content
+     */
+    uploadOpportunityBanner(opportunityId: string, file: FileParameter | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/banner";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = new FormData();
+        if (file === null || file === undefined)
+            throw new globalThis.Error("The parameter 'file' cannot be null.");
+        else
+            content_.append("file", file.data, file.fileName ? file.fileName : "file");
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUploadOpportunityBanner(_response);
+        });
+    }
+
+    protected processUploadOpportunityBanner(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    getOpportunityBanner(opportunityId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/banner";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOpportunityBanner(_response);
+        });
+    }
+
+    protected processGetOpportunityBanner(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 302) {
+            return response.text().then((_responseText) => {
+            return throwException("Found", status, _responseText, _headers);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @return No Content
      */
     updateVolunteerOpportunity(opportunityId: string, body: UpdateVolunteerOpportunityRequest, signal?: AbortSignal): Promise<void> {
@@ -340,7 +461,73 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param search (optional) 
+     * @return No Content
+     */
+    publishVolunteerOpportunity(opportunityId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/publish";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processPublishVolunteerOpportunity(_response);
+        });
+    }
+
+    protected processPublishVolunteerOpportunity(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @param city (optional) 
      * @param occurrence (optional) 
      * @param participationType (optional) 
@@ -354,11 +541,11 @@ export class EinsatzbereitApi {
      * @param centerLatitude (optional) 
      * @param centerLongitude (optional) 
      * @param radiusKm (optional) 
-     * @param category (optional) 
+     * @param categories (optional) 
      * @param tag (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, search: string | undefined, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, category: string | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -368,10 +555,6 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
         else
             url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
-        if (search === null)
-            throw new globalThis.Error("The parameter 'search' cannot be null.");
-        else if (search !== undefined)
-            url_ += "Search=" + encodeURIComponent("" + search) + "&";
         if (city === null)
             throw new globalThis.Error("The parameter 'city' cannot be null.");
         else if (city !== undefined)
@@ -424,10 +607,10 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'radiusKm' cannot be null.");
         else if (radiusKm !== undefined)
             url_ += "RadiusKm=" + encodeURIComponent("" + radiusKm) + "&";
-        if (category === null)
-            throw new globalThis.Error("The parameter 'category' cannot be null.");
-        else if (category !== undefined)
-            url_ += "Category=" + encodeURIComponent("" + category) + "&";
+        if (categories === null)
+            throw new globalThis.Error("The parameter 'categories' cannot be null.");
+        else if (categories !== undefined)
+            categories && categories.forEach(item => { url_ += "Categories=" + encodeURIComponent("" + item) + "&"; });
         if (tag === null)
             throw new globalThis.Error("The parameter 'tag' cannot be null.");
         else if (tag !== undefined)
@@ -539,6 +722,64 @@ export class EinsatzbereitApi {
             });
         }
         return Promise.resolve<CreateVolunteerOpportunityResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrganizationOpportunityDrafts(organizationId: string, signal?: AbortSignal): Promise<VolunteerOpportunitySummary[]> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunity-drafts";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOrganizationOpportunityDrafts(_response);
+        });
+    }
+
+    protected processGetOrganizationOpportunityDrafts(response: Response): Promise<VolunteerOpportunitySummary[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VolunteerOpportunitySummary[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<VolunteerOpportunitySummary[]>(null as any);
     }
 
     /**
@@ -2181,18 +2422,20 @@ export interface CreateTimeSlotResponse {
 }
 
 export interface CreateVolunteerOpportunityRequest {
-    title: string;
-    description: string;
+    title: string | undefined;
+    description: string | undefined;
     organizationId: string;
-    street: string;
-    houseNumber: string;
-    zipCode: string;
-    city: string;
+    isRemote: boolean;
+    street: string | undefined;
+    houseNumber: string | undefined;
+    zipCode: string | undefined;
+    city: string | undefined;
     occurrence: string;
     participationType: string;
     checkInMethod: string;
     category: string | undefined;
     tags: string[] | undefined;
+    isDraft: boolean | undefined;
 
     [key: string]: any;
 }
@@ -2215,6 +2458,7 @@ export interface CreateVolunteerOpportunityResponse {
     category: string | undefined;
     tags: string[];
     createdOn: Date;
+    status: string;
 
     [key: string]: any;
 }
@@ -2365,7 +2609,7 @@ export interface PublicAddressDto {
 export interface PublicOpportunitySummaryDto {
     id: string;
     title: string;
-    description: string;
+    description: string | undefined;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;
@@ -2447,8 +2691,8 @@ export interface UpdateUserProfileRequest {
 }
 
 export interface UpdateVolunteerOpportunityRequest {
-    title: string;
-    description: string;
+    title: string | undefined;
+    description: string | undefined;
     isRemote: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
@@ -2466,7 +2710,7 @@ export interface UpdateVolunteerOpportunityRequest {
 export interface VolunteerOpportunityDetails {
     id: string;
     title: string;
-    description: string;
+    description: string | undefined;
     organizationId: string;
     organizationName: string;
     street: string | undefined;
@@ -2485,6 +2729,8 @@ export interface VolunteerOpportunityDetails {
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
     currentParticipantCount: number;
+    status: string;
+    bannerImageUrl: string | undefined;
 
     [key: string]: any;
 }
@@ -2492,7 +2738,7 @@ export interface VolunteerOpportunityDetails {
 export interface VolunteerOpportunitySummary {
     id: string;
     title: string;
-    description: string;
+    description: string | undefined;
     organizationId: string;
     organizationName: string;
     street: string | undefined;
@@ -2510,8 +2756,15 @@ export interface VolunteerOpportunitySummary {
     createdOn: Date;
     totalMaxParticipants: number;
     currentParticipantCount: number;
+    status: string;
+    bannerImageUrl: string | undefined;
 
     [key: string]: any;
+}
+
+export interface FileParameter {
+    data: any;
+    fileName: string;
 }
 
 export class ApiException extends Error {

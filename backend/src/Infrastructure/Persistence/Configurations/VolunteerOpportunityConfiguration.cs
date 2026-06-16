@@ -60,6 +60,12 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasConversion<string>()
 			.IsRequired(false);
 
+		builder.Property(vo => vo.Status)
+			.HasConversion<string>()
+			.IsRequired();
+
+		builder.Property(vo => vo.BannerImageUrl);
+
 		builder.PrimitiveCollection(vo => vo.Tags)
 			.HasColumnType("text[]");
 
