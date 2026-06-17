@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -8,16 +8,17 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
+import PageHero from "../components/PageHero";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
 
 const STATUS_COLORS: Record<string, string> = {
-	Pending: "bg-yellow-50 text-yellow-700",
-	Confirmed: "bg-green-50 text-green-700",
-	Cancelled: "bg-red-50 text-red-700",
-	Withdrawn: "bg-gray-100 text-gray-500",
+	Pending: "bg-yellow-50 text-yellow-700 border-yellow-100",
+	Confirmed: "bg-green-50 text-green-700 border-green-100",
+	Cancelled: "bg-red-50 text-red-700 border-red-100",
+	Withdrawn: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 export default function EngagementManagementPage() {
@@ -141,37 +142,36 @@ export default function EngagementManagementPage() {
 
 	return (
 		<>
-			<Link
-				to={
+			<PageHero
+				title={t("engagementManagement.title")}
+				subtitle={opportunity?.title}
+				icon={
+					<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white">
+						<svg
+							className="h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth="1.5"
+							stroke="currentColor"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+							/>
+						</svg>
+					</div>
+				}
+				backHref={
 					opportunityId
 						? `/volunteer-opportunities/${opportunityId}`
 						: "/#opportunities"
 				}
-				className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
-			>
-				<svg
-					className="h-4 w-4"
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-					/>
-				</svg>
-				{opportunity?.title ?? t("breadcrumb.volunteerOpportunities")}
-			</Link>
-
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">
-				{t("engagementManagement.title")}
-			</h1>
+				backLabel={opportunity?.title ?? t("breadcrumb.volunteerOpportunities")}
+			/>
 
 			{checkInMethod === "PINCode" && opportunity?.checkInPin && (
-				<div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+				<div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
 					<p className="text-sm font-medium text-blue-900">
 						{t("checkIn.organizerPin")}
 					</p>
@@ -212,16 +212,19 @@ export default function EngagementManagementPage() {
 			{!loading && !error && engagements.length > 0 && (
 				<ul className="space-y-3">
 					{engagements.map((e) => (
-						<li key={e.id} className="rounded border p-4">
+						<li
+							key={e.id}
+							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+						>
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
-									<p className="font-mono text-xs text-gray-500">
+									<p className="font-mono text-xs text-gray-400">
 										{t("engagementManagement.volunteer", {
 											id: e.volunteerId.slice(0, 8) + "...",
 										})}
 									</p>
 									{e.message && (
-										<p className="mt-1 text-sm text-gray-700">
+										<p className="mt-1 text-sm italic text-gray-700">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
@@ -244,14 +247,26 @@ export default function EngagementManagementPage() {
 										})}
 									</p>
 									{e.isCheckedIn && (
-										<span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+											<svg
+												className="h-3 w-3"
+												fill="currentColor"
+												viewBox="0 0 20 20"
+												aria-hidden="true"
+											>
+												<path
+													fillRule="evenodd"
+													d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+													clipRule="evenodd"
+												/>
+											</svg>
 											{t("checkIn.checkedInLabel")}
 										</span>
 									)}
 								</div>
 								<div className="flex shrink-0 flex-col items-end gap-2">
 									<span
-										className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600"}`}
+										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>
@@ -260,7 +275,7 @@ export default function EngagementManagementPage() {
 											<button
 												onClick={() => handleConfirm(e.id)}
 												disabled={confirming === e.id}
-												className="rounded bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+												className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
 											>
 												{confirming === e.id
 													? t("engagementManagement.processing")
@@ -268,7 +283,7 @@ export default function EngagementManagementPage() {
 											</button>
 											<button
 												onClick={() => setConfirmCancelId(e.id)}
-												className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+												className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
 											>
 												{t("engagementManagement.cancel")}
 											</button>
@@ -280,7 +295,7 @@ export default function EngagementManagementPage() {
 												<button
 													onClick={() => handleCheckIn(e.id)}
 													disabled={checkingIn === e.id}
-													className="rounded bg-brand-800 px-2 py-1 text-xs text-white hover:bg-brand-700 disabled:opacity-50"
+													className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50"
 												>
 													{checkingIn === e.id
 														? t("checkIn.markingCheckedIn")
