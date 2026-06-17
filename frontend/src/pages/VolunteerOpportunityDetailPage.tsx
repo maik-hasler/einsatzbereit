@@ -358,8 +358,8 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Map */}
 			{!opportunity.isRemote &&
-				opportunity.latitude !== undefined &&
-				opportunity.longitude !== undefined && (
+				opportunity.latitude != null &&
+				opportunity.longitude != null && (
 					<div className="mb-6 overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
 						<SingleMarkerMap
 							latitude={opportunity.latitude}
