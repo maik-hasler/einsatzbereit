@@ -6,7 +6,6 @@ import type {
 	VolunteerOpportunitySummary,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import Breadcrumb from "../components/Breadcrumb";
 import { usePageTitle } from "../hooks/usePageTitle";
 
 interface KpiCardProps {
@@ -108,101 +107,94 @@ export default function OrganizationDashboardPage() {
 
 	if (error) {
 		return (
-			<div className="mx-auto max-w-4xl px-4 py-8">
-				<p className="text-red-600">
-					{t("orgDashboard.error", { message: error })}
-				</p>
-			</div>
+			<p className="text-red-600">
+				{t("orgDashboard.error", { message: error })}
+			</p>
 		);
 	}
 
 	return (
-		<div className="mx-auto max-w-4xl px-4 py-8">
-			<Breadcrumb
-				items={[
-					{ label: t("breadcrumb.home"), href: "/" },
-					{ label: t("orgDashboard.title") },
-				]}
-			/>
-
-			<h1 className="mt-4 text-2xl font-bold text-gray-900">
-				{t("orgDashboard.title")}
+		<>
+			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+				{data?.name ?? t("orgDashboard.title")}
 			</h1>
 
-			<div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<KpiCard
-					label={t("orgDashboard.openOpportunities")}
-					description={t("orgDashboard.openOpportunitiesDesc")}
-					value={data?.openOpportunities}
-					loading={loading}
-					to={`/organizations/${organizationId}`}
-					color="blue"
-				/>
-				<KpiCard
-					label={t("orgDashboard.pendingEngagements")}
-					description={t("orgDashboard.pendingEngagementsDesc")}
-					value={data?.pendingEngagements}
-					loading={loading}
-					to={`/organizations/${organizationId}`}
-					color="yellow"
-				/>
-				<KpiCard
-					label={t("orgDashboard.confirmedNext7Days")}
-					description={t("orgDashboard.confirmedNext7DaysDesc")}
-					value={data?.confirmedEngagementsNext7Days}
-					loading={loading}
-					to={`/organizations/${organizationId}`}
-					color="green"
-				/>
-				<KpiCard
-					label={t("orgDashboard.cancelledEngagements")}
-					description={t("orgDashboard.cancelledEngagementsDesc")}
-					value={data?.cancelledEngagements}
-					loading={loading}
-					to={`/organizations/${organizationId}`}
-					color="red"
-				/>
-			</div>
+			<div className="mx-auto max-w-4xl">
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<KpiCard
+						label={t("orgDashboard.openOpportunities")}
+						description={t("orgDashboard.openOpportunitiesDesc")}
+						value={data?.openOpportunities}
+						loading={loading}
+						to={`/organizations/${organizationId}`}
+						color="blue"
+					/>
+					<KpiCard
+						label={t("orgDashboard.pendingEngagements")}
+						description={t("orgDashboard.pendingEngagementsDesc")}
+						value={data?.pendingEngagements}
+						loading={loading}
+						to={`/organizations/${organizationId}`}
+						color="yellow"
+					/>
+					<KpiCard
+						label={t("orgDashboard.confirmedNext7Days")}
+						description={t("orgDashboard.confirmedNext7DaysDesc")}
+						value={data?.confirmedEngagementsNext7Days}
+						loading={loading}
+						to={`/organizations/${organizationId}`}
+						color="green"
+					/>
+					<KpiCard
+						label={t("orgDashboard.cancelledEngagements")}
+						description={t("orgDashboard.cancelledEngagementsDesc")}
+						value={data?.cancelledEngagements}
+						loading={loading}
+						to={`/organizations/${organizationId}`}
+						color="red"
+					/>
+				</div>
 
-			{drafts.length > 0 && (
-				<section className="mt-8" data-testid="drafts-section">
-					<h2 className="text-lg font-semibold text-gray-900">
-						{t("orgDashboard.draftsTitle")}
-					</h2>
-					<p className="mt-1 text-sm text-gray-500">
-						{t("orgDashboard.draftsDesc")}
-					</p>
-					<ul className="mt-4 space-y-3">
-						{drafts.map((draft) => (
-							<li
-								key={draft.id}
-								className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
-							>
-								<Link
-									to={`/volunteer-opportunities/${draft.id}`}
-									className="absolute inset-0"
-									aria-label={draft.title || t("orgDashboard.unnamedDraft")}
-								/>
-								<div className="flex items-center justify-between gap-3">
-									<div className="min-w-0">
-										<p className="truncate text-sm font-semibold text-gray-900">
-											{draft.title || t("orgDashboard.unnamedDraft")}
-										</p>
-										{draft.description && (
-											<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-												{draft.description}
+				{drafts.length > 0 && (
+					<section className="mt-8" data-testid="drafts-section">
+						<h2 className="text-lg font-semibold text-gray-900">
+							{t("orgDashboard.draftsTitle")}
+						</h2>
+						<p className="mt-1 text-sm text-gray-500">
+							{t("orgDashboard.draftsDesc")}
+						</p>
+						<ul className="mt-4 space-y-3">
+							{drafts.map((draft) => (
+								<li
+									key={draft.id}
+									className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+								>
+									<Link
+										to={`/volunteer-opportunities/${draft.id}`}
+										className="absolute inset-0"
+										aria-label={draft.title || t("orgDashboard.unnamedDraft")}
+									/>
+									<div className="flex items-center justify-between gap-3">
+										<div className="min-w-0">
+											<p className="truncate text-sm font-semibold text-gray-900">
+												{draft.title || t("orgDashboard.unnamedDraft")}
 											</p>
-										)}
+											{draft.description && (
+												<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
+													{draft.description}
+												</p>
+											)}
+										</div>
+										<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+											{t("opportunities.draftBadge")}
+										</span>
 									</div>
-									<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-										{t("opportunities.draftBadge")}
-									</span>
-								</div>
-							</li>
-						))}
-					</ul>
-				</section>
-			)}
-		</div>
+								</li>
+							))}
+						</ul>
+					</section>
+				)}
+			</div>
+		</>
 	);
 }

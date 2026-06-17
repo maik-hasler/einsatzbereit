@@ -10,10 +10,10 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 
 const STATUS_COLORS: Record<string, string> = {
-	Pending: "bg-yellow-50 text-yellow-700",
-	Confirmed: "bg-green-50 text-green-700",
-	Cancelled: "bg-red-50 text-red-700",
-	Withdrawn: "bg-gray-100 text-gray-500",
+	Pending: "bg-yellow-50 text-yellow-700 border-yellow-100",
+	Confirmed: "bg-green-50 text-green-700 border-green-100",
+	Cancelled: "bg-red-50 text-red-700 border-red-100",
+	Withdrawn: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 export default function MyEngagementsPage() {
@@ -115,7 +115,7 @@ export default function MyEngagementsPage() {
 					{engagements.map((e) => (
 						<li
 							key={e.id}
-							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm transition-shadow hover:shadow-md"
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0">
@@ -123,12 +123,12 @@ export default function MyEngagementsPage() {
 										onClick={() =>
 											navigate(`/volunteer-opportunities/${e.opportunityId}`)
 										}
-										className="text-left text-sm font-semibold text-gray-900 hover:text-brand-700 transition-colors"
+										className="text-left text-sm font-semibold text-gray-900 transition-colors hover:text-brand-700"
 									>
 										{e.opportunityTitle}
 									</button>
 									{e.message && (
-										<p className="mt-1 truncate text-sm text-gray-500 italic">
+										<p className="mt-1 truncate text-sm italic text-gray-500">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
@@ -157,14 +157,14 @@ export default function MyEngagementsPage() {
 								</div>
 								<div className="flex shrink-0 flex-col items-end gap-2">
 									<span
-										className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600"}`}
+										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>
 									{e.status === "Confirmed" && !e.isCheckedIn && (
 										<button
 											onClick={() => setCheckInEngagement(e)}
-											className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 transition-colors"
+											className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800"
 										>
 											{t("checkIn.buttonLabel")}
 										</button>
@@ -172,7 +172,7 @@ export default function MyEngagementsPage() {
 									{(e.status === "Pending" || e.status === "Confirmed") && (
 										<button
 											onClick={() => setConfirmWithdrawId(e.id)}
-											className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 transition-colors"
+											className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
 										>
 											{t("myEngagements.withdraw")}
 										</button>

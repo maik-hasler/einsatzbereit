@@ -43,16 +43,17 @@ export default function UserAchievementsPage() {
 	}
 
 	return (
-		<div className="space-y-8">
-			<h1 className="text-2xl font-bold text-gray-900">
+		<>
+			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("achievements.publicTitle")}
 			</h1>
+
 			<section>
-				<h2 className="mb-3 text-base font-semibold text-gray-700">
+				<h2 className="mb-4 text-base font-semibold text-gray-700">
 					{t("achievements.badgesTitle")}
 				</h2>
 				<BadgeGrid earned={achievements} catalog={catalog} loading={loading} />
 			</section>
-		</div>
+		</>
 	);
 }
