@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Persistence.Configurations;
 
@@ -20,17 +22,24 @@ internal sealed class UserConfiguration
 
 		builder.Property(u => u.Bio);
 
+		var listComparer = new ValueComparer<IReadOnlyList<string>>(
+			(a, b) => a != null && b != null && a.SequenceEqual(b),
+			v => v.Aggregate(0, (h, s) => HashCode.Combine(h, s.GetHashCode())),
+			v => v.ToList());
+
 		builder.Property(u => u.Skills)
 			.HasConversion(
-				list => string.Join('|', list),
-				raw => (IReadOnlyList<string>)(raw == "" ? Array.Empty<string>() : raw.Split('|', StringSplitOptions.RemoveEmptyEntries)))
-			.HasColumnType("text");
+				list => JsonSerializer.Serialize(list, JsonSerializerOptions.Default),
+				json => JsonSerializer.Deserialize<IReadOnlyList<string>>(json, JsonSerializerOptions.Default) ?? Array.Empty<string>())
+			.HasColumnType("text")
+			.Metadata.SetValueComparer(listComparer);
 
 		builder.Property(u => u.Languages)
 			.HasConversion(
-				list => string.Join('|', list),
-				raw => (IReadOnlyList<string>)(raw == "" ? Array.Empty<string>() : raw.Split('|', StringSplitOptions.RemoveEmptyEntries)))
-			.HasColumnType("text");
+				list => JsonSerializer.Serialize(list, JsonSerializerOptions.Default),
+				json => JsonSerializer.Deserialize<IReadOnlyList<string>>(json, JsonSerializerOptions.Default) ?? Array.Empty<string>())
+			.HasColumnType("text")
+			.Metadata.SetValueComparer(listComparer);
 
 		builder.Property(u => u.PreferredContact)
 			.HasConversion<string>();

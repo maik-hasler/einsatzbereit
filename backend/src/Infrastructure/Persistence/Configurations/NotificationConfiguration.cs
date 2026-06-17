@@ -42,5 +42,9 @@ internal sealed class NotificationConfiguration
 		builder.Ignore(n => n.Events);
 
 		builder.HasIndex(n => n.RecipientId);
+
+		builder.HasIndex(n => new { n.RecipientId, n.IsRead });
+
+		builder.HasIndex(n => new { n.RecipientId, n.CreatedOn });
 	}
 }
