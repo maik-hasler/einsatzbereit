@@ -41,9 +41,12 @@ export default function AchievementsPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	function handleShare() {
-		setShareModalOpen(true);
-	}
+	const shareUrl = auth.user?.profile?.sub
+		? window.location.origin +
+			"/users/" +
+			auth.user.profile.sub +
+			"/achievements"
+		: window.location.origin + "/achievements";
 
 	if (error) {
 		return (
@@ -54,59 +57,56 @@ export default function AchievementsPage() {
 	}
 
 	return (
-		<div className="space-y-8">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold text-gray-900">
-					{t("achievements.title")}
-				</h1>
-				<button
-					type="button"
-					onClick={handleShare}
-					className="inline-flex items-center gap-2 rounded-lg border border-brand-200 bg-white px-4 py-2 text-sm font-medium text-brand-700 shadow-sm hover:bg-brand-50 transition-colors"
-				>
-					<svg
-						className="h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
+		<>
+			<div className="mb-6">
+				<div className="flex items-center justify-between">
+					<h1 className="text-2xl font-bold text-gray-900">
+						{t("achievements.title")}
+					</h1>
+					<button
+						type="button"
+						onClick={() => setShareModalOpen(true)}
+						className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-						/>
-					</svg>
-					{t("achievements.shareButton")}
-				</button>
-			</div>
-
-			{streaks && (
-				<section>
-					<h2 className="mb-3 text-base font-semibold text-gray-700">
-						{t("achievements.streakTitle")}
-					</h2>
-					<div className="flex flex-wrap gap-4">
-						<div className="flex items-center gap-3 rounded-xl border border-orange-100 bg-orange-50 px-5 py-3">
+						<svg
+							className="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth="1.5"
+							stroke="currentColor"
+							aria-hidden="true"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+							/>
+						</svg>
+						{t("achievements.shareButton")}
+					</button>
+				</div>
+				{streaks && (
+					<div className="mt-4 flex flex-wrap gap-3">
+						<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
 							<span className="text-2xl">🔥</span>
 							<div>
-								<p className="text-xl font-bold text-orange-700">
+								<p className="text-xl font-bold text-gray-900">
 									{streaks.loginStreak}
 								</p>
-								<p className="text-xs text-orange-600">
+								<p className="text-xs text-gray-500">
 									{t("achievements.loginStreak", {
 										count: streaks.loginStreak,
 									})}
 								</p>
 							</div>
 						</div>
-						<div className="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 px-5 py-3">
+						<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
 							<span className="text-2xl">📅</span>
 							<div>
-								<p className="text-xl font-bold text-blue-700">
+								<p className="text-xl font-bold text-gray-900">
 									{streaks.activityStreak}
 								</p>
-								<p className="text-xs text-blue-600">
+								<p className="text-xs text-gray-500">
 									{t("achievements.activityStreak", {
 										count: streaks.activityStreak,
 									})}
@@ -114,11 +114,11 @@ export default function AchievementsPage() {
 							</div>
 						</div>
 					</div>
-				</section>
-			)}
+				)}
+			</div>
 
 			<section>
-				<h2 className="mb-3 text-base font-semibold text-gray-700">
+				<h2 className="mb-4 text-base font-semibold text-gray-700">
 					{t("achievements.badgesTitle")}
 				</h2>
 				<BadgeGrid earned={achievements} catalog={catalog} loading={loading} />
@@ -126,17 +126,10 @@ export default function AchievementsPage() {
 
 			{shareModalOpen && (
 				<ShareAchievementsModal
-					shareUrl={
-						auth.user?.profile?.sub
-							? window.location.origin +
-								"/users/" +
-								auth.user.profile.sub +
-								"/achievements"
-							: window.location.origin + "/achievements"
-					}
+					shareUrl={shareUrl}
 					onClose={() => setShareModalOpen(false)}
 				/>
 			)}
-		</div>
+		</>
 	);
 }
