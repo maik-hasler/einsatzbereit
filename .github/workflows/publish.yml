@@ -22,18 +22,18 @@ jobs:
     outputs:
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v5.3.0
         with:
           global-json-file: backend/global.json
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6.0.9
         with:
           package_json_file: frontend/package.json
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version-file: frontend/package.json
           cache: pnpm
@@ -68,7 +68,7 @@ jobs:
         run: dotnet run --project tests/VisualTests --no-build
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -87,7 +87,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v6.1.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -96,7 +96,7 @@ jobs:
             type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v7.2.0
         with:
           context: backend
           file: backend/src/Api/Dockerfile
@@ -110,13 +110,13 @@ jobs:
     env:
       IMAGE_NAME: ${{ github.repository }}-frontend
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6.0.9
         with:
           package_json_file: frontend/package.json
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version-file: frontend/package.json
           cache: pnpm
@@ -138,7 +138,7 @@ jobs:
         run: pnpm build
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -157,7 +157,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v6.1.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -166,7 +166,7 @@ jobs:
             type=raw,value=staging,enable=${{ steps.version.outputs.prerelease == 'true' }}
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v7.2.0
         with:
           context: frontend
           push: true
@@ -179,10 +179,10 @@ jobs:
     env:
       IMAGE_NAME: ${{ github.repository }}-keycloak
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -207,7 +207,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v6.1.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -218,7 +218,7 @@ jobs:
             org.opencontainers.image.base.version=${{ steps.keycloak.outputs.upstream_version }}
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v7.2.0
         with:
           context: keycloak
           push: true
@@ -232,7 +232,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
       - name: Configure SSH
         run: |

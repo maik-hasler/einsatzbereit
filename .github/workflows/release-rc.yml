@@ -28,7 +28,7 @@ jobs:
     name: Promote branch to tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
