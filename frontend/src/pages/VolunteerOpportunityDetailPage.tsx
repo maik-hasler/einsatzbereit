@@ -335,6 +335,27 @@ export default function VolunteerOpportunityDetailPage() {
 				)}
 			</div>
 
+			{/* Category and tags */}
+			{(opportunity.category ||
+				(opportunity.tags && opportunity.tags.length > 0)) && (
+				<div className="mb-6 flex flex-wrap gap-2">
+					{opportunity.category && (
+						<span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+							{t(`opportunities.category.${opportunity.category}`)}
+						</span>
+					)}
+					{opportunity.tags &&
+						opportunity.tags.map((tag) => (
+							<span
+								key={tag}
+								className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600"
+							>
+								{tag}
+							</span>
+						))}
+				</div>
+			)}
+
 			{/* Map */}
 			{!opportunity.isRemote &&
 				opportunity.latitude !== undefined &&
@@ -398,7 +419,7 @@ export default function VolunteerOpportunityDetailPage() {
 			)}
 
 			{/* Sign-up CTA */}
-			{isAuthenticated && !isOrganisator && !signedUp && !isDraft && (
+			{isAuthenticated && !isOwner && !signedUp && !isDraft && (
 				<div className="space-y-3">
 					{totalMax > 0 && (
 						<p
