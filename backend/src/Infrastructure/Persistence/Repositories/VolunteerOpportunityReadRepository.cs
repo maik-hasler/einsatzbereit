@@ -20,6 +20,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 	{
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
+			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= DateTimeOffset.UtcNow))
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
