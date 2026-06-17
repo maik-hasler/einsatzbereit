@@ -9,6 +9,98 @@ import ConfirmDialog from "../components/ConfirmDialog";
 
 type ContactPref = "Email" | "Phone" | "";
 
+const inputClass =
+	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
+
+const textareaClass =
+	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none resize-y";
+
+function Field({
+	label,
+	id,
+	children,
+}: {
+	label: string;
+	id?: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div>
+			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
+				{label}
+			</label>
+			{children}
+		</div>
+	);
+}
+
+function ChipInput({
+	inputRef,
+	inputId,
+	chips,
+	inputValue,
+	placeholder,
+	onInputChange,
+	onAdd,
+	onRemove,
+	removeLabel,
+}: {
+	inputRef: React.RefObject<HTMLInputElement | null>;
+	inputId: string;
+	chips: string[];
+	inputValue: string;
+	placeholder: string;
+	onInputChange: (v: string) => void;
+	onAdd: (v: string) => void;
+	onRemove: (v: string) => void;
+	removeLabel: string;
+}) {
+	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			onAdd(inputValue);
+		}
+	}
+
+	return (
+		<div className="mt-1">
+			{chips.length > 0 && (
+				<div className="mb-2 flex flex-wrap gap-2">
+					{chips.map((chip) => (
+						<span
+							key={chip}
+							className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700"
+						>
+							{chip}
+							<button
+								type="button"
+								aria-label={`${removeLabel} ${chip}`}
+								onClick={() => onRemove(chip)}
+								className="ml-1 text-brand-400 hover:text-brand-700"
+							>
+								&times;
+							</button>
+						</span>
+					))}
+				</div>
+			)}
+			<input
+				ref={inputRef}
+				id={inputId}
+				type="text"
+				value={inputValue}
+				placeholder={placeholder}
+				onChange={(e) => onInputChange(e.target.value)}
+				onKeyDown={handleKeyDown}
+				onBlur={() => {
+					if (inputValue.trim()) onAdd(inputValue);
+				}}
+				className={inputClass}
+			/>
+		</div>
+	);
+}
+
 export default function ProfilePage() {
 	const auth = useAuth();
 	const api = useApiClient();
@@ -140,188 +232,184 @@ export default function ProfilePage() {
 		}
 	}
 
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center py-16">
-				<span className="text-gray-500">{t("profile.loading")}</span>
-			</div>
-		);
-	}
-
-	const displayName = (auth.user?.profile?.name ??
-		auth.user?.profile?.preferred_username ??
-		"") as string;
-
 	return (
-		<div className="mx-auto max-w-2xl">
-			<div className="mb-6 flex items-center gap-4">
-				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-700 text-xl font-semibold text-white">
-					{getInitials(displayName)}
-				</div>
-				<div>
-					<h1 className="text-2xl font-bold text-gray-900">
-						{t("profile.title")}
-					</h1>
-					{profile && (
-						<p className="text-sm text-gray-500">@{profile.username}</p>
-					)}
-				</div>
-			</div>
+		<>
+			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+				{t("profile.title")}
+			</h1>
 
-			{error && (
-				<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-					{error}
-				</div>
-			)}
-			{successMessage && (
-				<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-					{successMessage}
-				</div>
-			)}
+			<div className="mx-auto max-w-2xl">
+				{loading && (
+					<div className="flex items-center justify-center py-16">
+						<span className="text-gray-500">{t("profile.loading")}</span>
+					</div>
+				)}
 
-			<form onSubmit={handleSave} className="space-y-6">
-				<section>
-					<h2 className="mb-4 text-base font-semibold text-gray-900">
-						{t("account.title")}
-					</h2>
-					<div className="space-y-5">
-						<Field label={t("account.fieldUsername")} id="username">
-							<input
-								id="username"
-								disabled
-								value={profile?.username ?? ""}
-								className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
-							/>
-						</Field>
+				{!loading && (
+					<>
+						{error && (
+							<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+								{error}
+							</div>
+						)}
+						{successMessage && (
+							<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+								{successMessage}
+							</div>
+						)}
 
-						<Field label={t("account.fieldEmail")} id="email">
-							<input
-								id="email"
-								disabled
-								type="email"
-								value={profile?.email ?? ""}
-								className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
-							/>
-							<p className="mt-1 text-xs text-gray-500">
-								{t("account.emailHint")}
+						<form onSubmit={handleSave} className="space-y-6">
+							<section>
+								<h2 className="mb-4 text-base font-semibold text-gray-900">
+									{t("account.title")}
+								</h2>
+								<div className="space-y-5">
+									<Field label={t("account.fieldUsername")} id="username">
+										<input
+											id="username"
+											disabled
+											value={profile?.username ?? ""}
+											className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+										/>
+									</Field>
+
+									<Field label={t("account.fieldEmail")} id="email">
+										<input
+											id="email"
+											disabled
+											type="email"
+											value={profile?.email ?? ""}
+											className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+										/>
+										<p className="mt-1 text-xs text-gray-500">
+											{t("account.emailHint")}
+										</p>
+									</Field>
+
+									<Field label={t("account.fieldFirstName")} id="first-name">
+										<input
+											id="first-name"
+											value={firstName}
+											onChange={(e) => setFirstName(e.target.value)}
+											className={inputClass}
+										/>
+									</Field>
+
+									<Field label={t("account.fieldLastName")} id="last-name">
+										<input
+											id="last-name"
+											value={lastName}
+											onChange={(e) => setLastName(e.target.value)}
+											className={inputClass}
+										/>
+									</Field>
+								</div>
+							</section>
+
+							<hr className="border-gray-200" />
+
+							<section>
+								<h2 className="mb-4 text-base font-semibold text-gray-900">
+									{t("profile.sectionDetails")}
+								</h2>
+								<div className="space-y-5">
+									<Field label={t("profile.fieldBio")} id="bio">
+										<textarea
+											id="bio"
+											rows={4}
+											value={bio}
+											placeholder={t("profile.bioPlaceholder")}
+											onChange={(e) => setBio(e.target.value)}
+											className={textareaClass}
+										/>
+									</Field>
+
+									<Field label={t("profile.fieldSkills")} id="skill-input">
+										<ChipInput
+											inputRef={skillInputRef}
+											inputId="skill-input"
+											chips={skills}
+											inputValue={skillInput}
+											placeholder={t("profile.skillsPlaceholder")}
+											onInputChange={setSkillInput}
+											onAdd={(v) =>
+												addChip(v, skills, setSkills, setSkillInput)
+											}
+											onRemove={(v) => removeChip(v, skills, setSkills)}
+											removeLabel={t("profile.removeChip")}
+										/>
+									</Field>
+
+									<Field label={t("profile.fieldLanguages")} id="lang-input">
+										<ChipInput
+											inputRef={langInputRef}
+											inputId="lang-input"
+											chips={languages}
+											inputValue={langInput}
+											placeholder={t("profile.languagesPlaceholder")}
+											onInputChange={setLangInput}
+											onAdd={(v) =>
+												addChip(v, languages, setLanguages, setLangInput)
+											}
+											onRemove={(v) => removeChip(v, languages, setLanguages)}
+											removeLabel={t("profile.removeChip")}
+										/>
+									</Field>
+
+									<Field
+										label={t("profile.fieldPreferredContact")}
+										id="preferred-contact"
+									>
+										<select
+											id="preferred-contact"
+											value={preferredContact}
+											onChange={(e) =>
+												setPreferredContact(e.target.value as ContactPref)
+											}
+											className={inputClass}
+										>
+											<option value="">
+												{t("profile.preferredContactNone")}
+											</option>
+											<option value="Email">
+												{t("profile.preferredContactEmail")}
+											</option>
+											<option value="Phone">
+												{t("profile.preferredContactPhone")}
+											</option>
+										</select>
+									</Field>
+								</div>
+							</section>
+
+							<div className="flex justify-end">
+								<button
+									type="submit"
+									disabled={saving}
+									className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+								>
+									{saving ? t("profile.saving") : t("profile.save")}
+								</button>
+							</div>
+						</form>
+
+						<div className="mt-12 rounded-lg border border-red-200 bg-red-50 p-6">
+							<h2 className="mb-1 text-base font-semibold text-red-800">
+								{t("account.dangerZoneTitle")}
+							</h2>
+							<p className="mb-4 text-sm text-red-700">
+								{t("account.dangerZoneDescription")}
 							</p>
-						</Field>
-
-						<Field label={t("account.fieldFirstName")} id="first-name">
-							<input
-								id="first-name"
-								value={firstName}
-								onChange={(e) => setFirstName(e.target.value)}
-								className={inputClass}
-							/>
-						</Field>
-
-						<Field label={t("account.fieldLastName")} id="last-name">
-							<input
-								id="last-name"
-								value={lastName}
-								onChange={(e) => setLastName(e.target.value)}
-								className={inputClass}
-							/>
-						</Field>
-					</div>
-				</section>
-
-				<hr className="border-gray-200" />
-
-				<section>
-					<h2 className="mb-4 text-base font-semibold text-gray-900">
-						{t("profile.sectionDetails")}
-					</h2>
-					<div className="space-y-5">
-						<Field label={t("profile.fieldBio")} id="bio">
-							<textarea
-								id="bio"
-								rows={4}
-								value={bio}
-								placeholder={t("profile.bioPlaceholder")}
-								onChange={(e) => setBio(e.target.value)}
-								className={textareaClass}
-							/>
-						</Field>
-
-						<Field label={t("profile.fieldSkills")} id="skill-input">
-							<ChipInput
-								inputRef={skillInputRef}
-								inputId="skill-input"
-								chips={skills}
-								inputValue={skillInput}
-								placeholder={t("profile.skillsPlaceholder")}
-								onInputChange={setSkillInput}
-								onAdd={(v) => addChip(v, skills, setSkills, setSkillInput)}
-								onRemove={(v) => removeChip(v, skills, setSkills)}
-								removeLabel={t("profile.removeChip")}
-							/>
-						</Field>
-
-						<Field label={t("profile.fieldLanguages")} id="lang-input">
-							<ChipInput
-								inputRef={langInputRef}
-								inputId="lang-input"
-								chips={languages}
-								inputValue={langInput}
-								placeholder={t("profile.languagesPlaceholder")}
-								onInputChange={setLangInput}
-								onAdd={(v) => addChip(v, languages, setLanguages, setLangInput)}
-								onRemove={(v) => removeChip(v, languages, setLanguages)}
-								removeLabel={t("profile.removeChip")}
-							/>
-						</Field>
-
-						<Field
-							label={t("profile.fieldPreferredContact")}
-							id="preferred-contact"
-						>
-							<select
-								id="preferred-contact"
-								value={preferredContact}
-								onChange={(e) =>
-									setPreferredContact(e.target.value as ContactPref)
-								}
-								className={inputClass}
+							<button
+								type="button"
+								onClick={() => setShowDeleteDialog(true)}
+								className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
 							>
-								<option value="">{t("profile.preferredContactNone")}</option>
-								<option value="Email">
-									{t("profile.preferredContactEmail")}
-								</option>
-								<option value="Phone">
-									{t("profile.preferredContactPhone")}
-								</option>
-							</select>
-						</Field>
-					</div>
-				</section>
-
-				<div className="flex justify-end">
-					<button
-						type="submit"
-						disabled={saving}
-						className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-					>
-						{saving ? t("profile.saving") : t("profile.save")}
-					</button>
-				</div>
-			</form>
-
-			<div className="mt-12 rounded-lg border border-red-200 bg-red-50 p-6">
-				<h2 className="mb-1 text-base font-semibold text-red-800">
-					{t("account.dangerZoneTitle")}
-				</h2>
-				<p className="mb-4 text-sm text-red-700">
-					{t("account.dangerZoneDescription")}
-				</p>
-				<button
-					type="button"
-					onClick={() => setShowDeleteDialog(true)}
-					className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-				>
-					{t("account.deleteAccountButton")}
-				</button>
+								{t("account.deleteAccountButton")}
+							</button>
+						</div>
+					</>
+				)}
 			</div>
 
 			{showDeleteDialog && (
@@ -338,105 +426,6 @@ export default function ProfilePage() {
 					error={deleteError}
 				/>
 			)}
-		</div>
-	);
-}
-
-function getInitials(name: string): string {
-	const parts = name.trim().split(/\s+/);
-	if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
-	if (name.length >= 2) return name.slice(0, 2).toUpperCase();
-	return name.toUpperCase();
-}
-
-const inputClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
-
-const textareaClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none resize-y";
-
-function Field({
-	label,
-	id,
-	children,
-}: {
-	label: string;
-	id?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div>
-			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
-				{label}
-			</label>
-			{children}
-		</div>
-	);
-}
-
-function ChipInput({
-	inputRef,
-	inputId,
-	chips,
-	inputValue,
-	placeholder,
-	onInputChange,
-	onAdd,
-	onRemove,
-	removeLabel,
-}: {
-	inputRef: React.RefObject<HTMLInputElement | null>;
-	inputId: string;
-	chips: string[];
-	inputValue: string;
-	placeholder: string;
-	onInputChange: (v: string) => void;
-	onAdd: (v: string) => void;
-	onRemove: (v: string) => void;
-	removeLabel: string;
-}) {
-	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-		if (e.key === "Enter") {
-			e.preventDefault();
-			onAdd(inputValue);
-		}
-	}
-
-	return (
-		<div className="mt-1">
-			{chips.length > 0 && (
-				<div className="mb-2 flex flex-wrap gap-2">
-					{chips.map((chip) => (
-						<span
-							key={chip}
-							className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
-						>
-							{chip}
-							<button
-								type="button"
-								aria-label={`${removeLabel} ${chip}`}
-								onClick={() => onRemove(chip)}
-								className="ml-1 text-gray-400 hover:text-gray-700"
-							>
-								&times;
-							</button>
-						</span>
-					))}
-				</div>
-			)}
-			<input
-				ref={inputRef}
-				id={inputId}
-				type="text"
-				value={inputValue}
-				placeholder={placeholder}
-				onChange={(e) => onInputChange(e.target.value)}
-				onKeyDown={handleKeyDown}
-				onBlur={() => {
-					if (inputValue.trim()) onAdd(inputValue);
-				}}
-				className={inputClass}
-			/>
-		</div>
+		</>
 	);
 }

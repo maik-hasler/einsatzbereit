@@ -18,9 +18,11 @@ internal sealed class VolunteerOpportunityReadRepository(
 		VolunteerOpportunityFilter filter,
 		CancellationToken cancellationToken = default)
 	{
+		var now = DateTimeOffset.UtcNow;
+
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
-			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= DateTimeOffset.UtcNow))
+			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= now))
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
