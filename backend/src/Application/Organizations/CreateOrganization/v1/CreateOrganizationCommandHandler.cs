@@ -18,6 +18,9 @@ internal sealed class CreateOrganizationCommandHandler(
 		if (string.IsNullOrWhiteSpace(request.Name))
 			throw new DomainException("Name must not be empty.");
 
+		if (request.Name.Length > 100)
+			throw new DomainException("Organization name must not exceed 100 characters.");
+
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
 			request.Name, cancellationToken);
 
