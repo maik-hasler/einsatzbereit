@@ -49,7 +49,7 @@ async function main() {
 		await login(page, "olaf", "olaf123");
 
 		// --- My Engagements ---
-		await page.goto(`${BASE}/engagements`, { waitUntil: "networkidle" });
+		await page.goto(`${BASE}/my-engagements`, { waitUntil: "networkidle" });
 		await assertPageHero(page, "MyEngagementsPage");
 
 		// --- Achievements ---
@@ -57,37 +57,65 @@ async function main() {
 		await assertPageHero(page, "AchievementsPage");
 
 		// --- Profile ---
-		await page.goto(`${BASE}/account`, { waitUntil: "networkidle" });
+		await page.goto(`${BASE}/profile`, { waitUntil: "networkidle" });
 		await assertPageHero(page, "ProfilePage");
 
-		// --- Find an organization via API ---
-		const orgsRes = await fetch(`${API}/v1/organizations`, {
-			signal: AbortSignal.timeout(10000),
-		});
-		if (orgsRes.ok) {
-			const orgsData = await orgsRes.json();
-			const orgId = orgsData?.items?.[0]?.id ?? orgsData?.[0]?.id;
-			if (orgId) {
-				// --- Organization Profile ---
-				await page.goto(`${BASE}/organizations/${orgId}`, {
-					waitUntil: "networkidle",
+		// --- Find an organization via the org switcher cookie (active-org) ---
+		// After login the header may set the active-org cookie; try to read it
+		let orgId = null;
+		const cookies = await ctx.cookies();
+		const activeOrgCookie = cookies.find((c) => c.name === "active-org");
+		if (activeOrgCookie) {
+			orgId = activeOrgCookie.value;
+			console.log(`OK  Found active-org cookie: ${orgId}`);
+		} else {
+			// Extract bearer token from oidc storage and call the API
+			const token = await page.evaluate(() => {
+				for (let i = 0; i < localStorage.length; i++) {
+					const key = localStorage.key(i);
+					if (!key) continue;
+					try {
+						const val = JSON.parse(localStorage.getItem(key) ?? "");
+						if (val?.access_token) return val.access_token;
+					} catch {
+						// ignore
+					}
+				}
+				return null;
+			});
+			if (token) {
+				const orgsRes = await fetch(`${API}/v1/organizations`, {
+					headers: { Authorization: `Bearer ${token}` },
+					signal: AbortSignal.timeout(10000),
 				});
-				await assertPageHero(page, "OrganizationProfilePage");
-
-				// --- Organization Settings (olaf is organisator) ---
-				await page.goto(`${BASE}/organizations/${orgId}/settings`, {
-					waitUntil: "networkidle",
-				});
-				await assertPageHero(page, "OrganizationSettingsPage");
-
-				// --- Organization Dashboard ---
-				await page.goto(`${BASE}/organizations/${orgId}/dashboard`, {
-					waitUntil: "networkidle",
-				});
-				await assertPageHero(page, "OrganizationDashboardPage");
-			} else {
-				console.log("WARN  No organizations found - skipping org page checks");
+				if (orgsRes.ok) {
+					const orgsData = await orgsRes.json();
+					orgId = orgsData?.items?.[0]?.id ?? orgsData?.[0]?.id ?? null;
+					if (orgId) console.log(`OK  Found org via API: ${orgId}`);
+				}
 			}
+		}
+
+		if (orgId) {
+			// --- Organization Profile ---
+			await page.goto(`${BASE}/organizations/${orgId}`, {
+				waitUntil: "networkidle",
+			});
+			await assertPageHero(page, "OrganizationProfilePage");
+
+			// --- Organization Settings (olaf is organisator) ---
+			await page.goto(`${BASE}/organizations/${orgId}/settings`, {
+				waitUntil: "networkidle",
+			});
+			await assertPageHero(page, "OrganizationSettingsPage");
+
+			// --- Organization Dashboard ---
+			await page.goto(`${BASE}/organizations/${orgId}/dashboard`, {
+				waitUntil: "networkidle",
+			});
+			await assertPageHero(page, "OrganizationDashboardPage");
+		} else {
+			console.log("WARN  No org ID found - skipping org page checks");
 		}
 
 		// --- Find an opportunity with engagements ---
