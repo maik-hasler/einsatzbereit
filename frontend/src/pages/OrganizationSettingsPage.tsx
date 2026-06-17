@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import EmptyState from "../components/EmptyState";
-import PageHero from "../components/PageHero";
 import { usePageTitle } from "../hooks/usePageTitle";
 
 type Tab = "general" | "members";
@@ -146,27 +145,33 @@ export default function OrganizationSettingsPage() {
 		);
 	}
 
-	const orgInitials = org.name
-		.trim()
-		.split(/\s+/)
-		.slice(0, 2)
-		.map((w) => w[0])
-		.join("")
-		.toUpperCase();
-
 	return (
 		<>
-			<PageHero
-				title={org.name}
-				subtitle={t("orgSettings.title")}
-				icon={
-					<div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white shadow-inner">
-						{orgInitials}
-					</div>
-				}
-				backHref={organizationId ? `/organizations/${organizationId}` : "/"}
-				backLabel={org.name}
-			/>
+			<div className="mb-6">
+				<Link
+					to={organizationId ? `/organizations/${organizationId}` : "/"}
+					className="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+				>
+					<svg
+						className="h-4 w-4"
+						fill="none"
+						viewBox="0 0 24 24"
+						strokeWidth="1.5"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M15.75 19.5 8.25 12l7.5-7.5"
+						/>
+					</svg>
+					{org.name}
+				</Link>
+				<h1 className="text-2xl font-bold text-gray-900">
+					{t("orgSettings.title")}
+				</h1>
+			</div>
 
 			<div className="mx-auto max-w-2xl">
 				<p className="mb-6 text-sm text-gray-500">

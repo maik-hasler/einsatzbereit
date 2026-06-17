@@ -6,7 +6,6 @@ import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
-import PageHero from "../components/PageHero";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -41,29 +40,9 @@ export default function OrganizationProfilePage() {
 	if (!profile)
 		return <p className="text-gray-500">{t("orgProfile.notFound")}</p>;
 
-	const initials = profile.name
-		.trim()
-		.split(/\s+/)
-		.slice(0, 2)
-		.map((w) => w[0])
-		.join("")
-		.toUpperCase();
-
-	const location = profile.address
-		? `${profile.address.zipCode} ${profile.address.city}`
-		: undefined;
-
 	return (
 		<>
-			<PageHero
-				title={profile.name}
-				subtitle={location}
-				icon={
-					<div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white shadow-inner">
-						{initials}
-					</div>
-				}
-			/>
+			<h1 className="mb-6 text-2xl font-bold text-gray-900">{profile.name}</h1>
 
 			<div className="max-w-2xl">
 				{profile.description && (

@@ -6,16 +6,8 @@ import type { MyProfileResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import ConfirmDialog from "../components/ConfirmDialog";
-import PageHero from "../components/PageHero";
 
 type ContactPref = "Email" | "Phone" | "";
-
-function getInitials(name: string): string {
-	const parts = name.trim().split(/\s+/);
-	if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
-	if (name.length >= 2) return name.slice(0, 2).toUpperCase();
-	return name.toUpperCase();
-}
 
 const inputClass =
 	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
@@ -115,10 +107,6 @@ export default function ProfilePage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	usePageTitle(t("profile.title"));
-
-	const displayName = (auth.user?.profile?.name ??
-		auth.user?.profile?.preferred_username ??
-		"") as string;
 
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -244,19 +232,11 @@ export default function ProfilePage() {
 		}
 	}
 
-	const initials = displayName ? getInitials(displayName) : "?";
-
 	return (
 		<>
-			<PageHero
-				title={t("profile.title")}
-				subtitle={profile ? `@${profile.username}` : undefined}
-				icon={
-					<div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white shadow-inner">
-						{initials}
-					</div>
-				}
-			/>
+			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+				{t("profile.title")}
+			</h1>
 
 			<div className="mx-auto max-w-2xl">
 				{loading && (

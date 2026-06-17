@@ -1,7 +1,7 @@
 /**
- * Smoke test for the sub-pages redesign (PR #458).
- * Verifies that key pages render the brand-800 PageHero banner
- * instead of the old plain h1 + Breadcrumb pattern.
+ * Smoke test for the sub-pages redesign.
+ * Verifies that key pages render a plain h1 page title
+ * instead of the old PageHero (brand-800 banner) pattern.
  * Run: node scripts/smoke-test-redesign.mjs
  */
 
@@ -27,12 +27,26 @@ async function login(page, username, password) {
 	console.log(`OK  Logged in as ${username}`);
 }
 
-async function assertPageHero(page, label) {
-	// PageHero renders a section with bg-brand-800
+async function assertH1(page, label, expectedText) {
+	const h1 = page.locator("h1").first();
+	const count = await h1.count();
+	if (count === 0) throw new Error(`${label}: no h1 found`);
+	if (expectedText) {
+		const text = await h1.textContent();
+		if (!text?.toLowerCase().includes(expectedText.toLowerCase())) {
+			throw new Error(
+				`${label}: h1 text "${text}" does not contain "${expectedText}"`,
+			);
+		}
+	}
+	console.log(`OK  ${label}: h1 rendered`);
+}
+
+async function assertNoPageHero(page, label) {
 	const hero = page.locator("section.bg-brand-800").first();
 	const count = await hero.count();
-	if (count === 0) throw new Error(`${label}: PageHero (bg-brand-800) not found`);
-	console.log(`OK  ${label}: PageHero rendered`);
+	if (count > 0)
+		throw new Error(`${label}: PageHero (bg-brand-800) still present`);
 }
 
 async function main() {
@@ -50,18 +64,20 @@ async function main() {
 
 		// --- My Engagements ---
 		await page.goto(`${BASE}/my-engagements`, { waitUntil: "networkidle" });
-		await assertPageHero(page, "MyEngagementsPage");
+		await assertH1(page, "MyEngagementsPage");
+		await assertNoPageHero(page, "MyEngagementsPage");
 
 		// --- Achievements ---
 		await page.goto(`${BASE}/achievements`, { waitUntil: "networkidle" });
-		await assertPageHero(page, "AchievementsPage");
+		await assertH1(page, "AchievementsPage");
+		await assertNoPageHero(page, "AchievementsPage");
 
 		// --- Profile ---
 		await page.goto(`${BASE}/profile`, { waitUntil: "networkidle" });
-		await assertPageHero(page, "ProfilePage");
+		await assertH1(page, "ProfilePage");
+		await assertNoPageHero(page, "ProfilePage");
 
 		// --- Find an organization via the org switcher cookie (active-org) ---
-		// After login the header may set the active-org cookie; try to read it
 		let orgId = null;
 		const cookies = await ctx.cookies();
 		const activeOrgCookie = cookies.find((c) => c.name === "active-org");
@@ -101,19 +117,22 @@ async function main() {
 			await page.goto(`${BASE}/organizations/${orgId}`, {
 				waitUntil: "networkidle",
 			});
-			await assertPageHero(page, "OrganizationProfilePage");
+			await assertH1(page, "OrganizationProfilePage");
+			await assertNoPageHero(page, "OrganizationProfilePage");
 
 			// --- Organization Settings (olaf is organisator) ---
 			await page.goto(`${BASE}/organizations/${orgId}/settings`, {
 				waitUntil: "networkidle",
 			});
-			await assertPageHero(page, "OrganizationSettingsPage");
+			await assertH1(page, "OrganizationSettingsPage");
+			await assertNoPageHero(page, "OrganizationSettingsPage");
 
 			// --- Organization Dashboard ---
 			await page.goto(`${BASE}/organizations/${orgId}/dashboard`, {
 				waitUntil: "networkidle",
 			});
-			await assertPageHero(page, "OrganizationDashboardPage");
+			await assertH1(page, "OrganizationDashboardPage");
+			await assertNoPageHero(page, "OrganizationDashboardPage");
 		} else {
 			console.log("WARN  No org ID found - skipping org page checks");
 		}
@@ -130,7 +149,8 @@ async function main() {
 					`${BASE}/volunteer-opportunities/${oppId}/engagements`,
 					{ waitUntil: "networkidle" },
 				);
-				await assertPageHero(page, "EngagementManagementPage");
+				await assertH1(page, "EngagementManagementPage");
+				await assertNoPageHero(page, "EngagementManagementPage");
 			}
 		}
 

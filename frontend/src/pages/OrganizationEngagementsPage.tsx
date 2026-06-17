@@ -5,7 +5,6 @@ import type { PublicOpportunitySummaryDto } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import EmptyState from "../components/EmptyState";
-import PageHero from "../components/PageHero";
 
 export default function OrganizationEngagementsPage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -58,47 +57,33 @@ export default function OrganizationEngagementsPage() {
 		);
 	}
 
-	const orgInitials = orgName
-		? orgName
-				.trim()
-				.split(/\s+/)
-				.slice(0, 2)
-				.map((w) => w[0])
-				.join("")
-				.toUpperCase()
-		: "";
-
 	return (
 		<>
-			<PageHero
-				title={t("orgEngagements.title")}
-				subtitle={orgName || undefined}
-				icon={
-					orgInitials ? (
-						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white shadow-inner">
-							{orgInitials}
-						</div>
-					) : (
-						<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white">
-							<svg
-								className="h-6 w-6"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="1.5"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-								/>
-							</svg>
-						</div>
-					)
-				}
-				backHref={organizationId ? `/organizations/${organizationId}` : "/"}
-				backLabel={orgName || t("breadcrumb.home")}
-			/>
+			<div className="mb-6">
+				<Link
+					to={organizationId ? `/organizations/${organizationId}` : "/"}
+					className="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+				>
+					<svg
+						className="h-4 w-4"
+						fill="none"
+						viewBox="0 0 24 24"
+						strokeWidth="1.5"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M15.75 19.5 8.25 12l7.5-7.5"
+						/>
+					</svg>
+					{orgName || t("breadcrumb.home")}
+				</Link>
+				<h1 className="text-2xl font-bold text-gray-900">
+					{t("orgEngagements.title")}
+				</h1>
+			</div>
 
 			<div className="mx-auto max-w-2xl">
 				{opportunities.length === 0 ? (
