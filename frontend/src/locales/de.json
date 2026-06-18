@@ -595,6 +595,13 @@
       "achievements": "Meine Errungenschaften",
       "userAchievements": "Errungenschaften"
     },
+    "onboarding": {
+      "ariaLabel": "Willkommensbanner",
+      "title": "Willkommen bei Einsatzbereit!",
+      "message": "Entdecke Freiwilligeneinsätze in deiner Nähe, melde dich mit einem Klick an und verdiene Abzeichen, während du deine Gemeinschaft unterstützt.",
+      "cta": "Einsätze entdecken",
+      "dismiss": "Schließen"
+    },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",
       "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
