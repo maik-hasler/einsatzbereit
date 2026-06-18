@@ -479,11 +479,11 @@
       "markAllRead": "Alle als gelesen markieren",
       "empty": "Keine Benachrichtigungen.",
       "kinds": {
-        "EngagementCreated": "Neue Bewerbung eingegangen",
-        "EngagementConfirmed": "Deine Bewerbung wurde bestätigt",
-        "EngagementCancelled": "Deine Bewerbung wurde abgesagt",
-        "EngagementWithdrawn": "Eine Bewerbung wurde zurückgezogen",
-        "OpportunityUpdated": "Ein Bedarf, für den du dich angemeldet hast, wurde aktualisiert",
+        "EngagementCreated": "Neue Bewerbung eingegangen fur {{title}}",
+        "EngagementConfirmed": "Deine Bewerbung fur {{title}} wurde bestätigt",
+        "EngagementCancelled": "Deine Bewerbung fur {{title}} wurde abgesagt",
+        "EngagementWithdrawn": "Eine Bewerbung fur {{title}} wurde zurückgezogen",
+        "OpportunityUpdated": "{{title}} wurde aktualisiert",
         "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt"
       }
     },

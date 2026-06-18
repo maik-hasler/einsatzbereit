@@ -144,6 +144,7 @@ export default function Header() {
 								<div className="relative" ref={notifRef}>
 									<button
 										type="button"
+										data-testid="notification-bell"
 										onClick={() => setNotifOpen((o) => !o)}
 										className={`relative p-2 rounded-lg transition-colors cursor-pointer ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
 										aria-label={t("notifications.bellLabel")}
@@ -171,7 +172,10 @@ export default function Header() {
 
 									{/* Notification dropdown */}
 									{notifOpen && (
-										<div className="absolute right-0 top-full mt-2 w-80 rounded-lg bg-white border border-gray-200 shadow-lg z-50">
+										<div
+											data-testid="notification-panel"
+											className="absolute right-0 top-full mt-2 w-80 rounded-lg bg-white border border-gray-200 shadow-lg z-50"
+										>
 											<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
 												<p className="text-sm font-medium text-gray-900">
 													{t("notifications.bellLabel")}
@@ -214,7 +218,7 @@ export default function Header() {
 																		);
 																	}
 																	setNotifOpen(false);
-																	navigate("/my-engagements");
+																	navigate(n.actionUrl ?? "/my-engagements");
 																}}
 															>
 																<span className="flex items-start gap-2">
@@ -226,7 +230,10 @@ export default function Header() {
 																			`notifications.kinds.${n.kind}` as Parameters<
 																				typeof t
 																			>[0],
-																			{ defaultValue: n.kind },
+																			{
+																				title: n.relatedTitle ?? "",
+																				defaultValue: n.kind,
+																			},
 																		)}
 																		<br />
 																		<span className="text-xs text-gray-400">
@@ -524,7 +531,7 @@ export default function Header() {
 																}
 																setNotifOpen(false);
 																setMobileOpen(false);
-																navigate("/my-engagements");
+																navigate(n.actionUrl ?? "/my-engagements");
 															}}
 														>
 															<span className="flex items-start gap-2">
@@ -536,7 +543,10 @@ export default function Header() {
 																		`notifications.kinds.${n.kind}` as Parameters<
 																			typeof t
 																		>[0],
-																		{ defaultValue: n.kind },
+																		{
+																			title: n.relatedTitle ?? "",
+																			defaultValue: n.kind,
+																		},
 																	)}
 																	<br />
 																	<span className="text-xs text-gray-400">

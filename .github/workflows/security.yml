@@ -1,12 +1,6 @@
 name: Dependency Security Scan
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - '.github/workflows/security.yml'
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:

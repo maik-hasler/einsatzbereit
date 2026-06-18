@@ -5163,6 +5163,12 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid RelatedEntityId { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("relatedTitle")]
+        public string? RelatedTitle { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("actionUrl")]
+        public string? ActionUrl { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("isRead")]
         public bool IsRead { get; set; } = default!;
 

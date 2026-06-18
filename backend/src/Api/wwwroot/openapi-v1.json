@@ -3143,6 +3143,8 @@
           "id",
           "kind",
           "relatedEntityId",
+          "relatedTitle",
+          "actionUrl",
           "isRead",
           "createdOn"
         ],
@@ -3158,6 +3160,18 @@
           "relatedEntityId": {
             "type": "string",
             "format": "uuid"
+          },
+          "relatedTitle": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "actionUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "isRead": {
             "type": "boolean"
