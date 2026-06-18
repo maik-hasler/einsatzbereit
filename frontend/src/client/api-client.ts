@@ -2487,6 +2487,8 @@ export interface EngagementSummary {
     id: string;
     opportunityId: string;
     opportunityTitle: string;
+    organizationId: string;
+    organizationName: string;
     volunteerId: string;
     timeSlotId: string | undefined;
     message: string | undefined;
