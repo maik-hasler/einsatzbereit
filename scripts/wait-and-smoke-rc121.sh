@@ -28,15 +28,15 @@ conclusions = [j.get('conclusion', 'null') for j in jobs]
 # Find deploy-staging
 deploy = next((j for j in jobs if j['name'] == 'Deploy to Staging'), None)
 if deploy:
-    print(f'deploy_status={deploy[\"status\"]}')
-    print(f'deploy_conclusion={deploy.get(\"conclusion\", \"null\")}')
+	print(f'deploy_status={deploy[\"status\"]}')
+	print(f'deploy_conclusion={deploy.get(\"conclusion\", \"null\")}')
 else:
-    # Check if all jobs are done
-    all_done = all(s == 'completed' for s in statuses)
-    has_failures = any(c in ('failure', 'cancelled') for c in conclusions)
-    print(f'deploy_status=pending')
-    print(f'all_done={all_done}')
-    print(f'has_failures={has_failures}')
+	# Check if all jobs are done
+	all_done = all(s == 'completed' for s in statuses)
+	has_failures = any(c in ('failure', 'cancelled') for c in conclusions)
+	print(f'deploy_status=pending')
+	print(f'all_done={all_done}')
+	print(f'has_failures={has_failures}')
 " 2>/dev/null || echo "deploy_status=error")
 
 	echo "Status: $RUN_STATUS"
