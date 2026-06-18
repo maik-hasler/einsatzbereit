@@ -783,6 +783,49 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return OK
+     */
+    getOpportunityCalendar(opportunityId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/calendar";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOpportunityCalendar(_response);
+        });
+    }
+
+    protected processGetOpportunityCalendar(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @return Created
      */
     createTimeSlot(opportunityId: string, body: CreateTimeSlotRequest, signal?: AbortSignal): Promise<CreateTimeSlotResponse> {
