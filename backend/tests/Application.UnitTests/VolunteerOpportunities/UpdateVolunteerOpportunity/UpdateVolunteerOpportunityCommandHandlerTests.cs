@@ -256,7 +256,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotifyActiveVolunteers_WhenUpdated(
+	public async Task Handle_ShouldNotifyActiveVolunteers_WhenAddressChanges(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -275,9 +275,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
 			]);
 
-		// Same participation type, so the update proceeds and volunteers are notified.
+		// Material change: new address (city changed).
+		var newAddress = new Address("Neue Straße", "99", "20095", "Hamburg");
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -285,6 +286,39 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotNotifyVolunteers_WhenOnlyCosmeticFieldsChange(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var activeVolunteer = Guid.NewGuid();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(
+			[
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+			]);
+
+		// Cosmetic change only: title and description change, address/remote/occurrence unchanged.
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert - no notification should be added
+		await _notifRepo.DidNotReceive().AddAsync(
+			Arg.Any<Notification>(),
 			cancellationToken);
 	}
 

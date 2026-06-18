@@ -59,6 +59,11 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		if (!request.IsRemote && address is not null)
 			address = await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken);
 
+		// Snapshot material fields before mutation to detect meaningful changes.
+		var prevIsRemote = opportunity.IsRemote;
+		var prevAddress = opportunity.Address;
+		var prevOccurrence = opportunity.Occurrence;
+
 		opportunity.Update(
 			title,
 			request.Description,
@@ -70,14 +75,27 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			request.Category,
 			request.Tags);
 
-		// Notify volunteers with an active engagement that details changed (#406).
-		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
-			dbContext,
-			engagementReadRepository,
-			opportunityId,
-			NotificationKind.OpportunityUpdated,
-			cancellationToken);
+		// Only notify on material changes (location or schedule); cosmetic edits
+		// (title, description, tags) must not spam engaged volunteers.
+		var materialChanged =
+			prevIsRemote != request.IsRemote ||
+			prevOccurrence != request.Occurrence ||
+			AddressTextChanged(prevAddress, request.Address);
+
+		if (materialChanged)
+			await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
+				dbContext,
+				engagementReadRepository,
+				opportunityId,
+				NotificationKind.OpportunityUpdated,
+				cancellationToken);
 
 		return true;
 	}
+
+	private static bool AddressTextChanged(Address? prev, Address? next) =>
+		prev?.Street != next?.Street ||
+		prev?.HouseNumber != next?.HouseNumber ||
+		prev?.ZipCode != next?.ZipCode ||
+		prev?.City != next?.City;
 }
