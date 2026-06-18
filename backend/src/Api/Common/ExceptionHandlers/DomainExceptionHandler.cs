@@ -27,12 +27,13 @@ internal sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> log
 					? StatusCodes.Status409Conflict
 					: StatusCodes.Status400BadRequest;
 
-		logger.LogInformation(
-			"DomainException handled: {Message} -> {StatusCode}",
-			domainException.Message,
-			statusCode);
-
 		var traceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
+
+		logger.LogInformation(
+			"DomainException handled: {Message} -> {StatusCode} (traceId={TraceId})",
+			domainException.Message,
+			statusCode,
+			traceId);
 
 		var problem = new ProblemDetails
 		{

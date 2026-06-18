@@ -174,6 +174,19 @@ app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+
+app.Use(async (ctx, next) =>
+{
+	using (app.Logger.BeginScope(new Dictionary<string, object?>
+	{
+		["TraceId"] = Activity.Current?.TraceId.ToString() ?? ctx.TraceIdentifier,
+		["UserId"] = ctx.User.FindFirst("sub")?.Value ?? "anonymous",
+	}))
+	{
+		await next(ctx);
+	}
+});
+
 app.UseMiddleware<LoginStreakMiddleware>();
 
 app.MapEndpoints();
