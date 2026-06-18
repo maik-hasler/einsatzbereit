@@ -42,7 +42,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
-			ValidateAudience = false,
+			ValidateAudience = true,
+			ValidAudience = builder.Configuration["Authentication:ValidAudience"],
 			RoleClaimType = "roles",
 			ValidIssuers = builder.Configuration
 				.GetSection("Authentication:ValidIssuers").Get<string[]>(),
