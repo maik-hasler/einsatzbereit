@@ -214,7 +214,7 @@ export default function Header() {
 																		);
 																	}
 																	setNotifOpen(false);
-																	navigate("/my-engagements");
+																	navigate(n.actionUrl ?? "/my-engagements");
 																}}
 															>
 																<span className="flex items-start gap-2">
@@ -226,7 +226,10 @@ export default function Header() {
 																			`notifications.kinds.${n.kind}` as Parameters<
 																				typeof t
 																			>[0],
-																			{ defaultValue: n.kind },
+																			{
+																				title: n.relatedTitle ?? "",
+																				defaultValue: n.kind,
+																			},
 																		)}
 																		<br />
 																		<span className="text-xs text-gray-400">
@@ -524,7 +527,7 @@ export default function Header() {
 																}
 																setNotifOpen(false);
 																setMobileOpen(false);
-																navigate("/my-engagements");
+																navigate(n.actionUrl ?? "/my-engagements");
 															}}
 														>
 															<span className="flex items-start gap-2">
@@ -536,7 +539,10 @@ export default function Header() {
 																		`notifications.kinds.${n.kind}` as Parameters<
 																			typeof t
 																		>[0],
-																		{ defaultValue: n.kind },
+																		{
+																			title: n.relatedTitle ?? "",
+																			defaultValue: n.kind,
+																		},
 																	)}
 																	<br />
 																	<span className="text-xs text-gray-400">

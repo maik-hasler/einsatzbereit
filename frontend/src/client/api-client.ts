@@ -2522,6 +2522,8 @@ export interface NotificationSummary {
     id: string;
     kind: string;
     relatedEntityId: string;
+    relatedTitle: string | undefined;
+    actionUrl: string | undefined;
     isRead: boolean;
     createdOn: Date;
 
