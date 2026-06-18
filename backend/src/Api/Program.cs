@@ -42,7 +42,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
-			ValidateAudience = false,
+			ValidateAudience = true,
+			ValidAudience = builder.Configuration["Authentication:ValidAudience"],
 			RoleClaimType = "roles",
 			ValidIssuers = builder.Configuration
 				.GetSection("Authentication:ValidIssuers").Get<string[]>(),
@@ -173,6 +174,19 @@ app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
+
+app.Use(async (ctx, next) =>
+{
+	using (app.Logger.BeginScope(new Dictionary<string, object?>
+	{
+		["TraceId"] = Activity.Current?.TraceId.ToString() ?? ctx.TraceIdentifier,
+		["UserId"] = ctx.User.FindFirst("sub")?.Value ?? "anonymous",
+	}))
+	{
+		await next(ctx);
+	}
+});
+
 app.UseMiddleware<LoginStreakMiddleware>();
 
 app.MapEndpoints();
