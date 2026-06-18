@@ -919,6 +919,40 @@
         }
       }
     },
+    "/v1/volunteer-opportunities/{opportunityId}/calendar": {
+      "get": {
+        "tags": [
+          "GetOpportunityCalendarEndpoint"
+        ],
+        "operationId": "GetOpportunityCalendar",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities/{opportunityId}/time-slots": {
       "post": {
         "tags": [
@@ -4263,6 +4297,9 @@
     },
     {
       "name": "GetOrganizationOpportunityDraftsEndpoint"
+    },
+    {
+      "name": "GetOpportunityCalendarEndpoint"
     },
     {
       "name": "CreateTimeSlotEndpoint"

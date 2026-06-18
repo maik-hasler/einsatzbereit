@@ -177,7 +177,9 @@
       "draftNotice": "This opportunity is a draft and not publicly visible yet.",
       "publish": "Publish",
       "publishing": "Publishing…",
-      "publishSuccess": "Opportunity published."
+      "publishSuccess": "Opportunity published.",
+      "addToCalendar": "Add to Calendar",
+      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity."
     },
     "createOpportunity": {
       "title": "Create opportunity",
