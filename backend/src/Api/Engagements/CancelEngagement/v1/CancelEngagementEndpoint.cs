@@ -37,7 +37,7 @@ internal sealed class CancelEngagementEndpoint
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
 
-		if (body?.Reason?.Length > 500)
+		if (body?.Reason is { Length: > 500 })
 			return Results.Problem("Reason must not exceed 500 characters.", statusCode: StatusCodes.Status400BadRequest);
 
 		var command = new CancelEngagementCommand(new EngagementId(engagementId), userId, body?.Reason);

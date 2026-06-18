@@ -34,6 +34,15 @@ internal sealed class UpdateUserProfileEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
+		if (request.FirstName is { Length: > 100 })
+			return Results.Problem("FirstName must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.LastName is { Length: > 100 })
+			return Results.Problem("LastName must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.Bio is { Length: > 1000 })
+			return Results.Problem("Bio must not exceed 1000 characters.", statusCode: StatusCodes.Status400BadRequest);
+
 		Domain.Users.PreferredContact? preferredContact = null;
 		if (request.PreferredContact is not null &&
 			Enum.TryParse<Domain.Users.PreferredContact>(request.PreferredContact, out var parsed))

@@ -36,10 +36,10 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
 
-		if (request.Title?.Length > 200)
+		if (request.Title is { Length: > 200 })
 			return Results.Problem("Title must not exceed 200 characters.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.Description?.Length > 5000)
+		if (request.Description is { Length: > 5000 })
 			return Results.Problem("Description must not exceed 5000 characters.", statusCode: StatusCodes.Status400BadRequest);
 
 		Address? address = null;

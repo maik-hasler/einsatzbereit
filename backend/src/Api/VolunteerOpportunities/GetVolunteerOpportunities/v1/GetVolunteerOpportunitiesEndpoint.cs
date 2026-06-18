@@ -31,7 +31,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 		if (request.PageNumber < 1)
 			return Results.Problem("PageNumber must be at least 1.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.PageSize is < 1 or > 100)
+		if (request.PageSize < 1 || request.PageSize > 100)
 			return Results.Problem("PageSize must be between 1 and 100.", statusCode: StatusCodes.Status400BadRequest);
 
 		var hasLat = request.CenterLatitude.HasValue;
