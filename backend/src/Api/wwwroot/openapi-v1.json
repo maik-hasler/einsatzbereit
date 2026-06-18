@@ -3011,6 +3011,8 @@
           "id",
           "opportunityId",
           "opportunityTitle",
+          "organizationId",
+          "organizationName",
           "volunteerId",
           "timeSlotId",
           "message",
@@ -3029,6 +3031,13 @@
             "format": "uuid"
           },
           "opportunityTitle": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationName": {
             "type": "string"
           },
           "volunteerId": {

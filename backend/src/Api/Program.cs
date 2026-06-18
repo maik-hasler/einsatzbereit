@@ -168,6 +168,7 @@ app.Use(async (context, next) =>
 	await next();
 });
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();

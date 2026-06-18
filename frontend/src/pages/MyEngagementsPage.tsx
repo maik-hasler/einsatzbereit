@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -119,14 +119,20 @@ export default function MyEngagementsPage() {
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0">
-									<button
-										onClick={() =>
-											navigate(`/volunteer-opportunities/${e.opportunityId}`)
-										}
-										className="text-left text-sm font-semibold text-gray-900 transition-colors hover:text-brand-700"
+									<Link
+										to={`/volunteer-opportunities/${e.opportunityId}`}
+										className="text-sm font-semibold text-gray-900 transition-colors hover:text-brand-700"
 									>
 										{e.opportunityTitle}
-									</button>
+									</Link>
+									<p className="mt-0.5 text-xs text-gray-500">
+										<Link
+											to={`/organizations/${e.organizationId}`}
+											className="hover:underline"
+										>
+											{e.organizationName}
+										</Link>
+									</p>
 									{e.message && (
 										<p className="mt-1 truncate text-sm italic text-gray-500">
 											&ldquo;{e.message}&rdquo;
