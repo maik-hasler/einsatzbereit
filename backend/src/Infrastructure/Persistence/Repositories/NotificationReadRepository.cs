@@ -1,4 +1,5 @@
 using Application.Notifications;
+using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -42,10 +43,12 @@ internal sealed class NotificationReadRepository(
 		Dictionary<Guid, Guid> engagementToOpportunity = [];
 		if (engagementIds.Count > 0)
 		{
-			engagementToOpportunity = await dbContext.EngagementsQuery
-				.Where(e => engagementIds.Contains(e.Id.Value))
-				.Select(e => new { EngId = e.Id.Value, OppId = e.OpportunityId.Value })
-				.ToDictionaryAsync(x => x.EngId, x => x.OppId, cancellationToken);
+			var engagementIdVOs = engagementIds.Select(id => new EngagementId(id)).ToList();
+			var engagementRows = await dbContext.EngagementsQuery
+				.Where(e => engagementIdVOs.Contains(e.Id))
+				.Select(e => new { e.Id, e.OpportunityId })
+				.ToListAsync(cancellationToken);
+			engagementToOpportunity = engagementRows.ToDictionary(x => x.Id.Value, x => x.OpportunityId.Value);
 		}
 
 		var opportunityIdsFromEngagements = engagementToOpportunity.Values.ToHashSet();
@@ -55,10 +58,12 @@ internal sealed class NotificationReadRepository(
 		Dictionary<Guid, string> opportunityTitles = [];
 		if (allOpportunityIds.Count > 0)
 		{
-			opportunityTitles = await dbContext.VolunteerOpportunitiesQuery
-				.Where(o => allOpportunityIds.Contains(o.Id.Value))
-				.Select(o => new { Id = o.Id.Value, o.Title })
-				.ToDictionaryAsync(x => x.Id, x => x.Title, cancellationToken);
+			var opportunityIdVOs = allOpportunityIds.Select(id => new VolunteerOpportunityId(id)).ToList();
+			var opportunityRows = await dbContext.VolunteerOpportunitiesQuery
+				.Where(o => opportunityIdVOs.Contains(o.Id))
+				.Select(o => new { o.Id, o.Title })
+				.ToListAsync(cancellationToken);
+			opportunityTitles = opportunityRows.ToDictionary(x => x.Id.Value, x => x.Title);
 		}
 
 		return notifications.Select(n =>
