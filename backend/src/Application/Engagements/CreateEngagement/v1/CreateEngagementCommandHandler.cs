@@ -23,6 +23,12 @@ internal sealed class CreateEngagementCommandHandler(
 		if (opportunity is null)
 			throw new DomainException($"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found.");
 
+		var alreadySignedUp = await dbContext.HasEngagementAsync(
+			request.VolunteerId, request.OpportunityId, cancellationToken);
+
+		if (alreadySignedUp)
+			throw new DomainException("Conflict: you are already signed up for this opportunity.");
+
 		var engagement = request.TimeSlotId is not null
 			? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
 			: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message

@@ -27,6 +27,11 @@ public interface IApplicationDbContext
 		string badgeName,
 		CancellationToken cancellationToken = default);
 
+	Task<bool> HasEngagementAsync(
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
+
 	IAggregateRepository<UserStreak, UserStreakId> UserStreaks { get; }
 
 	Task<UserStreak?> GetUserStreakAsync(
