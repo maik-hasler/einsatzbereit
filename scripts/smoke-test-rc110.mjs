@@ -11,10 +11,10 @@ const API_URL = 'https://api.maik-hasler.de';
 
 // Two-step Keycloak login helper (live Keycloak)
 async function login(page, username, password) {
-  await page.fill('#username', username);
-  await page.click('#kc-login');
-  await page.fill('#password', password);
-  await page.click('#kc-login');
+	await page.fill('#username', username);
+	await page.click('#kc-login');
+	await page.fill('#password', password);
+	await page.click('#kc-login');
 }
 
 // 1. Health check
@@ -52,9 +52,9 @@ page.on('pageerror', e => errors.push(e.message));
 await page.reload();
 await page.waitForLoadState('networkidle');
 if (errors.length > 0) {
-  console.warn('  ⚠ Console errors detected:', errors.slice(0, 3));
+	console.warn('  ⚠ Console errors detected:', errors.slice(0, 3));
 } else {
-  console.log('  ✓ No JS errors on account page');
+	console.log('  ✓ No JS errors on account page');
 }
 
 await browser.close();
