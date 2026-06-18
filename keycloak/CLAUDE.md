@@ -36,7 +36,7 @@ Imported on container startup. This file IS the auth configuration - edit here, 
   - `realm-name` - injects hardcoded claim `realm: "einsatzbereit"` (used by backend auth policies)
 
 **`backend`** (confidential service account)
-- Client secret: `backend-secret`
+- Client secret: not committed - injected via `Keycloak__ClientSecret` env var (dev: set by AppHost.cs; staging: `KEYCLOAK_BACKEND_SECRET` in `.env`)
 - No user login flows - server-to-server only
 - Service account permissions: `manage-realm`, `manage-users`, `manage-organizations`
 - Used by `KeycloakOrganizationService` in the backend to manage org membership
