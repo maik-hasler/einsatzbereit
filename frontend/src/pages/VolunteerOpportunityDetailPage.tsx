@@ -9,7 +9,6 @@ import {
 	formatOccurrence,
 	formatParticipationType,
 } from "../lib/format";
-import { getActiveOrgId } from "../lib/activeOrg";
 import SignUpModal from "../components/SignUpModal";
 import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -42,7 +41,16 @@ export default function VolunteerOpportunityDetailPage() {
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isOrganisator = roles.includes("organisator");
-	const activeOrgId = getActiveOrgId();
+	const [userOrgIds, setUserOrgIds] = useState<string[]>([]);
+
+	useEffect(() => {
+		if (!isOrganisator) return;
+		api
+			.getOrganizations()
+			.then((orgs) => setUserOrgIds(orgs.map((o) => o.id)))
+			.catch(() => {});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOrganisator]);
 
 	useEffect(() => {
 		if (!opportunityId) return;
@@ -104,7 +112,8 @@ export default function VolunteerOpportunityDetailPage() {
 		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
 
 	const isAuthenticated = auth.isAuthenticated;
-	const isOwner = isOrganisator && opportunity.organizationId === activeOrgId;
+	const isOwner =
+		isOrganisator && userOrgIds.includes(opportunity.organizationId);
 	const isDraft = opportunity.status === "Draft";
 
 	async function handlePublish() {

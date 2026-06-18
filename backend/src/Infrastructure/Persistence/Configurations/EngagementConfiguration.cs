@@ -61,6 +61,9 @@ internal sealed class EngagementConfiguration
 
 		builder.HasIndex(e => new { e.VolunteerId, e.Status });
 
+		builder.HasIndex(e => new { e.VolunteerId, e.OpportunityId })
+			.IsUnique();
+
 		builder.HasOne<TimeSlot>()
 			.WithMany()
 			.HasForeignKey(e => e.TimeSlotId)

@@ -6,7 +6,11 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId, setActiveOrgCookie } from "../lib/activeOrg";
 import CreateOrganizationModal from "./CreateOrganizationModal";
 
-export default function OrganizationSwitcher() {
+export default function OrganizationSwitcher({
+	transparent = false,
+}: {
+	transparent?: boolean;
+}) {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
@@ -81,7 +85,11 @@ export default function OrganizationSwitcher() {
 	};
 
 	if (loading) {
-		return <div className="h-9 w-32 animate-pulse rounded-lg bg-gray-100" />;
+		return (
+			<div
+				className={`h-9 w-32 animate-pulse rounded-lg ${transparent ? "bg-white/20" : "bg-gray-100"}`}
+			/>
+		);
 	}
 
 	// No orgs - show direct "create" button instead of dropdown
@@ -92,10 +100,10 @@ export default function OrganizationSwitcher() {
 					type="button"
 					onClick={() => setShowModal(true)}
 					data-testid="create-org-btn"
-					className="flex items-center gap-2 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-100 transition-colors"
+					className={`flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm font-medium transition-colors ${transparent ? "border-white/40 bg-white/10 text-white hover:bg-white/20" : "border-brand-300 bg-brand-50 text-brand-700 hover:bg-brand-100"}`}
 				>
 					<svg
-						className="w-4 h-4"
+						className={`w-4 h-4 ${transparent ? "text-white/80" : ""}`}
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="1.5"
@@ -126,13 +134,13 @@ export default function OrganizationSwitcher() {
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+					className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${transparent ? "border-white/30 bg-white/10 text-white hover:bg-white/20" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>
 					{/* Building icon */}
 					<svg
-						className="w-4 h-4 text-gray-400"
+						className={`w-4 h-4 ${transparent ? "text-white/70" : "text-gray-400"}`}
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="1.5"
@@ -151,7 +159,7 @@ export default function OrganizationSwitcher() {
 
 					{/* Chevron */}
 					<svg
-						className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+						className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="2"

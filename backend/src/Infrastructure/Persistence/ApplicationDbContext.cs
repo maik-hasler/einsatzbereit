@@ -72,6 +72,13 @@ internal sealed class ApplicationDbContext(
 		await Set<Achievement>()
 			.AnyAsync(a => a.UserId == userId && a.Name == badgeName, cancellationToken);
 
+	public async Task<bool> HasEngagementAsync(
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.AnyAsync(e => e.VolunteerId == volunteerId && e.OpportunityId == opportunityId, cancellationToken);
+
 	public IAggregateRepository<UserStreak, UserStreakId> UserStreaks
 		=> new AggregateRepository<UserStreak, UserStreakId>(
 			Set<UserStreak>(),

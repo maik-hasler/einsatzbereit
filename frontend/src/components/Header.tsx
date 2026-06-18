@@ -134,16 +134,18 @@ export default function Header() {
 					<nav className="hidden md:flex items-center gap-3">
 						{isLoggedIn ? (
 							<>
-								<OrganizationSwitcher />
+								<OrganizationSwitcher transparent={isTransparent} />
 
-								<div className="w-px h-6 bg-gray-200" />
+								<div
+									className={`w-px h-6 ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
+								/>
 
 								{/* Bell icon */}
 								<div className="relative" ref={notifRef}>
 									<button
 										type="button"
 										onClick={() => setNotifOpen((o) => !o)}
-										className="relative p-2 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition-colors cursor-pointer"
+										className={`relative p-2 rounded-lg transition-colors cursor-pointer ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
 										aria-label={t("notifications.bellLabel")}
 										aria-expanded={notifOpen}
 									>
@@ -253,7 +255,7 @@ export default function Header() {
 											{initials}
 										</span>
 										<svg
-											className="w-4 h-4 text-gray-400"
+											className={`w-4 h-4 ${isTransparent ? "text-white/70" : "text-gray-400"}`}
 											fill="none"
 											viewBox="0 0 24 24"
 											strokeWidth="2"
@@ -457,7 +459,7 @@ export default function Header() {
 									</span>
 								</div>
 								<div className="px-3 py-2">
-									<OrganizationSwitcher />
+									<OrganizationSwitcher transparent={isTransparent} />
 								</div>
 								<button
 									type="button"

@@ -18,11 +18,14 @@ internal sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> log
 
 		var isNotFound = domainException.Message.Contains("not found", StringComparison.OrdinalIgnoreCase);
 		var isForbidden = domainException.Message.Contains("permission", StringComparison.OrdinalIgnoreCase);
+		var isConflict = domainException.Message.Contains("conflict", StringComparison.OrdinalIgnoreCase);
 		var statusCode = isForbidden
 			? StatusCodes.Status403Forbidden
 			: isNotFound
 				? StatusCodes.Status404NotFound
-				: StatusCodes.Status400BadRequest;
+				: isConflict
+					? StatusCodes.Status409Conflict
+					: StatusCodes.Status400BadRequest;
 
 		logger.LogInformation(
 			"DomainException handled: {Message} -> {StatusCode}",
@@ -33,7 +36,7 @@ internal sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> log
 
 		var problem = new ProblemDetails
 		{
-			Title = isForbidden ? "Forbidden" : isNotFound ? "Not Found" : "Bad Request",
+			Title = isForbidden ? "Forbidden" : isNotFound ? "Not Found" : isConflict ? "Conflict" : "Bad Request",
 			Status = statusCode,
 			Detail = domainException.Message,
 			Extensions = { ["traceId"] = traceId },
