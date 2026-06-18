@@ -36,6 +36,12 @@ internal sealed class CreateOrganizationEndpoint
 
 		var userId = Guid.Parse(user.FindFirstValue("sub")!);
 
+		if (string.IsNullOrWhiteSpace(request.Name))
+			return Results.Problem("Name is required.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.Name.Length > 100)
+			return Results.Problem("Name must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
+
 		var command = new CreateOrganizationCommand(request.Name, userId);
 
 		var result = await sender.Send(command, cancellationToken);

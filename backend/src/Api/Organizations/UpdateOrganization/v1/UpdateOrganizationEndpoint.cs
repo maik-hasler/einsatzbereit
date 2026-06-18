@@ -37,10 +37,13 @@ internal sealed class UpdateOrganizationEndpoint
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
 
+		if (string.IsNullOrWhiteSpace(request.Name))
+			return Results.Problem("Name is required.", statusCode: StatusCodes.Status400BadRequest);
+
 		if (request.Name.Length > 100)
 			return Results.Problem("Name must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.Description?.Length > 1000)
+		if (request.Description is { Length: > 1000 })
 			return Results.Problem("Description must not exceed 1000 characters.", statusCode: StatusCodes.Status400BadRequest);
 
 		var addressCommand = request.Address is null

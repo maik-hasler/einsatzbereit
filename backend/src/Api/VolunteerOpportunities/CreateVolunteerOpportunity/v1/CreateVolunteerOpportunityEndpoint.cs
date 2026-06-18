@@ -29,10 +29,10 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
-		if (request.Title?.Length > 200)
+		if (request.Title is { Length: > 200 })
 			return Results.Problem("Title must not exceed 200 characters.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.Description?.Length > 5000)
+		if (request.Description is { Length: > 5000 })
 			return Results.Problem("Description must not exceed 5000 characters.", statusCode: StatusCodes.Status400BadRequest);
 
 		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence))
