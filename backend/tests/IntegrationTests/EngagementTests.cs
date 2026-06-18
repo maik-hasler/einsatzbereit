@@ -255,6 +255,155 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		myEngagements.Single().Status.Should().Be("Pending");
 	}
 
+	// ── CheckInEngagement ────────────────────────────────────────────────────
+
+	[Test]
+	public async Task CheckInEngagement_ShouldMarkAsCheckedIn_WhenOrganisatorChecksIn(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		var result = await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		result.Status.Should().Be("Confirmed");
+
+		var myEngagements = await veraClient.GetMyEngagementsAsync(cancellationToken);
+		myEngagements.Single().IsCheckedIn.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task CheckInEngagement_ShouldReturn400_WhenEngagementIsNotConfirmed(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var act = () => olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	// ── CheckInWithPin ────────────────────────────────────────────────────────
+
+	[Test]
+	public async Task CheckInWithPin_ShouldMarkAsCheckedIn_WhenVolunteerUsesCorrectPin(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
+
+		var details = await olafClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+		var pin = details.CheckInPin
+			?? throw new InvalidOperationException("PIN was not generated for PINCode opportunity.");
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Ready to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		var result = await veraClient.CheckInWithPinAsync(
+			engagement.Id,
+			new CheckInWithPinRequest { Pin = pin },
+			cancellationToken);
+
+		result.Status.Should().Be("Confirmed");
+
+		var myEngagements = await veraClient.GetMyEngagementsAsync(cancellationToken);
+		myEngagements.Single().IsCheckedIn.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task CheckInWithPin_ShouldReturn400_WhenPinIsWrong(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Ready to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		var act = () => veraClient.CheckInWithPinAsync(
+			engagement.Id,
+			new CheckInWithPinRequest { Pin = "wrong-pin" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	// ── Duplicate sign-up rejection ───────────────────────────────────────────
+
+	[Test]
+	public async Task CreateEngagement_ShouldReturn409_WhenVolunteerAlreadySignedUp(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "First sign-up" },
+			cancellationToken);
+
+		var act = () => veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Duplicate sign-up" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
+	// ── Cross-user withdrawal ─────────────────────────────────────────────────
+
+	[Test]
+	public async Task WithdrawEngagement_ShouldReturn400_WhenUserWithdrawsAnotherUsersEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var act = () => olafClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
 	// ── Cross-org ownership ───────────────────────────────────────────────────
 
 	[Test]
@@ -277,6 +426,28 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		// vera (organisator, but NOT in org1) tries to access org1's engagements
 		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task CancelEngagement_ShouldReturn403_WhenOrganisatorCancelsOtherOrgsEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await CreateOrganizationAsync(veraClient, cancellationToken);
+
+		var act = () => veraClient.CancelEngagementAsync(engagement.Id, null, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
@@ -328,8 +499,12 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		return org.Id.Value;
 	}
 
+	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(
+		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken) =>
+		CreateOpportunityAsync(client, orgId, "None", cancellationToken);
+
 	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(
-		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
+		EinsatzbereitApi client, Guid orgId, string checkInMethod, CancellationToken cancellationToken)
 	{
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
@@ -343,7 +518,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 				City = "Berlin",
 				Occurrence = "OneTime",
 				ParticipationType = "IndividualContact",
-				CheckInMethod = "None",
+				CheckInMethod = checkInMethod,
 			},
 			cancellationToken);
 	}
