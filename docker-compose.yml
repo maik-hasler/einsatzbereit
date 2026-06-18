@@ -9,6 +9,11 @@ services:
     restart: unless-stopped
     networks:
       - db
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.50"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -30,6 +35,11 @@ services:
     networks:
       - proxy
       - db
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+          cpus: "1.00"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +84,11 @@ services:
     networks:
       - proxy
       - db
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.50"
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,6 +132,11 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.10"
     depends_on:
       backend:
         condition: service_healthy
