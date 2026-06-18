@@ -100,9 +100,9 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", pendingVolunteer, null, null, "Pending", false, DateTimeOffset.UtcNow),
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", confirmedVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", pendingVolunteer, null, null, "Pending", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", confirmedVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
 			]);
 
 		// Act
@@ -130,7 +130,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow),
 			]);
 
 		// Act

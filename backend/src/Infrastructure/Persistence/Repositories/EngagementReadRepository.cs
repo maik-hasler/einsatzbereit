@@ -1,4 +1,5 @@
 using Application.Engagements;
+using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,7 @@ internal sealed class EngagementReadRepository(
 		var raw = await dbContext.EngagementsQuery
 			.Where(e => e.OpportunityId == opportunityId)
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
@@ -24,12 +25,31 @@ internal sealed class EngagementReadRepository(
 					e.Id,
 					e.OpportunityId,
 					OpportunityTitle = o.Title,
+					o.OrganizationId,
 					e.VolunteerId,
 					e.TimeSlotId,
 					e.Message,
 					e.Status,
 					e.IsCheckedIn,
 					e.CreatedOn,
+				})
+			.Join(
+				dbContext.OrganizationsQuery.Select(org => new { org.Id, org.Name }),
+				x => x.OrganizationId,
+				org => org.Id,
+				(x, org) => new
+				{
+					x.Id,
+					x.OpportunityId,
+					x.OpportunityTitle,
+					OrganizationId = org.Id,
+					OrganizationName = org.Name,
+					x.VolunteerId,
+					x.TimeSlotId,
+					x.Message,
+					x.Status,
+					x.IsCheckedIn,
+					x.CreatedOn,
 				})
 			.OrderByDescending(x => x.CreatedOn)
 			.ToListAsync(cancellationToken);
@@ -38,6 +58,8 @@ internal sealed class EngagementReadRepository(
 			x.Id.Value,
 			x.OpportunityId.Value,
 			x.OpportunityTitle,
+			x.OrganizationId.Value,
+			x.OrganizationName,
 			x.VolunteerId.Value,
 			x.TimeSlotId?.Value,
 			x.Message,
@@ -53,7 +75,7 @@ internal sealed class EngagementReadRepository(
 		var raw = await dbContext.EngagementsQuery
 			.Where(e => e.VolunteerId == volunteerId)
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
@@ -61,12 +83,31 @@ internal sealed class EngagementReadRepository(
 					e.Id,
 					e.OpportunityId,
 					OpportunityTitle = o.Title,
+					o.OrganizationId,
 					e.VolunteerId,
 					e.TimeSlotId,
 					e.Message,
 					e.Status,
 					e.IsCheckedIn,
 					e.CreatedOn,
+				})
+			.Join(
+				dbContext.OrganizationsQuery.Select(org => new { org.Id, org.Name }),
+				x => x.OrganizationId,
+				org => org.Id,
+				(x, org) => new
+				{
+					x.Id,
+					x.OpportunityId,
+					x.OpportunityTitle,
+					OrganizationId = org.Id,
+					OrganizationName = org.Name,
+					x.VolunteerId,
+					x.TimeSlotId,
+					x.Message,
+					x.Status,
+					x.IsCheckedIn,
+					x.CreatedOn,
 				})
 			.OrderByDescending(x => x.CreatedOn)
 			.ToListAsync(cancellationToken);
@@ -75,6 +116,8 @@ internal sealed class EngagementReadRepository(
 			x.Id.Value,
 			x.OpportunityId.Value,
 			x.OpportunityTitle,
+			x.OrganizationId.Value,
+			x.OrganizationName,
 			x.VolunteerId.Value,
 			x.TimeSlotId?.Value,
 			x.Message,
