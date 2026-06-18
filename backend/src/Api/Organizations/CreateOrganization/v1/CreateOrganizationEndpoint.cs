@@ -31,6 +31,9 @@ internal sealed class CreateOrganizationEndpoint
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
+		if (request.Name.Length > 100)
+			return Results.Problem("Name must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
+
 		var userId = Guid.Parse(user.FindFirstValue("sub")!);
 
 		var command = new CreateOrganizationCommand(request.Name, userId);

@@ -37,6 +37,9 @@ internal sealed class CreateEngagementEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
+		if (request.Message?.Length > 500)
+			return Results.Problem("Message must not exceed 500 characters.", statusCode: StatusCodes.Status400BadRequest);
+
 		TimeSlotId? timeSlotId = request.TimeSlotId.HasValue
 			? new TimeSlotId(request.TimeSlotId.Value)
 			: null;
