@@ -344,6 +344,12 @@ jobs:
             cd /opt/einsatzbereit
             chmod 600 .env
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            # Tag running images as staging-previous so we can roll back if the
+            # health gate fails after the deploy.
+            for svc in backend frontend keycloak; do
+              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
+              docker tag "${img}:staging" "${img}:staging-previous" 2>/dev/null || true
+            done
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune --force
@@ -368,6 +374,24 @@ jobs:
           done
           echo "::error::API did not report healthy within 5 minutes after deploy."
           exit 1
+
+      - name: Rollback on unhealthy deploy
+        if: failure()
+        run: |
+          echo "::warning::Health gate failed - rolling back to staging-previous images."
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            set -euo pipefail
+            cd /opt/einsatzbereit
+            # Re-tag staging-previous back to staging so compose uses the old images.
+            for svc in backend frontend keycloak; do
+              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
+              if docker image inspect "${img}:staging-previous" &>/dev/null; then
+                docker tag "${img}:staging-previous" "${img}:staging"
+              fi
+            done
+            docker compose up -d --remove-orphans
+            echo "Rollback complete - previous images re-deployed."
+          EOF
 
       - name: Bind single-step Keycloak browser flow
         env:
