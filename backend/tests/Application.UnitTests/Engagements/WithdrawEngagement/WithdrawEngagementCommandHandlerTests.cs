@@ -1,3 +1,4 @@
+using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.WithdrawEngagement.v1;
@@ -16,6 +17,9 @@ public class WithdrawEngagementCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IKeycloakOrganizationService _keycloakService =
 		Substitute.For<IKeycloakOrganizationService>();
+	private readonly IKeycloakUserService _keycloakUserService =
+		Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
@@ -29,7 +33,10 @@ public class WithdrawEngagementCommandHandlerTests
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
-		_sut = new WithdrawEngagementCommandHandler(_dbContext, _keycloakService);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
+		_sut = new WithdrawEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService);
 	}
 
 	private static (Engagement engagement, UserId volunteerId) CreatePendingEngagementWithVolunteer()
