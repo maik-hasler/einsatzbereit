@@ -85,6 +85,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
 				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
@@ -126,7 +127,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 			var summaries = page
 				.Select(x => new VolunteerOpportunitySummary(
-					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
+					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 					x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 					x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
@@ -152,7 +153,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var result = rows
 			.Select(x => new VolunteerOpportunitySummary(
-				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
+				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
@@ -313,6 +314,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
 				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
@@ -339,7 +341,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		return rows
 			.Select(x => new VolunteerOpportunitySummary(
-				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
+				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,

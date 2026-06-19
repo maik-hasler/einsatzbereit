@@ -6,6 +6,7 @@ public sealed record VolunteerOpportunitySummary(
 	string? Description,
 	Guid OrganizationId,
 	string OrganizationName,
+	bool OrganizationIsVerified,
 	string? Street,
 	string? HouseNumber,
 	string? ZipCode,

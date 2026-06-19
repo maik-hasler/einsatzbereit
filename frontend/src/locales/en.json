@@ -617,6 +617,20 @@
       "body": "Browse volunteer opportunities near you, sign up with one click, and earn badges as you help your community.",
       "cta": "Browse opportunities",
       "dismiss": "Dismiss"
+    },
+    "organizations": {
+      "verified": "Verified organization",
+      "verifyToggle": "Toggle verification",
+      "verifySuccess": "Organization verification updated.",
+      "verifyError": "Failed to update verification."
+    },
+    "adminOrgs": {
+      "title": "Admin - Organizations",
+      "loading": "Loading organizations...",
+      "error": "Failed to load organizations.",
+      "noOrgs": "No organizations found.",
+      "verify": "Verify",
+      "unverify": "Unverify"
     }
   }
 }

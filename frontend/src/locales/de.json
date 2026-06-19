@@ -617,6 +617,20 @@
       "body": "Entdecke Einsatzgelegenheiten in deiner Nähe, melde dich mit einem Klick an und sammle Abzeichen, während du deiner Gemeinschaft hilfst.",
       "cta": "Angebote entdecken",
       "dismiss": "Schließen"
+    },
+    "organizations": {
+      "verified": "Verifizierte Organisation",
+      "verifyToggle": "Verifizierung umschalten",
+      "verifySuccess": "Organisations-Verifizierung aktualisiert.",
+      "verifyError": "Verifizierung konnte nicht aktualisiert werden."
+    },
+    "adminOrgs": {
+      "title": "Admin - Organisationen",
+      "loading": "Organisationen werden geladen...",
+      "error": "Organisationen konnten nicht geladen werden.",
+      "noOrgs": "Keine Organisationen gefunden.",
+      "verify": "Verifizieren",
+      "unverify": "Verifizierung aufheben"
     }
   }
 }

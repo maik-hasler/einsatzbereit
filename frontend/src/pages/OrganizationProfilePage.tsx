@@ -42,7 +42,24 @@ export default function OrganizationProfilePage() {
 
 	return (
 		<>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">{profile.name}</h1>
+			<div className="mb-6 flex items-center gap-2">
+				<h1 className="text-2xl font-bold text-gray-900">{profile.name}</h1>
+				{profile.isVerified && (
+					<svg
+						className="h-6 w-6 shrink-0 text-brand-600"
+						viewBox="0 0 20 20"
+						fill="currentColor"
+						aria-label={t("organizations.verified")}
+						role="img"
+					>
+						<path
+							fillRule="evenodd"
+							d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
+							clipRule="evenodd"
+						/>
+					</svg>
+				)}
+			</div>
 
 			<div className="max-w-2xl">
 				{profile.description && (

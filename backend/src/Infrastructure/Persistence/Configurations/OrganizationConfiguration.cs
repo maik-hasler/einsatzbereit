@@ -37,6 +37,9 @@ internal sealed class OrganizationConfiguration
 			address.Property(a => a.City).IsRequired();
 		});
 
+		builder.Property(org => org.IsVerified)
+			.HasDefaultValue(false);
+
 		builder.Property(org => org.CreatedOn);
 
 		builder.Property(org => org.ModifiedOn);
