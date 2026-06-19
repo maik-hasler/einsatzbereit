@@ -58,7 +58,7 @@
       "directAccessGrantsEnabled": true,
       "redirectUris": [
         "http://localhost:*",
-        "https://einsatzbereit.maik-hasler.de/*"
+        "https://einsatzbereit.maik-hasler.de/callback"
       ],
       "webOrigins": [
         "http://localhost:*",
