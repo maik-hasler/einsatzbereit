@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
+import { dispatchToast } from "../lib/toastBus";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
 
@@ -844,6 +845,7 @@ export default function VolunteerOpportunitiesList({
 		CitySuggestion[]
 	>([]);
 	const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+	const [locationLoading, setLocationLoading] = useState(false);
 
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
@@ -1134,6 +1136,35 @@ export default function VolunteerOpportunitiesList({
 		setOpenFilter(null);
 	}
 
+	function handleNearMe() {
+		if (!navigator.geolocation) {
+			dispatchToast("error", t("opportunities.nearMeDenied"));
+			return;
+		}
+		setLocationLoading(true);
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				const { latitude, longitude } = pos.coords;
+				const currentRadius = radius || "10";
+				const label = t("opportunities.nearMe");
+				const params = new URLSearchParams(window.location.search);
+				params.set("city", label);
+				params.set("lat", String(latitude));
+				params.set("lng", String(longitude));
+				params.set("radius", currentRadius);
+				setSearchParams(params, { replace: true });
+				setLocationCityInput(label);
+				setShowLocationSuggestions(false);
+				setOpenFilter(null);
+				setLocationLoading(false);
+			},
+			() => {
+				dispatchToast("error", t("opportunities.nearMeDenied"));
+				setLocationLoading(false);
+			},
+		);
+	}
+
 	const hasFilters = !!(
 		hasLocation ||
 		occurrence ||
@@ -1269,6 +1300,40 @@ export default function VolunteerOpportunitiesList({
 									</ul>
 								)}
 							</div>
+
+							<button
+								type="button"
+								onClick={handleNearMe}
+								disabled={locationLoading}
+								aria-label={t("opportunities.nearMe")}
+								className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-2 text-sm text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{locationLoading ? (
+									<svg
+										className="h-4 w-4 animate-spin"
+										fill="none"
+										viewBox="0 0 24 24"
+										aria-hidden="true"
+									>
+										<circle
+											className="opacity-25"
+											cx="12"
+											cy="12"
+											r="10"
+											stroke="currentColor"
+											strokeWidth="4"
+										/>
+										<path
+											className="opacity-75"
+											fill="currentColor"
+											d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
+										/>
+									</svg>
+								) : (
+									<PinIcon className="h-4 w-4" />
+								)}
+								{t("opportunities.nearMe")}
+							</button>
 
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
 								{t("opportunities.radiusLabel")}
@@ -1633,6 +1698,21 @@ export default function VolunteerOpportunitiesList({
 														<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
 															{item.organizationName}
 														</span>
+														{item.isOrganizationVerified && (
+															<svg
+																className="h-4 w-4 shrink-0 text-brand-600"
+																viewBox="0 0 20 20"
+																fill="currentColor"
+																aria-label={t("orgProfile.verified")}
+																role="img"
+															>
+																<path
+																	fillRule="evenodd"
+																	d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
+																	clipRule="evenodd"
+																/>
+															</svg>
+														)}
 													</Link>
 													{(item.isRemote || item.city) && (
 														<span className="ml-auto flex items-center gap-1 text-xs text-gray-400">

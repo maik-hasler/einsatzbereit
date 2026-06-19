@@ -132,6 +132,8 @@
       "radiusLabel": "Radius",
       "locationPlaceholder": "Enter city...",
       "radiusKmValue": "{{count}} km",
+      "nearMe": "Near me",
+      "nearMeDenied": "Location access denied - please search manually.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",
@@ -531,7 +533,8 @@
       "website": "Website:",
       "address": "Address:",
       "currentNeeds": "Current Opportunities",
-      "noOpportunities": "No current opportunities available."
+      "noOpportunities": "No current opportunities available.",
+      "verified": "Verified Organization"
     },
     "map": {
       "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
