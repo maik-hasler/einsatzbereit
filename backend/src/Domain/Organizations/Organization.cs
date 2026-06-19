@@ -19,6 +19,8 @@ public sealed class Organization
 
 	public Address? Address { get; private set; }
 
+	public bool IsVerified { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -62,5 +64,10 @@ public sealed class Organization
 		ContactPhone = contactPhone;
 		Website = website;
 		Address = address;
+	}
+
+	public void SetVerified(bool isVerified)
+	{
+		IsVerified = isVerified;
 	}
 }

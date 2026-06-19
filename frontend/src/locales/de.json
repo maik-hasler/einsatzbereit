@@ -533,7 +533,8 @@
       "website": "Website:",
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
-      "noOpportunities": "Keine aktuellen Bedarfe vorhanden."
+      "noOpportunities": "Keine aktuellen Bedarfe vorhanden.",
+      "verified": "Verifizierte Organisation"
     },
     "map": {
       "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>-Mitwirkende",

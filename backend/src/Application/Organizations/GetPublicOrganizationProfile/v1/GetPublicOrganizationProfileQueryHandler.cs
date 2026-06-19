@@ -58,6 +58,7 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 			organization.ContactPhone,
 			organization.Website,
 			address,
+			organization.IsVerified,
 			openOpportunities);
 	}
 }

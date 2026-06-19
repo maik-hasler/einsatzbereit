@@ -29,6 +29,9 @@ internal sealed class OrganizationConfiguration
 
 		builder.Property(org => org.Website);
 
+		builder.Property(org => org.IsVerified)
+			.HasDefaultValue(false);
+
 		builder.OwnsOne(org => org.Address, address =>
 		{
 			address.Property(a => a.Street).IsRequired();
