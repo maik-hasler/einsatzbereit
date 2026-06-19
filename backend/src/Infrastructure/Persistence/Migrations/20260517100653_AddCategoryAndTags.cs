@@ -21,7 +21,8 @@ namespace Infrastructure.Persistence.Migrations
 				name: "tags",
 				table: "volunteer_opportunity",
 				type: "text[]",
-				nullable: false);
+				nullable: false,
+				defaultValue: new List<string>());
 		}
 
 		/// <inheritdoc />
