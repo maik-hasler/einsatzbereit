@@ -71,8 +71,4 @@ public sealed class Organization
 		Address = address;
 	}
 
-	public void SetVerified(bool isVerified)
-	{
-		IsVerified = isVerified;
-	}
 }
