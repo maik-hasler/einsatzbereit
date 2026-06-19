@@ -6583,9 +6583,6 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string OrganizationName { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("organizationIsVerified")]
-        public bool OrganizationIsVerified { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         public string? Street { get; set; } = default!;
 
