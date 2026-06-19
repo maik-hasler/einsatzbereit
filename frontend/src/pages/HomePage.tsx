@@ -114,7 +114,6 @@ export default function HomePage() {
 
 	const [showOnboarding, setShowOnboarding] = useState(false);
 
-
 	useEffect(() => {
 		if (auth.isAuthenticated && !localStorage.getItem(ONBOARDING_KEY)) {
 			setShowOnboarding(true);
@@ -500,7 +499,9 @@ export default function HomePage() {
 			)}
 
 			<div id="opportunities">
-				{showOnboarding && <OnboardingBanner onDismiss={handleDismissOnboarding} />}
+				{showOnboarding && (
+					<OnboardingBanner onDismiss={handleDismissOnboarding} />
+				)}
 				<VolunteerOpportunitiesList
 					canCreateOpportunity={canCreateOpportunity}
 				/>
