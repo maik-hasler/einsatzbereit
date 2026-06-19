@@ -132,6 +132,12 @@
       "radiusLabel": "Umkreis",
       "locationPlaceholder": "Stadt eingeben...",
       "radiusKmValue": "{{count}} km",
+      "nearMeButton": "Meinen Standort verwenden",
+      "nearMeLoading": "Wird ermittelt...",
+      "nearMeLabel": "In meiner Nahe",
+      "nearMeAriaLabel": "Meinen aktuellen Standort fur die Suche verwenden",
+      "geolocationDenied": "Standortzugriff wurde verweigert. Bitte in den Browsereinstellungen erlauben.",
+      "geolocationUnsupported": "Ihr Browser unterstutzt keine Standortermittlung.",
       "category": {
         "Social": "Soziales",
         "Environment": "Umwelt",

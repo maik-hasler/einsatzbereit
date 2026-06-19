@@ -132,6 +132,12 @@
       "radiusLabel": "Radius",
       "locationPlaceholder": "Enter city...",
       "radiusKmValue": "{{count}} km",
+      "nearMeButton": "Use my location",
+      "nearMeLoading": "Locating...",
+      "nearMeLabel": "Near me",
+      "nearMeAriaLabel": "Use my current location to filter opportunities",
+      "geolocationDenied": "Location access was denied. Please allow it in your browser settings.",
+      "geolocationUnsupported": "Your browser does not support geolocation.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",

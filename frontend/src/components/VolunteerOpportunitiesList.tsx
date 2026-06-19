@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
+import { dispatchToast } from "../lib/toastBus";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
 
@@ -844,6 +845,7 @@ export default function VolunteerOpportunitiesList({
 		CitySuggestion[]
 	>([]);
 	const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+	const [geolocating, setGeolocating] = useState(false);
 
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
@@ -1288,6 +1290,96 @@ export default function VolunteerOpportunitiesList({
 										{t("opportunities.radiusKmValue", { count: r })}
 									</button>
 								))}
+							</div>
+							<div className="mt-3 border-t border-gray-100 pt-3">
+								<button
+									type="button"
+									disabled={geolocating}
+									aria-label={t("opportunities.nearMeAriaLabel")}
+									onClick={() => {
+										if (!navigator.geolocation) {
+											dispatchToast(
+												"error",
+												t("opportunities.geolocationUnsupported"),
+											);
+											return;
+										}
+										setGeolocating(true);
+										navigator.geolocation.getCurrentPosition(
+											(pos) => {
+												const { latitude, longitude } = pos.coords;
+												const currentRadius =
+													searchParams.get("radius") || "10";
+												const params = new URLSearchParams(
+													window.location.search,
+												);
+												params.set("lat", latitude.toString());
+												params.set("lng", longitude.toString());
+												params.set("radius", currentRadius);
+												params.set("city", t("opportunities.nearMeLabel"));
+												setSearchParams(params, { replace: true });
+												setLocationCityInput(t("opportunities.nearMeLabel"));
+												setGeolocating(false);
+												setOpenFilter(null);
+											},
+											() => {
+												dispatchToast(
+													"error",
+													t("opportunities.geolocationDenied"),
+												);
+												setGeolocating(false);
+											},
+											{ timeout: 10000 },
+										);
+									}}
+									className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									{geolocating ? (
+										<svg
+											className="h-4 w-4 animate-spin text-brand-600"
+											fill="none"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+										>
+											<circle
+												className="opacity-25"
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												strokeWidth="4"
+											/>
+											<path
+												className="opacity-75"
+												fill="currentColor"
+												d="M4 12a8 8 0 018-8v8z"
+											/>
+										</svg>
+									) : (
+										<svg
+											className="h-4 w-4"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="2"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+											/>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+											/>
+										</svg>
+									)}
+									{geolocating
+										? t("opportunities.nearMeLoading")
+										: t("opportunities.nearMeButton")}
+								</button>
 							</div>
 						</div>
 					</FilterDropdown>
