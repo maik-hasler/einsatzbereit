@@ -4502,7 +4502,6 @@
           "description",
           "organizationId",
           "organizationName",
-          "organizationIsVerified",
           "street",
           "houseNumber",
           "zipCode",
@@ -4542,9 +4541,6 @@
           },
           "organizationName": {
             "type": "string"
-          },
-          "organizationIsVerified": {
-            "type": "boolean"
           },
           "street": {
             "type": [
