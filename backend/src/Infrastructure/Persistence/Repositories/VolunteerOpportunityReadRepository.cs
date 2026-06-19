@@ -153,7 +153,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var result = rows
 			.Select(x => new VolunteerOpportunitySummary(
-				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified,
+				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
@@ -341,7 +341,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		return rows
 			.Select(x => new VolunteerOpportunitySummary(
-				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified,
+				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
