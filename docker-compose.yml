@@ -9,6 +9,11 @@ services:
     restart: unless-stopped
     networks:
       - db
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.50"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -30,6 +35,11 @@ services:
     networks:
       - proxy
       - db
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+          cpus: "1.00"
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,6 +77,32 @@ services:
       - traefik.http.routers.keycloak.tls.certresolver=myresolver
       - traefik.http.services.keycloak.loadbalancer.server.port=8080
 
+  db-backup:
+    image: prodrigestivill/postgres-backup-local:17
+    container_name: db-backup
+    restart: unless-stopped
+    networks:
+      - db
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.25"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: einsatzbereit,keycloak
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: "7"
+      BACKUP_KEEP_WEEKS: "4"
+      BACKUP_KEEP_MONTHS: "6"
+    volumes:
+      - postgres_backups:/backups
+
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:staging
     container_name: backend
@@ -74,6 +110,11 @@ services:
     networks:
       - proxy
       - db
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.50"
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,6 +158,11 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.10"
     depends_on:
       backend:
         condition: service_healthy
@@ -144,6 +190,7 @@ networks:
 
 volumes:
   postgres_data:
+  postgres_backups:
 
 configs:
   postgres-init:

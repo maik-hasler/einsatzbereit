@@ -177,7 +177,9 @@
       "draftNotice": "This opportunity is a draft and not publicly visible yet.",
       "publish": "Publish",
       "publishing": "Publishing…",
-      "publishSuccess": "Opportunity published."
+      "publishSuccess": "Opportunity published.",
+      "addToCalendar": "Add to Calendar",
+      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity."
     },
     "createOpportunity": {
       "title": "Create opportunity",
@@ -594,6 +596,13 @@
       "profile": "Profile",
       "achievements": "My Achievements",
       "userAchievements": "Achievements"
+    },
+    "onboarding": {
+      "ariaLabel": "Welcome banner",
+      "title": "Welcome to Einsatzbereit!",
+      "message": "Browse volunteer opportunities near you, sign up with one click, and earn badges as you help your community.",
+      "cta": "Browse opportunities",
+      "dismiss": "Dismiss"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",

@@ -177,7 +177,9 @@
       "draftNotice": "Dieser Bedarf ist ein Entwurf und noch nicht öffentlich sichtbar.",
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
-      "publishSuccess": "Bedarf veröffentlicht."
+      "publishSuccess": "Bedarf veröffentlicht.",
+      "addToCalendar": "Zum Kalender hinzufügen",
+      "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden."
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",
@@ -594,6 +596,13 @@
       "profile": "Profil",
       "achievements": "Meine Errungenschaften",
       "userAchievements": "Errungenschaften"
+    },
+    "onboarding": {
+      "ariaLabel": "Willkommensbanner",
+      "title": "Willkommen bei Einsatzbereit!",
+      "message": "Entdecke Freiwilligeneinsätze in deiner Nähe, melde dich mit einem Klick an und verdiene Abzeichen, während du deine Gemeinschaft unterstützt.",
+      "cta": "Einsätze entdecken",
+      "dismiss": "Schließen"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",

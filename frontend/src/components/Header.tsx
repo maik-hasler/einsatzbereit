@@ -174,16 +174,20 @@ export default function Header() {
 									{notifOpen && (
 										<div
 											data-testid="notification-panel"
-											className="absolute right-0 top-full mt-2 w-80 rounded-lg bg-white border border-gray-200 shadow-lg z-50"
+											className={`absolute right-0 top-full mt-2 w-80 rounded-lg border shadow-lg z-50 ${isTransparent ? "bg-brand-800 border-white/20" : "bg-white border-gray-200"}`}
 										>
-											<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-												<p className="text-sm font-medium text-gray-900">
+											<div
+												className={`flex items-center justify-between px-4 py-3 border-b ${isTransparent ? "border-white/10" : "border-gray-100"}`}
+											>
+												<p
+													className={`text-sm font-medium ${isTransparent ? "text-white" : "text-gray-900"}`}
+												>
 													{t("notifications.bellLabel")}
 												</p>
 												{notifications.some((n) => !n.isRead) && (
 													<button
 														type="button"
-														className="text-xs text-brand-700 hover:underline cursor-pointer"
+														className={`text-xs hover:underline cursor-pointer ${isTransparent ? "text-brand-300" : "text-brand-700"}`}
 														onClick={async () => {
 															await api.markAllNotificationsRead();
 															setNotifications((prev) =>
@@ -195,9 +199,13 @@ export default function Header() {
 													</button>
 												)}
 											</div>
-											<ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+											<ul
+												className={`max-h-80 overflow-y-auto divide-y ${isTransparent ? "divide-white/10" : "divide-gray-50"}`}
+											>
 												{notifications.length === 0 ? (
-													<li className="px-4 py-6 text-center text-sm text-gray-400">
+													<li
+														className={`px-4 py-6 text-center text-sm ${isTransparent ? "text-white/50" : "text-gray-400"}`}
+													>
 														{t("notifications.empty")}
 													</li>
 												) : (
@@ -205,7 +213,7 @@ export default function Header() {
 														<li key={n.id}>
 															<button
 																type="button"
-																className={`w-full text-left px-4 py-3 text-sm hover:bg-brand-50 transition-colors cursor-pointer ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
+																className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${isTransparent ? `hover:bg-white/10 ${!n.isRead ? "font-medium text-white" : "text-white/60"}` : `hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}`}
 																onClick={async () => {
 																	if (!n.isRead) {
 																		await api.markNotificationRead(n.id);
@@ -236,7 +244,9 @@ export default function Header() {
 																			},
 																		)}
 																		<br />
-																		<span className="text-xs text-gray-400">
+																		<span
+																			className={`text-xs ${isTransparent ? "text-white/40" : "text-gray-400"}`}
+																		>
 																			{new Date(n.createdOn).toLocaleString()}
 																		</span>
 																	</span>
@@ -278,16 +288,22 @@ export default function Header() {
 
 									{/* Dropdown */}
 									{dropdownOpen && (
-										<div className="absolute right-0 top-full mt-2 w-56 rounded-lg bg-white border border-gray-200 shadow-lg z-50">
-											<div className="px-4 py-3 border-b border-gray-100">
-												<p className="text-sm font-medium text-gray-900">
+										<div
+											className={`absolute right-0 top-full mt-2 w-56 rounded-lg border shadow-lg z-50 ${isTransparent ? "bg-brand-800 border-white/20" : "bg-white border-gray-200"}`}
+										>
+											<div
+												className={`px-4 py-3 border-b ${isTransparent ? "border-white/10" : "border-gray-100"}`}
+											>
+												<p
+													className={`text-sm font-medium ${isTransparent ? "text-white" : "text-gray-900"}`}
+												>
 													{displayName}
 												</p>
 											</div>
 											<div className="py-1">
 												<Link
 													to="/my-engagements"
-													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+													className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-700"}`}
 												>
 													<svg
 														className="w-4 h-4"
@@ -306,7 +322,7 @@ export default function Header() {
 												</Link>
 												<Link
 													to="/profile"
-													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+													className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-700"}`}
 												>
 													<svg
 														className="w-4 h-4"
@@ -325,7 +341,7 @@ export default function Header() {
 												</Link>
 												<Link
 													to="/achievements"
-													className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+													className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-700"}`}
 												>
 													<svg
 														className="w-4 h-4"
@@ -345,7 +361,7 @@ export default function Header() {
 												<button
 													type="button"
 													onClick={() => auth.signoutRedirect()}
-													className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+													className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isTransparent ? "text-red-300 hover:bg-red-500/20 hover:text-red-200" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
 												>
 													<svg
 														className="w-4 h-4"
@@ -391,6 +407,124 @@ export default function Header() {
 						<LanguageSelector transparent={isTransparent} />
 					</nav>
 
+					{/* Mobile notification bell */}
+					{isLoggedIn && (
+						<div className="relative md:hidden" ref={mobileNotifRef}>
+							<button
+								type="button"
+								data-testid="notification-bell-mobile"
+								onClick={() => setNotifOpen((o) => !o)}
+								className={`relative p-2 rounded-lg transition-colors cursor-pointer ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
+								aria-label={t("notifications.bellLabel")}
+								aria-expanded={notifOpen}
+							>
+								<svg
+									className="w-5 h-5"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+									/>
+								</svg>
+								{unreadCount > 0 && (
+									<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+										{unreadCount > 9 ? "9+" : unreadCount}
+									</span>
+								)}
+							</button>
+							{notifOpen && (
+								<div
+									data-testid="notification-panel-mobile"
+									className={`absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-lg z-50 ${isTransparent ? "bg-brand-800 border-white/20" : "bg-white border-gray-200"}`}
+								>
+									<div
+										className={`flex items-center justify-between px-4 py-3 border-b ${isTransparent ? "border-white/10" : "border-gray-100"}`}
+									>
+										<p
+											className={`text-sm font-medium ${isTransparent ? "text-white" : "text-gray-900"}`}
+										>
+											{t("notifications.bellLabel")}
+										</p>
+										{notifications.some((n) => !n.isRead) && (
+											<button
+												type="button"
+												className={`text-xs hover:underline cursor-pointer ${isTransparent ? "text-brand-300" : "text-brand-700"}`}
+												onClick={async () => {
+													await api.markAllNotificationsRead();
+													setNotifications((prev) =>
+														prev.map((n) => ({ ...n, isRead: true })),
+													);
+												}}
+											>
+												{t("notifications.markAllRead")}
+											</button>
+										)}
+									</div>
+									<ul
+										className={`max-h-80 overflow-y-auto divide-y ${isTransparent ? "divide-white/10" : "divide-gray-50"}`}
+									>
+										{notifications.length === 0 ? (
+											<li
+												className={`px-4 py-6 text-center text-sm ${isTransparent ? "text-white/50" : "text-gray-400"}`}
+											>
+												{t("notifications.empty")}
+											</li>
+										) : (
+											notifications.map((n) => (
+												<li key={n.id}>
+													<button
+														type="button"
+														className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${isTransparent ? `hover:bg-white/10 ${!n.isRead ? "font-medium text-white" : "text-white/60"}` : `hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}`}
+														onClick={async () => {
+															if (!n.isRead) {
+																await api.markNotificationRead(n.id);
+																setNotifications((prev) =>
+																	prev.map((x) =>
+																		x.id === n.id ? { ...x, isRead: true } : x,
+																	),
+																);
+															}
+															setNotifOpen(false);
+															setMobileOpen(false);
+															navigate(n.actionUrl ?? "/my-engagements");
+														}}
+													>
+														<span className="flex items-start gap-2">
+															{!n.isRead && (
+																<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+															)}
+															<span className={!n.isRead ? "" : "pl-4"}>
+																{t(
+																	`notifications.kinds.${n.kind}` as Parameters<
+																		typeof t
+																	>[0],
+																	{
+																		title: n.relatedTitle ?? "",
+																		defaultValue: n.kind,
+																	},
+																)}
+																<br />
+																<span
+																	className={`text-xs ${isTransparent ? "text-white/40" : "text-gray-400"}`}
+																>
+																	{new Date(n.createdOn).toLocaleString()}
+																</span>
+															</span>
+														</span>
+													</button>
+												</li>
+											))
+										)}
+									</ul>
+								</div>
+							)}
+						</div>
+					)}
 					{/* Mobile Menu Button */}
 					<button
 						type="button"
@@ -468,99 +602,6 @@ export default function Header() {
 								<div className="px-3 py-2">
 									<OrganizationSwitcher transparent={isTransparent} />
 								</div>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										setNotifOpen((o) => !o);
-									}}
-									className={`flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
-								>
-									{t("notifications.bellLabel")}
-									{unreadCount > 0 && (
-										<span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-											{unreadCount > 9 ? "9+" : unreadCount}
-										</span>
-									)}
-								</button>
-								{notifOpen && (
-									<div
-										ref={mobileNotifRef}
-										className="rounded-lg border border-gray-200 bg-white shadow-sm"
-									>
-										<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-											<p className="text-sm font-medium text-gray-900">
-												{t("notifications.bellLabel")}
-											</p>
-											{notifications.some((n) => !n.isRead) && (
-												<button
-													type="button"
-													className="text-xs text-brand-700 hover:underline cursor-pointer"
-													onClick={async () => {
-														await api.markAllNotificationsRead();
-														setNotifications((prev) =>
-															prev.map((n) => ({ ...n, isRead: true })),
-														);
-													}}
-												>
-													{t("notifications.markAllRead")}
-												</button>
-											)}
-										</div>
-										<ul className="max-h-64 overflow-y-auto divide-y divide-gray-50">
-											{notifications.length === 0 ? (
-												<li className="px-4 py-6 text-center text-sm text-gray-400">
-													{t("notifications.empty")}
-												</li>
-											) : (
-												notifications.map((n) => (
-													<li key={n.id}>
-														<button
-															type="button"
-															className={`w-full text-left px-4 py-3 text-sm hover:bg-brand-50 transition-colors cursor-pointer ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
-															onClick={async () => {
-																if (!n.isRead) {
-																	await api.markNotificationRead(n.id);
-																	setNotifications((prev) =>
-																		prev.map((x) =>
-																			x.id === n.id
-																				? { ...x, isRead: true }
-																				: x,
-																		),
-																	);
-																}
-																setNotifOpen(false);
-																setMobileOpen(false);
-																navigate(n.actionUrl ?? "/my-engagements");
-															}}
-														>
-															<span className="flex items-start gap-2">
-																{!n.isRead && (
-																	<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
-																)}
-																<span className={!n.isRead ? "" : "pl-4"}>
-																	{t(
-																		`notifications.kinds.${n.kind}` as Parameters<
-																			typeof t
-																		>[0],
-																		{
-																			title: n.relatedTitle ?? "",
-																			defaultValue: n.kind,
-																		},
-																	)}
-																	<br />
-																	<span className="text-xs text-gray-400">
-																		{new Date(n.createdOn).toLocaleString()}
-																	</span>
-																</span>
-															</span>
-														</button>
-													</li>
-												))
-											)}
-										</ul>
-									</div>
-								)}
 								<Link
 									to="/my-engagements"
 									onClick={() => setMobileOpen(false)}
