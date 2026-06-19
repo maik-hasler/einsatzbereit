@@ -4,6 +4,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation, Trans } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { runtimeConfig } from "../lib/runtimeConfig";
 import {
 	formatDateTime,
 	formatOccurrence,
@@ -201,6 +202,32 @@ export default function VolunteerOpportunityDetailPage() {
 					{opportunity.organizationName}
 				</Link>
 				<div className="flex shrink-0 gap-2">
+					{opportunity.timeSlots && opportunity.timeSlots.length > 0 && (
+						<a
+							href={`${runtimeConfig.apiUrl}/v1/volunteer-opportunities/${opportunityId}/calendar`}
+							download="opportunity.ics"
+							aria-label={t("opportunities.addToCalendar")}
+							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth="2"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+								/>
+							</svg>
+							<span className="hidden sm:inline">
+								{t("opportunities.addToCalendar")}
+							</span>
+						</a>
+					)}
 					<button
 						onClick={handleShare}
 						data-testid="share-opportunity"
