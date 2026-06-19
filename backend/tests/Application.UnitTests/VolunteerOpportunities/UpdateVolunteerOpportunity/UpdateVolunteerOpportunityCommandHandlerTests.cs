@@ -306,7 +306,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
 			]);
 
 		// Cosmetic change only: title and description change, address/remote/occurrence unchanged.

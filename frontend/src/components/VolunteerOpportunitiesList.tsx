@@ -9,7 +9,6 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
-import { dispatchToast } from "../lib/toastBus";
 
 interface Props {
 	canCreateOpportunity: boolean;
@@ -1122,54 +1121,6 @@ export default function VolunteerOpportunitiesList({
 		if (next.length > 0) params.set("categories", next.join(","));
 		else params.delete("categories");
 		setSearchParams(params, { replace: true });
-	}
-
-	function handleNearMe() {
-		if (!navigator.geolocation) {
-			dispatchToast("error", t("opportunities.locationDenied"));
-			return;
-		}
-		setGeoLocating(true);
-		navigator.geolocation.getCurrentPosition(
-			async (pos) => {
-				const { latitude, longitude } = pos.coords;
-				const currentRadius = searchParams.get("radius") || "10";
-				let cityName = "";
-				try {
-					const res = await fetch(
-						`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
-						{ headers: { "Accept-Language": "de,en" } },
-					);
-					if (res.ok) {
-						const data = await res.json();
-						cityName =
-							data.address?.city ??
-							data.address?.town ??
-							data.address?.village ??
-							data.address?.municipality ??
-							"";
-					}
-				} catch {
-					// ignore reverse geocode failure - city name stays empty
-				}
-				const params = new URLSearchParams(window.location.search);
-				params.set("lat", latitude.toString());
-				params.set("lng", longitude.toString());
-				params.set("radius", currentRadius);
-				if (cityName) {
-					params.set("city", cityName);
-					setLocationCityInput(cityName);
-				}
-				setSearchParams(params, { replace: true });
-				setGeoLocating(false);
-				setOpenFilter(null);
-			},
-			() => {
-				setGeoLocating(false);
-				dispatchToast("error", t("opportunities.locationDenied"));
-			},
-			{ timeout: 10000 },
-		);
 	}
 
 	function selectLocationSuggestion(suggestion: CitySuggestion) {
