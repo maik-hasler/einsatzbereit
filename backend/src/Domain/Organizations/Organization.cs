@@ -47,6 +47,11 @@ public sealed class Organization
 		return new Organization(id, name);
 	}
 
+	public void SetVerified(bool isVerified)
+	{
+		IsVerified = isVerified;
+	}
+
 	public void Update(
 		string name,
 		string? description,
@@ -66,8 +71,4 @@ public sealed class Organization
 		Address = address;
 	}
 
-	public void SetVerified(bool isVerified)
-	{
-		IsVerified = isVerified;
-	}
 }

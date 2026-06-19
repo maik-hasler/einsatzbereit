@@ -116,7 +116,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "Test Opportunity", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Pending", false, DateTimeOffset.UtcNow)
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "Test Opportunity", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Pending", false, false, DateTimeOffset.UtcNow)
 			]);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -146,7 +146,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "Test Opportunity", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Cancelled", false, DateTimeOffset.UtcNow)
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "Test Opportunity", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Cancelled", false, false, DateTimeOffset.UtcNow)
 			]);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -272,7 +272,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
 			]);
 
 		// Material change: new address (city changed).
@@ -306,7 +306,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
 			.Returns(
 			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, DateTimeOffset.UtcNow),
+				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
 			]);
 
 		// Cosmetic change only: title and description change, address/remote/occurrence unchanged.

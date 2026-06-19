@@ -12,4 +12,8 @@ public interface IEngagementReadRepository
 	ValueTask<List<EngagementSummary>> GetByVolunteerAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
+
+	ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
 }

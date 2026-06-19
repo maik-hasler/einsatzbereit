@@ -11,4 +11,5 @@ public sealed record EngagementSummary(
 	string? Message,
 	string Status,
 	bool IsCheckedIn,
+	bool HasFeedback,
 	DateTimeOffset CreatedOn);

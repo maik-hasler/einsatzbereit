@@ -155,6 +155,7 @@
       "deleting": "…",
       "share": "Share",
       "shareOpportunity": "Share opportunity",
+      "addToCalendar": "Add to Calendar",
       "linkCopied": "Link copied to clipboard",
       "confirmDelete": "Really delete this opportunity?",
       "deleteError": "Error deleting",
@@ -385,6 +386,24 @@
       "deleteConfirmMessage": "Are you sure you want to permanently delete your account? All your personal data will be erased and your engagements will be anonymised. This cannot be undone.",
       "deleteConfirmButton": "Yes, delete permanently",
       "deleteError": "Failed to delete account. Please try again or contact support."
+    },
+    "feedback": {
+      "buttonLabel": "Leave feedback",
+      "submitted": "Feedback given",
+      "title": "Rate your experience",
+      "ratingLabel": "Rating (required)",
+      "starLabel": "{{count}} star",
+      "commentLabel": "Comment (optional)",
+      "commentPlaceholder": "Share your experience…",
+      "submit": "Submit feedback",
+      "submitting": "Submitting…",
+      "cancel": "Cancel",
+      "submitError": "Could not submit feedback. Please try again.",
+      "averageRating": "{{rating}} out of 5 ({{count}} ratings)",
+      "organizerTab": "Feedback",
+      "noFeedback": "No feedback yet.",
+      "feedbackCount_one": "{{count}} rating",
+      "feedbackCount_other": "{{count}} ratings"
     },
     "checkIn": {
       "buttonLabel": "Check in",
@@ -618,6 +637,34 @@
       "500Message": "An unexpected server error occurred. Please try again later.",
       "backHome": "Back to home",
       "dismiss": "Dismiss"
+    },
+    "onboarding": {
+      "ariaLabel": "Welcome banner",
+      "title": "Welcome to Einsatzbereit!",
+      "body": "Browse volunteer opportunities near you, sign up with one click, and earn badges as you help your community.",
+      "cta": "Browse opportunities",
+      "dismiss": "Dismiss"
+    },
+    "userProfile": {
+      "loading": "Loading profile...",
+      "notFound": "User not found.",
+      "engagementCount": "{{count}} confirmed engagement",
+      "engagementCount_other": "{{count}} confirmed engagements",
+      "viewAllAchievements": "View all achievements"
+    },
+    "organizations": {
+      "verified": "Verified organization",
+      "verifyToggle": "Toggle verification",
+      "verifySuccess": "Organization verification updated.",
+      "verifyError": "Failed to update verification."
+    },
+    "adminOrgs": {
+      "title": "Admin - Organizations",
+      "loading": "Loading organizations...",
+      "error": "Failed to load organizations.",
+      "noOrgs": "No organizations found.",
+      "verify": "Verify",
+      "unverify": "Unverify"
     }
   }
 }

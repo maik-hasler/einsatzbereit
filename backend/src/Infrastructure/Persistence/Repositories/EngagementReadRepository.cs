@@ -31,6 +31,7 @@ internal sealed class EngagementReadRepository(
 					e.Message,
 					e.Status,
 					e.IsCheckedIn,
+					e.FeedbackSubmittedAt,
 					e.CreatedOn,
 				})
 			.Join(
@@ -49,6 +50,7 @@ internal sealed class EngagementReadRepository(
 					x.Message,
 					x.Status,
 					x.IsCheckedIn,
+					x.FeedbackSubmittedAt,
 					x.CreatedOn,
 				})
 			.OrderByDescending(x => x.CreatedOn)
@@ -65,6 +67,7 @@ internal sealed class EngagementReadRepository(
 			x.Message,
 			x.Status.ToString(),
 			x.IsCheckedIn,
+			x.FeedbackSubmittedAt.HasValue,
 			x.CreatedOn)).ToList();
 	}
 
@@ -89,6 +92,7 @@ internal sealed class EngagementReadRepository(
 					e.Message,
 					e.Status,
 					e.IsCheckedIn,
+					e.FeedbackSubmittedAt,
 					e.CreatedOn,
 				})
 			.Join(
@@ -107,6 +111,7 @@ internal sealed class EngagementReadRepository(
 					x.Message,
 					x.Status,
 					x.IsCheckedIn,
+					x.FeedbackSubmittedAt,
 					x.CreatedOn,
 				})
 			.OrderByDescending(x => x.CreatedOn)
@@ -123,6 +128,24 @@ internal sealed class EngagementReadRepository(
 			x.Message,
 			x.Status.ToString(),
 			x.IsCheckedIn,
+			x.FeedbackSubmittedAt.HasValue,
 			x.CreatedOn)).ToList();
+	}
+
+	public async ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default)
+	{
+		var items = await dbContext.EngagementsQuery
+			.Where(e => e.OpportunityId == opportunityId && e.FeedbackSubmittedAt != null)
+			.Select(e => new FeedbackItemDto(
+				e.FeedbackRating!.Value,
+				e.FeedbackComment,
+				e.FeedbackSubmittedAt!.Value))
+			.OrderByDescending(f => f.SubmittedAt)
+			.ToListAsync(cancellationToken);
+
+		var avg = items.Count > 0 ? (double?)items.Average(f => f.Rating) : null;
+		return new OpportunityFeedbackSummary(avg, items.Count, items);
 	}
 }

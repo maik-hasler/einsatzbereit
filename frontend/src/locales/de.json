@@ -155,6 +155,7 @@
       "deleting": "…",
       "share": "Teilen",
       "shareOpportunity": "Bedarf teilen",
+      "addToCalendar": "Zum Kalender hinzufügen",
       "linkCopied": "Link in die Zwischenablage kopiert",
       "confirmDelete": "Bedarf wirklich löschen?",
       "deleteError": "Fehler beim Löschen",
@@ -385,6 +386,24 @@
       "deleteConfirmMessage": "Bist du sicher, dass du dein Konto dauerhaft löschen möchtest? Alle persönlichen Daten werden gelöscht und deine Engagements werden anonymisiert. Das kann nicht rückgängig gemacht werden.",
       "deleteConfirmButton": "Ja, dauerhaft löschen",
       "deleteError": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut oder kontaktiere den Support."
+    },
+    "feedback": {
+      "buttonLabel": "Feedback geben",
+      "submitted": "Feedback gegeben",
+      "title": "Erfahrung bewerten",
+      "ratingLabel": "Bewertung (Pflichtfeld)",
+      "starLabel": "{{count}} Stern",
+      "commentLabel": "Kommentar (optional)",
+      "commentPlaceholder": "Teile deine Erfahrung...",
+      "submit": "Feedback absenden",
+      "submitting": "Wird gesendet...",
+      "cancel": "Abbrechen",
+      "submitError": "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.",
+      "averageRating": "{{rating}} von 5 ({{count}} Bewertungen)",
+      "organizerTab": "Feedback",
+      "noFeedback": "Noch kein Feedback.",
+      "feedbackCount_one": "{{count}} Bewertung",
+      "feedbackCount_other": "{{count}} Bewertungen"
     },
     "checkIn": {
       "buttonLabel": "Einchecken",
@@ -618,6 +637,34 @@
       "500Message": "Ein unerwarteter Serverfehler ist aufgetreten. Bitte versuche es später erneut.",
       "backHome": "Zur Startseite",
       "dismiss": "Schließen"
+    },
+    "onboarding": {
+      "ariaLabel": "Willkommensbanner",
+      "title": "Willkommen bei Einsatzbereit!",
+      "body": "Entdecke Einsatzgelegenheiten in deiner Nähe, melde dich mit einem Klick an und sammle Abzeichen, während du deiner Gemeinschaft hilfst.",
+      "cta": "Angebote entdecken",
+      "dismiss": "Schließen"
+    },
+    "userProfile": {
+      "loading": "Profil wird geladen...",
+      "notFound": "Benutzer nicht gefunden.",
+      "engagementCount": "{{count}} bestatigter Einsatz",
+      "engagementCount_other": "{{count}} bestatige Einsatze",
+      "viewAllAchievements": "Alle Abzeichen anzeigen"
+    },
+    "organizations": {
+      "verified": "Verifizierte Organisation",
+      "verifyToggle": "Verifizierung umschalten",
+      "verifySuccess": "Organisations-Verifizierung aktualisiert.",
+      "verifyError": "Verifizierung konnte nicht aktualisiert werden."
+    },
+    "adminOrgs": {
+      "title": "Admin - Organisationen",
+      "loading": "Organisationen werden geladen...",
+      "error": "Organisationen konnten nicht geladen werden.",
+      "noOrgs": "Keine Organisationen gefunden.",
+      "verify": "Verifizieren",
+      "unverify": "Verifizierung aufheben"
     }
   }
 }

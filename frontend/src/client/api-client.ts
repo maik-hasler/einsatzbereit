@@ -785,6 +785,58 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
+    getOpportunityFeedback(opportunityId: string, signal?: AbortSignal): Promise<OpportunityFeedbackSummary> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/feedback";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOpportunityFeedback(_response);
+        });
+    }
+
+    protected processGetOpportunityFeedback(response: Response): Promise<OpportunityFeedbackSummary> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OpportunityFeedbackSummary;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OpportunityFeedbackSummary>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     getOpportunityCalendar(opportunityId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/calendar";
         if (opportunityId === undefined || opportunityId === null)
@@ -1042,6 +1094,58 @@ export class EinsatzbereitApi {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getPublicUserProfile(userId: string, signal?: AbortSignal): Promise<PublicUserProfileResponse> {
+        let url_ = this.baseUrl + "/v1/users/{userId}/public-profile";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPublicUserProfile(_response);
+        });
+    }
+
+    protected processGetPublicUserProfile(response: Response): Promise<PublicUserProfileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PublicUserProfileResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PublicUserProfileResponse>(null as any);
     }
 
     /**
@@ -1849,6 +1953,65 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return No Content
+     */
+    submitFeedback(engagementId: string, body: SubmitFeedbackRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/engagements/{engagementId}/feedback";
+        if (engagementId === undefined || engagementId === null)
+            throw new globalThis.Error("The parameter 'engagementId' must be defined.");
+        url_ = url_.replace("{engagementId}", encodeURIComponent("" + engagementId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSubmitFeedback(_response);
+        });
+    }
+
+    protected processSubmitFeedback(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @return OK
      */
     getMyEngagements(signal?: AbortSignal): Promise<EngagementSummary[]> {
@@ -2602,7 +2765,16 @@ export interface EngagementSummary {
     message: string | undefined;
     status: string;
     isCheckedIn: boolean;
+    hasFeedback: boolean;
     createdOn: Date;
+
+    [key: string]: any;
+}
+
+export interface FeedbackItemDto {
+    rating: number;
+    comment: string | undefined;
+    submittedAt: Date;
 
     [key: string]: any;
 }
@@ -2636,6 +2808,14 @@ export interface NotificationSummary {
     actionUrl: string | undefined;
     isRead: boolean;
     createdOn: Date;
+
+    [key: string]: any;
+}
+
+export interface OpportunityFeedbackSummary {
+    averageRating: number | undefined;
+    feedbackCount: number;
+    items: FeedbackItemDto[];
 
     [key: string]: any;
 }
@@ -2756,9 +2936,24 @@ export interface PublicOrganizationProfileResponse {
     [key: string]: any;
 }
 
+export interface PublicUserProfileResponse {
+    displayName: string;
+    engagementCount: number;
+    badges: AchievementSummary[];
+
+    [key: string]: any;
+}
+
 export interface StreakSummary {
     loginStreak: number;
     activityStreak: number;
+
+    [key: string]: any;
+}
+
+export interface SubmitFeedbackRequest {
+    rating: number;
+    comment: string | undefined;
 
     [key: string]: any;
 }
@@ -2868,6 +3063,7 @@ export interface VolunteerOpportunitySummary {
     description: string | undefined;
     organizationId: string;
     organizationName: string;
+    organizationIsVerified: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;
