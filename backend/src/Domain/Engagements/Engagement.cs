@@ -22,6 +22,8 @@ public sealed class Engagement
 
 	public bool IsCheckedIn { get; private set; }
 
+	public DateTimeOffset? ReminderSentAt { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -109,6 +111,11 @@ public sealed class Engagement
 			throw new DomainException("Only confirmed engagements can be checked in.");
 
 		IsCheckedIn = true;
+	}
+
+	public void MarkReminderSent(DateTimeOffset sentAt)
+	{
+		ReminderSentAt = sentAt;
 	}
 
 	public void Anonymize()

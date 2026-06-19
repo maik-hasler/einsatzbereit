@@ -45,6 +45,8 @@ internal sealed class EngagementConfiguration
 			.IsRequired()
 			.HasDefaultValue(false);
 
+		builder.Property(e => e.ReminderSentAt);
+
 		builder.Property(e => e.Status)
 			.HasConversion<string>()
 			.IsRequired();
