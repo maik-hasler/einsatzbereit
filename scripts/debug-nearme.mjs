@@ -12,10 +12,10 @@ await page.goto(FRONTEND, { waitUntil: "networkidle", timeout: 30000 });
 const buttons = await page.getByRole("button").all();
 console.log("All visible buttons before opening filter:");
 for (const btn of buttons) {
-  const text = (await btn.textContent())?.trim().slice(0, 80);
-  const ariaLabel = await btn.getAttribute("aria-label");
-  const visible = await btn.isVisible();
-  if (visible) console.log(`  text="${text}" aria-label="${ariaLabel}"`);
+	const text = (await btn.textContent())?.trim().slice(0, 80);
+	const ariaLabel = await btn.getAttribute("aria-label");
+	const visible = await btn.isVisible();
+	if (visible) console.log(`  text="${text}" aria-label="${ariaLabel}"`);
 }
 
 // Click the location filter
@@ -26,10 +26,10 @@ await page.waitForTimeout(500);
 console.log("\nAll visible buttons after opening Location filter:");
 const buttons2 = await page.getByRole("button").all();
 for (const btn of buttons2) {
-  const text = (await btn.textContent())?.trim().slice(0, 80);
-  const ariaLabel = await btn.getAttribute("aria-label");
-  const visible = await btn.isVisible();
-  if (visible) console.log(`  text="${text}" aria-label="${ariaLabel}"`);
+	const text = (await btn.textContent())?.trim().slice(0, 80);
+	const ariaLabel = await btn.getAttribute("aria-label");
+	const visible = await btn.isVisible();
+	if (visible) console.log(`  text="${text}" aria-label="${ariaLabel}"`);
 }
 
 await page.screenshot({ path: "/home/user/einsatzbereit/scripts/debug-location-filter.png" });

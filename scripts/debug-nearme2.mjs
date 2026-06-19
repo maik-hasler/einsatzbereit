@@ -4,9 +4,9 @@ const FRONTEND = "https://einsatzbereit.maik-hasler.de";
 
 const browser = await chromium.launch({ headless: true });
 const ctx = await browser.newContext({
-  ignoreHTTPSErrors: true,
-  geolocation: { latitude: 48.1351, longitude: 11.582 },
-  permissions: ["geolocation"],
+	ignoreHTTPSErrors: true,
+	geolocation: { latitude: 48.1351, longitude: 11.582 },
+	permissions: ["geolocation"],
 });
 const page = await ctx.newPage();
 
@@ -16,15 +16,15 @@ page.on("pageerror", (err) => console.log(`[browser error] ${err.message}`));
 
 // Inject geolocation debug
 await page.addInitScript(() => {
-  const orig = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
-  navigator.geolocation.getCurrentPosition = (success, error, opts) => {
-    console.log("[geolocation] getCurrentPosition called");
-    return orig(
-      (pos) => { console.log(`[geolocation] success: ${pos.coords.latitude}, ${pos.coords.longitude}`); success(pos); },
-      (err) => { console.log(`[geolocation] error: ${err.code} ${err.message}`); error?.(err); },
-      opts
-    );
-  };
+	const orig = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+	navigator.geolocation.getCurrentPosition = (success, error, opts) => {
+		console.log("[geolocation] getCurrentPosition called");
+		return orig(
+			(pos) => { console.log(`[geolocation] success: ${pos.coords.latitude}, ${pos.coords.longitude}`); success(pos); },
+			(err) => { console.log(`[geolocation] error: ${err.code} ${err.message}`); error?.(err); },
+			opts
+		);
+	};
 });
 
 await page.goto(FRONTEND, { waitUntil: "networkidle", timeout: 30000 });
