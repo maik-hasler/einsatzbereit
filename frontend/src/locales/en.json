@@ -132,6 +132,8 @@
       "radiusLabel": "Radius",
       "locationPlaceholder": "Enter city...",
       "radiusKmValue": "{{count}} km",
+      "nearMe": "Near me",
+      "nearMeDenied": "Location access denied - please search manually.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",

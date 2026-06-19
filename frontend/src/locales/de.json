@@ -132,6 +132,8 @@
       "radiusLabel": "Umkreis",
       "locationPlaceholder": "Stadt eingeben...",
       "radiusKmValue": "{{count}} km",
+      "nearMe": "In meiner Nähe",
+      "nearMeDenied": "Standortzugriff verweigert - bitte manuell suchen.",
       "category": {
         "Social": "Soziales",
         "Environment": "Umwelt",
