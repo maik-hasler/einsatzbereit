@@ -62,9 +62,9 @@ internal sealed class CreateEngagementCommandHandler(
 
 		var volunteerBody = isWaitlist
 			? $"Hi {volunteerName},\n\nYou're now on the waitlist for \"{opportunity.Title}\". " +
-			  $"An organizer will review your sign-up and confirm it soon.\n\nEinsatzbereit"
+				$"An organizer will review your sign-up and confirm it soon.\n\nEinsatzbereit"
 			: $"Hi {volunteerName},\n\nYour request to participate in \"{opportunity.Title}\" has been received. " +
-			  $"The organizer will be in touch.\n\nEinsatzbereit";
+				$"The organizer will be in touch.\n\nEinsatzbereit";
 
 		await emailService.SendAsync(volunteer.Email, volunteerSubject, volunteerBody, cancellationToken);
 
