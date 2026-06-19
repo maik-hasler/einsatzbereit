@@ -186,7 +186,7 @@ networks:
     name: proxy
     external: true
   db:
-    name: db
+    name: einsatzbereit-db
 
 volumes:
   postgres_data:
