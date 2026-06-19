@@ -1,5 +1,6 @@
 using System.Text;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ internal sealed class GetOpportunityCalendarEndpoint : IEndpoint
 			.Produces<string>(StatusCodes.Status200OK, "text/calendar")
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.AllowAnonymous()
+			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetCalendarAsync(
