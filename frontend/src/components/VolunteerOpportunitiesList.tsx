@@ -8,6 +8,7 @@ import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
+import { dispatchToast } from "../lib/toastBus";
 
 interface Props {
 	canCreateOpportunity: boolean;
@@ -844,6 +845,7 @@ export default function VolunteerOpportunitiesList({
 		CitySuggestion[]
 	>([]);
 	const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+	const [geoLocating, setGeoLocating] = useState(false);
 
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
@@ -1121,6 +1123,54 @@ export default function VolunteerOpportunitiesList({
 		setSearchParams(params, { replace: true });
 	}
 
+	function handleNearMe() {
+		if (!navigator.geolocation) {
+			dispatchToast("error", t("opportunities.locationDenied"));
+			return;
+		}
+		setGeoLocating(true);
+		navigator.geolocation.getCurrentPosition(
+			async (pos) => {
+				const { latitude, longitude } = pos.coords;
+				const currentRadius = searchParams.get("radius") || "10";
+				let cityName = "";
+				try {
+					const res = await fetch(
+						`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+						{ headers: { "Accept-Language": "de,en" } },
+					);
+					if (res.ok) {
+						const data = await res.json();
+						cityName =
+							data.address?.city ??
+							data.address?.town ??
+							data.address?.village ??
+							data.address?.municipality ??
+							"";
+					}
+				} catch {
+					// ignore reverse geocode failure - city name stays empty
+				}
+				const params = new URLSearchParams(window.location.search);
+				params.set("lat", latitude.toString());
+				params.set("lng", longitude.toString());
+				params.set("radius", currentRadius);
+				if (cityName) {
+					params.set("city", cityName);
+					setLocationCityInput(cityName);
+				}
+				setSearchParams(params, { replace: true });
+				setGeoLocating(false);
+				setOpenFilter(null);
+			},
+			() => {
+				setGeoLocating(false);
+				dispatchToast("error", t("opportunities.locationDenied"));
+			},
+			{ timeout: 10000 },
+		);
+	}
+
 	function selectLocationSuggestion(suggestion: CitySuggestion) {
 		const currentRadius = searchParams.get("radius") || "10";
 		const params = new URLSearchParams(window.location.search);
@@ -1269,6 +1319,36 @@ export default function VolunteerOpportunitiesList({
 									</ul>
 								)}
 							</div>
+
+							<button
+								type="button"
+								onClick={handleNearMe}
+								disabled={geoLocating}
+								className="mb-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-50"
+							>
+								<svg
+									className="h-4 w-4 shrink-0"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="2"
+									stroke="currentColor"
+									aria-hidden="true"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+									/>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+									/>
+								</svg>
+								{geoLocating
+									? t("opportunities.locatingYou")
+									: t("opportunities.useMyLocation")}
+							</button>
 
 							<p className="mb-1.5 text-xs font-medium text-gray-500">
 								{t("opportunities.radiusLabel")}

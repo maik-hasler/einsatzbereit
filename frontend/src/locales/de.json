@@ -132,6 +132,9 @@
       "radiusLabel": "Umkreis",
       "locationPlaceholder": "Stadt eingeben...",
       "radiusKmValue": "{{count}} km",
+      "useMyLocation": "Meinen Standort verwenden",
+      "locatingYou": "Ortung...",
+      "locationDenied": "Standortzugriff verweigert - bitte manuell suchen.",
       "category": {
         "Social": "Soziales",
         "Environment": "Umwelt",
@@ -606,6 +609,13 @@
       "500Title": "Serverfehler",
       "500Message": "Ein unerwarteter Serverfehler ist aufgetreten. Bitte versuche es später erneut.",
       "backHome": "Zur Startseite",
+      "dismiss": "Schließen"
+    },
+    "onboarding": {
+      "ariaLabel": "Willkommensbanner",
+      "title": "Willkommen bei Einsatzbereit!",
+      "body": "Entdecke Einsatzgelegenheiten in deiner Nähe, melde dich mit einem Klick an und sammle Abzeichen, während du deiner Gemeinschaft hilfst.",
+      "cta": "Angebote entdecken",
       "dismiss": "Schließen"
     }
   }

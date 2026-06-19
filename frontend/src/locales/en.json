@@ -132,6 +132,9 @@
       "radiusLabel": "Radius",
       "locationPlaceholder": "Enter city...",
       "radiusKmValue": "{{count}} km",
+      "useMyLocation": "Use my location",
+      "locatingYou": "Locating...",
+      "locationDenied": "Location access denied - please search manually.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",
@@ -606,6 +609,13 @@
       "500Title": "Server Error",
       "500Message": "An unexpected server error occurred. Please try again later.",
       "backHome": "Back to home",
+      "dismiss": "Dismiss"
+    },
+    "onboarding": {
+      "ariaLabel": "Welcome banner",
+      "title": "Welcome to Einsatzbereit!",
+      "body": "Browse volunteer opportunities near you, sign up with one click, and earn badges as you help your community.",
+      "cta": "Browse opportunities",
       "dismiss": "Dismiss"
     }
   }
