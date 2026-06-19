@@ -1037,7 +1037,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateTimeSlotResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreateTimeSlotResponse"
+                  }
                 }
               }
             }
@@ -2988,7 +2991,9 @@
         "required": [
           "startDateTime",
           "endDateTime",
-          "maxParticipants"
+          "maxParticipants",
+          "recurrenceFrequency",
+          "recurrenceCount"
         ],
         "type": "object",
         "properties": {
@@ -3001,6 +3006,20 @@
             "format": "date-time"
           },
           "maxParticipants": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recurrenceFrequency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recurrenceCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",

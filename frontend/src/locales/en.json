@@ -281,7 +281,11 @@
       "removing": "…",
       "noSlots": "No time slots added yet.",
       "addError": "Could not add time slot.",
-      "removeError": "Could not remove time slot."
+      "removeError": "Could not remove time slot.",
+      "recurrenceFrequency": "Frequency",
+      "recurrenceWeekly": "Weekly",
+      "recurrenceMonthly": "Monthly",
+      "recurrenceCount": "Number of sessions"
     },
     "signUp": {
       "titleWaitlist": "Join waitlist",

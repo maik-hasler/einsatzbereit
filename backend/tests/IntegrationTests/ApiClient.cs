@@ -99,7 +99,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CreateTimeSlotResponse> CreateTimeSlotAsync(System.Guid opportunityId, CreateTimeSlotRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CreateTimeSlotResponse>> CreateTimeSlotAsync(System.Guid opportunityId, CreateTimeSlotRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>No Content</returns>
@@ -1772,7 +1772,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CreateTimeSlotResponse> CreateTimeSlotAsync(System.Guid opportunityId, CreateTimeSlotRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CreateTimeSlotResponse>> CreateTimeSlotAsync(System.Guid opportunityId, CreateTimeSlotRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (opportunityId == null)
                 throw new System.ArgumentNullException("opportunityId");
@@ -1825,7 +1825,7 @@ namespace IntegrationTests
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 201)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<CreateTimeSlotResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<CreateTimeSlotResponse>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -5321,6 +5321,14 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
         public int MaxParticipants { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("recurrenceFrequency")]
+        public string? RecurrenceFrequency { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("recurrenceCount")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int RecurrenceCount { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -6582,9 +6590,6 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string OrganizationName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("organizationIsVerified")]
-        public bool OrganizationIsVerified { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
         public string? Street { get; set; } = default!;

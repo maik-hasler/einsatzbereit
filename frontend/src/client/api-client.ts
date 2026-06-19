@@ -880,7 +880,7 @@ export class EinsatzbereitApi {
     /**
      * @return Created
      */
-    createTimeSlot(opportunityId: string, body: CreateTimeSlotRequest, signal?: AbortSignal): Promise<CreateTimeSlotResponse> {
+    createTimeSlot(opportunityId: string, body: CreateTimeSlotRequest, signal?: AbortSignal): Promise<CreateTimeSlotResponse[]> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
@@ -904,13 +904,13 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processCreateTimeSlot(response: Response): Promise<CreateTimeSlotResponse> {
+    protected processCreateTimeSlot(response: Response): Promise<CreateTimeSlotResponse[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 201) {
             return response.text().then((_responseText) => {
             let result201: any = null;
-            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateTimeSlotResponse;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateTimeSlotResponse[];
             return result201;
             });
         } else if (status === 400) {
@@ -948,7 +948,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<CreateTimeSlotResponse>(null as any);
+        return Promise.resolve<CreateTimeSlotResponse[]>(null as any);
     }
 
     /**
@@ -2685,6 +2685,8 @@ export interface CreateTimeSlotRequest {
     startDateTime: Date;
     endDateTime: Date;
     maxParticipants: number;
+    recurrenceFrequency: string | undefined;
+    recurrenceCount: number;
 
     [key: string]: any;
 }
@@ -3063,7 +3065,6 @@ export interface VolunteerOpportunitySummary {
     description: string | undefined;
     organizationId: string;
     organizationName: string;
-    organizationIsVerified: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;
