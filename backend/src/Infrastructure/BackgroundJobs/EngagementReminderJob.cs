@@ -13,15 +13,48 @@ namespace Infrastructure.BackgroundJobs;
 internal sealed class EngagementReminderJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<EngagementReminderJob> logger)
-	: BackgroundService
+	: IHostedService, IAsyncDisposable
 {
-	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-	{
-		using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
+	private Task _executeTask = Task.CompletedTask;
+	private CancellationTokenSource? _cts;
+	private PeriodicTimer? _timer;
 
-		while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken))
+	public Task StartAsync(CancellationToken cancellationToken)
+	{
+		_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		_timer = new PeriodicTimer(TimeSpan.FromHours(1));
+		_executeTask = RunLoopAsync(_cts.Token);
+		return Task.CompletedTask;
+	}
+
+	public async Task StopAsync(CancellationToken cancellationToken)
+	{
+		if (_cts is not null)
+			await _cts.CancelAsync();
+
+		try
 		{
-			await SendRemindersAsync(stoppingToken);
+			await _executeTask.WaitAsync(cancellationToken);
+		}
+		catch (OperationCanceledException)
+		{
+		}
+	}
+
+	public ValueTask DisposeAsync()
+	{
+		_timer?.Dispose();
+		_cts?.Dispose();
+		return ValueTask.CompletedTask;
+	}
+
+	private async Task RunLoopAsync(CancellationToken ct)
+	{
+		if (_timer is null) return;
+
+		while (!ct.IsCancellationRequested && await _timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
+		{
+			await SendRemindersAsync(ct).ConfigureAwait(false);
 		}
 	}
 
@@ -60,14 +93,15 @@ internal sealed class EngagementReminderJob(
 			{
 				var user = await keycloakUserService.GetUserAsync(item.Engagement.VolunteerId.Value, ct);
 
-				var displayName = string.IsNullOrWhiteSpace($"{user.FirstName} {user.LastName}".Trim())
-					? user.Username
-					: $"{user.FirstName} {user.LastName}".Trim();
+				var displayName = $"{user.FirstName} {user.LastName}".Trim();
+				if (string.IsNullOrEmpty(displayName))
+					displayName = user.Username;
 
 				var startFormatted = item.TimeSlot.StartDateTime.ToLocalTime().ToString("dddd, d. MMMM yyyy 'at' HH:mm");
 
 				var subject = $"Reminder: {item.OpportunityTitle} starts tomorrow";
-				var body = $"Hi {displayName},\n\n" +
+				var body =
+					$"Hi {displayName},\n\n" +
 					$"This is a reminder that you are signed up for \"{item.OpportunityTitle}\" " +
 					$"which starts on {startFormatted}.\n\n" +
 					$"We are looking forward to seeing you!\n\n" +
