@@ -19,6 +19,7 @@ import OrganizationEngagementsPage from "./pages/OrganizationEngagementsPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
+import UserProfilePage from "./pages/UserProfilePage";
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -123,6 +124,7 @@ export default function App() {
 					path="/users/:userId/achievements"
 					element={<UserAchievementsPage />}
 				/>
+				<Route path="/users/:userId" element={<UserProfilePage />} />
 				<Route
 					path="/admin/organizations"
 					element={

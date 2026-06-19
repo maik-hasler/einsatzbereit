@@ -618,6 +618,13 @@
       "cta": "Browse opportunities",
       "dismiss": "Dismiss"
     },
+    "userProfile": {
+      "loading": "Loading profile...",
+      "notFound": "User not found.",
+      "engagementCount": "{{count}} confirmed engagement",
+      "engagementCount_other": "{{count}} confirmed engagements",
+      "viewAllAchievements": "View all achievements"
+    },
     "organizations": {
       "verified": "Verified organization",
       "verifyToggle": "Toggle verification",

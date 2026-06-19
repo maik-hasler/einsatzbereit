@@ -618,6 +618,13 @@
       "cta": "Angebote entdecken",
       "dismiss": "Schließen"
     },
+    "userProfile": {
+      "loading": "Profil wird geladen...",
+      "notFound": "Benutzer nicht gefunden.",
+      "engagementCount": "{{count}} bestatigter Einsatz",
+      "engagementCount_other": "{{count}} bestatige Einsatze",
+      "viewAllAchievements": "Alle Abzeichen anzeigen"
+    },
     "organizations": {
       "verified": "Verifizierte Organisation",
       "verifyToggle": "Verifizierung umschalten",
