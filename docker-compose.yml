@@ -125,11 +125,7 @@ services:
     # (not /health) is used so the container is gated on the app being up, not
     # on downstream readiness, which avoids dependency deadlocks.
     healthcheck:
-      test:
-        - CMD
-        - bash
-        - -c
-        - 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /alive HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && cat <&3 | grep -q "200 OK"'
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/alive"]
       interval: 10s
       timeout: 5s
       retries: 10
