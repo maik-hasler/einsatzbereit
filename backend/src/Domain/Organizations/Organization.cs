@@ -70,4 +70,9 @@ public sealed class Organization
 		Website = website;
 		Address = address;
 	}
+
+	public void SetVerified(bool isVerified)
+	{
+		IsVerified = isVerified;
+	}
 }

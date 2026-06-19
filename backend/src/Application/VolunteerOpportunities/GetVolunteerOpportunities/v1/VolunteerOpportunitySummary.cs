@@ -6,7 +6,6 @@ public sealed record VolunteerOpportunitySummary(
 	string? Description,
 	Guid OrganizationId,
 	string OrganizationName,
-	bool OrganizationIsVerified,
 	string? Street,
 	string? HouseNumber,
 	string? ZipCode,
@@ -23,4 +22,5 @@ public sealed record VolunteerOpportunitySummary(
 	int TotalMaxParticipants,
 	int CurrentParticipantCount,
 	string Status,
-	string? BannerImageUrl);
+	string? BannerImageUrl,
+	bool IsOrganizationVerified = false);

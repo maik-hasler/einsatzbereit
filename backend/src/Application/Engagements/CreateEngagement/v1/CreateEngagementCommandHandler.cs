@@ -52,51 +52,30 @@ internal sealed class CreateEngagementCommandHandler(
 			await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		}
 
-		try
+		var volunteer = await keycloakUserService.GetUserAsync(request.VolunteerId.Value, cancellationToken);
+		var volunteerName = volunteer.FirstName ?? volunteer.Username;
+		var isWaitlist = request.TimeSlotId is not null;
+
+		var volunteerSubject = isWaitlist
+			? $"You've joined the waitlist for \"{opportunity.Title}\""
+			: $"Your request for \"{opportunity.Title}\" has been received";
+
+		var volunteerBody = isWaitlist
+			? $"Hi {volunteerName},\n\nYou're now on the waitlist for \"{opportunity.Title}\". " +
+				$"An organizer will review your sign-up and confirm it soon.\n\nEinsatzbereit"
+			: $"Hi {volunteerName},\n\nYour request to participate in \"{opportunity.Title}\" has been received. " +
+				$"The organizer will be in touch.\n\nEinsatzbereit";
+
+		await emailService.SendAsync(volunteer.Email, volunteerSubject, volunteerBody, cancellationToken);
+
+		foreach (var organizer in members.Where(m => m.IsOrganisator))
 		{
-			var volunteer = await keycloakUserService.GetUserAsync(
-				request.VolunteerId.Value, cancellationToken);
-
-			var greeting = volunteer.FirstName ?? volunteer.Username;
-			var title = opportunity.Title;
-
-			// Email to volunteer
-			if (request.TimeSlotId is not null)
-			{
-				await emailService.SendAsync(
-					volunteer.Email,
-					$"You're on the waitlist for \"{title}\"",
-					$"Hello {greeting},\n\n" +
-					$"You've been added to the waitlist for \"{title}\".\n\n" +
-					$"The organiser will confirm your spot soon.\n\nEinsatzbereit",
-					cancellationToken);
-			}
-			else
-			{
-				await emailService.SendAsync(
-					volunteer.Email,
-					$"Your interest in \"{title}\" has been registered",
-					$"Hello {greeting},\n\n" +
-					$"Thank you for expressing your interest in \"{title}\".\n\n" +
-					$"The organiser will be in touch with you.\n\nEinsatzbereit",
-					cancellationToken);
-			}
-
-			// Email to organisators
-			foreach (var organizer in members.Where(m => m.IsOrganisator))
-			{
-				await emailService.SendAsync(
-					organizer.Email,
-					$"New sign-up: {greeting} joined \"{title}\"",
-					$"Hello {organizer.FirstName ?? organizer.Username},\n\n" +
-					$"{volunteer.FirstName} {volunteer.LastName} ({volunteer.Email}) has signed up for \"{title}\".\n\n" +
-					$"Log in to Einsatzbereit to manage applications.\n\nEinsatzbereit",
-					cancellationToken);
-			}
-		}
-		catch
-		{
-			// never fail a request due to email delivery
+			var organizerName = organizer.FirstName ?? organizer.Username;
+			await emailService.SendAsync(
+				organizer.Email,
+				$"New sign-up: {volunteerName} joined \"{opportunity.Title}\"",
+				$"Hi {organizerName},\n\n{volunteerName} has signed up for \"{opportunity.Title}\".\n\nEinsatzbereit",
+				cancellationToken);
 		}
 
 		return engagement;

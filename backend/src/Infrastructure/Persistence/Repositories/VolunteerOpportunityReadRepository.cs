@@ -127,13 +127,13 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 			var summaries = page
 				.Select(x => new VolunteerOpportunitySummary(
-					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified,
+					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
 					x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
 					x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
 					maxPMap.GetValueOrDefault(x.Id, 0),
 					partCountMap.GetValueOrDefault(x.Id, 0),
-					x.Status.ToString(), x.BannerImageUrl))
+					x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified))
 				.ToList();
 
 			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
@@ -159,7 +159,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
 				participantCountMap.GetValueOrDefault(x.Id, 0),
-				x.Status.ToString(), x.BannerImageUrl))
+				x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified))
 			.ToList();
 
 		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
@@ -347,7 +347,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
 				participantCountMap.GetValueOrDefault(x.Id, 0),
-				x.Status.ToString(), x.BannerImageUrl))
+				x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified))
 			.ToList();
 	}
 

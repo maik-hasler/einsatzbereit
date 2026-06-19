@@ -207,8 +207,9 @@ public class ConfirmEngagementCommandHandlerTests
 	private static UserStreak BuildActivityStreakOf(UserId userId, int weeks)
 	{
 		var streak = UserStreak.Create(userId);
-		// Record activity in consecutive ISO weeks ending before the current week
-		var now = DateTime.UtcNow;
+		// Use Europe/Berlin (matches the handler) so week boundaries agree at runtime.
+		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, berlin).DateTime;
 		var currentYear = System.Globalization.ISOWeek.GetYear(now);
 		var currentWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
 		for (var i = weeks; i >= 1; i--)

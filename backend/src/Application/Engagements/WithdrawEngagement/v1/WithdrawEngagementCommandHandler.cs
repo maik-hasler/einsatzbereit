@@ -1,3 +1,4 @@
+using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -10,7 +11,9 @@ namespace Application.Engagements.WithdrawEngagement.v1;
 
 internal sealed class WithdrawEngagementCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrganizationService)
+	IKeycloakOrganizationService keycloakOrganizationService,
+	IKeycloakUserService keycloakUserService,
+	IEmailService emailService)
 	: ICommandHandler<WithdrawEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -30,6 +33,9 @@ internal sealed class WithdrawEngagementCommandHandler(
 
 		if (opportunity is not null)
 		{
+			var volunteer = await keycloakUserService.GetUserAsync(request.VolunteerId, cancellationToken);
+			var volunteerName = volunteer.FirstName ?? volunteer.Username;
+
 			var members = await keycloakOrganizationService
 				.GetMembersAsync(opportunity.OrganizationId.Value, cancellationToken);
 
@@ -41,6 +47,13 @@ internal sealed class WithdrawEngagementCommandHandler(
 					engagement.Id.Value);
 
 				await dbContext.Notifications.AddAsync(notification, cancellationToken);
+
+				var organizerName = organizer.FirstName ?? organizer.Username;
+				await emailService.SendAsync(
+					organizer.Email,
+					$"{volunteerName} has withdrawn from \"{opportunity.Title}\"",
+					$"Hi {organizerName},\n\n{volunteerName} has withdrawn from \"{opportunity.Title}\".\n\nEinsatzbereit",
+					cancellationToken);
 			}
 		}
 

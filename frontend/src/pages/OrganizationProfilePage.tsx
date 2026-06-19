@@ -46,10 +46,10 @@ export default function OrganizationProfilePage() {
 				<h1 className="text-2xl font-bold text-gray-900">{profile.name}</h1>
 				{profile.isVerified && (
 					<svg
-						className="h-6 w-6 shrink-0 text-brand-600"
+						className="h-6 w-6 text-brand-600"
 						viewBox="0 0 20 20"
 						fill="currentColor"
-						aria-label={t("organizations.verified")}
+						aria-label={t("orgProfile.verified")}
 						role="img"
 					>
 						<path

@@ -52,10 +52,10 @@ public class CreateEngagementCommandHandlerTests
 		_dbContext.Notifications.Returns(_notifRepo);
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakUserService.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "vera", "Vera", "Test", "vera@example.com"));
-		_sut = new CreateEngagementCommandHandler(
-			_dbContext, _keycloakService, _keycloakUserService, _emailService);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService);
 	}
 
 	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)

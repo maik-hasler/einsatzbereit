@@ -45,8 +45,8 @@ internal sealed class ConfirmEngagementCommandHandler(
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
-		var berlinTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, berlinTz).DateTime;
+		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, berlin).DateTime;
 		var isoYear = System.Globalization.ISOWeek.GetYear(now);
 		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
 		await RecordActivityStreakAsync(engagement.VolunteerId, isoYear, isoWeek, cancellationToken);

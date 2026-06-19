@@ -47,11 +47,16 @@ if (localRealm["clients"] is JsonArray realmClients)
 {
 	foreach (var client in realmClients)
 	{
-		if (client is JsonObject clientObject
-			&& clientObject["clientId"]?.GetValue<string>() == "frontend")
-		{
+		if (client is not JsonObject clientObject)
+			continue;
+
+		var clientId = clientObject["clientId"]?.GetValue<string>();
+
+		if (clientId == "frontend")
 			clientObject["webOrigins"] = new JsonArray("*");
-		}
+
+		if (clientId == "backend")
+			clientObject["secret"] = "backend-secret";
 	}
 }
 
@@ -86,6 +91,7 @@ var backend = builder.AddProject<Projects.Api>("backend")
 		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
 	.WithEnvironment("Keycloak__BaseUrl",
 		ReferenceExpression.Create($"{keycloakEndpoint}"))
+	.WithEnvironment("Keycloak__ClientSecret", "backend-secret")
 	.WithEnvironment("Smtp__Host", mailpitSmtpEndpoint.Property(EndpointProperty.Host))
 	.WithEnvironment("Smtp__Port", mailpitSmtpEndpoint.Property(EndpointProperty.Port))
 	.WithEnvironment("Storage__Endpoint", ReferenceExpression.Create($"{minioApiEndpoint}"))

@@ -7,14 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Organizations.VerifyOrganization.v1;
 
-internal sealed class VerifyOrganizationEndpoint : IEndpoint
+internal sealed class VerifyOrganizationEndpoint
+	: IEndpoint
 {
-	public void MapEndpoint(IEndpointRouteBuilder app) =>
-		app.MapPut("/organizations/{organizationId:guid}/verify", VerifyOrganizationAsync)
+	public void MapEndpoint(IEndpointRouteBuilder app)
+	{
+		app.MapPut("/admin/organizations/{organizationId:guid}/verify", VerifyOrganizationAsync)
 			.WithName("VerifyOrganization")
-			.WithTags("Organizations")
 			.Produces(StatusCodes.Status204NoContent)
-			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
@@ -22,6 +22,7 @@ internal sealed class VerifyOrganizationEndpoint : IEndpoint
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitAdminPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
+	}
 
 	private static async Task<IResult> VerifyOrganizationAsync(
 		[FromRoute] Guid organizationId,
@@ -30,7 +31,9 @@ internal sealed class VerifyOrganizationEndpoint : IEndpoint
 		CancellationToken cancellationToken)
 	{
 		var command = new VerifyOrganizationCommand(organizationId, request.IsVerified);
+
 		await sender.Send(command, cancellationToken);
+
 		return Results.NoContent();
 	}
 }

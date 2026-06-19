@@ -65,7 +65,8 @@
         "https://einsatzbereit.maik-hasler.de"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:*##https://einsatzbereit.maik-hasler.de/*"
+        "post.logout.redirect.uris": "http://localhost:*##https://einsatzbereit.maik-hasler.de",
+        "pkce.code.challenge.method": "S256"
       },
       "protocol": "openid-connect",
       "protocolMappers": [
@@ -114,7 +115,6 @@
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "secret": "backend-secret",
       "protocol": "openid-connect"
     }
   ],

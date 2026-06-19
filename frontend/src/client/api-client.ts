@@ -837,7 +837,7 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOpportunityCalendar(opportunityId: string, signal?: AbortSignal): Promise<string> {
+    getOpportunityCalendar(opportunityId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/calendar";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
@@ -848,7 +848,6 @@ export class EinsatzbereitApi {
             method: "GET",
             signal,
             headers: {
-                "Accept": "text/calendar"
             }
         };
 
@@ -857,14 +856,12 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetOpportunityCalendar(response: Response): Promise<string> {
+    protected processGetOpportunityCalendar(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
-            return result200;
+            return;
             });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
@@ -877,7 +874,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<string>(null as any);
+        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -1204,7 +1201,7 @@ export class EinsatzbereitApi {
      * @return No Content
      */
     verifyOrganization(organizationId: string, body: VerifyOrganizationRequest, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/verify";
+        let url_ = this.baseUrl + "/v1/admin/organizations/{organizationId}/verify";
         if (organizationId === undefined || organizationId === null)
             throw new globalThis.Error("The parameter 'organizationId' must be defined.");
         url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
@@ -1232,12 +1229,6 @@ export class EinsatzbereitApi {
         if (status === 204) {
             return response.text().then((_responseText) => {
             return;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -2862,6 +2853,7 @@ export interface OrganizationDetailsResponse {
     contactPhone: string | undefined;
     website: string | undefined;
     address: AddressDto | undefined;
+    isVerified: boolean;
     createdOn: Date;
     modifiedOn: Date | undefined;
     members: OrganizationMemberDto[];
@@ -3089,6 +3081,7 @@ export interface VolunteerOpportunitySummary {
     currentParticipantCount: number;
     status: string;
     bannerImageUrl: string | undefined;
+    isOrganizationVerified?: boolean;
 
     [key: string]: any;
 }

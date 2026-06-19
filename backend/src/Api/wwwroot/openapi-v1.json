@@ -989,14 +989,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/calendar": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
+            "description": "OK"
           },
           "404": {
             "description": "Not Found",
@@ -1305,10 +1298,10 @@
         }
       }
     },
-    "/v1/organizations/{organizationId}/verify": {
+    "/v1/admin/organizations/{organizationId}/verify": {
       "put": {
         "tags": [
-          "Organizations"
+          "VerifyOrganizationEndpoint"
         ],
         "operationId": "VerifyOrganization",
         "parameters": [
@@ -1335,16 +1328,6 @@
         "responses": {
           "204": {
             "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           },
           "401": {
             "description": "Unauthorized",
@@ -3667,6 +3650,7 @@
           "contactPhone",
           "website",
           "address",
+          "isVerified",
           "createdOn",
           "modifiedOn",
           "members"
@@ -3713,6 +3697,9 @@
                 "$ref": "#/components/schemas/AddressDto"
               }
             ]
+          },
+          "isVerified": {
+            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -4653,6 +4640,10 @@
               "null",
               "string"
             ]
+          },
+          "isOrganizationVerified": {
+            "type": "boolean",
+            "default": false
           }
         }
       }
@@ -4705,7 +4696,7 @@
       "name": "Users"
     },
     {
-      "name": "Organizations"
+      "name": "VerifyOrganizationEndpoint"
     },
     {
       "name": "UpdateOrganizationEndpoint"
