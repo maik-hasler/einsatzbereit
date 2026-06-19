@@ -36,9 +36,9 @@
 		<PackageVersion Include="MessagePack" Version="2.5.302" />
 		<PackageVersion Include="MessagePack.Annotations" Version="2.5.302" />
 		<!-- Aspire: AppHost + Tests -->
-		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.3.5]" />
-		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.3.5]" />
-		<PackageVersion Include="Aspire.Hosting.Testing" Version="[13.3.5]" />
+		<PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="[13.4.6]" />
+		<PackageVersion Include="Aspire.Hosting.JavaScript" Version="[13.4.6]" />
+		<PackageVersion Include="Aspire.Hosting.Testing" Version="[13.4.6]" />
 		<!-- Tests -->
 		<PackageVersion Include="AwesomeAssertions" Version="[9.4.0]" />
 		<PackageVersion Include="Deque.AxeCore.Playwright" Version="[4.11.3]" />
