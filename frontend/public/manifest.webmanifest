@@ -1,0 +1,18 @@
+{
+	"name": "Einsatzbereit",
+	"short_name": "Einsatzbereit",
+	"description": "Volunteer coordination platform - find local volunteer opportunities and help your community.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#16a34a",
+	"lang": "de",
+	"icons": [
+		{
+			"src": "/favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
+}

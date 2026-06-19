@@ -919,6 +919,57 @@
         }
       }
     },
+    "/v1/volunteer-opportunities/{opportunityId}/feedback": {
+      "get": {
+        "tags": [
+          "VolunteerOpportunities"
+        ],
+        "operationId": "GetOpportunityFeedback",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityFeedbackSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities/{opportunityId}/calendar": {
       "get": {
         "tags": [
@@ -1156,6 +1207,57 @@
         }
       }
     },
+    "/v1/users/{userId}/public-profile": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "GetPublicUserProfile",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicUserProfileResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/me/streaks": {
       "get": {
         "tags": [
@@ -1175,6 +1277,80 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/organizations/{organizationId}/verify": {
+      "put": {
+        "tags": [
+          "VerifyOrganizationEndpoint"
+        ],
+        "operationId": "VerifyOrganization",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1889,6 +2065,70 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engagements/{engagementId}/feedback": {
+      "post": {
+        "tags": [
+          "Engagements"
+        ],
+        "operationId": "SubmitFeedback",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3052,6 +3292,7 @@
           "message",
           "status",
           "isCheckedIn",
+          "hasFeedback",
           "createdOn"
         ],
         "type": "object",
@@ -3097,7 +3338,38 @@
           "isCheckedIn": {
             "type": "boolean"
           },
+          "hasFeedback": {
+            "type": "boolean"
+          },
           "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FeedbackItemDto": {
+        "required": [
+          "rating",
+          "comment",
+          "submittedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "rating": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "submittedAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -3225,6 +3497,39 @@
           }
         }
       },
+      "OpportunityFeedbackSummary": {
+        "required": [
+          "averageRating",
+          "feedbackCount",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "averageRating": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "feedbackCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedbackItemDto"
+            }
+          }
+        }
+      },
       "Organization": {
         "type": "object",
         "properties": {
@@ -3264,6 +3569,9 @@
                 "$ref": "#/components/schemas/Address"
               }
             ]
+          },
+          "isVerified": {
+            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -3342,6 +3650,7 @@
           "contactPhone",
           "website",
           "address",
+          "isVerified",
           "createdOn",
           "modifiedOn",
           "members"
@@ -3388,6 +3697,9 @@
                 "$ref": "#/components/schemas/AddressDto"
               }
             ]
+          },
+          "isVerified": {
+            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -3632,6 +3944,7 @@
           "contactPhone",
           "website",
           "address",
+          "isVerified",
           "openOpportunities"
         ],
         "type": "object",
@@ -3677,10 +3990,40 @@
               }
             ]
           },
+          "isVerified": {
+            "type": "boolean"
+          },
           "openOpportunities": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PublicOpportunitySummaryDto"
+            }
+          }
+        }
+      },
+      "PublicUserProfileResponse": {
+        "required": [
+          "displayName",
+          "engagementCount",
+          "badges"
+        ],
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "engagementCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AchievementSummary"
             }
           }
         }
@@ -3707,6 +4050,29 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "SubmitFeedbackRequest": {
+        "required": [
+          "rating",
+          "comment"
+        ],
+        "type": "object",
+        "properties": {
+          "rating": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -3969,6 +4335,17 @@
           }
         }
       },
+      "VerifyOrganizationRequest": {
+        "required": [
+          "isVerified"
+        ],
+        "type": "object",
+        "properties": {
+          "isVerified": {
+            "type": "boolean"
+          }
+        }
+      },
       "VolunteerOpportunityDetails": {
         "required": [
           "id",
@@ -4125,6 +4502,7 @@
           "description",
           "organizationId",
           "organizationName",
+          "organizationIsVerified",
           "street",
           "houseNumber",
           "zipCode",
@@ -4164,6 +4542,9 @@
           },
           "organizationName": {
             "type": "string"
+          },
+          "organizationIsVerified": {
+            "type": "boolean"
           },
           "street": {
             "type": [
@@ -4259,6 +4640,10 @@
               "null",
               "string"
             ]
+          },
+          "isOrganizationVerified": {
+            "type": "boolean",
+            "default": false
           }
         }
       }
@@ -4299,6 +4684,9 @@
       "name": "GetOrganizationOpportunityDraftsEndpoint"
     },
     {
+      "name": "VolunteerOpportunities"
+    },
+    {
       "name": "GetOpportunityCalendarEndpoint"
     },
     {
@@ -4306,6 +4694,9 @@
     },
     {
       "name": "Users"
+    },
+    {
+      "name": "VerifyOrganizationEndpoint"
     },
     {
       "name": "UpdateOrganizationEndpoint"

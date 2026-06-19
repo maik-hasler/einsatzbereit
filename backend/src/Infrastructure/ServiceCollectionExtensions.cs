@@ -11,6 +11,7 @@ using Application.Notifications;
 using Application.Organizations;
 using Application.VolunteerOpportunities;
 using Infrastructure.Achievements;
+using Infrastructure.BackgroundJobs;
 using Infrastructure.Email;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
@@ -70,6 +71,7 @@ public static class ServiceCollectionExtensions
 
 		services.ConfigureOptions<SmtpOptionsSetup>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
+		services.AddHostedService<EngagementReminderJob>();
 
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();

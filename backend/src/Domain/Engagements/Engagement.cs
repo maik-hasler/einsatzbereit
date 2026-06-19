@@ -22,6 +22,14 @@ public sealed class Engagement
 
 	public bool IsCheckedIn { get; private set; }
 
+	public DateTimeOffset? ReminderSentAt { get; private set; }
+
+	public int? FeedbackRating { get; private set; }
+
+	public string? FeedbackComment { get; private set; }
+
+	public DateTimeOffset? FeedbackSubmittedAt { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -109,6 +117,30 @@ public sealed class Engagement
 			throw new DomainException("Only confirmed engagements can be checked in.");
 
 		IsCheckedIn = true;
+	}
+
+	public void MarkReminderSent(DateTimeOffset sentAt)
+	{
+		ReminderSentAt = sentAt;
+	}
+
+	public void SubmitFeedback(int rating, string? comment)
+	{
+		if (!IsCheckedIn)
+			throw new DomainException("Feedback can only be submitted for checked-in engagements.");
+
+		if (FeedbackSubmittedAt.HasValue)
+			throw new DomainException("Feedback has already been submitted for this engagement.");
+
+		if (rating is < 1 or > 5)
+			throw new DomainException("Rating must be between 1 and 5.");
+
+		if (comment is not null && comment.Length > 500)
+			throw new DomainException("Comment must not exceed 500 characters.");
+
+		FeedbackRating = rating;
+		FeedbackComment = comment;
+		FeedbackSubmittedAt = DateTimeOffset.UtcNow;
 	}
 
 	public void Anonymize()

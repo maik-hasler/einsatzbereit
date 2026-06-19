@@ -85,6 +85,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
 				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
@@ -132,7 +133,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 					x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
 					maxPMap.GetValueOrDefault(x.Id, 0),
 					partCountMap.GetValueOrDefault(x.Id, 0),
-					x.Status.ToString(), x.BannerImageUrl))
+					x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified))
 				.ToList();
 
 			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
@@ -158,7 +159,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
 				participantCountMap.GetValueOrDefault(x.Id, 0),
-				x.Status.ToString(), x.BannerImageUrl))
+				x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified))
 			.ToList();
 
 		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
@@ -313,6 +314,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
 				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
@@ -345,7 +347,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
 				participantCountMap.GetValueOrDefault(x.Id, 0),
-				x.Status.ToString(), x.BannerImageUrl))
+				x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified))
 			.ToList();
 	}
 

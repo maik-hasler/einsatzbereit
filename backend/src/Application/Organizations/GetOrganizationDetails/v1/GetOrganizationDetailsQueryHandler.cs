@@ -47,6 +47,7 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 			organization.ContactPhone,
 			organization.Website,
 			address,
+			organization.IsVerified,
 			organization.CreatedOn,
 			organization.ModifiedOn,
 			members

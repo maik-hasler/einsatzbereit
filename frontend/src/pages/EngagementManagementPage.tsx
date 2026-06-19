@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
+	OpportunityFeedbackSummary,
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -43,6 +44,9 @@ export default function EngagementManagementPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
+	const [feedback, setFeedback] = useState<OpportunityFeedbackSummary | null>(
+		null,
+	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState<string | null>(null);
@@ -58,6 +62,10 @@ export default function EngagementManagementPage() {
 			api
 				.getVolunteerOpportunityDetails(opportunityId)
 				.then((d) => setOpportunity(d))
+				.catch(() => undefined),
+			api
+				.getOpportunityFeedback(opportunityId)
+				.then(setFeedback)
 				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
@@ -328,6 +336,56 @@ export default function EngagementManagementPage() {
 					loading={cancelling}
 					error={cancelError}
 				/>
+			)}
+
+			{feedback !== null && (
+				<section className="mt-8">
+					<h2 className="mb-4 text-lg font-semibold text-gray-900">
+						{t("feedback.organizerTab")}
+					</h2>
+					{feedback.feedbackCount === 0 ? (
+						<p className="text-sm text-gray-500">{t("feedback.noFeedback")}</p>
+					) : (
+						<>
+							<p className="mb-4 text-sm text-gray-700">
+								{t("feedback.averageRating", {
+									rating: feedback.averageRating?.toFixed(1) ?? "-",
+									count: feedback.feedbackCount,
+								})}
+							</p>
+							<ul className="space-y-3">
+								{feedback.items.map((item, idx) => (
+									<li
+										key={idx}
+										className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+									>
+										<div className="flex items-center gap-1">
+											{[1, 2, 3, 4, 5].map((s) => (
+												<svg
+													key={s}
+													className={`h-4 w-4 ${s <= item.rating ? "text-yellow-400" : "text-gray-200"}`}
+													fill="currentColor"
+													viewBox="0 0 24 24"
+													aria-hidden="true"
+												>
+													<path d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" />
+												</svg>
+											))}
+											<span className="ml-1 text-xs text-gray-400">
+												{new Date(item.submittedAt).toLocaleDateString(locale)}
+											</span>
+										</div>
+										{item.comment && (
+											<p className="mt-1 text-sm text-gray-700">
+												{item.comment}
+											</p>
+										)}
+									</li>
+								))}
+							</ul>
+						</>
+					)}
+				</section>
 			)}
 		</>
 	);
