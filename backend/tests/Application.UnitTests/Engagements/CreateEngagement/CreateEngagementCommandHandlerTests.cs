@@ -1,3 +1,4 @@
+using Application.Common.Email;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.CreateEngagement.v1;
@@ -17,6 +18,9 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IKeycloakOrganizationService _keycloakService =
 		Substitute.For<IKeycloakOrganizationService>();
+	private readonly IKeycloakUserService _keycloakUserService =
+		Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
@@ -48,7 +52,10 @@ public class CreateEngagementCommandHandlerTests
 		_dbContext.Notifications.Returns(_notifRepo);
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService);
+		_keycloakUserService.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "vera", "Vera", "Test", "vera@example.com"));
+		_sut = new CreateEngagementCommandHandler(
+			_dbContext, _keycloakService, _keycloakUserService, _emailService);
 	}
 
 	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
