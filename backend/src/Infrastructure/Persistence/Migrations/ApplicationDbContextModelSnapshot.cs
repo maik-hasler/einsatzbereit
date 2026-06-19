@@ -111,6 +111,19 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("reminder_sent_at");
 
+					b.Property<string>("FeedbackComment")
+						.HasMaxLength(500)
+						.HasColumnType("character varying(500)")
+						.HasColumnName("feedback_comment");
+
+					b.Property<int?>("FeedbackRating")
+						.HasColumnType("integer")
+						.HasColumnName("feedback_rating");
+
+					b.Property<DateTimeOffset?>("FeedbackSubmittedAt")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("feedback_submitted_at");
+
 					b.Property<string>("Status")
 						.IsRequired()
 						.HasColumnType("text")

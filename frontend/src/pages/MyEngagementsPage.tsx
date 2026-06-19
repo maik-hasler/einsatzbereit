@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import CheckInModal from "../components/CheckInModal";
+import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 
@@ -30,6 +31,8 @@ export default function MyEngagementsPage() {
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 	const [checkInEngagement, setCheckInEngagement] =
+		useState<EngagementSummary | null>(null);
+	const [feedbackEngagement, setFeedbackEngagement] =
 		useState<EngagementSummary | null>(null);
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -82,6 +85,15 @@ export default function MyEngagementsPage() {
 		setEngagements((prev) =>
 			prev.map((e) =>
 				e.id === checkInEngagement.id ? { ...e, isCheckedIn: true } : e,
+			),
+		);
+	}
+
+	function handleFeedbackSubmitted() {
+		if (!feedbackEngagement) return;
+		setEngagements((prev) =>
+			prev.map((e) =>
+				e.id === feedbackEngagement.id ? { ...e, hasFeedback: true } : e,
 			),
 		);
 	}
@@ -175,6 +187,19 @@ export default function MyEngagementsPage() {
 											{t("checkIn.buttonLabel")}
 										</button>
 									)}
+									{e.isCheckedIn && !e.hasFeedback && (
+										<button
+											onClick={() => setFeedbackEngagement(e)}
+											className="rounded-lg bg-yellow-500 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-yellow-600"
+										>
+											{t("feedback.buttonLabel")}
+										</button>
+									)}
+									{e.isCheckedIn && e.hasFeedback && (
+										<span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs text-yellow-700">
+											{t("feedback.submitted")}
+										</span>
+									)}
 									{(e.status === "Pending" || e.status === "Confirmed") && (
 										<button
 											onClick={() => setConfirmWithdrawId(e.id)}
@@ -208,6 +233,15 @@ export default function MyEngagementsPage() {
 					opportunityId={checkInEngagement.opportunityId}
 					onCheckedIn={handleCheckedIn}
 					onClose={() => setCheckInEngagement(null)}
+				/>
+			)}
+
+			{feedbackEngagement && (
+				<SubmitFeedbackModal
+					engagementId={feedbackEngagement.id}
+					opportunityTitle={feedbackEngagement.opportunityTitle}
+					onSubmitted={handleFeedbackSubmitted}
+					onClose={() => setFeedbackEngagement(null)}
 				/>
 			)}
 		</>

@@ -386,6 +386,24 @@
       "deleteConfirmButton": "Yes, delete permanently",
       "deleteError": "Failed to delete account. Please try again or contact support."
     },
+    "feedback": {
+      "buttonLabel": "Leave feedback",
+      "submitted": "Feedback given",
+      "title": "Rate your experience",
+      "ratingLabel": "Rating (required)",
+      "starLabel": "{{count}} star",
+      "commentLabel": "Comment (optional)",
+      "commentPlaceholder": "Share your experience…",
+      "submit": "Submit feedback",
+      "submitting": "Submitting…",
+      "cancel": "Cancel",
+      "submitError": "Could not submit feedback. Please try again.",
+      "averageRating": "{{rating}} out of 5 ({{count}} ratings)",
+      "organizerTab": "Feedback",
+      "noFeedback": "No feedback yet.",
+      "feedbackCount_one": "{{count}} rating",
+      "feedbackCount_other": "{{count}} ratings"
+    },
     "checkIn": {
       "buttonLabel": "Check in",
       "checkedInLabel": "Checked in",

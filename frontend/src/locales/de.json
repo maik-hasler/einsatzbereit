@@ -386,6 +386,24 @@
       "deleteConfirmButton": "Ja, dauerhaft löschen",
       "deleteError": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut oder kontaktiere den Support."
     },
+    "feedback": {
+      "buttonLabel": "Feedback geben",
+      "submitted": "Feedback gegeben",
+      "title": "Erfahrung bewerten",
+      "ratingLabel": "Bewertung (Pflichtfeld)",
+      "starLabel": "{{count}} Stern",
+      "commentLabel": "Kommentar (optional)",
+      "commentPlaceholder": "Teile deine Erfahrung...",
+      "submit": "Feedback absenden",
+      "submitting": "Wird gesendet...",
+      "cancel": "Abbrechen",
+      "submitError": "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.",
+      "averageRating": "{{rating}} von 5 ({{count}} Bewertungen)",
+      "organizerTab": "Feedback",
+      "noFeedback": "Noch kein Feedback.",
+      "feedbackCount_one": "{{count}} Bewertung",
+      "feedbackCount_other": "{{count}} Bewertungen"
+    },
     "checkIn": {
       "buttonLabel": "Einchecken",
       "checkedInLabel": "Eingecheckt",

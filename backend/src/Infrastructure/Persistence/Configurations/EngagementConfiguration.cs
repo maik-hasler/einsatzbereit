@@ -47,6 +47,13 @@ internal sealed class EngagementConfiguration
 
 		builder.Property(e => e.ReminderSentAt);
 
+		builder.Property(e => e.FeedbackRating);
+
+		builder.Property(e => e.FeedbackComment)
+			.HasMaxLength(500);
+
+		builder.Property(e => e.FeedbackSubmittedAt);
+
 		builder.Property(e => e.Status)
 			.HasConversion<string>()
 			.IsRequired();
