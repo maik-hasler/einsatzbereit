@@ -367,8 +367,11 @@ jobs:
             set +e
             cd /opt/einsatzbereit
             for svc in backend keycloak postgres; do
-              echo "::group::docker logs ${svc} (tail 150)"
-              docker logs --tail 150 "${svc}" 2>&1 || true
+              echo "::group::docker inspect ${svc} (state)"
+              docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
+              echo "::endgroup::"
+              echo "::group::docker logs ${svc} (tail 200)"
+              docker logs --tail 200 "${svc}" 2>&1 || true
               echo "::endgroup::"
             done
           EOF
