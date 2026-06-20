@@ -120,16 +120,11 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-    # The .NET aspnet image ships no curl/wget and its /bin/sh is dash (no
-    # /dev/tcp), so probe the liveness endpoint over bash's /dev/tcp. /alive
-    # (not /health) is used so the container is gated on the app being up, not
-    # on downstream readiness, which avoids dependency deadlocks.
+    # curl is installed in the Dockerfile (as root before switching to $APP_UID).
+    # /alive (not /health) is used so the container is gated on the app being up,
+    # not on downstream readiness, which avoids dependency deadlocks.
     healthcheck:
-      test:
-        - CMD
-        - bash
-        - -c
-        - 'exec 3<>/dev/tcp/localhost/8080 && printf "GET /alive HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep -q "200 OK"'
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/alive"]
       interval: 10s
       timeout: 5s
       retries: 10

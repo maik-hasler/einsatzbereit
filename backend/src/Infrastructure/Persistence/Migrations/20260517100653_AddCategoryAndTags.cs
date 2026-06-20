@@ -21,7 +21,18 @@ namespace Infrastructure.Persistence.Migrations
 				name: "tags",
 				table: "volunteer_opportunity",
 				type: "text[]",
-				nullable: false);
+				nullable: true);
+
+			migrationBuilder.Sql("UPDATE volunteer_opportunity SET tags = '{}' WHERE tags IS NULL");
+
+			migrationBuilder.AlterColumn<List<string>>(
+				name: "tags",
+				table: "volunteer_opportunity",
+				type: "text[]",
+				nullable: false,
+				oldClrType: typeof(List<string>),
+				oldType: "text[]",
+				oldNullable: true);
 		}
 
 		/// <inheritdoc />
