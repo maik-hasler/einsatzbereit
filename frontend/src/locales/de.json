@@ -281,7 +281,11 @@
       "removing": "…",
       "noSlots": "Noch keine Zeitslots hinzugefügt.",
       "addError": "Zeitslot konnte nicht hinzugefügt werden.",
-      "removeError": "Zeitslot konnte nicht entfernt werden."
+      "removeError": "Zeitslot konnte nicht entfernt werden.",
+      "recurrenceFrequency": "Wiederholungsrhythmus",
+      "recurrenceWeekly": "Wöchentlich",
+      "recurrenceMonthly": "Monatlich",
+      "recurrenceCount": "Anzahl Termine"
     },
     "signUp": {
       "titleWaitlist": "Auf Warteliste eintragen",

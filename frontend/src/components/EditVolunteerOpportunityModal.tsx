@@ -92,19 +92,21 @@ export default function EditVolunteerOpportunityModal({
 		setAddingSlot(true);
 		setSlotError(null);
 		try {
-			const response = await api.createTimeSlot(opportunity.id, {
+			const responses = await api.createTimeSlot(opportunity.id, {
 				startDateTime: new Date(newSlot.startDateTime),
 				endDateTime: new Date(newSlot.endDateTime),
 				maxParticipants: newSlot.maxParticipants,
+				recurrenceFrequency: undefined,
+				recurrenceCount: 1,
 			});
 			setTimeSlots((prev) => [
 				...prev,
-				{
-					id: response.id,
-					startDateTime: response.startDateTime,
-					endDateTime: response.endDateTime,
-					maxParticipants: response.maxParticipants,
-				},
+				...responses.map((r) => ({
+					id: r.id,
+					startDateTime: r.startDateTime,
+					endDateTime: r.endDateTime,
+					maxParticipants: r.maxParticipants,
+				})),
 			]);
 			setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 		} catch {

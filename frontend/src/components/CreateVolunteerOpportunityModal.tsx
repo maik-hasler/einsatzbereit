@@ -15,6 +15,20 @@ const TOTAL_STEPS = 4;
 const MAX_BANNER_BYTES = 2 * 1024 * 1024;
 const BANNER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+function advanceDate(
+	origin: Date,
+	frequency: string | undefined,
+	steps: number,
+): Date {
+	const d = new Date(origin);
+	if (frequency === "Weekly") {
+		d.setDate(d.getDate() + 7 * steps);
+	} else if (frequency === "Monthly") {
+		d.setMonth(d.getMonth() + steps);
+	}
+	return d;
+}
+
 interface Props {
 	organizationId: string;
 	onClose: () => void;
@@ -305,6 +319,8 @@ export default function CreateVolunteerOpportunityModal({
 	const [slotError, setSlotError] = useState<string | null>(null);
 	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
 	const [addingSlot, setAddingSlot] = useState(false);
+	const [recurrenceFrequency, setRecurrenceFrequency] = useState("Weekly");
+	const [recurrenceCount, setRecurrenceCount] = useState(1);
 
 	useEffect(() => {
 		if (isEditMode) return;
@@ -424,22 +440,25 @@ export default function CreateVolunteerOpportunityModal({
 			return;
 		}
 
+		const isRecurring = form.occurrence === "Recurring";
 		if (isEditMode && initialOpportunity) {
 			setAddingSlot(true);
 			try {
-				const response = await api.createTimeSlot(initialOpportunity.id, {
+				const responses = await api.createTimeSlot(initialOpportunity.id, {
 					startDateTime: start,
 					endDateTime: end,
 					maxParticipants: newSlot.maxParticipants,
+					recurrenceFrequency: isRecurring ? recurrenceFrequency : undefined,
+					recurrenceCount: isRecurring ? recurrenceCount : 1,
 				});
 				setExistingSlots((prev) => [
 					...prev,
-					{
-						id: response.id,
-						startDateTime: response.startDateTime,
-						endDateTime: response.endDateTime,
-						maxParticipants: response.maxParticipants,
-					},
+					...responses.map((r) => ({
+						id: r.id,
+						startDateTime: r.startDateTime,
+						endDateTime: r.endDateTime,
+						maxParticipants: r.maxParticipants,
+					})),
 				]);
 			} catch {
 				setSlotError(t("timeSlots.addError"));
@@ -447,15 +466,25 @@ export default function CreateVolunteerOpportunityModal({
 				setAddingSlot(false);
 			}
 		} else {
-			setPendingSlots((prev) => [
-				...prev,
-				{
-					id: crypto.randomUUID(),
-					startDateTime: newSlot.startDateTime,
-					endDateTime: newSlot.endDateTime,
-					maxParticipants: newSlot.maxParticipants,
+			const duration = end.getTime() - start.getTime();
+			const count = isRecurring
+				? Math.max(1, Math.min(52, recurrenceCount))
+				: 1;
+			const freq = isRecurring ? recurrenceFrequency : undefined;
+			const newSlots: PendingTimeSlot[] = Array.from(
+				{ length: count },
+				(_, i) => {
+					const slotStart = advanceDate(start, freq, i);
+					const slotEnd = new Date(slotStart.getTime() + duration);
+					return {
+						id: crypto.randomUUID(),
+						startDateTime: slotStart.toISOString(),
+						endDateTime: slotEnd.toISOString(),
+						maxParticipants: newSlot.maxParticipants,
+					};
 				},
-			]);
+			);
+			setPendingSlots((prev) => [...prev, ...newSlots]);
 		}
 		setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 	}
@@ -536,6 +565,8 @@ export default function CreateVolunteerOpportunityModal({
 						startDateTime: new Date(slot.startDateTime),
 						endDateTime: new Date(slot.endDateTime),
 						maxParticipants: slot.maxParticipants,
+						recurrenceFrequency: undefined,
+						recurrenceCount: 1,
 					});
 				}
 				if (asDraft) {
@@ -1186,6 +1217,60 @@ export default function CreateVolunteerOpportunityModal({
 												className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
 											/>
 										</div>
+										{form.occurrence === "Recurring" && (
+											<div className="grid grid-cols-2 gap-3">
+												<div>
+													<label
+														htmlFor="slot-recurrence-frequency"
+														className="mb-1 block text-xs font-medium text-gray-600"
+													>
+														{t("timeSlots.recurrenceFrequency")}
+													</label>
+													<select
+														id="slot-recurrence-frequency"
+														value={recurrenceFrequency}
+														onChange={(e) =>
+															setRecurrenceFrequency(e.target.value)
+														}
+														className={selectClass}
+													>
+														<option value="Weekly">
+															{t("timeSlots.recurrenceWeekly")}
+														</option>
+														<option value="Monthly">
+															{t("timeSlots.recurrenceMonthly")}
+														</option>
+													</select>
+												</div>
+												<div>
+													<label
+														htmlFor="slot-recurrence-count"
+														className="mb-1 block text-xs font-medium text-gray-600"
+													>
+														{t("timeSlots.recurrenceCount")}
+													</label>
+													<input
+														id="slot-recurrence-count"
+														type="number"
+														min={1}
+														max={52}
+														value={recurrenceCount}
+														onChange={(e) =>
+															setRecurrenceCount(
+																Math.max(
+																	1,
+																	Math.min(
+																		52,
+																		parseInt(e.target.value, 10) || 1,
+																	),
+																),
+															)
+														}
+														className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+													/>
+												</div>
+											</div>
+										)}
 										{slotError && (
 											<p className="text-xs text-red-600">{slotError}</p>
 										)}

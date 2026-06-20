@@ -15,7 +15,7 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
 		app.MapPost("/volunteer-opportunities/{opportunityId:guid}/time-slots", CreateTimeSlotAsync)
 			.WithName("CreateTimeSlot")
-			.Produces<CreateTimeSlotResponse>(StatusCodes.Status201Created)
+			.Produces<IReadOnlyList<CreateTimeSlotResponse>>(StatusCodes.Status201Created)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
@@ -33,9 +33,35 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
-		var command = new CreateTimeSlotCommand(opportunityId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId);
-		var timeSlotId = await sender.Send(command, cancellationToken);
-		var response = new CreateTimeSlotResponse(timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants);
-		return Results.Created($"/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}", response);
+
+		var recurrenceCount = request.RecurrenceCount <= 0 ? 1 : request.RecurrenceCount;
+		if (recurrenceCount > 52)
+			return Results.Problem("RecurrenceCount must be between 1 and 52.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.RecurrenceFrequency is not null &&
+			!request.RecurrenceFrequency.Equals("Weekly", StringComparison.OrdinalIgnoreCase) &&
+			!request.RecurrenceFrequency.Equals("Monthly", StringComparison.OrdinalIgnoreCase))
+		{
+			return Results.Problem(
+				"Invalid RecurrenceFrequency. Allowed values: Weekly, Monthly.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		var command = new CreateTimeSlotCommand(
+			opportunityId,
+			request.StartDateTime,
+			request.EndDateTime,
+			request.MaxParticipants,
+			userId,
+			request.RecurrenceFrequency,
+			recurrenceCount);
+
+		var timeSlots = await sender.Send(command, cancellationToken);
+
+		var responses = timeSlots
+			.Select(ts => new CreateTimeSlotResponse(ts.Id.Value, ts.StartDateTime, ts.EndDateTime, ts.MaxParticipants))
+			.ToList();
+
+		return Results.Created($"/v1/volunteer-opportunities/{opportunityId}/time-slots", responses);
 	}
 }
