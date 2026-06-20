@@ -22,15 +22,15 @@ public class EngagementTimezoneTests(AspireFixture fixture) : VisualTestBase(fix
 
 		// Extract the OIDC access token stored by oidc-client-ts in localStorage.
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.includes('oidc.user')) {
-                    const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
-                    if (entry?.access_token) return entry.access_token;
-                }
-            }
-            return null;
-        }");
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
 
 		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
 
