@@ -45,8 +45,8 @@ internal sealed class ConfirmEngagementCommandHandler(
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
-		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, berlin).DateTime;
+		var tz = ResolveTimeZone(request.Timezone);
+		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz).DateTime;
 		var isoYear = System.Globalization.ISOWeek.GetYear(now);
 		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
 		await RecordActivityStreakAsync(engagement.VolunteerId, isoYear, isoWeek, cancellationToken);
@@ -69,6 +69,20 @@ internal sealed class ConfirmEngagementCommandHandler(
 			cancellationToken);
 
 		return engagement;
+	}
+
+	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
+	{
+		if (string.IsNullOrWhiteSpace(ianaId))
+			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		try
+		{
+			return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
+		}
+		catch
+		{
+			return TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		}
 	}
 
 	private async Task RecordActivityStreakAsync(
