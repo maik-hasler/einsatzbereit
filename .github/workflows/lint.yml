@@ -29,4 +29,10 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Check EditorConfig conformance
+        # editorconfig-checker downloads its binary from GitHub releases on first
+        # run; without a token the unauthenticated GitHub API rate limit (shared
+        # across the runner's IP) intermittently returns 403 and fails the job.
+        # GITHUB_TOKEN authenticates the download and raises the limit.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx --yes editorconfig-checker@6.1.1 -config .editorconfig-checker.json

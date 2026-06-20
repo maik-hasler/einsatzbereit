@@ -1,0 +1,84 @@
+name: Keycloak Realm Import Check
+
+# Imports the committed realm on the SAME Keycloak version that ships to
+# production (read from keycloak/Dockerfile) and fails if the realm is not
+# served afterwards. The backend's readiness probe and the integration-test
+# fixture both depend on GET /realms/einsatzbereit/.well-known/openid-configuration
+# being reachable; if a realm change is rejected by the production Keycloak
+# version, Keycloak crashes on `--import-realm` and every staging deploy rolls
+# back. This guard catches that before it reaches staging, and prints the full
+# Keycloak logs (the exact ModelValidationException / rejected element) on
+# failure.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'keycloak/**'
+      - '.github/workflows/keycloak-realm-import.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'keycloak/**'
+      - '.github/workflows/keycloak-realm-import.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import-check:
+    name: Import realm on production Keycloak version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Resolve production Keycloak version
+        id: kc
+        run: |
+          KC_VERSION=$(grep -m1 'FROM quay.io/keycloak/keycloak:' keycloak/Dockerfile \
+            | sed 's/.*keycloak:\([^ ]*\).*/\1/')
+          echo "version=$KC_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Testing realm import on quay.io/keycloak/keycloak:$KC_VERSION"
+
+      - name: Import realm and verify it is served
+        env:
+          KC_VERSION: ${{ steps.kc.outputs.version }}
+        run: |
+          set -u
+          IMPORT_DIR="$RUNNER_TEMP/kc-import"
+          mkdir -p "$IMPORT_DIR"
+          cp keycloak/realms/*-realm.json "$IMPORT_DIR/"
+
+          docker run -d --name kc-import-check -p 8080:8080 \
+            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+            -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+            -v "$IMPORT_DIR:/opt/keycloak/data/import:ro" \
+            "quay.io/keycloak/keycloak:$KC_VERSION" \
+            start-dev --import-realm
+
+          WELL_KNOWN="http://localhost:8080/realms/einsatzbereit/.well-known/openid-configuration"
+          ready=0
+          for i in $(seq 1 60); do
+            if curl -fsS "$WELL_KNOWN" >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            # Fail fast if the container has already exited (import crash).
+            if [ "$(docker inspect -f '{{.State.Running}}' kc-import-check 2>/dev/null)" != "true" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          echo "::group::Keycloak container logs"
+          docker logs kc-import-check || true
+          echo "::endgroup::"
+
+          docker rm -f kc-import-check >/dev/null 2>&1 || true
+
+          if [ "$ready" != "1" ]; then
+            echo "::error::Keycloak $KC_VERSION did not serve the 'einsatzbereit' realm after --import-realm (see logs above)."
+            exit 1
+          fi
+          echo "Realm 'einsatzbereit' imported and served successfully on Keycloak $KC_VERSION."
