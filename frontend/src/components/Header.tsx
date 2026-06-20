@@ -407,19 +407,138 @@ export default function Header() {
 						<LanguageSelector transparent={isTransparent} />
 					</nav>
 
-					{/* Mobile notification bell */}
-					{isLoggedIn && (
-						<div className="relative md:hidden" ref={mobileNotifRef}>
-							<button
-								type="button"
-								data-testid="notification-bell-mobile"
-								onClick={() => setNotifOpen((o) => !o)}
-								className={`relative p-2 rounded-lg transition-colors cursor-pointer ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
-								aria-label={t("notifications.bellLabel")}
-								aria-expanded={notifOpen}
-							>
+					{/* Mobile: notification bell + burger grouped so they stay flush-right */}
+					<div className="flex items-center gap-1 md:hidden">
+						{isLoggedIn && (
+							<div className="relative" ref={mobileNotifRef}>
+								<button
+									type="button"
+									data-testid="notification-bell-mobile"
+									onClick={() => setNotifOpen((o) => !o)}
+									className={`relative p-2 rounded-lg transition-colors cursor-pointer ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
+									aria-label={t("notifications.bellLabel")}
+									aria-expanded={notifOpen}
+								>
+									<svg
+										className="w-5 h-5"
+										fill="none"
+										viewBox="0 0 24 24"
+										strokeWidth="1.5"
+										stroke="currentColor"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+										/>
+									</svg>
+									{unreadCount > 0 && (
+										<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+											{unreadCount > 9 ? "9+" : unreadCount}
+										</span>
+									)}
+								</button>
+								{notifOpen && (
+									<div
+										data-testid="notification-panel-mobile"
+										className={`absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-lg z-50 ${isTransparent ? "bg-brand-800 border-white/20" : "bg-white border-gray-200"}`}
+									>
+										<div
+											className={`flex items-center justify-between px-4 py-3 border-b ${isTransparent ? "border-white/10" : "border-gray-100"}`}
+										>
+											<p
+												className={`text-sm font-medium ${isTransparent ? "text-white" : "text-gray-900"}`}
+											>
+												{t("notifications.bellLabel")}
+											</p>
+											{notifications.some((n) => !n.isRead) && (
+												<button
+													type="button"
+													className={`text-xs hover:underline cursor-pointer ${isTransparent ? "text-brand-300" : "text-brand-700"}`}
+													onClick={async () => {
+														await api.markAllNotificationsRead();
+														setNotifications((prev) =>
+															prev.map((n) => ({ ...n, isRead: true })),
+														);
+													}}
+												>
+													{t("notifications.markAllRead")}
+												</button>
+											)}
+										</div>
+										<ul
+											className={`max-h-80 overflow-y-auto divide-y ${isTransparent ? "divide-white/10" : "divide-gray-50"}`}
+										>
+											{notifications.length === 0 ? (
+												<li
+													className={`px-4 py-6 text-center text-sm ${isTransparent ? "text-white/50" : "text-gray-400"}`}
+												>
+													{t("notifications.empty")}
+												</li>
+											) : (
+												notifications.map((n) => (
+													<li key={n.id}>
+														<button
+															type="button"
+															className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${isTransparent ? `hover:bg-white/10 ${!n.isRead ? "font-medium text-white" : "text-white/60"}` : `hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}`}
+															onClick={async () => {
+																if (!n.isRead) {
+																	await api.markNotificationRead(n.id);
+																	setNotifications((prev) =>
+																		prev.map((x) =>
+																			x.id === n.id
+																				? { ...x, isRead: true }
+																				: x,
+																		),
+																	);
+																}
+																setNotifOpen(false);
+																setMobileOpen(false);
+																navigate(n.actionUrl ?? "/my-engagements");
+															}}
+														>
+															<span className="flex items-start gap-2">
+																{!n.isRead && (
+																	<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+																)}
+																<span className={!n.isRead ? "" : "pl-4"}>
+																	{t(
+																		`notifications.kinds.${n.kind}` as Parameters<
+																			typeof t
+																		>[0],
+																		{
+																			title: n.relatedTitle ?? "",
+																			defaultValue: n.kind,
+																		},
+																	)}
+																	<br />
+																	<span
+																		className={`text-xs ${isTransparent ? "text-white/40" : "text-gray-400"}`}
+																	>
+																		{new Date(n.createdOn).toLocaleString()}
+																	</span>
+																</span>
+															</span>
+														</button>
+													</li>
+												))
+											)}
+										</ul>
+									</div>
+								)}
+							</div>
+						)}
+						{/* Mobile Menu Button */}
+						<button
+							type="button"
+							onClick={() => setMobileOpen((o) => !o)}
+							className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
+							aria-label={t("nav.openMenu")}
+							aria-expanded={mobileOpen}
+						>
+							{mobileOpen ? (
 								<svg
-									className="w-5 h-5"
+									className="w-6 h-6"
 									fill="none"
 									viewBox="0 0 24 24"
 									strokeWidth="1.5"
@@ -428,141 +547,26 @@ export default function Header() {
 									<path
 										strokeLinecap="round"
 										strokeLinejoin="round"
-										d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+										d="M6 18 18 6M6 6l12 12"
 									/>
 								</svg>
-								{unreadCount > 0 && (
-									<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-										{unreadCount > 9 ? "9+" : unreadCount}
-									</span>
-								)}
-							</button>
-							{notifOpen && (
-								<div
-									data-testid="notification-panel-mobile"
-									className={`absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-lg z-50 ${isTransparent ? "bg-brand-800 border-white/20" : "bg-white border-gray-200"}`}
+							) : (
+								<svg
+									className="w-6 h-6"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
 								>
-									<div
-										className={`flex items-center justify-between px-4 py-3 border-b ${isTransparent ? "border-white/10" : "border-gray-100"}`}
-									>
-										<p
-											className={`text-sm font-medium ${isTransparent ? "text-white" : "text-gray-900"}`}
-										>
-											{t("notifications.bellLabel")}
-										</p>
-										{notifications.some((n) => !n.isRead) && (
-											<button
-												type="button"
-												className={`text-xs hover:underline cursor-pointer ${isTransparent ? "text-brand-300" : "text-brand-700"}`}
-												onClick={async () => {
-													await api.markAllNotificationsRead();
-													setNotifications((prev) =>
-														prev.map((n) => ({ ...n, isRead: true })),
-													);
-												}}
-											>
-												{t("notifications.markAllRead")}
-											</button>
-										)}
-									</div>
-									<ul
-										className={`max-h-80 overflow-y-auto divide-y ${isTransparent ? "divide-white/10" : "divide-gray-50"}`}
-									>
-										{notifications.length === 0 ? (
-											<li
-												className={`px-4 py-6 text-center text-sm ${isTransparent ? "text-white/50" : "text-gray-400"}`}
-											>
-												{t("notifications.empty")}
-											</li>
-										) : (
-											notifications.map((n) => (
-												<li key={n.id}>
-													<button
-														type="button"
-														className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer ${isTransparent ? `hover:bg-white/10 ${!n.isRead ? "font-medium text-white" : "text-white/60"}` : `hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}`}
-														onClick={async () => {
-															if (!n.isRead) {
-																await api.markNotificationRead(n.id);
-																setNotifications((prev) =>
-																	prev.map((x) =>
-																		x.id === n.id ? { ...x, isRead: true } : x,
-																	),
-																);
-															}
-															setNotifOpen(false);
-															setMobileOpen(false);
-															navigate(n.actionUrl ?? "/my-engagements");
-														}}
-													>
-														<span className="flex items-start gap-2">
-															{!n.isRead && (
-																<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
-															)}
-															<span className={!n.isRead ? "" : "pl-4"}>
-																{t(
-																	`notifications.kinds.${n.kind}` as Parameters<
-																		typeof t
-																	>[0],
-																	{
-																		title: n.relatedTitle ?? "",
-																		defaultValue: n.kind,
-																	},
-																)}
-																<br />
-																<span
-																	className={`text-xs ${isTransparent ? "text-white/40" : "text-gray-400"}`}
-																>
-																	{new Date(n.createdOn).toLocaleString()}
-																</span>
-															</span>
-														</span>
-													</button>
-												</li>
-											))
-										)}
-									</ul>
-								</div>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+									/>
+								</svg>
 							)}
-						</div>
-					)}
-					{/* Mobile Menu Button */}
-					<button
-						type="button"
-						onClick={() => setMobileOpen((o) => !o)}
-						className={`md:hidden inline-flex items-center justify-center p-2 rounded-lg transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
-						aria-label={t("nav.openMenu")}
-						aria-expanded={mobileOpen}
-					>
-						{mobileOpen ? (
-							<svg
-								className="w-6 h-6"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="1.5"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M6 18 18 6M6 6l12 12"
-								/>
-							</svg>
-						) : (
-							<svg
-								className="w-6 h-6"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="1.5"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-								/>
-							</svg>
-						)}
-					</button>
+						</button>
+					</div>
 				</div>
 			</div>
 
