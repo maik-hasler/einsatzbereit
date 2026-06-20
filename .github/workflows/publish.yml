@@ -355,6 +355,24 @@ jobs:
             docker image prune --force
           EOF
 
+      - name: Capture container logs on deploy failure
+        if: failure()
+        run: |
+          # The deploy fails inside `docker compose up` when the backend never
+          # becomes healthy; the failed containers are then recreated by the
+          # rollback step, losing their logs. Dump them here first so the root
+          # cause (a backend startup exception / migration error) is visible in
+          # the workflow log instead of an opaque "container is unhealthy".
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            set +e
+            cd /opt/einsatzbereit
+            for svc in backend keycloak postgres; do
+              echo "::group::docker logs ${svc} (tail 150)"
+              docker logs --tail 150 "${svc}" 2>&1 || true
+              echo "::endgroup::"
+            done
+          EOF
+
       - name: Post-deploy health gate
         run: |
           set -uo pipefail
