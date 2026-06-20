@@ -3063,7 +3063,6 @@ export interface VolunteerOpportunitySummary {
     description: string | undefined;
     organizationId: string;
     organizationName: string;
-    organizationIsVerified: boolean;
     street: string | undefined;
     houseNumber: string | undefined;
     zipCode: string | undefined;
