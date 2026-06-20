@@ -28,15 +28,21 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 ### Clients
 
 **`frontend`** (public OIDC client)
-- Authorization Code + PKCE flow
-- Direct access grants enabled (password flow for integration tests)
-- Redirect URIs: `http://localhost:*`
+- Authorization Code + PKCE (S256 enforced) flow only
+- ROPC disabled (`directAccessGrantsEnabled: false`) - use `frontend-test` for integration tests
+- Redirect URIs: `http://localhost:*`, `https://einsatzbereit.maik-hasler.de/callback`
 - Protocol mappers:
   - `realm-roles` - injects `roles: [...]` into id_token, access_token, userinfo
   - `realm-name` - injects hardcoded claim `realm: "einsatzbereit"` (used by backend auth policies)
+  - `backend-audience` - adds `backend` client to audience in access tokens
+
+**`frontend-test`** (public OIDC client, integration tests only)
+- ROPC enabled (`directAccessGrantsEnabled: true`) - used by `IntegrationTestFixture.GetAccessTokenAsync`
+- Redirect URIs: `http://localhost:*` only (never production)
+- Same protocol mappers as `frontend` (roles, realm-name, backend-audience)
 
 **`backend`** (confidential service account)
-- Client secret: not committed - injected via `Keycloak__ClientSecret` env var (dev: set by AppHost.cs; staging: `KEYCLOAK_BACKEND_SECRET` in `.env`)
+- Client secret: `backend-secret` (dev); injected via `KEYCLOAK_BACKEND_SECRET` env var on staging
 - No user login flows - server-to-server only
 - Service account permissions: `manage-realm`, `manage-users`, `manage-organizations`
 - Used by `KeycloakOrganizationService` in the backend to manage org membership

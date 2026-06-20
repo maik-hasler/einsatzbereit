@@ -17,7 +17,7 @@ public class IntegrationTestFixture
 	IAsyncDisposable
 {
 	private const string Realm = "einsatzbereit";
-	private const string FrontendClientId = "frontend";
+	private const string FrontendClientId = "frontend-test";
 	private const string BackendClientId = "backend";
 	private const string BackendClientSecret = "backend-secret";
 	private const string OrganisatorRole = "organisator";
