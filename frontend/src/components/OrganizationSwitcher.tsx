@@ -175,9 +175,7 @@ export default function OrganizationSwitcher({
 
 				{/* Dropdown */}
 				{open && (
-					<div
-						className={`absolute left-0 top-full mt-2 w-64 rounded-lg border shadow-lg z-50 ${transparent ? "bg-brand-800 border-white/20" : "bg-white border-gray-200"}`}
-					>
+					<div className="absolute left-0 top-full mt-2 w-64 rounded-lg border shadow-lg z-50 bg-white border-gray-200">
 						<div className="py-1 max-h-60 overflow-y-auto">
 							{orgs.map((org) => (
 								<button
@@ -186,17 +184,11 @@ export default function OrganizationSwitcher({
 									onClick={() => handleSwitch(org)}
 									className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
 										org.id === activeOrgId
-											? transparent
-												? "bg-white/15 text-white font-medium"
-												: "bg-brand-50 text-brand-700 font-medium"
-											: transparent
-												? "text-white/80 hover:bg-white/10 hover:text-white"
-												: "text-gray-700 hover:bg-gray-50"
+											? "bg-brand-50 text-brand-700 font-medium"
+											: "text-gray-700 hover:bg-gray-50"
 									}`}
 								>
-									<span
-										className={`flex h-7 w-7 items-center justify-center rounded-md text-xs font-semibold ${transparent ? "bg-white/15 text-white" : "bg-brand-100 text-brand-700"}`}
-									>
+									<span className="flex h-7 w-7 items-center justify-center rounded-md text-xs font-semibold bg-brand-100 text-brand-700">
 										{org.name.charAt(0).toUpperCase()}
 									</span>
 									<span className="truncate">{org.name}</span>
@@ -219,9 +211,7 @@ export default function OrganizationSwitcher({
 							))}
 						</div>
 
-						<div
-							className={`border-t ${transparent ? "border-white/10" : "border-gray-100"}`}
-						>
+						<div className="border-t border-gray-100">
 							{activeOrgId && (
 								<>
 									<button
@@ -231,10 +221,10 @@ export default function OrganizationSwitcher({
 											setOpen(false);
 											navigate(`/organizations/${activeOrgId}/dashboard`);
 										}}
-										className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${transparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-gray-50"}`}
+										className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-gray-50"
 									>
 										<svg
-											className={`w-4 h-4 ${transparent ? "text-white/60" : "text-gray-400"}`}
+											className="w-4 h-4 text-gray-400"
 											fill="none"
 											viewBox="0 0 24 24"
 											strokeWidth="1.5"
@@ -255,10 +245,10 @@ export default function OrganizationSwitcher({
 											setOpen(false);
 											navigate(`/organizations/${activeOrgId}/engagements`);
 										}}
-										className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${transparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-gray-50"}`}
+										className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-gray-50"
 									>
 										<svg
-											className={`w-4 h-4 ${transparent ? "text-white/60" : "text-gray-400"}`}
+											className="w-4 h-4 text-gray-400"
 											fill="none"
 											viewBox="0 0 24 24"
 											strokeWidth="1.5"
@@ -280,10 +270,10 @@ export default function OrganizationSwitcher({
 											setOpen(false);
 											navigate(`/organizations/${activeOrgId}/settings`);
 										}}
-										className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${transparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-gray-50"}`}
+										className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-gray-50"
 									>
 										<svg
-											className={`w-4 h-4 ${transparent ? "text-white/60" : "text-gray-400"}`}
+											className="w-4 h-4 text-gray-400"
 											fill="none"
 											viewBox="0 0 24 24"
 											strokeWidth="1.5"
@@ -310,7 +300,7 @@ export default function OrganizationSwitcher({
 									setOpen(false);
 									setShowModal(true);
 								}}
-								className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${transparent ? "text-brand-300 hover:bg-white/10 hover:text-white" : "text-brand-700 hover:bg-brand-50"}`}
+								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-brand-700 hover:bg-brand-50"
 							>
 								<svg
 									className="w-4 h-4"
