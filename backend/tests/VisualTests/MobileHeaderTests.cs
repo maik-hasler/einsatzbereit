@@ -6,63 +6,63 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-    private const int MobileWidth = 375;
-    private const int MobileHeight = 812;
+	private const int MobileWidth = 375;
+	private const int MobileHeight = 812;
 
-    [Test]
-    public async Task MobileHeader_NotificationBell_IsAdjacentToBurger_NotCentered()
-    {
-        // Resize to a typical mobile viewport before navigating.
-        await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+	[Test]
+	public async Task MobileHeader_NotificationBell_IsAdjacentToBurger_NotCentered()
+	{
+		// Resize to a typical mobile viewport before navigating.
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
-        var frontend = Fixture.GetEndpoint("frontend");
-        await Page.GotoAsync(frontend.ToString());
+		var frontend = Fixture.GetEndpoint("frontend");
+		await Page.GotoAsync(frontend.ToString());
 
-        // On mobile the Sign in button lives inside the hamburger menu.
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
-            .ClickAsync(new() { Timeout = 10_000 });
-        await Page.WaitForTimeoutAsync(400);
+		// On mobile the Sign in button lives inside the hamburger menu.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.WaitForTimeoutAsync(400);
 
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First
-            .ClickAsync(new() { Timeout = 10_000 });
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
 
-        await Page.WaitForURLAsync("**/realms/einsatzbereit/**", new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync("**/realms/einsatzbereit/**", new() { Timeout = 15_000 });
 
-        // Local Keycloak: single-step login (username + password on the same form).
-        await Page.Locator("#username").FillAsync("vera");
-        await Page.Locator("#password").FillAsync("vera123");
-        await Page.Locator("#kc-login").ClickAsync();
+		// Local Keycloak: single-step login (username + password on the same form).
+		await Page.Locator("#username").FillAsync("vera");
+		await Page.Locator("#password").FillAsync("vera123");
+		await Page.Locator("#kc-login").ClickAsync();
 
-        await Page.WaitForURLAsync(
-            $"{frontend.GetLeftPart(UriPartial.Authority)}/",
-            new() { Timeout = 30_000 });
+		await Page.WaitForURLAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/",
+			new() { Timeout = 30_000 });
 
-        await Page.WaitForTimeoutAsync(1_000);
+		await Page.WaitForTimeoutAsync(1_000);
 
-        // Bell should be visible on mobile viewport.
-        var bell = Page.GetByTestId("notification-bell-mobile");
-        await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// Bell should be visible on mobile viewport.
+		var bell = Page.GetByTestId("notification-bell-mobile");
+		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-        var bellBox = await bell.BoundingBoxAsync();
-        bellBox.Should().NotBeNull("Could not get bounding box for notification bell");
+		var bellBox = await bell.BoundingBoxAsync();
+		bellBox.Should().NotBeNull("Could not get bounding box for notification bell");
 
-        // Burger button (aria-label = "Open menu") should also be visible.
-        var burger = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First;
-        await Expect(burger).ToBeVisibleAsync(new() { Timeout = 5_000 });
-        var burgerBox = await burger.BoundingBoxAsync();
-        burgerBox.Should().NotBeNull("Could not get bounding box for burger button");
+		// Burger button (aria-label = "Open menu") should also be visible.
+		var burger = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First;
+		await Expect(burger).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		var burgerBox = await burger.BoundingBoxAsync();
+		burgerBox.Should().NotBeNull("Could not get bounding box for burger button");
 
-        // Bell center must be in the right half of the viewport (not in the middle).
-        double bellCenterX = bellBox!.X + bellBox.Width / 2.0;
-        bellCenterX.Should().BeGreaterThan(
-            MobileWidth / 2.0,
-            $"Bell center ({bellCenterX:F0}px) should be in the right half of the {MobileWidth}px viewport - it was centered before fix #497");
+		// Bell center must be in the right half of the viewport (not in the middle).
+		double bellCenterX = bellBox!.X + bellBox.Width / 2.0;
+		bellCenterX.Should().BeGreaterThan(
+			MobileWidth / 2.0,
+			$"Bell center ({bellCenterX:F0}px) should be in the right half of the {MobileWidth}px viewport - it was centered before fix #497");
 
-        // Bell and burger must be adjacent: gap between bell's right edge and burger's
-        // left edge must be at most 60px (they are in the same flex wrapper).
-        double gap = burgerBox!.X - (bellBox.X + bellBox.Width);
-        gap.Should().BeLessThanOrEqualTo(
-            60.0,
-            $"Bell and burger gap ({gap:F0}px) should be <= 60px - a large gap indicates they are not grouped");
-    }
+		// Bell and burger must be adjacent: gap between bell's right edge and burger's
+		// left edge must be at most 60px (they are in the same flex wrapper).
+		double gap = burgerBox!.X - (bellBox.X + bellBox.Width);
+		gap.Should().BeLessThanOrEqualTo(
+			60.0,
+			$"Bell and burger gap ({gap:F0}px) should be <= 60px - a large gap indicates they are not grouped");
+	}
 }
