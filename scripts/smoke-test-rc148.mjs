@@ -134,18 +134,18 @@ try {
 				color === "black";
 			if (isBlack) {
 				fail(
-					`"Create organization" text is black (${color}) — brand-300 token not applied`,
+					`"Create organization" text is black (${color}) - brand-300 token not applied`,
 				);
 			} else {
 				pass(
-					`"Create organization" text is NOT black (${color}) — color token correctly applied`,
+					`"Create organization" text is NOT black (${color}) - color token correctly applied`,
 				);
 			}
 		} else {
-			// Dropdown opened but "Create organization" not found — may mean user has no orgs
+			// Dropdown opened but "Create organization" not found - may mean user has no orgs
 			// or button label differs; skip with a warning rather than failing
 			console.log(
-				'  NOTE: "Create organization" button not visible in dropdown — checking standalone button instead',
+				'  NOTE: "Create organization" button not visible in dropdown - checking standalone button instead',
 			);
 			// Close dropdown and look for standalone button
 			await page.keyboard.press("Escape");
@@ -169,12 +169,12 @@ try {
 				}
 			} else {
 				pass(
-					'Neither dropdown item nor standalone "Create organization" visible — org switcher working normally',
+					'Neither dropdown item nor standalone "Create organization" visible - org switcher working normally',
 				);
 			}
 		}
 	} else {
-		fail("Org switcher button not found in nav — could not verify dropdown colors");
+		fail("Org switcher button not found in nav - could not verify dropdown colors");
 	}
 
 	// 6. Verify brand-400 border color on form inputs: open create-opportunity modal
@@ -217,14 +217,14 @@ try {
 		const isBlack =
 			heroColor === "rgb(0, 0, 0)" || heroColor === "rgba(0, 0, 0, 1)";
 		if (isBlack) {
-			fail(`brand-900 hero text renders as black — token not applied correctly`);
+			fail(`brand-900 hero text renders as black - token not applied correctly`);
 		} else {
 			pass(`brand-900 hero text has correct color: ${heroColor}`);
 		}
 	} else {
-		// CSS class selectors may not survive the Tailwind build — skip gracefully
+		// CSS class selectors may not survive the Tailwind build - skip gracefully
 		console.log(
-			"  NOTE: brand-900 element not found by class selector (Tailwind purges classes) — CSS variable check above is sufficient",
+			"  NOTE: brand-900 element not found by class selector (Tailwind purges classes) - CSS variable check above is sufficient",
 		);
 	}
 } catch (err) {
