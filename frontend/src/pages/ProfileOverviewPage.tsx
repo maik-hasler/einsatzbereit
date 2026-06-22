@@ -19,6 +19,9 @@ import EmptyState from "../components/EmptyState";
 import ShareAchievementsModal from "../components/ShareAchievementsModal";
 import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
 
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 type Tab = "profile" | "engagements" | "achievements";
 type ContactPref = "Email" | "Phone" | "";
 
@@ -164,6 +167,10 @@ export default function ProfileOverviewPage() {
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+	const [uploadingAvatar, setUploadingAvatar] = useState(false);
+	const [avatarError, setAvatarError] = useState<string | null>(null);
+	const avatarInputRef = useRef<HTMLInputElement>(null);
 
 	// --- Engagements tab state ---
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
@@ -215,6 +222,7 @@ export default function ProfileOverviewPage() {
 					setBio(data.bio ?? "");
 					setSkills(data.skills ?? []);
 					setLanguages(data.languages ?? []);
+					setAvatarUrl(data.avatarUrl ?? null);
 					const pref = data.preferredContact;
 					setPreferredContact(pref === "Email" || pref === "Phone" ? pref : "");
 					setProfileError(null);
@@ -298,6 +306,30 @@ export default function ProfileOverviewPage() {
 		setList: (l: string[]) => void,
 	) {
 		setList(list.filter((s) => s !== item));
+	}
+
+	async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		if (!AVATAR_TYPES.includes(file.type)) {
+			setAvatarError(t("profile.avatarHint"));
+			return;
+		}
+		if (file.size > MAX_AVATAR_BYTES) {
+			setAvatarError(t("profile.avatarHint"));
+			return;
+		}
+		setUploadingAvatar(true);
+		setAvatarError(null);
+		try {
+			await api.uploadUserAvatar({ data: file, fileName: file.name });
+			setAvatarUrl(URL.createObjectURL(file));
+		} catch {
+			setAvatarError(t("profile.avatarUploadError"));
+		} finally {
+			setUploadingAvatar(false);
+			if (avatarInputRef.current) avatarInputRef.current.value = "";
+		}
 	}
 
 	async function handleSave(e: React.FormEvent) {
@@ -448,6 +480,52 @@ export default function ProfileOverviewPage() {
 										{t("account.title")}
 									</h2>
 									<div className="space-y-5">
+										<div>
+											<p className="mb-1 block text-sm font-medium text-gray-700">
+												{t("profile.fieldAvatar")}
+											</p>
+											<div className="flex items-center gap-4">
+												{avatarUrl ? (
+													<img
+														src={avatarUrl}
+														alt=""
+														className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+													/>
+												) : (
+													<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+														{profile?.username?.charAt(0).toUpperCase() ?? "?"}
+													</span>
+												)}
+												<div>
+													<label
+														htmlFor="avatar-upload"
+														className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingAvatar ? "opacity-50 pointer-events-none" : ""}`}
+													>
+														{uploadingAvatar
+															? t("profile.avatarUploading")
+															: t("profile.avatarUpload")}
+													</label>
+													<input
+														ref={avatarInputRef}
+														id="avatar-upload"
+														type="file"
+														accept="image/jpeg,image/png,image/webp"
+														className="sr-only"
+														onChange={handleAvatarChange}
+														disabled={uploadingAvatar}
+													/>
+													<p className="mt-1 text-xs text-gray-500">
+														{t("profile.avatarHint")}
+													</p>
+													{avatarError && (
+														<p className="mt-1 text-xs text-red-600">
+															{avatarError}
+														</p>
+													)}
+												</div>
+											</div>
+										</div>
+
 										<Field label={t("account.fieldUsername")} id="username">
 											<input
 												id="username"

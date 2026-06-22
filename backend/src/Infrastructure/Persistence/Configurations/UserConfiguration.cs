@@ -20,6 +20,8 @@ internal sealed class UserConfiguration
 				guid => new UserId(guid))
 			.ValueGeneratedNever();
 
+		builder.Property(u => u.AvatarUrl);
+
 		builder.Property(u => u.Bio);
 
 		var listComparer = new ValueComparer<IReadOnlyList<string>>(

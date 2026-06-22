@@ -7,6 +7,7 @@ public sealed record OrganizationDetailsResponse(
 	string? ContactEmail,
 	string? ContactPhone,
 	string? Website,
+	string? LogoUrl,
 	AddressDto? Address,
 	bool IsVerified,
 	DateTimeOffset CreatedOn,

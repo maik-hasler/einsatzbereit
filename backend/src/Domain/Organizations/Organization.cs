@@ -19,6 +19,8 @@ public sealed class Organization
 
 	public Address? Address { get; private set; }
 
+	public string? LogoUrl { get; private set; }
+
 	public bool IsVerified { get; private set; }
 
 	public DateTimeOffset CreatedOn { get; private set; }
@@ -45,6 +47,11 @@ public sealed class Organization
 			throw new DomainException("Name must not be empty.");
 
 		return new Organization(id, name);
+	}
+
+	public void SetLogoUrl(string? url)
+	{
+		LogoUrl = url;
 	}
 
 	public void SetVerified(bool isVerified)
