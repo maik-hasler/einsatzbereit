@@ -8,15 +8,12 @@ import DatenschutzPage from "./pages/DatenschutzPage";
 import ImpressumPage from "./pages/ImpressumPage";
 import OrganizationSettingsPage from "./pages/OrganizationSettingsPage";
 import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
-import MyEngagementsPage from "./pages/MyEngagementsPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
-import AccountPage from "./pages/AccountPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfileOverviewPage from "./pages/ProfileOverviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
 import OrganizationEngagementsPage from "./pages/OrganizationEngagementsPage";
-import AchievementsPage from "./pages/AchievementsPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
@@ -58,11 +55,7 @@ export default function App() {
 				/>
 				<Route
 					path="/my-engagements"
-					element={
-						<ProtectedRoute>
-							<MyEngagementsPage />
-						</ProtectedRoute>
-					}
+					element={<Navigate to="/profile?tab=engagements" replace />}
 				/>
 				<Route
 					path="/volunteer-opportunities/:opportunityId/engagements"
@@ -72,19 +65,12 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
-				<Route
-					path="/account"
-					element={
-						<ProtectedRoute>
-							<AccountPage />
-						</ProtectedRoute>
-					}
-				/>
+				<Route path="/account" element={<Navigate to="/profile" replace />} />
 				<Route
 					path="/profile"
 					element={
 						<ProtectedRoute>
-							<ProfilePage />
+							<ProfileOverviewPage />
 						</ProtectedRoute>
 					}
 				/>
@@ -114,11 +100,7 @@ export default function App() {
 				/>
 				<Route
 					path="/achievements"
-					element={
-						<ProtectedRoute>
-							<AchievementsPage />
-						</ProtectedRoute>
-					}
+					element={<Navigate to="/profile?tab=achievements" replace />}
 				/>
 				<Route
 					path="/users/:userId/achievements"

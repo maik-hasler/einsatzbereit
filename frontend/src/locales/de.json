@@ -566,6 +566,11 @@
         "viewDetails": "Details anzeigen →"
       }
     },
+    "profileOverview": {
+      "tabProfile": "Profil",
+      "tabEngagements": "Engagements",
+      "tabAchievements": "Errungenschaften"
+    },
     "profile": {
       "title": "Mein Profil",
       "sectionDetails": "Profil-Details",
