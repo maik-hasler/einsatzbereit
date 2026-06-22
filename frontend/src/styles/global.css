@@ -109,9 +109,12 @@ input[type="number"]::-webkit-outer-spin-button {
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;
 	--color-brand-200: #a8dfc3;
+	--color-brand-300: #80cba6;
+	--color-brand-400: #5bbf8c;
 	--color-brand-500: #3eaf78;
 	--color-brand-600: #2d8a5e;
 	--color-brand-700: #226947;
 	--color-brand-800: #1a3c2b;
+	--color-brand-900: #0e251a;
 	--color-accent-400: #5ac48a;
 }
