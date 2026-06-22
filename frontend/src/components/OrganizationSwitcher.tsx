@@ -92,40 +92,10 @@ export default function OrganizationSwitcher({
 		);
 	}
 
-	// No orgs - show direct "create" button instead of dropdown
+	// No orgs - hide the switcher from the header entirely.
+	// Users can create an org from their profile page instead.
 	if (orgs.length === 0) {
-		return (
-			<>
-				<button
-					type="button"
-					onClick={() => setShowModal(true)}
-					data-testid="create-org-btn"
-					className={`flex items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-sm font-medium transition-colors ${transparent ? "border-white/40 bg-white/10 text-white hover:bg-white/20" : "border-brand-300 bg-brand-50 text-brand-700 hover:bg-brand-100"}`}
-				>
-					<svg
-						className={`w-4 h-4 ${transparent ? "text-white/80" : ""}`}
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M12 4.5v15m7.5-7.5h-15"
-						/>
-					</svg>
-					{t("organization.create")}
-				</button>
-
-				{showModal && (
-					<CreateOrganizationModal
-						onClose={() => setShowModal(false)}
-						onSuccess={handleOrgCreated}
-					/>
-				)}
-			</>
-		);
+		return null;
 	}
 
 	return (

@@ -601,7 +601,9 @@
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
-      "removeChip": "Entfernen"
+      "removeChip": "Entfernen",
+      "sectionOrganization": "Organisationen",
+      "createOrgHint": "Moechtest du Freiwilligeneinsaetze organisieren? Erstelle eine Organisation, um loszulegen."
     },
     "achievements": {
       "title": "Meine Errungenschaften",

@@ -15,6 +15,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import BadgeGrid from "../components/BadgeGrid";
 import CheckInModal from "../components/CheckInModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import EmptyState from "../components/EmptyState";
 import ShareAchievementsModal from "../components/ShareAchievementsModal";
 import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
@@ -171,6 +172,7 @@ export default function ProfileOverviewPage() {
 	const [uploadingAvatar, setUploadingAvatar] = useState(false);
 	const [avatarError, setAvatarError] = useState<string | null>(null);
 	const avatarInputRef = useRef<HTMLInputElement>(null);
+	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 
 	// --- Engagements tab state ---
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
@@ -655,7 +657,24 @@ export default function ProfileOverviewPage() {
 								</div>
 							</form>
 
-							<div className="mt-12 rounded-lg border border-red-200 bg-red-50 p-6">
+							<div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
+								<h2 className="mb-1 text-base font-semibold text-gray-900">
+									{t("profile.sectionOrganization")}
+								</h2>
+								<p className="mb-4 text-sm text-gray-600">
+									{t("profile.createOrgHint")}
+								</p>
+								<button
+									type="button"
+									onClick={() => setShowCreateOrgModal(true)}
+									data-testid="create-org-btn"
+									className="rounded-md border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50"
+								>
+									{t("organization.create")}
+								</button>
+							</div>
+
+							<div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-6">
 								<h2 className="mb-1 text-base font-semibold text-red-800">
 									{t("account.dangerZoneTitle")}
 								</h2>
@@ -887,6 +906,13 @@ export default function ProfileOverviewPage() {
 			)}
 
 			{/* Dialogs / Modals */}
+			{showCreateOrgModal && (
+				<CreateOrganizationModal
+					onClose={() => setShowCreateOrgModal(false)}
+					onSuccess={() => setShowCreateOrgModal(false)}
+				/>
+			)}
+
 			{showDeleteDialog && (
 				<ConfirmDialog
 					title={t("account.deleteConfirmTitle")}
