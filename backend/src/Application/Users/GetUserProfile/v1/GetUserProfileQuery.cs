@@ -12,6 +12,7 @@ public sealed record MyProfileResponse(
 	string? FirstName,
 	string? LastName,
 	string Email,
+	string? AvatarUrl,
 	string? Bio,
 	IReadOnlyList<string> Skills,
 	IReadOnlyList<string> Languages,

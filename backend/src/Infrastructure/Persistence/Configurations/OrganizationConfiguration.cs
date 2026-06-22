@@ -29,6 +29,8 @@ internal sealed class OrganizationConfiguration
 
 		builder.Property(org => org.Website);
 
+		builder.Property(org => org.LogoUrl);
+
 		builder.Property(org => org.IsVerified)
 			.HasDefaultValue(false);
 

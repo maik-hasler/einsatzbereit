@@ -5,6 +5,8 @@ namespace Domain.Users;
 public sealed class User
 	: AggregateRoot<UserId>
 {
+	public string? AvatarUrl { get; private set; }
+
 	public string? Bio { get; private set; }
 
 	public IReadOnlyList<string> Skills { get; private set; } = [];
@@ -20,6 +22,11 @@ public sealed class User
 	private User(UserId id) : base(id) { }
 
 	public static User Create(UserId id) => new(id);
+
+	public void SetAvatarUrl(string? url)
+	{
+		AvatarUrl = url;
+	}
 
 	public void Update(
 		string? bio,

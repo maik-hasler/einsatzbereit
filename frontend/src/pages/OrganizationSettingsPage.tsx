@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import EmptyState from "../components/EmptyState";
 import { usePageTitle } from "../hooks/usePageTitle";
+
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type Tab = "general" | "members";
 
@@ -31,6 +34,11 @@ export default function OrganizationSettingsPage() {
 		city: "",
 	});
 
+	const [logoUrl, setLogoUrl] = useState<string | null>(null);
+	const [uploadingLogo, setUploadingLogo] = useState(false);
+	const [logoError, setLogoError] = useState<string | null>(null);
+	const logoInputRef = useRef<HTMLInputElement>(null);
+
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	usePageTitle(t("orgSettings.title"));
@@ -42,6 +50,7 @@ export default function OrganizationSettingsPage() {
 			.getOrganizationDetails(organizationId)
 			.then((data) => {
 				setOrg(data);
+				setLogoUrl(data.logoUrl ?? null);
 				setForm({
 					name: data.name,
 					description: data.description ?? "",
@@ -61,6 +70,33 @@ export default function OrganizationSettingsPage() {
 
 	const hasAddress =
 		form.street || form.houseNumber || form.zipCode || form.city;
+
+	async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file || !organizationId) return;
+		if (!LOGO_TYPES.includes(file.type)) {
+			setLogoError(t("orgSettings.logoHint"));
+			return;
+		}
+		if (file.size > MAX_LOGO_BYTES) {
+			setLogoError(t("orgSettings.logoHint"));
+			return;
+		}
+		setUploadingLogo(true);
+		setLogoError(null);
+		try {
+			await api.uploadOrganizationLogo(organizationId, {
+				data: file,
+				fileName: file.name,
+			});
+			setLogoUrl(URL.createObjectURL(file));
+		} catch {
+			setLogoError(t("orgSettings.logoUploadError"));
+		} finally {
+			setUploadingLogo(false);
+			if (logoInputRef.current) logoInputRef.current.value = "";
+		}
+	}
 
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
@@ -215,6 +251,50 @@ export default function OrganizationSettingsPage() {
 
 				{activeTab === "general" && (
 					<form onSubmit={handleSave} className="space-y-5">
+						<div>
+							<p className="mb-1 block text-sm font-medium text-gray-700">
+								{t("orgSettings.fieldLogo")}
+							</p>
+							<div className="flex items-center gap-4">
+								{logoUrl ? (
+									<img
+										src={logoUrl}
+										alt=""
+										className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
+									/>
+								) : (
+									<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
+										{org.name.charAt(0).toUpperCase()}
+									</span>
+								)}
+								<div>
+									<label
+										htmlFor="logo-upload"
+										className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
+									>
+										{uploadingLogo
+											? t("orgSettings.logoUploading")
+											: t("orgSettings.logoUpload")}
+									</label>
+									<input
+										ref={logoInputRef}
+										id="logo-upload"
+										type="file"
+										accept="image/jpeg,image/png,image/webp"
+										className="sr-only"
+										onChange={handleLogoChange}
+										disabled={uploadingLogo}
+									/>
+									<p className="mt-1 text-xs text-gray-500">
+										{t("orgSettings.logoHint")}
+									</p>
+									{logoError && (
+										<p className="mt-1 text-xs text-red-600">{logoError}</p>
+									)}
+								</div>
+							</div>
+						</div>
+
 						<Field label={t("orgSettings.fieldName")} id="org-name">
 							<input
 								id="org-name"
