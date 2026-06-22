@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router";
+import { Routes, Route, Navigate, useParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
@@ -6,17 +6,25 @@ import ProtectedRoute from "./layouts/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import DatenschutzPage from "./pages/DatenschutzPage";
 import ImpressumPage from "./pages/ImpressumPage";
-import OrganizationSettingsPage from "./pages/OrganizationSettingsPage";
 import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import ProfileOverviewPage from "./pages/ProfileOverviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
-import OrganizationDashboardPage from "./pages/OrganizationDashboardPage";
-import OrganizationEngagementsPage from "./pages/OrganizationEngagementsPage";
+import OrganizationOverviewPage from "./pages/OrganizationOverviewPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
+
+function OrgTabRedirect({ tab }: { tab: string }) {
+	const { organizationId } = useParams<{ organizationId: string }>();
+	return (
+		<Navigate
+			to={`/organizations/${organizationId}/dashboard?tab=${tab}`}
+			replace
+		/>
+	);
+}
 
 function CallbackPage() {
 	const auth = useAuth();
@@ -76,27 +84,19 @@ export default function App() {
 				/>
 				<Route
 					path="/organizations/:organizationId/settings"
-					element={
-						<ProtectedRoute>
-							<OrganizationSettingsPage />
-						</ProtectedRoute>
-					}
+					element={<OrgTabRedirect tab="settings" />}
 				/>
 				<Route
 					path="/organizations/:organizationId/dashboard"
 					element={
 						<ProtectedRoute>
-							<OrganizationDashboardPage />
+							<OrganizationOverviewPage />
 						</ProtectedRoute>
 					}
 				/>
 				<Route
 					path="/organizations/:organizationId/engagements"
-					element={
-						<ProtectedRoute>
-							<OrganizationEngagementsPage />
-						</ProtectedRoute>
-					}
+					element={<OrgTabRedirect tab="engagements" />}
 				/>
 				<Route
 					path="/achievements"

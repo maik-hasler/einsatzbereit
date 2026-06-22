@@ -33,6 +33,8 @@ public sealed class VolunteerOpportunity
 
 	public string? BannerImageUrl { get; private set; }
 
+	public string? Color { get; private set; }
+
 	public string? CheckInPin { get; private set; }
 
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
@@ -140,6 +142,11 @@ public sealed class VolunteerOpportunity
 			throw new DomainException("Banner image URL must not be empty.");
 
 		BannerImageUrl = url;
+	}
+
+	public void SetColor(string? color)
+	{
+		Color = color;
 	}
 
 	public void Update(

@@ -500,6 +500,90 @@
         }
       }
     },
+    "/v1/volunteer-opportunities/{opportunityId}/color": {
+      "put": {
+        "tags": [
+          "SetOpportunityColorEndpoint"
+        ],
+        "operationId": "SetOpportunityColor",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOpportunityColorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities/{opportunityId}/publish": {
       "post": {
         "tags": [
@@ -1969,6 +2053,70 @@
         }
       }
     },
+    "/v1/organizations/{organizationId}/calendar-events": {
+      "get": {
+        "tags": [
+          "GetOrganizationCalendarEventsEndpoint"
+        ],
+        "operationId": "GetOrganizationCalendarEvents",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationCalendarEventDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/organizations/{organizationId}/members": {
       "post": {
         "tags": [
@@ -3054,6 +3202,37 @@
           }
         }
       },
+      "CalendarTimeSlotDto": {
+        "required": [
+          "timeSlotId",
+          "startDateTime",
+          "endDateTime",
+          "maxParticipants"
+        ],
+        "type": "object",
+        "properties": {
+          "timeSlotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startDateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxParticipants": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "CancelEngagementRequest": {
         "required": [
           "reason"
@@ -3785,6 +3964,36 @@
           }
         }
       },
+      "OrganizationCalendarEventDto": {
+        "required": [
+          "opportunityId",
+          "title",
+          "color",
+          "timeSlots"
+        ],
+        "type": "object",
+        "properties": {
+          "opportunityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "color": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "timeSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarTimeSlotDto"
+            }
+          }
+        }
+      },
       "OrganizationDashboardResponse": {
         "required": [
           "openOpportunities",
@@ -4219,6 +4428,20 @@
             "items": {
               "$ref": "#/components/schemas/AchievementSummary"
             }
+          }
+        }
+      },
+      "SetOpportunityColorRequest": {
+        "required": [
+          "color"
+        ],
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -4862,6 +5085,9 @@
       "name": "DeleteTimeSlotEndpoint"
     },
     {
+      "name": "SetOpportunityColorEndpoint"
+    },
+    {
       "name": "PublishVolunteerOpportunityEndpoint"
     },
     {
@@ -4911,6 +5137,9 @@
     },
     {
       "name": "GetOrganizationDashboardEndpoint"
+    },
+    {
+      "name": "GetOrganizationCalendarEventsEndpoint"
     },
     {
       "name": "AddMemberEndpoint"

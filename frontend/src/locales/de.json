@@ -685,6 +685,26 @@
       "noOrgs": "Keine Organisationen gefunden.",
       "verify": "Verifizieren",
       "unverify": "Verifizierung aufheben"
+    },
+    "orgOverview": {
+      "tabCalendar": "Kalender",
+      "tabEngagements": "Bewerbungen",
+      "tabSettings": "Einstellungen",
+      "calendarLoading": "Kalender wird geladen...",
+      "calendarError": "Kalendereintraege konnten nicht geladen werden.",
+      "calendarNoEvents": "Keine Eintraege in diesem Zeitraum.",
+      "eventColorLabel": "Farbe des Eintrags",
+      "eventColorSave": "Speichern",
+      "eventColorSaving": "Wird gespeichert...",
+      "colorSaveError": "Farbe konnte nicht gespeichert werden.",
+      "eventNavigate": "Einsatzmoglichkeit verwalten",
+      "calendarToday": "Heute",
+      "calendarBack": "Zuruck",
+      "calendarNext": "Weiter",
+      "calendarMonth": "Monat",
+      "calendarWeek": "Woche",
+      "calendarWorkWeek": "Arbeitswoche",
+      "calendarDay": "Tag"
     }
   }
 }

@@ -66,6 +66,8 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.Property(vo => vo.BannerImageUrl);
 
+		builder.Property(vo => vo.Color);
+
 		builder.PrimitiveCollection(vo => vo.Tags)
 			.HasColumnType("text[]");
 
