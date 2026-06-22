@@ -104,12 +104,12 @@ try {
 	await page.goto(FRONTEND, { waitUntil: "domcontentloaded", timeout: 30000 });
 	await page.waitForTimeout(500);
 
-	// Open org switcher (the building-icon button in the nav)
+	// Open org switcher - wait up to 10s for the API fetch to finish (loading skeleton hides the button)
+	// The button has aria-label="Switch organization" / "Organisation wechseln"
 	const orgBtn = page
-		.locator("nav")
-		.getByRole("button", { name: /organization|organisation/i })
+		.getByRole("button", { name: /switch organization|organisation wechseln/i })
 		.first();
-	const orgBtnVisible = await orgBtn.isVisible({ timeout: 5000 }).catch(() => false);
+	const orgBtnVisible = await orgBtn.isVisible({ timeout: 10000 }).catch(() => false);
 
 	if (orgBtnVisible) {
 		await orgBtn.click();
@@ -181,8 +181,7 @@ try {
 	//    and check that focus produces a non-black border color.
 	//    (Navigation to org dashboard first so we have access to create-opportunity button.)
 	const orgSwitcherBtn = page
-		.locator("nav")
-		.getByRole("button", { name: /organization|organisation/i })
+		.getByRole("button", { name: /switch organization|organisation wechseln/i })
 		.first();
 	const switcherVis = await orgSwitcherBtn
 		.isVisible({ timeout: 3000 })
