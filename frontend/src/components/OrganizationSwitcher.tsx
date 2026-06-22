@@ -213,7 +213,9 @@ export default function OrganizationSwitcher({
 										data-testid="org-engagements-link"
 										onClick={() => {
 											setOpen(false);
-											navigate(`/organizations/${activeOrgId}/engagements`);
+											navigate(
+												`/organizations/${activeOrgId}/dashboard?tab=engagements`,
+											);
 										}}
 										className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-gray-50"
 									>
@@ -238,7 +240,9 @@ export default function OrganizationSwitcher({
 										data-testid="org-settings-link"
 										onClick={() => {
 											setOpen(false);
-											navigate(`/organizations/${activeOrgId}/settings`);
+											navigate(
+												`/organizations/${activeOrgId}/dashboard?tab=settings`,
+											);
 										}}
 										className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-gray-50"
 									>

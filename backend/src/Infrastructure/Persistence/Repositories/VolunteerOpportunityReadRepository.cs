@@ -1,4 +1,5 @@
 using Application.Common.Pagination;
+using Application.Organizations.GetOrganizationCalendarEvents.v1;
 using Application.VolunteerOpportunities;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
@@ -361,5 +362,40 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Where(vo => vo.Id == opportunityId_)
 			.Select(vo => vo.BannerImageUrl)
 			.FirstOrDefaultAsync(cancellationToken);
+	}
+
+	public async ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
+		Guid organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		var orgId = new OrganizationId(organizationId);
+
+		var rows = await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.OrganizationId == orgId)
+			.Where(vo => vo.TimeSlots.Any())
+			.OrderBy(vo => vo.TimeSlots.Min(ts => ts.StartDateTime))
+			.Select(vo => new
+			{
+				Id = vo.Id.Value,
+				vo.Title,
+				vo.Color,
+				TimeSlots = vo.TimeSlots
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => new CalendarTimeSlotDto(
+						ts.Id.Value,
+						ts.StartDateTime,
+						ts.EndDateTime,
+						ts.MaxParticipants))
+					.ToList(),
+			})
+			.ToListAsync(cancellationToken);
+
+		return rows
+			.Select(r => new OrganizationCalendarEventDto(
+				r.Id,
+				r.Title,
+				r.Color,
+				r.TimeSlots))
+			.ToList();
 	}
 }

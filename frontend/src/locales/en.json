@@ -687,6 +687,26 @@
       "noOrgs": "No organizations found.",
       "verify": "Verify",
       "unverify": "Unverify"
+    },
+    "orgOverview": {
+      "tabCalendar": "Calendar",
+      "tabEngagements": "Engagements",
+      "tabSettings": "Settings",
+      "calendarLoading": "Loading calendar...",
+      "calendarError": "Failed to load calendar events.",
+      "calendarNoEvents": "No events in this range.",
+      "eventColorLabel": "Event color",
+      "eventColorSave": "Save",
+      "eventColorSaving": "Saving...",
+      "colorSaveError": "Failed to save color.",
+      "eventNavigate": "Manage opportunity",
+      "calendarToday": "Today",
+      "calendarBack": "Back",
+      "calendarNext": "Next",
+      "calendarMonth": "Month",
+      "calendarWeek": "Week",
+      "calendarWorkWeek": "Work week",
+      "calendarDay": "Day"
     }
   }
 }
