@@ -599,7 +599,7 @@ export default function OrganizationOverviewPage() {
 					)}
 					{!orgLoading && org && !editing && (
 						<>
-							{/* View mode — mirrors the public org profile */}
+							{/* View mode - mirrors the public org profile */}
 							<div className="mb-6 flex items-start justify-between gap-4">
 								<div className="flex items-center gap-4">
 									{logoUrl ? (
