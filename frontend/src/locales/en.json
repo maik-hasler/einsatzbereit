@@ -691,6 +691,7 @@
     "orgOverview": {
       "tabCalendar": "Calendar",
       "tabEngagements": "Engagements",
+      "tabMembers": "Members",
       "tabSettings": "Settings",
       "calendarLoading": "Loading calendar...",
       "calendarError": "Failed to load calendar events.",

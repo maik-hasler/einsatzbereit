@@ -691,6 +691,7 @@
     "orgOverview": {
       "tabCalendar": "Kalender",
       "tabEngagements": "Bewerbungen",
+      "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",
       "calendarLoading": "Kalender wird geladen...",
       "calendarError": "Kalendereintraege konnten nicht geladen werden.",

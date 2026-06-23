@@ -38,10 +38,9 @@ interface CalEvent {
 	color: string | undefined;
 }
 
-type Tab = "calendar" | "engagements" | "settings";
-type SettingsTab = "general" | "members";
+type Tab = "calendar" | "engagements" | "members" | "settings";
 
-const VALID_TABS: Tab[] = ["calendar", "engagements", "settings"];
+const VALID_TABS: Tab[] = ["calendar", "engagements", "members", "settings"];
 
 function isTab(v: string | null): v is Tab {
 	return VALID_TABS.includes(v as Tab);
@@ -229,8 +228,7 @@ export default function OrganizationOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab, engInitialized, organizationId]);
 
-	// ── Settings tab ────────────────────────────────────────────────────────
-	const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
+	// ── Settings / Members tabs ─────────────────────────────────────────────
 	const [saving, setSaving] = useState(false);
 	const [settingsError, setSettingsError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -337,6 +335,7 @@ export default function OrganizationOverviewPage() {
 	const tabs: { key: Tab; label: string }[] = [
 		{ key: "calendar", label: t("orgOverview.tabCalendar") },
 		{ key: "engagements", label: t("orgOverview.tabEngagements") },
+		{ key: "members", label: t("orgOverview.tabMembers") },
 		{ key: "settings", label: t("orgOverview.tabSettings") },
 	];
 
@@ -590,27 +589,6 @@ export default function OrganizationOverviewPage() {
 								})}
 							</p>
 
-							<div className="mb-6 flex gap-4 border-b border-gray-200">
-								{(["general", "members"] as SettingsTab[]).map((tab) => (
-									<button
-										key={tab}
-										type="button"
-										onClick={() => setSettingsTab(tab)}
-										className={`pb-2 text-sm font-medium transition-colors ${
-											settingsTab === tab
-												? "border-b-2 border-brand-700 text-brand-700"
-												: "text-gray-500 hover:text-gray-700"
-										}`}
-									>
-										{tab === "general"
-											? t("orgSettings.tabGeneral")
-											: t("orgSettings.tabMembers", {
-													count: org.members.length,
-												})}
-									</button>
-								))}
-							</div>
-
 							{settingsError && (
 								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
 									{settingsError}
@@ -622,262 +600,268 @@ export default function OrganizationOverviewPage() {
 								</div>
 							)}
 
-							{settingsTab === "general" && (
-								<form onSubmit={handleSave} className="space-y-5">
-									<div>
-										<p className="mb-1 block text-sm font-medium text-gray-700">
-											{t("orgSettings.fieldLogo")}
-										</p>
-										<div className="flex items-center gap-4">
-											{logoUrl ? (
-												<img
-													src={logoUrl}
-													alt=""
-													className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
-												/>
-											) : (
-												<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
-													{org.name.charAt(0).toUpperCase()}
-												</span>
+							<form onSubmit={handleSave} className="space-y-5">
+								<div>
+									<p className="mb-1 block text-sm font-medium text-gray-700">
+										{t("orgSettings.fieldLogo")}
+									</p>
+									<div className="flex items-center gap-4">
+										{logoUrl ? (
+											<img
+												src={logoUrl}
+												alt=""
+												className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
+											/>
+										) : (
+											<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
+												{org.name.charAt(0).toUpperCase()}
+											</span>
+										)}
+										<div>
+											<label
+												htmlFor="logo-upload"
+												className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
+											>
+												{uploadingLogo
+													? t("orgSettings.logoUploading")
+													: t("orgSettings.logoUpload")}
+											</label>
+											<input
+												ref={logoInputRef}
+												id="logo-upload"
+												type="file"
+												accept="image/jpeg,image/png,image/webp"
+												className="sr-only"
+												onChange={handleLogoChange}
+												disabled={uploadingLogo}
+											/>
+											<p className="mt-1 text-xs text-gray-500">
+												{t("orgSettings.logoHint")}
+											</p>
+											{logoError && (
+												<p className="mt-1 text-xs text-red-600">{logoError}</p>
 											)}
+										</div>
+									</div>
+								</div>
+
+								<Field label={t("orgSettings.fieldName")} id="org-name">
+									<input
+										id="org-name"
+										required
+										value={form.name}
+										onChange={(e) =>
+											setForm((f) => ({ ...f, name: e.target.value }))
+										}
+										className={inputClass}
+									/>
+								</Field>
+
+								<Field
+									label={t("orgSettings.fieldDescription")}
+									id="org-description"
+								>
+									<textarea
+										id="org-description"
+										rows={3}
+										value={form.description}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												description: e.target.value,
+											}))
+										}
+										className={inputClass}
+									/>
+								</Field>
+
+								<Field
+									label={t("orgSettings.fieldContactEmail")}
+									id="org-contact-email"
+								>
+									<input
+										id="org-contact-email"
+										type="email"
+										value={form.contactEmail}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												contactEmail: e.target.value,
+											}))
+										}
+										className={inputClass}
+									/>
+								</Field>
+
+								<Field label={t("orgSettings.fieldPhone")} id="org-phone">
+									<input
+										id="org-phone"
+										type="tel"
+										value={form.contactPhone}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												contactPhone: e.target.value,
+											}))
+										}
+										className={inputClass}
+									/>
+								</Field>
+
+								<Field label={t("orgSettings.fieldWebsite")} id="org-website">
+									<input
+										id="org-website"
+										type="url"
+										value={form.website}
+										onChange={(e) =>
+											setForm((f) => ({
+												...f,
+												website: e.target.value,
+											}))
+										}
+										placeholder="https://"
+										className={inputClass}
+									/>
+								</Field>
+
+								<fieldset className="rounded-md border border-gray-200 p-4">
+									<legend className="px-1 text-sm font-medium text-gray-700">
+										{t("orgSettings.fieldAddress")}
+									</legend>
+									<div className="mt-3 grid grid-cols-3 gap-3">
+										<div className="col-span-2">
+											<label htmlFor="org-street" className={labelClass}>
+												{t("orgSettings.fieldStreet")}
+											</label>
+											<input
+												id="org-street"
+												value={form.street}
+												onChange={(e) =>
+													setForm((f) => ({
+														...f,
+														street: e.target.value,
+													}))
+												}
+												className={inputClass}
+											/>
+										</div>
+										<div>
+											<label htmlFor="org-house-number" className={labelClass}>
+												{t("orgSettings.fieldHouseNumber")}
+											</label>
+											<input
+												id="org-house-number"
+												value={form.houseNumber}
+												onChange={(e) =>
+													setForm((f) => ({
+														...f,
+														houseNumber: e.target.value,
+													}))
+												}
+												className={inputClass}
+											/>
+										</div>
+										<div>
+											<label htmlFor="org-zip" className={labelClass}>
+												{t("orgSettings.fieldZip")}
+											</label>
+											<input
+												id="org-zip"
+												maxLength={5}
+												value={form.zipCode}
+												onChange={(e) =>
+													setForm((f) => ({
+														...f,
+														zipCode: e.target.value,
+													}))
+												}
+												className={inputClass}
+											/>
+										</div>
+										<div className="col-span-2">
+											<label htmlFor="org-city" className={labelClass}>
+												{t("orgSettings.fieldCity")}
+											</label>
+											<input
+												id="org-city"
+												value={form.city}
+												onChange={(e) =>
+													setForm((f) => ({
+														...f,
+														city: e.target.value,
+													}))
+												}
+												className={inputClass}
+											/>
+										</div>
+									</div>
+								</fieldset>
+
+								<div className="flex justify-end">
+									<button
+										type="submit"
+										disabled={saving}
+										className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+									>
+										{saving ? t("orgSettings.saving") : t("orgSettings.save")}
+									</button>
+								</div>
+							</form>
+						</>
+					)}
+				</div>
+			)}
+
+			{/* ── Members tab ───────────────────────────────────────────────────── */}
+			{activeTab === "members" && (
+				<div className="mx-auto max-w-2xl">
+					{orgLoading && (
+						<div className="flex items-center justify-center py-16">
+							<span className="text-gray-500">{t("orgSettings.loading")}</span>
+						</div>
+					)}
+					{!orgLoading && org && (
+						<>
+							{settingsError && (
+								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+									{settingsError}
+								</div>
+							)}
+							{org.members.length === 0 ? (
+								<EmptyState
+									title={t("orgSettings.noMembers")}
+									message={t("orgSettings.noMembersHint")}
+								/>
+							) : (
+								<ul className="divide-y divide-gray-100">
+									{org.members.map((member) => (
+										<li
+											key={member.userId}
+											className="flex items-center justify-between py-3"
+										>
 											<div>
-												<label
-													htmlFor="logo-upload"
-													className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
-												>
-													{uploadingLogo
-														? t("orgSettings.logoUploading")
-														: t("orgSettings.logoUpload")}
-												</label>
-												<input
-													ref={logoInputRef}
-													id="logo-upload"
-													type="file"
-													accept="image/jpeg,image/png,image/webp"
-													className="sr-only"
-													onChange={handleLogoChange}
-													disabled={uploadingLogo}
-												/>
-												<p className="mt-1 text-xs text-gray-500">
-													{t("orgSettings.logoHint")}
+												<p className="text-sm font-medium text-gray-900">
+													{member.firstName && member.lastName
+														? `${member.firstName} ${member.lastName}`
+														: member.username}
 												</p>
-												{logoError && (
-													<p className="mt-1 text-xs text-red-600">
-														{logoError}
-													</p>
+												<p className="text-xs text-gray-500">{member.email}</p>
+												{member.isOrganisator && (
+													<span className="mt-0.5 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+														{t("orgSettings.organisator")}
+													</span>
 												)}
 											</div>
-										</div>
-									</div>
-
-									<Field label={t("orgSettings.fieldName")} id="org-name">
-										<input
-											id="org-name"
-											required
-											value={form.name}
-											onChange={(e) =>
-												setForm((f) => ({ ...f, name: e.target.value }))
-											}
-											className={inputClass}
-										/>
-									</Field>
-
-									<Field
-										label={t("orgSettings.fieldDescription")}
-										id="org-description"
-									>
-										<textarea
-											id="org-description"
-											rows={3}
-											value={form.description}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													description: e.target.value,
-												}))
-											}
-											className={inputClass}
-										/>
-									</Field>
-
-									<Field
-										label={t("orgSettings.fieldContactEmail")}
-										id="org-contact-email"
-									>
-										<input
-											id="org-contact-email"
-											type="email"
-											value={form.contactEmail}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													contactEmail: e.target.value,
-												}))
-											}
-											className={inputClass}
-										/>
-									</Field>
-
-									<Field label={t("orgSettings.fieldPhone")} id="org-phone">
-										<input
-											id="org-phone"
-											type="tel"
-											value={form.contactPhone}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													contactPhone: e.target.value,
-												}))
-											}
-											className={inputClass}
-										/>
-									</Field>
-
-									<Field label={t("orgSettings.fieldWebsite")} id="org-website">
-										<input
-											id="org-website"
-											type="url"
-											value={form.website}
-											onChange={(e) =>
-												setForm((f) => ({
-													...f,
-													website: e.target.value,
-												}))
-											}
-											placeholder="https://"
-											className={inputClass}
-										/>
-									</Field>
-
-									<fieldset className="rounded-md border border-gray-200 p-4">
-										<legend className="px-1 text-sm font-medium text-gray-700">
-											{t("orgSettings.fieldAddress")}
-										</legend>
-										<div className="mt-3 grid grid-cols-3 gap-3">
-											<div className="col-span-2">
-												<label htmlFor="org-street" className={labelClass}>
-													{t("orgSettings.fieldStreet")}
-												</label>
-												<input
-													id="org-street"
-													value={form.street}
-													onChange={(e) =>
-														setForm((f) => ({
-															...f,
-															street: e.target.value,
-														}))
-													}
-													className={inputClass}
-												/>
-											</div>
-											<div>
-												<label
-													htmlFor="org-house-number"
-													className={labelClass}
-												>
-													{t("orgSettings.fieldHouseNumber")}
-												</label>
-												<input
-													id="org-house-number"
-													value={form.houseNumber}
-													onChange={(e) =>
-														setForm((f) => ({
-															...f,
-															houseNumber: e.target.value,
-														}))
-													}
-													className={inputClass}
-												/>
-											</div>
-											<div>
-												<label htmlFor="org-zip" className={labelClass}>
-													{t("orgSettings.fieldZip")}
-												</label>
-												<input
-													id="org-zip"
-													maxLength={5}
-													value={form.zipCode}
-													onChange={(e) =>
-														setForm((f) => ({
-															...f,
-															zipCode: e.target.value,
-														}))
-													}
-													className={inputClass}
-												/>
-											</div>
-											<div className="col-span-2">
-												<label htmlFor="org-city" className={labelClass}>
-													{t("orgSettings.fieldCity")}
-												</label>
-												<input
-													id="org-city"
-													value={form.city}
-													onChange={(e) =>
-														setForm((f) => ({
-															...f,
-															city: e.target.value,
-														}))
-													}
-													className={inputClass}
-												/>
-											</div>
-										</div>
-									</fieldset>
-
-									<div className="flex justify-end">
-										<button
-											type="submit"
-											disabled={saving}
-											className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-										>
-											{saving ? t("orgSettings.saving") : t("orgSettings.save")}
-										</button>
-									</div>
-								</form>
-							)}
-
-							{settingsTab === "members" && (
-								<>
-									{org.members.length === 0 ? (
-										<EmptyState
-											title={t("orgSettings.noMembers")}
-											message={t("orgSettings.noMembersHint")}
-										/>
-									) : (
-										<ul className="divide-y divide-gray-100">
-											{org.members.map((member) => (
-												<li
-													key={member.userId}
-													className="flex items-center justify-between py-3"
-												>
-													<div>
-														<p className="text-sm font-medium text-gray-900">
-															{member.firstName && member.lastName
-																? `${member.firstName} ${member.lastName}`
-																: member.username}
-														</p>
-														<p className="text-xs text-gray-500">
-															{member.email}
-														</p>
-														{member.isOrganisator && (
-															<span className="mt-0.5 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
-																{t("orgSettings.organisator")}
-															</span>
-														)}
-													</div>
-													<button
-														type="button"
-														onClick={() => handleRemoveMember(member.userId)}
-														className="text-xs text-red-700 hover:text-red-800"
-													>
-														{t("orgSettings.removeMember")}
-													</button>
-												</li>
-											))}
-										</ul>
-									)}
-								</>
+											<button
+												type="button"
+												onClick={() => handleRemoveMember(member.userId)}
+												className="text-xs text-red-700 hover:text-red-800"
+											>
+												{t("orgSettings.removeMember")}
+											</button>
+										</li>
+									))}
+								</ul>
 							)}
 						</>
 					)}
