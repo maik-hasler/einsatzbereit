@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.SearchMemberCandidates.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ internal sealed class SearchMemberCandidatesEndpoint
 			.Produces<IReadOnlyList<MemberCandidateDto>>()
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
+			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 	}
 
