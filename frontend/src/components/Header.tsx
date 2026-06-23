@@ -509,19 +509,16 @@ export default function Header() {
 			{/* Mobile Menu - absolute overlay so it doesn't push content down */}
 			{mobileOpen && (
 				<div
-					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg overflow-hidden ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
+					className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
 				>
 					{isTransparent && (
-						<>
-							<div
-								className="pointer-events-none absolute -left-20 -top-10 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl"
-								aria-hidden="true"
-							/>
-							<div
-								className="pointer-events-none absolute -right-16 -top-8 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl"
-								aria-hidden="true"
-							/>
-						</>
+						<div
+							className="pointer-events-none absolute inset-0 overflow-hidden"
+							aria-hidden="true"
+						>
+							<div className="absolute -left-20 -top-10 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl" />
+							<div className="absolute -right-16 -top-8 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl" />
+						</div>
 					)}
 					<div className="relative px-4 py-4 space-y-2">
 						<div className="pb-2">

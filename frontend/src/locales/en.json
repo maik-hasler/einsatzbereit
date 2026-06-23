@@ -601,7 +601,9 @@
       "saveError": "Failed to save profile.",
       "loadError": "Could not load profile.",
       "loading": "Loading…",
-      "removeChip": "Remove"
+      "removeChip": "Remove",
+      "sectionOrganization": "Organizations",
+      "createOrgHint": "Want to organize volunteer opportunities? Create an organization to get started."
     },
     "achievements": {
       "title": "My Achievements",
