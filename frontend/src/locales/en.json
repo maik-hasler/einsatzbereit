@@ -595,6 +595,8 @@
       "preferredContactEmail": "Email",
       "preferredContactPhone": "Phone",
       "preferredContactNone": "No preference",
+      "edit": "Edit",
+      "cancel": "Cancel",
       "saving": "Saving…",
       "save": "Save",
       "savedSuccess": "Profile saved.",

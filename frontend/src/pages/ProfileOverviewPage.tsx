@@ -173,6 +173,7 @@ export default function ProfileOverviewPage() {
 	const [avatarError, setAvatarError] = useState<string | null>(null);
 	const avatarInputRef = useRef<HTMLInputElement>(null);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
+	const [editing, setEditing] = useState(false);
 
 	// --- Engagements tab state ---
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
@@ -349,11 +350,26 @@ export default function ProfileOverviewPage() {
 				preferredContact: preferredContact || undefined,
 			});
 			setSuccessMessage(t("profile.savedSuccess"));
+			setEditing(false);
 		} catch {
 			setProfileError(t("profile.saveError"));
 		} finally {
 			setSaving(false);
 		}
+	}
+
+	function handleCancel() {
+		if (profile) {
+			setFirstName(profile.firstName ?? "");
+			setLastName(profile.lastName ?? "");
+			setBio(profile.bio ?? "");
+			setSkills(profile.skills ?? []);
+			setLanguages(profile.languages ?? []);
+			const pref = profile.preferredContact;
+			setPreferredContact(pref === "Email" || pref === "Phone" ? pref : "");
+		}
+		setProfileError(null);
+		setEditing(false);
 	}
 
 	async function handleDeleteAccount() {
@@ -476,186 +492,306 @@ export default function ProfileOverviewPage() {
 								</div>
 							)}
 
-							<form onSubmit={handleSave} className="space-y-6">
-								<section>
-									<h2 className="mb-4 text-base font-semibold text-gray-900">
-										{t("account.title")}
-									</h2>
-									<div className="space-y-5">
-										<div>
-											<p className="mb-1 block text-sm font-medium text-gray-700">
-												{t("profile.fieldAvatar")}
-											</p>
-											<div className="flex items-center gap-4">
-												{avatarUrl ? (
-													<img
-														src={avatarUrl}
-														alt=""
-														className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
-													/>
-												) : (
-													<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-														{profile?.username?.charAt(0).toUpperCase() ?? "?"}
-													</span>
-												)}
-												<div>
-													<label
-														htmlFor="avatar-upload"
-														className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingAvatar ? "opacity-50 pointer-events-none" : ""}`}
-													>
-														{uploadingAvatar
-															? t("profile.avatarUploading")
-															: t("profile.avatarUpload")}
-													</label>
-													<input
-														ref={avatarInputRef}
-														id="avatar-upload"
-														type="file"
-														accept="image/jpeg,image/png,image/webp"
-														className="sr-only"
-														onChange={handleAvatarChange}
-														disabled={uploadingAvatar}
-													/>
-													<p className="mt-1 text-xs text-gray-500">
-														{t("profile.avatarHint")}
-													</p>
-													{avatarError && (
-														<p className="mt-1 text-xs text-red-600">
-															{avatarError}
-														</p>
-													)}
-												</div>
+							{/* View mode */}
+							{!editing && (
+								<div className="space-y-5">
+									<div className="flex items-start justify-between">
+										<div className="flex items-center gap-4">
+											{avatarUrl ? (
+												<img
+													src={avatarUrl}
+													alt=""
+													className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+												/>
+											) : (
+												<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+													{profile?.username?.charAt(0).toUpperCase() ?? "?"}
+												</span>
+											)}
+											<div>
+												<p className="text-xl font-semibold text-gray-900">
+													{firstName || lastName
+														? `${firstName} ${lastName}`.trim()
+														: profile?.username}
+												</p>
+												<p className="text-sm text-gray-500">
+													@{profile?.username}
+												</p>
+												<p className="text-sm text-gray-500">
+													{profile?.email}
+												</p>
 											</div>
 										</div>
-
-										<Field label={t("account.fieldUsername")} id="username">
-											<input
-												id="username"
-												disabled
-												value={profile?.username ?? ""}
-												className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
-											/>
-										</Field>
-
-										<Field label={t("account.fieldEmail")} id="email">
-											<input
-												id="email"
-												disabled
-												type="email"
-												value={profile?.email ?? ""}
-												className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
-											/>
-											<p className="mt-1 text-xs text-gray-500">
-												{t("account.emailHint")}
-											</p>
-										</Field>
-
-										<Field label={t("account.fieldFirstName")} id="first-name">
-											<input
-												id="first-name"
-												value={firstName}
-												onChange={(e) => setFirstName(e.target.value)}
-												className={inputClass}
-											/>
-										</Field>
-
-										<Field label={t("account.fieldLastName")} id="last-name">
-											<input
-												id="last-name"
-												value={lastName}
-												onChange={(e) => setLastName(e.target.value)}
-												className={inputClass}
-											/>
-										</Field>
-									</div>
-								</section>
-
-								<hr className="border-gray-200" />
-
-								<section>
-									<h2 className="mb-4 text-base font-semibold text-gray-900">
-										{t("profile.sectionDetails")}
-									</h2>
-									<div className="space-y-5">
-										<Field label={t("profile.fieldBio")} id="bio">
-											<textarea
-												id="bio"
-												rows={4}
-												value={bio}
-												placeholder={t("profile.bioPlaceholder")}
-												onChange={(e) => setBio(e.target.value)}
-												className={textareaClass}
-											/>
-										</Field>
-
-										<Field label={t("profile.fieldSkills")} id="skill-input">
-											<ChipInput
-												inputRef={skillInputRef}
-												inputId="skill-input"
-												chips={skills}
-												inputValue={skillInput}
-												placeholder={t("profile.skillsPlaceholder")}
-												onInputChange={setSkillInput}
-												onAdd={(v) =>
-													addChip(v, skills, setSkills, setSkillInput)
-												}
-												onRemove={(v) => removeChip(v, skills, setSkills)}
-												removeLabel={t("profile.removeChip")}
-											/>
-										</Field>
-
-										<Field label={t("profile.fieldLanguages")} id="lang-input">
-											<ChipInput
-												inputRef={langInputRef}
-												inputId="lang-input"
-												chips={languages}
-												inputValue={langInput}
-												placeholder={t("profile.languagesPlaceholder")}
-												onInputChange={setLangInput}
-												onAdd={(v) =>
-													addChip(v, languages, setLanguages, setLangInput)
-												}
-												onRemove={(v) => removeChip(v, languages, setLanguages)}
-												removeLabel={t("profile.removeChip")}
-											/>
-										</Field>
-
-										<Field
-											label={t("profile.fieldPreferredContact")}
-											id="preferred-contact"
+										<button
+											type="button"
+											onClick={() => setEditing(true)}
+											className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
 										>
-											<select
-												id="preferred-contact"
-												value={preferredContact}
-												onChange={(e) =>
-													setPreferredContact(e.target.value as ContactPref)
-												}
-												className={inputClass}
-											>
-												<option value="">
-													{t("profile.preferredContactNone")}
-												</option>
-												<option value="Email">
-													{t("profile.preferredContactEmail")}
-												</option>
-												<option value="Phone">
-													{t("profile.preferredContactPhone")}
-												</option>
-											</select>
-										</Field>
+											{t("profile.edit")}
+										</button>
 									</div>
-								</section>
 
-								<div className="flex justify-end">
-									<button
-										type="submit"
-										disabled={saving}
-										className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-									>
-										{saving ? t("profile.saving") : t("profile.save")}
-									</button>
+									{bio && (
+										<div>
+											<p className="mb-1 text-sm font-medium text-gray-700">
+												{t("profile.fieldBio")}
+											</p>
+											<p className="whitespace-pre-wrap text-sm text-gray-600">
+												{bio}
+											</p>
+										</div>
+									)}
+
+									{skills.length > 0 && (
+										<div>
+											<p className="mb-2 text-sm font-medium text-gray-700">
+												{t("profile.fieldSkills")}
+											</p>
+											<div className="flex flex-wrap gap-2">
+												{skills.map((s) => (
+													<span
+														key={s}
+														className="rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700"
+													>
+														{s}
+													</span>
+												))}
+											</div>
+										</div>
+									)}
+
+									{languages.length > 0 && (
+										<div>
+											<p className="mb-2 text-sm font-medium text-gray-700">
+												{t("profile.fieldLanguages")}
+											</p>
+											<div className="flex flex-wrap gap-2">
+												{languages.map((l) => (
+													<span
+														key={l}
+														className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"
+													>
+														{l}
+													</span>
+												))}
+											</div>
+										</div>
+									)}
+
+									{preferredContact && (
+										<div>
+											<p className="mb-1 text-sm font-medium text-gray-700">
+												{t("profile.fieldPreferredContact")}
+											</p>
+											<p className="text-sm text-gray-600">
+												{preferredContact === "Email"
+													? t("profile.preferredContactEmail")
+													: t("profile.preferredContactPhone")}
+											</p>
+										</div>
+									)}
 								</div>
-							</form>
+							)}
+
+							{/* Edit mode */}
+							{editing && (
+								<form onSubmit={handleSave} className="space-y-6">
+									<section>
+										<h2 className="mb-4 text-base font-semibold text-gray-900">
+											{t("account.title")}
+										</h2>
+										<div className="space-y-5">
+											<div>
+												<p className="mb-1 block text-sm font-medium text-gray-700">
+													{t("profile.fieldAvatar")}
+												</p>
+												<div className="flex items-center gap-4">
+													{avatarUrl ? (
+														<img
+															src={avatarUrl}
+															alt=""
+															className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+														/>
+													) : (
+														<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+															{profile?.username?.charAt(0).toUpperCase() ??
+																"?"}
+														</span>
+													)}
+													<div>
+														<label
+															htmlFor="avatar-upload"
+															className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingAvatar ? "opacity-50 pointer-events-none" : ""}`}
+														>
+															{uploadingAvatar
+																? t("profile.avatarUploading")
+																: t("profile.avatarUpload")}
+														</label>
+														<input
+															ref={avatarInputRef}
+															id="avatar-upload"
+															type="file"
+															accept="image/jpeg,image/png,image/webp"
+															className="sr-only"
+															onChange={handleAvatarChange}
+															disabled={uploadingAvatar}
+														/>
+														<p className="mt-1 text-xs text-gray-500">
+															{t("profile.avatarHint")}
+														</p>
+														{avatarError && (
+															<p className="mt-1 text-xs text-red-600">
+																{avatarError}
+															</p>
+														)}
+													</div>
+												</div>
+											</div>
+
+											<Field label={t("account.fieldUsername")} id="username">
+												<input
+													id="username"
+													disabled
+													value={profile?.username ?? ""}
+													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+												/>
+											</Field>
+
+											<Field label={t("account.fieldEmail")} id="email">
+												<input
+													id="email"
+													disabled
+													type="email"
+													value={profile?.email ?? ""}
+													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+												/>
+												<p className="mt-1 text-xs text-gray-500">
+													{t("account.emailHint")}
+												</p>
+											</Field>
+
+											<Field
+												label={t("account.fieldFirstName")}
+												id="first-name"
+											>
+												<input
+													id="first-name"
+													value={firstName}
+													onChange={(e) => setFirstName(e.target.value)}
+													className={inputClass}
+												/>
+											</Field>
+
+											<Field label={t("account.fieldLastName")} id="last-name">
+												<input
+													id="last-name"
+													value={lastName}
+													onChange={(e) => setLastName(e.target.value)}
+													className={inputClass}
+												/>
+											</Field>
+										</div>
+									</section>
+
+									<hr className="border-gray-200" />
+
+									<section>
+										<h2 className="mb-4 text-base font-semibold text-gray-900">
+											{t("profile.sectionDetails")}
+										</h2>
+										<div className="space-y-5">
+											<Field label={t("profile.fieldBio")} id="bio">
+												<textarea
+													id="bio"
+													rows={4}
+													value={bio}
+													placeholder={t("profile.bioPlaceholder")}
+													onChange={(e) => setBio(e.target.value)}
+													className={textareaClass}
+												/>
+											</Field>
+
+											<Field label={t("profile.fieldSkills")} id="skill-input">
+												<ChipInput
+													inputRef={skillInputRef}
+													inputId="skill-input"
+													chips={skills}
+													inputValue={skillInput}
+													placeholder={t("profile.skillsPlaceholder")}
+													onInputChange={setSkillInput}
+													onAdd={(v) =>
+														addChip(v, skills, setSkills, setSkillInput)
+													}
+													onRemove={(v) => removeChip(v, skills, setSkills)}
+													removeLabel={t("profile.removeChip")}
+												/>
+											</Field>
+
+											<Field
+												label={t("profile.fieldLanguages")}
+												id="lang-input"
+											>
+												<ChipInput
+													inputRef={langInputRef}
+													inputId="lang-input"
+													chips={languages}
+													inputValue={langInput}
+													placeholder={t("profile.languagesPlaceholder")}
+													onInputChange={setLangInput}
+													onAdd={(v) =>
+														addChip(v, languages, setLanguages, setLangInput)
+													}
+													onRemove={(v) =>
+														removeChip(v, languages, setLanguages)
+													}
+													removeLabel={t("profile.removeChip")}
+												/>
+											</Field>
+
+											<Field
+												label={t("profile.fieldPreferredContact")}
+												id="preferred-contact"
+											>
+												<select
+													id="preferred-contact"
+													value={preferredContact}
+													onChange={(e) =>
+														setPreferredContact(e.target.value as ContactPref)
+													}
+													className={inputClass}
+												>
+													<option value="">
+														{t("profile.preferredContactNone")}
+													</option>
+													<option value="Email">
+														{t("profile.preferredContactEmail")}
+													</option>
+													<option value="Phone">
+														{t("profile.preferredContactPhone")}
+													</option>
+												</select>
+											</Field>
+										</div>
+									</section>
+
+									<div className="flex justify-end gap-3">
+										<button
+											type="button"
+											onClick={handleCancel}
+											className="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+										>
+											{t("profile.cancel")}
+										</button>
+										<button
+											type="submit"
+											disabled={saving}
+											className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+										>
+											{saving ? t("profile.saving") : t("profile.save")}
+										</button>
+									</div>
+								</form>
+							)}
 
 							<div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
 								<h2 className="mb-1 text-base font-semibold text-gray-900">
