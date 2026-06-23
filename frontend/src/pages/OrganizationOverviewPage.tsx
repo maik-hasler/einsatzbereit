@@ -360,7 +360,7 @@ export default function OrganizationOverviewPage() {
 	];
 
 	return (
-		<>
+		<div className={activeTab !== "calendar" ? "max-w-2xl" : ""}>
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{org?.name ?? t("orgDashboard.title")}
 			</h1>
@@ -523,7 +523,7 @@ export default function OrganizationOverviewPage() {
 
 			{/* ── Engagements tab ───────────────────────────────────────────────── */}
 			{activeTab === "engagements" && (
-				<div className="max-w-2xl">
+				<div>
 					{engLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">
@@ -586,7 +586,7 @@ export default function OrganizationOverviewPage() {
 
 			{/* ── Settings tab ──────────────────────────────────────────────────── */}
 			{activeTab === "settings" && (
-				<div className="max-w-2xl">
+				<div>
 					{orgLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">{t("orgSettings.loading")}</span>
@@ -991,7 +991,7 @@ export default function OrganizationOverviewPage() {
 
 			{/* ── Members tab ───────────────────────────────────────────────────── */}
 			{activeTab === "members" && (
-				<div className="max-w-2xl">
+				<div>
 					{orgLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">{t("orgSettings.loading")}</span>
@@ -1044,6 +1044,6 @@ export default function OrganizationOverviewPage() {
 					)}
 				</div>
 			)}
-		</>
+		</div>
 	);
 }
