@@ -374,6 +374,8 @@
       "organisator": "Organizer",
       "removeMember": "Remove",
       "removeMemberError": "Could not remove member.",
+      "edit": "Edit",
+      "cancel": "Cancel",
       "loading": "Loading…"
     },
     "account": {

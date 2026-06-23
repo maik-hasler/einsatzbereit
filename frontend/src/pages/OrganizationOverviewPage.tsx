@@ -229,9 +229,28 @@ export default function OrganizationOverviewPage() {
 	}, [activeTab, engInitialized, organizationId]);
 
 	// ── Settings / Members tabs ─────────────────────────────────────────────
+	const [editing, setEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [settingsError, setSettingsError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+	function handleCancelEdit() {
+		if (!org) return;
+		setForm({
+			name: org.name,
+			description: org.description ?? "",
+			contactEmail: org.contactEmail ?? "",
+			contactPhone: org.contactPhone ?? "",
+			website: org.website ?? "",
+			street: org.address?.street ?? "",
+			houseNumber: org.address?.houseNumber ?? "",
+			zipCode: org.address?.zipCode ?? "",
+			city: org.address?.city ?? "",
+		});
+		setLogoError(null);
+		setSettingsError(null);
+		setEditing(false);
+	}
 
 	const hasAddress =
 		form.street || form.houseNumber || form.zipCode || form.city;
@@ -285,6 +304,7 @@ export default function OrganizationOverviewPage() {
 						}
 					: undefined,
 			});
+			setEditing(false);
 			setSuccessMessage(t("orgSettings.savedSuccess"));
 			setOrg((prev) =>
 				prev
@@ -503,7 +523,7 @@ export default function OrganizationOverviewPage() {
 
 			{/* ── Engagements tab ───────────────────────────────────────────────── */}
 			{activeTab === "engagements" && (
-				<div className="mx-auto max-w-2xl">
+				<div className="max-w-2xl">
 					{engLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">
@@ -566,7 +586,7 @@ export default function OrganizationOverviewPage() {
 
 			{/* ── Settings tab ──────────────────────────────────────────────────── */}
 			{activeTab === "settings" && (
-				<div className="mx-auto max-w-2xl">
+				<div className="max-w-2xl">
 					{orgLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">{t("orgSettings.loading")}</span>
@@ -577,26 +597,176 @@ export default function OrganizationOverviewPage() {
 							{t("orgSettings.notFound")}
 						</div>
 					)}
-					{!orgLoading && org && (
+					{!orgLoading && org && !editing && (
 						<>
-							<p className="mb-6 text-sm text-gray-500">
-								{t("orgSettings.createdOn", {
-									date: new Date(org.createdOn).toLocaleDateString(locale, {
-										day: "2-digit",
-										month: "long",
-										year: "numeric",
-									}),
-								})}
-							</p>
-
-							{settingsError && (
-								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-									{settingsError}
+							{/* View mode — mirrors the public org profile */}
+							<div className="mb-6 flex items-start justify-between gap-4">
+								<div className="flex items-center gap-4">
+									{logoUrl ? (
+										<img
+											src={logoUrl}
+											alt=""
+											className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
+										/>
+									) : (
+										<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
+											{org.name.charAt(0).toUpperCase()}
+										</span>
+									)}
+									<div>
+										<p className="text-base font-semibold text-gray-900">
+											{org.name}
+										</p>
+										<p className="text-xs text-gray-400">
+											{t("orgSettings.createdOn", {
+												date: new Date(org.createdOn).toLocaleDateString(
+													locale,
+													{
+														day: "2-digit",
+														month: "long",
+														year: "numeric",
+													},
+												),
+											})}
+										</p>
+									</div>
 								</div>
-							)}
+								<button
+									type="button"
+									onClick={() => setEditing(true)}
+									className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+								>
+									{t("orgSettings.edit")}
+								</button>
+							</div>
+
 							{successMessage && (
 								<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
 									{successMessage}
+								</div>
+							)}
+
+							{org.description && (
+								<p className="mb-5 leading-relaxed text-gray-600">
+									{org.description}
+								</p>
+							)}
+
+							{(org.contactEmail ||
+								org.contactPhone ||
+								org.website ||
+								org.address) && (
+								<div className="space-y-2.5 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+									{org.contactEmail && (
+										<div className="flex items-center gap-3">
+											<svg
+												className="h-4 w-4 shrink-0 text-gray-400"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="1.5"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+												/>
+											</svg>
+											<a
+												href={`mailto:${org.contactEmail}`}
+												className="text-brand-700 hover:underline"
+											>
+												{org.contactEmail}
+											</a>
+										</div>
+									)}
+									{org.contactPhone && (
+										<div className="flex items-center gap-3">
+											<svg
+												className="h-4 w-4 shrink-0 text-gray-400"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="1.5"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+												/>
+											</svg>
+											<a
+												href={`tel:${org.contactPhone}`}
+												className="text-brand-700 hover:underline"
+											>
+												{org.contactPhone}
+											</a>
+										</div>
+									)}
+									{org.website && (
+										<div className="flex items-center gap-3">
+											<svg
+												className="h-4 w-4 shrink-0 text-gray-400"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="1.5"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+												/>
+											</svg>
+											<a
+												href={org.website}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="text-brand-700 hover:underline"
+											>
+												{org.website}
+											</a>
+										</div>
+									)}
+									{org.address && (
+										<div className="flex items-center gap-3">
+											<svg
+												className="h-4 w-4 shrink-0 text-gray-400"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="1.5"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+												/>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+												/>
+											</svg>
+											<span>
+												{org.address.street} {org.address.houseNumber},{" "}
+												{org.address.zipCode} {org.address.city}
+											</span>
+										</div>
+									)}
+								</div>
+							)}
+						</>
+					)}
+					{!orgLoading && org && editing && (
+						<>
+							{settingsError && (
+								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+									{settingsError}
 								</div>
 							)}
 
@@ -797,7 +967,14 @@ export default function OrganizationOverviewPage() {
 									</div>
 								</fieldset>
 
-								<div className="flex justify-end">
+								<div className="flex justify-end gap-3">
+									<button
+										type="button"
+										onClick={handleCancelEdit}
+										className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+									>
+										{t("orgSettings.cancel")}
+									</button>
 									<button
 										type="submit"
 										disabled={saving}
@@ -814,7 +991,7 @@ export default function OrganizationOverviewPage() {
 
 			{/* ── Members tab ───────────────────────────────────────────────────── */}
 			{activeTab === "members" && (
-				<div className="mx-auto max-w-2xl">
+				<div className="max-w-2xl">
 					{orgLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">{t("orgSettings.loading")}</span>

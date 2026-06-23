@@ -374,6 +374,8 @@
       "organisator": "Organisator",
       "removeMember": "Entfernen",
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
+      "edit": "Bearbeiten",
+      "cancel": "Abbrechen",
       "loading": "Wird geladen…"
     },
     "account": {
