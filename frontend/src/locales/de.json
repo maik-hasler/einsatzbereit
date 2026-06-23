@@ -374,6 +374,12 @@
       "organisator": "Organisator",
       "removeMember": "Entfernen",
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
+      "addMemberLabel": "Mitglied hinzufügen",
+      "addMemberPlaceholder": "Nach Name oder E-Mail suchen…",
+      "addMember": "Hinzufügen",
+      "addMemberError": "Mitglied konnte nicht hinzugefügt werden.",
+      "searching": "Suche läuft…",
+      "noSearchResults": "Keine Benutzer gefunden.",
       "edit": "Bearbeiten",
       "cancel": "Abbrechen",
       "loading": "Wird geladen…"

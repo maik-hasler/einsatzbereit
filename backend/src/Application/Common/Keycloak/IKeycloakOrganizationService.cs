@@ -39,4 +39,9 @@ public interface IKeycloakOrganizationService
 	Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default);
+
+	Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
+		string search,
+		int max = 20,
+		CancellationToken cancellationToken = default);
 }

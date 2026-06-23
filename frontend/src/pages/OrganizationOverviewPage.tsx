@@ -234,6 +234,63 @@ export default function OrganizationOverviewPage() {
 	const [settingsError, setSettingsError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+	// ── Member search ────────────────────────────────────────────────────────
+	const [memberSearch, setMemberSearch] = useState("");
+	const [memberCandidates, setMemberCandidates] = useState<
+		import("../client/api-client").MemberCandidateDto[]
+	>([]);
+	const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+	const memberSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	function handleMemberSearchChange(value: string) {
+		setMemberSearch(value);
+		if (memberSearchTimer.current) clearTimeout(memberSearchTimer.current);
+		if (value.length < 2) {
+			setMemberCandidates([]);
+			return;
+		}
+		memberSearchTimer.current = setTimeout(() => {
+			if (!organizationId) return;
+			setMemberSearchLoading(true);
+			api
+				.searchMemberCandidates(organizationId, value)
+				.then(setMemberCandidates)
+				.catch(() => setMemberCandidates([]))
+				.finally(() => setMemberSearchLoading(false));
+		}, 300);
+	}
+
+	async function handleAddMember(userId: string) {
+		if (!organizationId) return;
+		try {
+			await api.addMember(organizationId, { userId });
+			const added = memberCandidates.find((c) => c.userId === userId);
+			if (added) {
+				setOrg((prev) =>
+					prev
+						? {
+								...prev,
+								members: [
+									...prev.members,
+									{
+										userId: added.userId,
+										username: added.username,
+										firstName: added.firstName,
+										lastName: added.lastName,
+										email: added.email,
+										isOrganisator: false,
+									},
+								],
+							}
+						: prev,
+				);
+				setMemberCandidates((prev) => prev.filter((c) => c.userId !== userId));
+			}
+		} catch {
+			setSettingsError(t("orgSettings.addMemberError"));
+		}
+	}
+
 	function handleCancelEdit() {
 		if (!org) return;
 		setForm({
@@ -1004,6 +1061,65 @@ export default function OrganizationOverviewPage() {
 									{settingsError}
 								</div>
 							)}
+
+							{/* Add member search */}
+							<div className="mb-6">
+								<label
+									htmlFor="member-search"
+									className="block text-sm font-medium text-gray-700"
+								>
+									{t("orgSettings.addMemberLabel")}
+								</label>
+								<input
+									id="member-search"
+									type="search"
+									value={memberSearch}
+									onChange={(e) => handleMemberSearchChange(e.target.value)}
+									placeholder={t("orgSettings.addMemberPlaceholder")}
+									className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none"
+								/>
+								{memberSearchLoading && (
+									<p className="mt-1 text-xs text-gray-500">
+										{t("orgSettings.searching")}
+									</p>
+								)}
+								{memberCandidates.length > 0 && (
+									<ul className="mt-1 divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+										{memberCandidates.map((candidate) => (
+											<li
+												key={candidate.userId}
+												className="flex items-center justify-between px-3 py-2"
+											>
+												<div className="min-w-0">
+													<p className="truncate text-sm font-medium text-gray-900">
+														{candidate.firstName && candidate.lastName
+															? `${candidate.firstName} ${candidate.lastName}`
+															: candidate.username}
+													</p>
+													<p className="truncate text-xs text-gray-500">
+														{candidate.email}
+													</p>
+												</div>
+												<button
+													type="button"
+													onClick={() => handleAddMember(candidate.userId)}
+													className="ml-3 shrink-0 rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-800"
+												>
+													{t("orgSettings.addMember")}
+												</button>
+											</li>
+										))}
+									</ul>
+								)}
+								{memberSearch.length >= 2 &&
+									!memberSearchLoading &&
+									memberCandidates.length === 0 && (
+										<p className="mt-1 text-xs text-gray-500">
+											{t("orgSettings.noSearchResults")}
+										</p>
+									)}
+							</div>
+
 							{org.members.length === 0 ? (
 								<EmptyState
 									title={t("orgSettings.noMembers")}

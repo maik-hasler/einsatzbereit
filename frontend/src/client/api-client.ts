@@ -1604,6 +1604,56 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return OK
+     */
+    searchMemberCandidates(organizationId: string, q: string, signal?: AbortSignal): Promise<MemberCandidateDto[]> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/members/search?";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (q === undefined || q === null)
+            throw new globalThis.Error("The parameter 'q' must be defined and cannot be null.");
+        else
+            url_ += "q=" + encodeURIComponent("" + q) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearchMemberCandidates(_response);
+        });
+    }
+
+    protected processSearchMemberCandidates(response: Response): Promise<MemberCandidateDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MemberCandidateDto[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MemberCandidateDto[]>(null as any);
+    }
+
+    /**
      * @return No Content
      */
     removeMember(organizationId: string, userId: string, signal?: AbortSignal): Promise<void> {
@@ -3057,6 +3107,16 @@ export interface FeedbackItemDto {
 export interface KeycloakOrganization {
     id: string;
     name: string;
+
+    [key: string]: any;
+}
+
+export interface MemberCandidateDto {
+    userId: string;
+    username: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string;
 
     [key: string]: any;
 }
