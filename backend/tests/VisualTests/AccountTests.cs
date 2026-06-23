@@ -14,7 +14,11 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
-		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await editButton.ClickAsync();
+
+		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync(new() { Timeout = 5_000 });
 		await Expect(Page.GetByLabel("Email address")).ToBeVisibleAsync(new() { Timeout = 5_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
@@ -28,8 +32,12 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 30_000 });
+		await editButton.ClickAsync();
+
 		await Expect(Page.GetByLabel("Username")).ToHaveValueAsync("vera",
-			new() { Timeout = 30_000 });
+			new() { Timeout = 10_000 });
 	}
 
 	[Test]
@@ -41,7 +49,11 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
-		await Page.GetByLabel("First name").FillAsync("Vera", new() { Timeout = 20_000 });
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await editButton.ClickAsync();
+
+		await Page.GetByLabel("First name").FillAsync("Vera", new() { Timeout = 10_000 });
 		await Page.GetByLabel("Last name").FillAsync("Sample");
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
