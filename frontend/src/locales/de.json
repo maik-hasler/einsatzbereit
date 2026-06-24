@@ -603,6 +603,8 @@
       "preferredContactEmail": "E-Mail",
       "preferredContactPhone": "Telefon",
       "preferredContactNone": "Keine Präferenz",
+      "edit": "Bearbeiten",
+      "cancel": "Abbrechen",
       "saving": "Wird gespeichert…",
       "save": "Speichern",
       "savedSuccess": "Profil gespeichert.",
