@@ -55,6 +55,10 @@ public interface IApplicationDbContext
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);
 
+	Task<int> CountActiveEngagementsForTimeSlotAsync(
+		TimeSlotId timeSlotId,
+		CancellationToken cancellationToken = default);
+
 	Task<bool> CanConnectAsync(
 		CancellationToken cancellationToken = default);
 }

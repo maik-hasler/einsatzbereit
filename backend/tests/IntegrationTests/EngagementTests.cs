@@ -524,6 +524,167 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(403);
 	}
 
+	// ── Re-apply after withdrawal (#522) ─────────────────────────────────────
+
+	[Test]
+	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerReapliesAfterWithdrawal(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "First attempt" },
+			cancellationToken);
+
+		await veraClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
+
+		var result = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Second attempt after withdrawal" },
+			cancellationToken);
+
+		result.Status.Should().Be("Pending");
+	}
+
+	[Test]
+	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerReapliesAfterOrganizerCancellation(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "First attempt" },
+			cancellationToken);
+
+		await olafClient.CancelEngagementAsync(
+			engagement.Id,
+			new CancelEngagementRequest { Reason = "No longer needed" },
+			cancellationToken);
+
+		var result = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Second attempt after cancellation" },
+			cancellationToken);
+
+		result.Status.Should().Be("Pending");
+	}
+
+	// ── Waitlist capacity enforcement (#523) ─────────────────────────────────
+
+	[Test]
+	public async Task CreateEngagement_ShouldReturn409_WhenWaitlistSlotIsFull(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 1,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		var slotId = timeSlots.First().Id;
+
+		var olafEngagement = await olafClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = slotId },
+			cancellationToken);
+		olafEngagement.Status.Should().Be("Pending");
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var act = () => veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = slotId },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
+	[Test]
+	public async Task CreateEngagement_ShouldSucceed_WhenSlotSpotIsFreedAfterWithdrawal(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 1,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		var slotId = timeSlots.First().Id;
+
+		var olafEngagement = await olafClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = slotId },
+			cancellationToken);
+
+		await olafClient.WithdrawEngagementAsync(olafEngagement.Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var result = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = slotId },
+			cancellationToken);
+
+		result.Status.Should().Be("Pending");
+	}
+
+	// ── Cross-opportunity time slot validation (#524) ─────────────────────────
+
+	[Test]
+	public async Task CreateEngagement_ShouldReturn400_WhenTimeSlotBelongsToOtherOpportunity(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		var opportunityA = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunityB = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var slotsB = await olafClient.CreateTimeSlotAsync(
+			opportunityB.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		var slotFromB = slotsB.First().Id;
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var act = () => veraClient.CreateEngagementAsync(
+			opportunityA.Id,
+			new CreateEngagementRequest { TimeSlotId = slotFromB },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
@@ -565,6 +726,26 @@ public class EngagementTests(IntegrationTestFixture fixture)
 				Occurrence = "OneTime",
 				ParticipationType = "IndividualContact",
 				CheckInMethod = checkInMethod,
+			},
+			cancellationToken);
+	}
+
+	private static async Task<CreateVolunteerOpportunityResponse> CreateWaitlistOpportunityAsync(
+		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
+	{
+		return await client.CreateVolunteerOpportunityAsync(
+			new CreateVolunteerOpportunityRequest
+			{
+				Title = "Waitlist Opportunity",
+				Description = "Integration test waitlist opportunity",
+				OrganizationId = orgId,
+				Street = "Test Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+				Occurrence = "OneTime",
+				ParticipationType = "Waitlist",
+				CheckInMethod = "None",
 			},
 			cancellationToken);
 	}
