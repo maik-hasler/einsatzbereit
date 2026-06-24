@@ -45,12 +45,24 @@ internal sealed class CreateEngagementCommandHandler(
 				throw new DomainException("Conflict: this time slot has reached its capacity and cannot accept more sign-ups.");
 		}
 
-		var engagement = request.TimeSlotId is not null
-			? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
-			: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
-				?? throw new DomainException("Message is required for individual contact."));
+		var existingTerminal = await dbContext.GetTerminalEngagementAsync(
+			request.VolunteerId, request.OpportunityId, cancellationToken);
 
-		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		Engagement engagement;
+		if (existingTerminal is not null)
+		{
+			existingTerminal.Reactivate(request.TimeSlotId, request.Message);
+			engagement = existingTerminal;
+		}
+		else
+		{
+			engagement = request.TimeSlotId is not null
+				? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
+				: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
+					?? throw new DomainException("Message is required for individual contact."));
+
+			await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		}
 
 		var members = await keycloakOrganizationService
 			.GetMembersAsync(opportunity.OrganizationId.Value, cancellationToken);

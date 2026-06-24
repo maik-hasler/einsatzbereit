@@ -57,6 +57,8 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
 		_dbContext.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
 			.Returns(0);
+		_dbContext.GetTerminalEngagementAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns((Engagement?)null);
 		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService);
 	}
 

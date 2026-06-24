@@ -132,6 +132,16 @@ internal sealed class ApplicationDbContext(
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
 				cancellationToken);
 
+	public async Task<Engagement?> GetTerminalEngagementAsync(
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.FirstOrDefaultAsync(e => e.VolunteerId == volunteerId
+				&& e.OpportunityId == opportunityId
+				&& (e.Status == EngagementStatus.Withdrawn || e.Status == EngagementStatus.Cancelled),
+				cancellationToken);
+
 	public Task<bool> CanConnectAsync(
 		CancellationToken cancellationToken = default) =>
 		Database.CanConnectAsync(cancellationToken);
