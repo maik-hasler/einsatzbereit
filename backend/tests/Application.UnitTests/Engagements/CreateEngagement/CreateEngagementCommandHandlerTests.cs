@@ -55,6 +55,8 @@ public class CreateEngagementCommandHandlerTests
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
+		_dbContext.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
+			.Returns(0);
 		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService);
 	}
 
@@ -63,6 +65,18 @@ public class CreateEngagementCommandHandlerTests
 		var opportunity = CreateTestOpportunity(opportunityId);
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns(opportunity);
+	}
+
+	private TimeSlotId SetupOpportunityExistsWithTimeSlot(VolunteerOpportunityId opportunityId)
+	{
+		var opportunity = CreateTestOpportunity(opportunityId);
+		var timeSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1),
+			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
+			10);
+		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
+			.Returns(opportunity);
+		return timeSlot.Id;
 	}
 
 	[Test]
@@ -90,8 +104,7 @@ public class CreateEngagementCommandHandlerTests
 		// Arrange
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
 		var volunteerId = new UserId(Guid.CreateVersion7());
-		var timeSlotId = new TimeSlotId(Guid.CreateVersion7());
-		SetupOpportunityExists(opportunityId);
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
 		// Act
@@ -128,11 +141,11 @@ public class CreateEngagementCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
-		SetupOpportunityExists(opportunityId);
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
 			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()),
+			timeSlotId,
 			Message: null);
 
 		// Act
@@ -168,11 +181,11 @@ public class CreateEngagementCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
-		SetupOpportunityExists(opportunityId);
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
 			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()),
+			timeSlotId,
 			Message: null);
 
 		// Act
@@ -189,11 +202,11 @@ public class CreateEngagementCommandHandlerTests
 		// Arrange
 		var volunteerId = new UserId(Guid.CreateVersion7());
 		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
-		SetupOpportunityExists(opportunityId);
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()),
+			timeSlotId,
 			Message: null);
 
 		// Act
