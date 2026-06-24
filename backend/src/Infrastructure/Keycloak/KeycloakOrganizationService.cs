@@ -144,6 +144,34 @@ internal sealed class KeycloakOrganizationService(
 			.ToList();
 	}
 
+	public async Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
+		string search,
+		int max = 20,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var encoded = Uri.EscapeDataString(search);
+		var response = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/users?search={encoded}&max={max}",
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+			JsonOptions, cancellationToken) ?? [];
+
+		return users
+			.Select(u => new KeycloakOrganizationMember(
+				Guid.Parse(u.Id),
+				u.Username,
+				u.FirstName,
+				u.LastName,
+				u.Email ?? string.Empty,
+				false))
+			.ToList();
+	}
+
 	public async Task RemoveMemberAsync(
 		Guid organizationId,
 		Guid userId,

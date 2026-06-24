@@ -103,6 +103,38 @@ services:
     volumes:
       - postgres_backups:/backups
 
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    networks:
+      - proxy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.50"
+    environment:
+      MINIO_ROOT_USER: einsatzbereit-minio
+      MINIO_ROOT_PASSWORD: einsatzbereit-minio-secret
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.minio.rule=Host(`storage.maik-hasler.de`)
+      - traefik.http.routers.minio.entrypoints=websecure
+      - traefik.http.routers.minio.tls=true
+      - traefik.http.routers.minio.tls.certresolver=myresolver
+      - traefik.http.services.minio.loadbalancer.server.port=9000
+
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:staging
     container_name: backend
@@ -119,6 +151,8 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     # curl is installed in the Dockerfile (as root before switching to $APP_UID).
     # /alive (not /health) is used so the container is gated on the app being up,
@@ -138,6 +172,11 @@ services:
       Keycloak__BaseUrl: http://keycloak:8080
       Keycloak__ClientSecret: ${KEYCLOAK_BACKEND_SECRET:?set KEYCLOAK_BACKEND_SECRET in .env}
       Cors__Origins__0: https://einsatzbereit.maik-hasler.de
+      Storage__Endpoint: http://minio:9000
+      Storage__AccessKey: einsatzbereit-minio
+      Storage__SecretKey: einsatzbereit-minio-secret
+      Storage__BucketName: einsatzbereit
+      Storage__PublicEndpoint: https://storage.maik-hasler.de
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
@@ -186,6 +225,7 @@ networks:
 volumes:
   postgres_data:
   postgres_backups:
+  minio_data:
 
 configs:
   postgres-init:

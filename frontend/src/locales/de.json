@@ -374,6 +374,14 @@
       "organisator": "Organisator",
       "removeMember": "Entfernen",
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
+      "addMemberLabel": "Mitglied hinzufügen",
+      "addMemberPlaceholder": "Nach Name oder E-Mail suchen…",
+      "addMember": "Hinzufügen",
+      "addMemberError": "Mitglied konnte nicht hinzugefügt werden.",
+      "searching": "Suche läuft…",
+      "noSearchResults": "Keine Benutzer gefunden.",
+      "edit": "Bearbeiten",
+      "cancel": "Abbrechen",
       "loading": "Wird geladen…"
     },
     "account": {
@@ -687,6 +695,27 @@
       "noOrgs": "Keine Organisationen gefunden.",
       "verify": "Verifizieren",
       "unverify": "Verifizierung aufheben"
+    },
+    "orgOverview": {
+      "tabCalendar": "Kalender",
+      "tabEngagements": "Bewerbungen",
+      "tabMembers": "Mitglieder",
+      "tabSettings": "Einstellungen",
+      "calendarLoading": "Kalender wird geladen...",
+      "calendarError": "Kalendereintraege konnten nicht geladen werden.",
+      "calendarNoEvents": "Keine Eintraege in diesem Zeitraum.",
+      "eventColorLabel": "Farbe des Eintrags",
+      "eventColorSave": "Speichern",
+      "eventColorSaving": "Wird gespeichert...",
+      "colorSaveError": "Farbe konnte nicht gespeichert werden.",
+      "eventNavigate": "Einsatzmoglichkeit verwalten",
+      "calendarToday": "Heute",
+      "calendarBack": "Zuruck",
+      "calendarNext": "Weiter",
+      "calendarMonth": "Monat",
+      "calendarWeek": "Woche",
+      "calendarWorkWeek": "Arbeitswoche",
+      "calendarDay": "Tag"
     }
   }
 }

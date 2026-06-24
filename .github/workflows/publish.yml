@@ -352,7 +352,7 @@ jobs:
             done
             docker compose pull
             docker compose up -d --remove-orphans
-            docker image prune --force
+            docker image prune --force || true
           EOF
 
       - name: Capture container logs on deploy failure

@@ -463,6 +463,77 @@ export class EinsatzbereitApi {
     /**
      * @return No Content
      */
+    setOpportunityColor(opportunityId: string, body: SetOpportunityColorRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/color";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetOpportunityColor(_response);
+        });
+    }
+
+    protected processSetOpportunityColor(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
     publishVolunteerOpportunity(opportunityId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/publish";
         if (opportunityId === undefined || opportunityId === null)
@@ -1533,6 +1604,56 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return OK
+     */
+    searchMemberCandidates(organizationId: string, q: string, signal?: AbortSignal): Promise<MemberCandidateDto[]> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/members/search?";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (q === undefined || q === null)
+            throw new globalThis.Error("The parameter 'q' must be defined and cannot be null.");
+        else
+            url_ += "q=" + encodeURIComponent("" + q) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearchMemberCandidates(_response);
+        });
+    }
+
+    protected processSearchMemberCandidates(response: Response): Promise<MemberCandidateDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MemberCandidateDto[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MemberCandidateDto[]>(null as any);
+    }
+
+    /**
      * @return No Content
      */
     removeMember(organizationId: string, userId: string, signal?: AbortSignal): Promise<void> {
@@ -1812,6 +1933,64 @@ export class EinsatzbereitApi {
             });
         }
         return Promise.resolve<OrganizationDashboardResponse>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrganizationCalendarEvents(organizationId: string, signal?: AbortSignal): Promise<OrganizationCalendarEventDto[]> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/calendar-events";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetOrganizationCalendarEvents(_response);
+        });
+    }
+
+    protected processGetOrganizationCalendarEvents(response: Response): Promise<OrganizationCalendarEventDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OrganizationCalendarEventDto[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OrganizationCalendarEventDto[]>(null as any);
     }
 
     /**
@@ -2781,6 +2960,15 @@ export interface BadgeCatalogEntry {
     [key: string]: any;
 }
 
+export interface CalendarTimeSlotDto {
+    timeSlotId: string;
+    startDateTime: Date;
+    endDateTime: Date;
+    maxParticipants: number;
+
+    [key: string]: any;
+}
+
 export interface CancelEngagementRequest {
     reason: string | undefined;
 
@@ -2923,6 +3111,16 @@ export interface KeycloakOrganization {
     [key: string]: any;
 }
 
+export interface MemberCandidateDto {
+    userId: string;
+    username: string;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string;
+
+    [key: string]: any;
+}
+
 export interface MyProfileResponse {
     id: string;
     username: string;
@@ -2971,6 +3169,15 @@ export interface Organization {
     modifiedOn?: Date | undefined;
     events?: DomainEvent[] | undefined;
     id?: OrganizationId;
+
+    [key: string]: any;
+}
+
+export interface OrganizationCalendarEventDto {
+    opportunityId: string;
+    title: string;
+    color: string | undefined;
+    timeSlots: CalendarTimeSlotDto[];
 
     [key: string]: any;
 }
@@ -3080,6 +3287,12 @@ export interface PublicUserProfileResponse {
     displayName: string;
     engagementCount: number;
     badges: AchievementSummary[];
+
+    [key: string]: any;
+}
+
+export interface SetOpportunityColorRequest {
+    color: string | undefined;
 
     [key: string]: any;
 }
