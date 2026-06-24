@@ -18,7 +18,6 @@ public sealed record VolunteerOpportunityDetails(
 	string CheckInMethod,
 	string? Category,
 	IReadOnlyList<string> Tags,
-	string? CheckInPin,
 	IReadOnlyList<TimeSlotDetail> TimeSlots,
 	DateTimeOffset CreatedOn,
 	int CurrentParticipantCount,

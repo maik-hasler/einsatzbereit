@@ -5,7 +5,9 @@ using Application.Common.Messaging;
 using Application.Engagements.CheckInWithPin.v1;
 using Domain.Engagements;
 using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Engagements.CheckInWithPin.v1;
 
@@ -28,9 +30,14 @@ internal sealed class CheckInWithPinEndpoint
 		[FromRoute] Guid engagementId,
 		[FromBody] CheckInWithPinRequest request,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var command = new CheckInWithPinCommand(new EngagementId(engagementId), request.Pin);
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid)
+			? new UserId(uid)
+			: throw new DomainException("Invalid user.");
+
+		var command = new CheckInWithPinCommand(new EngagementId(engagementId), request.Pin, userId);
 		var engagement = await sender.Send(command, cancellationToken);
 		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
 	}

@@ -1054,6 +1054,67 @@
         }
       }
     },
+    "/v1/volunteer-opportunities/{opportunityId}/check-in-pin": {
+      "get": {
+        "tags": [
+          "VolunteerOpportunities"
+        ],
+        "operationId": "GetOpportunityCheckInPin",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities/{opportunityId}/calendar": {
       "get": {
         "tags": [
@@ -4868,7 +4929,6 @@
           "checkInMethod",
           "category",
           "tags",
-          "checkInPin",
           "timeSlots",
           "createdOn",
           "currentParticipantCount",
@@ -4962,12 +5022,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "checkInPin": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "timeSlots": {
             "type": "array",

@@ -235,7 +235,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.CheckInMethod,
 				x.vo.Category,
 				x.vo.Tags,
-				x.vo.CheckInPin,
 				x.vo.CreatedOn,
 				x.vo.Status,
 				BannerImageUrl = x.vo.BannerImageUrl
@@ -280,7 +279,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.CheckInMethod.ToString(),
 			result.Category?.ToString(),
 			result.Tags,
-			result.CheckInPin,
 			timeSlots,
 			result.CreatedOn,
 			currentParticipantCount,

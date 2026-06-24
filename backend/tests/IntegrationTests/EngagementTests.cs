@@ -310,8 +310,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
 
-		var details = await olafClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
-		var pin = details.CheckInPin
+		var pin = await olafClient.GetOpportunityCheckInPinAsync(opportunity.Id, cancellationToken)
 			?? throw new InvalidOperationException("PIN was not generated for PINCode opportunity.");
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
@@ -351,6 +350,53 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var act = () => veraClient.CheckInWithPinAsync(
 			engagement.Id,
 			new CheckInWithPinRequest { Pin = "wrong-pin" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunityDetails_ShouldNotExposeCheckInPin(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
+
+		var details = await olafClient.GetVolunteerOpportunityDetailsAsync(opportunity.Id, cancellationToken);
+
+		details.Should().NotBeNull();
+	}
+
+	[Test]
+	public async Task CheckInWithPin_ShouldReturn400_WhenVolunteerTriesToCheckInSomeoneElsesEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
+
+		var pin = await olafClient.GetOpportunityCheckInPinAsync(opportunity.Id, cancellationToken)
+			?? throw new InvalidOperationException("PIN was not generated for PINCode opportunity.");
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Ready to help!" },
+			cancellationToken);
+
+		var olafEngagement = await olafClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I will also help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(veraEngagement.Id, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(olafEngagement.Id, cancellationToken);
+
+		var act = () => veraClient.CheckInWithPinAsync(
+			olafEngagement.Id,
+			new CheckInWithPinRequest { Pin = pin },
 			cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
