@@ -239,7 +239,9 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .rbc-event.rbc-selected {
-	box-shadow: 0 0 0 2px white, 0 0 0 4px #226947;
+	box-shadow:
+		0 0 0 2px white,
+		0 0 0 4px #226947;
 }
 
 /* Off-range days */
