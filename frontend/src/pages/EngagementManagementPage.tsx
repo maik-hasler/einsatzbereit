@@ -47,6 +47,7 @@ export default function EngagementManagementPage() {
 	const [feedback, setFeedback] = useState<OpportunityFeedbackSummary | null>(
 		null,
 	);
+	const [checkInPin, setCheckInPin] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [confirming, setConfirming] = useState<string | null>(null);
@@ -66,6 +67,10 @@ export default function EngagementManagementPage() {
 			api
 				.getOpportunityFeedback(opportunityId)
 				.then(setFeedback)
+				.catch(() => undefined),
+			api
+				.getOpportunityCheckInPin(opportunityId)
+				.then(setCheckInPin)
 				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
@@ -179,13 +184,13 @@ export default function EngagementManagementPage() {
 				</h1>
 			</div>
 
-			{checkInMethod === "PINCode" && opportunity?.checkInPin && (
+			{checkInMethod === "PINCode" && checkInPin && (
 				<div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
 					<p className="text-sm font-medium text-blue-900">
 						{t("checkIn.organizerPin")}
 					</p>
 					<p className="mt-1 font-mono text-2xl font-bold tracking-widest text-blue-800">
-						{opportunity.checkInPin}
+						{checkInPin}
 					</p>
 					<p className="mt-1 text-xs text-blue-600">
 						{t("checkIn.organizerPinHint")}

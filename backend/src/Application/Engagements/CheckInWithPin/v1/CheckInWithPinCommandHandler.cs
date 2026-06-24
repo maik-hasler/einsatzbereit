@@ -22,6 +22,9 @@ internal sealed class CheckInWithPinCommandHandler(
 		if (opportunity.CheckInPin != request.Pin)
 			throw new DomainException("Invalid PIN.");
 
+		if (engagement.VolunteerId.Value != request.RequestingUserId.Value)
+			throw new DomainException("You can only check in your own engagement.");
+
 		engagement.CheckIn();
 
 		return engagement;
