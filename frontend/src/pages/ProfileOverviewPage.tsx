@@ -6,6 +6,7 @@ import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
 	EngagementSummary,
+	MyInvitationDto,
 	MyProfileResponse,
 	StreakSummary,
 } from "../client/api-client";
@@ -23,10 +24,15 @@ import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-type Tab = "profile" | "engagements" | "achievements";
+type Tab = "profile" | "engagements" | "achievements" | "invitations";
 type ContactPref = "Email" | "Phone" | "";
 
-const VALID_TABS: Tab[] = ["profile", "engagements", "achievements"];
+const VALID_TABS: Tab[] = [
+	"profile",
+	"engagements",
+	"achievements",
+	"invitations",
+];
 
 function isTab(value: string | null): value is Tab {
 	return VALID_TABS.includes(value as Tab);
@@ -201,6 +207,17 @@ export default function ProfileOverviewPage() {
 	const [achievementsInitialized, setAchievementsInitialized] = useState(false);
 	const [shareModalOpen, setShareModalOpen] = useState(false);
 
+	// --- Invitations tab state ---
+	const [invitations, setInvitations] = useState<MyInvitationDto[]>([]);
+	const [invitationsLoading, setInvitationsLoading] = useState(false);
+	const [invitationsError, setInvitationsError] = useState<string | null>(null);
+	const [invitationsInitialized, setInvitationsInitialized] = useState(false);
+	const [acceptingId, setAcceptingId] = useState<string | null>(null);
+	const [decliningId, setDecliningId] = useState<string | null>(null);
+	const [invitationActionError, setInvitationActionError] = useState<
+		string | null
+	>(null);
+
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
 		Confirmed: t("myEngagements.status.Confirmed"),
@@ -267,6 +284,19 @@ export default function ProfileOverviewPage() {
 			.finally(() => setEngagementsLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab, engagementsInitialized]);
+
+	// Load invitations lazily on first visit to that tab
+	useEffect(() => {
+		if (activeTab !== "invitations" || invitationsInitialized) return;
+		setInvitationsInitialized(true);
+		setInvitationsLoading(true);
+		api
+			.getMyInvitations()
+			.then(setInvitations)
+			.catch(() => setInvitationsError(t("invitations.loadError")))
+			.finally(() => setInvitationsLoading(false));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTab, invitationsInitialized]);
 
 	// Load achievements lazily on first visit to that tab
 	useEffect(() => {
@@ -430,6 +460,32 @@ export default function ProfileOverviewPage() {
 		);
 	}
 
+	async function handleAcceptInvitation(invitationId: string) {
+		setAcceptingId(invitationId);
+		setInvitationActionError(null);
+		try {
+			await api.acceptInvitation(invitationId);
+			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+		} catch {
+			setInvitationActionError(t("invitations.acceptError"));
+		} finally {
+			setAcceptingId(null);
+		}
+	}
+
+	async function handleDeclineInvitation(invitationId: string) {
+		setDecliningId(invitationId);
+		setInvitationActionError(null);
+		try {
+			await api.declineInvitation(invitationId);
+			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+		} catch {
+			setInvitationActionError(t("invitations.declineError"));
+		} finally {
+			setDecliningId(null);
+		}
+	}
+
 	const shareUrl = auth.user?.profile?.sub
 		? window.location.origin +
 			"/users/" +
@@ -441,6 +497,7 @@ export default function ProfileOverviewPage() {
 		{ key: "profile", label: t("profileOverview.tabProfile") },
 		{ key: "engagements", label: t("profileOverview.tabEngagements") },
 		{ key: "achievements", label: t("profileOverview.tabAchievements") },
+		{ key: "invitations", label: t("profileOverview.tabInvitations") },
 	];
 
 	return (
@@ -1037,6 +1094,82 @@ export default function ProfileOverviewPage() {
 								/>
 							</section>
 						</>
+					)}
+				</>
+			)}
+
+			{/* Invitations tab */}
+			{activeTab === "invitations" && (
+				<>
+					{invitationsLoading && (
+						<p className="text-gray-500">{t("invitations.loading")}</p>
+					)}
+					{invitationsError && (
+						<p className="text-red-600">{invitationsError}</p>
+					)}
+					{invitationActionError && (
+						<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+							{invitationActionError}
+						</div>
+					)}
+					{!invitationsLoading &&
+						!invitationsError &&
+						invitations.length === 0 && (
+							<EmptyState
+								title={t("invitations.empty")}
+								message={t("invitations.emptyHint")}
+							/>
+						)}
+					{!invitationsLoading && invitations.length > 0 && (
+						<ul className="space-y-3">
+							{invitations.map((inv) => (
+								<li
+									key={inv.id}
+									className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+								>
+									<div className="flex items-start justify-between gap-3">
+										<div>
+											<p className="text-sm font-semibold text-gray-900">
+												{inv.organizationName}
+											</p>
+											<p className="mt-0.5 text-xs text-gray-500">
+												{t("invitations.invitedOn", {
+													date: new Date(inv.createdOn).toLocaleDateString(
+														locale,
+													),
+												})}
+											</p>
+										</div>
+										<div className="flex shrink-0 gap-2">
+											<button
+												type="button"
+												onClick={() => handleAcceptInvitation(inv.id)}
+												disabled={
+													acceptingId === inv.id || decliningId === inv.id
+												}
+												className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+											>
+												{acceptingId === inv.id
+													? t("invitations.accepting")
+													: t("invitations.accept")}
+											</button>
+											<button
+												type="button"
+												onClick={() => handleDeclineInvitation(inv.id)}
+												disabled={
+													acceptingId === inv.id || decliningId === inv.id
+												}
+												className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+											>
+												{decliningId === inv.id
+													? t("invitations.declining")
+													: t("invitations.decline")}
+											</button>
+										</div>
+									</div>
+								</li>
+							))}
+						</ul>
 					)}
 				</>
 			)}

@@ -7,5 +7,6 @@ public enum NotificationKind
 	EngagementCancelled,
 	EngagementWithdrawn,
 	OpportunityUpdated,
-	OpportunityDeleted
+	OpportunityDeleted,
+	InvitationReceived
 }

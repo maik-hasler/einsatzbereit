@@ -22,6 +22,21 @@ public interface IApplicationDbContext
 
 	IAggregateRepository<Achievement, AchievementId> Achievements { get; }
 
+	IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> OrganizationInvitations { get; }
+
+	Task<bool> HasPendingInvitationAsync(
+		OrganizationId organizationId,
+		UserId inviteeId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<OrganizationInvitation>> GetInvitationsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<OrganizationInvitation>> GetPendingInvitationsForUserAsync(
+		UserId inviteeId,
+		CancellationToken cancellationToken = default);
+
 	Task<bool> HasAchievementAsync(
 		UserId userId,
 		string badgeName,
