@@ -15,6 +15,7 @@ interface PublicUserProfile {
 	displayName: string;
 	engagementCount: number;
 	badges: AchievementSummary[];
+	avatarUrl?: string;
 }
 
 export default function UserProfilePage() {
@@ -58,9 +59,17 @@ export default function UserProfilePage() {
 	return (
 		<>
 			<div className="mb-8 flex items-center gap-4">
-				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-bold text-brand-700">
-					{profile.displayName.charAt(0).toUpperCase()}
-				</div>
+				{profile.avatarUrl ? (
+					<img
+						src={profile.avatarUrl}
+						alt={profile.displayName}
+						className="h-16 w-16 rounded-full object-cover"
+					/>
+				) : (
+					<div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-bold text-brand-700">
+						{profile.displayName.charAt(0).toUpperCase()}
+					</div>
+				)}
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900">
 						{profile.displayName}

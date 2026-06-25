@@ -39,6 +39,8 @@ internal sealed class GetPublicUserProfileQueryHandler(
 			request.UserId,
 			cancellationToken);
 
-		return new PublicUserProfileResponse(displayName, engagementCount, badges);
+		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
+
+		return new PublicUserProfileResponse(displayName, engagementCount, badges, user?.AvatarUrl);
 	}
 }
