@@ -74,15 +74,10 @@ export default function Header() {
 				// silently ignore (includes AbortError on cleanup)
 			}
 		};
-		// Delay the first poll past Playwright's WaitForLoadState(NetworkIdle)
-		// 30-second timeout: any fetch within 30 s of component mount breaks
-		// NetworkIdle in visual tests. 35 s guarantees the initial poll fires
-		// after that window closes on every GotoAsync/page-reload in tests.
-		const initialTimer = setTimeout(() => void fetchCount(), 35_000);
+		void fetchCount();
 		const id = setInterval(() => void fetchCount(), 60_000);
 		return () => {
 			controller.abort();
-			clearTimeout(initialTimer);
 			clearInterval(id);
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps

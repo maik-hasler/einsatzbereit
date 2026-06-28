@@ -133,6 +133,9 @@ public sealed class VolunteerOpportunity
 
 		EnsurePublishable(Description, IsRemote, Address);
 
+		if (ParticipationType == ParticipationType.Waitlist && _timeSlots.Count == 0)
+			throw new DomainException("A Waitlist opportunity must have at least one time slot before it can be published.");
+
 		Status = OpportunityStatus.Published;
 	}
 

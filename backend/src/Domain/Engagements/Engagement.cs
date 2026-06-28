@@ -122,6 +122,11 @@ public sealed class Engagement
 		TimeSlotId = timeSlotId;
 		Message = message;
 		CancellationReason = null;
+		IsCheckedIn = false;
+		FeedbackRating = null;
+		FeedbackComment = null;
+		FeedbackSubmittedAt = null;
+		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
 	}
 

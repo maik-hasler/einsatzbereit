@@ -32,8 +32,13 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
+		var timeSlotId = new TimeSlotId(request.TimeSlotId);
+		var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, cancellationToken);
+		if (request.MaxParticipants < activeCount)
+			throw new DomainException($"Cannot reduce capacity below the current number of active sign-ups ({activeCount}).");
+
 		opportunity.UpdateTimeSlot(
-			new TimeSlotId(request.TimeSlotId),
+			timeSlotId,
 			request.StartDateTime,
 			request.EndDateTime,
 			request.MaxParticipants);
