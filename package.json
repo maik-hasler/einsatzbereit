@@ -1,6 +1,6 @@
 {
   "devDependencies": {
     "editorconfig-checker": "6.1.1",
-    "playwright": "^1.56.0"
+    "playwright": "^1.61.1"
   }
 }

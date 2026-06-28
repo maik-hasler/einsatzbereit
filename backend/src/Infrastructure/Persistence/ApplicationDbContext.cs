@@ -77,7 +77,10 @@ internal sealed class ApplicationDbContext(
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default) =>
 		await Set<Engagement>()
-			.AnyAsync(e => e.VolunteerId == volunteerId && e.OpportunityId == opportunityId, cancellationToken);
+			.AnyAsync(e => e.VolunteerId == volunteerId
+				&& e.OpportunityId == opportunityId
+				&& e.Status != EngagementStatus.Withdrawn
+				&& e.Status != EngagementStatus.Cancelled, cancellationToken);
 
 	public IAggregateRepository<UserStreak, UserStreakId> UserStreaks
 		=> new AggregateRepository<UserStreak, UserStreakId>(
@@ -120,6 +123,24 @@ internal sealed class ApplicationDbContext(
 		CancellationToken cancellationToken = default) =>
 		await Set<Engagement>()
 			.CountAsync(e => e.VolunteerId == volunteerId && e.Status == EngagementStatus.Confirmed, cancellationToken);
+
+	public async Task<int> CountActiveEngagementsForTimeSlotAsync(
+		TimeSlotId timeSlotId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.CountAsync(e => e.TimeSlotId == timeSlotId
+				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
+				cancellationToken);
+
+	public async Task<Engagement?> GetTerminalEngagementAsync(
+		UserId volunteerId,
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.FirstOrDefaultAsync(e => e.VolunteerId == volunteerId
+				&& e.OpportunityId == opportunityId
+				&& (e.Status == EngagementStatus.Withdrawn || e.Status == EngagementStatus.Cancelled),
+				cancellationToken);
 
 	public Task<bool> CanConnectAsync(
 		CancellationToken cancellationToken = default) =>
