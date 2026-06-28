@@ -3337,6 +3337,7 @@ export interface PublicOrganizationProfileResponse {
     address: PublicAddressDto | undefined;
     isVerified: boolean;
     openOpportunities: PublicOpportunitySummaryDto[];
+    logoUrl: string | undefined;
 
     [key: string]: any;
 }
@@ -3345,6 +3346,7 @@ export interface PublicUserProfileResponse {
     displayName: string;
     engagementCount: number;
     badges: AchievementSummary[];
+    avatarUrl: string | undefined;
 
     [key: string]: any;
 }

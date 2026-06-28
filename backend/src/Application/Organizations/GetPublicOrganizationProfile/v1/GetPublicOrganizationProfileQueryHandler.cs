@@ -59,6 +59,7 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 			organization.Website,
 			address,
 			organization.IsVerified,
-			openOpportunities);
+			openOpportunities,
+			organization.LogoUrl);
 	}
 }

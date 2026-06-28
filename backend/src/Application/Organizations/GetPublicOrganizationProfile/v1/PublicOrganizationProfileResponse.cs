@@ -9,7 +9,8 @@ public sealed record PublicOrganizationProfileResponse(
 	string? Website,
 	PublicAddressDto? Address,
 	bool IsVerified,
-	IReadOnlyList<PublicOpportunitySummaryDto> OpenOpportunities);
+	IReadOnlyList<PublicOpportunitySummaryDto> OpenOpportunities,
+	string? LogoUrl);
 
 public sealed record PublicAddressDto(
 	string Street,

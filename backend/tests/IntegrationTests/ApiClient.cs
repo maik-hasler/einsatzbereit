@@ -6962,6 +6962,9 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<PublicOpportunitySummaryDto> OpenOpportunities { get; set; } = new System.Collections.ObjectModel.Collection<PublicOpportunitySummaryDto>();
 
+        [System.Text.Json.Serialization.JsonPropertyName("logoUrl")]
+        public string? LogoUrl { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -6989,6 +6992,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("badges")]
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<AchievementSummary> Badges { get; set; } = new System.Collections.ObjectModel.Collection<AchievementSummary>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("avatarUrl")]
+        public string? AvatarUrl { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
