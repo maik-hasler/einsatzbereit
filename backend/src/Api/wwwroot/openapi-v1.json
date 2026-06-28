@@ -4952,7 +4952,8 @@
           "website",
           "address",
           "isVerified",
-          "openOpportunities"
+          "openOpportunities",
+          "logoUrl"
         ],
         "type": "object",
         "properties": {
@@ -5005,6 +5006,12 @@
             "items": {
               "$ref": "#/components/schemas/PublicOpportunitySummaryDto"
             }
+          },
+          "logoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5012,7 +5019,8 @@
         "required": [
           "displayName",
           "engagementCount",
-          "badges"
+          "badges",
+          "avatarUrl"
         ],
         "type": "object",
         "properties": {
@@ -5032,6 +5040,12 @@
             "items": {
               "$ref": "#/components/schemas/AchievementSummary"
             }
+          },
+          "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

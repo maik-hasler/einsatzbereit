@@ -6,6 +6,7 @@ using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Primitives;
 using Domain.Users;
+using Domain.VolunteerOpportunities;
 
 namespace Application.Engagements.CreateEngagement.v1;
 
@@ -32,12 +33,36 @@ internal sealed class CreateEngagementCommandHandler(
 		if (alreadySignedUp)
 			throw new DomainException("Conflict: you are already signed up for this opportunity.");
 
-		var engagement = request.TimeSlotId is not null
-			? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
-			: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
-				?? throw new DomainException("Message is required for individual contact."));
+		if (request.TimeSlotId is not null)
+		{
+			var timeSlot = opportunity.TimeSlots.FirstOrDefault(ts => ts.Id == request.TimeSlotId);
+			if (timeSlot is null)
+				throw new DomainException("The selected time slot does not belong to this opportunity.");
 
-		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+			var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(
+				request.TimeSlotId.Value, cancellationToken);
+			if (activeCount >= timeSlot.MaxParticipants)
+				throw new DomainException("Conflict: this time slot has reached its capacity and cannot accept more sign-ups.");
+		}
+
+		var existingTerminal = await dbContext.GetTerminalEngagementAsync(
+			request.VolunteerId, request.OpportunityId, cancellationToken);
+
+		Engagement engagement;
+		if (existingTerminal is not null)
+		{
+			existingTerminal.Reactivate(request.TimeSlotId, request.Message);
+			engagement = existingTerminal;
+		}
+		else
+		{
+			engagement = request.TimeSlotId is not null
+				? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
+				: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
+					?? throw new DomainException("Message is required for individual contact."));
+
+			await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		}
 
 		var members = await keycloakOrganizationService
 			.GetMembersAsync(opportunity.OrganizationId.Value, cancellationToken);

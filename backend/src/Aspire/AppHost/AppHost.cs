@@ -97,7 +97,9 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithEnvironment("Storage__Endpoint", ReferenceExpression.Create($"{minioApiEndpoint}"))
 	.WithEnvironment("Storage__AccessKey", "minio")
 	.WithEnvironment("Storage__SecretKey", "minio123")
-	.WithEnvironment("Storage__BucketName", "einsatzbereit");
+	.WithEnvironment("Storage__BucketName", "einsatzbereit")
+	.WithEnvironment("RateLimiting__Write__PermitLimit", "10000")
+	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "10000");
 
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()

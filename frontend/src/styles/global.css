@@ -105,6 +105,238 @@ input[type="number"]::-webkit-outer-spin-button {
 	opacity: 0.5;
 }
 
+/* ── react-big-calendar brand overrides ──────────────────────────────────── */
+
+/* Toolbar layout */
+.rbc-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+	margin-bottom: 0.75rem;
+}
+
+.rbc-toolbar-label {
+	font-size: 1rem;
+	font-weight: 600;
+	color: rgb(17 24 39);
+	flex: 1;
+	text-align: center;
+}
+
+/* Button group base */
+.rbc-btn-group {
+	display: inline-flex;
+}
+
+.rbc-btn-group button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.375rem 0.75rem;
+	min-height: 2.25rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: rgb(55 65 81);
+	background: white;
+	border: 1px solid rgb(209 213 219);
+	border-right-width: 0;
+	cursor: pointer;
+	transition: background-color 0.15s;
+	white-space: nowrap;
+}
+
+.rbc-btn-group button:first-child {
+	border-radius: 0.375rem 0 0 0.375rem;
+}
+
+.rbc-btn-group button:last-child {
+	border-radius: 0 0.375rem 0.375rem 0;
+	border-right-width: 1px;
+}
+
+.rbc-btn-group button:only-child {
+	border-radius: 0.375rem;
+	border-right-width: 1px;
+}
+
+.rbc-btn-group button:hover {
+	background: rgb(249 250 251);
+}
+
+.rbc-btn-group button:focus-visible {
+	outline: 2px solid #226947;
+	outline-offset: -1px;
+	z-index: 1;
+	position: relative;
+}
+
+/* Active view button */
+.rbc-btn-group button.rbc-active {
+	background: #226947;
+	color: white;
+	border-color: #226947;
+}
+
+.rbc-btn-group button.rbc-active + button {
+	border-left-color: #1a3c2b;
+}
+
+.rbc-btn-group button.rbc-active:hover {
+	background: #1a3c2b;
+}
+
+/* Grid borders */
+.rbc-month-view,
+.rbc-time-view,
+.rbc-agenda-view {
+	border: 1px solid rgb(229 231 235);
+	border-radius: 0.5rem;
+	overflow: hidden;
+}
+
+.rbc-month-row + .rbc-month-row {
+	border-top: 1px solid rgb(229 231 235);
+}
+
+.rbc-day-bg + .rbc-day-bg {
+	border-left: 1px solid rgb(229 231 235);
+}
+
+.rbc-header {
+	padding: 0.375rem 0.25rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: rgb(107 114 128);
+	border-bottom: 1px solid rgb(229 231 235);
+}
+
+.rbc-header + .rbc-header {
+	border-left: 1px solid rgb(229 231 235);
+}
+
+/* Today highlight */
+.rbc-today {
+	background: rgb(240 250 245);
+}
+
+/* Events */
+.rbc-event {
+	border-radius: 0.25rem;
+	padding: 0.125rem 0.375rem;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	border: none;
+	outline: none;
+}
+
+.rbc-event:focus-visible {
+	outline: 2px solid #226947;
+	outline-offset: 1px;
+}
+
+.rbc-event.rbc-selected {
+	box-shadow:
+		0 0 0 2px white,
+		0 0 0 4px #226947;
+}
+
+/* Off-range days */
+.rbc-off-range-bg {
+	background: rgb(249 250 251);
+}
+
+.rbc-off-range {
+	color: rgb(156 163 175);
+}
+
+/* Date cell numbers */
+.rbc-date-cell {
+	padding: 0.25rem 0.375rem;
+	font-size: 0.8125rem;
+	color: rgb(55 65 81);
+}
+
+.rbc-date-cell.rbc-now {
+	font-weight: 700;
+	color: #226947;
+}
+
+/* Time gutter */
+.rbc-time-gutter .rbc-timeslot-group {
+	border-bottom: 1px solid rgb(229 231 235);
+}
+
+.rbc-time-content > * + * > * {
+	border-left: 1px solid rgb(229 231 235);
+}
+
+.rbc-timeslot-group {
+	border-bottom: 1px solid rgb(243 244 246);
+}
+
+.rbc-time-slot {
+	font-size: 0.75rem;
+	color: rgb(107 114 128);
+}
+
+/* Agenda view */
+.rbc-agenda-view table.rbc-agenda-table {
+	border: 1px solid rgb(229 231 235);
+	border-radius: 0.5rem;
+}
+
+.rbc-agenda-table thead > tr > th {
+	padding: 0.5rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	text-transform: uppercase;
+	color: rgb(107 114 128);
+	border-bottom: 1px solid rgb(229 231 235);
+}
+
+.rbc-agenda-table tbody > tr > td {
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid rgb(243 244 246);
+}
+
+/* Show more link */
+.rbc-show-more {
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: #226947;
+	background: transparent;
+	padding: 0.125rem 0.375rem;
+}
+
+.rbc-show-more:hover {
+	color: #1a3c2b;
+}
+
+/* Mobile: stack toolbar vertically */
+@media (max-width: 640px) {
+	.rbc-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.rbc-toolbar-label {
+		text-align: center;
+	}
+
+	.rbc-btn-group {
+		justify-content: center;
+	}
+
+	.rbc-btn-group button {
+		flex: 1;
+		min-height: 2.75rem;
+	}
+}
+
 @theme {
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;

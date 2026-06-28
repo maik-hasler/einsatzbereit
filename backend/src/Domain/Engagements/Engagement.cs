@@ -111,6 +111,20 @@ public sealed class Engagement
 		Status = EngagementStatus.Withdrawn;
 	}
 
+	public void Reactivate(TimeSlotId? timeSlotId, string? message)
+	{
+		if (Status is not (EngagementStatus.Withdrawn or EngagementStatus.Cancelled))
+			throw new DomainException("Only withdrawn or cancelled engagements can be reactivated.");
+
+		if (timeSlotId is null && string.IsNullOrWhiteSpace(message))
+			throw new DomainException("Message is required for individual contact.");
+
+		TimeSlotId = timeSlotId;
+		Message = message;
+		CancellationReason = null;
+		Status = EngagementStatus.Pending;
+	}
+
 	public void CheckIn()
 	{
 		if (Status != EngagementStatus.Confirmed)
