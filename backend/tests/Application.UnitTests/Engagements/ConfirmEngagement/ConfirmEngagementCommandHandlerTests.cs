@@ -7,6 +7,7 @@ using Application.Engagements.ConfirmEngagement.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Notifications;
+using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -32,6 +33,8 @@ public class ConfirmEngagementCommandHandlerTests
 	private readonly ConfirmEngagementCommandHandler _sut;
 
 	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly OrganizationId DefaultOrgId = new(Guid.Empty);
+	private static readonly Address DefaultAddress = new("Teststraße", "1", "12345", "Berlin");
 
 	public ConfirmEngagementCommandHandlerTests()
 	{
@@ -39,6 +42,9 @@ public class ConfirmEngagementCommandHandlerTests
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.UserStreaks.Returns(_streakRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_opportunityRepo
+			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns(CreateDefaultOpportunity());
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
@@ -203,6 +209,9 @@ public class ConfirmEngagementCommandHandlerTests
 			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4"),
 			Arg.Any<CancellationToken>());
 	}
+
+	private static VolunteerOpportunity CreateDefaultOpportunity() =>
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 	private static UserStreak BuildActivityStreakOf(UserId userId, int weeks)
 	{

@@ -26,7 +26,14 @@ internal sealed class DeleteTimeSlotCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		opportunity.RemoveTimeSlot(new TimeSlotId(request.TimeSlotId));
+		var timeSlotId = new TimeSlotId(request.TimeSlotId);
+
+		var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, cancellationToken);
+		if (activeCount > 0)
+			throw new DomainException(
+				$"Cannot delete a time slot that has {activeCount} active sign-up(s). Cancel the affected engagements first.");
+
+		opportunity.RemoveTimeSlot(timeSlotId);
 
 		return true;
 	}

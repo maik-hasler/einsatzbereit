@@ -41,6 +41,14 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			NotificationKind.OpportunityDeleted,
 			cancellationToken);
 
+		// Cancel active engagements so they do not outlive the opportunity (#548).
+		var activeEngagements = await dbContext.GetActiveEngagementsForOpportunityAsync(
+			opportunityId, cancellationToken);
+		foreach (var engagement in activeEngagements)
+		{
+			engagement.Cancel("Opportunity was deleted.");
+		}
+
 		dbContext.VolunteerOpportunities.Delete(opportunity);
 
 		return true;

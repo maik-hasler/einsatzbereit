@@ -74,6 +74,10 @@ public interface IApplicationDbContext
 		TimeSlotId timeSlotId,
 		CancellationToken cancellationToken = default);
 
+	Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
+
 	Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

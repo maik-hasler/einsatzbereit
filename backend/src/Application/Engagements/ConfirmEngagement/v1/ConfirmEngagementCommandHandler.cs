@@ -26,15 +26,14 @@ internal sealed class ConfirmEngagementCommandHandler(
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
 
-		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
-		if (opportunity is not null)
-		{
-			await OwnershipGuard.EnsureIsOrgMemberAsync(
-				keycloakOrgService,
-				opportunity.OrganizationId.Value,
-				request.RequestingUserId,
-				cancellationToken);
-		}
+		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
+			?? throw new DomainException($"Volunteer opportunity '{engagement.OpportunityId.Value}' not found.");
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrgService,
+			opportunity.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
 
 		engagement.Confirm();
 
@@ -64,7 +63,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 			volunteer.Email,
 			"Your engagement has been confirmed",
 			$"Hello {volunteer.FirstName ?? volunteer.Username},\n\n" +
-			$"Your application for \"{opportunity?.Title ?? "the opportunity"}\" has been confirmed.\n\n" +
+			$"Your application for \"{opportunity.Title}\" has been confirmed.\n\n" +
 			$"We look forward to seeing you!\n\nEinsatzbereit",
 			cancellationToken);
 

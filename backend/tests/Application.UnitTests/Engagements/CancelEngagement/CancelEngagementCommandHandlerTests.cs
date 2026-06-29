@@ -5,6 +5,7 @@ using Application.Engagements.CancelEngagement.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Notifications;
+using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -27,12 +28,17 @@ public class CancelEngagementCommandHandlerTests
 	private readonly CancelEngagementCommandHandler _sut;
 
 	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly OrganizationId DefaultOrgId = new(Guid.Empty);
+	private static readonly Address DefaultAddress = new("Teststraße", "1", "12345", "Berlin");
 
 	public CancelEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_opportunityRepo
+			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns(CreateDefaultOpportunity());
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
@@ -41,6 +47,9 @@ public class CancelEngagementCommandHandlerTests
 			.Returns([new KeycloakOrganization(Guid.Empty, "any")]);
 		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _keycloakOrgService, _emailService);
 	}
+
+	private static VolunteerOpportunity CreateDefaultOpportunity() =>
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
 
 	private static Engagement CreatePendingWaitlistEngagement() =>
 		Engagement.CreateWaitlistSignUp(
