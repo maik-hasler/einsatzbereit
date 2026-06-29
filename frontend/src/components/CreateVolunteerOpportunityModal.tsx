@@ -515,6 +515,14 @@ export default function CreateVolunteerOpportunityModal({
 			else setStep(2);
 			return;
 		}
+		if (!asDraft && form.participationType === "Waitlist") {
+			const totalSlots = pendingSlots.length + existingSlots.length;
+			if (totalSlots === 0) {
+				setError(t("timeSlots.requiredForPublish"));
+				setStep(4);
+				return;
+			}
+		}
 		setSubmitting(asDraft ? "draft" : "publish");
 		setError(null);
 		try {

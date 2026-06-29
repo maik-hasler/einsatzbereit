@@ -41,7 +41,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Page.GetByTestId("filter-type").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Waitlist" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Scheduled slots" }).ClickAsync();
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=Waitlist"));
 	}
@@ -57,7 +57,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("filter-frequency").ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
 		await Page.GetByTestId("filter-type").ClickAsync();
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Waitlist" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Scheduled slots" }).ClickAsync();
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*occurrence=OneTime"));
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=Waitlist"));
