@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       date-fns:
-        specifier: ^4.4.0
+        specifier: 4.4.0
         version: 4.4.0
       i18next:
         specifier: 26.3.1
@@ -30,7 +30,7 @@ importers:
         specifier: 19.2.7
         version: 19.2.7
       react-big-calendar:
-        specifier: ^1.20.0
+        specifier: 1.20.0
         version: 1.20.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-dom:
         specifier: 19.2.7
@@ -64,7 +64,7 @@ importers:
         specifier: 19.2.17
         version: 19.2.17
       '@types/react-big-calendar':
-        specifier: ^1.16.3
+        specifier: 1.16.3
         version: 1.16.3
       '@types/react-dom':
         specifier: 19.2.3
@@ -1281,9 +1281,6 @@ packages:
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
       '@types/react': ^19.2.0
-
-  '@types/react@19.2.15':
-    resolution: {integrity: sha512-eRwcGNHve+E8qtEQSSRl6urh+rFop4v8gm6O8rGv25CodbvFdLjA1vVQ1KkiFE0w0UPOnb8tDiFKL5lp0rtY5Q==}
 
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
@@ -4158,15 +4155,11 @@ snapshots:
     dependencies:
       '@types/date-arithmetic': 4.1.4
       '@types/prop-types': 15.7.15
-      '@types/react': 19.2.15
+      '@types/react': 19.2.17
 
   '@types/react-dom@19.2.3(@types/react@19.2.17)':
     dependencies:
       '@types/react': 19.2.17
-
-  '@types/react@19.2.15':
-    dependencies:
-      csstype: 3.2.3
 
   '@types/react@19.2.17':
     dependencies:
@@ -4519,12 +4512,12 @@ snapshots:
 
   dom-helpers@5.2.1:
     dependencies:
-      '@babel/runtime': 7.29.2
+      '@babel/runtime': 7.29.7
       csstype: 3.2.3
 
   dom-helpers@6.0.1:
     dependencies:
-      '@babel/runtime': 7.29.2
+      '@babel/runtime': 7.29.7
       csstype: 3.2.3
 
   dot-case@3.0.4:
@@ -5410,7 +5403,7 @@ snapshots:
 
   react-overlays@5.2.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
-      '@babel/runtime': 7.29.2
+      '@babel/runtime': 7.29.7
       '@popperjs/core': 2.11.8
       '@restart/hooks': 0.4.16(react@19.2.7)
       '@types/warning': 3.0.4
@@ -5802,8 +5795,8 @@ snapshots:
 
   uncontrollable@7.2.1(react@19.2.7):
     dependencies:
-      '@babel/runtime': 7.29.2
-      '@types/react': 19.2.15
+      '@babel/runtime': 7.29.7
+      '@types/react': 19.2.17
       invariant: 2.2.4
       react: 19.2.7
       react-lifecycles-compat: 3.0.4
