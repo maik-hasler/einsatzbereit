@@ -302,7 +302,9 @@
       "submit": "Sign up",
       "cancel": "Cancel",
       "unknownError": "Unknown error",
-      "maxParticipants": "(max. {{count}})"
+      "maxParticipants": "(max. {{count}})",
+      "spotsLeft": "({{count}} left)",
+      "slotFull": "(Full)"
     },
     "organization": {
       "create": "Create organization",

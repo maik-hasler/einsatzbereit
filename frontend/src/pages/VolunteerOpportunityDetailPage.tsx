@@ -135,9 +135,14 @@ export default function VolunteerOpportunityDetailPage() {
 		(sum, ts) => sum + ts.maxParticipants,
 		0,
 	);
-	const spotsLeft =
-		totalMax > 0 ? totalMax - opportunity.currentParticipantCount : Infinity;
-	const isFull = totalMax > 0 && spotsLeft <= 0;
+	const totalBooked = opportunity.timeSlots.reduce(
+		(sum, ts) => sum + ts.bookedCount,
+		0,
+	);
+	const spotsLeft = totalMax > 0 ? totalMax - totalBooked : Infinity;
+	const isFull =
+		opportunity.timeSlots.length > 0 &&
+		opportunity.timeSlots.every((ts) => ts.bookedCount >= ts.maxParticipants);
 
 	return (
 		<div className="max-w-2xl">

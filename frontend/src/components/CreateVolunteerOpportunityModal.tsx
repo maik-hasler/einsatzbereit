@@ -464,6 +464,7 @@ export default function CreateVolunteerOpportunityModal({
 						startDateTime: r.startDateTime,
 						endDateTime: r.endDateTime,
 						maxParticipants: r.maxParticipants,
+						bookedCount: 0,
 					})),
 				]);
 			} catch {

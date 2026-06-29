@@ -183,6 +183,10 @@ public sealed class VolunteerOpportunity
 		CheckInMethod = checkInMethod;
 		Category = category;
 		Tags = tags;
+		if (checkInMethod == CheckInMethod.PINCode && CheckInPin is null)
+		{
+			CheckInPin = GeneratePin();
+		}
 	}
 
 	public TimeSlot AddTimeSlot(

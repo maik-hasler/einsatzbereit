@@ -94,22 +94,28 @@ export default function SignUpModal({
 									className="w-full rounded border px-3 py-2 text-sm"
 								>
 									<option value="">{t("signUp.selectPlaceholder")}</option>
-									{timeSlots.map((ts) => (
-										<option key={ts.id} value={ts.id}>
-											{formatDateTime(
-												ts.startDateTime as unknown as string,
-												i18n.language,
-											)}{" "}
-											-{" "}
-											{formatDateTime(
-												ts.endDateTime as unknown as string,
-												i18n.language,
-											)}{" "}
-											{t("signUp.maxParticipants", {
-												count: ts.maxParticipants,
-											})}
-										</option>
-									))}
+									{timeSlots.map((ts) => {
+										const spotsLeft = ts.maxParticipants - ts.bookedCount;
+										const slotFull = spotsLeft <= 0;
+										return (
+											<option key={ts.id} value={ts.id} disabled={slotFull}>
+												{formatDateTime(
+													ts.startDateTime as unknown as string,
+													i18n.language,
+												)}{" "}
+												-{" "}
+												{formatDateTime(
+													ts.endDateTime as unknown as string,
+													i18n.language,
+												)}{" "}
+												{slotFull
+													? t("signUp.slotFull")
+													: t("signUp.spotsLeft", {
+															count: spotsLeft,
+														})}
+											</option>
+										);
+									})}
 								</select>
 							)}
 						</div>
