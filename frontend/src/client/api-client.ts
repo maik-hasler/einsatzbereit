@@ -3545,6 +3545,14 @@ export interface CreateVolunteerOpportunityResponse {
     [key: string]: any;
 }
 
+export interface CurrentUserEngagementInfo {
+    id: string;
+    status: string;
+    timeSlotId: string | undefined;
+
+    [key: string]: any;
+}
+
 export interface DomainEvent {
 
     [key: string]: any;
@@ -3572,6 +3580,7 @@ export interface EngagementSummary {
     isCheckedIn: boolean;
     hasFeedback: boolean;
     createdOn: Date;
+    volunteerName?: string | undefined;
 
     [key: string]: any;
 }
@@ -3907,6 +3916,7 @@ export interface VolunteerOpportunityDetails {
     currentParticipantCount: number;
     status: string;
     bannerImageUrl: string | undefined;
+    currentUserEngagement?: CurrentUserEngagementInfo | undefined;
 
     [key: string]: any;
 }

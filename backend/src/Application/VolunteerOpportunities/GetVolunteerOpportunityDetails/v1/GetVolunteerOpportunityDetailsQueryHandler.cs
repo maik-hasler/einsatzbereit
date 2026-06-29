@@ -9,5 +9,5 @@ internal sealed class GetVolunteerOpportunityDetailsQueryHandler(
 	public async ValueTask<VolunteerOpportunityDetails?> Handle(
 		GetVolunteerOpportunityDetailsQuery request,
 		CancellationToken cancellationToken = default) =>
-			await readRepository.GetDetailsAsync(request.OpportunityId, cancellationToken);
+			await readRepository.GetDetailsAsync(request.OpportunityId, request.RequestingUserId, cancellationToken);
 }

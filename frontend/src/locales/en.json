@@ -182,7 +182,8 @@
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
       "addToCalendar": "Add to Calendar",
-      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity."
+      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity.",
+      "yourApplication": "Your application"
     },
     "createOpportunity": {
       "title": "Create opportunity",

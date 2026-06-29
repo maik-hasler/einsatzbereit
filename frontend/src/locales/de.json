@@ -182,7 +182,8 @@
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
       "addToCalendar": "Zum Kalender hinzufügen",
-      "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden."
+      "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden.",
+      "yourApplication": "Deine Bewerbung"
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",

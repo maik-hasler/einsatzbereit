@@ -12,4 +12,5 @@ public sealed record EngagementSummary(
 	string Status,
 	bool IsCheckedIn,
 	bool HasFeedback,
-	DateTimeOffset CreatedOn);
+	DateTimeOffset CreatedOn,
+	string? VolunteerName = null);

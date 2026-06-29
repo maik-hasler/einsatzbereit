@@ -22,7 +22,8 @@ public sealed record VolunteerOpportunityDetails(
 	DateTimeOffset CreatedOn,
 	int CurrentParticipantCount,
 	string Status,
-	string? BannerImageUrl);
+	string? BannerImageUrl,
+	CurrentUserEngagementInfo? CurrentUserEngagement = null);
 
 public sealed record TimeSlotDetail(
 	Guid Id,
@@ -30,3 +31,8 @@ public sealed record TimeSlotDetail(
 	DateTimeOffset EndDateTime,
 	int MaxParticipants,
 	int BookedCount);
+
+public sealed record CurrentUserEngagementInfo(
+	Guid Id,
+	string Status,
+	Guid? TimeSlotId);

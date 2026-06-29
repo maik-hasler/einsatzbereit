@@ -44,6 +44,29 @@ internal sealed class KeycloakUserService(
 			user.Email ?? string.Empty);
 	}
 
+	public async Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(
+		IReadOnlyList<Guid> userIds,
+		CancellationToken cancellationToken = default)
+	{
+		var result = new Dictionary<Guid, string>(userIds.Count);
+		foreach (var userId in userIds.Distinct())
+		{
+			try
+			{
+				var profile = await GetUserAsync(userId, cancellationToken);
+				var name = profile.FirstName is not null || profile.LastName is not null
+					? $"{profile.FirstName} {profile.LastName}".Trim()
+					: profile.Username;
+				result[userId] = name;
+			}
+			catch
+			{
+				// ignore individual lookup failures
+			}
+		}
+		return result;
+	}
+
 	public async Task UpdateUserAsync(
 		Guid userId,
 		string? firstName,

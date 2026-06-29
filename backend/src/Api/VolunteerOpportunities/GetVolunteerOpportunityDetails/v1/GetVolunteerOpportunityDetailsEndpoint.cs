@@ -3,6 +3,7 @@ using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 
@@ -22,9 +23,11 @@ internal sealed class GetVolunteerOpportunityDetailsEndpoint
 	private static async Task<IResult> GetVolunteerOpportunityDetailsAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var query = new GetVolunteerOpportunityDetailsQuery(opportunityId);
+		var requestingUserId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? uid : (Guid?)null;
+		var query = new GetVolunteerOpportunityDetailsQuery(opportunityId, requestingUserId);
 		var result = await sender.Send(query, cancellationToken);
 		return result is null ? Results.NotFound() : Results.Ok(result);
 	}

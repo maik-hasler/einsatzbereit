@@ -14,6 +14,7 @@ public interface IVolunteerOpportunityReadRepository
 
 	ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
 		Guid opportunityId,
+		Guid? requestingUserId = null,
 		CancellationToken cancellationToken = default);
 
 	ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(
