@@ -3,6 +3,7 @@ using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 using AwesomeAssertions;
+using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
@@ -32,6 +33,9 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Engagement>());
 		_engagementReadRepository
 			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
