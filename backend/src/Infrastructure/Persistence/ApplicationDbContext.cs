@@ -138,6 +138,14 @@ internal sealed class ApplicationDbContext(
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
 				cancellationToken);
 
+	public async Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Engagement>()
+			.Where(e => e.OpportunityId == opportunityId
+				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.ToListAsync(cancellationToken);
+
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

@@ -23,15 +23,14 @@ internal sealed class CancelEngagementCommandHandler(
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
 
-		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
-		if (opportunity is not null)
-		{
-			await OwnershipGuard.EnsureIsOrgMemberAsync(
-				keycloakOrgService,
-				opportunity.OrganizationId.Value,
-				request.RequestingUserId,
-				cancellationToken);
-		}
+		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
+			?? throw new DomainException($"Volunteer opportunity '{engagement.OpportunityId.Value}' not found.");
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrgService,
+			opportunity.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
 
 		engagement.Cancel(request.Reason);
 
@@ -51,7 +50,7 @@ internal sealed class CancelEngagementCommandHandler(
 			volunteer.Email,
 			"Your engagement has been cancelled",
 			$"Hello {volunteer.FirstName ?? volunteer.Username},\n\n" +
-			$"Unfortunately your application for \"{opportunity?.Title ?? "the opportunity"}\" has been cancelled.{reasonText}\n\n" +
+			$"Unfortunately your application for \"{opportunity.Title}\" has been cancelled.{reasonText}\n\n" +
 			$"We hope to see you at another opportunity.\n\nEinsatzbereit",
 			cancellationToken);
 
