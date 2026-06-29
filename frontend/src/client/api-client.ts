@@ -3817,6 +3817,7 @@ export interface TimeSlotDetail {
     startDateTime: Date;
     endDateTime: Date;
     maxParticipants: number;
+    bookedCount: number;
 
     [key: string]: any;
 }

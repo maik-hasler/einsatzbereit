@@ -302,7 +302,9 @@
       "submit": "Anmelden",
       "cancel": "Abbrechen",
       "unknownError": "Unbekannter Fehler",
-      "maxParticipants": "(max. {{count}})"
+      "maxParticipants": "(max. {{count}})",
+      "spotsLeft": "(noch {{count}})",
+      "slotFull": "(Ausgebucht)"
     },
     "organization": {
       "create": "Organisation erstellen",

@@ -252,7 +252,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 				ts.Id.Value,
 				ts.StartDateTime,
 				ts.EndDateTime,
-				ts.MaxParticipants))
+				ts.MaxParticipants,
+				dbContext.EngagementsQuery.Count(e =>
+					e.TimeSlotId == ts.Id &&
+					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))))
 			.ToListAsync(cancellationToken);
 
 		var currentParticipantCount = await dbContext.EngagementsQuery

@@ -106,6 +106,7 @@ export default function EditVolunteerOpportunityModal({
 					startDateTime: r.startDateTime,
 					endDateTime: r.endDateTime,
 					maxParticipants: r.maxParticipants,
+					bookedCount: 0,
 				})),
 			]);
 			setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });

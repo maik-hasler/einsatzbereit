@@ -5168,7 +5168,8 @@
           "id",
           "startDateTime",
           "endDateTime",
-          "maxParticipants"
+          "maxParticipants",
+          "bookedCount"
         ],
         "type": "object",
         "properties": {
@@ -5185,6 +5186,14 @@
             "format": "date-time"
           },
           "maxParticipants": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "bookedCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
