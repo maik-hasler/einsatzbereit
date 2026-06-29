@@ -147,6 +147,11 @@ public sealed class VolunteerOpportunity
 		BannerImageUrl = url;
 	}
 
+	public void ClearBannerImageUrl()
+	{
+		BannerImageUrl = null;
+	}
+
 	public void SetColor(string? color)
 	{
 		Color = color;

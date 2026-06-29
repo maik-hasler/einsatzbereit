@@ -301,10 +301,13 @@ export default function CreateVolunteerOpportunityModal({
 	);
 	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
 
-	// Banner (create mode only)
+	// Banner
 	const [bannerFile, setBannerFile] = useState<File | null>(null);
-	const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+	const [bannerPreview, setBannerPreview] = useState<string | null>(
+		initialOpportunity?.bannerImageUrl ?? null,
+	);
 	const [bannerError, setBannerError] = useState<string | null>(null);
+	const [bannerRemoved, setBannerRemoved] = useState(false);
 
 	// Time slots: pending = not yet persisted (create mode); existing = already saved (edit mode)
 	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
@@ -425,6 +428,9 @@ export default function CreateVolunteerOpportunityModal({
 	}
 
 	function removeBanner() {
+		if (isEditMode && bannerFile === null) {
+			setBannerRemoved(true);
+		}
 		setBannerFile(null);
 		setBannerPreview(null);
 		setBannerError(null);
@@ -541,6 +547,22 @@ export default function CreateVolunteerOpportunityModal({
 					category: form.category || undefined,
 					tags: form.tags,
 				});
+				if (bannerFile) {
+					try {
+						await api.uploadOpportunityBanner(initialOpportunity.id, {
+							data: bannerFile,
+							fileName: bannerFile.name,
+						});
+					} catch {
+						dispatchToast("error", t("editOpportunity.bannerUploadFailed"));
+					}
+				} else if (bannerRemoved) {
+					try {
+						await api.deleteOpportunityBanner(initialOpportunity.id);
+					} catch {
+						dispatchToast("error", t("editOpportunity.bannerRemoveFailed"));
+					}
+				}
 			} else {
 				const opportunity = await api.createVolunteerOpportunity({
 					title: form.title,
@@ -731,67 +753,65 @@ export default function CreateVolunteerOpportunityModal({
 								showCount
 							/>
 
-							{!isEditMode && (
-								<div>
-									<p className="mb-1.5 text-sm font-semibold text-gray-800">
-										{t("createOpportunity.fieldBanner")}
-									</p>
-									{bannerPreview ? (
-										<div className="relative overflow-hidden rounded-xl">
-											<img
-												src={bannerPreview}
-												alt={t("createOpportunity.fieldBanner")}
-												className="h-36 w-full object-cover"
-											/>
-											<button
-												type="button"
-												onClick={removeBanner}
-												className="absolute right-2 top-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
-											>
-												{t("createOpportunity.bannerRemove")}
-											</button>
-										</div>
-									) : (
-										<label
-											htmlFor="opportunity-banner"
-											className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition hover:border-brand-300 hover:bg-brand-50"
+							<div>
+								<p className="mb-1.5 text-sm font-semibold text-gray-800">
+									{t("createOpportunity.fieldBanner")}
+								</p>
+								{bannerPreview ? (
+									<div className="relative overflow-hidden rounded-xl">
+										<img
+											src={bannerPreview}
+											alt={t("createOpportunity.fieldBanner")}
+											className="h-36 w-full object-cover"
+										/>
+										<button
+											type="button"
+											onClick={removeBanner}
+											className="absolute right-2 top-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
 										>
-											<svg
-												aria-hidden="true"
-												className="h-6 w-6 text-gray-400"
-												fill="none"
-												stroke="currentColor"
-												strokeWidth={1.5}
-												viewBox="0 0 24 24"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-												/>
-											</svg>
-											<span className="text-sm font-medium text-gray-700">
-												{t("createOpportunity.bannerUpload")}
-											</span>
-											<span className="text-xs text-gray-400">
-												{t("createOpportunity.bannerHint")}
-											</span>
-											<input
-												id="opportunity-banner"
-												type="file"
-												accept="image/jpeg,image/png,image/webp"
-												className="sr-only"
-												onChange={handleBannerChange}
+											{t("createOpportunity.bannerRemove")}
+										</button>
+									</div>
+								) : (
+									<label
+										htmlFor="opportunity-banner"
+										className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition hover:border-brand-300 hover:bg-brand-50"
+									>
+										<svg
+											aria-hidden="true"
+											className="h-6 w-6 text-gray-400"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth={1.5}
+											viewBox="0 0 24 24"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
 											/>
-										</label>
-									)}
-									{bannerError && (
-										<p className="mt-1 text-xs text-red-600" role="alert">
-											{bannerError}
-										</p>
-									)}
-								</div>
-							)}
+										</svg>
+										<span className="text-sm font-medium text-gray-700">
+											{t("createOpportunity.bannerUpload")}
+										</span>
+										<span className="text-xs text-gray-400">
+											{t("createOpportunity.bannerHint")}
+										</span>
+										<input
+											id="opportunity-banner"
+											type="file"
+											accept="image/jpeg,image/png,image/webp"
+											className="sr-only"
+											onChange={handleBannerChange}
+										/>
+									</label>
+								)}
+								{bannerError && (
+									<p className="mt-1 text-xs text-red-600" role="alert">
+										{bannerError}
+									</p>
+								)}
+							</div>
 						</div>
 					)}
 

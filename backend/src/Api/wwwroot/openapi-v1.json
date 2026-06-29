@@ -139,6 +139,58 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "DeleteOpportunityBannerEndpoint"
+        ],
+        "operationId": "DeleteOpportunityBanner",
+        "parameters": [
+          {
+            "name": "opportunityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/volunteer-opportunities/{opportunityId}": {
@@ -5679,6 +5731,9 @@
     },
     {
       "name": "GetOpportunityBannerEndpoint"
+    },
+    {
+      "name": "DeleteOpportunityBannerEndpoint"
     },
     {
       "name": "UpdateVolunteerOpportunityEndpoint"

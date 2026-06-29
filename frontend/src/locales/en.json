@@ -266,7 +266,9 @@
       "saving": "Saving…",
       "save": "Save",
       "cancel": "Cancel",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "bannerUploadFailed": "The opportunity was saved, but the banner image could not be uploaded.",
+      "bannerRemoveFailed": "The banner could not be removed."
     },
     "timeSlots": {
       "sectionTitle": "Time slots",
@@ -664,6 +666,32 @@
         "Streak": "Streak",
         "Social": "Social",
         "Hidden": "Special"
+      },
+      "badges": {
+        "first-step": {
+          "name": "First Step",
+          "description": "Earned on your first confirmed engagement."
+        },
+        "dedicated-5": {
+          "name": "Dedicated",
+          "description": "Earned after 5 confirmed engagements."
+        },
+        "centurion-100": {
+          "name": "Century",
+          "description": "Earned after 100 confirmed engagements."
+        },
+        "on-a-roll-7": {
+          "name": "On a Roll",
+          "description": "Earned for a 7-day login streak."
+        },
+        "weekly-hero-4": {
+          "name": "Weekly Hero",
+          "description": "Earned for 4 consecutive weeks of activity."
+        },
+        "early-adopter": {
+          "name": "Early Adopter",
+          "description": "One of the first volunteers on the platform."
+        }
       }
     },
     "breadcrumb": {

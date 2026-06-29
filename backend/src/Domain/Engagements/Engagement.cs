@@ -166,5 +166,8 @@ public sealed class Engagement
 	{
 		VolunteerId = new UserId(Guid.Empty);
 		Message = null;
+		FeedbackComment = null;
+		FeedbackRating = null;
+		FeedbackSubmittedAt = null;
 	}
 }
