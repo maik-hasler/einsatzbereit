@@ -266,7 +266,9 @@
       "saving": "Wird gespeichert…",
       "save": "Speichern",
       "cancel": "Abbrechen",
-      "unknownError": "Unbekannter Fehler"
+      "unknownError": "Unbekannter Fehler",
+      "bannerUploadFailed": "Der Bedarf wurde gespeichert, aber das Bannerbild konnte nicht hochgeladen werden.",
+      "bannerRemoveFailed": "Das Banner konnte nicht entfernt werden."
     },
     "timeSlots": {
       "sectionTitle": "Zeitslots",
@@ -639,6 +641,32 @@
         "Streak": "Serie",
         "Social": "Sozial",
         "Hidden": "Besonders"
+      },
+      "badges": {
+        "first-step": {
+          "name": "Erster Schritt",
+          "description": "Verdient bei deinem ersten bestaetigen Einsatz."
+        },
+        "dedicated-5": {
+          "name": "Engagiert",
+          "description": "Verdient nach 5 bestaetigten Einsaetzen."
+        },
+        "centurion-100": {
+          "name": "Jahrhundert",
+          "description": "Verdient nach 100 bestaetigten Einsaetzen."
+        },
+        "on-a-roll-7": {
+          "name": "Auf Kurs",
+          "description": "Verdient fuer eine 7-taegige Login-Serie."
+        },
+        "weekly-hero-4": {
+          "name": "Wochenheld",
+          "description": "Verdient fuer 4 aufeinanderfolgende Aktivitaetswochen."
+        },
+        "early-adopter": {
+          "name": "Frueheinsteiger",
+          "description": "Einer der ersten Freiwilligen auf der Plattform."
+        }
       }
     },
     "breadcrumb": {

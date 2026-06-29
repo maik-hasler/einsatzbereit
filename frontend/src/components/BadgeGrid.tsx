@@ -58,7 +58,11 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 					isEarned ? "text-gray-900" : "text-gray-400"
 				}`}
 			>
-				{isHidden ? t("achievements.lockedBadge") : catalog.name}
+				{isHidden
+					? t("achievements.lockedBadge")
+					: t(`achievements.badges.${catalog.key}.name`, {
+							defaultValue: catalog.name,
+						})}
 			</p>
 			{isEarned && (
 				<p className="mt-1 text-xs text-gray-500">
@@ -68,7 +72,11 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 				</p>
 			)}
 			{!isEarned && !isHidden && (
-				<p className="mt-1 text-xs text-gray-400">{catalog.description}</p>
+				<p className="mt-1 text-xs text-gray-400">
+					{t(`achievements.badges.${catalog.key}.description`, {
+						defaultValue: catalog.description,
+					})}
+				</p>
 			)}
 			{!isHidden && (
 				<div
@@ -76,8 +84,16 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 					role="tooltip"
 					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block"
 				>
-					<p className="font-semibold">{catalog.name}</p>
-					<p className="mt-0.5 text-gray-300">{catalog.description}</p>
+					<p className="font-semibold">
+						{t(`achievements.badges.${catalog.key}.name`, {
+							defaultValue: catalog.name,
+						})}
+					</p>
+					<p className="mt-0.5 text-gray-300">
+						{t(`achievements.badges.${catalog.key}.description`, {
+							defaultValue: catalog.description,
+						})}
+					</p>
 					{isEarned && (
 						<p className="mt-1 text-brand-300">
 							{t("achievements.types." + typeName)}
