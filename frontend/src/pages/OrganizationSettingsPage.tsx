@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
-import type { OrganizationDetailsResponse } from "../client/api-client";
+import type {
+	MemberCandidateDto,
+	OrgInvitationDto,
+	OrganizationDetailsResponse,
+} from "../client/api-client";
 import EmptyState from "../components/EmptyState";
 import { usePageTitle } from "../hooks/usePageTitle";
 
@@ -39,6 +43,18 @@ export default function OrganizationSettingsPage() {
 	const [logoError, setLogoError] = useState<string | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 
+	const [invitations, setInvitations] = useState<OrgInvitationDto[]>([]);
+	const [invitationsLoading, setInvitationsLoading] = useState(false);
+	const [invitationsInitialized, setInvitationsInitialized] = useState(false);
+	const [inviteQuery, setInviteQuery] = useState("");
+	const [candidates, setCandidates] = useState<MemberCandidateDto[]>([]);
+	const [inviteSearching, setInviteSearching] = useState(false);
+	const [showCandidates, setShowCandidates] = useState(false);
+	const [inviteError, setInviteError] = useState<string | null>(null);
+	const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+	const [dismissingId, setDismissingId] = useState<string | null>(null);
+	const inviteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	usePageTitle(t("orgSettings.title"));
@@ -67,6 +83,26 @@ export default function OrganizationSettingsPage() {
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
+
+	useEffect(() => {
+		if (activeTab !== "members" || !organizationId || invitationsInitialized)
+			return;
+		setInvitationsInitialized(true);
+		setInvitationsLoading(true);
+		api
+			.getOrgInvitations(organizationId)
+			.then(setInvitations)
+			.catch(() => {})
+			.finally(() => setInvitationsLoading(false));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTab, organizationId, invitationsInitialized]);
+
+	useEffect(
+		() => () => {
+			if (inviteDebounceRef.current) clearTimeout(inviteDebounceRef.current);
+		},
+		[],
+	);
 
 	const hasAddress =
 		form.street || form.houseNumber || form.zipCode || form.city;
@@ -162,6 +198,65 @@ export default function OrganizationSettingsPage() {
 			);
 		} catch {
 			setError(t("orgSettings.removeMemberError"));
+		}
+	}
+
+	function handleInviteQueryChange(q: string) {
+		setInviteQuery(q);
+		setCandidates([]);
+		setInviteError(null);
+		setInviteSuccess(null);
+		if (inviteDebounceRef.current) clearTimeout(inviteDebounceRef.current);
+		if (q.trim().length < 2) {
+			setInviteSearching(false);
+			setShowCandidates(false);
+			return;
+		}
+		setInviteSearching(true);
+		inviteDebounceRef.current = setTimeout(async () => {
+			if (!organizationId) return;
+			try {
+				const results = await api.searchMemberCandidates(
+					organizationId,
+					q.trim(),
+				);
+				setCandidates(results);
+				setShowCandidates(true);
+			} catch {
+				// silently ignore search errors
+			} finally {
+				setInviteSearching(false);
+			}
+		}, 300);
+	}
+
+	async function handleInvite(userId: string) {
+		if (!organizationId) return;
+		setInviteError(null);
+		setInviteSuccess(null);
+		setInviteQuery("");
+		setCandidates([]);
+		setShowCandidates(false);
+		try {
+			await api.createInvitation(organizationId, { inviteeId: userId });
+			const updated = await api.getOrgInvitations(organizationId);
+			setInvitations(updated);
+			setInviteSuccess(t("orgSettings.inviteSent"));
+		} catch {
+			setInviteError(t("orgSettings.inviteError"));
+		}
+	}
+
+	async function handleDismiss(invitationId: string) {
+		if (!organizationId) return;
+		setDismissingId(invitationId);
+		try {
+			await api.dismissInvitation(organizationId, invitationId);
+			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+		} catch {
+			setError(t("orgSettings.dismissError"));
+		} finally {
+			setDismissingId(null);
 		}
 	}
 
@@ -461,6 +556,73 @@ export default function OrganizationSettingsPage() {
 
 				{activeTab === "members" && (
 					<>
+						{/* Invite member */}
+						<div className="mb-6">
+							<label
+								htmlFor="invite-search"
+								className="mb-1 block text-sm font-medium text-gray-700"
+							>
+								{t("orgSettings.inviteLabel")}
+							</label>
+							<div className="relative">
+								<input
+									id="invite-search"
+									type="text"
+									autoComplete="off"
+									value={inviteQuery}
+									onChange={(e) => handleInviteQueryChange(e.target.value)}
+									onBlur={() => setTimeout(() => setShowCandidates(false), 150)}
+									onFocus={() =>
+										candidates.length > 0 && setShowCandidates(true)
+									}
+									placeholder={t("orgSettings.invitePlaceholder")}
+									className={inputClass}
+								/>
+								{(inviteSearching || showCandidates) && (
+									<ul
+										role="listbox"
+										aria-label={t("orgSettings.inviteLabel")}
+										className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg"
+									>
+										{inviteSearching && (
+											<li className="px-3 py-2 text-sm text-gray-500">
+												{t("orgSettings.searching")}
+											</li>
+										)}
+										{!inviteSearching &&
+											showCandidates &&
+											candidates.length === 0 && (
+												<li className="px-3 py-2 text-sm text-gray-500">
+													{t("orgSettings.noSearchResults")}
+												</li>
+											)}
+										{!inviteSearching &&
+											candidates.map((c) => (
+												<li key={c.userId} role="option" aria-selected={false}>
+													<button
+														type="button"
+														onMouseDown={() => handleInvite(c.userId)}
+														className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+													>
+														{c.firstName && c.lastName
+															? `${c.firstName} ${c.lastName}`
+															: c.username}{" "}
+														<span className="text-gray-400">({c.email})</span>
+													</button>
+												</li>
+											))}
+									</ul>
+								)}
+							</div>
+							{inviteError && (
+								<p className="mt-1 text-xs text-red-600">{inviteError}</p>
+							)}
+							{inviteSuccess && (
+								<p className="mt-1 text-xs text-green-600">{inviteSuccess}</p>
+							)}
+						</div>
+
+						{/* Current members */}
 						{org.members.length === 0 ? (
 							<EmptyState
 								title={t("orgSettings.noMembers")}
@@ -487,6 +649,7 @@ export default function OrganizationSettingsPage() {
 											)}
 										</div>
 										<button
+											type="button"
 											onClick={() => handleRemoveMember(member.userId)}
 											className="text-xs text-red-700 hover:text-red-800"
 										>
@@ -496,6 +659,83 @@ export default function OrganizationSettingsPage() {
 								))}
 							</ul>
 						)}
+
+						{/* Invitations */}
+						{invitationsLoading && (
+							<p className="mt-4 text-sm text-gray-500">
+								{t("orgSettings.loading")}
+							</p>
+						)}
+						{!invitationsLoading &&
+							invitations.some((i) => i.status === "Pending") && (
+								<div className="mt-6">
+									<h3 className="mb-2 text-sm font-medium text-gray-700">
+										{t("orgSettings.pendingInvitations")}
+									</h3>
+									<ul className="divide-y divide-gray-100">
+										{invitations
+											.filter((i) => i.status === "Pending")
+											.map((inv) => (
+												<li
+													key={inv.id}
+													className="flex items-center justify-between py-3"
+												>
+													<div>
+														<p className="text-sm font-medium text-gray-900">
+															{inv.inviteeName}
+														</p>
+														<p className="text-xs text-gray-500">
+															{t("orgSettings.invitationSentOn", {
+																date: new Date(
+																	inv.createdOn,
+																).toLocaleDateString(locale),
+															})}
+														</p>
+													</div>
+												</li>
+											))}
+									</ul>
+								</div>
+							)}
+						{!invitationsLoading &&
+							invitations.some((i) => i.status === "Declined") && (
+								<div className="mt-6">
+									<h3 className="mb-2 text-sm font-medium text-gray-700">
+										{t("orgSettings.declinedInvitations")}
+									</h3>
+									<ul className="divide-y divide-gray-100">
+										{invitations
+											.filter((i) => i.status === "Declined")
+											.map((inv) => (
+												<li
+													key={inv.id}
+													className="flex items-center justify-between py-3"
+												>
+													<div>
+														<p className="text-sm font-medium text-gray-900">
+															{inv.inviteeName}
+														</p>
+														<p className="text-xs text-gray-500">
+															{t("orgSettings.invitationSentOn", {
+																date: new Date(
+																	inv.createdOn,
+																).toLocaleDateString(locale),
+															})}
+														</p>
+													</div>
+													<button
+														type="button"
+														disabled={dismissingId === inv.id}
+														onClick={() => handleDismiss(inv.id)}
+														className="text-xs text-gray-500 hover:text-gray-700 disabled:opacity-50"
+													>
+														{t("orgSettings.dismissInvitation")}
+													</button>
+												</li>
+											))}
+									</ul>
+								</div>
+							)}
 					</>
 				)}
 			</div>

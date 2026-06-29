@@ -65,6 +65,12 @@ internal sealed class ApplicationDbContext(
 
 	internal IQueryable<Achievement> AchievementsQuery => Set<Achievement>().AsNoTracking();
 
+	public IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> OrganizationInvitations
+		=> new AggregateRepository<OrganizationInvitation, OrganizationInvitationId>(
+			Set<OrganizationInvitation>(),
+			Set<OrganizationInvitation>(),
+			i => i.Id);
+
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,
 		string badgeName,
@@ -141,6 +147,29 @@ internal sealed class ApplicationDbContext(
 				&& e.OpportunityId == opportunityId
 				&& (e.Status == EngagementStatus.Withdrawn || e.Status == EngagementStatus.Cancelled),
 				cancellationToken);
+
+	public async Task<bool> HasPendingInvitationAsync(
+		OrganizationId organizationId,
+		UserId inviteeId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationInvitation>()
+			.AnyAsync(i => i.OrganizationId == organizationId && i.InviteeId == inviteeId && i.Status == InvitationStatus.Pending, cancellationToken);
+
+	public async Task<List<OrganizationInvitation>> GetInvitationsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationInvitation>()
+			.Where(i => i.OrganizationId == organizationId && i.Status != InvitationStatus.Accepted)
+			.OrderByDescending(i => i.CreatedOn)
+			.ToListAsync(cancellationToken);
+
+	public async Task<List<OrganizationInvitation>> GetPendingInvitationsForUserAsync(
+		UserId inviteeId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationInvitation>()
+			.Where(i => i.InviteeId == inviteeId && i.Status == InvitationStatus.Pending)
+			.OrderByDescending(i => i.CreatedOn)
+			.ToListAsync(cancellationToken);
 
 	public Task<bool> CanConnectAsync(
 		CancellationToken cancellationToken = default) =>

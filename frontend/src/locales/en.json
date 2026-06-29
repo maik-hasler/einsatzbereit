@@ -382,7 +382,16 @@
       "noSearchResults": "No users found.",
       "edit": "Edit",
       "cancel": "Cancel",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "inviteLabel": "Invite member",
+      "invitePlaceholder": "Search by username or email…",
+      "inviteError": "Could not send invitation.",
+      "inviteSent": "Invitation sent.",
+      "pendingInvitations": "Pending Invitations",
+      "declinedInvitations": "Declined Invitations",
+      "dismissInvitation": "Dismiss",
+      "dismissError": "Could not dismiss invitation.",
+      "invitationSentOn": "Sent {{date}}"
     },
     "account": {
       "title": "My Account",
@@ -525,7 +534,8 @@
         "EngagementCancelled": "Your application for {{title}} was cancelled",
         "EngagementWithdrawn": "An application for {{title}} was withdrawn",
         "OpportunityUpdated": "{{title}} was updated",
-        "OpportunityDeleted": "An opportunity you signed up for was removed"
+        "OpportunityDeleted": "An opportunity you signed up for was removed",
+        "InvitationReceived": "You've been invited to join {{title}}"
       }
     },
     "language": {
@@ -583,7 +593,21 @@
     "profileOverview": {
       "tabProfile": "Profile",
       "tabEngagements": "Engagements",
-      "tabAchievements": "Achievements"
+      "tabAchievements": "Achievements",
+      "tabInvitations": "Invitations"
+    },
+    "invitations": {
+      "loading": "Loading…",
+      "loadError": "Could not load invitations.",
+      "empty": "No pending invitations.",
+      "emptyHint": "When you're invited to join an organization, it will appear here.",
+      "invitedOn": "Invited {{date}}",
+      "accept": "Accept",
+      "decline": "Decline",
+      "accepting": "…",
+      "declining": "…",
+      "acceptError": "Could not accept invitation.",
+      "declineError": "Could not decline invitation."
     },
     "profile": {
       "title": "My Profile",

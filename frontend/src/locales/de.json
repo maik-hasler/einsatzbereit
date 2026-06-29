@@ -382,7 +382,16 @@
       "noSearchResults": "Keine Benutzer gefunden.",
       "edit": "Bearbeiten",
       "cancel": "Abbrechen",
-      "loading": "Wird geladen…"
+      "loading": "Wird geladen…",
+      "inviteLabel": "Mitglied einladen",
+      "invitePlaceholder": "Nach Benutzername oder E-Mail suchen…",
+      "inviteError": "Einladung konnte nicht gesendet werden.",
+      "inviteSent": "Einladung gesendet.",
+      "pendingInvitations": "Ausstehende Einladungen",
+      "declinedInvitations": "Abgelehnte Einladungen",
+      "dismissInvitation": "Entfernen",
+      "dismissError": "Einladung konnte nicht entfernt werden.",
+      "invitationSentOn": "Gesendet am {{date}}"
     },
     "account": {
       "title": "Mein Konto",
@@ -525,7 +534,8 @@
         "EngagementCancelled": "Deine Bewerbung fur {{title}} wurde abgesagt",
         "EngagementWithdrawn": "Eine Bewerbung fur {{title}} wurde zurückgezogen",
         "OpportunityUpdated": "{{title}} wurde aktualisiert",
-        "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt"
+        "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt",
+        "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten"
       }
     },
     "language": {
@@ -583,7 +593,21 @@
     "profileOverview": {
       "tabProfile": "Profil",
       "tabEngagements": "Engagements",
-      "tabAchievements": "Errungenschaften"
+      "tabAchievements": "Errungenschaften",
+      "tabInvitations": "Einladungen"
+    },
+    "invitations": {
+      "loading": "Wird geladen…",
+      "loadError": "Einladungen konnten nicht geladen werden.",
+      "empty": "Keine ausstehenden Einladungen.",
+      "emptyHint": "Wenn du zu einer Organisation eingeladen wirst, erscheint die Einladung hier.",
+      "invitedOn": "Eingeladen am {{date}}",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "accepting": "…",
+      "declining": "…",
+      "acceptError": "Einladung konnte nicht angenommen werden.",
+      "declineError": "Einladung konnte nicht abgelehnt werden."
     },
     "profile": {
       "title": "Mein Profil",
