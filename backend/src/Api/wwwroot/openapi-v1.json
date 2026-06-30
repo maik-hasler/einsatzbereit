@@ -4166,6 +4166,30 @@
           }
         }
       },
+      "CurrentUserEngagementInfo": {
+        "required": [
+          "id",
+          "status",
+          "timeSlotId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "timeSlotId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "DomainEvent": {
         "type": "object"
       },
@@ -4263,6 +4287,12 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "volunteerName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5580,6 +5610,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "currentUserEngagement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CurrentUserEngagementInfo"
+              }
             ]
           }
         }

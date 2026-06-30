@@ -5,6 +5,7 @@ using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
 using Domain.Engagements;
 using Domain.Organizations;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -210,6 +211,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
 		Guid opportunityId,
+		Guid? requestingUserId = null,
 		CancellationToken cancellationToken = default)
 	{
 		var opportunityId_ = new VolunteerOpportunityId(opportunityId);
@@ -264,6 +266,26 @@ internal sealed class VolunteerOpportunityReadRepository(
 				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
 				cancellationToken);
 
+		CurrentUserEngagementInfo? currentUserEngagement = null;
+		if (requestingUserId is Guid uid)
+		{
+			var userId_ = new UserId(uid);
+			var engagement = await dbContext.EngagementsQuery
+				.Where(e =>
+					e.OpportunityId == opportunityId_ &&
+					e.VolunteerId == userId_ &&
+					(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+				.OrderByDescending(e => e.CreatedOn)
+				.Select(e => new { e.Id, e.Status, e.TimeSlotId })
+				.FirstOrDefaultAsync(cancellationToken);
+
+			if (engagement is not null)
+				currentUserEngagement = new CurrentUserEngagementInfo(
+					engagement.Id.Value,
+					engagement.Status.ToString(),
+					engagement.TimeSlotId?.Value);
+		}
+
 		return new VolunteerOpportunityDetails(
 			result.Id.Value,
 			result.Title,
@@ -286,7 +308,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.CreatedOn,
 			currentParticipantCount,
 			result.Status.ToString(),
-			result.BannerImageUrl);
+			result.BannerImageUrl,
+			currentUserEngagement);
 	}
 
 	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> GetSummariesByOrganizationAsync(

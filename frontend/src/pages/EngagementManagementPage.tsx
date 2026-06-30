@@ -232,10 +232,21 @@ export default function EngagementManagementPage() {
 						>
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
-									<p className="font-mono text-xs text-gray-400">
-										{t("engagementManagement.volunteer", {
-											id: e.volunteerId.slice(0, 8) + "...",
-										})}
+									<p className="text-sm font-medium text-gray-800">
+										{e.volunteerName ? (
+											<Link
+												to={`/users/${e.volunteerId}`}
+												className="hover:underline"
+											>
+												{e.volunteerName}
+											</Link>
+										) : (
+											<span className="font-mono text-xs text-gray-400">
+												{t("engagementManagement.volunteer", {
+													id: e.volunteerId.slice(0, 8) + "...",
+												})}
+											</span>
+										)}
 									</p>
 									{e.message && (
 										<p className="mt-1 text-sm italic text-gray-700">

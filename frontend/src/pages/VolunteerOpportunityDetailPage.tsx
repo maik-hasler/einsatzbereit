@@ -31,7 +31,9 @@ export default function VolunteerOpportunityDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showSignUp, setShowSignUp] = useState(false);
-	const [signedUp, setSignedUp] = useState(false);
+	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+	const [withdrawing, setWithdrawing] = useState(false);
+	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 	const [showEdit, setShowEdit] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [deleting, setDeleting] = useState(false);
@@ -86,6 +88,23 @@ export default function VolunteerOpportunityDetailPage() {
 		}
 	}
 
+	async function handleWithdrawConfirm() {
+		if (!opportunity?.currentUserEngagement) return;
+		setWithdrawing(true);
+		setWithdrawError(null);
+		try {
+			await api.withdrawEngagement(opportunity.currentUserEngagement.id);
+			setShowWithdrawConfirm(false);
+			load();
+		} catch (err) {
+			setWithdrawError(
+				err instanceof Error ? err.message : t("myEngagements.withdrawError"),
+			);
+		} finally {
+			setWithdrawing(false);
+		}
+	}
+
 	async function handleDeleteConfirm() {
 		if (!opportunityId) return;
 		setDeleting(true);
@@ -130,6 +149,8 @@ export default function VolunteerOpportunityDetailPage() {
 			setPublishing(false);
 		}
 	}
+
+	const cue = opportunity.currentUserEngagement;
 
 	const totalMax = opportunity.timeSlots.reduce(
 		(sum, ts) => sum + ts.maxParticipants,
@@ -457,8 +478,37 @@ export default function VolunteerOpportunityDetailPage() {
 				</div>
 			)}
 
+			{/* Your application status */}
+			{isAuthenticated && !isOwner && cue && !isDraft && (
+				<div className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+					<div className="flex items-center justify-between gap-4">
+						<div>
+							<p className="mb-1 text-xs text-gray-500">
+								{t("opportunities.yourApplication")}
+							</p>
+							<span
+								className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+									cue.status === "Confirmed"
+										? "bg-green-50 text-green-700 border-green-100"
+										: "bg-yellow-50 text-yellow-700 border-yellow-100"
+								}`}
+							>
+								{t(`myEngagements.status.${cue.status}`)}
+							</span>
+						</div>
+						<button
+							onClick={() => setShowWithdrawConfirm(true)}
+							disabled={withdrawing}
+							className="shrink-0 text-xs text-red-600 hover:underline disabled:opacity-50"
+						>
+							{t("myEngagements.withdraw")}
+						</button>
+					</div>
+				</div>
+			)}
+
 			{/* Sign-up CTA */}
-			{isAuthenticated && !isOwner && !signedUp && !isDraft && (
+			{isAuthenticated && !isOwner && !cue && !isDraft && (
 				<div className="space-y-3">
 					{totalMax > 0 && (
 						<p
@@ -506,20 +556,16 @@ export default function VolunteerOpportunityDetailPage() {
 				</p>
 			)}
 
-			{/* Signed up confirmation */}
-			{signedUp && (
-				<p className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
-					{t("opportunities.signupSuccess")}
-				</p>
-			)}
-
 			{showSignUp && (
 				<SignUpModal
 					opportunityId={opportunity.id}
 					participationType={opportunity.participationType}
 					timeSlots={opportunity.timeSlots}
 					onClose={() => setShowSignUp(false)}
-					onSuccess={() => setSignedUp(true)}
+					onSuccess={() => {
+						setShowSignUp(false);
+						load();
+					}}
 				/>
 			)}
 
@@ -544,6 +590,22 @@ export default function VolunteerOpportunityDetailPage() {
 					}}
 					loading={deleting}
 					error={deleteError}
+				/>
+			)}
+
+			{showWithdrawConfirm && (
+				<ConfirmDialog
+					title={t("confirmDialog.withdraw.title")}
+					message={t("confirmDialog.withdraw.message")}
+					confirmLabel={t("confirmDialog.withdraw.confirm")}
+					onConfirm={handleWithdrawConfirm}
+					onClose={() => {
+						if (withdrawing) return;
+						setShowWithdrawConfirm(false);
+						setWithdrawError(null);
+					}}
+					loading={withdrawing}
+					error={withdrawError}
 				/>
 			)}
 		</div>

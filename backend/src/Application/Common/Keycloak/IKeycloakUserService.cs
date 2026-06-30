@@ -13,6 +13,10 @@ public interface IKeycloakUserService
 		Guid userId,
 		CancellationToken cancellationToken = default);
 
+	Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(
+		IReadOnlyList<Guid> userIds,
+		CancellationToken cancellationToken = default);
+
 	Task UpdateUserAsync(
 		Guid userId,
 		string? firstName,

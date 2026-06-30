@@ -9,7 +9,8 @@ namespace Application.Engagements.GetEngagements.v1;
 internal sealed class GetEngagementsQueryHandler(
 	IEngagementReadRepository readRepository,
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService)
+	IKeycloakOrganizationService keycloakOrgService,
+	IKeycloakUserService keycloakUserService)
 	: IQueryHandler<GetEngagementsQuery, List<EngagementSummary>>
 {
 	public async ValueTask<List<EngagementSummary>> Handle(
@@ -25,6 +26,13 @@ internal sealed class GetEngagementsQueryHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		return await readRepository.GetByOpportunityAsync(request.OpportunityId, cancellationToken);
+		var engagements = await readRepository.GetByOpportunityAsync(request.OpportunityId, cancellationToken);
+
+		var volunteerIds = engagements.Select(e => e.VolunteerId).Distinct().ToList();
+		var nameMap = await keycloakUserService.GetDisplayNamesAsync(volunteerIds, cancellationToken);
+
+		return engagements
+			.Select(e => e with { VolunteerName = nameMap.GetValueOrDefault(e.VolunteerId) })
+			.ToList();
 	}
 }
