@@ -140,18 +140,18 @@ export default function SubmitFeedbackModal({
 
 					<div className="flex gap-3">
 						<button
-							type="submit"
-							disabled={submitting || rating === 0}
-							className="flex-1 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-						>
-							{submitting ? t("feedback.submitting") : t("feedback.submit")}
-						</button>
-						<button
 							type="button"
 							onClick={onClose}
 							className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
 						>
 							{t("feedback.cancel")}
+						</button>
+						<button
+							type="submit"
+							disabled={submitting || rating === 0}
+							className="flex-1 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+						>
+							{submitting ? t("feedback.submitting") : t("feedback.submit")}
 						</button>
 					</div>
 				</form>

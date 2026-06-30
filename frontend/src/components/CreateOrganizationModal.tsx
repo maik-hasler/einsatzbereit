@@ -53,9 +53,9 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="create-org-dialog-title"
-				className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+				className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
 			>
-				<h2 id="create-org-dialog-title" className="mb-4 text-xl font-semibold">
+				<h2 id="create-org-dialog-title" className="mb-4 text-lg font-semibold">
 					{t("organization.create")}
 				</h2>
 
