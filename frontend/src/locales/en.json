@@ -782,7 +782,9 @@
       "calendarMonth": "Month",
       "calendarWeek": "Week",
       "calendarWorkWeek": "Work week",
-      "calendarDay": "Day"
+      "calendarDay": "Day",
+      "eventFillState": "{{booked}} / {{max}} booked",
+      "eventManageApplications": "Manage applications"
     }
   }
 }

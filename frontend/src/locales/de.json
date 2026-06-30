@@ -782,7 +782,9 @@
       "calendarMonth": "Monat",
       "calendarWeek": "Woche",
       "calendarWorkWeek": "Arbeitswoche",
-      "calendarDay": "Tag"
+      "calendarDay": "Tag",
+      "eventFillState": "{{booked}} / {{max}} gebucht",
+      "eventManageApplications": "Bewerbungen verwalten"
     }
   }
 }
