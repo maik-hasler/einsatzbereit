@@ -3631,6 +3631,7 @@
         "required": [
           "id",
           "type",
+          "key",
           "name",
           "description",
           "unlockedAt"
@@ -3643,6 +3644,12 @@
           },
           "type": {
             "type": "string"
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "name": {
             "type": "string"
