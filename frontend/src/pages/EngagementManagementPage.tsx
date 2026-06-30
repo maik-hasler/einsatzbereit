@@ -9,6 +9,7 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
+import QRScannerModal from "../components/QRScannerModal";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
@@ -55,6 +56,7 @@ export default function EngagementManagementPage() {
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
+	const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
 	useEffect(() => {
 		if (!opportunityId) return;
@@ -149,8 +151,8 @@ export default function EngagementManagementPage() {
 	}
 
 	const checkInMethod = opportunity?.checkInMethod;
-	const showManualCheckIn =
-		checkInMethod === "Manual" || checkInMethod === "QRCode";
+	const showManualCheckIn = checkInMethod === "Manual";
+	const showQrScanner = checkInMethod === "QRCode";
 
 	return (
 		<>
@@ -195,6 +197,37 @@ export default function EngagementManagementPage() {
 					<p className="mt-1 text-xs text-blue-600">
 						{t("checkIn.organizerPinHint")}
 					</p>
+				</div>
+			)}
+
+			{showQrScanner && (
+				<div className="mb-6">
+					<button
+						type="button"
+						onClick={() => setQrScannerOpen(true)}
+						className="inline-flex items-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
+					>
+						<svg
+							className="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth="1.5"
+							stroke="currentColor"
+							aria-hidden="true"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"
+							/>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"
+							/>
+						</svg>
+						{t("checkIn.qrScanButton")}
+					</button>
 				</div>
 			)}
 
@@ -340,6 +373,20 @@ export default function EngagementManagementPage() {
 						</li>
 					))}
 				</ul>
+			)}
+
+			{qrScannerOpen && (
+				<QRScannerModal
+					engagements={engagements}
+					onCheckedIn={(engagementId) => {
+						setEngagements((prev) =>
+							prev.map((e) =>
+								e.id === engagementId ? { ...e, isCheckedIn: true } : e,
+							),
+						);
+					}}
+					onClose={() => setQrScannerOpen(false)}
+				/>
 			)}
 
 			{confirmCancelId && (

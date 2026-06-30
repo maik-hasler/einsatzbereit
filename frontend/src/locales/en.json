@@ -456,7 +456,16 @@
       "organizerPin": "Check-in PIN",
       "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
       "markCheckedIn": "Mark as checked in",
-      "markingCheckedIn": "…"
+      "markingCheckedIn": "…",
+      "qrScanButton": "Scan QR code",
+      "qrScanTitle": "Scan volunteer QR code",
+      "qrScanHint": "Point the camera at the volunteer's QR code.",
+      "qrVideoLabel": "Camera view for QR code scanning",
+      "qrNotSupported": "QR scanning is not supported in this browser. Please use Chrome or Edge, or switch to a manual check-in method.",
+      "qrCameraError": "Camera access denied. Please allow camera access and try again.",
+      "qrNotFound": "QR code not recognised. The volunteer may not be confirmed yet.",
+      "qrCheckInError": "Check-in failed. Please try again.",
+      "qrSuccess": "Volunteer checked in successfully!"
     },
     "myEngagements": {
       "title": "My Engagements",
