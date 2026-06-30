@@ -122,6 +122,9 @@ export default function BadgeGrid({
 		return <p className="text-sm text-gray-500">{t("achievements.loading")}</p>;
 	}
 
+	const earnedByKey = new Map(
+		earned.filter((a) => a.key != null).map((a) => [a.key as string, a]),
+	);
 	const earnedByName = new Map(earned.map((a) => [a.name, a]));
 
 	return (
@@ -130,7 +133,7 @@ export default function BadgeGrid({
 				<BadgeCard
 					key={entry.key}
 					catalog={entry}
-					earned={earnedByName.get(entry.name)}
+					earned={earnedByKey.get(entry.key) ?? earnedByName.get(entry.name)}
 				/>
 			))}
 			{catalog.length === 0 && earned.length === 0 && (

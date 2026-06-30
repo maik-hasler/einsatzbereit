@@ -3387,6 +3387,7 @@ export class EinsatzbereitApi {
 export interface AchievementSummary {
     id: string;
     type: string;
+    key: string | undefined;
     name: string;
     description: string;
     unlockedAt: Date;

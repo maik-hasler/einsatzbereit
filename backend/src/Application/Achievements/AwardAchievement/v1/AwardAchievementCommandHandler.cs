@@ -29,6 +29,7 @@ internal sealed class AwardAchievementCommandHandler(
 		var achievement = Achievement.Create(
 			request.UserId,
 			definition.Type,
+			definition.Key,
 			definition.Name,
 			definition.Description);
 

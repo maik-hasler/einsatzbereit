@@ -11,6 +11,8 @@ public sealed class Achievement
 
 	public AchievementType Type { get; private set; }
 
+	public string? Key { get; private set; }
+
 	public string Name { get; private set; }
 
 	public string Description { get; private set; }
@@ -29,12 +31,14 @@ public sealed class Achievement
 		AchievementId id,
 		UserId userId,
 		AchievementType type,
+		string? key,
 		string name,
 		string description)
 		: base(id)
 	{
 		UserId = userId;
 		Type = type;
+		Key = key;
 		Name = name;
 		Description = description;
 		UnlockedAt = DateTimeOffset.UtcNow;
@@ -43,12 +47,14 @@ public sealed class Achievement
 	public static Achievement Create(
 		UserId userId,
 		AchievementType type,
+		string? key,
 		string name,
 		string description) =>
 		new(
 			new AchievementId(Guid.CreateVersion7()),
 			userId,
 			type,
+			key,
 			name,
 			description);
 }

@@ -17,6 +17,7 @@ internal sealed class AchievementReadRepository(
 			.Select(a => new AchievementSummary(
 				a.Id.Value,
 				a.Type.ToString(),
+				a.Key,
 				a.Name,
 				a.Description,
 				a.UnlockedAt))

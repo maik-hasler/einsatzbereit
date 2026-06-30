@@ -29,6 +29,9 @@ internal sealed class AchievementConfiguration
 			.HasConversion<string>()
 			.IsRequired();
 
+		builder.Property(a => a.Key)
+			.HasMaxLength(100);
+
 		builder.Property(a => a.Name)
 			.IsRequired()
 			.HasMaxLength(200);
