@@ -14,13 +14,9 @@ import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
+import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 
-const STATUS_COLORS: Record<string, string> = {
-	Pending: "bg-yellow-50 text-yellow-700 border-yellow-100",
-	Confirmed: "bg-green-50 text-green-700 border-green-100",
-	Cancelled: "bg-red-50 text-red-700 border-red-100",
-	Withdrawn: "bg-gray-100 text-gray-500 border-gray-200",
-};
+const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -187,14 +183,14 @@ export default function EngagementManagementPage() {
 			</div>
 
 			{checkInMethod === "PINCode" && checkInPin && (
-				<div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
-					<p className="text-sm font-medium text-blue-900">
+				<div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-4">
+					<p className="text-sm font-medium text-brand-900">
 						{t("checkIn.organizerPin")}
 					</p>
-					<p className="mt-1 font-mono text-2xl font-bold tracking-widest text-blue-800">
+					<p className="mt-1 font-mono text-2xl font-bold tracking-widest text-brand-800">
 						{checkInPin}
 					</p>
-					<p className="mt-1 text-xs text-blue-600">
+					<p className="mt-1 text-xs text-brand-600">
 						{t("checkIn.organizerPinHint")}
 					</p>
 				</div>
