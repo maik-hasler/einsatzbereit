@@ -23,17 +23,17 @@ orgs -up-> identity : "Anti-Corruption Layer needed\norg membership split betwee
 opportunities -up-> orgs : "owned by"
 
 note bottom of engagements
-  Dead integration point: **EngagementCancelledDomainEvent**
-  is raised in Engagement.Cancel() but has no handler -
-  evidence event-driven integration was intended but never wired.
+Dead integration point: **EngagementCancelledDomainEvent**
+is raised in Engagement.Cancel() but has no handler -
+evidence event-driven integration was intended but never wired.
 end note
 
 legend right
-  |= Style |= Meaning |
-  | solid arrow | direct/synchronous call (tight coupling today) |
-  | dotted arrow | inline side-effect (should become event-driven) |
-  This is a code-derived AS-IS view for the Domain Storytelling
-  workshop proposed in issue #547, not a final TO-BE design.
+|= Style |= Meaning |
+| solid arrow | direct/synchronous call (tight coupling today) |
+| dotted arrow | inline side-effect (should become event-driven) |
+This is a code-derived AS-IS view for the Domain Storytelling
+workshop proposed in issue #547, not a final TO-BE design.
 endlegend
 
 @enduml

@@ -40,8 +40,7 @@ because they touch bounded-context boundaries the core flow above does not:
 
 * Organization onboarding & verification (admin)
 * Member management (joining/leaving an organization)
-* Withdraw / cancel and its consequences (orphaned slots, notifications - see
-  issues #539, #548)
+* Withdraw / cancel and its consequences (orphaned slots, notifications - see issues #539, #548)
 * Account deletion / "forget me" (right to erasure - see issue #546)
 * Reminders (scheduled, not actor-triggered)
 
