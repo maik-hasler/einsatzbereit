@@ -10,4 +10,5 @@ public sealed record CalendarTimeSlotDto(
 	Guid TimeSlotId,
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
-	int MaxParticipants);
+	int MaxParticipants,
+	int BookedCount);

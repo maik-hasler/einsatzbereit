@@ -36,6 +36,22 @@ interface CalEvent {
 	end: Date;
 	opportunityId: string;
 	color: string | undefined;
+	bookedCount: number;
+	maxParticipants: number;
+}
+
+function CalEventChip({ event }: { event: object }) {
+	const e = event as CalEvent;
+	return (
+		<span className="flex items-center justify-between gap-1 overflow-hidden">
+			<span className="truncate">{e.title}</span>
+			{e.maxParticipants > 0 && (
+				<span className="shrink-0 text-xs opacity-80">
+					{e.bookedCount}/{e.maxParticipants}
+				</span>
+			)}
+		</span>
+	);
 }
 
 type Tab = "calendar" | "engagements" | "members" | "settings";
@@ -175,6 +191,8 @@ export default function OrganizationOverviewPage() {
 			end: new Date(slot.endDateTime),
 			opportunityId: opp.opportunityId,
 			color: opp.color,
+			bookedCount: slot.bookedCount,
+			maxParticipants: slot.maxParticipants,
 		})),
 	);
 
@@ -469,6 +487,7 @@ export default function OrganizationOverviewPage() {
 								onNavigate={(d: Date) => setCalDate(d)}
 								views={["month", "week", "work_week", "day"]}
 								style={{ height: 600 }}
+								components={{ event: CalEventChip }}
 								eventPropGetter={(event: object) => {
 									const e = event as CalEvent;
 									const bg = e.color ?? DEFAULT_EVENT_COLOR;
@@ -520,6 +539,14 @@ export default function OrganizationOverviewPage() {
 									{selectedEvent.title}
 								</h2>
 								<div className="space-y-4">
+									{selectedEvent.maxParticipants > 0 && (
+										<p className="text-sm text-gray-600">
+											{t("orgOverview.eventFillState", {
+												booked: selectedEvent.bookedCount,
+												max: selectedEvent.maxParticipants,
+											})}
+										</p>
+									)}
 									<div>
 										<label
 											htmlFor="event-color-picker"
@@ -543,15 +570,24 @@ export default function OrganizationOverviewPage() {
 									{colorSaveError && (
 										<p className="text-sm text-red-600">{colorSaveError}</p>
 									)}
-									<div className="flex justify-between gap-3">
-										<Link
-											to={`/volunteer-opportunities/${selectedEvent.opportunityId}`}
-											className="text-sm text-brand-700 hover:underline"
-											onClick={() => setSelectedEvent(null)}
-										>
-											{t("orgOverview.eventNavigate")}
-										</Link>
-										<div className="flex gap-2">
+									<div className="flex flex-col gap-2">
+										<div className="flex gap-4">
+											<Link
+												to={`/volunteer-opportunities/${selectedEvent.opportunityId}`}
+												className="text-sm text-brand-700 hover:underline"
+												onClick={() => setSelectedEvent(null)}
+											>
+												{t("orgOverview.eventNavigate")}
+											</Link>
+											<Link
+												to={`/volunteer-opportunities/${selectedEvent.opportunityId}/engagements`}
+												className="text-sm text-brand-700 hover:underline"
+												onClick={() => setSelectedEvent(null)}
+											>
+												{t("orgOverview.eventManageApplications")}
+											</Link>
+										</div>
+										<div className="flex justify-end gap-2">
 											<button
 												type="button"
 												onClick={() => setSelectedEvent(null)}

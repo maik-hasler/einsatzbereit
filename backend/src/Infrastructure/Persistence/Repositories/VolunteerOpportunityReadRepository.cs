@@ -405,21 +405,39 @@ internal sealed class VolunteerOpportunityReadRepository(
 				vo.Color,
 				TimeSlots = vo.TimeSlots
 					.OrderBy(ts => ts.StartDateTime)
-					.Select(ts => new CalendarTimeSlotDto(
-						ts.Id.Value,
-						ts.StartDateTime,
-						ts.EndDateTime,
-						ts.MaxParticipants))
+					.Select(ts => new { SlotId = ts.Id.Value, ts.StartDateTime, ts.EndDateTime, ts.MaxParticipants })
 					.ToList(),
 			})
 			.ToListAsync(cancellationToken);
+
+		var opportunityIds = rows.Select(r => new VolunteerOpportunityId(r.Id)).ToList();
+		var slotCounts = opportunityIds.Count == 0
+			? new Dictionary<Guid, int>()
+			: await dbContext.VolunteerOpportunitiesQuery
+				.Where(vo => opportunityIds.Contains(vo.Id))
+				.SelectMany(vo => vo.TimeSlots)
+				.Select(ts => new
+				{
+					SlotId = ts.Id.Value,
+					BookedCount = dbContext.EngagementsQuery.Count(e =>
+						e.TimeSlotId == ts.Id &&
+						(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
+				})
+				.ToDictionaryAsync(x => x.SlotId, x => x.BookedCount, cancellationToken);
 
 		return rows
 			.Select(r => new OrganizationCalendarEventDto(
 				r.Id,
 				r.Title,
 				r.Color,
-				r.TimeSlots))
+				r.TimeSlots
+					.Select(ts => new CalendarTimeSlotDto(
+						ts.SlotId,
+						ts.StartDateTime,
+						ts.EndDateTime,
+						ts.MaxParticipants,
+						slotCounts.GetValueOrDefault(ts.SlotId, 0)))
+					.ToList()))
 			.ToList();
 	}
 }
