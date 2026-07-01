@@ -1,0 +1,39 @@
+@startuml Context Map (Candidate, AS-IS)
+
+title Candidate Bounded Context Map - AS-IS coupling (see ADR 5)
+
+skinparam rectangle {
+	BackgroundColor White
+	BorderColor Black
+}
+
+rectangle "Identity & Access\n(Keycloak + Domain/Users, partial)" as identity
+rectangle "Organization Management\n(Domain/Organizations)" as orgs
+rectangle "Opportunity Management\n(Domain/VolunteerOpportunities)" as opportunities
+rectangle "Participation / Engagement\n(Domain/Engagements)" as engagements
+rectangle "Feedback\n(embedded in Engagement)" as feedback
+rectangle "Recognition / Gamification\n(Domain/Achievements, UserStreak)" as recognition
+rectangle "Notifications\n(Domain/Notifications)" as notifications
+
+engagements -right-> opportunities : "Shared Kernel (today)\nreaches into opportunity.TimeSlots\nfor capacity checks"
+engagements -down-> recognition : "Customer/Supplier (today, synchronous)\ndirect AwardAchievementCommand +\nstreak recording from ConfirmEngagementCommandHandler\n--> should become async, reacting to EngagementConfirmed"
+engagements .down.> notifications : "Published Language (today, inline)\nevery handler creates Notification directly\n--> should become a downstream consumer of domain events"
+feedback -up-> engagements : "embedded, not yet split out"
+orgs -up-> identity : "Anti-Corruption Layer needed\norg membership split between Keycloak and local store"
+opportunities -up-> orgs : "owned by"
+
+note bottom of engagements
+  Dead integration point: **EngagementCancelledDomainEvent**
+  is raised in Engagement.Cancel() but has no handler -
+  evidence event-driven integration was intended but never wired.
+end note
+
+legend right
+  |= Style |= Meaning |
+  | solid arrow | direct/synchronous call (tight coupling today) |
+  | dotted arrow | inline side-effect (should become event-driven) |
+  This is a code-derived AS-IS view for the Domain Storytelling
+  workshop proposed in issue #547, not a final TO-BE design.
+endlegend
+
+@enduml

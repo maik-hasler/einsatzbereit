@@ -1,0 +1,153 @@
+== 5. Bounded Contexts and Event-Driven Integration
+
+=== Status
+Proposed
+
+=== Date
+2026-07-01
+
+=== Context
+Issue #547 asks us to make the domain explicit before 1.0 hardens the
+current structure: capture how Einsatzbereit actually works as a Domain
+Story, derive bounded contexts and a context map from it, and define a path
+toward self-contained systems (SCS). A first, code-derived AS-IS domain
+story lives at
+link:../domain-stories/as-is-core-flow.html[domain-stories/as-is-core-flow.adoc]
+and the candidate context map at
+link:../images/context-map.puml[context-map.puml].
+
+The current `Domain/` folder is already organized by concept
+(`Users`, `Organizations`, `VolunteerOpportunities`, `Engagements`,
+`Achievements`, `Notifications`), but the modules are not decoupled:
+
+* `CreateEngagementCommandHandler` reaches directly into
+  `opportunity.TimeSlots` for capacity checks (shared-model coupling between
+  Engagement and Opportunity).
+* `ConfirmEngagementCommandHandler` directly issues `AwardAchievementCommand`
+  and records streaks - Gamification is called synchronously from the core
+  participation flow instead of reacting to it.
+* Every engagement/opportunity handler creates a `Notification` row
+  directly, instead of Notifications being a downstream consumer.
+* `EngagementCancelledDomainEvent` is raised in `Engagement.Cancel()` but has
+  **no registered handler** - concrete evidence that event-driven
+  integration between contexts was intended at some point but never wired
+  up.
+* Organization membership is split between Keycloak (roles) and the local
+  `Organizations` module, with no explicit anti-corruption boundary.
+
+None of this is a functional bug today; it is friction that will make future
+changes (per-context ownership, independent deployability, the SCS goal in
+#547) increasingly expensive if left alone.
+
+=== Decision
+Adopt the following bounded-context catalog as the working model until a
+Domain Storytelling workshop with domain experts revises it:
+
+[cols="1,3,2" options="header"]
+|===
+|Context |Responsibility |Today lives in
+
+|Identity & Access
+|Users, roles, org membership
+|Keycloak + `Domain/Users` (partial)
+
+|Organization Management
+|Org profile, members, verification
+|`Domain/Organizations`
+
+|Opportunity Management (core)
+|Opportunities, time slots, publish, banner
+|`Domain/VolunteerOpportunities`
+
+|Participation / Engagement (core)
+|Apply, waitlist, confirm, cancel, withdraw, check-in
+|`Domain/Engagements`
+
+|Feedback
+|Ratings & comments
+|currently embedded in `Engagement`
+
+|Recognition / Gamification
+|Achievements, badges, streaks
+|`Domain/Achievements`, `Domain/Users/UserStreak`
+
+|Notifications
+|In-app + email
+|`Domain/Notifications`
+|===
+
+Going forward, cross-context integration should prefer **domain events**
+over direct calls or shared-model reach-through:
+
+* Introduce explicit domain events for the seams identified above -
+  `EngagementConfirmed`, `EngagementCheckedIn`, `FeedbackSubmitted` - and move
+  Recognition and Notifications to react to them instead of being called
+  inline from `Engagement`/`VolunteerOpportunity` command handlers.
+* Wire (or remove) the currently dead `EngagementCancelledDomainEvent`
+  handler as the first concrete step, since it already demonstrates the
+  intended pattern.
+* Keep Engagement <-> Opportunity/TimeSlot as a deliberate Shared Kernel for
+  now (capacity is a genuine cross-context invariant); revisit only if the
+  coupling grows further.
+* Treat Identity & Access as requiring an explicit Anti-Corruption Layer
+  between Keycloak-held roles and the locally-owned `Organizations`
+  membership data.
+
+Recognition and Notifications are the first candidates for an eventual SCS
+carve-out, since they are naturally downstream/async consumers once the
+event model above is in place. Actually splitting into separately deployed
+systems remains out of scope for this ADR.
+
+=== Rationale
+* The dead `EngagementCancelledDomainEvent` handler shows the codebase
+  already has the primitives (a domain event dispatcher) for this pattern;
+  the gap is discipline, not infrastructure.
+* Moving Gamification and Notifications to react to events removes them from
+  the core participation transaction, so a failure to award a badge or send
+  a notification can no longer affect whether a confirm/cancel succeeds.
+* Naming the bounded-context catalog now gives the NetArchTest suite
+  (already used in this repo for Clean Architecture layering) a vocabulary
+  to eventually enforce module boundaries per context, closing the loop
+  requested in #547's roadmap.
+
+=== Considered Alternatives
+
+==== Do nothing until the full Domain Storytelling workshop happens
+Wait for a dedicated workshop with organizers and volunteers before writing
+anything down.
+
+* Pros
+** Avoids codifying an AS-IS model that might be wrong before domain experts
+   weigh in.
+* Cons
+** #547 has been open across many sessions with no workshop scheduled; a
+   code-derived starting point lowers the cost of that future workshop
+   rather than replacing it.
+** The dead-event-handler and inline-coupling findings are concrete and
+   worth recording regardless of workshop timing.
+
+==== Split into separate deployable services now
+Jump straight to physically separating Notifications/Recognition as their
+own services.
+
+* Pros
+** Forces the decoupling immediately.
+* Cons
+** Premature at current scale; the in-process event-driven step above is a
+   prerequisite (a strangler-fig sequence), not something to skip.
+** Adds operational complexity (deployment, service discovery, distributed
+   transactions) not justified yet.
+
+=== Consequences
+* This ADR is **Proposed**, not Accepted - it should move to Accepted (or be
+  revised) after the Domain Storytelling workshop described in
+  link:../domain-stories/as-is-core-flow.html[the AS-IS domain
+  story] happens.
+* No code changes ship with this ADR. It records the target integration
+  pattern so that the next concrete step (wiring or removing
+  `EngagementCancelledDomainEvent`, and introducing `EngagementConfirmed`)
+  can be scoped as its own focused PR against issue #547.
+* Until the event-driven integration lands, `ConfirmEngagementCommandHandler`
+  remains the single place where Engagement, Recognition, and Notifications
+  intersect - anyone changing confirmation behavior needs to be aware all
+  three are affected together.

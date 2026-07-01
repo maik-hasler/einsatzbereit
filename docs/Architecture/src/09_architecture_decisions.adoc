@@ -31,4 +31,18 @@ The following table lists the relevant architecture decisions. Each decision lin
 |2026-03-25
 |link:ADRs/3_keycloak.html[Keycloak]
 
+|4
+|Geocoding
+|Geocode addresses at write time; bounding-box + Haversine spatial search, no PostGIS.
+|Accepted
+|2026-05-13
+|link:ADRs/4_geocoding_and_geo_search.html[Geocoding and Geo Search]
+
+|5
+|Bounded Contexts
+|Candidate bounded-context catalog and event-driven integration pattern between contexts.
+|Proposed
+|2026-07-01
+|link:ADRs/5_bounded_contexts_and_event_driven_integration.html[Bounded Contexts and Event-Driven Integration]
+
 |===

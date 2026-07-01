@@ -1,0 +1,66 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[domain-story-as-is-core-flow]]
+= Domain Story: AS-IS Core Flow
+
+== Status
+
+Scaffold - code-derived starting point for issue #547.
+
+CAUTION: Domain Storytelling is a *collaborative* modeling technique (see Hofer &
+Schwentner, _Domain Storytelling_, WPS; tool: https://egon.io[egon.io]). The
+story below was reconstructed from the current codebase by an automated
+session, not captured in a workshop with the actual domain experts
+(organizers and volunteers). Treat it as a draft to correct and refine in a
+real session, not as ground truth.
+
+== AS-IS story - core flow
+
+Sentence form: `Actor -> activity -> work object [-> recipient]`
+
+1. Volunteer *searches* the _opportunity list_ for needs nearby.
+2. Organizer *creates* an _opportunity_ with _time slots_.
+3. Organizer *publishes* the _opportunity_.
+4. Volunteer *applies to* the _opportunity_ (a _message_, or a _time slot_).
+5. System *notifies* the Organizer of the new _application_.
+6. Organizer *reviews* the _applications_.
+7. Organizer *confirms* an _application_.
+8. System *notifies* the Volunteer of the _confirmation_.
+9. Volunteer *checks in* with a _PIN/QR code_ at the _event_.
+10. Volunteer *submits* _feedback_ for the _engagement_.
+11. System *awards* a _badge_ to the Volunteer.
+
+A visual (egon.io) version of this story should be produced in the workshop
+and exported as `.egn` + PNG into this folder.
+
+== Secondary stories (not yet told)
+
+These are worth capturing as their own domain stories in the workshop,
+because they touch bounded-context boundaries the core flow above does not:
+
+* Organization onboarding & verification (admin)
+* Member management (joining/leaving an organization)
+* Withdraw / cancel and its consequences (orphaned slots, notifications - see
+  issues #539, #548)
+* Account deletion / "forget me" (right to erasure - see issue #546)
+* Reminders (scheduled, not actor-triggered)
+
+== How this feeds the context map
+
+Each activity above is annotated in link:{imagesdir}/context-map.puml[the
+candidate context map] with the bounded context that currently owns it. The
+seams between contexts in that diagram are exactly the points where this
+story crosses from one actor/system responsibility to another (e.g. step 7
+"confirms" today directly triggers Recognition and Notifications side
+effects instead of only emitting `EngagementConfirmed`).
+
+See link:../ADRs/5_bounded_contexts_and_event_driven_integration.html[ADR
+5] for the proposed bounded-context catalog and integration pattern that
+follows from this story.
+
+== Next steps (from issue #547's roadmap)
+
+* [ ] Run the actual Domain Storytelling workshop with organizers + volunteers.
+* [ ] Replace this text version with the egon.io export.
+* [ ] Extend to the secondary stories above.
+* [ ] Enforce the resulting module boundaries with NetArchTest rules per context.

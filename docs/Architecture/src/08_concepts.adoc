@@ -93,3 +93,22 @@ Key logged events:
 * Startup configuration summary
 
 No external observability service (Datadog, Grafana, etc.) is currently integrated - this is a deliberate trade-off to keep operational complexity minimal.
+
+=== Domain Storytelling and Bounded Contexts
+
+As a step toward the Domain Storytelling / bounded-contexts / self-contained
+systems track (issue #547), the domain has a code-derived AS-IS story and a
+candidate context map:
+
+* link:domain-stories/as-is-core-flow.html[AS-IS domain story - core flow]
+* link:ADRs/5_bounded_contexts_and_event_driven_integration.html[ADR 5 -
+  Bounded Contexts and Event-Driven Integration]
+
+.Candidate Context Map
+[plantuml, "context-map", png]
+....
+include::../images/context-map.puml[]
+....
+
+These are a starting point for a Domain Storytelling workshop with domain
+experts, not a finalized design - see the caveats in the linked documents.

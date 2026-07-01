@@ -52,6 +52,10 @@ jobs:
               -b html5 \
               -D build/TDRs \
               docs/TDRs/*.adoc
+            asciidoctor \
+              -b html5 \
+              -D build/domain-stories \
+              docs/Architecture/domain-stories/*.adoc
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
