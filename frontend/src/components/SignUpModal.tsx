@@ -61,7 +61,7 @@ export default function SignUpModal({
 		<div className="fixed inset-0 z-[2000] flex items-center justify-center">
 			<button
 				type="button"
-				className="absolute inset-0 bg-black/40"
+				className="absolute inset-0 bg-black/50"
 				onClick={onClose}
 				tabIndex={-1}
 				aria-hidden="true"
@@ -70,7 +70,7 @@ export default function SignUpModal({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="sign-up-dialog-title"
-				className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+				className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
 			>
 				<h2 id="sign-up-dialog-title" className="mb-4 text-lg font-semibold">
 					{isWaitlist ? t("signUp.titleWaitlist") : t("signUp.titleInterest")}

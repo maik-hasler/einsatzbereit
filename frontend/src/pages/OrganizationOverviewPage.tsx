@@ -499,12 +499,12 @@ export default function OrganizationOverviewPage() {
 
 					{/* Color picker modal */}
 					{selectedEvent && (
-						<div className="fixed inset-0 z-50 flex items-center justify-center">
+						<div className="fixed inset-0 z-[2000] flex items-center justify-center">
 							<button
 								type="button"
 								aria-hidden="true"
 								tabIndex={-1}
-								className="absolute inset-0 bg-black/40"
+								className="absolute inset-0 bg-black/50"
 								onClick={() => setSelectedEvent(null)}
 							/>
 							<div
@@ -515,7 +515,7 @@ export default function OrganizationOverviewPage() {
 							>
 								<h2
 									id="color-dialog-title"
-									className="mb-4 text-base font-semibold text-gray-900"
+									className="mb-4 text-lg font-semibold text-gray-900"
 								>
 									{selectedEvent.title}
 								</h2>
