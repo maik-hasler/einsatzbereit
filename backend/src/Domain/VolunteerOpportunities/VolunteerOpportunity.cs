@@ -179,6 +179,12 @@ public sealed class VolunteerOpportunity
 		IsRemote = isRemote;
 		Address = address;
 		Occurrence = occurrence;
+		// Time slots are only meaningful for Waitlist opportunities (see AddTimeSlot).
+		// Clearing them when switching away prevents orphaned slots from lingering
+		// once the opportunity no longer surfaces them. Callers must ensure no
+		// active engagements reference these slots before switching away.
+		if (participationType != ParticipationType.Waitlist && ParticipationType == ParticipationType.Waitlist)
+			_timeSlots.Clear();
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
 		Category = category;

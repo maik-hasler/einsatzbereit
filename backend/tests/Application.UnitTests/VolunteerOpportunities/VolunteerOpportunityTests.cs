@@ -182,6 +182,32 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
+	public void Update_ShouldClearTimeSlots_WhenSwitchingAwayFromWaitlist()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			CheckInMethod.None);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
+
+		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, []);
+
+		opportunity.TimeSlots.Should().BeEmpty();
+	}
+
+	[Test]
+	public void Update_ShouldKeepTimeSlots_WhenStayingWaitlist()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			CheckInMethod.None);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
+
+		opportunity.Update("New title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
+
+		opportunity.TimeSlots.Should().HaveCount(1);
+	}
+
+	[Test]
 	public void Update_ShouldAllowRemote_WithNullAddress()
 	{
 		var opportunity = VolunteerOpportunity.Create(
