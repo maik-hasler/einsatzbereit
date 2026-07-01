@@ -48,7 +48,7 @@ public class IntegrationTestFixture
 
 		_keycloakClient = _app.CreateHttpClient("keycloak");
 
-		var backendClient = _app.CreateHttpClient("backend");
+		var backendClient = _app.CreateHttpClient("backend", "http");
 		await WaitForBackendReadyAsync(backendClient);
 
 		await WaitForRealmReadyAsync();
@@ -75,7 +75,7 @@ public class IntegrationTestFixture
 		await _app.DisposeAsync();
 
 	public HttpClient CreateHttpClient() =>
-		_app.CreateHttpClient("backend");
+		_app.CreateHttpClient("backend", "http");
 
 	public async Task<string> GetAccessTokenAsync(string username, string password)
 	{
