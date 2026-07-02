@@ -49,7 +49,7 @@ public class CancelEngagementCommandHandlerTests
 	}
 
 	private static VolunteerOpportunity CreateDefaultOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, status: OpportunityStatus.Draft);
 
 	private static Engagement CreatePendingWaitlistEngagement() =>
 		Engagement.CreateWaitlistSignUp(

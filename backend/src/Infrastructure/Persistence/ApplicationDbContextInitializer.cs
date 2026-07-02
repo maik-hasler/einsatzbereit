@@ -62,8 +62,10 @@ internal sealed class ApplicationDbContextInitializer(
 				new Domain.VolunteerOpportunities.Address("Hauptstrasse", "1", "12345", "Musterstadt"),
 				Occurrence.OneTime,
 				ParticipationType.Waitlist,
-				CheckInMethod.Manual);
+				CheckInMethod.Manual,
+				status: OpportunityStatus.Draft);
 			opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20);
+			opp1.Publish();
 
 			var opp2 = VolunteerOpportunity.Create(
 				org1Id,
@@ -83,9 +85,11 @@ internal sealed class ApplicationDbContextInitializer(
 				new Domain.VolunteerOpportunities.Address("Tiergartenweg", "5", "12345", "Musterstadt"),
 				Occurrence.Recurring,
 				ParticipationType.Waitlist,
-				CheckInMethod.QRCode);
+				CheckInMethod.QRCode,
+				status: OpportunityStatus.Draft);
 			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5);
 			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), 5);
+			opp3.Publish();
 
 			var opp4 = VolunteerOpportunity.Create(
 				org2Id,

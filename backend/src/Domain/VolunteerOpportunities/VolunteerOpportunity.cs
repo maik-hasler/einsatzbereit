@@ -97,7 +97,16 @@ public sealed class VolunteerOpportunity
 			throw new DomainException("Title must not be empty.");
 
 		if (status == OpportunityStatus.Published)
+		{
 			EnsurePublishable(description, isRemote, address);
+
+			// Time slots can only be added after the aggregate is created (see
+			// AddTimeSlot), so a Waitlist opportunity can never satisfy the
+			// "at least one time slot" rule at construction time. Callers must
+			// create it as a Draft, add slots, then call Publish().
+			if (participationType == ParticipationType.Waitlist)
+				throw new DomainException("A Waitlist opportunity must be created as a draft and published after adding at least one time slot.");
+		}
 
 		return new VolunteerOpportunity(
 			new VolunteerOpportunityId(Guid.CreateVersion7()),

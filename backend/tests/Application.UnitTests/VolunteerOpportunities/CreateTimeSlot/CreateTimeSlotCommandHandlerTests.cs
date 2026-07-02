@@ -36,7 +36,8 @@ public class CreateTimeSlotCommandHandlerTests
 	private static VolunteerOpportunity CreateOpportunity() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None);
+			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None,
+			status: OpportunityStatus.Draft);
 
 	[Test]
 	public async Task Handle_ShouldCreateSingleSlot_WhenNoRecurrence(

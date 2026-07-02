@@ -565,6 +565,12 @@ export default function CreateVolunteerOpportunityModal({
 					}
 				}
 			} else {
+				// A Waitlist opportunity can't be published until it has at least
+				// one time slot, and slots can only be added after the opportunity
+				// exists. Always create it as a draft, add slots and banner, then
+				// publish - this also keeps it invisible in listings if any step
+				// in between fails, instead of leaving a published dead-end.
+				const publishWaitlistAfterCreate = !asDraft && isWaitlist;
 				const opportunity = await api.createVolunteerOpportunity({
 					title: form.title,
 					description: form.description,
@@ -579,7 +585,7 @@ export default function CreateVolunteerOpportunityModal({
 					checkInMethod: form.checkInMethod,
 					category: form.category,
 					tags: form.tags,
-					isDraft: asDraft,
+					isDraft: asDraft || publishWaitlistAfterCreate,
 				});
 				if (bannerFile) {
 					try {
@@ -599,6 +605,9 @@ export default function CreateVolunteerOpportunityModal({
 						recurrenceFrequency: undefined,
 						recurrenceCount: 1,
 					});
+				}
+				if (publishWaitlistAfterCreate) {
+					await api.publishVolunteerOpportunity(opportunity.id);
 				}
 				if (asDraft) {
 					dispatchToast("success", t("createOpportunity.draftSavedToast"));
