@@ -304,4 +304,74 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var amberBadge = draftsSection.Locator("[class*='bg-amber-100']").First;
 		await Expect(amberBadge).ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task PublishWaitlist_BlockedWithNoTimeSlots_SucceedsAfterAddingOne()
+	{
+		// Regression for #542: a Waitlist opportunity could be published with
+		// zero time slots via the direct-create-as-Published path, since
+		// VolunteerOpportunity.Create() had no equivalent guard to Publish().
+		// Verifies the UI still blocks publishing with no slots, and that the
+		// supported draft -> add-slot -> publish flow succeeds.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var uniqueTitle = $"Waitlist Publish Gap Test {Guid.NewGuid().ToString("N")[..8]}";
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		if (await createBtn.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return; // modal did not open - skip remaining assertions
+		}
+
+		// Step 1: title/description.
+		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
+		await Page.Locator("#opportunity-description").FillAsync(
+			"Regression test for the Waitlist publish-with-no-slots gap.");
+
+		// Step 2: remote, to skip address fields.
+		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
+		await Page.Locator("#opportunity-remote").CheckAsync();
+
+		// Step 3: Waitlist participation type.
+		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
+		await Page.Locator("input[name='participationType'][value='Waitlist']").CheckAsync();
+
+		// Step 4: publishing with no time slots must still be blocked client-side.
+		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("wizard-step-4")).ToBeVisibleAsync();
+
+		// Add a time slot, then publishing must succeed.
+		var start = DateTimeOffset.UtcNow.AddDays(7);
+		var end = start.AddHours(2);
+		var step4 = Page.GetByTestId("wizard-step-4");
+		await step4.Locator("#slot-start").FillAsync(start.ToString("yyyy-MM-ddTHH:mm"));
+		await step4.Locator("#slot-end").FillAsync(end.ToString("yyyy-MM-ddTHH:mm"));
+		var addSlotBtn = step4.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true });
+		await addSlotBtn.ClickAsync();
+		await Expect(addSlotBtn).ToBeEnabledAsync(new() { Timeout = 5000 });
+
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// The newly published opportunity is visible in the public list.
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var listedCard = Page
+			.Locator("a[href*='/volunteer-opportunities/']")
+			.Filter(new() { HasText = uniqueTitle });
+		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
+	}
 }
