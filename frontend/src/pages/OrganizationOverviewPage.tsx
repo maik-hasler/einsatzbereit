@@ -13,6 +13,7 @@ import type {
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { inputClass, labelClass } from "../lib/formClasses";
 import EmptyState from "../components/EmptyState";
 
 const rbcLocales = {
@@ -61,10 +62,6 @@ const VALID_TABS: Tab[] = ["calendar", "engagements", "members", "settings"];
 function isTab(v: string | null): v is Tab {
 	return VALID_TABS.includes(v as Tab);
 }
-
-const inputClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
-const labelClass = "block text-xs text-gray-600";
 
 function Field({
 	label,

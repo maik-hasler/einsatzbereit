@@ -9,6 +9,7 @@ import type {
 } from "../client/api-client";
 import EmptyState from "../components/EmptyState";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { inputClass, labelClass } from "../lib/formClasses";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -742,11 +743,6 @@ export default function OrganizationSettingsPage() {
 		</>
 	);
 }
-
-const inputClass =
-	"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
-
-const labelClass = "block text-xs text-gray-600";
 
 function Field({
 	label,
