@@ -24,7 +24,7 @@ src/
 │   └── ProtectedRoute.tsx  Redirects to Keycloak if not authenticated
 ├── pages/
 │   ├── HomePage.tsx                    Main page with VolunteerOpportunitiesList
-│   ├── OrganizationSettingsPage.tsx    Org settings: general info + member management
+│   ├── OrganizationOverviewPage.tsx    Org dashboard: calendar/engagements/members/settings tabs
 │   ├── DatenschutzPage.tsx             Privacy policy (static)
 │   └── ImpressumPage.tsx               Legal notice (static)
 ├── styles/global.css       Tailwind directives + custom brand theme
