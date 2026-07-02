@@ -22,6 +22,10 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// Profile fields render read-only until "Edit" is clicked.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true })
+			.First.ClickAsync();
+
 		var profileInput = Page.Locator("#first-name");
 		await Expect(profileInput).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		var profileInputClass = await profileInput.GetAttributeAsync("class");
@@ -40,6 +44,10 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		await settingsLink.ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/organizations/**/settings");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Org general-info fields also render read-only until "Edit" is clicked.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true })
+			.First.ClickAsync();
 
 		var orgInput = Page.Locator("#org-name");
 		await Expect(orgInput).ToBeVisibleAsync(new() { Timeout = 20_000 });
