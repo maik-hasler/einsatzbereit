@@ -3,7 +3,10 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.RemoveMember.v1;
+using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Organizations.RemoveMember.v1;
 
@@ -16,6 +19,7 @@ internal sealed class RemoveMemberEndpoint
 			.WithName("RemoveMember")
 			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
@@ -27,9 +31,12 @@ internal sealed class RemoveMemberEndpoint
 		[FromRoute] Guid organizationId,
 		[FromRoute] Guid userId,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var command = new RemoveMemberCommand(organizationId, userId);
+		var requestingUserId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+
+		var command = new RemoveMemberCommand(organizationId, userId, requestingUserId);
 
 		await sender.Send(command, cancellationToken);
 

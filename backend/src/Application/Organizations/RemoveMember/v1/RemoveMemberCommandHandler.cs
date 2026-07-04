@@ -1,3 +1,4 @@
+using Application.Common.Authorization;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 
@@ -11,6 +12,12 @@ internal sealed class RemoveMemberCommandHandler(
 		RemoveMemberCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrganizationService,
+			request.OrganizationId,
+			request.RequestingUserId,
+			cancellationToken);
+
 		await keycloakOrganizationService.RemoveMemberAsync(
 			request.OrganizationId, request.UserId, cancellationToken);
 
