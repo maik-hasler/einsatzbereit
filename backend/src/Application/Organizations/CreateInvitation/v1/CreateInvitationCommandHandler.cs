@@ -1,3 +1,4 @@
+using Application.Common.Authorization;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -21,6 +22,12 @@ internal sealed class CreateInvitationCommandHandler(
 	{
 		var org = await dbContext.Organizations.FindAsync(request.OrganizationId, cancellationToken)
 			?? throw new DomainException("Organization not found.");
+
+		await OwnershipGuard.EnsureIsOrgMemberAsync(
+			keycloakOrganizationService,
+			request.OrganizationId.Value,
+			request.InvitedById,
+			cancellationToken);
 
 		var inviteeProfile = await keycloakUserService.GetUserAsync(request.InviteeId.Value, cancellationToken);
 
