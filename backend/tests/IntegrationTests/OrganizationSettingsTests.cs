@@ -164,10 +164,13 @@ public class OrganizationSettingsTests(
 	public async Task RemoveMember_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// vera creates her own organization and becomes its sole member/organizer.
+		// vera creates her own organization and becomes its sole member/organizer. Her original
+		// access token predates that role grant, so a fresh token is needed to call organizer-only
+		// endpoints against her own org afterwards.
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var veraOrg = await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Unrelated Org" }, cancellationToken);
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var veraOrgDetails = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
 		var veraUserId = veraOrgDetails.Members.Single().UserId;
 
