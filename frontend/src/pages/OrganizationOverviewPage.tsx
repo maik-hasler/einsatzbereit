@@ -15,6 +15,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { inputClass, labelClass } from "../lib/formClasses";
 import EmptyState from "../components/EmptyState";
+import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpportunityModal";
 
 const rbcLocales = {
 	"en-US": enUS,
@@ -146,6 +147,14 @@ export default function OrganizationOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
+	// ── Create opportunity ───────────────────────────────────────────────────
+	const [showCreateModal, setShowCreateModal] = useState(false);
+
+	function handleOpportunityCreated() {
+		loadCalendarEvents();
+		setEngInitialized(false);
+	}
+
 	// ── Calendar tab ────────────────────────────────────────────────────────
 	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
 	const [calLoading, setCalLoading] = useState(true);
@@ -166,7 +175,7 @@ export default function OrganizationOverviewPage() {
 		return () => document.removeEventListener("keydown", handleKey);
 	}, [selectedEvent]);
 
-	useEffect(() => {
+	function loadCalendarEvents() {
 		if (!organizationId) return;
 		setCalLoading(true);
 		setCalError(null);
@@ -177,6 +186,10 @@ export default function OrganizationOverviewPage() {
 				setCalError(e instanceof Error ? e.message : String(e)),
 			)
 			.finally(() => setCalLoading(false));
+	}
+
+	useEffect(() => {
+		loadCalendarEvents();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
@@ -433,9 +446,21 @@ export default function OrganizationOverviewPage() {
 
 	return (
 		<div className={activeTab !== "calendar" ? "max-w-2xl" : ""}>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">
-				{org?.name ?? t("orgDashboard.title")}
-			</h1>
+			<div className="mb-6 flex items-center justify-between gap-3">
+				<h1 className="text-2xl font-bold text-gray-900">
+					{org?.name ?? t("orgDashboard.title")}
+				</h1>
+				{organizationId && (
+					<button
+						type="button"
+						onClick={() => setShowCreateModal(true)}
+						data-testid="create-opportunity-btn"
+						className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none"
+					>
+						{t("orgOverview.createOpportunity")}
+					</button>
+				)}
+			</div>
 
 			{/* Tab bar */}
 			<div className="mb-6 border-b border-gray-200">
@@ -1192,6 +1217,14 @@ export default function OrganizationOverviewPage() {
 						</>
 					)}
 				</div>
+			)}
+
+			{showCreateModal && organizationId && (
+				<CreateVolunteerOpportunityModal
+					organizationId={organizationId}
+					onClose={() => setShowCreateModal(false)}
+					onSuccess={handleOpportunityCreated}
+				/>
 			)}
 		</div>
 	);

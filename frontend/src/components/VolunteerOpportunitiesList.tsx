@@ -3,16 +3,10 @@ import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { getActiveOrgId } from "../lib/activeOrg";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
-import CreateVolunteerOpportunityModal from "./CreateVolunteerOpportunityModal";
 import EmptyState from "./EmptyState";
-
-interface Props {
-	canCreateOpportunity: boolean;
-}
 
 const LIST_PAGE_SIZE = 10;
 
@@ -815,9 +809,7 @@ function FilterDropdown({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function VolunteerOpportunitiesList({
-	canCreateOpportunity,
-}: Props) {
+export default function VolunteerOpportunitiesList() {
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -856,8 +848,6 @@ export default function VolunteerOpportunitiesList({
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [refreshKey, setRefreshKey] = useState(0);
-	const [showModal, setShowModal] = useState(false);
 
 	useEffect(() => {
 		function handleOutside(e: MouseEvent) {
@@ -931,7 +921,6 @@ export default function VolunteerOpportunitiesList({
 		dateTo,
 		categories: categoriesParam,
 		tag,
-		refreshKey,
 	});
 
 	useEffect(() => {
@@ -946,8 +935,7 @@ export default function VolunteerOpportunitiesList({
 			prev.dateFrom !== dateFrom ||
 			prev.dateTo !== dateTo ||
 			prev.categories !== categoriesParam ||
-			prev.tag !== tag ||
-			prev.refreshKey !== refreshKey;
+			prev.tag !== tag;
 
 		prevFiltersRef.current = {
 			lat,
@@ -960,7 +948,6 @@ export default function VolunteerOpportunitiesList({
 			dateTo,
 			categories: categoriesParam,
 			tag,
-			refreshKey,
 		};
 
 		if (filterChanged) {
@@ -1040,10 +1027,7 @@ export default function VolunteerOpportunitiesList({
 		dateTo,
 		categoriesParam,
 		tag,
-		refreshKey,
 	]);
-
-	const activeOrgId = getActiveOrgId();
 
 	function updateFilter(key: string, value: string) {
 		const next = new URLSearchParams(window.location.search);
@@ -1205,16 +1189,6 @@ export default function VolunteerOpportunitiesList({
 				<p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
 					{t("opportunities.subtitle")}
 				</p>
-				{canCreateOpportunity && (
-					<button
-						type="button"
-						onClick={() => setShowModal(true)}
-						data-testid="create-opportunity-btn"
-						className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none"
-					>
-						{t("opportunities.createNeed")}
-					</button>
-				)}
 			</div>
 
 			{/* Filter bar */}
@@ -1752,14 +1726,6 @@ export default function VolunteerOpportunitiesList({
 						</div>
 					)}
 				</>
-			)}
-
-			{showModal && activeOrgId && (
-				<CreateVolunteerOpportunityModal
-					organizationId={activeOrgId}
-					onClose={() => setShowModal(false)}
-					onSuccess={() => setRefreshKey((k) => k + 1)}
-				/>
 			)}
 		</div>
 	);
