@@ -30,7 +30,12 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.Locator("button[aria-expanded]");
+		// The switcher toggle has aria-label "Switch organization" (en) /
+		// "Organisation wechseln" (de). Match on that specifically rather than
+		// the generic `button[aria-expanded]` selector, since the header also
+		// has other aria-expanded buttons (notifications, mobile menu,
+		// language selector) whose DOM order isn't stable across seed state.
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		if (await switcherBtn.CountAsync() == 0)
 			return; // no org selected in seed - skip
 
