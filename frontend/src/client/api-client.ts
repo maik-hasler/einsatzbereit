@@ -1804,6 +1804,12 @@ export class EinsatzbereitApi {
             result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Unauthorized", status, _responseText, _headers, result401);
             });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
             let result404: any = null;

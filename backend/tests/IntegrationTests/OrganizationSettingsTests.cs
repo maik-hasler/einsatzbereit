@@ -160,6 +160,32 @@ public class OrganizationSettingsTests(
 		ex.Which.StatusCode.Should().Be(401);
 	}
 
+	[Test]
+	public async Task RemoveMember_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		// vera creates her own organization and becomes its sole member/organizer. Her original
+		// access token predates that role grant, so a fresh token is needed to call organizer-only
+		// endpoints against her own org afterwards.
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraOrg = await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Unrelated Org" }, cancellationToken);
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraOrgDetails = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
+		var veraUserId = veraOrgDetails.Members.Single().UserId;
+
+		// olaf is an organizer of other organizations, but not a member of vera's.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var act = () => olafClient.RemoveMemberAsync(veraOrg.Id.Value, veraUserId, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+
+		var stillThere = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
+		stillThere.Members.Should().ContainSingle(m => m.UserId == veraUserId);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);
