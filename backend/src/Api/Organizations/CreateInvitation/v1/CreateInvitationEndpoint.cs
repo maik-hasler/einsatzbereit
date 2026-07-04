@@ -19,6 +19,7 @@ internal sealed class CreateInvitationEndpoint : IEndpoint
 			.Produces<CreateInvitationResponse>(StatusCodes.Status201Created)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status409Conflict)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)

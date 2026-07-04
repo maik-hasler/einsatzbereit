@@ -9,6 +9,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import type {
 	OrganizationCalendarEventDto,
 	OrganizationDetailsResponse,
+	OrgInvitationDto,
 	PublicOpportunitySummaryDto,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -288,34 +289,55 @@ export default function OrganizationOverviewPage() {
 		}, 300);
 	}
 
-	async function handleAddMember(userId: string) {
+	// ── Invitations ──────────────────────────────────────────────────────────
+	const [invitations, setInvitations] = useState<OrgInvitationDto[]>([]);
+
+	useEffect(() => {
+		if (!organizationId) return;
+		api
+			.getOrgInvitations(organizationId)
+			.then(setInvitations)
+			.catch(() => {});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [organizationId]);
+
+	async function handleInviteMember(userId: string) {
 		if (!organizationId) return;
 		try {
-			await api.addMember(organizationId, { userId });
-			const added = memberCandidates.find((c) => c.userId === userId);
-			if (added) {
-				setOrg((prev) =>
-					prev
-						? {
-								...prev,
-								members: [
-									...prev.members,
-									{
-										userId: added.userId,
-										username: added.username,
-										firstName: added.firstName,
-										lastName: added.lastName,
-										email: added.email,
-										isOrganisator: false,
-									},
-								],
-							}
-						: prev,
-				);
-				setMemberCandidates((prev) => prev.filter((c) => c.userId !== userId));
-			}
+			const response = await api.createInvitation(organizationId, {
+				inviteeId: userId,
+			});
+			const invited = memberCandidates.find((c) => c.userId === userId);
+			setInvitations((prev) => [
+				...prev,
+				{
+					id: response.invitationId,
+					inviteeId: userId,
+					inviteeName:
+						invited?.firstName && invited?.lastName
+							? `${invited.firstName} ${invited.lastName}`
+							: (invited?.username ?? ""),
+					status: "Pending",
+					createdOn: new Date(),
+				},
+			]);
+			setMemberCandidates((prev) => prev.filter((c) => c.userId !== userId));
+			setMemberSearch("");
+			setSettingsError(null);
+			setSuccessMessage(t("orgSettings.inviteSent"));
 		} catch {
-			setSettingsError(t("orgSettings.addMemberError"));
+			setSuccessMessage(null);
+			setSettingsError(t("orgSettings.inviteError"));
+		}
+	}
+
+	async function handleDismissInvitation(invitationId: string) {
+		if (!organizationId) return;
+		try {
+			await api.dismissInvitation(organizationId, invitationId);
+			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+		} catch {
+			setSettingsError(t("orgSettings.dismissError"));
 		}
 	}
 
@@ -1114,26 +1136,31 @@ export default function OrganizationOverviewPage() {
 					)}
 					{!orgLoading && org && (
 						<>
+							{successMessage && (
+								<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+									{successMessage}
+								</div>
+							)}
 							{settingsError && (
 								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
 									{settingsError}
 								</div>
 							)}
 
-							{/* Add member search */}
+							{/* Invite member search */}
 							<div className="mb-6">
 								<label
 									htmlFor="member-search"
 									className="block text-sm font-medium text-gray-700"
 								>
-									{t("orgSettings.addMemberLabel")}
+									{t("orgSettings.inviteLabel")}
 								</label>
 								<input
 									id="member-search"
 									type="search"
 									value={memberSearch}
 									onChange={(e) => handleMemberSearchChange(e.target.value)}
-									placeholder={t("orgSettings.addMemberPlaceholder")}
+									placeholder={t("orgSettings.invitePlaceholder")}
 									className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none"
 								/>
 								{memberSearchLoading && (
@@ -1160,10 +1187,10 @@ export default function OrganizationOverviewPage() {
 												</div>
 												<button
 													type="button"
-													onClick={() => handleAddMember(candidate.userId)}
+													onClick={() => handleInviteMember(candidate.userId)}
 													className="ml-3 shrink-0 rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-800"
 												>
-													{t("orgSettings.addMember")}
+													{t("orgSettings.invite")}
 												</button>
 											</li>
 										))}
@@ -1177,6 +1204,74 @@ export default function OrganizationOverviewPage() {
 										</p>
 									)}
 							</div>
+
+							{invitations.some((i) => i.status === "Pending") && (
+								<div className="mb-6">
+									<h2 className="mb-2 text-sm font-medium text-gray-700">
+										{t("orgSettings.pendingInvitations")}
+									</h2>
+									<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+										{invitations
+											.filter((i) => i.status === "Pending")
+											.map((invitation) => (
+												<li
+													key={invitation.id}
+													className="flex items-center justify-between px-3 py-2"
+												>
+													<div className="min-w-0">
+														<p className="truncate text-sm font-medium text-gray-900">
+															{invitation.inviteeName}
+														</p>
+														<p className="truncate text-xs text-gray-500">
+															{t("orgSettings.invitationSentOn", {
+																date: new Date(
+																	invitation.createdOn,
+																).toLocaleDateString(locale, {
+																	day: "2-digit",
+																	month: "long",
+																	year: "numeric",
+																}),
+															})}
+														</p>
+													</div>
+												</li>
+											))}
+									</ul>
+								</div>
+							)}
+
+							{invitations.some((i) => i.status === "Declined") && (
+								<div className="mb-6">
+									<h2 className="mb-2 text-sm font-medium text-gray-700">
+										{t("orgSettings.declinedInvitations")}
+									</h2>
+									<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+										{invitations
+											.filter((i) => i.status === "Declined")
+											.map((invitation) => (
+												<li
+													key={invitation.id}
+													className="flex items-center justify-between px-3 py-2"
+												>
+													<div className="min-w-0">
+														<p className="truncate text-sm font-medium text-gray-900">
+															{invitation.inviteeName}
+														</p>
+													</div>
+													<button
+														type="button"
+														onClick={() =>
+															handleDismissInvitation(invitation.id)
+														}
+														className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800"
+													>
+														{t("orgSettings.dismissInvitation")}
+													</button>
+												</li>
+											))}
+									</ul>
+								</div>
+							)}
 
 							{org.members.length === 0 ? (
 								<EmptyState

@@ -186,6 +186,118 @@ public class OrganizationSettingsTests(
 		stillThere.Members.Should().ContainSingle(m => m.UserId == veraUserId);
 	}
 
+	// ── Invitations ─────────────────────────────────────────────────────────
+
+	[Test]
+	public async Task CreateInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Invite 403 Test Org" }, cancellationToken);
+
+		// vera creates her own, unrelated organization, which grants her the
+		// platform-wide organisator role without making her a member of org.
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org" }, cancellationToken);
+
+		// The ownership check runs before any invitee lookup, so a fabricated
+		// invitee id is enough to prove the 403 fires first.
+		var act = () => veraClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = Guid.NewGuid() }, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task CreateInvitation_ShouldReturn201AndListAsPending_WhenRequestingUserIsOrgMember(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Invite Success Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+
+		invitation.InvitationId.Should().NotBeEmpty();
+
+		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitations.Should().ContainSingle(i => i.Id == invitation.InvitationId && i.Status == "Pending");
+	}
+
+	[Test]
+	public async Task GetOrgInvitations_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Invitations List 403 Test Org" }, cancellationToken);
+
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 2" }, cancellationToken);
+
+		var act = () => veraClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task DismissInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Dismiss 403 Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 3" }, cancellationToken);
+
+		// vera is now an organizer, but not of `org` - dismissing its (now
+		// declined) invitation must still be rejected.
+		var act = () => veraClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsDeclined(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Dismiss Success Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		await olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);
