@@ -119,6 +119,38 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldCancelActiveEngagements_WhenOpportunityDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var timeSlotId = new TimeSlotId(Guid.CreateVersion7());
+		var pendingEngagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(opportunityId), new UserId(Guid.CreateVersion7()), timeSlotId);
+		var confirmedEngagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(opportunityId), new UserId(Guid.CreateVersion7()), timeSlotId);
+		confirmedEngagement.Confirm();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns([pendingEngagement, confirmedEngagement]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert - active engagements are cancelled, not left dangling after the opportunity is gone.
+		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
+		pendingEngagement.CancellationReason.Should().Be("Opportunity was deleted.");
+		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
+		confirmedEngagement.CancellationReason.Should().Be("Opportunity was deleted.");
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotNotify_WhenNoActiveEngagements(
 		CancellationToken cancellationToken)
 	{
