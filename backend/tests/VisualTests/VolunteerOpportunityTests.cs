@@ -105,10 +105,22 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Create button only appears when an org is active.
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
-		if (await createBtn.CountAsync() == 0)
+		// Create opportunity now lives on the organization dashboard - navigate there
+		// via the org switcher. Switcher toggle has aria-label "Switch organization"
+		// (en) / "Organisation wechseln" (de).
+		var switcherBtn = Page.Locator("button[aria-expanded]");
+		if (await switcherBtn.CountAsync() == 0)
+			return; // no org membership in seed - skip
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
 			return; // no org selected in seed - skip
+
+		await dashboardLink.First.ClickAsync();
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
@@ -252,10 +264,22 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Create opportunity button is only present when an org is active.
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
-		if (await createBtn.CountAsync() == 0)
+		// Create opportunity lives on the organization dashboard - navigate there
+		// via the org switcher. Switcher toggle has aria-label "Switch organization"
+		// (en) / "Organisation wechseln" (de).
+		var switcherBtn = Page.Locator("button[aria-expanded]");
+		if (await switcherBtn.CountAsync() == 0)
 			return;
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
+			return;
+
+		await dashboardLink.First.ClickAsync();
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
@@ -284,16 +308,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			.Filter(new() { HasText = uniqueTitle });
 		await Expect(draftInPublicList).Not.ToBeVisibleAsync();
 
-		// Navigate to org dashboard via the org switcher.
-		// The switcher toggle has aria-label "Switch organization" (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.Locator("button[aria-expanded]");
-		if (await switcherBtn.CountAsync() == 0)
-			return;
+		// Navigate back to the org dashboard - the draft is listed there.
+		await Page.GoBackAsync();
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await switcherBtn.First.ClickAsync();
-		await Page.GetByTestId("org-dashboard-link").ClickAsync();
-
-		// Drafts section is visible.
 		var draftsSection = Page.GetByTestId("drafts-section");
 		await Expect(draftsSection).ToBeVisibleAsync();
 
@@ -319,9 +337,22 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
-		if (await createBtn.CountAsync() == 0)
+		// Create opportunity lives on the organization dashboard - navigate there
+		// via the org switcher. Switcher toggle has aria-label "Switch organization"
+		// (en) / "Organisation wechseln" (de).
+		var switcherBtn = Page.Locator("button[aria-expanded]");
+		if (await switcherBtn.CountAsync() == 0)
+			return; // no org membership in seed - skip
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
 			return; // no org selected in seed - skip
+
+		await dashboardLink.First.ClickAsync();
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 

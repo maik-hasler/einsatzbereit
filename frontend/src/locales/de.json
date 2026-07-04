@@ -82,7 +82,6 @@
     "opportunities": {
       "currentNeeds": "Aktuelle Einsätze",
       "subtitle": "Finde eine Aufgabe in deiner Nähe und pack mit an - die meisten dauern nur wenige Stunden.",
-      "createNeed": "+ Einsatz erstellen",
       "searchPlaceholder": "Suche…",
       "cityPlaceholder": "Stadt…",
       "allFrequencies": "Alle Häufigkeiten",
@@ -784,7 +783,8 @@
       "calendarWorkWeek": "Arbeitswoche",
       "calendarDay": "Tag",
       "eventFillState": "{{booked}} / {{max}} gebucht",
-      "eventManageApplications": "Bewerbungen verwalten"
+      "eventManageApplications": "Bewerbungen verwalten",
+      "createOpportunity": "+ Einsatz erstellen"
     }
   }
 }

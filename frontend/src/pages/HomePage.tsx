@@ -125,12 +125,6 @@ export default function HomePage() {
 		setShowOnboarding(false);
 	}
 
-	const roles = (
-		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
-	) as string[];
-	const canCreateOpportunity =
-		auth.isAuthenticated && roles.includes("organisator");
-
 	const steps = [
 		{
 			step: 1,
@@ -502,9 +496,7 @@ export default function HomePage() {
 				{showOnboarding && (
 					<OnboardingBanner onDismiss={handleDismissOnboarding} />
 				)}
-				<VolunteerOpportunitiesList
-					canCreateOpportunity={canCreateOpportunity}
-				/>
+				<VolunteerOpportunitiesList />
 			</div>
 		</>
 	);

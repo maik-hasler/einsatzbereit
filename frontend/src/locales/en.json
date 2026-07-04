@@ -82,7 +82,6 @@
     "opportunities": {
       "currentNeeds": "Current Opportunities",
       "subtitle": "Find a cause near you and lend a hand - most take just a few hours.",
-      "createNeed": "+ Create opportunity",
       "searchPlaceholder": "Search…",
       "cityPlaceholder": "City…",
       "allFrequencies": "All frequencies",
@@ -784,7 +783,8 @@
       "calendarWorkWeek": "Work week",
       "calendarDay": "Day",
       "eventFillState": "{{booked}} / {{max}} booked",
-      "eventManageApplications": "Manage applications"
+      "eventManageApplications": "Manage applications",
+      "createOpportunity": "+ Create opportunity"
     }
   }
 }
