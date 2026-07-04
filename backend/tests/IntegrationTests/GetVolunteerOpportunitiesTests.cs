@@ -256,7 +256,9 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, string title, string description,
 		CancellationToken cancellationToken)
 	{
-		return await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		// A Waitlist opportunity can't be published until it has at least one time
+		// slot, so create it as a draft, add a slot, then publish it.
+		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			Title = title,
 			Description = description,
@@ -267,7 +269,23 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			City = "Berlin",
 			Occurrence = "OneTime",
 			ParticipationType = "Waitlist",
-			CheckInMethod = "None"
+			CheckInMethod = "None",
+			IsDraft = true,
 		}, cancellationToken);
+
+		await client.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		return opportunity;
 	}
 }

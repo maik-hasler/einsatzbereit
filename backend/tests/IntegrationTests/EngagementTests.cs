@@ -733,6 +733,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	private static async Task<CreateVolunteerOpportunityResponse> CreateWaitlistOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
+		// Created as a draft: a Waitlist opportunity can't be published until it has
+		// at least one time slot, and callers add slots separately after this returns.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
@@ -746,6 +748,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 				Occurrence = "OneTime",
 				ParticipationType = "Waitlist",
 				CheckInMethod = "None",
+				IsDraft = true,
 			},
 			cancellationToken);
 	}

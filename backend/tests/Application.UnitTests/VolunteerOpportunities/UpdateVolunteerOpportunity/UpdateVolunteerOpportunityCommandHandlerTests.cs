@@ -49,7 +49,17 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	private static VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
-		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None);
+		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None);
+
+	private static VolunteerOpportunity CreatePublishedWaitlistOpportunity()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None,
+			status: OpportunityStatus.Draft);
+		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10);
+		opportunity.Publish();
+		return opportunity;
+	}
 
 	[Test]
 	public async Task Handle_ShouldUpdateFields_WhenOpportunityExists(
@@ -106,7 +116,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
+		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		_opportunityRepo
 			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
@@ -136,7 +146,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
+		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		_opportunityRepo
 			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
@@ -278,7 +288,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Material change: new address (city changed).
 		var newAddress = new Address("Neue Straße", "99", "20095", "Hamburg");
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -311,7 +321,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		// Cosmetic change only: title and description change, address/remote/occurrence unchanged.
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);

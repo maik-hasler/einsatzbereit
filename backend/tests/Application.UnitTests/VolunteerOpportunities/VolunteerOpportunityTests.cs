@@ -24,7 +24,8 @@ public class VolunteerOpportunityTests
 			TestAddress,
 			Occurrence.OneTime,
 			ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None,
+			status: OpportunityStatus.Draft);
 
 		// Assert
 		opportunity.Title.Should().Be("Helpers needed");
@@ -137,6 +138,45 @@ public class VolunteerOpportunityTests
 		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
 	}
 
+	[Test]
+	public void Create_ShouldThrow_WhenPublishedWaitlistHasNoTimeSlots()
+	{
+		// Act
+		var act = () => VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			status: OpportunityStatus.Published);
+
+		// Assert
+		act.Should().Throw<DomainException>()
+			.WithMessage("*Waitlist opportunity*");
+	}
+
+	[Test]
+	public void Create_ShouldAllow_PublishedIndividualContact_WithNoTimeSlots()
+	{
+		// Act
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			status: OpportunityStatus.Published);
+
+		// Assert
+		opportunity.Status.Should().Be(OpportunityStatus.Published);
+	}
+
 	// --- Update ---
 
 	[Test]
@@ -144,7 +184,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Old title", "Old desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 		var newAddress = new Address("Neue Straße", "42", "10115", "Hamburg");
 
 		opportunity.Update("New title", "New desc", false, newAddress, Occurrence.Recurring, ParticipationType.IndividualContact, CheckInMethod.Manual, null, []);
@@ -162,7 +202,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 
 		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
@@ -174,7 +214,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 
 		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, []);
 
@@ -186,7 +226,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
 
 		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, []);
@@ -199,7 +239,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
 
 		opportunity.Update("New title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
@@ -212,7 +252,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 
 		opportunity.Update("Remote title", "Remote desc", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
@@ -228,7 +268,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 
 		Action act = () => opportunity.Update(title!, "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
@@ -241,9 +281,7 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void Update_ShouldThrow_WhenDescriptionIsEmpty(string? description)
 	{
-		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		Action act = () => opportunity.Update("Title", description!, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
@@ -253,13 +291,21 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Update_ShouldThrow_WhenNotRemoteAndAddressIsNull()
 	{
-		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		Action act = () => opportunity.Update("Title", "Desc", false, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, []);
 
 		act.Should().Throw<DomainException>().WithMessage("Address is required for non-remote opportunities.");
+	}
+
+	private VolunteerOpportunity CreatePublishedWaitlistOpportunity()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			CheckInMethod.None, status: OpportunityStatus.Draft);
+		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
+		opportunity.Publish();
+		return opportunity;
 	}
 
 	// --- AddTimeSlot ---
@@ -269,7 +315,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), maxParticipants: 20);
 
@@ -294,7 +340,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
 		opportunity.AddTimeSlot(FutureSlotStart.AddDays(7), FutureSlotStart.AddDays(7).AddHours(2), 10);
@@ -309,7 +355,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10);
 		var slotId = opportunity.TimeSlots.First().Id;
 
@@ -323,7 +369,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 		var nonExistentId = new TimeSlotId(Guid.CreateVersion7());
 
 		Action act = () => opportunity.RemoveTimeSlot(nonExistentId);
@@ -336,7 +382,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None, status: OpportunityStatus.Draft);
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 5);
 		opportunity.AddTimeSlot(FutureSlotStart.AddDays(7), FutureSlotStart.AddDays(7).AddHours(2), 5);
 

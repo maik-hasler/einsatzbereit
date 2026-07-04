@@ -41,7 +41,8 @@ public class CreateEngagementCommandHandlerTests
 			TestAddress,
 			Occurrence.OneTime,
 			ParticipationType.Waitlist,
-			CheckInMethod.None);
+			CheckInMethod.None,
+			status: OpportunityStatus.Draft);
 		return org;
 	}
 
