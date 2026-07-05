@@ -5,8 +5,25 @@
       "Bash(dotnet test:*)",
       "Bash(bash .claude/scripts/session-start.sh)",
       "Bash(curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh)",
-      "Bash(pnpm format:write)"
+      "Bash(pnpm format:write)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "dotnet-agent-skills": {
+      "source": { "source": "github", "repo": "dotnet/skills" }
+    }
+  },
+  "enabledPlugins": {
+    "dotnet-aspnetcore@dotnet-agent-skills": true,
+    "dotnet-test@dotnet-agent-skills": true,
+    "dotnet-nuget@dotnet-agent-skills": true,
+    "dotnet-data@dotnet-agent-skills": true,
+    "csharp-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true
   },
   "hooks": {
     "SessionStart": [
@@ -15,6 +32,27 @@
           {
             "type": "command",
             "command": "bash .claude/scripts/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/protect-generated-clients.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-stop-verify.sh\""
           }
         ]
       }
