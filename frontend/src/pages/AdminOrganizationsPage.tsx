@@ -5,6 +5,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { dispatchToast } from "../lib/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
 interface OrgRow {
 	id: string;
@@ -22,6 +23,10 @@ export default function AdminOrganizationsPage() {
 	const [toggling, setToggling] = useState<string | null>(null);
 
 	usePageTitle(t("adminOrgs.title"));
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{ label: t("adminOrgs.title") },
+	]);
 
 	useEffect(() => {
 		async function load() {

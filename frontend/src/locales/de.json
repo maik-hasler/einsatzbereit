@@ -490,7 +490,6 @@
       "error": "Fehler: {{message}}",
       "noApplications": "Noch keine Bewerbungen.",
       "noApplicationsHint": "Sobald sich Freiwillige für diesen Bedarf bewerben, erscheinen sie hier.",
-      "backToOpportunity": "Zurück zum Bedarf",
       "volunteer": "Freiwilliger: {{id}}",
       "timeSlot": "Zeitslot: {{id}}",
       "receivedOn": "Eingegangen: {{date}}",

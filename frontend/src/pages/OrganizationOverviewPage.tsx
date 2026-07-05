@@ -14,6 +14,7 @@ import type {
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 import { inputClass, labelClass } from "../lib/formClasses";
 import EmptyState from "../components/EmptyState";
 import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpportunityModal";
@@ -122,6 +123,14 @@ export default function OrganizationOverviewPage() {
 	const logoInputRef = useRef<HTMLInputElement>(null);
 
 	usePageTitle(org?.name ?? t("orgDashboard.title"));
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{
+			label: org?.name ?? t("orgDashboard.title"),
+			href: organizationId ? `/organizations/${organizationId}` : undefined,
+		},
+		{ label: t("orgDashboard.title") },
+	]);
 
 	useEffect(() => {
 		if (!organizationId) return;

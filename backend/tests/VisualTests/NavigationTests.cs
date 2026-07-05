@@ -50,6 +50,123 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task HomePage_HasNoBreadcrumb()
+	{
+		// #574: pages that don't call usePageToolbar must not render a stray
+		// breadcrumb bar - the home page has no parent to link back to.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
+	{
+		// #574: OrganizationProfilePage had no way back at all - revived
+		// breadcrumb must show "Home > {organization name}".
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var orgLink = Page.Locator("a[href*='/organizations/']").First;
+		if (await orgLink.CountAsync() == 0)
+			return; // no opportunities/organizations seeded - skip
+
+		var href = await orgLink.GetAttributeAsync("href");
+		if (href is null)
+			return;
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+		await Expect(breadcrumb).ToBeVisibleAsync();
+
+		var homeCrumb = breadcrumb.Locator("a[href='/']");
+		await Expect(homeCrumb).ToBeVisibleAsync();
+
+		var orgName = await Page.Locator("h1").First.InnerTextAsync();
+		await Expect(breadcrumb.GetByText(orgName, new() { Exact = true })).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task VolunteerOpportunityDetailPage_BreadcrumbShowsOrgAndOpportunityTitle()
+	{
+		// #574: the old back link always went to "/#opportunities" regardless of
+		// where the user came from. The revived breadcrumb must instead reflect
+		// the opportunity's actual organization and title.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		if (await firstCard.CountAsync() == 0)
+			return; // no opportunities seeded, skip
+
+		var href = await firstCard.GetAttributeAsync("href");
+		if (href is null)
+			return;
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+		await Expect(breadcrumb).ToBeVisibleAsync();
+		await Expect(breadcrumb.Locator("a[href='/']")).ToBeVisibleAsync();
+
+		// Middle crumb links to the opportunity's organization, matching the org
+		// chip rendered further down the page.
+		var orgChipHref = await Page.Locator("a[href*='/organizations/']").First.GetAttributeAsync("href");
+		if (orgChipHref is not null)
+			await Expect(breadcrumb.Locator($"a[href='{orgChipHref}']")).ToBeVisibleAsync();
+
+		// Last crumb (current page, no link) matches the opportunity title.
+		var title = await Page.Locator("h1").First.InnerTextAsync();
+		await Expect(breadcrumb.GetByText(title, new() { Exact = true })).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task EngagementManagementPage_BreadcrumbPersistsRegardlessOfApplicationCount()
+	{
+		// #574: back navigation used to only appear in the empty-application state.
+		// The revived breadcrumb must be present unconditionally.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		if (await switcherBtn.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
+			return;
+
+		await dashboardLink.First.ClickAsync();
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Engagements", Exact = true }).ClickAsync();
+
+		var manageLink = Page.GetByText("Manage engagements").First;
+		if (await manageLink.CountAsync() == 0)
+			return; // organizer has no opportunities in seed - skip
+
+		await manageLink.ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task MobileMenu_LanguageSelector_HasDarkTransparentTheme_OnHero()
 	{
 		// Regression: LanguageSelector inside the mobile menu on the hero section
