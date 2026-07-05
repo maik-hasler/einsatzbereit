@@ -75,11 +75,19 @@ edit on your own initiative):
   to only what ESLint's `jsx-a11y` ruleset can't already catch, see the
   agent file for why), `i18n-check` (`en.json`/`de.json` translation key
   parity - nothing else in CI checks this).
-- **Skill** (`.claude/skills/self-review/`) - `/self-review` runs a
+- **Skills** - `.claude/skills/self-review/` (`/self-review`) runs a
   prioritised diff review and fans out to the agents above for the areas the
-  diff touches. Required before opening a PR, see below.
-- **Hook** (`.claude/hooks/protect-generated-clients.sh`) - blocks Edit/Write
+  diff touches, required before opening a PR (see below). `.claude/skills/issue-triage/`
+  is the recurring triage-and-implement loop for this repo's autonomous
+  routine - the durable process lives here, checked in and versioned,
+  rather than only in the routine's own (unowned, unversioned) prompt text.
+- **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
+  `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
+  once before ending a turn if backend/frontend source changed, blocking
+  only on an actual failure (capped at 2 blocks per session so it fails
+  open rather than risk a loop) - a safety net since this routine has no
+  human review before a PR goes out.
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
   `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus the official
   `csharp-lsp`, `typescript-lsp`, and `playwright` (Microsoft's Playwright
