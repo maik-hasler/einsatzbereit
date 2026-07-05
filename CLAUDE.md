@@ -54,7 +54,12 @@ Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/a
 - Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)
 - No `.Result`/`.Wait()` - async all the way
 - **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in any file - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes
-- **Shell scripts use tab indentation** - the EditorConfig rule for `.sh` files requires tabs, not spaces
+- **Tab indentation is the default** (`.editorconfig`'s `[*]` rule) - shell scripts, AsciiDoc (`.adoc`), and PlantUML (`.puml`) all use tabs. Only `.md`, `.json`, and `.yml`/`.yaml` are overridden to spaces. CI's `editorconfig` job enforces this; when writing `.adoc` prose keep paragraphs on one unwrapped line rather than hand-wrapping with space-indented continuation lines
+
+## Sandbox Limitations (Claude Code on the web)
+
+- **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Testcontainers), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
+- **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
 
 ## Claude Code Configuration
 
@@ -101,8 +106,11 @@ After every bug fix or feature implementation, **always** cut a release candidat
    - `curl -sf https://api.maik-hasler.de/health` - must return HTTP 200
    - Run (or write + run) a **manual Playwright script** in `scripts/` that exercises the changed behaviour end-to-end against `https://einsatzbereit.maik-hasler.de`. The script must exit 0 (all assertions green).
      ```bash
-     # Install playwright once per session if needed
-     npm install --save-dev playwright && npx playwright install chromium
+     # Install playwright once per session if needed. The root package.json
+     # already pins the version - use bare `npm install`, never
+     # `npm install --save-dev playwright` (that bumps the pin to a caret
+     # range and dirties package-lock.json for no reason).
+     npm install && npx playwright install chromium
      # Run the smoke script for the feature you just fixed
      node scripts/smoke-test-<feature>.mjs
      ```

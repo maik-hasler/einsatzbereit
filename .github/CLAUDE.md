@@ -20,6 +20,7 @@
 - **Steps:** setup .NET + Node + pnpm → frontend `pnpm install` → `dotnet restore` → `dotnet build` → run each test project sequentially via `dotnet run --project ... --no-build`
 - **Test projects:** Application.UnitTests, ArchitectureTests, IntegrationTests, VisualTests
 - **Why `dotnet run` not `dotnet test`:** TUnit uses Microsoft.Testing.Platform; `dotnet test` on .NET 10 requires opt-in to new experience. `dotnet run` invokes the test runner directly.
+- **Typical duration:** ~20-30 minutes end to end, dominated by the `VisualTests` job (boots the full Aspire stack, then drives it with Playwright). When polling `get_check_runs` for this workflow, don't re-poll more often than every ~10 minutes while it's `in_progress` - shorter intervals just burn turns without new information.
 
 ### `frontend.yml`
 - **Trigger:** `frontend/**` path filter or manual
