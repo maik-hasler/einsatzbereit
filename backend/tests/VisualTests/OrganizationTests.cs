@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -67,5 +68,94 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task SoleMember_MembersTab_ShowsDisabledLeaveInsteadOfRemove()
+	{
+		// #580: the org's sole member must see a disabled "Leave" action on
+		// their own row, never "Remove" - removing them would orphan the org.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual580 Leave");
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Members" }).ClickAsync();
+
+		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
+		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(leaveButton).ToBeDisabledAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task SoleMember_CanDeleteOrganization_FromSettingsTab()
+	{
+		// #580: the new "Delete Organization" action, enabled only for the
+		// sole remaining member, must actually delete the org and go home.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var orgName = await CreateOrganizationAsync("Visual580 Delete");
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+
+		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
+		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(deleteButton).ToBeEnabledAsync();
+		await deleteButton.ClickAsync();
+
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await Expect(dialog.GetByText(orgName)).ToBeVisibleAsync();
+
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, delete" }).ClickAsync();
+
+		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 10_000 });
+	}
+
+	private async Task<string> CreateOrganizationAsync(string namePrefix)
+	{
+		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
+		var origin = Fixture.GetEndpoint("frontend").GetLeftPart(UriPartial.Authority);
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		if (await switcherBtn.CountAsync() > 0)
+		{
+			await switcherBtn.First.ClickAsync();
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+		}
+		else
+		{
+			// No orgs yet - the switcher is hidden from the header entirely,
+			// so create from the profile page instead.
+			await Page.GotoAsync($"{origin}/profile");
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+		}
+
+		var createDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(createDialog).ToBeVisibleAsync();
+		await createDialog.Locator("input[type='text']").FillAsync(orgName);
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Reload so the header's org switcher (fetched once on mount) picks up
+		// the newly created org - creating it doesn't refresh the switcher in place.
+		await Page.GotoAsync(origin);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var switcher = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		await switcher.First.ClickAsync();
+		var orgRow = Page.Locator("li", new() { HasText = orgName });
+		await orgRow.GetByTestId("org-dashboard-link").ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/organizations/.+/dashboard"), new() { Timeout = 10_000 });
+
+		return orgName;
 	}
 }
