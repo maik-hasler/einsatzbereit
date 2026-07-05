@@ -71,7 +71,9 @@ edit on your own initiative):
   `nswag-check` (endpoint/DTO changes vs. generated clients),
   `ef-migration-check` (entity changes vs. EF Core migrations),
   `architecture-check` (Clean Architecture layer/naming/rate-limiting rules),
-  `a11y-check` (frontend components vs. the a11y conventions below).
+  `a11y-check` (frontend components vs. the a11y conventions below - scoped
+  to only what ESLint's `jsx-a11y` ruleset can't already catch, see the
+  agent file for why).
 - **Skill** (`.claude/skills/self-review/`) - `/self-review` runs a
   prioritised diff review and fans out to the agents above for the areas the
   diff touches. Required before opening a PR, see below.
@@ -79,8 +81,12 @@ edit on your own initiative):
   on the three NSwag-generated files (see "API client" row above).
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
   `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus the official
-  `csharp-lsp` and `typescript-lsp` plugins are enabled in
-  `.claude/settings.json` for backend/frontend code intelligence.
+  `csharp-lsp`, `typescript-lsp`, and `playwright` (Microsoft's Playwright
+  MCP - live browser control for ad-hoc exploration/debugging during live
+  verification) plugins are enabled in `.claude/settings.json`. The
+  `playwright` plugin is for interactive poking around, not a replacement
+  for the persisted smoke-test script required below - that stays as the
+  reviewable, committed record of what was verified.
 
 ## Releases (autonomous from Claude Code on the web)
 
