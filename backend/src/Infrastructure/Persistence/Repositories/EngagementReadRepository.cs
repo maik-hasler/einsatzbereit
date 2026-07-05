@@ -1,4 +1,5 @@
 using Application.Engagements;
+using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -176,6 +177,46 @@ internal sealed class EngagementReadRepository(
 		if (!string.IsNullOrWhiteSpace(cityLine))
 			parts.Add(cityLine);
 		return string.Join(", ", parts);
+	}
+
+	public async ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(
+		EngagementId engagementId,
+		CancellationToken cancellationToken = default)
+	{
+		var engagement = await dbContext.EngagementsQuery
+			.Where(e => e.Id == engagementId)
+			.Select(e => new { e.OpportunityId, e.TimeSlotId })
+			.FirstOrDefaultAsync(cancellationToken);
+
+		if (engagement is null || engagement.TimeSlotId is null)
+			return null;
+
+		var opportunity = await dbContext.VolunteerOpportunitiesQuery
+			.Where(o => o.Id == engagement.OpportunityId)
+			.Select(o => new { o.Id, o.Title, o.Description, o.IsRemote, o.Address })
+			.FirstOrDefaultAsync(cancellationToken);
+
+		if (opportunity is null)
+			return null;
+
+		var timeSlot = await dbContext.TimeSlotsQuery
+			.Where(ts => ts.Id == engagement.TimeSlotId.Value)
+			.Select(ts => new { ts.StartDateTime, ts.EndDateTime })
+			.FirstOrDefaultAsync(cancellationToken);
+
+		if (timeSlot is null)
+			return null;
+
+		var location = opportunity.IsRemote ? "Remote" : FormatAddress(opportunity.Address);
+
+		return new EngagementCalendarInfo(
+			engagementId.Value,
+			opportunity.Id.Value,
+			opportunity.Title,
+			opportunity.Description,
+			location,
+			timeSlot.StartDateTime,
+			timeSlot.EndDateTime);
 	}
 
 	public async ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(

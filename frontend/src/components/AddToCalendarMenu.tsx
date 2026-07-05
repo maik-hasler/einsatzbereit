@@ -79,7 +79,6 @@ export default function AddToCalendarMenu({
 			<button
 				type="button"
 				onClick={() => setOpen((o) => !o)}
-				aria-haspopup="menu"
 				aria-expanded={open}
 				className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
 			>
@@ -101,13 +100,9 @@ export default function AddToCalendarMenu({
 			</button>
 
 			{open && (
-				<ul
-					role="menu"
-					className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg"
-				>
-					<li role="none">
+				<ul className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg">
+					<li>
 						<a
-							role="menuitem"
 							href={googleUrl}
 							target="_blank"
 							rel="noopener noreferrer"
@@ -117,9 +112,8 @@ export default function AddToCalendarMenu({
 							{t("myEngagements.addToCalendarGoogle")}
 						</a>
 					</li>
-					<li role="none">
+					<li>
 						<a
-							role="menuitem"
 							href={outlookUrl}
 							target="_blank"
 							rel="noopener noreferrer"
@@ -129,9 +123,8 @@ export default function AddToCalendarMenu({
 							{t("myEngagements.addToCalendarOutlook")}
 						</a>
 					</li>
-					<li role="none">
+					<li>
 						<a
-							role="menuitem"
 							href={webcalUrl}
 							onClick={() => setOpen(false)}
 							className="block px-3 py-2 text-gray-700 hover:bg-gray-50"
@@ -139,9 +132,8 @@ export default function AddToCalendarMenu({
 							{t("myEngagements.addToCalendarApple")}
 						</a>
 					</li>
-					<li role="none">
+					<li>
 						<a
-							role="menuitem"
 							href={icsUrl}
 							onClick={() => setOpen(false)}
 							className="block px-3 py-2 text-gray-700 hover:bg-gray-50"

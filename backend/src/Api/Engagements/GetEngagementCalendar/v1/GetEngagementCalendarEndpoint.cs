@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Engagements.GetEngagementCalendar.v1;
 
+// AllowAnonymous is deliberate: Apple Calendar/webcal subscriptions and
+// desktop calendar apps re-fetch this URL directly and cannot attach a
+// Bearer token, so the unguessable engagementId (a v7 GUID, never listed
+// publicly) acts as a capability token, the same trust model already used
+// by the per-opportunity calendar feed this endpoint replaces.
 internal sealed class GetEngagementCalendarEndpoint : IEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app) =>

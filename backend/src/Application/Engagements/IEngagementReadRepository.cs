@@ -1,3 +1,4 @@
+using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
@@ -15,5 +16,9 @@ public interface IEngagementReadRepository
 
 	ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
+
+	ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(
+		EngagementId engagementId,
 		CancellationToken cancellationToken = default);
 }

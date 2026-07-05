@@ -1,4 +1,4 @@
-namespace Application.Engagements.GetEngagementCalendarInfo.v1;
+namespace Application.Engagements;
 
 public sealed record EngagementCalendarInfo(
 	Guid EngagementId,
