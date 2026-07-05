@@ -55,7 +55,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 			</div>
 			<p
 				className={`text-sm font-semibold leading-snug ${
-					isEarned ? "text-gray-900" : "text-gray-400"
+					isEarned ? "text-gray-900" : "text-gray-500"
 				}`}
 			>
 				{isHidden
@@ -72,7 +72,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 				</p>
 			)}
 			{!isEarned && !isHidden && (
-				<p className="mt-1 text-xs text-gray-400">
+				<p className="mt-1 text-xs text-gray-500">
 					{t(`achievements.badges.${catalog.key}.description`, {
 						defaultValue: catalog.description,
 					})}
