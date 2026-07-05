@@ -3,27 +3,22 @@ import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { createApiClient } from "../client/api-instance";
 import type {
-	AchievementSummary,
 	BadgeCatalogEntry,
+	PublicUserProfileResponse,
 } from "../client/api-client";
 import BadgeGrid from "../components/BadgeGrid";
+import ProfileFieldsView from "../components/ProfileFieldsView";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
-import { runtimeConfig } from "../lib/runtimeConfig";
 import { getApiErrorMessage } from "../lib/apiError";
-
-interface PublicUserProfile {
-	displayName: string;
-	engagementCount: number;
-	badges: AchievementSummary[];
-	avatarUrl?: string;
-}
 
 export default function UserProfilePage() {
 	const { userId } = useParams<{ userId: string }>();
 	const { t } = useTranslation();
 
-	const [profile, setProfile] = useState<PublicUserProfile | null>(null);
+	const [profile, setProfile] = useState<PublicUserProfileResponse | null>(
+		null,
+	);
 	const [catalog, setCatalog] = useState<BadgeCatalogEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -37,15 +32,7 @@ export default function UserProfilePage() {
 	useEffect(() => {
 		if (!userId) return;
 		const api = createApiClient();
-		Promise.all([
-			fetch(`${runtimeConfig.apiUrl}/v1/users/${userId}/public-profile`).then(
-				(r) => {
-					if (!r.ok) throw new Error();
-					return r.json() as Promise<PublicUserProfile>;
-				},
-			),
-			api.getBadgeCatalog(),
-		])
+		Promise.all([api.getPublicUserProfile(userId), api.getBadgeCatalog()])
 			.then(([prof, cat]) => {
 				setProfile(prof);
 				setCatalog(cat);
@@ -86,6 +73,20 @@ export default function UserProfilePage() {
 					</p>
 				</div>
 			</div>
+
+			{(profile.bio ||
+				profile.skills.length > 0 ||
+				profile.languages.length > 0 ||
+				profile.preferredContact) && (
+				<div className="mb-8 max-w-2xl space-y-5">
+					<ProfileFieldsView
+						bio={profile.bio}
+						skills={profile.skills}
+						languages={profile.languages}
+						preferredContact={profile.preferredContact}
+					/>
+				</div>
+			)}
 
 			<section>
 				<h2 className="mb-4 text-base font-semibold text-gray-700">

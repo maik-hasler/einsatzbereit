@@ -6,4 +6,8 @@ public sealed record PublicUserProfileResponse(
 	string DisplayName,
 	int EngagementCount,
 	IReadOnlyList<AchievementSummary> Badges,
-	string? AvatarUrl);
+	string? AvatarUrl,
+	string? Bio,
+	IReadOnlyList<string> Skills,
+	IReadOnlyList<string> Languages,
+	string? PreferredContact);

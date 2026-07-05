@@ -122,6 +122,37 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task UserProfilePage_HasNoSeriousA11yViolations()
+	{
+		// #576: the public /users/{userId} page previously showed only avatar,
+		// name, engagement count, and badges - it now also renders bio/skills/
+		// languages/preferredContact via the shared ProfileFieldsView component.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		var userId = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.profile?.sub) return entry.profile.sub;
+				}
+			}
+			return null;
+		}");
+		if (userId is null)
+			return; // could not resolve the logged-in user's id, skip
+
+		await Page.GotoAsync($"{origin}/users/{userId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrganizationSettingsPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
