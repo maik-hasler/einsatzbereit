@@ -14,6 +14,7 @@ import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpport
 import ConfirmDialog from "../components/ConfirmDialog";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
 import { runtimeConfig } from "../lib/runtimeConfig";
@@ -28,6 +29,18 @@ export default function VolunteerOpportunityDetailPage() {
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
 	usePageTitle(opportunity?.title);
+	usePageToolbar(
+		opportunity
+			? [
+					{ label: t("breadcrumb.home"), href: "/" },
+					{
+						label: opportunity.organizationName,
+						href: `/organizations/${opportunity.organizationId}`,
+					},
+					{ label: opportunity.title },
+				]
+			: [{ label: t("breadcrumb.home"), href: "/" }],
+	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showSignUp, setShowSignUp] = useState(false);
@@ -167,28 +180,6 @@ export default function VolunteerOpportunityDetailPage() {
 
 	return (
 		<div className="max-w-2xl">
-			{/* Back navigation */}
-			<Link
-				to="/#opportunities"
-				className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
-			>
-				<svg
-					className="h-4 w-4"
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-					/>
-				</svg>
-				{t("breadcrumb.volunteerOpportunities")}
-			</Link>
-
 			{/* Banner image */}
 			{opportunity.bannerImageUrl && (
 				<img

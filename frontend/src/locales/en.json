@@ -490,7 +490,6 @@
       "error": "Error: {{message}}",
       "noApplications": "No applications yet.",
       "noApplicationsHint": "Once volunteers apply for this opportunity, their applications will appear here.",
-      "backToOpportunity": "Back to opportunity",
       "volunteer": "Volunteer: {{id}}",
       "timeSlot": "Time slot: {{id}}",
       "receivedOn": "Received: {{date}}",

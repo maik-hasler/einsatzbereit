@@ -8,6 +8,7 @@ import type {
 } from "../client/api-client";
 import BadgeGrid from "../components/BadgeGrid";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { getApiErrorMessage } from "../lib/apiError";
 
@@ -28,6 +29,10 @@ export default function UserProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 
 	usePageTitle(profile?.displayName ?? t("userProfile.loading"));
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{ label: profile?.displayName ?? t("userProfile.loading") },
+	]);
 
 	useEffect(() => {
 		if (!userId) return;

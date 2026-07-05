@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -12,6 +12,7 @@ import EmptyState from "../components/EmptyState";
 import QRScannerModal from "../components/QRScannerModal";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
@@ -21,7 +22,6 @@ const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
 	const api = useApiClient();
-	const navigate = useNavigate();
 	const { t, i18n } = useTranslation();
 	const [opportunity, setOpportunity] =
 		useState<VolunteerOpportunityDetails | null>(null);
@@ -29,6 +29,22 @@ export default function EngagementManagementPage() {
 		opportunity?.title
 			? `${t("engagementManagement.title")} - ${opportunity.title}`
 			: t("engagementManagement.title"),
+	);
+	usePageToolbar(
+		opportunity
+			? [
+					{ label: t("breadcrumb.home"), href: "/" },
+					{
+						label: opportunity.organizationName,
+						href: `/organizations/${opportunity.organizationId}`,
+					},
+					{
+						label: opportunity.title,
+						href: `/volunteer-opportunities/${opportunityId}`,
+					},
+					{ label: t("engagementManagement.title") },
+				]
+			: [{ label: t("breadcrumb.home"), href: "/" }],
 	);
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -153,30 +169,6 @@ export default function EngagementManagementPage() {
 	return (
 		<>
 			<div className="mb-6">
-				<Link
-					to={
-						opportunityId
-							? `/volunteer-opportunities/${opportunityId}`
-							: "/#opportunities"
-					}
-					className="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
-				>
-					<svg
-						className="h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M15.75 19.5 8.25 12l7.5-7.5"
-						/>
-					</svg>
-					{opportunity?.title ?? t("breadcrumb.volunteerOpportunities")}
-				</Link>
 				<h1 className="text-2xl font-bold text-gray-900">
 					{t("engagementManagement.title")}
 				</h1>
@@ -240,15 +232,6 @@ export default function EngagementManagementPage() {
 				<EmptyState
 					title={t("engagementManagement.noApplications")}
 					message={t("engagementManagement.noApplicationsHint")}
-					action={{
-						label: t("engagementManagement.backToOpportunity"),
-						onClick: () =>
-							navigate(
-								opportunityId
-									? `/volunteer-opportunities/${opportunityId}`
-									: "/",
-							),
-					}}
 				/>
 			)}
 
