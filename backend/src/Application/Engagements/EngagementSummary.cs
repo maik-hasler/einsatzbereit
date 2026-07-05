@@ -13,4 +13,7 @@ public sealed record EngagementSummary(
 	bool IsCheckedIn,
 	bool HasFeedback,
 	DateTimeOffset CreatedOn,
-	string? VolunteerName = null);
+	string? VolunteerName = null,
+	DateTimeOffset? TimeSlotStartDateTime = null,
+	DateTimeOffset? TimeSlotEndDateTime = null,
+	string? Location = null);

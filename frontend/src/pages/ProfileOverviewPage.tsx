@@ -15,6 +15,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { getApiErrorMessage } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, textareaClass } from "../lib/formClasses";
+import AddToCalendarMenu from "../components/AddToCalendarMenu";
 import BadgeGrid from "../components/BadgeGrid";
 import CheckInModal from "../components/CheckInModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -990,6 +991,18 @@ export default function ProfileOverviewPage() {
 														{t("feedback.submitted")}
 													</span>
 												)}
+												{e.status === "Confirmed" &&
+													e.timeSlotId &&
+													e.timeSlotStartDateTime &&
+													e.timeSlotEndDateTime && (
+														<AddToCalendarMenu
+															engagementId={e.id}
+															title={e.opportunityTitle}
+															location={e.location}
+															start={e.timeSlotStartDateTime}
+															end={e.timeSlotEndDateTime}
+														/>
+													)}
 												{(e.status === "Pending" ||
 													e.status === "Confirmed") && (
 													<button

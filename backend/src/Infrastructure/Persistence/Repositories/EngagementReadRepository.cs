@@ -78,7 +78,7 @@ internal sealed class EngagementReadRepository(
 		var raw = await dbContext.EngagementsQuery
 			.Where(e => e.VolunteerId == volunteerId)
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
@@ -86,6 +86,8 @@ internal sealed class EngagementReadRepository(
 					e.Id,
 					e.OpportunityId,
 					OpportunityTitle = o.Title,
+					o.IsRemote,
+					o.Address,
 					o.OrganizationId,
 					e.VolunteerId,
 					e.TimeSlotId,
@@ -104,6 +106,8 @@ internal sealed class EngagementReadRepository(
 					x.Id,
 					x.OpportunityId,
 					x.OpportunityTitle,
+					x.IsRemote,
+					x.Address,
 					OrganizationId = org.Id,
 					OrganizationName = org.Name,
 					x.VolunteerId,
@@ -117,19 +121,61 @@ internal sealed class EngagementReadRepository(
 			.OrderByDescending(x => x.CreatedOn)
 			.ToListAsync(cancellationToken);
 
-		return raw.Select(x => new EngagementSummary(
-			x.Id.Value,
-			x.OpportunityId.Value,
-			x.OpportunityTitle,
-			x.OrganizationId.Value,
-			x.OrganizationName,
-			x.VolunteerId.Value,
-			x.TimeSlotId?.Value,
-			x.Message,
-			x.Status.ToString(),
-			x.IsCheckedIn,
-			x.FeedbackSubmittedAt.HasValue,
-			x.CreatedOn)).ToList();
+		var timeSlotIds = raw
+			.Where(x => x.TimeSlotId is not null)
+			.Select(x => x.TimeSlotId!.Value)
+			.Distinct()
+			.ToList();
+
+		Dictionary<TimeSlotId, TimeSlot> timeSlots = [];
+		if (timeSlotIds.Count > 0)
+		{
+			timeSlots = await dbContext.TimeSlotsQuery
+				.Where(ts => timeSlotIds.Contains(ts.Id))
+				.ToDictionaryAsync(ts => ts.Id, cancellationToken);
+		}
+
+		return raw.Select(x =>
+		{
+			TimeSlot? timeSlot = x.TimeSlotId is not null
+				&& timeSlots.TryGetValue(x.TimeSlotId.Value, out var slot)
+					? slot
+					: null;
+
+			var location = x.IsRemote ? "Remote" : FormatAddress(x.Address);
+
+			return new EngagementSummary(
+				x.Id.Value,
+				x.OpportunityId.Value,
+				x.OpportunityTitle,
+				x.OrganizationId.Value,
+				x.OrganizationName,
+				x.VolunteerId.Value,
+				x.TimeSlotId?.Value,
+				x.Message,
+				x.Status.ToString(),
+				x.IsCheckedIn,
+				x.FeedbackSubmittedAt.HasValue,
+				x.CreatedOn,
+				TimeSlotStartDateTime: timeSlot?.StartDateTime,
+				TimeSlotEndDateTime: timeSlot?.EndDateTime,
+				Location: location);
+		}).ToList();
+	}
+
+	private static string? FormatAddress(Address? address)
+	{
+		if (address is null)
+			return null;
+
+		var parts = new List<string>();
+		var streetLine = $"{address.Street} {address.HouseNumber}".Trim();
+		if (!string.IsNullOrWhiteSpace(streetLine))
+			parts.Add(streetLine);
+		var cityLine = $"{address.ZipCode} {address.City}".Trim();
+		if (!string.IsNullOrWhiteSpace(cityLine))
+			parts.Add(cityLine);
+		return string.Join(", ", parts);
 	}
 
 	public async ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(

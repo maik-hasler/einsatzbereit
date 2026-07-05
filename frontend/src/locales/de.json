@@ -154,7 +154,6 @@
       "deleting": "…",
       "share": "Teilen",
       "shareOpportunity": "Bedarf teilen",
-      "addToCalendar": "Zum Kalender hinzufügen",
       "linkCopied": "Link in die Zwischenablage kopiert",
       "confirmDelete": "Bedarf wirklich löschen?",
       "deleteError": "Fehler beim Löschen",
@@ -180,7 +179,6 @@
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
-      "addToCalendar": "Zum Kalender hinzufügen",
       "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden.",
       "yourApplication": "Deine Bewerbung"
     },
@@ -484,6 +482,11 @@
       "withdraw": "Zurückziehen",
       "withdrawing": "…",
       "withdrawError": "Fehler beim Zurückziehen",
+      "addToCalendar": "Zum Kalender hinzufügen",
+      "addToCalendarGoogle": "Google Kalender",
+      "addToCalendarOutlook": "Outlook.com",
+      "addToCalendarApple": "Apple Kalender",
+      "addToCalendarDownload": ".ics herunterladen",
       "status": {
         "Pending": "Ausstehend",
         "Confirmed": "Bestätigt",

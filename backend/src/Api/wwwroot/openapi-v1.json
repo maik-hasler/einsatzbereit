@@ -1167,40 +1167,6 @@
         }
       }
     },
-    "/v1/volunteer-opportunities/{opportunityId}/calendar": {
-      "get": {
-        "tags": [
-          "GetOpportunityCalendarEndpoint"
-        ],
-        "operationId": "GetOpportunityCalendar",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/volunteer-opportunities/{opportunityId}/time-slots": {
       "post": {
         "tags": [
@@ -3296,6 +3262,40 @@
         }
       }
     },
+    "/v1/engagements/{engagementId}/calendar": {
+      "get": {
+        "tags": [
+          "GetEngagementCalendarEndpoint"
+        ],
+        "operationId": "GetEngagementCalendar",
+        "parameters": [
+          {
+            "name": "engagementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/engagements/{engagementId}/confirm": {
       "post": {
         "tags": [
@@ -4417,6 +4417,26 @@
             "format": "date-time"
           },
           "volunteerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "timeSlotStartDateTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "timeSlotEndDateTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "location": {
             "type": [
               "null",
               "string"
@@ -5946,9 +5966,6 @@
       "name": "VolunteerOpportunities"
     },
     {
-      "name": "GetOpportunityCalendarEndpoint"
-    },
-    {
       "name": "CreateTimeSlotEndpoint"
     },
     {
@@ -6001,6 +6018,9 @@
     },
     {
       "name": "Engagements"
+    },
+    {
+      "name": "GetEngagementCalendarEndpoint"
     },
     {
       "name": "Achievements"
