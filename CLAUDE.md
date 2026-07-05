@@ -122,25 +122,8 @@ After every bug fix or feature implementation, **always** cut a release candidat
      node scripts/smoke-test-<feature>.mjs
      ```
    - Notes on live Playwright scripts:
-     - Use `ignoreHTTPSErrors: true` in `browser.newContext()` (sandbox TLS)
-     - **Launch Chromium with the sandbox's egress-proxy workaround** or the connection resets before it ever reaches the live site: the proxy re-terminates TLS, and Chromium's default ClientHello (HTTP/2, QUIC, PQ-Kyber/ECH) doesn't survive that re-termination.
-       ```js
-       const browser = await chromium.launch({
-         executablePath: "/opt/pw-browsers/chromium",
-         proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
-         args: [
-           "--no-sandbox",
-           "--disable-setuid-sandbox",
-           "--disable-http2",
-           "--disable-quic",
-           "--ssl-version-max=tls1.2",
-           "--disable-features=PostQuantumKyber,EncryptedClientHello",
-         ],
-       });
-       ```
-       (Not needed outside this sandboxed runner.) Most existing scripts in `scripts/` predate this workaround and will silently fail to connect if reused as-is - add it rather than copying an older script's launch call.
-     - The live Keycloak (`login.maik-hasler.de`) uses a **two-step** login: fill `#username` -> click `#kc-login` -> fill `#password` -> click `#kc-login`
-     - The sign-in button text may be "Sign in" or "Anmelden" - use `/sign in|anmelden/i`
+     - **Use `scripts/lib/live-browser.mjs`** (`launchLiveBrowser()`, `loginKeycloak()`) instead of copy-pasting a new browser launch / login sequence - it already has `ignoreHTTPSErrors: true` and the sandbox's egress-proxy workaround baked in (the proxy re-terminates TLS, and Chromium's default ClientHello doesn't survive that without pinned launch args). Most pre-existing scripts in `scripts/` predate this helper and launch plain `chromium.launch()` - don't copy one of those as a template, import the helper instead.
+     - The sign-in button text may be "Sign in" or "Anmelden" - use `/sign in|anmelden/i` for the button that navigates to Keycloak, then call `loginKeycloak(page, username, password)` once there.
 7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this.
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.
