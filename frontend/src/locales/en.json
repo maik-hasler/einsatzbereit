@@ -154,7 +154,6 @@
       "deleting": "…",
       "share": "Share",
       "shareOpportunity": "Share opportunity",
-      "addToCalendar": "Add to Calendar",
       "linkCopied": "Link copied to clipboard",
       "confirmDelete": "Really delete this opportunity?",
       "deleteError": "Error deleting",
@@ -180,7 +179,6 @@
       "publish": "Publish",
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
-      "addToCalendar": "Add to Calendar",
       "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity.",
       "yourApplication": "Your application"
     },
@@ -484,6 +482,11 @@
       "withdraw": "Withdraw",
       "withdrawing": "…",
       "withdrawError": "Error withdrawing",
+      "addToCalendar": "Add to Calendar",
+      "addToCalendarGoogle": "Google Calendar",
+      "addToCalendarOutlook": "Outlook.com",
+      "addToCalendarApple": "Apple Calendar",
+      "addToCalendarDownload": "Download .ics",
       "status": {
         "Pending": "Pending",
         "Confirmed": "Confirmed",
