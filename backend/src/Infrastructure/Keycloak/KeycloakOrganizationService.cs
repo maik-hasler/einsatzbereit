@@ -186,6 +186,19 @@ internal sealed class KeycloakOrganizationService(
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
+	public async Task DeleteOrganizationAsync(
+		Guid organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var response = await httpClient.DeleteAsync(
+			$"/admin/realms/{_options.Realm}/organizations/{organizationId}",
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
 	private async Task EnsureAuthenticatedAsync(
 		CancellationToken cancellationToken) =>
 		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(

@@ -78,6 +78,10 @@ public interface IApplicationDbContext
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default);
 
+	Task<List<VolunteerOpportunity>> GetBlockingOpportunitiesForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
 	Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

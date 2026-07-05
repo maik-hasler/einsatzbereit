@@ -380,6 +380,9 @@
       "organisator": "Organizer",
       "removeMember": "Remove",
       "removeMemberError": "Could not remove member.",
+      "leaveOrganization": "Leave",
+      "leaveOrganizationError": "Could not leave organization.",
+      "leaveOrganizationLastMemberHint": "You're the only member - delete the organization instead if you want to close it.",
       "searching": "Searching…",
       "noSearchResults": "No users found.",
       "edit": "Edit",
@@ -394,7 +397,11 @@
       "declinedInvitations": "Declined Invitations",
       "dismissInvitation": "Dismiss",
       "dismissError": "Could not dismiss invitation.",
-      "invitationSentOn": "Sent {{date}}"
+      "invitationSentOn": "Sent {{date}}",
+      "dangerZone": "Danger Zone",
+      "deleteOrganization": "Delete Organization",
+      "deleteOrganizationHint": "Only the organization's sole remaining member can delete it. Remove other members first.",
+      "deleteOrganizationError": "Could not delete organization."
     },
     "account": {
       "title": "My Account",
@@ -580,6 +587,16 @@
         "title": "Cancel engagement?",
         "message": "Are you sure you want to cancel this engagement? The volunteer will be informed.",
         "confirm": "Yes, cancel"
+      },
+      "leaveOrganization": {
+        "title": "Leave organization?",
+        "message": "Are you sure you want to leave \"{{name}}\"? You will lose organizer access to it.",
+        "confirm": "Yes, leave"
+      },
+      "deleteOrganization": {
+        "title": "Delete organization?",
+        "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone.",
+        "confirm": "Yes, delete"
       }
     },
     "orgProfile": {

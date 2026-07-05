@@ -380,6 +380,9 @@
       "organisator": "Organisator",
       "removeMember": "Entfernen",
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
+      "leaveOrganization": "Verlassen",
+      "leaveOrganizationError": "Organisation konnte nicht verlassen werden.",
+      "leaveOrganizationLastMemberHint": "Du bist das einzige Mitglied - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
       "searching": "Suche läuft…",
       "noSearchResults": "Keine Benutzer gefunden.",
       "edit": "Bearbeiten",
@@ -394,7 +397,11 @@
       "declinedInvitations": "Abgelehnte Einladungen",
       "dismissInvitation": "Entfernen",
       "dismissError": "Einladung konnte nicht entfernt werden.",
-      "invitationSentOn": "Gesendet am {{date}}"
+      "invitationSentOn": "Gesendet am {{date}}",
+      "dangerZone": "Gefahrenzone",
+      "deleteOrganization": "Organisation löschen",
+      "deleteOrganizationHint": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
+      "deleteOrganizationError": "Organisation konnte nicht gelöscht werden."
     },
     "account": {
       "title": "Mein Konto",
@@ -580,6 +587,16 @@
         "title": "Engagement absagen?",
         "message": "Möchtest du dieses Engagement wirklich absagen? Der Freiwillige wird informiert.",
         "confirm": "Ja, absagen"
+      },
+      "leaveOrganization": {
+        "title": "Organisation verlassen?",
+        "message": "Möchtest du \"{{name}}\" wirklich verlassen? Du verlierst den Organisator-Zugriff darauf.",
+        "confirm": "Ja, verlassen"
+      },
+      "deleteOrganization": {
+        "title": "Organisation löschen?",
+        "message": "Möchtest du \"{{name}}\" wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm": "Ja, löschen"
       }
     },
     "orgProfile": {
