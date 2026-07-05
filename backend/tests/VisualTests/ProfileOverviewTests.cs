@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -63,5 +64,54 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// Share achievements button should be visible on the achievements tab
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Share achievements" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+	}
+
+	[Test]
+	public async Task PublicUserProfile_ShowsBioSkillsLanguagesAndPreferredContact()
+	{
+		// #576: bio/skills/languages/preferredContact were captured on the owner's
+		// own profile but never exposed on the public /users/{userId} page. Set
+		// them on vera's own profile, then verify they appear on her public page.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		var userId = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.profile?.sub) return entry.profile.sub;
+				}
+			}
+			return null;
+		}");
+		userId.Should().NotBeNull("the logged-in user's id must be available via the OIDC profile claims");
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First.ClickAsync();
+
+		var bioText = $"Public profile smoke test bio {Guid.NewGuid()}";
+		await Page.Locator("#bio").FillAsync(bioText);
+
+		var skill = $"Smoke576-{Guid.NewGuid():N}".Substring(0, 16);
+		await Page.Locator("#skill-input").FillAsync(skill);
+		await Page.Locator("#skill-input").PressAsync("Enter");
+
+		await Page.Locator("#preferred-contact").ClickAsync();
+		await Page.GetByRole(AriaRole.Option, new() { Name = "Email" }).ClickAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
+		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.GotoAsync($"{origin}/users/{userId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Preferred contact channel")).ToBeVisibleAsync();
 	}
 }

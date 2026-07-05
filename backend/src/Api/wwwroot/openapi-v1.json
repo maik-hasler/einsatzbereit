@@ -5250,7 +5250,11 @@
           "displayName",
           "engagementCount",
           "badges",
-          "avatarUrl"
+          "avatarUrl",
+          "bio",
+          "skills",
+          "languages",
+          "preferredContact"
         ],
         "type": "object",
         "properties": {
@@ -5272,6 +5276,30 @@
             }
           },
           "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredContact": {
             "type": [
               "null",
               "string"

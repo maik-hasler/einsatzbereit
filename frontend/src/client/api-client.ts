@@ -3893,6 +3893,10 @@ export interface PublicUserProfileResponse {
     engagementCount: number;
     badges: AchievementSummary[];
     avatarUrl: string | undefined;
+    bio: string | undefined;
+    skills: string[];
+    languages: string[];
+    preferredContact: string | undefined;
 
     [key: string]: any;
 }
