@@ -146,6 +146,34 @@ internal sealed class ApplicationDbContext(
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 			.ToListAsync(cancellationToken);
 
+	public async Task<List<VolunteerOpportunity>> GetBlockingOpportunitiesForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		var opportunities = await Set<VolunteerOpportunity>()
+			.Include(vo => vo.TimeSlots)
+			.Where(vo => vo.OrganizationId == organizationId)
+			.ToListAsync(cancellationToken);
+
+		if (opportunities.Count == 0)
+			return [];
+
+		var opportunityIds = opportunities.Select(vo => vo.Id).ToList();
+		var now = DateTimeOffset.UtcNow;
+
+		var opportunityIdsWithActiveEngagements = await Set<Engagement>()
+			.Where(e => opportunityIds.Contains(e.OpportunityId)
+				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.Select(e => e.OpportunityId)
+			.Distinct()
+			.ToListAsync(cancellationToken);
+
+		return opportunities
+			.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime > now)
+				|| opportunityIdsWithActiveEngagements.Contains(vo.Id))
+			.ToList();
+	}
+
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

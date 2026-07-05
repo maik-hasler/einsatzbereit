@@ -28,6 +28,10 @@ public interface IKeycloakOrganizationService
 		Guid userId,
 		CancellationToken cancellationToken = default);
 
+	Task DeleteOrganizationAsync(
+		Guid organizationId,
+		CancellationToken cancellationToken = default);
+
 	Task AssignOrganizerRoleAsync(
 		Guid userId,
 		CancellationToken cancellationToken = default);

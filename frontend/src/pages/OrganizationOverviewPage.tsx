@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import type { View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
@@ -16,7 +17,9 @@ import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { inputClass, labelClass } from "../lib/formClasses";
+import { getApiErrorMessage } from "../lib/apiError";
 import EmptyState from "../components/EmptyState";
+import ConfirmDialog from "../components/ConfirmDialog";
 import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpportunityModal";
 
 const rbcLocales = {
@@ -93,7 +96,10 @@ export default function OrganizationOverviewPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
+	const auth = useAuth();
+	const navigate = useNavigate();
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const currentUserId = auth.user?.profile?.sub;
 
 	const rawTab = searchParams.get("tab");
 	const activeTab: Tab = isTab(rawTab) ? rawTab : "calendar";
@@ -271,6 +277,11 @@ export default function OrganizationOverviewPage() {
 	const [saving, setSaving] = useState(false);
 	const [settingsError, setSettingsError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+	const [leaving, setLeaving] = useState(false);
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const isSoleMember = org?.members.length === 1;
 
 	// ── Member search ────────────────────────────────────────────────────────
 	const [memberSearch, setMemberSearch] = useState("");
@@ -463,6 +474,38 @@ export default function OrganizationOverviewPage() {
 			);
 		} catch {
 			setSettingsError(t("orgSettings.removeMemberError"));
+		}
+	}
+
+	async function handleLeaveOrganization() {
+		if (!organizationId || !currentUserId) return;
+		setLeaving(true);
+		try {
+			await api.removeMember(organizationId, currentUserId);
+			navigate("/");
+		} catch (err) {
+			setShowLeaveConfirm(false);
+			setSettingsError(
+				getApiErrorMessage(err, t("orgSettings.leaveOrganizationError")),
+			);
+		} finally {
+			setLeaving(false);
+		}
+	}
+
+	async function handleDeleteOrganization() {
+		if (!organizationId) return;
+		setDeleting(true);
+		try {
+			await api.deleteOrganization(organizationId);
+			navigate("/");
+		} catch (err) {
+			setShowDeleteConfirm(false);
+			setSettingsError(
+				getApiErrorMessage(err, t("orgSettings.deleteOrganizationError")),
+			);
+		} finally {
+			setDeleting(false);
 		}
 	}
 
@@ -791,6 +834,11 @@ export default function OrganizationOverviewPage() {
 									{successMessage}
 								</div>
 							)}
+							{settingsError && (
+								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+									{settingsError}
+								</div>
+							)}
 
 							{org.description && (
 								<p className="mb-5 leading-relaxed text-gray-600">
@@ -906,6 +954,23 @@ export default function OrganizationOverviewPage() {
 									)}
 								</div>
 							)}
+
+							<div className="mt-8 rounded-2xl border border-red-100 bg-red-50 px-4 py-4">
+								<h2 className="text-sm font-semibold text-red-800">
+									{t("orgSettings.dangerZone")}
+								</h2>
+								<p className="mt-1 text-xs text-red-700">
+									{t("orgSettings.deleteOrganizationHint")}
+								</p>
+								<button
+									type="button"
+									onClick={() => setShowDeleteConfirm(true)}
+									disabled={!isSoleMember}
+									className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
+								>
+									{t("orgSettings.deleteOrganization")}
+								</button>
+							</div>
 						</>
 					)}
 					{!orgLoading && org && editing && (
@@ -1307,20 +1372,67 @@ export default function OrganizationOverviewPage() {
 													</span>
 												)}
 											</div>
-											<button
-												type="button"
-												onClick={() => handleRemoveMember(member.userId)}
-												className="text-xs text-red-700 hover:text-red-800"
-											>
-												{t("orgSettings.removeMember")}
-											</button>
+											{member.userId === currentUserId ? (
+												<button
+													type="button"
+													onClick={() => setShowLeaveConfirm(true)}
+													disabled={isSoleMember}
+													title={
+														isSoleMember
+															? t("orgSettings.leaveOrganizationLastMemberHint")
+															: undefined
+													}
+													className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+												>
+													{t("orgSettings.leaveOrganization")}
+												</button>
+											) : (
+												<button
+													type="button"
+													onClick={() => handleRemoveMember(member.userId)}
+													className="text-xs text-red-700 hover:text-red-800"
+												>
+													{t("orgSettings.removeMember")}
+												</button>
+											)}
 										</li>
 									))}
 								</ul>
 							)}
+							{isSoleMember && (
+								<p className="mt-3 text-xs text-gray-500">
+									{t("orgSettings.leaveOrganizationLastMemberHint")}
+								</p>
+							)}
 						</>
 					)}
 				</div>
+			)}
+
+			{showLeaveConfirm && org && (
+				<ConfirmDialog
+					title={t("confirmDialog.leaveOrganization.title")}
+					message={t("confirmDialog.leaveOrganization.message", {
+						name: org.name,
+					})}
+					confirmLabel={t("confirmDialog.leaveOrganization.confirm")}
+					onConfirm={handleLeaveOrganization}
+					onClose={() => setShowLeaveConfirm(false)}
+					loading={leaving}
+				/>
+			)}
+
+			{showDeleteConfirm && org && (
+				<ConfirmDialog
+					title={t("confirmDialog.deleteOrganization.title")}
+					message={t("confirmDialog.deleteOrganization.message", {
+						name: org.name,
+					})}
+					confirmLabel={t("confirmDialog.deleteOrganization.confirm")}
+					onConfirm={handleDeleteOrganization}
+					onClose={() => setShowDeleteConfirm(false)}
+					loading={deleting}
+				/>
 			)}
 
 			{showCreateModal && organizationId && (

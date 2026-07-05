@@ -26,6 +26,14 @@ public class RemoveMemberCommandHandlerTests
 			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
 			.Returns([new KeycloakOrganization(orgId, "Test Org")]);
 
+	private void SetMembers(Guid orgId, params KeycloakOrganizationMember[] members) =>
+		_keycloakService
+			.GetMembersAsync(orgId, Arg.Any<CancellationToken>())
+			.Returns((IReadOnlyList<KeycloakOrganizationMember>)members);
+
+	private static KeycloakOrganizationMember Member(Guid userId) =>
+		new(userId, "user", "First", "Last", "user@example.com", IsOrganisator: false);
+
 	[Test]
 	public async Task Handle_ShouldCallRemoveMemberOnKeycloak(
 		CancellationToken cancellationToken)
@@ -34,6 +42,7 @@ public class RemoveMemberCommandHandlerTests
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(userId));
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		// Act
@@ -49,8 +58,10 @@ public class RemoveMemberCommandHandlerTests
 	{
 		// Arrange
 		var orgId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
-		var command = new RemoveMemberCommand(orgId, Guid.NewGuid(), DefaultRequestingUserId);
+		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(userId));
+		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -67,6 +78,7 @@ public class RemoveMemberCommandHandlerTests
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(userId));
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		_keycloakService
@@ -99,5 +111,43 @@ public class RemoveMemberCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<DomainException>();
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, userId, Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenRemovingTheLastRemainingMember(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the requesting user is the org's sole member removing (leaving) themselves.
+		var orgId = Guid.NewGuid();
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, Member(DefaultRequestingUserId.Value));
+		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<DomainException>()
+			.WithMessage("*only member*");
+		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldAllowRemoval_WhenMultipleMembersRemain(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - two members left, removing one is fine.
+		var orgId = Guid.NewGuid();
+		var otherUserId = Guid.NewGuid();
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(otherUserId));
+		var command = new RemoveMemberCommand(orgId, otherUserId, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _keycloakService.Received(1).RemoveMemberAsync(orgId, otherUserId, cancellationToken);
 	}
 }

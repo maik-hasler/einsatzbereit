@@ -298,6 +298,123 @@ public class OrganizationSettingsTests(
 		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
 	}
 
+	// ── RemoveMember (last-member protection, #580) ──────────────────────────
+
+	[Test]
+	public async Task RemoveMember_ShouldReturn409_WhenRemovingTheLastRemainingMember(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Last Member Test Org" }, cancellationToken);
+		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
+
+		var act = () => olafClient.RemoveMemberAsync(org.Id.Value, olaf.Id, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().ContainSingle(m => m.UserId == olaf.Id);
+	}
+
+	// ── DeleteOrganization (#580) ─────────────────────────────────────────────
+
+	[Test]
+	public async Task DeleteOrganization_ShouldReturn401_WhenNotAuthenticated(
+		CancellationToken cancellationToken)
+	{
+		var client = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => client.DeleteOrganizationAsync(Guid.NewGuid(), cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(401);
+	}
+
+	[Test]
+	public async Task DeleteOrganization_ShouldReturn204AndRemoveOrganization_WhenSoleMemberWithNoBlockingOpportunities(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Delete Success Test Org" }, cancellationToken);
+
+		await olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
+
+		var act = () => olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task DeleteOrganization_ShouldReturn409_WhenOtherMembersRemain(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Delete 409 Members Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var act = () => olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().HaveCount(2);
+	}
+
+	[Test]
+	public async Task DeleteOrganization_ShouldReturn409_WhenOpportunityHasFutureTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Delete 409 Opportunity Test Org" }, cancellationToken);
+
+		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
+			new CreateVolunteerOpportunityRequest
+			{
+				Title = "Blocking Opportunity",
+				Description = "Integration test opportunity",
+				OrganizationId = org.Id.Value,
+				Street = "Test Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+				Occurrence = "OneTime",
+				ParticipationType = "Waitlist",
+				CheckInMethod = "None",
+			},
+			cancellationToken);
+
+		await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 5,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		var act = () => olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Id.Should().Be(org.Id.Value);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);
