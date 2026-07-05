@@ -42,6 +42,7 @@ in rather than re-checking the same thing shallowly yourself:
 | `backend/src/Domain/**` or `backend/src/Infrastructure/Persistence/**` | `ef-migration-check` |
 | A new endpoint/command/query/handler, or a type moved between layers | `architecture-check` |
 | A `.tsx` component or page under `frontend/src/` | `a11y-check` |
+| `frontend/src/locales/en.json`/`de.json`, or a new `t("...")` call | `i18n-check` |
 
 ## Output format
 

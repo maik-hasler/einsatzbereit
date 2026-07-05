@@ -73,7 +73,8 @@ edit on your own initiative):
   `architecture-check` (Clean Architecture layer/naming/rate-limiting rules),
   `a11y-check` (frontend components vs. the a11y conventions below - scoped
   to only what ESLint's `jsx-a11y` ruleset can't already catch, see the
-  agent file for why).
+  agent file for why), `i18n-check` (`en.json`/`de.json` translation key
+  parity - nothing else in CI checks this).
 - **Skill** (`.claude/skills/self-review/`) - `/self-review` runs a
   prioritised diff review and fans out to the agents above for the areas the
   diff touches. Required before opening a PR, see below.
