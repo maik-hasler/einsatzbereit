@@ -304,7 +304,8 @@
       "unknownError": "Unknown error",
       "maxParticipants": "(max. {{count}})",
       "spotsLeft": "({{count}} left)",
-      "slotFull": "(Full)"
+      "slotFull": "(Full)",
+      "selectTimeSlotRequired": "Please select a time slot."
     },
     "organization": {
       "create": "Create organization",

@@ -234,4 +234,39 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
+
+	[Test]
+	public async Task SignUpModal_OpenTimeSlotDropdown_HasNoSeriousA11yViolations()
+	{
+		// #573: the native time slot <select> was replaced with a custom
+		// accessible combobox/listbox - assert the open dropdown itself is
+		// axe-clean, not just the page around it.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
+		try
+		{
+			await signUpBtn.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			return; // no waitlist opportunity with open slots seeded, skip
+		}
+
+		await signUpBtn.ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']");
+
+		var dropdown = Page.Locator("#sign-up-time-slot");
+		if (await dropdown.CountAsync() == 0)
+			return; // opportunity has no time slots to pick from, skip
+
+		await dropdown.ClickAsync();
+		await Expect(Page.Locator("[role='option']").First).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
 }

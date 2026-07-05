@@ -104,10 +104,15 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		await signUpBtn.ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
-		var slotSelect = Page.Locator("select");
-		await Expect(slotSelect).ToBeVisibleAsync();
+		// #573: the time slot picker is a custom accessible dropdown (role="combobox"
+		// trigger + role="option" list), not a native <select>.
+		var slotDropdown = Page.Locator("#sign-up-time-slot");
+		await Expect(slotDropdown).ToBeVisibleAsync();
+		await slotDropdown.ClickAsync();
 
-		var options = await slotSelect.Locator("option").AllTextContentsAsync();
+		var optionLocator = Page.Locator("[role='option']");
+		await Expect(optionLocator.First).ToBeVisibleAsync();
+		var options = await optionLocator.AllTextContentsAsync();
 		options.Should().NotBeEmpty("slot options must be rendered");
 
 		var hasAvailabilityInfo = options.Any(o =>

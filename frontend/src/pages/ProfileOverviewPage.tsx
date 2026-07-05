@@ -19,6 +19,7 @@ import BadgeGrid from "../components/BadgeGrid";
 import CheckInModal from "../components/CheckInModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
+import Dropdown from "../components/Dropdown";
 import EmptyState from "../components/EmptyState";
 import ShareAchievementsModal from "../components/ShareAchievementsModal";
 import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
@@ -800,24 +801,28 @@ export default function ProfileOverviewPage() {
 												label={t("profile.fieldPreferredContact")}
 												id="preferred-contact"
 											>
-												<select
+												<Dropdown
 													id="preferred-contact"
 													value={preferredContact}
-													onChange={(e) =>
-														setPreferredContact(e.target.value as ContactPref)
+													onChange={(v) =>
+														setPreferredContact(v as ContactPref)
 													}
 													className={inputClass}
-												>
-													<option value="">
-														{t("profile.preferredContactNone")}
-													</option>
-													<option value="Email">
-														{t("profile.preferredContactEmail")}
-													</option>
-													<option value="Phone">
-														{t("profile.preferredContactPhone")}
-													</option>
-												</select>
+													options={[
+														{
+															value: "",
+															label: t("profile.preferredContactNone"),
+														},
+														{
+															value: "Email",
+															label: t("profile.preferredContactEmail"),
+														},
+														{
+															value: "Phone",
+															label: t("profile.preferredContactPhone"),
+														},
+													]}
+												/>
 											</Field>
 										</div>
 									</section>
