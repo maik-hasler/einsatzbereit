@@ -58,7 +58,7 @@ export default function CheckInModal({
 	const checkInMethod = details?.checkInMethod;
 
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center">
+		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/50"

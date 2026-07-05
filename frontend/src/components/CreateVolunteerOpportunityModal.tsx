@@ -10,6 +10,7 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
+import Dropdown from "./Dropdown";
 
 const TOTAL_STEPS = 4;
 const MAX_BANNER_BYTES = 2 * 1024 * 1024;
@@ -1070,39 +1071,40 @@ export default function CreateVolunteerOpportunityModal({
 								>
 									{t("createOpportunity.fieldCategory")}
 								</label>
-								<select
+								<Dropdown
 									id="create-category"
 									value={form.category ?? ""}
-									onChange={(e) =>
+									onChange={(v) =>
 										setForm((f) => ({
 											...f,
-											category: e.target.value || undefined,
+											category: v || undefined,
 										}))
 									}
 									className={selectClass}
-								>
-									<option value="">
-										{t("createOpportunity.fieldCategoryNone")}
-									</option>
-									{(
-										[
-											"Social",
-											"Environment",
-											"Sport",
-											"Education",
-											"DisasterRelief",
-											"Health",
-											"Animals",
-											"Culture",
-											"Technology",
-											"Other",
-										] as const
-									).map((c) => (
-										<option key={c} value={c}>
-											{t(`opportunities.category.${c}`)}
-										</option>
-									))}
-								</select>
+									options={[
+										{
+											value: "",
+											label: t("createOpportunity.fieldCategoryNone"),
+										},
+										...(
+											[
+												"Social",
+												"Environment",
+												"Sport",
+												"Education",
+												"DisasterRelief",
+												"Health",
+												"Animals",
+												"Culture",
+												"Technology",
+												"Other",
+											] as const
+										).map((c) => ({
+											value: c,
+											label: t(`opportunities.category.${c}`),
+										})),
+									]}
+								/>
 							</div>
 
 							<div>
@@ -1264,21 +1266,22 @@ export default function CreateVolunteerOpportunityModal({
 													>
 														{t("timeSlots.recurrenceFrequency")}
 													</label>
-													<select
+													<Dropdown
 														id="slot-recurrence-frequency"
 														value={recurrenceFrequency}
-														onChange={(e) =>
-															setRecurrenceFrequency(e.target.value)
-														}
+														onChange={setRecurrenceFrequency}
 														className={selectClass}
-													>
-														<option value="Weekly">
-															{t("timeSlots.recurrenceWeekly")}
-														</option>
-														<option value="Monthly">
-															{t("timeSlots.recurrenceMonthly")}
-														</option>
-													</select>
+														options={[
+															{
+																value: "Weekly",
+																label: t("timeSlots.recurrenceWeekly"),
+															},
+															{
+																value: "Monthly",
+																label: t("timeSlots.recurrenceMonthly"),
+															},
+														]}
+													/>
 												</div>
 												<div>
 													<label

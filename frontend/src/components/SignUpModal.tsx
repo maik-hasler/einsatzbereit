@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatDateTime } from "../lib/format";
+import Dropdown from "./Dropdown";
 
 interface Props {
 	opportunityId: string;
@@ -38,6 +39,10 @@ export default function SignUpModal({
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
+		if (isWaitlist && timeSlots.length > 0 && !selectedTimeSlotId) {
+			setError(t("signUp.selectTimeSlotRequired"));
+			return;
+		}
 		setSubmitting(true);
 		setError(null);
 
@@ -58,7 +63,7 @@ export default function SignUpModal({
 	}
 
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center">
+		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4">
 			<button
 				type="button"
 				className="absolute inset-0 bg-black/50"
@@ -79,7 +84,10 @@ export default function SignUpModal({
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{isWaitlist && (
 						<div>
-							<label className="mb-1 block text-sm font-medium text-gray-700">
+							<label
+								htmlFor="sign-up-time-slot"
+								className="mb-1 block text-sm font-medium text-gray-700"
+							>
 								{t("signUp.selectTimeSlot")}
 							</label>
 							{timeSlots.length === 0 ? (
@@ -87,36 +95,32 @@ export default function SignUpModal({
 									{t("signUp.noTimeSlots")}
 								</p>
 							) : (
-								<select
+								<Dropdown
+									id="sign-up-time-slot"
 									value={selectedTimeSlotId}
-									onChange={(e) => setSelectedTimeSlotId(e.target.value)}
-									required
-									className="w-full rounded border px-3 py-2 text-sm"
-								>
-									<option value="">{t("signUp.selectPlaceholder")}</option>
-									{timeSlots.map((ts) => {
+									onChange={setSelectedTimeSlotId}
+									placeholder={t("signUp.selectPlaceholder")}
+									className="rounded border px-3 py-2 text-sm"
+									options={timeSlots.map((ts) => {
 										const spotsLeft = ts.maxParticipants - ts.bookedCount;
 										const slotFull = spotsLeft <= 0;
-										return (
-											<option key={ts.id} value={ts.id} disabled={slotFull}>
-												{formatDateTime(
-													ts.startDateTime as unknown as string,
-													i18n.language,
-												)}{" "}
-												-{" "}
-												{formatDateTime(
-													ts.endDateTime as unknown as string,
-													i18n.language,
-												)}{" "}
-												{slotFull
+										return {
+											value: ts.id,
+											disabled: slotFull,
+											label: `${formatDateTime(
+												ts.startDateTime as unknown as string,
+												i18n.language,
+											)} - ${formatDateTime(
+												ts.endDateTime as unknown as string,
+												i18n.language,
+											)} ${
+												slotFull
 													? t("signUp.slotFull")
-													: t("signUp.spotsLeft", {
-															count: spotsLeft,
-														})}
-											</option>
-										);
+													: t("signUp.spotsLeft", { count: spotsLeft })
+											}`,
+										};
 									})}
-								</select>
+								/>
 							)}
 						</div>
 					)}
