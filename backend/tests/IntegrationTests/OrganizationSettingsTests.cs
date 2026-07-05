@@ -392,6 +392,7 @@ public class OrganizationSettingsTests(
 				Occurrence = "OneTime",
 				ParticipationType = "Waitlist",
 				CheckInMethod = "None",
+				IsDraft = true,
 			},
 			cancellationToken);
 
