@@ -108,7 +108,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Create opportunity now lives on the organization dashboard - navigate there
 		// via the org switcher. Switcher toggle has aria-label "Switch organization"
 		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.Locator("button[aria-expanded]");
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		if (await switcherBtn.CountAsync() == 0)
 			return; // no org membership in seed - skip
 
@@ -267,7 +267,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Create opportunity lives on the organization dashboard - navigate there
 		// via the org switcher. Switcher toggle has aria-label "Switch organization"
 		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.Locator("button[aria-expanded]");
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		if (await switcherBtn.CountAsync() == 0)
 			return;
 
@@ -340,7 +340,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Create opportunity lives on the organization dashboard - navigate there
 		// via the org switcher. Switcher toggle has aria-label "Switch organization"
 		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.Locator("button[aria-expanded]");
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		if (await switcherBtn.CountAsync() == 0)
 			return; // no org membership in seed - skip
 
