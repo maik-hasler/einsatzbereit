@@ -30,6 +30,25 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
+	public async Task ProfilePage_ShowsHomeBreadcrumb()
+	{
+		// #590: /profile never called usePageToolbar, so it rendered with no
+		// breadcrumb trail at all, unlike every other authenticated page.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+		await Expect(breadcrumb).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(breadcrumb.Locator("a[href='/']")).ToBeVisibleAsync();
+		await Expect(breadcrumb.GetByText("Profile", new() { Exact = true })).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task MyEngagements_Redirects_ToProfileEngagementsTab()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
