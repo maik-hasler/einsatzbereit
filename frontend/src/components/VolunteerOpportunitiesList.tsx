@@ -1663,12 +1663,20 @@ export default function VolunteerOpportunitiesList() {
 														to={`/organizations/${item.organizationId}`}
 														className="group/org relative z-20 inline-flex items-center gap-2"
 													>
-														<span
-															aria-hidden="true"
-															className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700"
-														>
-															{orgInitials(item.organizationName)}
-														</span>
+														{item.organizationLogoUrl ? (
+															<img
+																src={item.organizationLogoUrl}
+																alt=""
+																className="h-7 w-7 shrink-0 rounded-full object-cover"
+															/>
+														) : (
+															<span
+																aria-hidden="true"
+																className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700"
+															>
+																{orgInitials(item.organizationName)}
+															</span>
+														)}
 														<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
 															{item.organizationName}
 														</span>
