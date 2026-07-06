@@ -17,6 +17,11 @@ Review all open issues and all open PRs before starting any work.
 For each open issue:
 
 - Determine whether it's still relevant and actionable.
+- Skip anything labelled `needs-decision` entirely - it's a finding that
+  needs the repo owner's own product/design call before it can be
+  implemented (see `persona-simulation`). Don't triage it, don't implement
+  it, don't comment on it beyond what's already there. It stays untouched
+  until the owner removes the label.
 - Check open PRs for related work - if one already resolves, partially
   resolves, or clearly addresses it, don't duplicate the work. Document the
   relationship in a comment and move on.
@@ -25,6 +30,11 @@ For each open issue:
 - Prefer an issue that's already been triaged as actionable across multiple
   prior cycles without being picked up, over re-triaging the same backlog
   indefinitely and always reaching for something newer/shinier.
+- If, after all of the above, no open issue is actionable (everything
+  remaining is `needs-decision`, bot-managed like Renovate's Dependency
+  Dashboard, or already covered by an open PR), run the `persona-simulation`
+  skill instead of stopping here - it's the fallback for a genuinely empty
+  backlog, not a replacement for real triage work.
 
 ## 2. Implement
 

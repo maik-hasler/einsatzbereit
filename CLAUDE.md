@@ -81,6 +81,11 @@ edit on your own initiative):
   is the recurring triage-and-implement loop for this repo's autonomous
   routine - the durable process lives here, checked in and versioned,
   rather than only in the routine's own (unowned, unversioned) prompt text.
+  `.claude/skills/persona-simulation/` is that routine's fallback for a
+  genuinely empty backlog - it drives the live app as Volunteer Vera/Organizer
+  Olaf to find real gaps in the existing feature set, filing GitHub issues
+  only (never code) and labelling anything needing the repo owner's own
+  product call as `needs-decision`, which `issue-triage` then leaves alone.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
