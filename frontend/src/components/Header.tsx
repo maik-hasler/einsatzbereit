@@ -25,6 +25,7 @@ export default function Header() {
 		user?.preferred_username ??
 		"User") as string;
 	const initials = isLoggedIn ? getInitials(displayName) : "";
+	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [notifOpen, setNotifOpen] = useState(false);
@@ -80,6 +81,24 @@ export default function Header() {
 			controller.abort();
 			clearInterval(id);
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLoggedIn]);
+
+	useEffect(() => {
+		if (!isLoggedIn) {
+			setAvatarUrl(null);
+			return;
+		}
+		const controller = new AbortController();
+		void (async () => {
+			try {
+				const profile = await api.getUserProfile(controller.signal);
+				setAvatarUrl(profile.avatarUrl ?? null);
+			} catch {
+				// silently ignore (includes AbortError on cleanup)
+			}
+		})();
+		return () => controller.abort();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
 
@@ -253,9 +272,17 @@ export default function Header() {
 										aria-label={t("nav.userMenu")}
 										aria-expanded={dropdownOpen}
 									>
-										<span className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
-											{initials}
-										</span>
+										{avatarUrl ? (
+											<img
+												src={avatarUrl}
+												alt=""
+												className="w-9 h-9 rounded-full object-cover"
+											/>
+										) : (
+											<span className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
+												{initials}
+											</span>
+										)}
 										<svg
 											className={`w-4 h-4 ${isTransparent ? "text-white/70" : "text-gray-400"}`}
 											fill="none"
@@ -522,9 +549,17 @@ export default function Header() {
 						{isLoggedIn ? (
 							<div className="space-y-1">
 								<div className="flex items-center gap-3 px-3 py-2">
-									<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
-										{initials}
-									</div>
+									{avatarUrl ? (
+										<img
+											src={avatarUrl}
+											alt=""
+											className="w-9 h-9 rounded-full object-cover"
+										/>
+									) : (
+										<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
+											{initials}
+										</div>
+									)}
 									<span
 										className={`text-sm font-medium ${isTransparent ? "text-white/90" : "text-gray-700"}`}
 									>

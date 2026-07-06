@@ -5945,6 +5945,12 @@
           "isOrganizationVerified": {
             "type": "boolean",
             "default": false
+          },
+          "organizationLogoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       }

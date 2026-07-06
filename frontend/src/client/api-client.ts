@@ -4045,6 +4045,7 @@ export interface VolunteerOpportunitySummary {
     status: string;
     bannerImageUrl: string | undefined;
     isOrganizationVerified?: boolean;
+    organizationLogoUrl?: string | undefined;
 
     [key: string]: any;
 }

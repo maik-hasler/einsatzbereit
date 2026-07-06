@@ -8605,6 +8605,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("isOrganizationVerified")]
         public bool IsOrganizationVerified { get; set; } = false;
 
+        [System.Text.Json.Serialization.JsonPropertyName("organizationLogoUrl")]
+        public string? OrganizationLogoUrl { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
