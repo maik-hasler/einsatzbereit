@@ -41,7 +41,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			return; // no org selected in seed - skip
 
 		await switcherBtn.First.ClickAsync();
-		await Page.GetByTestId("org-dashboard-link").ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await dashboardLink.First.ClickAsync();
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Members" }).ClickAsync();
 

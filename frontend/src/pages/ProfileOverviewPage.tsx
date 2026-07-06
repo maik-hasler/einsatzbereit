@@ -12,6 +12,7 @@ import type {
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, textareaClass } from "../lib/formClasses";
@@ -138,6 +139,10 @@ export default function ProfileOverviewPage() {
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 	usePageTitle(t("profile.title"));
+	usePageToolbar([
+		{ label: t("breadcrumb.home"), href: "/" },
+		{ label: t("breadcrumb.profile") },
+	]);
 
 	const rawTab = searchParams.get("tab");
 	const activeTab: Tab = isTab(rawTab) ? rawTab : "profile";
