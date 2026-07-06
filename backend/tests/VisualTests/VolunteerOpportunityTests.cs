@@ -236,11 +236,14 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// The main element must be present - a 500 would show an error page instead.
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Wait for the API call to resolve: opportunity cards, empty state, or error appear
+		// Wait for the API call to resolve: opportunity cards, empty state, or error appear.
+		// .First avoids a Playwright strict-mode violation when more than one
+		// opportunity card is present - this just needs to see *some* result.
 		await Expect(
 			Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 				.Or(Page.GetByText(new Regex("No opportunities|Keine Eins", RegexOptions.IgnoreCase)))
 				.Or(Page.GetByTestId("opportunities-error"))
+				.First
 		).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		// No error message should be visible in the opportunities list.
