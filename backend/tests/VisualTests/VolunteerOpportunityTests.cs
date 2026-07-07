@@ -395,7 +395,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await step4.Locator("#slot-end").FillAsync(end.ToString("yyyy-MM-ddTHH:mm"));
 		var addSlotBtn = step4.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true });
 		await addSlotBtn.ClickAsync();
-		await Expect(addSlotBtn).ToBeEnabledAsync(new() { Timeout = 5000 });
+
+		// The Add button clears start/end and goes disabled again by design once a
+		// slot is added (ready for the next entry), so waiting for it to re-enable
+		// is not a valid completion signal here - that previously made this
+		// assertion flaky/incorrect. Wait for the slot to actually appear instead.
+		await Expect(step4.GetByText("No time slots added yet.")).Not.ToBeVisibleAsync(
+			new() { Timeout = 5000 });
 
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
