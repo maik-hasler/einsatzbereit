@@ -3,9 +3,11 @@ name: issue-triage
 description: >
   The recurring issue-triage-and-implement loop for this repo: review open
   issues and PRs, pick something actionable and not already covered, implement
-  it, release it, and document the outcome on the issue. Use when asked to
-  review/triage open issues, when running the recurring routine for this
-  repo, or when told to "check open issues and implement one".
+  it, open a PR and verify it via a release candidate for the repository
+  owner to review and merge themselves, and document the outcome on the
+  issue. Use when asked to review/triage open issues, when running the
+  recurring routine for this repo, or when told to "check open issues and
+  implement one".
 ---
 
 # Issue triage and implement
@@ -39,10 +41,19 @@ For each open issue:
 ## 2. Implement
 
 - Always work from the latest state of `main`.
-- Implement on a dedicated working branch and open a PR into `main` -
-  direct pushes to `main` are blocked in this sandbox (see root `CLAUDE.md`,
-  "Sandbox Limitations"). "Directly on main" means "merged into main via
-  PR", not a direct push.
+- Implement on a dedicated working branch and open a PR into `main`. **Never
+  merge the PR yourself, under any circumstances** - merging is the
+  repository owner's decision alone, regardless of how green CI is or how
+  clean the live-verification result looks. (Direct pushes to `main` are
+  also blocked in this sandbox anyway - see root `CLAUDE.md`, "Sandbox
+  Limitations" - but the point is broader than that restriction: even where
+  merging were possible, it's still not this routine's call to make.)
+- **Never use a GitHub closing keyword** (`Fixes`/`Closes`/`Resolves`, any
+  tense, case-insensitive) followed by an issue number, in the PR title,
+  body, or any commit message. Use non-linking phrasing instead - `Addresses
+  #NNN`, `Relates to #NNN`. A closing keyword auto-closes the issue the
+  instant the owner merges, turning issue closure into an automatic side
+  effect instead of the deliberate, separate action it must always be.
 - Follow existing project conventions and architecture. Smallest reasonable
   change that fully resolves the issue.
 - Update or add tests where appropriate. Run `/self-review` before opening
@@ -66,17 +77,22 @@ For each open issue:
 
 ## 4. Release
 
-- Every time a PR is merged into `main`, immediately create a
-  release-candidate branch from that merge commit (see "Mandatory: Deploy
-  and verify" for the exact steps) - only after the merge commit has
-  actually landed and the branch push has succeeded.
+- Cut the release-candidate branch from the **feature/PR branch itself**
+  (see "Mandatory: Deploy and verify" for the exact steps) so live
+  verification happens before the repository owner ever needs to look at
+  it. Do not wait for, or perform, a merge into `main` first - the PR stays
+  open throughout this entire step.
+- Once the RC deploys and live verification passes, the PR is ready for the
+  owner's review, nothing more. This routine never merges it.
 
 ## 5. Document, don't spam
 
 For every issue investigated this cycle, leave one concise comment
 covering: what was analyzed, whether it was reproduced, whether an open PR
-already covers it, what changed (if anything), how it was validated, and
-any remaining limitations/follow-up.
+already covers it, what changed (if anything - link the PR and note it's
+open and awaiting the repository owner's review, since this routine never
+merges it), how it was validated (including the release-candidate
+live-verification result), and any remaining limitations/follow-up.
 
 Skip leaving a new comment if an existing comment from a recent prior cycle
 already says the same thing with nothing new to add - re-confirm the
