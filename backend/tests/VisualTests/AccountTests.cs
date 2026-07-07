@@ -14,7 +14,9 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		// /account redirects to /profile - .First matches the guard already
+		// applied to this same "Edit" button in ProfileOverviewTests.cs.
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await editButton.ClickAsync();
 
@@ -32,7 +34,9 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		// /account redirects to /profile - .First matches the guard already
+		// applied to this same "Edit" button in ProfileOverviewTests.cs.
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 30_000 });
 		await editButton.ClickAsync();
 
@@ -49,7 +53,9 @@ public class AccountTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 
-		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		// /account redirects to /profile - .First matches the guard already
+		// applied to this same "Edit" button in ProfileOverviewTests.cs.
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await editButton.ClickAsync();
 
