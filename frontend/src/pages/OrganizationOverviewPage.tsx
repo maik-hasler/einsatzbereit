@@ -12,6 +12,7 @@ import type {
 	OrganizationDetailsResponse,
 	OrgInvitationDto,
 	PublicOpportunitySummaryDto,
+	VolunteerOpportunitySummary,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -169,8 +170,25 @@ export default function OrganizationOverviewPage() {
 
 	function handleOpportunityCreated() {
 		loadCalendarEvents();
+		loadDrafts();
 		setEngInitialized(false);
 	}
+
+	// ── Drafts (unpublished opportunities, not shown in public listings) ────
+	const [drafts, setDrafts] = useState<VolunteerOpportunitySummary[]>([]);
+
+	function loadDrafts() {
+		if (!organizationId) return;
+		api
+			.getOrganizationOpportunityDrafts(organizationId)
+			.then(setDrafts)
+			.catch(() => {});
+	}
+
+	useEffect(() => {
+		loadDrafts();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [organizationId]);
 
 	// ── Calendar tab ────────────────────────────────────────────────────────
 	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
@@ -561,6 +579,46 @@ export default function OrganizationOverviewPage() {
 			{/* ── Calendar tab ──────────────────────────────────────────────────── */}
 			{activeTab === "calendar" && (
 				<div>
+					{drafts.length > 0 && (
+						<section className="mb-8" data-testid="drafts-section">
+							<h2 className="text-lg font-semibold text-gray-900">
+								{t("orgDashboard.draftsTitle")}
+							</h2>
+							<p className="mt-1 text-sm text-gray-500">
+								{t("orgDashboard.draftsDesc")}
+							</p>
+							<ul className="mt-4 space-y-3">
+								{drafts.map((draft) => (
+									<li
+										key={draft.id}
+										className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+									>
+										<Link
+											to={`/volunteer-opportunities/${draft.id}`}
+											className="absolute inset-0"
+											aria-label={draft.title || t("orgDashboard.unnamedDraft")}
+										/>
+										<div className="flex items-center justify-between gap-3">
+											<div className="min-w-0">
+												<p className="truncate text-sm font-semibold text-gray-900">
+													{draft.title || t("orgDashboard.unnamedDraft")}
+												</p>
+												{draft.description && (
+													<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
+														{draft.description}
+													</p>
+												)}
+											</div>
+											<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+												{t("opportunities.draftBadge")}
+											</span>
+										</div>
+									</li>
+								))}
+							</ul>
+						</section>
+					)}
+
 					{calLoading && (
 						<div className="flex items-center justify-center py-16">
 							<span className="text-gray-500">
