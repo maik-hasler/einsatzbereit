@@ -732,13 +732,6 @@
       "achievements": "My Achievements",
       "userAchievements": "Achievements"
     },
-    "onboarding": {
-      "ariaLabel": "Welcome banner",
-      "title": "Welcome to Einsatzbereit!",
-      "message": "Browse volunteer opportunities near you, sign up with one click, and earn badges as you help your community.",
-      "cta": "Browse opportunities",
-      "dismiss": "Dismiss"
-    },
     "error": {
       "forbidden": "You do not have permission to do this.",
       "serverError": "An unexpected error occurred. Please try again later.",
