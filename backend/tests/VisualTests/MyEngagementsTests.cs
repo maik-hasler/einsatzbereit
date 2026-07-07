@@ -33,8 +33,10 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var orgLinks = Page.Locator("a[href^='/organizations/']");
 		await Expect(orgLinks.First).ToBeVisibleAsync();
 
-		// Both seed org names must appear somewhere on the page.
-		await Expect(Page.GetByText("Rotes Kreuz Musterstadt")).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Tierschutzverein Musterstadt")).ToBeVisibleAsync();
+		// Both seed org names must appear somewhere on the page. .First avoids a
+		// Playwright strict-mode violation once Vera has more than one engagement
+		// with the same org (seed data grows release over release).
+		await Expect(Page.GetByText("Rotes Kreuz Musterstadt").First).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Tierschutzverein Musterstadt").First).ToBeVisibleAsync();
 	}
 }
