@@ -458,40 +458,6 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{showOnboarding && (
-				<section
-					aria-label={t("onboarding.ariaLabel")}
-					className="mb-8 rounded-2xl border border-brand-200 bg-brand-50 px-6 py-5"
-				>
-					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-						<div className="min-w-0">
-							<p className="text-sm font-semibold text-brand-900">
-								{t("onboarding.title")}
-							</p>
-							<p className="mt-1 text-sm text-brand-700">
-								{t("onboarding.message")}
-							</p>
-						</div>
-						<div className="flex shrink-0 items-center gap-3">
-							<a
-								href="#opportunities"
-								className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
-							>
-								{t("onboarding.cta")}
-							</a>
-							<button
-								type="button"
-								onClick={handleDismissOnboarding}
-								aria-label={t("onboarding.dismiss")}
-								className="rounded-lg border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700"
-							>
-								{t("onboarding.dismiss")}
-							</button>
-						</div>
-					</div>
-				</section>
-			)}
-
 			<div id="opportunities">
 				{showOnboarding && (
 					<OnboardingBanner onDismiss={handleDismissOnboarding} />
