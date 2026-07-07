@@ -403,8 +403,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(step4.GetByText("No time slots added yet.")).Not.ToBeVisibleAsync(
 			new() { Timeout = 5000 });
 
+		// Closing the dialog waits on 3 sequential API calls (create opportunity,
+		// create time slot, publish) - under the shared, contended CI stack this can
+		// exceed 15s even when nothing is actually wrong, so use the same 30s window
+		// already established in this file for other network-heavy waits (see
+		// HomePage_LoadsWithoutError_WhenPublishedOpportunitiesExist above).
 		await Page.GetByTestId("modal-submit").ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		// The newly published opportunity is visible in the public list.
 		await Page.GotoAsync(frontend.ToString());
