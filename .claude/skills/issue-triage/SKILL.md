@@ -14,6 +14,19 @@ description: >
 
 ## 1. Survey
 
+Before anything else, check for a sign that another instance of this
+routine might already be running: look for a PR or branch matching this
+repo's `claude/*` naming convention that was opened in roughly the last 15
+minutes. If one already exists, stop immediately and do nothing this cycle
+- no comments, no new branches, no PRs - since the likely cause is a
+duplicate/overlapping scheduled trigger (this has happened before: two
+triggers on the same cron schedule both firing). Two instances racing on
+the same backlog risks duplicate fixes and colliding pushes. A PR that's
+simply been sitting open for a while awaiting the repository owner's review
+is normal and not a sign of this - the window is short specifically so it
+only catches near-simultaneous starts, not the everyday case of a PR
+waiting to be merged.
+
 Review all open issues and all open PRs before starting any work.
 
 For each open issue:
