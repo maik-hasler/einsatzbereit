@@ -225,11 +225,11 @@ internal sealed class EngagementReadRepository(
 	{
 		var items = await dbContext.EngagementsQuery
 			.Where(e => e.OpportunityId == opportunityId && e.FeedbackSubmittedAt != null)
+			.OrderByDescending(e => e.FeedbackSubmittedAt)
 			.Select(e => new FeedbackItemDto(
 				e.FeedbackRating!.Value,
 				e.FeedbackComment,
 				e.FeedbackSubmittedAt!.Value))
-			.OrderByDescending(f => f.SubmittedAt)
 			.ToListAsync(cancellationToken);
 
 		var avg = items.Count > 0 ? (double?)items.Average(f => f.Rating) : null;

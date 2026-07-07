@@ -325,7 +325,7 @@
       "error": "Error: {{message}}",
       "noOpportunities": "No open opportunities",
       "noOpportunitiesHint": "Create a volunteer opportunity to start receiving applications.",
-      "manageEngagements": "Manage engagements →"
+      "manageEngagements": "Manage engagements"
     },
     "orgDashboard": {
       "title": "Organization Dashboard",
