@@ -651,6 +651,51 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		result.Status.Should().Be("Pending");
 	}
 
+	// ── GetOpportunityFeedback (#628) ─────────────────────────────────────────
+
+	[Test]
+	public async Task GetOpportunityFeedback_ShouldReturnEmptySummary_WhenNoFeedbackSubmitted(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, cancellationToken);
+
+		summary.AverageRating.Should().BeNull();
+		summary.FeedbackCount.Should().Be(0);
+		summary.Items.Should().BeEmpty();
+	}
+
+	[Test]
+	public async Task GetOpportunityFeedback_ShouldReturnSubmittedFeedback_WhenVolunteerCheckedInAndRated(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			engagement.Id,
+			new SubmitFeedbackRequest { Rating = 4, Comment = "Great experience" },
+			cancellationToken);
+
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, cancellationToken);
+
+		summary.AverageRating.Should().Be(4);
+		summary.FeedbackCount.Should().Be(1);
+		summary.Items.Should().ContainSingle(i => i.Rating == 4 && i.Comment == "Great experience");
+	}
+
 	// ── Cross-opportunity time slot validation (#524) ─────────────────────────
 
 	[Test]
