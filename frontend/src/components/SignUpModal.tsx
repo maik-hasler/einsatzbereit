@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatDateTime } from "../lib/format";
+import { getApiErrorMessage } from "../lib/apiError";
 import Dropdown from "./Dropdown";
 
 interface Props {
@@ -56,7 +57,7 @@ export default function SignUpModal({
 			onSuccess();
 			onClose();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("signUp.unknownError"));
+			setError(getApiErrorMessage(err, t("signUp.unknownError")));
 		} finally {
 			setSubmitting(false);
 		}

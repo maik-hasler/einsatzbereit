@@ -38,6 +38,15 @@ export function useAchievementNotifier() {
 			try {
 				const achievements = await api.getMyAchievements();
 				const seen = getSeenIds();
+				// Fresh browser/device/profile with no seen-tracking yet: seed the
+				// account's existing achievements as already-seen instead of
+				// announcing all of them as newly unlocked.
+				if (seen.size === 0) {
+					if (achievements.length > 0) {
+						markSeen(achievements.map((a) => a.id));
+					}
+					return;
+				}
 				const newOnes = achievements.filter((a) => !seen.has(a.id));
 				if (newOnes.length > 0) {
 					markSeen(newOnes.map((a) => a.id));
@@ -47,10 +56,6 @@ export function useAchievementNotifier() {
 							t("achievements.newBadge", { name: a.name }),
 						),
 					);
-				}
-				// Seed seen list on first run so we don't toast for old achievements
-				if (seen.size === 0 && newOnes.length === 0) {
-					markSeen(achievements.map((a) => a.id));
 				}
 			} catch {
 				// never fail silently

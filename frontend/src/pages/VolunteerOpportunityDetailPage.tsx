@@ -71,7 +71,7 @@ export default function VolunteerOpportunityDetailPage() {
 		if (!opportunityId) return;
 		load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [opportunityId]);
+	}, [opportunityId, api]);
 
 	function load() {
 		if (!opportunityId) return;
