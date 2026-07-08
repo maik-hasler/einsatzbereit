@@ -538,7 +538,7 @@ export default function OrganizationOverviewPage() {
 	];
 
 	return (
-		<div className={activeTab !== "calendar" ? "max-w-2xl" : ""}>
+		<div>
 			<div className="mb-6 flex items-center justify-between gap-3">
 				<h1 className="text-2xl font-bold text-gray-900">
 					{org?.name ?? t("orgDashboard.title")}
@@ -576,772 +576,795 @@ export default function OrganizationOverviewPage() {
 				</nav>
 			</div>
 
-			{/* ── Calendar tab ──────────────────────────────────────────────────── */}
-			{activeTab === "calendar" && (
-				<div>
-					{drafts.length > 0 && (
-						<section className="mb-8" data-testid="drafts-section">
-							<h2 className="text-lg font-semibold text-gray-900">
-								{t("orgDashboard.draftsTitle")}
-							</h2>
-							<p className="mt-1 text-sm text-gray-500">
-								{t("orgDashboard.draftsDesc")}
-							</p>
-							<ul className="mt-4 space-y-3">
-								{drafts.map((draft) => (
-									<li
-										key={draft.id}
-										className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
-									>
-										<Link
-											to={`/volunteer-opportunities/${draft.id}`}
-											className="absolute inset-0"
-											aria-label={draft.title || t("orgDashboard.unnamedDraft")}
-										/>
-										<div className="flex items-center justify-between gap-3">
-											<div className="min-w-0">
-												<p className="truncate text-sm font-semibold text-gray-900">
-													{draft.title || t("orgDashboard.unnamedDraft")}
-												</p>
-												{draft.description && (
-													<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-														{draft.description}
+			<div
+				className={
+					activeTab !== "calendar"
+						? "mx-auto max-w-2xl lg:min-h-[600px]"
+						: "lg:min-h-[600px]"
+				}
+			>
+				{/* ── Calendar tab ──────────────────────────────────────────────────── */}
+				{activeTab === "calendar" && (
+					<div>
+						{drafts.length > 0 && (
+							<section className="mb-8" data-testid="drafts-section">
+								<h2 className="text-lg font-semibold text-gray-900">
+									{t("orgDashboard.draftsTitle")}
+								</h2>
+								<p className="mt-1 text-sm text-gray-500">
+									{t("orgDashboard.draftsDesc")}
+								</p>
+								<ul className="mt-4 space-y-3">
+									{drafts.map((draft) => (
+										<li
+											key={draft.id}
+											className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+										>
+											<Link
+												to={`/volunteer-opportunities/${draft.id}`}
+												className="absolute inset-0"
+												aria-label={
+													draft.title || t("orgDashboard.unnamedDraft")
+												}
+											/>
+											<div className="flex items-center justify-between gap-3">
+												<div className="min-w-0">
+													<p className="truncate text-sm font-semibold text-gray-900">
+														{draft.title || t("orgDashboard.unnamedDraft")}
 													</p>
-												)}
+													{draft.description && (
+														<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
+															{draft.description}
+														</p>
+													)}
+												</div>
+												<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+													{t("opportunities.draftBadge")}
+												</span>
 											</div>
-											<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-												{t("opportunities.draftBadge")}
-											</span>
-										</div>
-									</li>
-								))}
-							</ul>
-						</section>
-					)}
+										</li>
+									))}
+								</ul>
+							</section>
+						)}
 
-					{calLoading && (
-						<div className="flex items-center justify-center py-16">
-							<span className="text-gray-500">
-								{t("orgOverview.calendarLoading")}
-							</span>
-						</div>
-					)}
-					{calError && (
-						<p className="text-red-600">
-							{t("orgOverview.calendarError", { message: calError })}
-						</p>
-					)}
-					{!calLoading && !calError && (
-						<div className="rbc-container">
-							<Calendar
-								localizer={localizer}
-								events={calEvents}
-								view={calView}
-								onView={(v: View) => setCalView(v)}
-								date={calDate}
-								onNavigate={(d: Date) => setCalDate(d)}
-								views={["month", "week", "work_week", "day"]}
-								style={{ height: 600 }}
-								components={{ event: CalEventChip }}
-								eventPropGetter={(event: object) => {
-									const e = event as CalEvent;
-									const bg = e.color ?? DEFAULT_EVENT_COLOR;
-									return {
-										style: {
-											backgroundColor: bg,
-											borderColor: bg,
-											color: "#ffffff",
-										},
-									};
-								}}
-								onSelectEvent={(event: object) =>
-									handleSelectEvent(event as CalEvent)
-								}
-								messages={{
-									today: t("orgOverview.calendarToday"),
-									previous: t("orgOverview.calendarBack"),
-									next: t("orgOverview.calendarNext"),
-									month: t("orgOverview.calendarMonth"),
-									week: t("orgOverview.calendarWeek"),
-									work_week: t("orgOverview.calendarWorkWeek"),
-									day: t("orgOverview.calendarDay"),
-									noEventsInRange: t("orgOverview.calendarNoEvents"),
-								}}
-							/>
-						</div>
-					)}
-
-					{/* Color picker modal */}
-					{selectedEvent && (
-						<div className="fixed inset-0 z-[2000] flex items-center justify-center">
-							<button
-								type="button"
-								aria-hidden="true"
-								tabIndex={-1}
-								className="absolute inset-0 bg-black/50"
-								onClick={() => setSelectedEvent(null)}
-							/>
-							<div
-								role="dialog"
-								aria-modal="true"
-								aria-labelledby="color-dialog-title"
-								className="relative z-10 w-80 rounded-xl bg-white p-6 shadow-xl"
-							>
-								<h2
-									id="color-dialog-title"
-									className="mb-4 text-lg font-semibold text-gray-900"
-								>
-									{selectedEvent.title}
-								</h2>
-								<div className="space-y-4">
-									{selectedEvent.maxParticipants > 0 && (
-										<p className="text-sm text-gray-600">
-											{t("orgOverview.eventFillState", {
-												booked: selectedEvent.bookedCount,
-												max: selectedEvent.maxParticipants,
-											})}
-										</p>
-									)}
-									<div>
-										<label
-											htmlFor="event-color-picker"
-											className="block text-sm font-medium text-gray-700"
-										>
-											{t("orgOverview.eventColorLabel")}
-										</label>
-										<div className="mt-1 flex items-center gap-3">
-											<input
-												id="event-color-picker"
-												type="color"
-												value={pickerColor}
-												onChange={(e) => setPickerColor(e.target.value)}
-												className="h-9 w-16 cursor-pointer rounded border border-gray-300"
-											/>
-											<span className="text-sm text-gray-500">
-												{pickerColor}
-											</span>
-										</div>
-									</div>
-									{colorSaveError && (
-										<p className="text-sm text-red-600">{colorSaveError}</p>
-									)}
-									<div className="flex flex-col gap-2">
-										<div className="flex gap-4">
-											<Link
-												to={`/volunteer-opportunities/${selectedEvent.opportunityId}`}
-												className="text-sm text-brand-700 hover:underline"
-												onClick={() => setSelectedEvent(null)}
-											>
-												{t("orgOverview.eventNavigate")}
-											</Link>
-											<Link
-												to={`/volunteer-opportunities/${selectedEvent.opportunityId}/engagements`}
-												className="text-sm text-brand-700 hover:underline"
-												onClick={() => setSelectedEvent(null)}
-											>
-												{t("orgOverview.eventManageApplications")}
-											</Link>
-										</div>
-										<div className="flex justify-end gap-2">
-											<button
-												type="button"
-												onClick={() => setSelectedEvent(null)}
-												className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-											>
-												{t("createOpportunity.cancel")}
-											</button>
-											<button
-												type="button"
-												disabled={savingColor}
-												onClick={handleColorSave}
-												className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-											>
-												{savingColor
-													? t("orgOverview.eventColorSaving")
-													: t("orgOverview.eventColorSave")}
-											</button>
-										</div>
-									</div>
-								</div>
+						{calLoading && (
+							<div className="flex items-center justify-center py-16">
+								<span className="text-gray-500">
+									{t("orgOverview.calendarLoading")}
+								</span>
 							</div>
-						</div>
-					)}
-				</div>
-			)}
+						)}
+						{calError && (
+							<p className="text-red-600">
+								{t("orgOverview.calendarError", { message: calError })}
+							</p>
+						)}
+						{!calLoading && !calError && (
+							<div className="rbc-container">
+								<Calendar
+									localizer={localizer}
+									events={calEvents}
+									view={calView}
+									onView={(v: View) => setCalView(v)}
+									date={calDate}
+									onNavigate={(d: Date) => setCalDate(d)}
+									views={["month", "week", "work_week", "day"]}
+									style={{ height: 600 }}
+									components={{ event: CalEventChip }}
+									eventPropGetter={(event: object) => {
+										const e = event as CalEvent;
+										const bg = e.color ?? DEFAULT_EVENT_COLOR;
+										return {
+											style: {
+												backgroundColor: bg,
+												borderColor: bg,
+												color: "#ffffff",
+											},
+										};
+									}}
+									onSelectEvent={(event: object) =>
+										handleSelectEvent(event as CalEvent)
+									}
+									messages={{
+										today: t("orgOverview.calendarToday"),
+										previous: t("orgOverview.calendarBack"),
+										next: t("orgOverview.calendarNext"),
+										month: t("orgOverview.calendarMonth"),
+										week: t("orgOverview.calendarWeek"),
+										work_week: t("orgOverview.calendarWorkWeek"),
+										day: t("orgOverview.calendarDay"),
+										noEventsInRange: t("orgOverview.calendarNoEvents"),
+									}}
+								/>
+							</div>
+						)}
 
-			{/* ── Engagements tab ───────────────────────────────────────────────── */}
-			{activeTab === "engagements" && (
-				<div>
-					{engLoading && (
-						<div className="flex items-center justify-center py-16">
-							<span className="text-gray-500">
-								{t("orgEngagements.loading")}
-							</span>
-						</div>
-					)}
-					{engError && (
-						<p className="text-red-600">
-							{t("orgEngagements.error", { message: engError })}
-						</p>
-					)}
-					{!engLoading && !engError && engOpps.length === 0 && (
-						<EmptyState
-							title={t("orgEngagements.noOpportunities")}
-							message={t("orgEngagements.noOpportunitiesHint")}
-						/>
-					)}
-					{!engLoading && !engError && engOpps.length > 0 && (
-						<ul className="space-y-3">
-							{engOpps.map((opp) => (
-								<li
-									key={opp.id}
-									className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+						{/* Color picker modal */}
+						{selectedEvent && (
+							<div className="fixed inset-0 z-[2000] flex items-center justify-center">
+								<button
+									type="button"
+									aria-hidden="true"
+									tabIndex={-1}
+									className="absolute inset-0 bg-black/50"
+									onClick={() => setSelectedEvent(null)}
+								/>
+								<div
+									role="dialog"
+									aria-modal="true"
+									aria-labelledby="color-dialog-title"
+									className="relative z-10 w-80 rounded-xl bg-white p-6 shadow-xl"
 								>
-									<p className="text-sm font-semibold text-gray-900">
-										{opp.title}
-									</p>
-									{opp.description && (
-										<p className="mt-1 line-clamp-2 text-sm text-gray-500">
-											{opp.description}
-										</p>
-									)}
-									<Link
-										to={`/volunteer-opportunities/${opp.id}/engagements`}
-										className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
+									<h2
+										id="color-dialog-title"
+										className="mb-4 text-lg font-semibold text-gray-900"
 									>
-										{t("orgEngagements.manageEngagements")}
-										<svg
-											className="h-3.5 w-3.5"
-											fill="none"
-											viewBox="0 0 24 24"
-											strokeWidth="2"
-											stroke="currentColor"
-											aria-hidden="true"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-											/>
-										</svg>
-									</Link>
-								</li>
-							))}
-						</ul>
-					)}
-				</div>
-			)}
-
-			{/* ── Settings tab ──────────────────────────────────────────────────── */}
-			{activeTab === "settings" && (
-				<div>
-					{orgLoading && (
-						<div className="flex items-center justify-center py-16">
-							<span className="text-gray-500">{t("orgSettings.loading")}</span>
-						</div>
-					)}
-					{!orgLoading && !org && (
-						<div className="py-8 text-center text-red-600">
-							{t("orgSettings.notFound")}
-						</div>
-					)}
-					{!orgLoading && org && !editing && (
-						<OrganizationProfileView
-							name={org.name}
-							logoUrl={logoUrl}
-							description={org.description}
-							contactEmail={org.contactEmail}
-							contactPhone={org.contactPhone}
-							website={org.website}
-							address={org.address}
-							subtitle={
-								<p className="text-xs text-gray-400">
-									{t("orgSettings.createdOn", {
-										date: new Date(org.createdOn).toLocaleDateString(locale, {
-											day: "2-digit",
-											month: "long",
-											year: "numeric",
-										}),
-									})}
-								</p>
-							}
-							actions={
-								<button
-									type="button"
-									onClick={() => setEditing(true)}
-									className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-								>
-									{t("orgSettings.edit")}
-								</button>
-							}
-							beforeContent={
-								<>
-									{successMessage && (
-										<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-											{successMessage}
-										</div>
-									)}
-									{settingsError && (
-										<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-											{settingsError}
-										</div>
-									)}
-								</>
-							}
-						>
-							<div className="mt-8 rounded-2xl border border-red-100 bg-red-50 px-4 py-4">
-								<h2 className="text-sm font-semibold text-red-800">
-									{t("orgSettings.dangerZone")}
-								</h2>
-								<p className="mt-1 text-xs text-red-700">
-									{t("orgSettings.deleteOrganizationHint")}
-								</p>
-								<button
-									type="button"
-									onClick={() => setShowDeleteConfirm(true)}
-									disabled={!isSoleMember}
-									className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
-								>
-									{t("orgSettings.deleteOrganization")}
-								</button>
-							</div>
-						</OrganizationProfileView>
-					)}
-					{!orgLoading && org && editing && (
-						<>
-							{settingsError && (
-								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-									{settingsError}
-								</div>
-							)}
-
-							<form onSubmit={handleSave} className="space-y-5">
-								<div>
-									<p className="mb-1 block text-sm font-medium text-gray-700">
-										{t("orgSettings.fieldLogo")}
-									</p>
-									<div className="flex items-center gap-4">
-										{logoUrl ? (
-											<img
-												src={logoUrl}
-												alt=""
-												className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
-											/>
-										) : (
-											<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
-												{org.name.charAt(0).toUpperCase()}
-											</span>
+										{selectedEvent.title}
+									</h2>
+									<div className="space-y-4">
+										{selectedEvent.maxParticipants > 0 && (
+											<p className="text-sm text-gray-600">
+												{t("orgOverview.eventFillState", {
+													booked: selectedEvent.bookedCount,
+													max: selectedEvent.maxParticipants,
+												})}
+											</p>
 										)}
 										<div>
 											<label
-												htmlFor="logo-upload"
-												className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
+												htmlFor="event-color-picker"
+												className="block text-sm font-medium text-gray-700"
 											>
-												{uploadingLogo
-													? t("orgSettings.logoUploading")
-													: t("orgSettings.logoUpload")}
+												{t("orgOverview.eventColorLabel")}
 											</label>
-											<input
-												ref={logoInputRef}
-												id="logo-upload"
-												type="file"
-												accept="image/jpeg,image/png,image/webp"
-												className="sr-only"
-												onChange={handleLogoChange}
-												disabled={uploadingLogo}
-											/>
-											<p className="mt-1 text-xs text-gray-500">
-												{t("orgSettings.logoHint")}
-											</p>
-											{logoError && (
-												<p className="mt-1 text-xs text-red-600">{logoError}</p>
-											)}
+											<div className="mt-1 flex items-center gap-3">
+												<input
+													id="event-color-picker"
+													type="color"
+													value={pickerColor}
+													onChange={(e) => setPickerColor(e.target.value)}
+													className="h-9 w-16 cursor-pointer rounded border border-gray-300"
+												/>
+												<span className="text-sm text-gray-500">
+													{pickerColor}
+												</span>
+											</div>
 										</div>
-									</div>
-								</div>
-
-								<Field label={t("orgSettings.fieldName")} id="org-name">
-									<input
-										id="org-name"
-										required
-										value={form.name}
-										onChange={(e) =>
-											setForm((f) => ({ ...f, name: e.target.value }))
-										}
-										className={inputClass}
-									/>
-								</Field>
-
-								<Field
-									label={t("orgSettings.fieldDescription")}
-									id="org-description"
-								>
-									<textarea
-										id="org-description"
-										rows={3}
-										value={form.description}
-										onChange={(e) =>
-											setForm((f) => ({
-												...f,
-												description: e.target.value,
-											}))
-										}
-										className={inputClass}
-									/>
-								</Field>
-
-								<Field
-									label={t("orgSettings.fieldContactEmail")}
-									id="org-contact-email"
-								>
-									<input
-										id="org-contact-email"
-										type="email"
-										value={form.contactEmail}
-										onChange={(e) =>
-											setForm((f) => ({
-												...f,
-												contactEmail: e.target.value,
-											}))
-										}
-										className={inputClass}
-									/>
-								</Field>
-
-								<Field label={t("orgSettings.fieldPhone")} id="org-phone">
-									<input
-										id="org-phone"
-										type="tel"
-										value={form.contactPhone}
-										onChange={(e) =>
-											setForm((f) => ({
-												...f,
-												contactPhone: e.target.value,
-											}))
-										}
-										className={inputClass}
-									/>
-								</Field>
-
-								<Field label={t("orgSettings.fieldWebsite")} id="org-website">
-									<input
-										id="org-website"
-										type="url"
-										value={form.website}
-										onChange={(e) =>
-											setForm((f) => ({
-												...f,
-												website: e.target.value,
-											}))
-										}
-										placeholder="https://"
-										className={inputClass}
-									/>
-								</Field>
-
-								<fieldset className="rounded-md border border-gray-200 p-4">
-									<legend className="px-1 text-sm font-medium text-gray-700">
-										{t("orgSettings.fieldAddress")}
-									</legend>
-									<div className="mt-3 grid grid-cols-3 gap-3">
-										<div className="col-span-2">
-											<label htmlFor="org-street" className={labelClass}>
-												{t("orgSettings.fieldStreet")}
-											</label>
-											<input
-												id="org-street"
-												value={form.street}
-												onChange={(e) =>
-													setForm((f) => ({
-														...f,
-														street: e.target.value,
-													}))
-												}
-												className={inputClass}
-											/>
-										</div>
-										<div>
-											<label htmlFor="org-house-number" className={labelClass}>
-												{t("orgSettings.fieldHouseNumber")}
-											</label>
-											<input
-												id="org-house-number"
-												value={form.houseNumber}
-												onChange={(e) =>
-													setForm((f) => ({
-														...f,
-														houseNumber: e.target.value,
-													}))
-												}
-												className={inputClass}
-											/>
-										</div>
-										<div>
-											<label htmlFor="org-zip" className={labelClass}>
-												{t("orgSettings.fieldZip")}
-											</label>
-											<input
-												id="org-zip"
-												maxLength={5}
-												value={form.zipCode}
-												onChange={(e) =>
-													setForm((f) => ({
-														...f,
-														zipCode: e.target.value,
-													}))
-												}
-												className={inputClass}
-											/>
-										</div>
-										<div className="col-span-2">
-											<label htmlFor="org-city" className={labelClass}>
-												{t("orgSettings.fieldCity")}
-											</label>
-											<input
-												id="org-city"
-												value={form.city}
-												onChange={(e) =>
-													setForm((f) => ({
-														...f,
-														city: e.target.value,
-													}))
-												}
-												className={inputClass}
-											/>
-										</div>
-									</div>
-								</fieldset>
-
-								<div className="flex justify-end gap-3">
-									<button
-										type="button"
-										onClick={handleCancelEdit}
-										className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-									>
-										{t("orgSettings.cancel")}
-									</button>
-									<button
-										type="submit"
-										disabled={saving}
-										className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-									>
-										{saving ? t("orgSettings.saving") : t("orgSettings.save")}
-									</button>
-								</div>
-							</form>
-						</>
-					)}
-				</div>
-			)}
-
-			{/* ── Members tab ───────────────────────────────────────────────────── */}
-			{activeTab === "members" && (
-				<div>
-					{orgLoading && (
-						<div className="flex items-center justify-center py-16">
-							<span className="text-gray-500">{t("orgSettings.loading")}</span>
-						</div>
-					)}
-					{!orgLoading && org && (
-						<>
-							{successMessage && (
-								<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-									{successMessage}
-								</div>
-							)}
-							{settingsError && (
-								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-									{settingsError}
-								</div>
-							)}
-
-							{/* Invite member search */}
-							<div className="mb-6">
-								<label
-									htmlFor="member-search"
-									className="block text-sm font-medium text-gray-700"
-								>
-									{t("orgSettings.inviteLabel")}
-								</label>
-								<input
-									id="member-search"
-									type="search"
-									value={memberSearch}
-									onChange={(e) => handleMemberSearchChange(e.target.value)}
-									placeholder={t("orgSettings.invitePlaceholder")}
-									className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none"
-								/>
-								{memberSearchLoading && (
-									<p className="mt-1 text-xs text-gray-500">
-										{t("orgSettings.searching")}
-									</p>
-								)}
-								{memberCandidates.length > 0 && (
-									<ul className="mt-1 divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
-										{memberCandidates.map((candidate) => (
-											<li
-												key={candidate.userId}
-												className="flex items-center justify-between px-3 py-2"
-											>
-												<div className="min-w-0">
-													<p className="truncate text-sm font-medium text-gray-900">
-														{candidate.firstName && candidate.lastName
-															? `${candidate.firstName} ${candidate.lastName}`
-															: candidate.username}
-													</p>
-													<p className="truncate text-xs text-gray-500">
-														{candidate.email}
-													</p>
-												</div>
+										{colorSaveError && (
+											<p className="text-sm text-red-600">{colorSaveError}</p>
+										)}
+										<div className="flex flex-col gap-2">
+											<div className="flex gap-4">
+												<Link
+													to={`/volunteer-opportunities/${selectedEvent.opportunityId}`}
+													className="text-sm text-brand-700 hover:underline"
+													onClick={() => setSelectedEvent(null)}
+												>
+													{t("orgOverview.eventNavigate")}
+												</Link>
+												<Link
+													to={`/volunteer-opportunities/${selectedEvent.opportunityId}/engagements`}
+													className="text-sm text-brand-700 hover:underline"
+													onClick={() => setSelectedEvent(null)}
+												>
+													{t("orgOverview.eventManageApplications")}
+												</Link>
+											</div>
+											<div className="flex justify-end gap-2">
 												<button
 													type="button"
-													onClick={() => handleInviteMember(candidate.userId)}
-													className="ml-3 shrink-0 rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-800"
+													onClick={() => setSelectedEvent(null)}
+													className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
 												>
-													{t("orgSettings.invite")}
+													{t("createOpportunity.cancel")}
 												</button>
-											</li>
-										))}
-									</ul>
+												<button
+													type="button"
+													disabled={savingColor}
+													onClick={handleColorSave}
+													className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+												>
+													{savingColor
+														? t("orgOverview.eventColorSaving")
+														: t("orgOverview.eventColorSave")}
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
+					</div>
+				)}
+
+				{/* ── Engagements tab ───────────────────────────────────────────────── */}
+				{activeTab === "engagements" && (
+					<div>
+						{engLoading && (
+							<div className="flex items-center justify-center py-16">
+								<span className="text-gray-500">
+									{t("orgEngagements.loading")}
+								</span>
+							</div>
+						)}
+						{engError && (
+							<p className="text-red-600">
+								{t("orgEngagements.error", { message: engError })}
+							</p>
+						)}
+						{!engLoading && !engError && engOpps.length === 0 && (
+							<EmptyState
+								title={t("orgEngagements.noOpportunities")}
+								message={t("orgEngagements.noOpportunitiesHint")}
+							/>
+						)}
+						{!engLoading && !engError && engOpps.length > 0 && (
+							<ul className="space-y-3">
+								{engOpps.map((opp) => (
+									<li
+										key={opp.id}
+										className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+									>
+										<p className="text-sm font-semibold text-gray-900">
+											{opp.title}
+										</p>
+										{opp.description && (
+											<p className="mt-1 line-clamp-2 text-sm text-gray-500">
+												{opp.description}
+											</p>
+										)}
+										<Link
+											to={`/volunteer-opportunities/${opp.id}/engagements`}
+											className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
+										>
+											{t("orgEngagements.manageEngagements")}
+											<svg
+												className="h-3.5 w-3.5"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="2"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+												/>
+											</svg>
+										</Link>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+				)}
+
+				{/* ── Settings tab ──────────────────────────────────────────────────── */}
+				{activeTab === "settings" && (
+					<div>
+						{orgLoading && (
+							<div className="flex items-center justify-center py-16">
+								<span className="text-gray-500">
+									{t("orgSettings.loading")}
+								</span>
+							</div>
+						)}
+						{!orgLoading && !org && (
+							<div className="py-8 text-center text-red-600">
+								{t("orgSettings.notFound")}
+							</div>
+						)}
+						{!orgLoading && org && !editing && (
+							<OrganizationProfileView
+								name={org.name}
+								logoUrl={logoUrl}
+								description={org.description}
+								contactEmail={org.contactEmail}
+								contactPhone={org.contactPhone}
+								website={org.website}
+								address={org.address}
+								subtitle={
+									<p className="text-xs text-gray-400">
+										{t("orgSettings.createdOn", {
+											date: new Date(org.createdOn).toLocaleDateString(locale, {
+												day: "2-digit",
+												month: "long",
+												year: "numeric",
+											}),
+										})}
+									</p>
+								}
+								actions={
+									<button
+										type="button"
+										onClick={() => setEditing(true)}
+										className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+									>
+										{t("orgSettings.edit")}
+									</button>
+								}
+								beforeContent={
+									<>
+										{successMessage && (
+											<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+												{successMessage}
+											</div>
+										)}
+										{settingsError && (
+											<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+												{settingsError}
+											</div>
+										)}
+									</>
+								}
+							>
+								<div className="mt-8 rounded-2xl border border-red-100 bg-red-50 px-4 py-4">
+									<h2 className="text-sm font-semibold text-red-800">
+										{t("orgSettings.dangerZone")}
+									</h2>
+									<p className="mt-1 text-xs text-red-700">
+										{t("orgSettings.deleteOrganizationHint")}
+									</p>
+									<button
+										type="button"
+										onClick={() => setShowDeleteConfirm(true)}
+										disabled={!isSoleMember}
+										className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
+									>
+										{t("orgSettings.deleteOrganization")}
+									</button>
+								</div>
+							</OrganizationProfileView>
+						)}
+						{!orgLoading && org && editing && (
+							<>
+								{settingsError && (
+									<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+										{settingsError}
+									</div>
 								)}
-								{memberSearch.length >= 2 &&
-									!memberSearchLoading &&
-									memberCandidates.length === 0 && (
+
+								<form onSubmit={handleSave} className="space-y-5">
+									<div>
+										<p className="mb-1 block text-sm font-medium text-gray-700">
+											{t("orgSettings.fieldLogo")}
+										</p>
+										<div className="flex items-center gap-4">
+											{logoUrl ? (
+												<img
+													src={logoUrl}
+													alt=""
+													className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
+												/>
+											) : (
+												<span className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-100 text-2xl font-semibold text-brand-700">
+													{org.name.charAt(0).toUpperCase()}
+												</span>
+											)}
+											<div>
+												<label
+													htmlFor="logo-upload"
+													className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
+												>
+													{uploadingLogo
+														? t("orgSettings.logoUploading")
+														: t("orgSettings.logoUpload")}
+												</label>
+												<input
+													ref={logoInputRef}
+													id="logo-upload"
+													type="file"
+													accept="image/jpeg,image/png,image/webp"
+													className="sr-only"
+													onChange={handleLogoChange}
+													disabled={uploadingLogo}
+												/>
+												<p className="mt-1 text-xs text-gray-500">
+													{t("orgSettings.logoHint")}
+												</p>
+												{logoError && (
+													<p className="mt-1 text-xs text-red-600">
+														{logoError}
+													</p>
+												)}
+											</div>
+										</div>
+									</div>
+
+									<Field label={t("orgSettings.fieldName")} id="org-name">
+										<input
+											id="org-name"
+											required
+											value={form.name}
+											onChange={(e) =>
+												setForm((f) => ({ ...f, name: e.target.value }))
+											}
+											className={inputClass}
+										/>
+									</Field>
+
+									<Field
+										label={t("orgSettings.fieldDescription")}
+										id="org-description"
+									>
+										<textarea
+											id="org-description"
+											rows={3}
+											value={form.description}
+											onChange={(e) =>
+												setForm((f) => ({
+													...f,
+													description: e.target.value,
+												}))
+											}
+											className={inputClass}
+										/>
+									</Field>
+
+									<Field
+										label={t("orgSettings.fieldContactEmail")}
+										id="org-contact-email"
+									>
+										<input
+											id="org-contact-email"
+											type="email"
+											value={form.contactEmail}
+											onChange={(e) =>
+												setForm((f) => ({
+													...f,
+													contactEmail: e.target.value,
+												}))
+											}
+											className={inputClass}
+										/>
+									</Field>
+
+									<Field label={t("orgSettings.fieldPhone")} id="org-phone">
+										<input
+											id="org-phone"
+											type="tel"
+											value={form.contactPhone}
+											onChange={(e) =>
+												setForm((f) => ({
+													...f,
+													contactPhone: e.target.value,
+												}))
+											}
+											className={inputClass}
+										/>
+									</Field>
+
+									<Field label={t("orgSettings.fieldWebsite")} id="org-website">
+										<input
+											id="org-website"
+											type="url"
+											value={form.website}
+											onChange={(e) =>
+												setForm((f) => ({
+													...f,
+													website: e.target.value,
+												}))
+											}
+											placeholder="https://"
+											className={inputClass}
+										/>
+									</Field>
+
+									<fieldset className="rounded-md border border-gray-200 p-4">
+										<legend className="px-1 text-sm font-medium text-gray-700">
+											{t("orgSettings.fieldAddress")}
+										</legend>
+										<div className="mt-3 grid grid-cols-3 gap-3">
+											<div className="col-span-2">
+												<label htmlFor="org-street" className={labelClass}>
+													{t("orgSettings.fieldStreet")}
+												</label>
+												<input
+													id="org-street"
+													value={form.street}
+													onChange={(e) =>
+														setForm((f) => ({
+															...f,
+															street: e.target.value,
+														}))
+													}
+													className={inputClass}
+												/>
+											</div>
+											<div>
+												<label
+													htmlFor="org-house-number"
+													className={labelClass}
+												>
+													{t("orgSettings.fieldHouseNumber")}
+												</label>
+												<input
+													id="org-house-number"
+													value={form.houseNumber}
+													onChange={(e) =>
+														setForm((f) => ({
+															...f,
+															houseNumber: e.target.value,
+														}))
+													}
+													className={inputClass}
+												/>
+											</div>
+											<div>
+												<label htmlFor="org-zip" className={labelClass}>
+													{t("orgSettings.fieldZip")}
+												</label>
+												<input
+													id="org-zip"
+													maxLength={5}
+													value={form.zipCode}
+													onChange={(e) =>
+														setForm((f) => ({
+															...f,
+															zipCode: e.target.value,
+														}))
+													}
+													className={inputClass}
+												/>
+											</div>
+											<div className="col-span-2">
+												<label htmlFor="org-city" className={labelClass}>
+													{t("orgSettings.fieldCity")}
+												</label>
+												<input
+													id="org-city"
+													value={form.city}
+													onChange={(e) =>
+														setForm((f) => ({
+															...f,
+															city: e.target.value,
+														}))
+													}
+													className={inputClass}
+												/>
+											</div>
+										</div>
+									</fieldset>
+
+									<div className="flex justify-end gap-3">
+										<button
+											type="button"
+											onClick={handleCancelEdit}
+											className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+										>
+											{t("orgSettings.cancel")}
+										</button>
+										<button
+											type="submit"
+											disabled={saving}
+											className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+										>
+											{saving ? t("orgSettings.saving") : t("orgSettings.save")}
+										</button>
+									</div>
+								</form>
+							</>
+						)}
+					</div>
+				)}
+
+				{/* ── Members tab ───────────────────────────────────────────────────── */}
+				{activeTab === "members" && (
+					<div>
+						{orgLoading && (
+							<div className="flex items-center justify-center py-16">
+								<span className="text-gray-500">
+									{t("orgSettings.loading")}
+								</span>
+							</div>
+						)}
+						{!orgLoading && org && (
+							<>
+								{successMessage && (
+									<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+										{successMessage}
+									</div>
+								)}
+								{settingsError && (
+									<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+										{settingsError}
+									</div>
+								)}
+
+								{/* Invite member search */}
+								<div className="mb-6">
+									<label
+										htmlFor="member-search"
+										className="block text-sm font-medium text-gray-700"
+									>
+										{t("orgSettings.inviteLabel")}
+									</label>
+									<input
+										id="member-search"
+										type="search"
+										value={memberSearch}
+										onChange={(e) => handleMemberSearchChange(e.target.value)}
+										placeholder={t("orgSettings.invitePlaceholder")}
+										className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none"
+									/>
+									{memberSearchLoading && (
 										<p className="mt-1 text-xs text-gray-500">
-											{t("orgSettings.noSearchResults")}
+											{t("orgSettings.searching")}
 										</p>
 									)}
-							</div>
-
-							{invitations.some((i) => i.status === "Pending") && (
-								<div className="mb-6">
-									<h2 className="mb-2 text-sm font-medium text-gray-700">
-										{t("orgSettings.pendingInvitations")}
-									</h2>
-									<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
-										{invitations
-											.filter((i) => i.status === "Pending")
-											.map((invitation) => (
+									{memberCandidates.length > 0 && (
+										<ul className="mt-1 divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+											{memberCandidates.map((candidate) => (
 												<li
-													key={invitation.id}
+													key={candidate.userId}
 													className="flex items-center justify-between px-3 py-2"
 												>
 													<div className="min-w-0">
 														<p className="truncate text-sm font-medium text-gray-900">
-															{invitation.inviteeName}
+															{candidate.firstName && candidate.lastName
+																? `${candidate.firstName} ${candidate.lastName}`
+																: candidate.username}
 														</p>
 														<p className="truncate text-xs text-gray-500">
-															{t("orgSettings.invitationSentOn", {
-																date: new Date(
-																	invitation.createdOn,
-																).toLocaleDateString(locale, {
-																	day: "2-digit",
-																	month: "long",
-																	year: "numeric",
-																}),
-															})}
-														</p>
-													</div>
-												</li>
-											))}
-									</ul>
-								</div>
-							)}
-
-							{invitations.some((i) => i.status === "Declined") && (
-								<div className="mb-6">
-									<h2 className="mb-2 text-sm font-medium text-gray-700">
-										{t("orgSettings.declinedInvitations")}
-									</h2>
-									<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
-										{invitations
-											.filter((i) => i.status === "Declined")
-											.map((invitation) => (
-												<li
-													key={invitation.id}
-													className="flex items-center justify-between px-3 py-2"
-												>
-													<div className="min-w-0">
-														<p className="truncate text-sm font-medium text-gray-900">
-															{invitation.inviteeName}
+															{candidate.email}
 														</p>
 													</div>
 													<button
 														type="button"
-														onClick={() =>
-															handleDismissInvitation(invitation.id)
-														}
-														className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800"
+														onClick={() => handleInviteMember(candidate.userId)}
+														className="ml-3 shrink-0 rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-800"
 													>
-														{t("orgSettings.dismissInvitation")}
+														{t("orgSettings.invite")}
 													</button>
 												</li>
 											))}
-									</ul>
+										</ul>
+									)}
+									{memberSearch.length >= 2 &&
+										!memberSearchLoading &&
+										memberCandidates.length === 0 && (
+											<p className="mt-1 text-xs text-gray-500">
+												{t("orgSettings.noSearchResults")}
+											</p>
+										)}
 								</div>
-							)}
 
-							{org.members.length === 0 ? (
-								<EmptyState
-									title={t("orgSettings.noMembers")}
-									message={t("orgSettings.noMembersHint")}
-								/>
-							) : (
-								<ul className="divide-y divide-gray-100">
-									{org.members.map((member) => (
-										<li
-											key={member.userId}
-											className="flex items-center justify-between py-3"
-										>
-											<div>
-												<p className="text-sm font-medium text-gray-900">
-													{member.firstName && member.lastName
-														? `${member.firstName} ${member.lastName}`
-														: member.username}
-												</p>
-												<p className="text-xs text-gray-500">{member.email}</p>
-												{member.isOrganisator && (
-													<span className="mt-0.5 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
-														{t("orgSettings.organisator")}
-													</span>
+								{invitations.some((i) => i.status === "Pending") && (
+									<div className="mb-6">
+										<h2 className="mb-2 text-sm font-medium text-gray-700">
+											{t("orgSettings.pendingInvitations")}
+										</h2>
+										<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+											{invitations
+												.filter((i) => i.status === "Pending")
+												.map((invitation) => (
+													<li
+														key={invitation.id}
+														className="flex items-center justify-between px-3 py-2"
+													>
+														<div className="min-w-0">
+															<p className="truncate text-sm font-medium text-gray-900">
+																{invitation.inviteeName}
+															</p>
+															<p className="truncate text-xs text-gray-500">
+																{t("orgSettings.invitationSentOn", {
+																	date: new Date(
+																		invitation.createdOn,
+																	).toLocaleDateString(locale, {
+																		day: "2-digit",
+																		month: "long",
+																		year: "numeric",
+																	}),
+																})}
+															</p>
+														</div>
+													</li>
+												))}
+										</ul>
+									</div>
+								)}
+
+								{invitations.some((i) => i.status === "Declined") && (
+									<div className="mb-6">
+										<h2 className="mb-2 text-sm font-medium text-gray-700">
+											{t("orgSettings.declinedInvitations")}
+										</h2>
+										<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+											{invitations
+												.filter((i) => i.status === "Declined")
+												.map((invitation) => (
+													<li
+														key={invitation.id}
+														className="flex items-center justify-between px-3 py-2"
+													>
+														<div className="min-w-0">
+															<p className="truncate text-sm font-medium text-gray-900">
+																{invitation.inviteeName}
+															</p>
+														</div>
+														<button
+															type="button"
+															onClick={() =>
+																handleDismissInvitation(invitation.id)
+															}
+															className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800"
+														>
+															{t("orgSettings.dismissInvitation")}
+														</button>
+													</li>
+												))}
+										</ul>
+									</div>
+								)}
+
+								{org.members.length === 0 ? (
+									<EmptyState
+										title={t("orgSettings.noMembers")}
+										message={t("orgSettings.noMembersHint")}
+									/>
+								) : (
+									<ul className="divide-y divide-gray-100">
+										{org.members.map((member) => (
+											<li
+												key={member.userId}
+												className="flex items-center justify-between py-3"
+											>
+												<div>
+													<p className="text-sm font-medium text-gray-900">
+														{member.firstName && member.lastName
+															? `${member.firstName} ${member.lastName}`
+															: member.username}
+													</p>
+													<p className="text-xs text-gray-500">
+														{member.email}
+													</p>
+													{member.isOrganisator && (
+														<span className="mt-0.5 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+															{t("orgSettings.organisator")}
+														</span>
+													)}
+												</div>
+												{member.userId === currentUserId ? (
+													<button
+														type="button"
+														onClick={() => setShowLeaveConfirm(true)}
+														disabled={isSoleMember}
+														title={
+															isSoleMember
+																? t(
+																		"orgSettings.leaveOrganizationLastMemberHint",
+																	)
+																: undefined
+														}
+														className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+													>
+														{t("orgSettings.leaveOrganization")}
+													</button>
+												) : (
+													<button
+														type="button"
+														onClick={() => handleRemoveMember(member.userId)}
+														className="text-xs text-red-700 hover:text-red-800"
+													>
+														{t("orgSettings.removeMember")}
+													</button>
 												)}
-											</div>
-											{member.userId === currentUserId ? (
-												<button
-													type="button"
-													onClick={() => setShowLeaveConfirm(true)}
-													disabled={isSoleMember}
-													title={
-														isSoleMember
-															? t("orgSettings.leaveOrganizationLastMemberHint")
-															: undefined
-													}
-													className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-												>
-													{t("orgSettings.leaveOrganization")}
-												</button>
-											) : (
-												<button
-													type="button"
-													onClick={() => handleRemoveMember(member.userId)}
-													className="text-xs text-red-700 hover:text-red-800"
-												>
-													{t("orgSettings.removeMember")}
-												</button>
-											)}
-										</li>
-									))}
-								</ul>
-							)}
-							{isSoleMember && (
-								<p className="mt-3 text-xs text-gray-500">
-									{t("orgSettings.leaveOrganizationLastMemberHint")}
-								</p>
-							)}
-						</>
-					)}
-				</div>
-			)}
+											</li>
+										))}
+									</ul>
+								)}
+								{isSoleMember && (
+									<p className="mt-3 text-xs text-gray-500">
+										{t("orgSettings.leaveOrganizationLastMemberHint")}
+									</p>
+								)}
+							</>
+						)}
+					</div>
+				)}
+			</div>
 
 			{showLeaveConfirm && org && (
 				<ConfirmDialog
