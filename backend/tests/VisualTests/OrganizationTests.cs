@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -122,6 +123,36 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, delete" }).ClickAsync();
 
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 10_000 });
+	}
+
+	[Test]
+	public async Task TabBar_StaysFullWidth_AcrossTabSwitches()
+	{
+		// Regression for #641: the header/tab-bar used to be wrapped in the same
+		// `max-w-2xl` container as the per-tab content, so switching off the
+		// Calendar tab shrank the tab bar itself (and left-aligned it, since
+		// that container had no `mx-auto`) instead of leaving it full width and
+		// only constraining the content beneath it.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual641 Alignment");
+
+		var tabBar = Page.Locator("nav").Filter(new() { HasText = "Settings" });
+		var calendarBox = await tabBar.BoundingBoxAsync();
+		calendarBox.Should().NotBeNull();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Edit" })).ToBeVisibleAsync(
+			new() { Timeout = 10_000 });
+
+		var settingsBox = await tabBar.BoundingBoxAsync();
+		settingsBox.Should().NotBeNull();
+
+		settingsBox!.Width.Should().Be(calendarBox!.Width);
+		settingsBox.X.Should().Be(calendarBox.X);
 	}
 
 	private async Task<string> CreateOrganizationAsync(string namePrefix)
