@@ -102,7 +102,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 			new FormUrlEncodedContent(new Dictionary<string, string>
 			{
 				["grant_type"] = "password",
-				["client_id"] = "frontend",
+				["client_id"] = "frontend-test",
 				["username"] = "olaf",
 				["password"] = "olaf123",
 				["scope"] = "openid",
