@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation, Trans } from "react-i18next";
@@ -67,6 +67,8 @@ export default function VolunteerOpportunityDetailPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOrganisator]);
 
+	const latestRequestRef = useRef(0);
+
 	useEffect(() => {
 		if (!opportunityId) return;
 		load();
@@ -75,12 +77,22 @@ export default function VolunteerOpportunityDetailPage() {
 
 	function load() {
 		if (!opportunityId) return;
+		const requestId = ++latestRequestRef.current;
 		setLoading(true);
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
-			.then(setOpportunity)
-			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
-			.finally(() => setLoading(false));
+			.then((details) => {
+				if (requestId !== latestRequestRef.current) return;
+				setOpportunity(details);
+			})
+			.catch((err) => {
+				if (requestId !== latestRequestRef.current) return;
+				setError(getApiErrorMessage(err, t("error.serverError")));
+			})
+			.finally(() => {
+				if (requestId !== latestRequestRef.current) return;
+				setLoading(false);
+			});
 	}
 
 	async function handleShare() {
