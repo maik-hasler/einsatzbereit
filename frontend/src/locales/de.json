@@ -145,10 +145,6 @@
         "Technology": "Technologie",
         "Other": "Sonstiges"
       },
-      "view": {
-        "list": "Liste",
-        "map": "Karte"
-      },
       "edit": "Bearbeiten",
       "delete": "Löschen",
       "deleting": "…",
@@ -613,13 +609,6 @@
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden.",
       "verified": "Verifizierte Organisation"
-    },
-    "map": {
-      "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>-Mitwirkende",
-      "noPinsInView": "Keine Bedarfe im aktuellen Kartenausschnitt.",
-      "popup": {
-        "viewDetails": "Details anzeigen →"
-      }
     },
     "profileOverview": {
       "tabProfile": "Profil",

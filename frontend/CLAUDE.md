@@ -16,8 +16,7 @@ src/
 │   ├── Footer.tsx          Footer with links and social icons
 │   ├── OrganizationSwitcher.tsx        Dropdown to switch active org; reads/writes active-org cookie
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
-│   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, list/map toggle, gated create button
-│   ├── OpportunityMap.tsx              Leaflet/OSM map view with pins + bbox sync to filter state
+│   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, gated create button
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
 ├── layouts/
 │   ├── AppLayout.tsx       Header + <Outlet /> + Footer
