@@ -120,10 +120,16 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
 
-		var orgsResponse = await http.GetAsync("/v1/organizations");
-		orgsResponse.EnsureSuccessStatusCode();
-		var orgs = await orgsResponse.Content.ReadFromJsonAsync<JsonElement>();
-		var organizationId = orgs.EnumerateArray().First().GetProperty("id").GetString();
+		// Create a fresh organization rather than reusing olaf's shared seed
+		// org - other VisualTests running concurrently in this shared Aspire
+		// session can mutate/delete shared orgs, which made GET
+		// /v1/organizations intermittently race to an empty list here.
+		var createOrgResponse = await http.PostAsJsonAsync(
+			"/v1/organizations",
+			new { name = $"EngagementReactivation Org {suffix}" });
+		createOrgResponse.EnsureSuccessStatusCode();
+		var org = await createOrgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetString();
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
