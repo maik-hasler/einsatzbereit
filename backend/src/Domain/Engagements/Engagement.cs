@@ -128,6 +128,7 @@ public sealed class Engagement
 		FeedbackSubmittedAt = null;
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
+		CreatedOn = DateTimeOffset.UtcNow;
 	}
 
 	public void CheckIn()
