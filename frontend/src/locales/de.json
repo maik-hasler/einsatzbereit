@@ -545,6 +545,7 @@
       "bellLabel": "Benachrichtigungen",
       "markAllRead": "Alle als gelesen markieren",
       "empty": "Keine Benachrichtigungen.",
+      "deletedOpportunityPlaceholder": "einen gelöschten Bedarf",
       "kinds": {
         "EngagementCreated": "Neue Bewerbung eingegangen fur {{title}}",
         "EngagementConfirmed": "Deine Bewerbung fur {{title}} wurde bestätigt",

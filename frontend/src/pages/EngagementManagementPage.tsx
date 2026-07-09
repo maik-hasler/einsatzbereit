@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type {
-	EngagementSummary,
-	OpportunityFeedbackSummary,
-	VolunteerOpportunityDetails,
+import {
+	ApiException,
+	type EngagementSummary,
+	type OpportunityFeedbackSummary,
+	type VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import QRScannerModal from "../components/QRScannerModal";
+import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -63,6 +65,7 @@ export default function EngagementManagementPage() {
 	const [checkInPin, setCheckInPin] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [notFound, setNotFound] = useState(false);
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 	const [cancelling, setCancelling] = useState(false);
@@ -88,7 +91,13 @@ export default function EngagementManagementPage() {
 				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
-			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
+			.catch((err) => {
+				if (err instanceof ApiException && err.status === 404) {
+					setNotFound(true);
+				} else {
+					setError(getApiErrorMessage(err, t("error.serverError")));
+				}
+			})
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
@@ -160,6 +169,10 @@ export default function EngagementManagementPage() {
 		if (cancelling) return;
 		setConfirmCancelId(null);
 		setCancelError(null);
+	}
+
+	if (notFound) {
+		return <NotFoundPage />;
 	}
 
 	const checkInMethod = opportunity?.checkInMethod;
