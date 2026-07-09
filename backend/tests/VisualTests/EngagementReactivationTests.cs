@@ -129,7 +129,11 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 			new { name = $"EngagementReactivation Org {suffix}" });
 		createOrgResponse.EnsureSuccessStatusCode();
 		var org = await createOrgResponse.Content.ReadFromJsonAsync<JsonElement>();
-		var organizationId = org.GetProperty("id").GetString();
+		// CreateOrganizationEndpoint returns the raw domain Organization
+		// aggregate (unlike GetOrganizations, which projects to a DTO), so
+		// its strongly-typed OrganizationId record struct serializes as a
+		// nested { "value": "<guid>" } object rather than a plain string.
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
