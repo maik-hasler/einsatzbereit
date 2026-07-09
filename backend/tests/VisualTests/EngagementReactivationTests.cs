@@ -47,6 +47,10 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 
 		secondCreatedOn.Should().BeAfter(firstCreatedOn,
 			"Engagement.Reactivate must refresh CreatedOn to the re-application time, not leave it frozen at the original application's date");
+
+		// Leave vera's account clean for the rest of this shared Aspire session.
+		var cleanupResponse = await http.PostAsync($"/v1/engagements/{secondEngagement}/withdraw", content: null);
+		cleanupResponse.EnsureSuccessStatusCode();
 	}
 
 	[Test]
@@ -65,7 +69,7 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 		var engagementId = await ApplyAsync(http, opportunityId, "Original application.");
 		var withdrawResponse = await http.PostAsync($"/v1/engagements/{engagementId}/withdraw", content: null);
 		withdrawResponse.EnsureSuccessStatusCode();
-		await ApplyAsync(http, opportunityId, "Re-application after withdrawal.");
+		var reactivatedEngagementId = await ApplyAsync(http, opportunityId, "Re-application after withdrawal.");
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
@@ -73,6 +77,10 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Withdraw" }).First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Leave vera's account clean for the rest of this shared Aspire session.
+		var cleanupResponse = await http.PostAsync($"/v1/engagements/{reactivatedEngagementId}/withdraw", content: null);
+		cleanupResponse.EnsureSuccessStatusCode();
 	}
 
 	private static async Task<string> ApplyAsync(HttpClient http, string opportunityId, string message)
