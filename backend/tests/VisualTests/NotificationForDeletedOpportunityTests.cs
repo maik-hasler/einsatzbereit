@@ -79,7 +79,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 
 	private static async Task<JsonElement> GetEngagementCreatedNotificationAsync(HttpClient http, string opportunityId)
 	{
-		var response = await http.GetAsync("/v1/me/notifications");
+		var response = await http.GetAsync("/v1/notifications");
 		response.EnsureSuccessStatusCode();
 		var notifications = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return notifications.EnumerateArray()

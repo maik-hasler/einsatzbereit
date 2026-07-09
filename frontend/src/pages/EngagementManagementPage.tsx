@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import {
-	ApiException,
-	type EngagementSummary,
-	type OpportunityFeedbackSummary,
-	type VolunteerOpportunityDetails,
+import type {
+	EngagementSummary,
+	OpportunityFeedbackSummary,
+	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -16,7 +15,7 @@ import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
-import { getApiErrorMessage } from "../lib/apiError";
+import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
@@ -92,7 +91,7 @@ export default function EngagementManagementPage() {
 		])
 			.then(([e]) => setEngagements(e))
 			.catch((err) => {
-				if (err instanceof ApiException && err.status === 404) {
+				if (isApiNotFoundError(err)) {
 					setNotFound(true);
 				} else {
 					setError(getApiErrorMessage(err, t("error.serverError")));
