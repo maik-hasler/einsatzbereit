@@ -11,7 +11,10 @@ namespace VisualTests;
 /// isn't always restored from storage before the details fetch first fires,
 /// and the effect never re-ran once it was. Separately, the sign-up modal
 /// fell back to a generic "Unknown error" instead of the backend's actual
-/// conflict message on a duplicate sign-up attempt.
+/// conflict message on a duplicate sign-up attempt. A follow-up pass found
+/// that re-firing the details fetch as the OIDC token resolves could still
+/// race: an earlier-sent, unauthenticated request resolving after a later,
+/// authenticated one could silently overwrite the correct data.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -38,6 +41,48 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		// Genuine hard navigation (full reload), not an SPA transition - this is
 		// exactly the race the fix addresses: the OIDC token may not be restored
 		// from storage by the time the details fetch first fires.
+		await Page.GotoAsync(detailUrl);
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByText("Your application")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
+			.Not.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task DetailPage_KeepsAlreadyAppliedStatus_WhenEarlierUnauthenticatedResponseResolvesLast()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var opportunityId = await CreateIndividualContactOpportunityAsync("RaceGuard");
+		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GotoAsync(detailUrl);
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
+		await Page.Locator("textarea").FillAsync("Applying via race-guard regression check.");
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Delay any unauthenticated GET to the details endpoint so it resolves
+		// *after* a later authenticated GET - reproducing the out-of-order
+		// response race the request-id guard defends against: an earlier-sent
+		// request must not overwrite the result of a later-sent one just
+		// because it resolves later.
+		await Page.RouteAsync($"**/v1/volunteer-opportunities/{opportunityId}", async route =>
+		{
+			if (route.Request.Method == "GET" && !route.Request.Headers.ContainsKey("authorization"))
+			{
+				await Task.Delay(1500);
+			}
+
+			await route.ContinueAsync();
+		});
+
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
