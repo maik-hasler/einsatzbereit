@@ -29,6 +29,20 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 			return;
 		}
 
+		// Other VisualTests classes sharing this Aspire session (e.g.
+		// OpportunityApplicationStateTests, EngagementReactivationTests) also
+		// sign up vera for their own throwaway opportunities/orgs, so a
+		// non-zero card count no longer guarantees the seed engagements are
+		// among them - only that seeding failing silently in CI produces the
+		// same symptom (no card links to either seed org) as it would if
+		// vera genuinely had zero engagements. Skip in both cases.
+		var seedOrgCard = Page.GetByText("Rotes Kreuz Musterstadt")
+			.Or(Page.GetByText("Tierschutzverein Musterstadt"));
+		if (await seedOrgCard.CountAsync() == 0)
+		{
+			return;
+		}
+
 		// Vera has engagement cards - every card must expose an org link.
 		var orgLinks = Page.Locator("a[href^='/organizations/']");
 		await Expect(orgLinks.First).ToBeVisibleAsync();

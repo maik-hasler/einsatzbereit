@@ -220,4 +220,40 @@ public class EngagementTests
 
 		act.Should().Throw<DomainException>().WithMessage("*already terminated*");
 	}
+
+	// --- Reactivate ---
+
+	[Test]
+	public void Reactivate_ShouldSetStatus_ToPending()
+	{
+		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.Status.Should().Be(EngagementStatus.Pending);
+	}
+
+	[Test]
+	public void Reactivate_ShouldRefreshCreatedOn_ToTheReactivationTime()
+	{
+		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+
+		var before = DateTimeOffset.UtcNow;
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+		var after = DateTimeOffset.UtcNow;
+
+		engagement.CreatedOn.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+	}
+
+	[Test]
+	public void Reactivate_ShouldThrow_WhenPending()
+	{
+		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		Action act = () => engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		act.Should().Throw<DomainException>().WithMessage("*withdrawn or cancelled*");
+	}
 }
