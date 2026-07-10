@@ -7326,16 +7326,13 @@ namespace IntegrationTests
         public System.Guid OpportunityId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("opportunityTitle")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string OpportunityTitle { get; set; } = default!;
+        public string? OpportunityTitle { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid OrganizationId { get; set; } = default!;
+        public System.Guid? OrganizationId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("organizationName")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string OrganizationName { get; set; } = default!;
+        public string? OrganizationName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("volunteerId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

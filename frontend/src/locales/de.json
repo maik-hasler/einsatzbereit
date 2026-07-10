@@ -474,6 +474,7 @@
       "exploreNeeds": "Bedarfe erkunden",
       "viewOpportunity": "Bedarf anzeigen →",
       "registeredOn": "Angemeldet: {{date}}",
+      "deletedOpportunityTitle": "Dieser Bedarf wurde entfernt",
       "checkIn": "Einchecken",
       "withdraw": "Zurückziehen",
       "withdrawing": "…",

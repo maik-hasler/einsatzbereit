@@ -873,20 +873,28 @@ export default function ProfileOverviewPage() {
 									>
 										<div className="flex items-start justify-between gap-3">
 											<div className="min-w-0">
-												<Link
-													to={`/volunteer-opportunities/${e.opportunityId}`}
-													className="text-sm font-semibold text-gray-900 transition-colors hover:text-brand-700"
-												>
-													{e.opportunityTitle}
-												</Link>
-												<p className="mt-0.5 text-xs text-gray-500">
+												{e.opportunityTitle ? (
 													<Link
-														to={`/organizations/${e.organizationId}`}
-														className="hover:underline"
+														to={`/volunteer-opportunities/${e.opportunityId}`}
+														className="text-sm font-semibold text-gray-900 transition-colors hover:text-brand-700"
 													>
-														{e.organizationName}
+														{e.opportunityTitle}
 													</Link>
-												</p>
+												) : (
+													<span className="text-sm font-semibold italic text-gray-500">
+														{t("myEngagements.deletedOpportunityTitle")}
+													</span>
+												)}
+												{e.organizationName && e.organizationId && (
+													<p className="mt-0.5 text-xs text-gray-500">
+														<Link
+															to={`/organizations/${e.organizationId}`}
+															className="hover:underline"
+														>
+															{e.organizationName}
+														</Link>
+													</p>
+												)}
 												{e.message && (
 													<p className="mt-1 truncate text-sm italic text-gray-500">
 														&ldquo;{e.message}&rdquo;
@@ -950,7 +958,10 @@ export default function ProfileOverviewPage() {
 													e.timeSlotEndDateTime && (
 														<AddToCalendarMenu
 															engagementId={e.id}
-															title={e.opportunityTitle}
+															title={
+																e.opportunityTitle ??
+																t("myEngagements.deletedOpportunityTitle")
+															}
 															location={e.location}
 															start={e.timeSlotStartDateTime}
 															end={e.timeSlotEndDateTime}
@@ -1183,7 +1194,10 @@ export default function ProfileOverviewPage() {
 			{feedbackEngagement && (
 				<SubmitFeedbackModal
 					engagementId={feedbackEngagement.id}
-					opportunityTitle={feedbackEngagement.opportunityTitle}
+					opportunityTitle={
+						feedbackEngagement.opportunityTitle ??
+						t("myEngagements.deletedOpportunityTitle")
+					}
 					onSubmitted={handleFeedbackSubmitted}
 					onClose={() => setFeedbackEngagement(null)}
 				/>

@@ -474,6 +474,7 @@
       "exploreNeeds": "Explore opportunities",
       "viewOpportunity": "View opportunity →",
       "registeredOn": "Signed up: {{date}}",
+      "deletedOpportunityTitle": "This opportunity has been removed",
       "checkIn": "Check in",
       "withdraw": "Withdraw",
       "withdrawing": "…",
