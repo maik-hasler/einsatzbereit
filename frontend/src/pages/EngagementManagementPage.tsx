@@ -84,10 +84,6 @@ export default function EngagementManagementPage() {
 				.getOpportunityFeedback(opportunityId)
 				.then(setFeedback)
 				.catch(() => undefined),
-			api
-				.getOpportunityCheckInPin(opportunityId)
-				.then(setCheckInPin)
-				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
 			.catch((err) => {
@@ -100,6 +96,15 @@ export default function EngagementManagementPage() {
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
+
+	useEffect(() => {
+		if (!opportunityId || opportunity?.checkInMethod !== "PINCode") return;
+		api
+			.getOpportunityCheckInPin(opportunityId)
+			.then(setCheckInPin)
+			.catch(() => undefined);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [opportunityId, opportunity?.checkInMethod]);
 
 	async function handleConfirm(engagementId: string) {
 		setConfirming(engagementId);
