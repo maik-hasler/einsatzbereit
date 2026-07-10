@@ -23,7 +23,12 @@ export default function SignUpModal({
 }: Props) {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
-	const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>("");
+	const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>(() => {
+		const availableSlots = timeSlots.filter(
+			(ts) => ts.maxParticipants - ts.bookedCount > 0,
+		);
+		return availableSlots.length === 1 ? availableSlots[0].id : "";
+	});
 	const [message, setMessage] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
