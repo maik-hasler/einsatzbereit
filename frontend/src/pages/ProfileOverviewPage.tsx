@@ -892,7 +892,7 @@ export default function ProfileOverviewPage() {
 														&ldquo;{e.message}&rdquo;
 													</p>
 												)}
-												<p className="mt-1.5 text-xs text-gray-400">
+												<p className="mt-1.5 text-xs text-gray-500">
 													{t("myEngagements.registeredOn", {
 														date: new Date(e.createdOn).toLocaleDateString(
 															locale,
