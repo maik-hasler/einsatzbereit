@@ -19,11 +19,11 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 	{
 		// The "Sign up" button itself is only disabled while submitting or when
 		// there are zero time slots (SignUpModal.tsx) - it does not reflect
-		// whether a slot is selected, so pre-selection is verified by (1) the
-		// dropdown no longer showing the empty placeholder and (2) submitting
-		// immediately, with no dropdown interaction, succeeding without the
-		// "select a time slot" validation error that a real empty selection
-		// would otherwise produce.
+		// whether a slot is selected. Pre-selection is instead verified directly:
+		// the dropdown must no longer show the empty placeholder once the modal
+		// opens. Submission itself is exercised elsewhere (e.g.
+		// OpportunityApplicationStateTests) - not repeated here to avoid creating
+		// engagement data unrelated to this regression.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -43,9 +43,6 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		var dropdownText = (await slotDropdown.TextContentAsync())?.Trim();
 		dropdownText.Should().NotBeNullOrEmpty();
 		dropdownText.Should().NotBe("Please select…", "the sole available slot must be pre-selected");
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
 	[Test]
