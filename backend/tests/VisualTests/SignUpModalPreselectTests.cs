@@ -17,6 +17,13 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 	[Test]
 	public async Task SignUpModal_PreselectsTheOnlyAvailableTimeSlot()
 	{
+		// The "Sign up" button itself is only disabled while submitting or when
+		// there are zero time slots (SignUpModal.tsx) - it does not reflect
+		// whether a slot is selected, so pre-selection is verified by (1) the
+		// dropdown no longer showing the empty placeholder and (2) submitting
+		// immediately, with no dropdown interaction, succeeding without the
+		// "select a time slot" validation error that a real empty selection
+		// would otherwise produce.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -37,7 +44,8 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		dropdownText.Should().NotBeNullOrEmpty();
 		dropdownText.Should().NotBe("Please select…", "the sole available slot must be pre-selected");
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" })).ToBeEnabledAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
 	[Test]
@@ -62,7 +70,12 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		var dropdownText = (await slotDropdown.TextContentAsync())?.Trim();
 		dropdownText.Should().Be("Please select…", "behaviour must be unchanged when more than one slot exists");
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" })).ToBeDisabledAsync();
+		// Behaviour is unchanged: submitting without picking a slot still
+		// surfaces the existing client-side validation error instead of
+		// silently proceeding.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign up" }).ClickAsync();
+		await Expect(Page.GetByText("Please select a time slot.")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync();
 	}
 
 	private async Task<string> CreateWaitlistOpportunityAsync(string label, int slotCount)

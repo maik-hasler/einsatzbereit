@@ -148,18 +148,12 @@ async function main() {
 				`OK  Time slot dropdown is pre-selected ("${comboboxText}") instead of the empty placeholder`,
 			);
 
-			const signUpButton = dialog.getByRole("button", { name: "Sign up" });
-			const isDisabled = await signUpButton.isDisabled();
-			if (isDisabled) {
-				throw new Error(
-					'Expected "Sign up" to be immediately enabled with the slot pre-selected, but it is disabled',
-				);
-			}
-			console.log(
-				'OK  "Sign up" is immediately enabled without any extra selection step',
-			);
-
-			// Close without submitting - no engagement/notification data needed for this check.
+			// Note: the "Sign up" button itself is only disabled while submitting
+			// or when there are zero time slots (SignUpModal.tsx) - it was never
+			// disabled by an empty selection, so its enabled state alone would not
+			// prove pre-selection. The dropdown check above is the real assertion;
+			// close here without submitting - no engagement/notification data
+			// needed for this check.
 			await dialog.getByRole("button", { name: "Cancel" }).click();
 			await dialog.waitFor({ state: "hidden", timeout: 15000 });
 			console.log("OK  Closed the sign-up modal without submitting");
