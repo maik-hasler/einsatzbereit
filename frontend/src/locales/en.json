@@ -545,6 +545,7 @@
       "bellLabel": "Notifications",
       "markAllRead": "Mark all as read",
       "empty": "No notifications.",
+      "deletedOpportunityPlaceholder": "a deleted opportunity",
       "kinds": {
         "EngagementCreated": "New application received for {{title}}",
         "EngagementConfirmed": "Your application for {{title}} was confirmed",

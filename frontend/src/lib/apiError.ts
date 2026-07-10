@@ -15,3 +15,18 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
 	}
 	return fallback;
 }
+
+/**
+ * Detects a 404 from a rejected API call.
+ *
+ * Both shapes the NSwag client can throw - the raw ProblemDetails object
+ * (when the response has a JSON body) or an ApiException instance (when it
+ * doesn't) - carry a numeric `.status` field, so this works for either.
+ */
+export function isApiNotFoundError(err: unknown): boolean {
+	return (
+		!!err &&
+		typeof err === "object" &&
+		(err as { status?: unknown }).status === 404
+	);
+}

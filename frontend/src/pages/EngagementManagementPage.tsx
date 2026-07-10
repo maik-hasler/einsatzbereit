@@ -10,11 +10,12 @@ import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import QRScannerModal from "../components/QRScannerModal";
+import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
-import { getApiErrorMessage } from "../lib/apiError";
+import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
@@ -63,6 +64,7 @@ export default function EngagementManagementPage() {
 	const [checkInPin, setCheckInPin] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [notFound, setNotFound] = useState(false);
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 	const [cancelling, setCancelling] = useState(false);
@@ -88,7 +90,13 @@ export default function EngagementManagementPage() {
 				.catch(() => undefined),
 		])
 			.then(([e]) => setEngagements(e))
-			.catch((err) => setError(getApiErrorMessage(err, t("error.serverError"))))
+			.catch((err) => {
+				if (isApiNotFoundError(err)) {
+					setNotFound(true);
+				} else {
+					setError(getApiErrorMessage(err, t("error.serverError")));
+				}
+			})
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
@@ -160,6 +168,10 @@ export default function EngagementManagementPage() {
 		if (cancelling) return;
 		setConfirmCancelId(null);
 		setCancelError(null);
+	}
+
+	if (notFound) {
+		return <NotFoundPage />;
 	}
 
 	const checkInMethod = opportunity?.checkInMethod;

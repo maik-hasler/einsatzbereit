@@ -245,7 +245,11 @@ export default function Header() {
 																				typeof t
 																			>[0],
 																			{
-																				title: n.relatedTitle ?? "",
+																				title:
+																					n.relatedTitle ??
+																					t(
+																						"notifications.deletedOpportunityPlaceholder",
+																					),
 																				defaultValue: n.kind,
 																			},
 																		)}
@@ -467,7 +471,11 @@ export default function Header() {
 																			typeof t
 																		>[0],
 																		{
-																			title: n.relatedTitle ?? "",
+																			title:
+																				n.relatedTitle ??
+																				t(
+																					"notifications.deletedOpportunityPlaceholder",
+																				),
 																			defaultValue: n.kind,
 																		},
 																	)}
