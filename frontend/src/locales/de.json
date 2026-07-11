@@ -450,6 +450,7 @@
       "success": "Erfolgreich eingecheckt!",
       "invalidPin": "Falsche PIN. Bitte erneut versuchen.",
       "manualInstruction": "Der Veranstalter wird dich manuell einchecken.",
+      "noneInstruction": "Für diesen Einsatz ist kein ausdrücklicher Check-in erforderlich.",
       "close": "Fertig",
       "organizerPin": "Eincheck-PIN",
       "organizerPinHint": "Teile diese PIN mit deinen Freiwilligen, damit sie einchecken können.",

@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -12,6 +14,87 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	/// <summary>
+	/// Regression for #671: the "Check in" modal rendered no branch for
+	/// checkInMethod == "None", so clicking "Check in" on such an engagement
+	/// opened a blank modal with only a title and a "Done" button.
+	/// </summary>
+	[Test]
+	public async Task CheckInModal_ShowsInstruction_ForNoneCheckInMethod()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"CheckInNone Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"CheckInNone Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CheckInAndSlotTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var engagementResponse = await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = (string?)null });
+		engagementResponse.EnsureSuccessStatusCode();
+		var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString();
+
+		(await http.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
+			.EnsureSuccessStatusCode();
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile?tab=engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var row = Page.Locator("li", new() { HasText = oppTitle });
+		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await row.GetByRole(AriaRole.Button, new() { Name = "Check in" }).ClickAsync();
+		var dialog = Page.Locator("[role='dialog']");
+		await Expect(dialog).ToBeVisibleAsync();
+
+		await Expect(dialog.GetByText("This opportunity doesn't require an explicit check-in step."))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+	}
+
+	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
+	{
+		using var http = new HttpClient { BaseAddress = keycloak };
+		var response = await http.PostAsync(
+			"/realms/einsatzbereit/protocol/openid-connect/token",
+			new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["grant_type"] = "password",
+				["client_id"] = "frontend-test",
+				["username"] = username,
+				["password"] = password,
+				["scope"] = "openid",
+			}));
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("access_token").GetString()!;
+	}
+
 	[Test]
 	public async Task EditOpportunity_SwitchToPINCode_GeneratesPin()
 	{
