@@ -93,4 +93,38 @@ public class UserStreakTests
 
 		streak.LoginStreak.Should().Be(1);
 	}
+
+	[Test]
+	public void RecordConfirmedEngagement_ShouldStartAtZero_BeforeAnyConfirmation()
+	{
+		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+
+		streak.TotalConfirmedEngagements.Should().Be(0);
+	}
+
+	[Test]
+	public void RecordConfirmedEngagement_ShouldIncrementByOne_PerCall()
+	{
+		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+
+		streak.RecordConfirmedEngagement();
+		streak.RecordConfirmedEngagement();
+		streak.RecordConfirmedEngagement();
+
+		streak.TotalConfirmedEngagements.Should().Be(3);
+	}
+
+	[Test]
+	public void RecordConfirmedEngagement_ShouldNeverDecrease_RegardlessOfOtherState()
+	{
+		// The counter has no "undo" - it must stay monotonic even if unrelated
+		// engagements are later cancelled or their opportunities deleted, since
+		// those transitions never call this method.
+		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+
+		for (var i = 0; i < 5; i++)
+			streak.RecordConfirmedEngagement();
+
+		streak.TotalConfirmedEngagements.Should().Be(5);
+	}
 }
