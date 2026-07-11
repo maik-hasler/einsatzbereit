@@ -33,7 +33,7 @@ namespace Infrastructure.Persistence.Migrations
 					GROUP BY volunteer_id
 				) sub
 				WHERE us.user_id = sub.volunteer_id
-				  AND sub.confirmed_count > us.total_confirmed_engagements;
+				AND sub.confirmed_count > us.total_confirmed_engagements;
 				""");
 		}
 
