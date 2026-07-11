@@ -76,55 +76,32 @@ internal sealed class EngagementReadRepository(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default)
 	{
-		var raw = await dbContext.EngagementsQuery
+		// Deliberately not an inner join against VolunteerOpportunitiesQuery: deleting an
+		// opportunity hard-deletes its row while only cancelling (not deleting) the
+		// volunteer's Engagement rows, so an inner join would silently drop those
+		// engagements from the volunteer's own history (#667). Opportunity/organization
+		// data is instead looked up separately and merged in below, falling back to
+		// null when the opportunity no longer exists.
+		var engagements = await dbContext.EngagementsQuery
 			.Where(e => e.VolunteerId == volunteerId)
-			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId }),
-				e => e.OpportunityId,
-				o => o.Id,
-				(e, o) => new
-				{
-					e.Id,
-					e.OpportunityId,
-					OpportunityTitle = o.Title,
-					o.IsRemote,
-					o.Address,
-					o.OrganizationId,
-					e.VolunteerId,
-					e.TimeSlotId,
-					e.Message,
-					e.Status,
-					e.IsCheckedIn,
-					e.FeedbackSubmittedAt,
-					e.CreatedOn,
-				})
-			.Join(
-				dbContext.OrganizationsQuery.Select(org => new { org.Id, org.Name }),
-				x => x.OrganizationId,
-				org => org.Id,
-				(x, org) => new
-				{
-					x.Id,
-					x.OpportunityId,
-					x.OpportunityTitle,
-					x.IsRemote,
-					x.Address,
-					OrganizationId = org.Id,
-					OrganizationName = org.Name,
-					x.VolunteerId,
-					x.TimeSlotId,
-					x.Message,
-					x.Status,
-					x.IsCheckedIn,
-					x.FeedbackSubmittedAt,
-					x.CreatedOn,
-				})
-			.OrderByDescending(x => x.CreatedOn)
+			.OrderByDescending(e => e.CreatedOn)
 			.ToListAsync(cancellationToken);
 
-		var timeSlotIds = raw
-			.Where(x => x.TimeSlotId is not null)
-			.Select(x => x.TimeSlotId!.Value)
+		var opportunityIds = engagements.Select(e => e.OpportunityId).Distinct().ToList();
+		var opportunities = await dbContext.VolunteerOpportunitiesQuery
+			.Where(o => opportunityIds.Contains(o.Id))
+			.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId })
+			.ToDictionaryAsync(o => o.Id, cancellationToken);
+
+		var organizationIds = opportunities.Values.Select(o => o.OrganizationId).Distinct().ToList();
+		var organizations = await dbContext.OrganizationsQuery
+			.Where(org => organizationIds.Contains(org.Id))
+			.Select(org => new { org.Id, org.Name })
+			.ToDictionaryAsync(org => org.Id, cancellationToken);
+
+		var timeSlotIds = engagements
+			.Where(e => e.TimeSlotId is not null)
+			.Select(e => e.TimeSlotId!.Value)
 			.Distinct()
 			.ToList();
 
@@ -136,28 +113,36 @@ internal sealed class EngagementReadRepository(
 				.ToDictionaryAsync(ts => ts.Id, cancellationToken);
 		}
 
-		return raw.Select(x =>
+		return engagements.Select(e =>
 		{
-			TimeSlot? timeSlot = x.TimeSlotId is not null
-				&& timeSlots.TryGetValue(x.TimeSlotId.Value, out var slot)
+			opportunities.TryGetValue(e.OpportunityId, out var opportunity);
+			var organization = opportunity is not null
+				&& organizations.TryGetValue(opportunity.OrganizationId, out var org)
+					? org
+					: null;
+
+			TimeSlot? timeSlot = e.TimeSlotId is not null
+				&& timeSlots.TryGetValue(e.TimeSlotId.Value, out var slot)
 					? slot
 					: null;
 
-			var location = x.IsRemote ? "Remote" : FormatAddress(x.Address);
+			var location = opportunity is null
+				? null
+				: opportunity.IsRemote ? "Remote" : FormatAddress(opportunity.Address);
 
 			return new EngagementSummary(
-				x.Id.Value,
-				x.OpportunityId.Value,
-				x.OpportunityTitle,
-				x.OrganizationId.Value,
-				x.OrganizationName,
-				x.VolunteerId.Value,
-				x.TimeSlotId?.Value,
-				x.Message,
-				x.Status.ToString(),
-				x.IsCheckedIn,
-				x.FeedbackSubmittedAt.HasValue,
-				x.CreatedOn,
+				e.Id.Value,
+				e.OpportunityId.Value,
+				opportunity?.Title,
+				organization?.Id.Value,
+				organization?.Name,
+				e.VolunteerId.Value,
+				e.TimeSlotId?.Value,
+				e.Message,
+				e.Status.ToString(),
+				e.IsCheckedIn,
+				e.FeedbackSubmittedAt.HasValue,
+				e.CreatedOn,
 				TimeSlotStartDateTime: timeSlot?.StartDateTime,
 				TimeSlotEndDateTime: timeSlot?.EndDateTime,
 				Location: location);

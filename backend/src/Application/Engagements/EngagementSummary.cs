@@ -3,9 +3,9 @@ namespace Application.Engagements;
 public sealed record EngagementSummary(
 	Guid Id,
 	Guid OpportunityId,
-	string OpportunityTitle,
-	Guid OrganizationId,
-	string OrganizationName,
+	string? OpportunityTitle,
+	Guid? OrganizationId,
+	string? OrganizationName,
 	Guid VolunteerId,
 	Guid? TimeSlotId,
 	string? Message,

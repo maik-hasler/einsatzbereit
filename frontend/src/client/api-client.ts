@@ -3663,9 +3663,9 @@ export interface EngagementStatusResponse {
 export interface EngagementSummary {
     id: string;
     opportunityId: string;
-    opportunityTitle: string;
-    organizationId: string;
-    organizationName: string;
+    opportunityTitle: string | undefined;
+    organizationId: string | undefined;
+    organizationName: string | undefined;
     volunteerId: string;
     timeSlotId: string | undefined;
     message: string | undefined;

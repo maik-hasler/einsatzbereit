@@ -4377,14 +4377,23 @@
             "format": "uuid"
           },
           "opportunityTitle": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizationId": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "organizationName": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "volunteerId": {
             "type": "string",
