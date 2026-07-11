@@ -161,4 +161,24 @@ public class WithdrawEngagementCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenEngagementIsCheckedIn(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
+		engagement.Confirm();
+		engagement.CheckIn();
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<DomainException>().WithMessage("*checked-in*");
+	}
 }

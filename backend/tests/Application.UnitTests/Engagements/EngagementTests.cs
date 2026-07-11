@@ -221,6 +221,18 @@ public class EngagementTests
 		act.Should().Throw<DomainException>().WithMessage("*already terminated*");
 	}
 
+	[Test]
+	public void Withdraw_ShouldThrow_WhenCheckedIn()
+	{
+		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+
+		Action act = () => engagement.Withdraw();
+
+		act.Should().Throw<DomainException>().WithMessage("*checked-in*");
+	}
+
 	// --- Reactivate ---
 
 	[Test]
