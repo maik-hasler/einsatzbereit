@@ -141,6 +141,12 @@ export default function CheckInModal({
 					</p>
 				)}
 
+				{details && !success && checkInMethod === "None" && (
+					<p className="text-sm text-gray-600">
+						{t("checkIn.noneInstruction")}
+					</p>
+				)}
+
 				{success && (
 					<p className="text-sm font-medium text-green-700">
 						{t("checkIn.success")}

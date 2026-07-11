@@ -450,6 +450,7 @@
       "success": "Checked in successfully!",
       "invalidPin": "Invalid PIN. Please try again.",
       "manualInstruction": "The organizer will check you in manually.",
+      "noneInstruction": "This opportunity doesn't require an explicit check-in step.",
       "close": "Done",
       "organizerPin": "Check-in PIN",
       "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
