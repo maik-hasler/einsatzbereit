@@ -54,7 +54,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		var engagementResponse = await http.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
-			new { message = (string?)null });
+			new { message = "Applying via CheckInAndSlotTests regression check." });
 		engagementResponse.EnsureSuccessStatusCode();
 		var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var engagementId = engagement.GetProperty("id").GetString();
