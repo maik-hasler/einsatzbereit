@@ -108,6 +108,9 @@ public sealed class Engagement
 		if (Status is EngagementStatus.Cancelled or EngagementStatus.Withdrawn)
 			throw new DomainException("Engagement is already terminated.");
 
+		if (IsCheckedIn)
+			throw new DomainException("A checked-in engagement can no longer be withdrawn.");
+
 		Status = EngagementStatus.Withdrawn;
 	}
 

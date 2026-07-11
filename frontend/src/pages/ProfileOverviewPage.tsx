@@ -956,15 +956,15 @@ export default function ProfileOverviewPage() {
 															end={e.timeSlotEndDateTime}
 														/>
 													)}
-												{(e.status === "Pending" ||
-													e.status === "Confirmed") && (
-													<button
-														onClick={() => setConfirmWithdrawId(e.id)}
-														className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
-													>
-														{t("myEngagements.withdraw")}
-													</button>
-												)}
+												{(e.status === "Pending" || e.status === "Confirmed") &&
+													!e.isCheckedIn && (
+														<button
+															onClick={() => setConfirmWithdrawId(e.id)}
+															className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
+														>
+															{t("myEngagements.withdraw")}
+														</button>
+													)}
 											</div>
 										</div>
 									</li>
