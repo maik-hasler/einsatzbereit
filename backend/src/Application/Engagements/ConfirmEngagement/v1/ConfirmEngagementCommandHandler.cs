@@ -48,14 +48,10 @@ internal sealed class ConfirmEngagementCommandHandler(
 		var now = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz).DateTime;
 		var isoYear = System.Globalization.ISOWeek.GetYear(now);
 		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
-		await RecordActivityStreakAsync(engagement.VolunteerId, isoYear, isoWeek, cancellationToken);
+		var totalConfirmedEngagements = await RecordActivityStreakAndConfirmationAsync(
+			engagement.VolunteerId, isoYear, isoWeek, cancellationToken);
 
-		// Count from DB (not yet saved) and +1 for this confirmation
-		var confirmedCount = await dbContext.CountConfirmedEngagementsForVolunteerAsync(
-			engagement.VolunteerId,
-			cancellationToken) + 1;
-
-		await EvaluateMilestoneAchievementsAsync(engagement.VolunteerId, confirmedCount, cancellationToken);
+		await EvaluateMilestoneAchievementsAsync(engagement.VolunteerId, totalConfirmedEngagements, cancellationToken);
 
 		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId.Value, cancellationToken);
 
@@ -84,7 +80,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 		}
 	}
 
-	private async Task RecordActivityStreakAsync(
+	private async Task<int> RecordActivityStreakAndConfirmationAsync(
 		UserId volunteerId,
 		int isoYear,
 		int isoWeek,
@@ -97,29 +93,38 @@ internal sealed class ConfirmEngagementCommandHandler(
 			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
 		}
 		streak.RecordActivity(isoYear, isoWeek);
+		streak.RecordConfirmedEngagement();
 
 		if (streak.ActivityStreak >= 4)
 		{
 			await sender.Send(new AwardAchievementCommand(volunteerId, "weekly-hero-4"), cancellationToken);
 		}
+
+		return streak.TotalConfirmedEngagements;
 	}
+
+	// Milestones are keyed by a monotonically-increasing lifetime confirmation
+	// count (never decremented by later cancellations/deletions elsewhere), and
+	// evaluated with >= rather than an exact match, so a threshold can never be
+	// skipped over or made permanently unreachable.
+	private static readonly (int Threshold, string Key)[] MilestoneThresholds =
+	[
+		(1, "first-step"),
+		(5, "dedicated-5"),
+		(100, "centurion-100"),
+	];
 
 	private async Task EvaluateMilestoneAchievementsAsync(
 		UserId volunteerId,
-		int confirmedCount,
+		int totalConfirmedEngagements,
 		CancellationToken cancellationToken)
 	{
-		string[] keysToAward = confirmedCount switch
+		foreach (var (threshold, key) in MilestoneThresholds)
 		{
-			1 => ["first-step"],
-			5 => ["dedicated-5"],
-			100 => ["centurion-100"],
-			_ => []
-		};
-
-		foreach (var key in keysToAward)
-		{
-			await sender.Send(new AwardAchievementCommand(volunteerId, key), cancellationToken);
+			if (totalConfirmedEngagements >= threshold)
+			{
+				await sender.Send(new AwardAchievementCommand(volunteerId, key), cancellationToken);
+			}
 		}
 	}
 }

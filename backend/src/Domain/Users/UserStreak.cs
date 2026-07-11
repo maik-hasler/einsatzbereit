@@ -18,6 +18,8 @@ public sealed class UserStreak
 
 	public int? LastActiveIsoYear { get; private set; }
 
+	public int TotalConfirmedEngagements { get; private set; }
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -62,6 +64,11 @@ public sealed class UserStreak
 		ActivityStreak = isConsecutive ? ActivityStreak + 1 : 1;
 		LastActiveIsoYear = isoYear;
 		LastActiveIsoWeek = isoWeek;
+	}
+
+	public void RecordConfirmedEngagement()
+	{
+		TotalConfirmedEngagements++;
 	}
 
 	private static bool IsPreviousWeek(

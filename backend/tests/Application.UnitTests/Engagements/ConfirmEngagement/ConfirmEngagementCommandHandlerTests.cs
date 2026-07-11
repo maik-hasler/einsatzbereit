@@ -210,8 +210,113 @@ public class ConfirmEngagementCommandHandlerTests
 			Arg.Any<CancellationToken>());
 	}
 
+	[Test]
+	public async Task Handle_ShouldAwardFirstStepBadge_WhenVolunteerHasNoPriorStreak(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			volunteerId,
+			new TimeSlotId(Guid.CreateVersion7()));
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns((UserStreak?)null);
+
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		await _sender.Received(1).Send(
+			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "first-step" && c.UserId == volunteerId),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldAwardDedicatedBadge_WhenLifetimeConfirmationsReach5_EvenIfLiveConfirmedCountIsLower(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #668: a volunteer's live "currently confirmed" count can be
+		// pulled back down by an unrelated opportunity deletion/cancellation elsewhere.
+		// Milestone eligibility must key off the monotonic lifetime counter on the
+		// volunteer's UserStreak, not that live count.
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			volunteerId,
+			new TimeSlotId(Guid.CreateVersion7()));
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 4);
+		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+		// Live confirmed count deliberately stubbed lower than the lifetime counter,
+		// to prove milestone evaluation no longer depends on it at all.
+		_dbContext.CountConfirmedEngagementsForVolunteerAsync(volunteerId, cancellationToken).Returns(1);
+
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		await _sender.Received(1).Send(
+			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "dedicated-5" && c.UserId == volunteerId),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAwardDedicatedBadge_WhenLifetimeConfirmationsAreBelow5(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			volunteerId,
+			new TimeSlotId(Guid.CreateVersion7()));
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 2);
+		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		await _sender.DidNotReceive().Send(
+			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "dedicated-5"),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldAwardCenturionBadge_WhenLifetimeConfirmationsReach100(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagement = Engagement.CreateWaitlistSignUp(
+			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			volunteerId,
+			new TimeSlotId(Guid.CreateVersion7()));
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 99);
+		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		await _sender.Received(1).Send(
+			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "centurion-100" && c.UserId == volunteerId),
+			Arg.Any<CancellationToken>());
+	}
+
 	private static VolunteerOpportunity CreateDefaultOpportunity() =>
 		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, status: OpportunityStatus.Draft);
+
+	private static UserStreak BuildStreakWithTotalConfirmedEngagementsOf(UserId userId, int count)
+	{
+		var streak = UserStreak.Create(userId);
+		for (var i = 0; i < count; i++)
+			streak.RecordConfirmedEngagement();
+		return streak;
+	}
 
 	private static UserStreak BuildActivityStreakOf(UserId userId, int weeks)
 	{

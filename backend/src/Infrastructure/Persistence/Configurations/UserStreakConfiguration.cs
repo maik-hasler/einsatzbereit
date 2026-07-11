@@ -38,6 +38,10 @@ internal sealed class UserStreakConfiguration
 
 		builder.Property(s => s.LastActiveIsoYear);
 
+		builder.Property(s => s.TotalConfirmedEngagements)
+			.HasDefaultValue(0)
+			.IsRequired();
+
 		builder.Property(s => s.CreatedOn);
 
 		builder.Property(s => s.ModifiedOn);
