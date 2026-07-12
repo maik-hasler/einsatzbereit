@@ -249,10 +249,10 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		var myEngagements = await veraClient.GetMyEngagementsAsync(cancellationToken);
+		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
 
-		myEngagements.Should().HaveCount(1);
-		myEngagements.Single().Status.Should().Be("Pending");
+		myEngagements.Items.Should().HaveCount(1);
+		myEngagements.Items.Single().Status.Should().Be("Pending");
 	}
 
 	// ── CheckInEngagement ────────────────────────────────────────────────────
@@ -276,8 +276,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		result.Status.Should().Be("Confirmed");
 
-		var myEngagements = await veraClient.GetMyEngagementsAsync(cancellationToken);
-		myEngagements.Single().IsCheckedIn.Should().BeTrue();
+		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: false, cancellationToken);
+		myEngagements.Items.Single().IsCheckedIn.Should().BeTrue();
 	}
 
 	[Test]
@@ -327,8 +327,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		result.Status.Should().Be("Confirmed");
 
-		var myEngagements = await veraClient.GetMyEngagementsAsync(cancellationToken);
-		myEngagements.Single().IsCheckedIn.Should().BeTrue();
+		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: false, cancellationToken);
+		myEngagements.Items.Single().IsCheckedIn.Should().BeTrue();
 	}
 
 	[Test]

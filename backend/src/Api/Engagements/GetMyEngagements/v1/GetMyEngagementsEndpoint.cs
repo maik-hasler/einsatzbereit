@@ -2,6 +2,7 @@ using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
+using Application.Common.Pagination;
 using Application.Engagements;
 using Application.Engagements.GetMyEngagements.v1;
 using Domain.Users;
@@ -16,7 +17,8 @@ internal sealed class GetMyEngagementsEndpoint
 		app.MapGet("/me/engagements", GetMyEngagementsAsync)
 			.WithName("GetMyEngagements")
 			.WithTags("Engagements")
-			.Produces<List<EngagementSummary>>()
+			.Produces<PagedList<EngagementSummary>>()
+			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
@@ -24,17 +26,28 @@ internal sealed class GetMyEngagementsEndpoint
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetMyEngagementsAsync(
+		[AsParameters] GetMyEngagementsRequest request,
 		[FromServices] ISender sender,
 		HttpContext httpContext,
 		CancellationToken cancellationToken)
 	{
+		if (request.PageNumber < 1)
+			return Results.Problem("PageNumber must be at least 1.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (request.PageSize < 1 || request.PageSize > 100)
+			return Results.Problem("PageSize must be between 1 and 100.", statusCode: StatusCodes.Status400BadRequest);
+
 		var subClaim = httpContext.User.FindFirst("sub")?.Value;
 		if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
 		{
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		var query = new GetMyEngagementsQuery(new UserId(userId));
+		var query = new GetMyEngagementsQuery(
+			new UserId(userId),
+			request.PageNumber,
+			request.PageSize,
+			request.Upcoming);
 		var result = await sender.Send(query, cancellationToken);
 		return Results.Ok(result);
 	}

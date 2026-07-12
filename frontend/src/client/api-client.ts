@@ -2844,8 +2844,20 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getMyEngagements(signal?: AbortSignal): Promise<EngagementSummary[]> {
-        let url_ = this.baseUrl + "/v1/me/engagements";
+    getMyEngagements(pageNumber: number, pageSize: number, upcoming: boolean, signal?: AbortSignal): Promise<PagedListOfEngagementSummary> {
+        let url_ = this.baseUrl + "/v1/me/engagements?";
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "PageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (upcoming === undefined || upcoming === null)
+            throw new globalThis.Error("The parameter 'upcoming' must be defined and cannot be null.");
+        else
+            url_ += "Upcoming=" + encodeURIComponent("" + upcoming) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -2861,14 +2873,20 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetMyEngagements(response: Response): Promise<EngagementSummary[]> {
+    protected processGetMyEngagements(response: Response): Promise<PagedListOfEngagementSummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementSummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfEngagementSummary;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -2887,7 +2905,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<EngagementSummary[]>(null as any);
+        return Promise.resolve<PagedListOfEngagementSummary>(null as any);
     }
 
     /**
@@ -3825,6 +3843,15 @@ export interface OrgInvitationDto {
     inviteeName: string;
     status: string;
     createdOn: Date;
+
+    [key: string]: any;
+}
+
+export interface PagedListOfEngagementSummary {
+    totalItems?: number;
+    currentPage: number;
+    pageCount?: number;
+    items: EngagementSummary[];
 
     [key: string]: any;
 }

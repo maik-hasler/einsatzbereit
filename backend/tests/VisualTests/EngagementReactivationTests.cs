@@ -95,10 +95,10 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 
 	private static async Task<DateTimeOffset> GetCreatedOnAsync(HttpClient http, string opportunityId)
 	{
-		var response = await http.GetAsync("/v1/me/engagements");
+		var response = await http.GetAsync("/v1/me/engagements?pageNumber=1&pageSize=50&upcoming=true");
 		response.EnsureSuccessStatusCode();
 		var engagements = await response.Content.ReadFromJsonAsync<JsonElement>();
-		var match = engagements.EnumerateArray()
+		var match = engagements.GetProperty("items").EnumerateArray()
 			.First(e => e.GetProperty("opportunityId").GetString() == opportunityId);
 		return match.GetProperty("createdOn").GetDateTimeOffset();
 	}
