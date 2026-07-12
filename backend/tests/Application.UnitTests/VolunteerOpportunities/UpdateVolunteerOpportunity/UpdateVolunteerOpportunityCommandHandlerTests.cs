@@ -62,6 +62,29 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldUseGivenCheckInPin(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], DefaultRequestingUserId,
+			CheckInPin: "13579");
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		opportunity.CheckInPin.Should().Be("13579");
+	}
+
+	[Test]
 	public async Task Handle_ShouldUpdateFields_WhenOpportunityExists(
 		CancellationToken cancellationToken)
 	{

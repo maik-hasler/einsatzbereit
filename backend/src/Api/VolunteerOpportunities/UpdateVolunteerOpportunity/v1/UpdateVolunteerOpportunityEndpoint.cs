@@ -42,6 +42,13 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 		if (request.Description is { Length: > 5000 })
 			return Results.Problem("Description must not exceed 5000 characters.", statusCode: StatusCodes.Status400BadRequest);
 
+		if (request.CheckInPin is { Length: > 0 } pin && (pin.Length < 4 || pin.Length > 6 || !pin.All(char.IsAsciiDigit)))
+		{
+			return Results.Problem(
+				"Check-in PIN must be 4 to 6 digits.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
 		Address? address = null;
 		if (!request.IsRemote && !string.IsNullOrWhiteSpace(request.Street))
 			address = new Address(
@@ -94,7 +101,8 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 			checkInMethod,
 			category,
 			[.. request.Tags ?? []],
-			userId);
+			userId,
+			string.IsNullOrWhiteSpace(request.CheckInPin) ? null : request.CheckInPin);
 
 		await sender.Send(command, cancellationToken);
 

@@ -73,7 +73,8 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			request.ParticipationType,
 			request.CheckInMethod,
 			request.Category,
-			request.Tags);
+			request.Tags,
+			request.CheckInPin);
 
 		// Only notify on material changes (location or schedule); cosmetic edits
 		// (title, description, tags) must not spam engaged volunteers.

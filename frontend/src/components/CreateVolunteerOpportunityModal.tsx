@@ -16,6 +16,10 @@ const TOTAL_STEPS = 4;
 const MAX_BANNER_BYTES = 2 * 1024 * 1024;
 const BANNER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+function generateRandomPin(): string {
+	return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 function advanceDate(
 	origin: Date,
 	frequency: string | undefined,
@@ -56,13 +60,20 @@ interface OpportunityForm {
 	occurrence: string;
 	participationType: string;
 	checkInMethod: string;
+	checkInPin: string;
 	category: string | undefined;
 	tags: string[];
 }
 
 type ValidationErrors = Partial<
 	Record<
-		"title" | "description" | "street" | "houseNumber" | "zipCode" | "city",
+		| "title"
+		| "description"
+		| "street"
+		| "houseNumber"
+		| "zipCode"
+		| "city"
+		| "checkInPin",
 		string
 	>
 >;
@@ -78,6 +89,7 @@ function errorStepsFromErrs(
 		(errs.street ?? errs.houseNumber ?? errs.zipCode ?? errs.city)
 	)
 		s.add(2);
+	if (errs.checkInPin) s.add(3);
 	return s;
 }
 
@@ -256,6 +268,7 @@ function formFromOpportunity(
 		occurrence: opp.occurrence,
 		participationType: opp.participationType,
 		checkInMethod: opp.checkInMethod,
+		checkInPin: "",
 		category: opp.category ?? undefined,
 		tags: opp.tags ?? [],
 	};
@@ -286,6 +299,7 @@ export default function CreateVolunteerOpportunityModal({
 					occurrence: "OneTime",
 					participationType: "Waitlist",
 					checkInMethod: "None",
+					checkInPin: "",
 					category: undefined,
 					tags: [],
 				},
@@ -353,6 +367,23 @@ export default function CreateVolunteerOpportunityModal({
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId, isEditMode]);
+
+	useEffect(() => {
+		if (!initialOpportunity || initialOpportunity.checkInMethod !== "PINCode")
+			return;
+		let cancelled = false;
+		api
+			.getOpportunityCheckInPin(initialOpportunity.id)
+			.then((pin) => {
+				if (cancelled || !pin) return;
+				setForm((f) => ({ ...f, checkInPin: pin }));
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [initialOpportunity]);
 
 	useEffect(() => {
 		return () => {
@@ -516,6 +547,18 @@ export default function CreateVolunteerOpportunityModal({
 	}
 
 	const submit = async (asDraft: boolean) => {
+		if (
+			form.checkInMethod === "PINCode" &&
+			form.checkInPin &&
+			!/^\d{4,6}$/.test(form.checkInPin)
+		) {
+			setValidationErrors((prev) => ({
+				...prev,
+				checkInPin: t("createOpportunity.checkInPinInvalid"),
+			}));
+			setStep(3);
+			return;
+		}
 		const errs = asDraft ? {} : validateForPublish();
 		if (Object.keys(errs).length > 0) {
 			setValidationErrors(errs);
@@ -546,6 +589,10 @@ export default function CreateVolunteerOpportunityModal({
 					occurrence: form.occurrence,
 					participationType: form.participationType,
 					checkInMethod: form.checkInMethod,
+					checkInPin:
+						form.checkInMethod === "PINCode"
+							? form.checkInPin || undefined
+							: undefined,
 					category: form.category || undefined,
 					tags: form.tags,
 				});
@@ -584,6 +631,10 @@ export default function CreateVolunteerOpportunityModal({
 					occurrence: form.occurrence,
 					participationType: form.participationType,
 					checkInMethod: form.checkInMethod,
+					checkInPin:
+						form.checkInMethod === "PINCode"
+							? form.checkInPin || undefined
+							: undefined,
 					category: form.category,
 					tags: form.tags,
 					isDraft: asDraft || publishWaitlistAfterCreate,
@@ -1058,6 +1109,40 @@ export default function CreateVolunteerOpportunityModal({
 									))}
 								</div>
 							</div>
+
+							{form.checkInMethod === "PINCode" && (
+								<div>
+									<div className="flex items-start gap-2">
+										<FloatingField
+											id="create-check-in-pin"
+											label={t("createOpportunity.fieldCheckInPin")}
+											value={form.checkInPin}
+											onChange={(v) =>
+												setField("checkInPin", v.replace(/\D/g, "").slice(0, 6))
+											}
+											error={validationErrors.checkInPin}
+											maxLength={6}
+											inputMode="numeric"
+											pattern="[0-9]*"
+											wrapperClassName="flex-1"
+										/>
+										<button
+											type="button"
+											onClick={() =>
+												setField("checkInPin", generateRandomPin())
+											}
+											className="mt-0.5 shrink-0 rounded-xl border-2 border-gray-200 px-4 py-3.5 text-sm font-medium text-gray-700 transition hover:border-brand-200 hover:bg-gray-50"
+										>
+											{t("createOpportunity.generateRandomPin")}
+										</button>
+									</div>
+									{!validationErrors.checkInPin && (
+										<p className="mt-1 text-xs text-gray-500">
+											{t("createOpportunity.checkInPinHint")}
+										</p>
+									)}
+								</div>
+							)}
 						</div>
 					)}
 

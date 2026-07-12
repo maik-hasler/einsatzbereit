@@ -3611,6 +3611,7 @@ export interface CreateVolunteerOpportunityRequest {
     category: string | undefined;
     tags: string[] | undefined;
     isDraft: boolean | undefined;
+    checkInPin: string | undefined;
 
     [key: string]: any;
 }
@@ -3983,6 +3984,7 @@ export interface UpdateVolunteerOpportunityRequest {
     checkInMethod: string;
     category: string | undefined;
     tags: string[] | undefined;
+    checkInPin: string | undefined;
 
     [key: string]: any;
 }

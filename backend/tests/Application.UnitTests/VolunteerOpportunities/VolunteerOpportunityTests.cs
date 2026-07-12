@@ -308,6 +308,100 @@ public class VolunteerOpportunityTests
 		return opportunity;
 	}
 
+	// --- CheckInPin ---
+
+	[Test]
+	public void Create_ShouldGeneratePin_WhenPINCodeAndNoPinGiven()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode);
+
+		opportunity.CheckInPin.Should().NotBeNullOrEmpty();
+		opportunity.CheckInPin.Should().HaveLength(4);
+	}
+
+	[Test]
+	public void Create_ShouldUseGivenPin_WhenPINCodeAndPinGiven()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, checkInPin: "13579");
+
+		opportunity.CheckInPin.Should().Be("13579");
+	}
+
+	[Test]
+	public void Create_ShouldNotSetPin_WhenCheckInMethodIsNotPINCode()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, checkInPin: "1234");
+
+		opportunity.CheckInPin.Should().BeNull();
+	}
+
+	[Test]
+	[Arguments("123")]
+	[Arguments("1234567")]
+	[Arguments("12ab")]
+	public void Create_ShouldThrow_WhenPinIsInvalidFormat(string pin)
+	{
+		Action act = () => VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, checkInPin: pin);
+
+		act.Should().Throw<DomainException>().WithMessage("Check-in PIN must be 4 to 6 digits.");
+	}
+
+	[Test]
+	public void Update_ShouldOverwritePin_WhenCustomPinGiven()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, checkInPin: "1111");
+
+		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], checkInPin: "2222");
+
+		opportunity.CheckInPin.Should().Be("2222");
+	}
+
+	[Test]
+	public void Update_ShouldKeepExistingPin_WhenNoPinGiven()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, checkInPin: "1111");
+
+		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, []);
+
+		opportunity.CheckInPin.Should().Be("1111");
+	}
+
+	[Test]
+	public void Update_ShouldGeneratePin_WhenSwitchedToPINCodeWithNoExistingPin()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None);
+
+		opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, []);
+
+		opportunity.CheckInPin.Should().NotBeNullOrEmpty();
+	}
+
+	[Test]
+	public void Update_ShouldThrow_WhenPinIsInvalidFormat()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, checkInPin: "1111");
+
+		Action act = () => opportunity.Update("Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.PINCode, null, [], checkInPin: "abc");
+
+		act.Should().Throw<DomainException>().WithMessage("Check-in PIN must be 4 to 6 digits.");
+	}
+
 	// --- AddTimeSlot ---
 
 	[Test]

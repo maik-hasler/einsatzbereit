@@ -59,7 +59,8 @@ public sealed class VolunteerOpportunity
 		CheckInMethod checkInMethod,
 		Category? category,
 		List<string> tags,
-		OpportunityStatus status)
+		OpportunityStatus status,
+		string? checkInPin)
 		: base(id)
 	{
 		OrganizationId = organizationId;
@@ -74,11 +75,17 @@ public sealed class VolunteerOpportunity
 		Tags = tags;
 		Status = status;
 		if (checkInMethod == CheckInMethod.PINCode)
-			CheckInPin = GeneratePin();
+			CheckInPin = checkInPin ?? GeneratePin();
 	}
 
 	private static string GeneratePin() =>
 		Random.Shared.Next(1000, 10000).ToString("D4");
+
+	private static void EnsureValidPin(string pin)
+	{
+		if (pin.Length is < 4 or > 6 || !pin.All(char.IsAsciiDigit))
+			throw new DomainException("Check-in PIN must be 4 to 6 digits.");
+	}
 
 	public static VolunteerOpportunity Create(
 		OrganizationId organizationId,
@@ -91,10 +98,14 @@ public sealed class VolunteerOpportunity
 		CheckInMethod checkInMethod,
 		Category? category = null,
 		List<string>? tags = null,
-		OpportunityStatus status = OpportunityStatus.Published)
+		OpportunityStatus status = OpportunityStatus.Published,
+		string? checkInPin = null)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
+
+		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
+			EnsureValidPin(checkInPin);
 
 		if (status == OpportunityStatus.Published)
 		{
@@ -120,7 +131,8 @@ public sealed class VolunteerOpportunity
 			checkInMethod,
 			category,
 			tags ?? [],
-			status);
+			status,
+			checkInPin);
 	}
 
 	private static void EnsurePublishable(
@@ -175,13 +187,17 @@ public sealed class VolunteerOpportunity
 		ParticipationType participationType,
 		CheckInMethod checkInMethod,
 		Category? category,
-		List<string> tags)
+		List<string> tags,
+		string? checkInPin = null)
 	{
 		if (string.IsNullOrWhiteSpace(title))
 			throw new DomainException("Title must not be empty.");
 
 		if (Status == OpportunityStatus.Published)
 			EnsurePublishable(description, isRemote, address);
+
+		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
+			EnsureValidPin(checkInPin);
 
 		Title = title;
 		Description = description;
@@ -198,9 +214,12 @@ public sealed class VolunteerOpportunity
 		CheckInMethod = checkInMethod;
 		Category = category;
 		Tags = tags;
-		if (checkInMethod == CheckInMethod.PINCode && CheckInPin is null)
+		if (checkInMethod == CheckInMethod.PINCode)
 		{
-			CheckInPin = GeneratePin();
+			if (checkInPin is not null)
+				CheckInPin = checkInPin;
+			else if (CheckInPin is null)
+				CheckInPin = GeneratePin();
 		}
 	}
 
