@@ -75,6 +75,11 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		await Page.GotoAsync($"{origin}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// #675 split the tab into "Current & Upcoming" (default) and "Past" -
+		// the opportunity's deletion cancels the engagement, so it now only
+		// shows up under "Past".
+		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
+
 		await Expect(Page.GetByText("This opportunity has been removed").First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
