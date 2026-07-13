@@ -417,14 +417,20 @@ export default function CreateVolunteerOpportunityModal({
 	}
 
 	const submit = async (asDraft: boolean) => {
-		const valid = asDraft || (await trigger());
-		if (!valid) {
-			const erroredFields = new Set(
-				Object.keys(errors) as (keyof OpportunityFormValues)[],
-			);
-			const steps = errorStepsFromFieldErrors(erroredFields);
-			if (steps.size > 0) setStep(Math.min(...steps));
-			return;
+		if (!asDraft) {
+			// Walk the steps in order and stop at the first one that fails -
+			// its own `trigger()` return value is used directly rather than
+			// reading `errors` afterward, which can still reflect the render
+			// this closure was created in rather than the just-awaited result.
+			for (let s = 1; s <= TOTAL_STEPS; s++) {
+				const fields = STEP_FIELDS[s];
+				if (fields.length === 0) continue;
+				const stepValid = await trigger(fields);
+				if (!stepValid) {
+					setStep(s);
+					return;
+				}
+			}
 		}
 
 		const values = getValues();
