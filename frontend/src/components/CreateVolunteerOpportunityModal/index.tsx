@@ -155,7 +155,7 @@ export default function CreateVolunteerOpportunityModal({
 	const [recurrenceCount, setRecurrenceCount] = useState(1);
 
 	const dialogRef = useRef<HTMLDivElement>(null);
-	const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+	const bodyRef = useRef<HTMLDivElement>(null);
 
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
@@ -219,22 +219,38 @@ export default function CreateVolunteerOpportunityModal({
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
+			// While the discard-changes confirmation is open, it owns Escape
+			// (and its own focus trap) - let it handle its own keydowns
+			// instead of racing with this dialog's handler.
+			if (showDiscardConfirm) return;
 			if (e.key === "Escape") requestClose();
 		}
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [onClose, isDirty]);
+	}, [onClose, isDirty, showDiscardConfirm]);
 
-	// Focus trap + move focus into the dialog on open, and to the step
-	// heading whenever the active step changes.
+	// Move focus into the dialog on open, landing on the first field so a
+	// keyboard user lands somewhere useful. Step changes are announced via
+	// the aria-live region below (moving focus too, on top of that, risks a
+	// double/competing screen-reader announcement).
+	const isFirstFocusRef = useRef(true);
 	useEffect(() => {
-		stepHeadingRef.current?.focus();
+		if (!isFirstFocusRef.current) return;
+		isFirstFocusRef.current = false;
+		// Scoped to the step body (not the whole dialog) so the header's
+		// close button doesn't win over the step's first actual field.
+		bodyRef.current
+			?.querySelector<HTMLElement>(
+				'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+			)
+			?.focus();
 	}, [step]);
 
 	useEffect(() => {
 		function trapTab(e: KeyboardEvent) {
-			if (e.key !== "Tab" || !dialogRef.current) return;
+			// The discard-changes confirmation traps its own Tab cycle while open.
+			if (showDiscardConfirm || e.key !== "Tab" || !dialogRef.current) return;
 			const focusables = Array.from(
 				dialogRef.current.querySelectorAll<HTMLElement>(
 					'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
@@ -253,7 +269,7 @@ export default function CreateVolunteerOpportunityModal({
 		}
 		document.addEventListener("keydown", trapTab);
 		return () => document.removeEventListener("keydown", trapTab);
-	}, []);
+	}, [showDiscardConfirm]);
 
 	function applyOrgAddress() {
 		if (!orgAddress) return;
@@ -284,7 +300,13 @@ export default function CreateVolunteerOpportunityModal({
 			setStep(n);
 			return;
 		}
-		const fields = STEP_FIELDS[step];
+		// Jumping ahead skips every step in between - validate all of their
+		// fields, not just the currently active one, so a step revisited and
+		// broken (e.g. going back to blank out the title) still blocks the
+		// jump instead of only surfacing at Publish-time.
+		const fields = Object.entries(STEP_FIELDS)
+			.filter(([s]) => Number(s) >= step && Number(s) < n)
+			.flatMap(([, stepFields]) => stepFields);
 		const valid = fields.length === 0 || (await trigger(fields));
 		if (!valid) return;
 		setStep(n);
@@ -624,14 +646,11 @@ export default function CreateVolunteerOpportunityModal({
 				</div>
 
 				{/* Scrollable body */}
-				<div className="max-h-[min(70vh,640px)] overflow-y-auto px-6 py-5">
-					<h3
-						ref={stepHeadingRef}
-						tabIndex={-1}
-						className="sr-only focus:outline-none"
-					>
-						{stepTitles[step - 1]}
-					</h3>
+				<div
+					ref={bodyRef}
+					className="max-h-[min(70vh,640px)] overflow-y-auto px-6 py-5"
+				>
+					<h3 className="sr-only">{stepTitles[step - 1]}</h3>
 					<p className="mb-4 text-sm leading-relaxed text-gray-500">
 						{stepSubtitles[step - 1]}
 					</p>
