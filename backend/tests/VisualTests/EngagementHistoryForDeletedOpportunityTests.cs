@@ -38,11 +38,11 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
 		deleteResponse.EnsureSuccessStatusCode();
 
-		var myEngagementsResponse = await veraHttp.GetAsync("/v1/me/engagements");
+		var myEngagementsResponse = await veraHttp.GetAsync("/v1/me/engagements?pageNumber=1&pageSize=50&upcoming=false");
 		myEngagementsResponse.EnsureSuccessStatusCode();
 		var myEngagements = await myEngagementsResponse.Content.ReadFromJsonAsync<JsonElement>();
 
-		var engagement = myEngagements.EnumerateArray()
+		var engagement = myEngagements.GetProperty("items").EnumerateArray()
 			.FirstOrDefault(e => e.GetProperty("id").GetString() == engagementId);
 
 		engagement.ValueKind.Should().NotBe(JsonValueKind.Undefined,
@@ -74,6 +74,11 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// #675 split the tab into "Current & Upcoming" (default) and "Past" -
+		// the opportunity's deletion cancels the engagement, so it now only
+		// shows up under "Past".
+		await Page.Locator("[data-testid='engagements-scope-past']").ClickAsync();
 
 		await Expect(Page.GetByText("This opportunity has been removed").First)
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });

@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -10,8 +11,11 @@ public interface IEngagementReadRepository
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default);
 
-	ValueTask<List<EngagementSummary>> GetByVolunteerAsync(
+	ValueTask<PagedList<EngagementSummary>> GetByVolunteerAsync(
 		UserId volunteerId,
+		bool upcoming,
+		int pageNumber,
+		int pageSize,
 		CancellationToken cancellationToken = default);
 
 	ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(

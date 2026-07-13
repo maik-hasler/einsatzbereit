@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Engagements;
 using Domain.Engagements;
 using Domain.Organizations;
@@ -72,8 +73,11 @@ internal sealed class EngagementReadRepository(
 			x.CreatedOn)).ToList();
 	}
 
-	public async ValueTask<List<EngagementSummary>> GetByVolunteerAsync(
+	public async ValueTask<PagedList<EngagementSummary>> GetByVolunteerAsync(
 		UserId volunteerId,
+		bool upcoming,
+		int pageNumber,
+		int pageSize,
 		CancellationToken cancellationToken = default)
 	{
 		// Deliberately not an inner join against VolunteerOpportunitiesQuery: deleting an
@@ -82,9 +86,26 @@ internal sealed class EngagementReadRepository(
 		// engagements from the volunteer's own history (#667). Opportunity/organization
 		// data is instead looked up separately and merged in below, falling back to
 		// null when the opportunity no longer exists.
-		var engagements = await dbContext.EngagementsQuery
-			.Where(e => e.VolunteerId == volunteerId)
+		var scopedQuery = dbContext.EngagementsQuery.Where(e => e.VolunteerId == volunteerId);
+
+		// Current/upcoming vs. past split (#675): a checked-in Confirmed engagement
+		// represents a shift that has already happened, so it counts as past even
+		// though its status is not yet terminal.
+		scopedQuery = upcoming
+			? scopedQuery.Where(e =>
+				e.Status == EngagementStatus.Pending
+				|| (e.Status == EngagementStatus.Confirmed && !e.IsCheckedIn))
+			: scopedQuery.Where(e =>
+				e.Status == EngagementStatus.Cancelled
+				|| e.Status == EngagementStatus.Withdrawn
+				|| (e.Status == EngagementStatus.Confirmed && e.IsCheckedIn));
+
+		var totalCount = await scopedQuery.CountAsync(cancellationToken);
+
+		var engagements = await scopedQuery
 			.OrderByDescending(e => e.CreatedOn)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
 			.ToListAsync(cancellationToken);
 
 		var opportunityIds = engagements.Select(e => e.OpportunityId).Distinct().ToList();
@@ -113,7 +134,7 @@ internal sealed class EngagementReadRepository(
 				.ToDictionaryAsync(ts => ts.Id, cancellationToken);
 		}
 
-		return engagements.Select(e =>
+		var items = engagements.Select(e =>
 		{
 			opportunities.TryGetValue(e.OpportunityId, out var opportunity);
 			var organization = opportunity is not null
@@ -147,6 +168,8 @@ internal sealed class EngagementReadRepository(
 				TimeSlotEndDateTime: timeSlot?.EndDateTime,
 				Location: location);
 		}).ToList();
+
+		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
 	}
 
 	private static string? FormatAddress(Address? address)

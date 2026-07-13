@@ -29,8 +29,10 @@ import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ENGAGEMENTS_PAGE_SIZE = 10;
 
 type Tab = "profile" | "engagements" | "achievements" | "invitations";
+type EngagementsScope = "upcoming" | "past";
 type ContactPref = "Email" | "Phone" | "";
 
 const VALID_TABS: Tab[] = [
@@ -181,8 +183,13 @@ export default function ProfileOverviewPage() {
 	const [editing, setEditing] = useState(false);
 
 	// --- Engagements tab state ---
+	const [engagementsScope, setEngagementsScope] =
+		useState<EngagementsScope>("upcoming");
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
+	const [engagementsPage, setEngagementsPage] = useState(1);
+	const [engagementsPageCount, setEngagementsPageCount] = useState(1);
 	const [engagementsLoading, setEngagementsLoading] = useState(false);
+	const [engagementsLoadingMore, setEngagementsLoadingMore] = useState(false);
 	const [engagementsError, setEngagementsError] = useState<string | null>(null);
 	const [engagementsInitialized, setEngagementsInitialized] = useState(false);
 	const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(
@@ -269,18 +276,40 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accessToken]);
 
+	function fetchEngagements(scope: EngagementsScope, page: number) {
+		if (page > 1) setEngagementsLoadingMore(true);
+		else setEngagementsLoading(true);
+		setEngagementsError(null);
+		api
+			.getMyEngagements(page, ENGAGEMENTS_PAGE_SIZE, scope === "upcoming")
+			.then((result) => {
+				setEngagements((prev) =>
+					page === 1 ? result.items : [...prev, ...result.items],
+				);
+				setEngagementsPage(page);
+				setEngagementsPageCount(result.pageCount ?? 1);
+			})
+			.catch((err) =>
+				setEngagementsError(getApiErrorMessage(err, t("error.serverError"))),
+			)
+			.finally(() => {
+				setEngagementsLoading(false);
+				setEngagementsLoadingMore(false);
+			});
+	}
+
+	function switchEngagementsScope(scope: EngagementsScope) {
+		if (scope === engagementsScope) return;
+		setEngagementsScope(scope);
+		setEngagements([]);
+		fetchEngagements(scope, 1);
+	}
+
 	// Load engagements lazily on first visit to that tab
 	useEffect(() => {
 		if (activeTab !== "engagements" || engagementsInitialized) return;
 		setEngagementsInitialized(true);
-		setEngagementsLoading(true);
-		api
-			.getMyEngagements()
-			.then(setEngagements)
-			.catch((err) =>
-				setEngagementsError(getApiErrorMessage(err, t("error.serverError"))),
-			)
-			.finally(() => setEngagementsLoading(false));
+		fetchEngagements(engagementsScope, 1);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab, engagementsInitialized]);
 
@@ -840,6 +869,39 @@ export default function ProfileOverviewPage() {
 			{/* Engagements tab */}
 			{activeTab === "engagements" && (
 				<>
+					<div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+						<button
+							type="button"
+							data-testid="engagements-scope-upcoming"
+							onClick={() => switchEngagementsScope("upcoming")}
+							disabled={engagementsLoading}
+							aria-current={
+								engagementsScope === "upcoming" ? "true" : undefined
+							}
+							className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+								engagementsScope === "upcoming"
+									? "bg-white text-brand-700 shadow-sm"
+									: "text-gray-600 hover:text-gray-900"
+							}`}
+						>
+							{t("myEngagements.scopeUpcoming")}
+						</button>
+						<button
+							type="button"
+							data-testid="engagements-scope-past"
+							onClick={() => switchEngagementsScope("past")}
+							disabled={engagementsLoading}
+							aria-current={engagementsScope === "past" ? "true" : undefined}
+							className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+								engagementsScope === "past"
+									? "bg-white text-brand-700 shadow-sm"
+									: "text-gray-600 hover:text-gray-900"
+							}`}
+						>
+							{t("myEngagements.scopePast")}
+						</button>
+					</div>
+
 					{engagementsLoading && (
 						<p className="text-gray-500">{t("myEngagements.loading")}</p>
 					)}
@@ -851,7 +913,8 @@ export default function ProfileOverviewPage() {
 
 					{!engagementsLoading &&
 						!engagementsError &&
-						engagements.length === 0 && (
+						engagements.length === 0 &&
+						(engagementsScope === "upcoming" ? (
 							<EmptyState
 								title={t("myEngagements.noEngagements")}
 								message={t("myEngagements.noEngagementsHint")}
@@ -860,7 +923,9 @@ export default function ProfileOverviewPage() {
 									onClick: () => navigate("/"),
 								}}
 							/>
-						)}
+						) : (
+							<EmptyState title={t("myEngagements.noPastEngagements")} />
+						))}
 
 					{!engagementsLoading &&
 						!engagementsError &&
@@ -981,6 +1046,25 @@ export default function ProfileOverviewPage() {
 									</li>
 								))}
 							</ul>
+						)}
+
+					{!engagementsLoading &&
+						!engagementsError &&
+						engagements.length > 0 &&
+						engagementsPage < engagementsPageCount && (
+							<div className="mt-6 flex justify-center">
+								<button
+									onClick={() =>
+										fetchEngagements(engagementsScope, engagementsPage + 1)
+									}
+									disabled={engagementsLoadingMore}
+									className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+								>
+									{engagementsLoadingMore
+										? t("myEngagements.loading")
+										: t("myEngagements.loadMore")}
+								</button>
+							</div>
 						)}
 				</>
 			)}
