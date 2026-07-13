@@ -138,9 +138,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Step 1 content visible.
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
 
-		// Brand accent bar present (from-brand-600 class).
-		var accent = dialog.Locator("[class*='from-brand-600']").First;
-		await Expect(accent).ToBeVisibleAsync();
+		// Plain header (#676 Pitch 2 dropped the one-off gradient accent bar
+		// in favor of the same plain header every other modal uses).
+		var accent = dialog.Locator("[class*='from-brand-600']");
+		await Expect(accent).Not.ToBeAttachedAsync();
 
 		// Clickable stepper with 4 labelled steps.
 		for (var n = 1; n <= 4; n++)
@@ -149,20 +150,29 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Save-as-draft action is always available.
 		await Expect(Page.GetByTestId("modal-save-draft")).ToBeVisibleAsync();
 
-		// Free navigation: Next is enabled even with empty required fields.
+		// Fail-fast validation: "Next" is blocked while step 1's required
+		// fields are empty, with the error shown before Publish-time.
 		var nextBtn = Page.GetByTestId("modal-next");
-		await Expect(nextBtn).ToBeEnabledAsync();
+		await nextBtn.ClickAsync();
+		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
+		await Expect(Page.Locator("#opportunity-title-error")).ToBeVisibleAsync();
+
+		// Fill in the required fields - Next now advances.
+		await Page.Locator("#opportunity-title").FillAsync("Wizard CI Test");
+		await Page.Locator("#opportunity-description").FillAsync(
+			"Visual test coverage for the Pitch 2 wizard rewrite.");
 		await nextBtn.ClickAsync();
 		await Expect(Page.GetByTestId("wizard-step-2")).ToBeVisibleAsync();
 
-		// Stepper jumps directly to any step (2 -> 4).
+		// Mark remote so step 2's address fields are no longer required,
+		// then the stepper can jump directly ahead to step 4.
+		await Page.Locator("#opportunity-remote").CheckAsync();
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
 		await Expect(Page.GetByTestId("wizard-step-4")).ToBeVisibleAsync();
 
-		// Jump back to step 1 and check the floating-label title field.
+		// Jump back to step 1 - always allowed, no validation on the way back.
 		await Page.GetByTestId("wizard-stepper-1").ClickAsync();
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
-		await Page.Locator("#opportunity-title").FillAsync("Wizard CI Test");
 
 		// Banner upload affordance present on step 1.
 		await Expect(Page.Locator("#opportunity-banner")).ToBeAttachedAsync();
@@ -172,9 +182,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var hint = Page.GetByTestId("wizard-step-2").Locator("[class*='bg-brand-50']").First;
 		await Expect(hint).ToBeVisibleAsync();
 
-		// Close with Escape.
+		// The form is dirty (title/description filled in) - Escape must ask
+		// for confirmation instead of silently discarding the input.
 		await Page.Keyboard.PressAsync("Escape");
-		await Expect(dialog).Not.ToBeVisibleAsync();
+		var discardBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" });
+		await Expect(discardBtn).ToBeVisibleAsync();
+		await discardBtn.ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
