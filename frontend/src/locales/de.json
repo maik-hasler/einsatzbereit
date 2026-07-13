@@ -290,7 +290,7 @@
       "selectTimeSlot": "Zeitslot wählen",
       "noTimeSlots": "Keine Zeitslots verfügbar.",
       "selectPlaceholder": "Bitte wählen…",
-      "message": "Nachricht",
+      "message": "Nachricht (Pflichtfeld)",
       "messagePlaceholder": "Beschreibe kurz, warum du dich engagieren möchtest…",
       "submitting": "Wird gesendet…",
       "submit": "Anmelden",

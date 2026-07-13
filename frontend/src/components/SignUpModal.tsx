@@ -133,10 +133,14 @@ export default function SignUpModal({
 
 					{!isWaitlist && (
 						<div>
-							<label className="mb-1 block text-sm font-medium text-gray-700">
+							<label
+								htmlFor="sign-up-message"
+								className="mb-1 block text-sm font-medium text-gray-700"
+							>
 								{t("signUp.message")}
 							</label>
 							<textarea
+								id="sign-up-message"
 								value={message}
 								onChange={(e) => setMessage(e.target.value)}
 								required

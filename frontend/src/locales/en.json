@@ -290,7 +290,7 @@
       "selectTimeSlot": "Select time slot",
       "noTimeSlots": "No time slots available.",
       "selectPlaceholder": "Please select…",
-      "message": "Message",
+      "message": "Message (required)",
       "messagePlaceholder": "Briefly describe why you want to volunteer…",
       "submitting": "Submitting…",
       "submit": "Sign up",
