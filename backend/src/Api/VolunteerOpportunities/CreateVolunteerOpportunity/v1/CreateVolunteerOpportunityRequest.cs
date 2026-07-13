@@ -16,4 +16,5 @@ public sealed record CreateVolunteerOpportunityRequest(
 	string CheckInMethod,
 	string? Category,
 	IReadOnlyList<string>? Tags,
-	bool? IsDraft);
+	bool? IsDraft,
+	[MaxLength(6)] string? CheckInPin);

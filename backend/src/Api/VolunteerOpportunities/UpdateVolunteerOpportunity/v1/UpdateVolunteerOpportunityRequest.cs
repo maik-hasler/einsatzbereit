@@ -14,4 +14,5 @@ public sealed record UpdateVolunteerOpportunityRequest(
 	string ParticipationType,
 	string CheckInMethod,
 	string? Category,
-	IReadOnlyList<string>? Tags);
+	IReadOnlyList<string>? Tags,
+	[MaxLength(6)] string? CheckInPin);

@@ -15,5 +15,6 @@ public sealed record CreateVolunteerOpportunityCommand(
 	CheckInMethod CheckInMethod,
 	Category? Category,
 	List<string> Tags,
-	OpportunityStatus Status)
+	OpportunityStatus Status,
+	string? CheckInPin = null)
 	: ICommand<VolunteerOpportunity>;

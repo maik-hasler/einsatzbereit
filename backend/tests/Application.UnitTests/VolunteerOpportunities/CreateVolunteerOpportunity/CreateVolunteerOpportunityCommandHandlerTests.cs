@@ -61,6 +61,32 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldUseGivenCheckInPin(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new CreateVolunteerOpportunityCommand(
+			"Helpers needed",
+			"For moving",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.PINCode,
+			null,
+			[],
+			OpportunityStatus.Draft,
+			CheckInPin: "13579");
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.CheckInPin.Should().Be("13579");
+	}
+
+	[Test]
 	public async Task Handle_ShouldCallRepositoryAndUnitOfWork(
 		CancellationToken cancellationToken)
 	{

@@ -7151,6 +7151,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("isDraft")]
         public bool? IsDraft { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("checkInPin")]
+        public string? CheckInPin { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -8384,6 +8387,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("tags")]
         public System.Collections.Generic.ICollection<string>? Tags { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("checkInPin")]
+        public string? CheckInPin { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

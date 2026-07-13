@@ -68,6 +68,13 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			category = parsedCategory;
 		}
 
+		if (request.CheckInPin is { Length: > 0 } pin && (pin.Length < 4 || pin.Length > 6 || !pin.All(char.IsAsciiDigit)))
+		{
+			return Results.Problem(
+				"Check-in PIN must be 4 to 6 digits.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
 		var status = request.IsDraft == true
 			? OpportunityStatus.Draft
 			: OpportunityStatus.Published;
@@ -102,7 +109,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			checkInMethod,
 			category,
 			[.. request.Tags ?? []],
-			status);
+			status,
+			string.IsNullOrWhiteSpace(request.CheckInPin) ? null : request.CheckInPin);
 
 		var opportunity = await sender.Send(command, cancellationToken);
 

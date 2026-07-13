@@ -4103,7 +4103,8 @@
           "checkInMethod",
           "category",
           "tags",
-          "isDraft"
+          "isDraft",
+          "checkInPin"
         ],
         "type": "object",
         "properties": {
@@ -4178,6 +4179,12 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "checkInPin": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -5577,7 +5584,8 @@
           "participationType",
           "checkInMethod",
           "category",
-          "tags"
+          "tags",
+          "checkInPin"
         ],
         "type": "object",
         "properties": {
@@ -5643,6 +5651,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "checkInPin": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
