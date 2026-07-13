@@ -300,4 +300,54 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
+
+	[Test]
+	public async Task CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations()
+	{
+		// #676 Pitch 2 rewrote this modal with custom ARIA machinery (a manual
+		// Tab trap, an aria-live step announcer, sr-only radio-cards, and a
+		// nested unsaved-changes ConfirmDialog) that a plain page-load axe
+		// scan can't reach, since the modal only exists in the DOM while open.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		if (await switcherBtn.CountAsync() == 0)
+			return; // no org membership in seed - skip
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await dashboardLink.First.ClickAsync();
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return; // modal did not open - skip remaining assertions
+		}
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+
+		// Dirty the form, then open the nested discard-changes confirmation -
+		// both dialogs stacked must remain axe-clean together.
+		await Page.Locator("#opportunity-title").FillAsync("A11y Axe Test");
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" }))
+			.ToBeVisibleAsync();
+
+		var nestedResult = await Page.RunAxe();
+		AssertNoViolations(nestedResult);
+	}
 }

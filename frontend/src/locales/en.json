@@ -207,8 +207,10 @@
       "generateRandomPin": "Generate random",
       "fieldCategory": "Category",
       "fieldCategoryNone": "None",
-      "fieldTags": "Tags (comma-separated)",
+      "fieldTags": "Tags",
       "fieldTagsPlaceholder": "e.g. outdoor, youth, weekend",
+      "fieldTagsHint": "Press Enter or comma to add a tag.",
+      "removeTag": "Remove tag {{tag}}",
       "charCount": "{{current}} / {{max}}",
       "creating": "Creating…",
       "submit": "Create",
@@ -233,7 +235,10 @@
       "fieldRemoteHint": "This opportunity takes place online or at a flexible location.",
       "editTitle": "Edit opportunity",
       "save": "Save",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "unsavedChangesTitle": "Discard unsaved changes?",
+      "unsavedChangesMessage": "You have unsaved changes to this opportunity. If you close now, they will be lost.",
+      "discardChanges": "Discard changes"
     },
     "checkInMethod": {
       "none": "None (automatic)",

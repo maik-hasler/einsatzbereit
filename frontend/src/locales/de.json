@@ -207,8 +207,10 @@
       "generateRandomPin": "Zufällig generieren",
       "fieldCategory": "Kategorie",
       "fieldCategoryNone": "Keine",
-      "fieldTags": "Tags (kommagetrennt)",
+      "fieldTags": "Tags",
       "fieldTagsPlaceholder": "z.B. outdoor, Jugend, Wochenende",
+      "fieldTagsHint": "Enter oder Komma drücken, um ein Tag hinzuzufügen.",
+      "removeTag": "Tag {{tag}} entfernen",
       "charCount": "{{current}} / {{max}}",
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
@@ -233,7 +235,10 @@
       "fieldRemoteHint": "Der Einsatz findet online oder an einem flexiblen Ort statt.",
       "editTitle": "Bedarf bearbeiten",
       "save": "Speichern",
-      "saving": "Wird gespeichert..."
+      "saving": "Wird gespeichert...",
+      "unsavedChangesTitle": "Ungespeicherte Änderungen verwerfen?",
+      "unsavedChangesMessage": "Du hast ungespeicherte Änderungen an diesem Einsatz. Wenn du jetzt schließt, gehen sie verloren.",
+      "discardChanges": "Änderungen verwerfen"
     },
     "checkInMethod": {
       "none": "Keine (automatisch)",

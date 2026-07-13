@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -21,10 +21,35 @@ export default function ConfirmDialog({
 	error = null,
 }: Props) {
 	const { t } = useTranslation();
+	const dialogRef = useRef<HTMLDivElement>(null);
+	const keepButtonRef = useRef<HTMLButtonElement>(null);
+
+	useEffect(() => {
+		keepButtonRef.current?.focus();
+	}, []);
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === "Escape") onClose();
+			if (e.key === "Escape") {
+				onClose();
+				return;
+			}
+			if (e.key !== "Tab" || !dialogRef.current) return;
+			const focusables = Array.from(
+				dialogRef.current.querySelectorAll<HTMLElement>(
+					"button:not([disabled])",
+				),
+			);
+			if (focusables.length === 0) return;
+			const first = focusables[0];
+			const last = focusables[focusables.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
 		}
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
@@ -40,6 +65,7 @@ export default function ConfirmDialog({
 				aria-hidden="true"
 			/>
 			<div
+				ref={dialogRef}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="confirm-dialog-title"
@@ -57,6 +83,7 @@ export default function ConfirmDialog({
 
 				<div className="mt-5 flex justify-end gap-3">
 					<button
+						ref={keepButtonRef}
 						onClick={onClose}
 						disabled={loading}
 						className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
