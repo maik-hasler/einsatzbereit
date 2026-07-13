@@ -66,8 +66,12 @@ try {
 	await page.getByTestId("wizard-step-3").waitFor({ state: "visible" });
 	console.log("PASS: advanced to step 3 (remote, address not required)");
 
-	// Step 3: PIN Code check-in with generated PIN.
-	await page.locator("input[name='checkInMethod'][value='PINCode']").check();
+	// Step 3: PIN Code check-in with generated PIN. The radio itself is
+	// visually sr-only (a styled label wraps it) - click the label's visible
+	// text, matching how a real mouse user interacts with it.
+	await page
+		.locator("label:has(input[name='checkInMethod'][value='PINCode'])")
+		.click();
 	const pinInput = page.locator("#create-check-in-pin");
 	await pinInput.waitFor({ state: "visible" });
 	await page.getByRole("button", { name: "Generate random" }).click();
