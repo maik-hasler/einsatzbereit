@@ -469,7 +469,8 @@
       "qrCameraError": "Camera access denied. Please allow camera access and try again.",
       "qrNotFound": "QR code not recognised. The volunteer may not be confirmed yet.",
       "qrCheckInError": "Check-in failed. Please try again.",
-      "qrSuccess": "Volunteer checked in successfully!"
+      "qrSuccess": "Volunteer checked in successfully!",
+      "loadError": "This opportunity is no longer available."
     },
     "myEngagements": {
       "title": "My Engagements",

@@ -469,7 +469,8 @@
       "qrCameraError": "Kamerazugriff verweigert. Bitte Kamerazugriff erlauben und erneut versuchen.",
       "qrNotFound": "QR-Code nicht erkannt. Der Freiwillige ist möglicherweise noch nicht bestätigt.",
       "qrCheckInError": "Einchecken fehlgeschlagen. Bitte erneut versuchen.",
-      "qrSuccess": "Freiwilliger erfolgreich eingecheckt!"
+      "qrSuccess": "Freiwilliger erfolgreich eingecheckt!",
+      "loadError": "Dieser Einsatz ist nicht mehr verfügbar."
     },
     "myEngagements": {
       "title": "Meine Engagements",

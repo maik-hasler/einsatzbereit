@@ -996,14 +996,16 @@ export default function ProfileOverviewPage() {
 												>
 													{STATUS_LABELS[e.status] ?? e.status}
 												</span>
-												{e.status === "Confirmed" && !e.isCheckedIn && (
-													<button
-														onClick={() => setCheckInEngagement(e)}
-														className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800"
-													>
-														{t("checkIn.buttonLabel")}
-													</button>
-												)}
+												{e.status === "Confirmed" &&
+													!e.isCheckedIn &&
+													e.opportunityTitle && (
+														<button
+															onClick={() => setCheckInEngagement(e)}
+															className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800"
+														>
+															{t("checkIn.buttonLabel")}
+														</button>
+													)}
 												{e.isCheckedIn && !e.hasFeedback && (
 													<button
 														onClick={() => setFeedbackEngagement(e)}
