@@ -22,13 +22,17 @@ export default function CheckInModal({
 	const [details, setDetails] = useState<VolunteerOpportunityDetails | null>(
 		null,
 	);
+	const [loadError, setLoadError] = useState(false);
 	const [pin, setPin] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 
 	useEffect(() => {
-		void api.getVolunteerOpportunityDetails(opportunityId).then(setDetails);
+		api
+			.getVolunteerOpportunityDetails(opportunityId)
+			.then(setDetails)
+			.catch(() => setLoadError(true));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
 
@@ -79,8 +83,14 @@ export default function CheckInModal({
 					{t("checkIn.title")}
 				</h2>
 
-				{!details && (
+				{!details && !loadError && (
 					<p className="text-sm text-gray-500">{t("opportunities.loading")}</p>
+				)}
+
+				{loadError && (
+					<p className="text-sm text-red-600" role="alert">
+						{t("checkIn.loadError")}
+					</p>
 				)}
 
 				{details && !success && checkInMethod === "QRCode" && (
