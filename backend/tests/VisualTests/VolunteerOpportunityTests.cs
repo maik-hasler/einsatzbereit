@@ -401,6 +401,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync();
 		await Expect(Page.GetByTestId("wizard-step-4")).ToBeVisibleAsync();
 
+		// #688 regression: the publish-blocking error must be announced
+		// (role="alert") and scrolled/focused into view, not merely present
+		// somewhere in the DOM below the fold of the modal's scrollable body.
+		var publishError = Page.GetByRole(AriaRole.Alert)
+			.Filter(new() { HasTextString = "time slot" });
+		await Expect(publishError).ToBeVisibleAsync();
+		await Expect(publishError).ToBeInViewportAsync();
+		await Expect(publishError).ToBeFocusedAsync();
+
 		// Add a time slot, then publishing must succeed.
 		var start = DateTimeOffset.UtcNow.AddDays(7);
 		var end = start.AddHours(2);
