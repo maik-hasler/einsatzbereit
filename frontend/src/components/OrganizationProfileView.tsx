@@ -74,7 +74,7 @@ export default function OrganizationProfileView({
 				{actions}
 			</div>
 
-			<div className="max-w-2xl">
+			<div className="mx-auto max-w-2xl">
 				{beforeContent}
 
 				{description && (

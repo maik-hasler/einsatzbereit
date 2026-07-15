@@ -190,7 +190,7 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.timeSlots.every((ts) => ts.bookedCount >= ts.maxParticipants);
 
 	return (
-		<div className="max-w-2xl">
+		<div className="mx-auto max-w-2xl">
 			{/* Banner image */}
 			{opportunity.bannerImageUrl && (
 				<img
