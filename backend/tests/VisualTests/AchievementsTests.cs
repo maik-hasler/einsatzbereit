@@ -65,6 +65,18 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/achievements");
 
+		var userId = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.profile?.sub) return entry.profile.sub;
+				}
+			}
+			return null;
+		}");
+		userId.Should().NotBeNull("the logged-in user's id must be available via the OIDC profile claims");
+
 		var shareBtn = Page.GetByRole(AriaRole.Button,
 			new() { Name = "Share achievements" });
 		await Expect(shareBtn).ToBeVisibleAsync(new() { Timeout = 20_000 });
@@ -76,12 +88,14 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// QR code SVG is rendered inside the dialog
 		await Expect(dialog.Locator("svg").First).ToBeVisibleAsync();
 
-		// Share URL contains /achievements
+		// #695: share URL now points at the combined public profile
+		// (/users/:userId), not the achievements-only deep link.
 		var dialogText = await dialog.TextContentAsync();
 		await Expect(dialog.GetByRole(AriaRole.Button,
 			new() { Name = "Copy link" }))
 			.ToBeVisibleAsync();
-		dialogText.Should().Contain("/achievements");
+		dialogText.Should().Contain($"/users/{userId}");
+		dialogText.Should().NotContain("/achievements");
 	}
 
 	[Test]
