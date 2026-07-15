@@ -31,19 +31,25 @@ const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
-type Tab = "profile" | "engagements" | "achievements" | "invitations";
+type Tab = "profile" | "activity";
 type EngagementsScope = "upcoming" | "past";
 type ContactPref = "Email" | "Phone" | "";
 
-const VALID_TABS: Tab[] = [
-	"profile",
-	"engagements",
-	"achievements",
-	"invitations",
-];
+const VALID_TABS: Tab[] = ["profile", "activity"];
 
-function isTab(value: string | null): value is Tab {
-	return VALID_TABS.includes(value as Tab);
+// Pre-consolidation deep links (?tab=engagements/achievements/invitations, still
+// used by /my-engagements and /achievements redirects and old bookmarks/shares)
+// keep resolving to the merged tab that now contains that content.
+const LEGACY_TAB_ALIASES: Record<string, Tab> = {
+	engagements: "activity",
+	achievements: "profile",
+	invitations: "activity",
+};
+
+function resolveTab(value: string | null): Tab {
+	if (value && (VALID_TABS as string[]).includes(value)) return value as Tab;
+	if (value && value in LEGACY_TAB_ALIASES) return LEGACY_TAB_ALIASES[value];
+	return "profile";
 }
 
 function Field({
@@ -147,7 +153,7 @@ export default function ProfileOverviewPage() {
 	]);
 
 	const rawTab = searchParams.get("tab");
-	const activeTab: Tab = isTab(rawTab) ? rawTab : "profile";
+	const activeTab: Tab = resolveTab(rawTab);
 
 	function switchTab(tab: Tab) {
 		setSearchParams(tab === "profile" ? {} : { tab }, { replace: true });
@@ -305,17 +311,17 @@ export default function ProfileOverviewPage() {
 		fetchEngagements(scope, 1);
 	}
 
-	// Load engagements lazily on first visit to that tab
+	// Load engagements lazily on first visit to the Activity tab
 	useEffect(() => {
-		if (activeTab !== "engagements" || engagementsInitialized) return;
+		if (activeTab !== "activity" || engagementsInitialized) return;
 		setEngagementsInitialized(true);
 		fetchEngagements(engagementsScope, 1);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab, engagementsInitialized]);
 
-	// Load invitations lazily on first visit to that tab
+	// Load invitations lazily on first visit to the Activity tab
 	useEffect(() => {
-		if (activeTab !== "invitations" || invitationsInitialized) return;
+		if (activeTab !== "activity" || invitationsInitialized) return;
 		setInvitationsInitialized(true);
 		setInvitationsLoading(true);
 		api
@@ -326,9 +332,9 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab, invitationsInitialized]);
 
-	// Load achievements lazily on first visit to that tab
+	// Load achievements lazily on first visit to the Profile tab
 	useEffect(() => {
-		if (activeTab !== "achievements" || achievementsInitialized) return;
+		if (activeTab !== "profile" || achievementsInitialized) return;
 		setAchievementsInitialized(true);
 		setAchievementsLoading(true);
 		Promise.all([
@@ -515,17 +521,12 @@ export default function ProfileOverviewPage() {
 	}
 
 	const shareUrl = auth.user?.profile?.sub
-		? window.location.origin +
-			"/users/" +
-			auth.user.profile.sub +
-			"/achievements"
-		: window.location.origin + "/profile?tab=achievements";
+		? window.location.origin + "/users/" + auth.user.profile.sub
+		: window.location.origin + "/profile";
 
 	const tabs: { key: Tab; label: string }[] = [
 		{ key: "profile", label: t("profileOverview.tabProfile") },
-		{ key: "engagements", label: t("profileOverview.tabEngagements") },
-		{ key: "achievements", label: t("profileOverview.tabAchievements") },
-		{ key: "invitations", label: t("profileOverview.tabInvitations") },
+		{ key: "activity", label: t("profileOverview.tabActivity") },
 	];
 
 	return (
@@ -557,318 +558,482 @@ export default function ProfileOverviewPage() {
 
 			{/* Profile tab */}
 			{activeTab === "profile" && (
-				<div className="mx-auto max-w-2xl">
-					{profileLoading && (
-						<div className="flex items-center justify-center py-16">
-							<span className="text-gray-500">{t("profile.loading")}</span>
+				<>
+					<div className="mx-auto max-w-2xl">
+						{profileLoading && (
+							<div className="flex items-center justify-center py-16">
+								<span className="text-gray-500">{t("profile.loading")}</span>
+							</div>
+						)}
+
+						{!profileLoading && (
+							<>
+								{profileError && (
+									<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+										{profileError}
+									</div>
+								)}
+								{successMessage && (
+									<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+										{successMessage}
+									</div>
+								)}
+
+								{/* View mode */}
+								{!editing && (
+									<div className="space-y-5">
+										<div className="flex items-start justify-between">
+											<div className="flex items-center gap-4">
+												{avatarUrl ? (
+													<img
+														src={avatarUrl}
+														alt=""
+														className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+													/>
+												) : (
+													<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+														{profile?.username?.charAt(0).toUpperCase() ?? "?"}
+													</span>
+												)}
+												<div>
+													<p className="text-xl font-semibold text-gray-900">
+														{firstName || lastName
+															? `${firstName} ${lastName}`.trim()
+															: profile?.username}
+													</p>
+													<p className="text-sm text-gray-500">
+														@{profile?.username}
+													</p>
+													<p className="text-sm text-gray-500">
+														{profile?.email}
+													</p>
+												</div>
+											</div>
+											<button
+												type="button"
+												onClick={() => setEditing(true)}
+												className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+											>
+												{t("profile.edit")}
+											</button>
+										</div>
+
+										<ProfileFieldsView
+											bio={bio}
+											skills={skills}
+											languages={languages}
+											preferredContact={preferredContact || null}
+										/>
+									</div>
+								)}
+
+								{/* Edit mode */}
+								{editing && (
+									<form onSubmit={handleSave} className="space-y-6">
+										<section>
+											<h2 className="mb-4 text-base font-semibold text-gray-900">
+												{t("account.title")}
+											</h2>
+											<div className="space-y-5">
+												<div>
+													<p className="mb-1 block text-sm font-medium text-gray-700">
+														{t("profile.fieldAvatar")}
+													</p>
+													<div className="flex items-center gap-4">
+														{avatarUrl ? (
+															<img
+																src={avatarUrl}
+																alt=""
+																className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+															/>
+														) : (
+															<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
+																{profile?.username?.charAt(0).toUpperCase() ??
+																	"?"}
+															</span>
+														)}
+														<div>
+															<label
+																htmlFor="avatar-upload"
+																className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingAvatar ? "opacity-50 pointer-events-none" : ""}`}
+															>
+																{uploadingAvatar
+																	? t("profile.avatarUploading")
+																	: t("profile.avatarUpload")}
+															</label>
+															<input
+																ref={avatarInputRef}
+																id="avatar-upload"
+																type="file"
+																accept="image/jpeg,image/png,image/webp"
+																className="sr-only"
+																onChange={handleAvatarChange}
+																disabled={uploadingAvatar}
+															/>
+															<p className="mt-1 text-xs text-gray-500">
+																{t("profile.avatarHint")}
+															</p>
+															{avatarError && (
+																<p className="mt-1 text-xs text-red-600">
+																	{avatarError}
+																</p>
+															)}
+														</div>
+													</div>
+												</div>
+
+												<Field label={t("account.fieldUsername")} id="username">
+													<input
+														id="username"
+														disabled
+														value={profile?.username ?? ""}
+														className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+													/>
+												</Field>
+
+												<Field label={t("account.fieldEmail")} id="email">
+													<input
+														id="email"
+														disabled
+														type="email"
+														value={profile?.email ?? ""}
+														className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
+													/>
+													<p className="mt-1 text-xs text-gray-500">
+														{t("account.emailHint")}
+													</p>
+												</Field>
+
+												<Field
+													label={t("account.fieldFirstName")}
+													id="first-name"
+												>
+													<input
+														id="first-name"
+														value={firstName}
+														onChange={(e) => setFirstName(e.target.value)}
+														className={inputClass}
+													/>
+												</Field>
+
+												<Field
+													label={t("account.fieldLastName")}
+													id="last-name"
+												>
+													<input
+														id="last-name"
+														value={lastName}
+														onChange={(e) => setLastName(e.target.value)}
+														className={inputClass}
+													/>
+												</Field>
+											</div>
+										</section>
+
+										<hr className="border-gray-200" />
+
+										<section>
+											<h2 className="mb-4 text-base font-semibold text-gray-900">
+												{t("profile.sectionDetails")}
+											</h2>
+											<div className="space-y-5">
+												<Field label={t("profile.fieldBio")} id="bio">
+													<textarea
+														id="bio"
+														rows={4}
+														value={bio}
+														placeholder={t("profile.bioPlaceholder")}
+														onChange={(e) => setBio(e.target.value)}
+														className={textareaClass}
+													/>
+												</Field>
+
+												<Field
+													label={t("profile.fieldSkills")}
+													id="skill-input"
+												>
+													<ChipInput
+														inputRef={skillInputRef}
+														inputId="skill-input"
+														chips={skills}
+														inputValue={skillInput}
+														placeholder={t("profile.skillsPlaceholder")}
+														onInputChange={setSkillInput}
+														onAdd={(v) =>
+															addChip(v, skills, setSkills, setSkillInput)
+														}
+														onRemove={(v) => removeChip(v, skills, setSkills)}
+														removeLabel={t("profile.removeChip")}
+													/>
+												</Field>
+
+												<Field
+													label={t("profile.fieldLanguages")}
+													id="lang-input"
+												>
+													<ChipInput
+														inputRef={langInputRef}
+														inputId="lang-input"
+														chips={languages}
+														inputValue={langInput}
+														placeholder={t("profile.languagesPlaceholder")}
+														onInputChange={setLangInput}
+														onAdd={(v) =>
+															addChip(v, languages, setLanguages, setLangInput)
+														}
+														onRemove={(v) =>
+															removeChip(v, languages, setLanguages)
+														}
+														removeLabel={t("profile.removeChip")}
+													/>
+												</Field>
+
+												<Field
+													label={t("profile.fieldPreferredContact")}
+													id="preferred-contact"
+												>
+													<Dropdown
+														id="preferred-contact"
+														value={preferredContact}
+														onChange={(v) =>
+															setPreferredContact(v as ContactPref)
+														}
+														className={inputClass}
+														options={[
+															{
+																value: "",
+																label: t("profile.preferredContactNone"),
+															},
+															{
+																value: "Email",
+																label: t("profile.preferredContactEmail"),
+															},
+															{
+																value: "Phone",
+																label: t("profile.preferredContactPhone"),
+															},
+														]}
+													/>
+												</Field>
+											</div>
+										</section>
+
+										<div className="flex justify-end gap-3">
+											<button
+												type="button"
+												onClick={handleCancel}
+												className="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+											>
+												{t("profile.cancel")}
+											</button>
+											<button
+												type="submit"
+												disabled={saving}
+												className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+											>
+												{saving ? t("profile.saving") : t("profile.save")}
+											</button>
+										</div>
+									</form>
+								)}
+
+								<div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
+									<h2 className="mb-1 text-base font-semibold text-gray-900">
+										{t("profile.sectionOrganization")}
+									</h2>
+									<p className="mb-4 text-sm text-gray-600">
+										{t("profile.createOrgHint")}
+									</p>
+									<button
+										type="button"
+										onClick={() => setShowCreateOrgModal(true)}
+										data-testid="create-org-btn"
+										className="rounded-md border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50"
+									>
+										{t("organization.create")}
+									</button>
+								</div>
+
+								<div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-6">
+									<h2 className="mb-1 text-base font-semibold text-red-800">
+										{t("account.dangerZoneTitle")}
+									</h2>
+									<p className="mb-4 text-sm text-red-700">
+										{t("account.dangerZoneDescription")}
+									</p>
+									<button
+										type="button"
+										onClick={() => setShowDeleteDialog(true)}
+										className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+									>
+										{t("account.deleteAccountButton")}
+									</button>
+								</div>
+							</>
+						)}
+					</div>
+
+					{/* Achievements - merged into the Profile tab, matching the layout UserProfilePage.tsx already uses for the public view */}
+					{!profileLoading && (
+						<div className="mt-10">
+							{achievementsError && (
+								<p className="text-sm text-red-600">
+									{t("achievements.error", { message: achievementsError })}
+								</p>
+							)}
+
+							{!achievementsError && (
+								<>
+									<div className="mb-6 flex items-center justify-between">
+										<div />
+										<button
+											type="button"
+											onClick={() => setShareModalOpen(true)}
+											className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+										>
+											<svg
+												className="h-4 w-4"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="1.5"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+												/>
+											</svg>
+											{t("achievements.shareButton")}
+										</button>
+									</div>
+
+									{streaks && (
+										<div className="mb-6 flex flex-wrap gap-3">
+											<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+												<span className="text-2xl" aria-hidden="true">
+													🔥
+												</span>
+												<div>
+													<p className="text-xl font-bold text-gray-900">
+														{streaks.loginStreak}
+													</p>
+													<p className="text-xs text-gray-500">
+														{t("achievements.loginStreak", {
+															count: streaks.loginStreak,
+														})}
+													</p>
+												</div>
+											</div>
+											<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+												<span className="text-2xl" aria-hidden="true">
+													📅
+												</span>
+												<div>
+													<p className="text-xl font-bold text-gray-900">
+														{streaks.activityStreak}
+													</p>
+													<p className="text-xs text-gray-500">
+														{t("achievements.activityStreak", {
+															count: streaks.activityStreak,
+														})}
+													</p>
+												</div>
+											</div>
+										</div>
+									)}
+
+									<section>
+										<h2 className="mb-4 text-base font-semibold text-gray-700">
+											{t("achievements.badgesTitle")}
+										</h2>
+										<BadgeGrid
+											earned={achievements}
+											catalog={catalog}
+											loading={achievementsLoading}
+										/>
+									</section>
+								</>
+							)}
+						</div>
+					)}
+				</>
+			)}
+
+			{/* Activity tab (Engagements + Invitations) */}
+			{activeTab === "activity" && (
+				<>
+					{/* Open invitations banner */}
+					{invitationsError && (
+						<p className="text-red-600">{invitationsError}</p>
+					)}
+					{invitationActionError && (
+						<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+							{invitationActionError}
+						</div>
+					)}
+					{!invitationsLoading && invitations.length > 0 && (
+						<div className="mb-8">
+							<h2 className="mb-3 text-base font-semibold text-gray-900">
+								{t("profileOverview.invitationsHeading")}
+							</h2>
+							<ul className="space-y-3">
+								{invitations.map((inv) => (
+									<li
+										key={inv.id}
+										className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+									>
+										<div className="flex items-start justify-between gap-3">
+											<div>
+												<p className="text-sm font-semibold text-gray-900">
+													{inv.organizationName}
+												</p>
+												<p className="mt-0.5 text-xs text-gray-500">
+													{t("invitations.invitedOn", {
+														date: new Date(inv.createdOn).toLocaleDateString(
+															locale,
+														),
+													})}
+												</p>
+											</div>
+											<div className="flex shrink-0 gap-2">
+												<button
+													type="button"
+													onClick={() => handleAcceptInvitation(inv.id)}
+													disabled={
+														acceptingId === inv.id || decliningId === inv.id
+													}
+													className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+												>
+													{acceptingId === inv.id
+														? t("invitations.accepting")
+														: t("invitations.accept")}
+												</button>
+												<button
+													type="button"
+													onClick={() => handleDeclineInvitation(inv.id)}
+													disabled={
+														acceptingId === inv.id || decliningId === inv.id
+													}
+													className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+												>
+													{decliningId === inv.id
+														? t("invitations.declining")
+														: t("invitations.decline")}
+												</button>
+											</div>
+										</div>
+									</li>
+								))}
+							</ul>
 						</div>
 					)}
 
-					{!profileLoading && (
-						<>
-							{profileError && (
-								<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-									{profileError}
-								</div>
-							)}
-							{successMessage && (
-								<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-									{successMessage}
-								</div>
-							)}
+					<h2 className="mb-3 text-base font-semibold text-gray-900">
+						{t("myEngagements.title")}
+					</h2>
 
-							{/* View mode */}
-							{!editing && (
-								<div className="space-y-5">
-									<div className="flex items-start justify-between">
-										<div className="flex items-center gap-4">
-											{avatarUrl ? (
-												<img
-													src={avatarUrl}
-													alt=""
-													className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
-												/>
-											) : (
-												<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-													{profile?.username?.charAt(0).toUpperCase() ?? "?"}
-												</span>
-											)}
-											<div>
-												<p className="text-xl font-semibold text-gray-900">
-													{firstName || lastName
-														? `${firstName} ${lastName}`.trim()
-														: profile?.username}
-												</p>
-												<p className="text-sm text-gray-500">
-													@{profile?.username}
-												</p>
-												<p className="text-sm text-gray-500">
-													{profile?.email}
-												</p>
-											</div>
-										</div>
-										<button
-											type="button"
-											onClick={() => setEditing(true)}
-											className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-										>
-											{t("profile.edit")}
-										</button>
-									</div>
-
-									<ProfileFieldsView
-										bio={bio}
-										skills={skills}
-										languages={languages}
-										preferredContact={preferredContact || null}
-									/>
-								</div>
-							)}
-
-							{/* Edit mode */}
-							{editing && (
-								<form onSubmit={handleSave} className="space-y-6">
-									<section>
-										<h2 className="mb-4 text-base font-semibold text-gray-900">
-											{t("account.title")}
-										</h2>
-										<div className="space-y-5">
-											<div>
-												<p className="mb-1 block text-sm font-medium text-gray-700">
-													{t("profile.fieldAvatar")}
-												</p>
-												<div className="flex items-center gap-4">
-													{avatarUrl ? (
-														<img
-															src={avatarUrl}
-															alt=""
-															className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
-														/>
-													) : (
-														<span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-700">
-															{profile?.username?.charAt(0).toUpperCase() ??
-																"?"}
-														</span>
-													)}
-													<div>
-														<label
-															htmlFor="avatar-upload"
-															className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingAvatar ? "opacity-50 pointer-events-none" : ""}`}
-														>
-															{uploadingAvatar
-																? t("profile.avatarUploading")
-																: t("profile.avatarUpload")}
-														</label>
-														<input
-															ref={avatarInputRef}
-															id="avatar-upload"
-															type="file"
-															accept="image/jpeg,image/png,image/webp"
-															className="sr-only"
-															onChange={handleAvatarChange}
-															disabled={uploadingAvatar}
-														/>
-														<p className="mt-1 text-xs text-gray-500">
-															{t("profile.avatarHint")}
-														</p>
-														{avatarError && (
-															<p className="mt-1 text-xs text-red-600">
-																{avatarError}
-															</p>
-														)}
-													</div>
-												</div>
-											</div>
-
-											<Field label={t("account.fieldUsername")} id="username">
-												<input
-													id="username"
-													disabled
-													value={profile?.username ?? ""}
-													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
-												/>
-											</Field>
-
-											<Field label={t("account.fieldEmail")} id="email">
-												<input
-													id="email"
-													disabled
-													type="email"
-													value={profile?.email ?? ""}
-													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
-												/>
-												<p className="mt-1 text-xs text-gray-500">
-													{t("account.emailHint")}
-												</p>
-											</Field>
-
-											<Field
-												label={t("account.fieldFirstName")}
-												id="first-name"
-											>
-												<input
-													id="first-name"
-													value={firstName}
-													onChange={(e) => setFirstName(e.target.value)}
-													className={inputClass}
-												/>
-											</Field>
-
-											<Field label={t("account.fieldLastName")} id="last-name">
-												<input
-													id="last-name"
-													value={lastName}
-													onChange={(e) => setLastName(e.target.value)}
-													className={inputClass}
-												/>
-											</Field>
-										</div>
-									</section>
-
-									<hr className="border-gray-200" />
-
-									<section>
-										<h2 className="mb-4 text-base font-semibold text-gray-900">
-											{t("profile.sectionDetails")}
-										</h2>
-										<div className="space-y-5">
-											<Field label={t("profile.fieldBio")} id="bio">
-												<textarea
-													id="bio"
-													rows={4}
-													value={bio}
-													placeholder={t("profile.bioPlaceholder")}
-													onChange={(e) => setBio(e.target.value)}
-													className={textareaClass}
-												/>
-											</Field>
-
-											<Field label={t("profile.fieldSkills")} id="skill-input">
-												<ChipInput
-													inputRef={skillInputRef}
-													inputId="skill-input"
-													chips={skills}
-													inputValue={skillInput}
-													placeholder={t("profile.skillsPlaceholder")}
-													onInputChange={setSkillInput}
-													onAdd={(v) =>
-														addChip(v, skills, setSkills, setSkillInput)
-													}
-													onRemove={(v) => removeChip(v, skills, setSkills)}
-													removeLabel={t("profile.removeChip")}
-												/>
-											</Field>
-
-											<Field
-												label={t("profile.fieldLanguages")}
-												id="lang-input"
-											>
-												<ChipInput
-													inputRef={langInputRef}
-													inputId="lang-input"
-													chips={languages}
-													inputValue={langInput}
-													placeholder={t("profile.languagesPlaceholder")}
-													onInputChange={setLangInput}
-													onAdd={(v) =>
-														addChip(v, languages, setLanguages, setLangInput)
-													}
-													onRemove={(v) =>
-														removeChip(v, languages, setLanguages)
-													}
-													removeLabel={t("profile.removeChip")}
-												/>
-											</Field>
-
-											<Field
-												label={t("profile.fieldPreferredContact")}
-												id="preferred-contact"
-											>
-												<Dropdown
-													id="preferred-contact"
-													value={preferredContact}
-													onChange={(v) =>
-														setPreferredContact(v as ContactPref)
-													}
-													className={inputClass}
-													options={[
-														{
-															value: "",
-															label: t("profile.preferredContactNone"),
-														},
-														{
-															value: "Email",
-															label: t("profile.preferredContactEmail"),
-														},
-														{
-															value: "Phone",
-															label: t("profile.preferredContactPhone"),
-														},
-													]}
-												/>
-											</Field>
-										</div>
-									</section>
-
-									<div className="flex justify-end gap-3">
-										<button
-											type="button"
-											onClick={handleCancel}
-											className="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-										>
-											{t("profile.cancel")}
-										</button>
-										<button
-											type="submit"
-											disabled={saving}
-											className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-										>
-											{saving ? t("profile.saving") : t("profile.save")}
-										</button>
-									</div>
-								</form>
-							)}
-
-							<div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-6">
-								<h2 className="mb-1 text-base font-semibold text-gray-900">
-									{t("profile.sectionOrganization")}
-								</h2>
-								<p className="mb-4 text-sm text-gray-600">
-									{t("profile.createOrgHint")}
-								</p>
-								<button
-									type="button"
-									onClick={() => setShowCreateOrgModal(true)}
-									data-testid="create-org-btn"
-									className="rounded-md border border-brand-700 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50"
-								>
-									{t("organization.create")}
-								</button>
-							</div>
-
-							<div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-6">
-								<h2 className="mb-1 text-base font-semibold text-red-800">
-									{t("account.dangerZoneTitle")}
-								</h2>
-								<p className="mb-4 text-sm text-red-700">
-									{t("account.dangerZoneDescription")}
-								</p>
-								<button
-									type="button"
-									onClick={() => setShowDeleteDialog(true)}
-									className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-								>
-									{t("account.deleteAccountButton")}
-								</button>
-							</div>
-						</>
-					)}
-				</div>
-			)}
-
-			{/* Engagements tab */}
-			{activeTab === "engagements" && (
-				<>
 					<div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
 						<button
 							type="button"
@@ -1068,168 +1233,6 @@ export default function ProfileOverviewPage() {
 								</button>
 							</div>
 						)}
-				</>
-			)}
-
-			{/* Achievements tab */}
-			{activeTab === "achievements" && (
-				<>
-					{achievementsError && (
-						<p className="text-sm text-red-600">
-							{t("achievements.error", { message: achievementsError })}
-						</p>
-					)}
-
-					{!achievementsError && (
-						<>
-							<div className="mb-6 flex items-center justify-between">
-								<div />
-								<button
-									type="button"
-									onClick={() => setShareModalOpen(true)}
-									className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-								>
-									<svg
-										className="h-4 w-4"
-										fill="none"
-										viewBox="0 0 24 24"
-										strokeWidth="1.5"
-										stroke="currentColor"
-										aria-hidden="true"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-										/>
-									</svg>
-									{t("achievements.shareButton")}
-								</button>
-							</div>
-
-							{streaks && (
-								<div className="mb-6 flex flex-wrap gap-3">
-									<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-										<span className="text-2xl" aria-hidden="true">
-											🔥
-										</span>
-										<div>
-											<p className="text-xl font-bold text-gray-900">
-												{streaks.loginStreak}
-											</p>
-											<p className="text-xs text-gray-500">
-												{t("achievements.loginStreak", {
-													count: streaks.loginStreak,
-												})}
-											</p>
-										</div>
-									</div>
-									<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-										<span className="text-2xl" aria-hidden="true">
-											📅
-										</span>
-										<div>
-											<p className="text-xl font-bold text-gray-900">
-												{streaks.activityStreak}
-											</p>
-											<p className="text-xs text-gray-500">
-												{t("achievements.activityStreak", {
-													count: streaks.activityStreak,
-												})}
-											</p>
-										</div>
-									</div>
-								</div>
-							)}
-
-							<section>
-								<h2 className="mb-4 text-base font-semibold text-gray-700">
-									{t("achievements.badgesTitle")}
-								</h2>
-								<BadgeGrid
-									earned={achievements}
-									catalog={catalog}
-									loading={achievementsLoading}
-								/>
-							</section>
-						</>
-					)}
-				</>
-			)}
-
-			{/* Invitations tab */}
-			{activeTab === "invitations" && (
-				<>
-					{invitationsLoading && (
-						<p className="text-gray-500">{t("invitations.loading")}</p>
-					)}
-					{invitationsError && (
-						<p className="text-red-600">{invitationsError}</p>
-					)}
-					{invitationActionError && (
-						<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-							{invitationActionError}
-						</div>
-					)}
-					{!invitationsLoading &&
-						!invitationsError &&
-						invitations.length === 0 && (
-							<EmptyState
-								title={t("invitations.empty")}
-								message={t("invitations.emptyHint")}
-							/>
-						)}
-					{!invitationsLoading && invitations.length > 0 && (
-						<ul className="space-y-3">
-							{invitations.map((inv) => (
-								<li
-									key={inv.id}
-									className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
-								>
-									<div className="flex items-start justify-between gap-3">
-										<div>
-											<p className="text-sm font-semibold text-gray-900">
-												{inv.organizationName}
-											</p>
-											<p className="mt-0.5 text-xs text-gray-500">
-												{t("invitations.invitedOn", {
-													date: new Date(inv.createdOn).toLocaleDateString(
-														locale,
-													),
-												})}
-											</p>
-										</div>
-										<div className="flex shrink-0 gap-2">
-											<button
-												type="button"
-												onClick={() => handleAcceptInvitation(inv.id)}
-												disabled={
-													acceptingId === inv.id || decliningId === inv.id
-												}
-												className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-											>
-												{acceptingId === inv.id
-													? t("invitations.accepting")
-													: t("invitations.accept")}
-											</button>
-											<button
-												type="button"
-												onClick={() => handleDeclineInvitation(inv.id)}
-												disabled={
-													acceptingId === inv.id || decliningId === inv.id
-												}
-												className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-											>
-												{decliningId === inv.id
-													? t("invitations.declining")
-													: t("invitations.decline")}
-											</button>
-										</div>
-									</div>
-								</li>
-							))}
-						</ul>
-					)}
 				</>
 			)}
 

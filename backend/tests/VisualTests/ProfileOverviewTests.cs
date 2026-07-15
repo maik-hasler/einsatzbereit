@@ -7,10 +7,11 @@ namespace VisualTests;
 public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task ProfilePage_ShowsThreeTabButtons_WhenAuthenticated()
+	public async Task ProfilePage_ShowsTwoTabButtons_WhenAuthenticated()
 	{
 		// Regression: /profile should render a tab bar instead of a flat page.
-		// Introduced by PR #508 (RC.150 - unified profile overview).
+		// Introduced by PR #508 (RC.150 - unified profile overview), consolidated
+		// from four tabs to two (Profile+Achievements, Activity) by #695.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -22,11 +23,12 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Profile" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Engagements" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Activity" }))
 			.ToBeVisibleAsync(new() { Timeout = 5_000 });
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Achievements" }))
-			.ToBeVisibleAsync(new() { Timeout = 5_000 });
+		// Achievements now live on the Profile tab itself, not a separate tab.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Share achievements" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 	}
 
 	[Test]
