@@ -1,4 +1,4 @@
-import "./i18n";
+import i18n from "./i18n";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { AuthProvider } from "react-oidc-context";
@@ -28,6 +28,10 @@ const oidcConfig = {
 	// Use localStorage so Playwright storageState captures the session
 	userStore: new WebStorageStateStore({ store: window.localStorage }),
 	onSigninCallback: (user: User | undefined) => {
+		const keycloakLocale = user?.profile?.locale;
+		if (keycloakLocale && keycloakLocale !== i18n.language) {
+			void i18n.changeLanguage(keycloakLocale);
+		}
 		const returnTo = (user?.state as { returnTo?: string })?.returnTo ?? "/";
 		window.location.replace(returnTo);
 	},

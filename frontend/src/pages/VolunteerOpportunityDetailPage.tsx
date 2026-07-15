@@ -17,6 +17,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
+import { signinLocaleArgs } from "../lib/authLocale";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -525,7 +526,7 @@ export default function VolunteerOpportunityDetailPage() {
 						components={{
 							loginLink: (
 								<button
-									onClick={() => auth.signinRedirect()}
+									onClick={() => auth.signinRedirect(signinLocaleArgs())}
 									className="underline hover:text-gray-800"
 								/>
 							),
