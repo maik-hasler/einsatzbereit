@@ -1031,6 +1031,10 @@ export default function ProfileOverviewPage() {
 						</div>
 					)}
 
+					<h2 className="mb-3 text-base font-semibold text-gray-900">
+						{t("myEngagements.title")}
+					</h2>
+
 					<div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
 						<button
 							type="button"
