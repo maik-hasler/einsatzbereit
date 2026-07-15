@@ -186,6 +186,7 @@
       "step3Subtitle": "Wie oft findet der Einsatz statt und wie melden sich Freiwillige an?",
       "step4Title": "Details",
       "step4Subtitle": "Optional: Kategorie, Tags und Zeitfenster helfen Freiwilligen, den passenden Einsatz zu finden.",
+      "step4SubtitleWaitlist": "Kategorie und Tags sind optional. Ein Zeitslots-Einsatz benötigt außerdem mindestens einen Zeitslot, bevor er veröffentlicht werden kann.",
       "back": "Zurück",
       "next": "Weiter",
       "fieldTitle": "Titel",

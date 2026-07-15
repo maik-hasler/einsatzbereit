@@ -127,6 +127,11 @@ export default function CreateVolunteerOpportunityModal({
 		null,
 	);
 	const [error, setError] = useState<string | null>(null);
+	// Bumped on every submit attempt that sets `error`, even when the message
+	// text is identical to the previous attempt (e.g. retrying without
+	// changing anything) - lets DetailsStep re-scroll/re-focus the error each
+	// time, since a dependency on the string alone wouldn't change.
+	const [errorToken, setErrorToken] = useState(0);
 	const [orgAddress, setOrgAddress] = useState<AddressDto | null>(null);
 	const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
@@ -438,6 +443,7 @@ export default function CreateVolunteerOpportunityModal({
 			const totalSlots = pendingSlots.length + existingSlots.length;
 			if (totalSlots === 0) {
 				setError(t("timeSlots.requiredForPublish"));
+				setErrorToken((tk) => tk + 1);
 				setStep(4);
 				return;
 			}
@@ -544,6 +550,7 @@ export default function CreateVolunteerOpportunityModal({
 						: t("createOpportunity.unknownError"),
 				),
 			);
+			setErrorToken((tk) => tk + 1);
 		} finally {
 			setSubmitting(null);
 		}
@@ -564,7 +571,9 @@ export default function CreateVolunteerOpportunityModal({
 		t("createOpportunity.step1Subtitle"),
 		t("createOpportunity.step2Subtitle"),
 		t("createOpportunity.step3Subtitle"),
-		t("createOpportunity.step4Subtitle"),
+		isWaitlist
+			? t("createOpportunity.step4SubtitleWaitlist")
+			: t("createOpportunity.step4Subtitle"),
 	];
 
 	const allTimeSlots = isEditMode
@@ -721,6 +730,7 @@ export default function CreateVolunteerOpportunityModal({
 							recurrenceCount={recurrenceCount}
 							onRecurrenceCountChange={setRecurrenceCount}
 							error={error}
+							errorToken={errorToken}
 						/>
 					)}
 				</div>

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
@@ -40,6 +41,10 @@ interface Props {
 	recurrenceCount: number;
 	onRecurrenceCountChange: (count: number) => void;
 	error: string | null;
+	/** Bumped on every submit attempt that sets `error`, including repeats of
+	 * the same message - lets the scroll/focus effect below re-run even when
+	 * the error text itself didn't change. */
+	errorToken: number;
 }
 
 const CATEGORY_VALUES = [
@@ -80,8 +85,19 @@ export default function DetailsStep({
 	recurrenceCount,
 	onRecurrenceCountChange,
 	error,
+	errorToken,
 }: Props) {
 	const { t } = useTranslation();
+	const errorRef = useRef<HTMLParagraphElement>(null);
+
+	// The publish-blocking error (e.g. "needs a time slot") can land below the
+	// fold of this step's scrollable body - scroll and focus it into view so
+	// it isn't effectively invisible, on top of role="alert" announcing it.
+	useEffect(() => {
+		if (!error) return;
+		errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+		errorRef.current?.focus();
+	}, [error, errorToken]);
 
 	return (
 		<div className="space-y-5" data-testid="wizard-step-4">
@@ -314,7 +330,12 @@ export default function DetailsStep({
 			)}
 
 			{error && (
-				<p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+				<p
+					ref={errorRef}
+					role="alert"
+					tabIndex={-1}
+					className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 focus:outline-none"
+				>
 					{error}
 				</p>
 			)}
