@@ -1,5 +1,4 @@
 using Application.Common.Authorization;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -8,8 +7,7 @@ using Domain.Primitives;
 namespace Application.Engagements.CheckInEngagement.v1;
 
 internal sealed class CheckInEngagementCommandHandler(
-	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService)
+	IApplicationDbContext dbContext)
 	: ICommandHandler<CheckInEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -22,8 +20,8 @@ internal sealed class CheckInEngagementCommandHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
 		if (opportunity is not null)
 		{
-			await OwnershipGuard.EnsureIsOrgMemberAsync(
-				keycloakOrgService,
+			await OwnershipGuard.EnsureIsOrganizerAsync(
+				dbContext,
 				opportunity.OrganizationId.Value,
 				request.RequestingUserId,
 				cancellationToken);

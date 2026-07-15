@@ -186,6 +186,46 @@ public class OrganizationSettingsTests(
 		stillThere.Members.Should().ContainSingle(m => m.UserId == veraUserId);
 	}
 
+	// ── Per-organization organizer role (#691) ────────────────────────────────
+
+	[Test]
+	public async Task UpdateOrganization_ShouldReturn403_WhenRequestingUserIsAPlainMemberHoldingOrganizerRoleFromAnUnrelatedOrg(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #691: being an organizer of one org (which grants the
+		// platform-wide Keycloak "organisator" role) must not grant authority
+		// over a different org the same user is merely a plain member of.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		// vera becomes an organizer of her own, unrelated org - she now holds
+		// the platform-wide "organisator" role.
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 4" }, cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Escalation Test Org" }, cancellationToken);
+
+		// olaf invites vera to his org as a plain member; she accepts but is
+		// never promoted to organizer of this specific org.
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var act = () => veraClient.UpdateOrganizationAsync(
+			org.Id.Value,
+			new UpdateOrganizationRequest { Name = "Hijacked Name" },
+			cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Name.Should().Be("Escalation Test Org");
+	}
+
 	// ── Invitations ─────────────────────────────────────────────────────────
 
 	[Test]

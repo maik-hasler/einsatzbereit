@@ -1,5 +1,4 @@
 using Application.Common.Authorization;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -12,8 +11,7 @@ namespace Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 
 internal sealed class DeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository,
-	IKeycloakOrganizationService keycloakOrgService)
+	IEngagementReadRepository engagementReadRepository)
 	: ICommandHandler<DeleteVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -26,8 +24,8 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			opportunityId, cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

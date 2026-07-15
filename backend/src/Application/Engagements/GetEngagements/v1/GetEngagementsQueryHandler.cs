@@ -9,7 +9,6 @@ namespace Application.Engagements.GetEngagements.v1;
 internal sealed class GetEngagementsQueryHandler(
 	IEngagementReadRepository readRepository,
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService,
 	IKeycloakUserService keycloakUserService)
 	: IQueryHandler<GetEngagementsQuery, List<EngagementSummary>>
 {
@@ -20,8 +19,8 @@ internal sealed class GetEngagementsQueryHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(request.OpportunityId, cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId.Value}' not found.");
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

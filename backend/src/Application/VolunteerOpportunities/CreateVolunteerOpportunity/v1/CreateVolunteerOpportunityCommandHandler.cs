@@ -1,3 +1,4 @@
+using Application.Common.Authorization;
 using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -16,6 +17,12 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 		CreateVolunteerOpportunityCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
+			request.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
+
 		var address = request.Address;
 
 		if (!request.IsRemote && address is not null)

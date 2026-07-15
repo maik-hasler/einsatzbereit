@@ -3,7 +3,10 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Organizations.SearchMemberCandidates.v1;
+using Domain.Primitives;
+using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Organizations.SearchMemberCandidates.v1;
 
@@ -25,13 +28,16 @@ internal sealed class SearchMemberCandidatesEndpoint
 		[FromRoute] Guid organizationId,
 		[FromQuery] string q,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
 		if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
 			return Results.Ok(Array.Empty<MemberCandidateDto>());
 
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+
 		var result = await sender.Send(
-			new SearchMemberCandidatesQuery(organizationId, q),
+			new SearchMemberCandidatesQuery(organizationId, q, userId),
 			cancellationToken);
 
 		return Results.Ok(result);

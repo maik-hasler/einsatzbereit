@@ -60,6 +60,8 @@ export default function OrganizationSwitcher({
 	const handleSwitch = (org: KeycloakOrganization) => {
 		setActiveOrgCookie(org.id);
 		setActiveOrgId(org.id);
+		setOpen(false);
+		navigate(`/organizations/${org.id}/dashboard`);
 	};
 
 	const handleOrgCreated = () => {

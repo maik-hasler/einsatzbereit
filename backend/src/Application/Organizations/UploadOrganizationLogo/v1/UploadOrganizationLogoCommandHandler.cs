@@ -1,5 +1,4 @@
 using Application.Common.Authorization;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
@@ -10,7 +9,6 @@ namespace Application.Organizations.UploadOrganizationLogo.v1;
 
 internal sealed class UploadOrganizationLogoCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService,
 	IFileStorageService fileStorage)
 	: ICommandHandler<UploadOrganizationLogoCommand, bool>
 {
@@ -29,8 +27,8 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 			new OrganizationId(request.OrganizationId), cancellationToken)
 			?? throw new DomainException($"Organization '{request.OrganizationId}' not found.");
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);

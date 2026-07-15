@@ -3,6 +3,7 @@ using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 
 namespace Application.Organizations.CreateOrganization.v1;
 
@@ -33,6 +34,11 @@ internal sealed class CreateOrganizationCommandHandler(
 		var organization = Organization.Create(new OrganizationId(keycloakId), request.Name);
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
+
+		var membership = OrganizationMembership.Create(
+			organization.Id, new UserId(request.UserId), OrganizationMemberRole.Organizer);
+
+		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 
 		return organization;
 	}

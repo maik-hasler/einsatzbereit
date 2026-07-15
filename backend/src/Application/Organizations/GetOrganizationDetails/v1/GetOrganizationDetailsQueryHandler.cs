@@ -22,8 +22,8 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		if (organization is null)
 			return null;
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrganizationService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);

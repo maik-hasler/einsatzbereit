@@ -319,7 +319,8 @@
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "contextBanner": "Managing {{name}}"
     },
     "orgEngagements": {
       "title": "Engagement Overview",

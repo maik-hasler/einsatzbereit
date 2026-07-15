@@ -1,5 +1,4 @@
 using Application.Common.Authorization;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -9,8 +8,7 @@ using Domain.VolunteerOpportunities;
 namespace Application.VolunteerOpportunities.CreateTimeSlot.v1;
 
 internal sealed class CreateTimeSlotCommandHandler(
-	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService)
+	IApplicationDbContext dbContext)
 	: ICommandHandler<CreateTimeSlotCommand, IReadOnlyList<TimeSlot>>
 {
 	private const int MaxRecurrenceCount = 52;
@@ -23,8 +21,8 @@ internal sealed class CreateTimeSlotCommandHandler(
 			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
 			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

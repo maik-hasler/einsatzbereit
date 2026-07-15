@@ -1,6 +1,8 @@
 using Application.Common.Keycloak;
+using Application.Common.Persistence;
 using Application.Organizations.RemoveMember.v1;
 using AwesomeAssertions;
+using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
@@ -11,6 +13,7 @@ namespace Application.UnitTests.Organizations.RemoveMember;
 
 public class RemoveMemberCommandHandlerTests
 {
+	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly RemoveMemberCommandHandler _sut;
 
@@ -18,13 +21,13 @@ public class RemoveMemberCommandHandlerTests
 
 	public RemoveMemberCommandHandlerTests()
 	{
-		_sut = new RemoveMemberCommandHandler(_keycloakService);
+		_sut = new RemoveMemberCommandHandler(_dbContext, _keycloakService);
 	}
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>
-		_keycloakService
-			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(orgId, "Test Org")]);
+		_dbContext
+			.IsOrganizerAsync(new OrganizationId(orgId), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(true);
 
 	private void SetMembers(Guid orgId, params KeycloakOrganizationMember[] members) =>
 		_keycloakService
@@ -100,9 +103,9 @@ public class RemoveMemberCommandHandlerTests
 		// Arrange
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		_keycloakService
-			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(Guid.NewGuid(), "Unrelated Org")]);
+		_dbContext
+			.IsOrganizerAsync(new OrganizationId(orgId), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		// Act

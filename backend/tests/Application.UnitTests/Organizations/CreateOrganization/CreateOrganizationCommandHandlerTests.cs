@@ -13,10 +13,13 @@ public class CreateOrganizationCommandHandlerTests
 {
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IAggregateRepository<OrganizationMembership, OrganizationMembershipId> _membershipRepo =
+		Substitute.For<IAggregateRepository<OrganizationMembership, OrganizationMembershipId>>();
 	private readonly CreateOrganizationCommandHandler _sut;
 
 	public CreateOrganizationCommandHandlerTests()
 	{
+		_dbContext.OrganizationMemberships.Returns(_membershipRepo);
 		_sut = new CreateOrganizationCommandHandler(
 			_keycloakService,
 			_dbContext);
@@ -80,6 +83,31 @@ public class CreateOrganizationCommandHandlerTests
 
 		// Assert
 		await _keycloakService.Received(1).AssignOrganizerRoleAsync(userId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldCreateOrganizerMembership_ForCreator(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Test Org", userId);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _membershipRepo.Received(1).AddAsync(
+			Arg.Is<OrganizationMembership>(m =>
+				m.OrganizationId == new OrganizationId(keycloakId) &&
+				m.UserId == new Domain.Users.UserId(userId) &&
+				m.Role == OrganizationMemberRole.Organizer),
+			cancellationToken);
 	}
 
 	[Test]

@@ -1,6 +1,6 @@
 using Application.Common.Authorization;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
+using Application.Common.Persistence;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Domain.VolunteerOpportunities;
 
@@ -8,15 +8,15 @@ namespace Application.VolunteerOpportunities.GetOrganizationOpportunityDrafts.v1
 
 internal sealed class GetOrganizationOpportunityDraftsQueryHandler(
 	IVolunteerOpportunityReadRepository readRepository,
-	IKeycloakOrganizationService keycloakOrgService)
+	IApplicationDbContext dbContext)
 	: IQueryHandler<GetOrganizationOpportunityDraftsQuery, IReadOnlyList<VolunteerOpportunitySummary>>
 {
 	public async ValueTask<IReadOnlyList<VolunteerOpportunitySummary>> Handle(
 		GetOrganizationOpportunityDraftsQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);

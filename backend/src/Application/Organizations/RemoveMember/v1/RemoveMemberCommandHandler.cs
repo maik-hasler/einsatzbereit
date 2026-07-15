@@ -1,11 +1,15 @@
 using Application.Common.Authorization;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
+using Application.Common.Persistence;
+using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 
 namespace Application.Organizations.RemoveMember.v1;
 
 internal sealed class RemoveMemberCommandHandler(
+	IApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService)
 	: ICommandHandler<RemoveMemberCommand, bool>
 {
@@ -13,8 +17,8 @@ internal sealed class RemoveMemberCommandHandler(
 		RemoveMemberCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrganizationService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);
@@ -28,6 +32,9 @@ internal sealed class RemoveMemberCommandHandler(
 
 		await keycloakOrganizationService.RemoveMemberAsync(
 			request.OrganizationId, request.UserId, cancellationToken);
+
+		await dbContext.RemoveMembershipAsync(
+			new OrganizationId(request.OrganizationId), new UserId(request.UserId), cancellationToken);
 
 		return true;
 	}

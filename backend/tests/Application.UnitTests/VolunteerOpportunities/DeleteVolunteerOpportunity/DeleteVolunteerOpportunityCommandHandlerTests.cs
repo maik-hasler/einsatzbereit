@@ -1,4 +1,3 @@
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
@@ -22,7 +21,6 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
-	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly DeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
@@ -39,10 +37,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		_engagementReadRepository
 			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakOrgService);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(true);
+		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity() =>

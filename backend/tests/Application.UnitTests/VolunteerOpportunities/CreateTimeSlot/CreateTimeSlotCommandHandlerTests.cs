@@ -1,4 +1,3 @@
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities.CreateTimeSlot.v1;
 using AwesomeAssertions;
@@ -15,7 +14,6 @@ public class CreateTimeSlotCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
-	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly CreateTimeSlotCommandHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
@@ -27,10 +25,10 @@ public class CreateTimeSlotCommandHandlerTests
 	public CreateTimeSlotCommandHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
-		_sut = new CreateTimeSlotCommandHandler(_dbContext, _keycloakOrgService);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(true);
+		_sut = new CreateTimeSlotCommandHandler(_dbContext);
 	}
 
 	private static VolunteerOpportunity CreateOpportunity() =>

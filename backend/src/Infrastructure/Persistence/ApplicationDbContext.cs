@@ -71,6 +71,36 @@ internal sealed class ApplicationDbContext(
 			Set<OrganizationInvitation>(),
 			i => i.Id);
 
+	public IAggregateRepository<OrganizationMembership, OrganizationMembershipId> OrganizationMemberships
+		=> new AggregateRepository<OrganizationMembership, OrganizationMembershipId>(
+			Set<OrganizationMembership>(),
+			Set<OrganizationMembership>(),
+			m => m.Id);
+
+	public async Task<bool> IsOrganizerAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.AnyAsync(m => m.OrganizationId == organizationId
+				&& m.UserId == userId
+				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
+
+	public async Task RemoveMembershipAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.Where(m => m.OrganizationId == organizationId && m.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task RemoveMembershipsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.Where(m => m.OrganizationId == organizationId)
+			.ExecuteDeleteAsync(cancellationToken);
+
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,
 		string badgeName,
