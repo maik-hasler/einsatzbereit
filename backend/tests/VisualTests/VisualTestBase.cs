@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Microsoft.Playwright;
 using TUnit.Playwright;
 
@@ -47,5 +48,29 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				headers["X-Forwarded-For"] = uniqueTestIp;
 			await route.ContinueAsync(new() { Headers = headers });
 		});
+	}
+
+	/// <summary>
+	/// Asserts the page's `.max-w-2xl` content wrapper inside `&lt;main&gt;` has equal
+	/// left/right whitespace, i.e. it is horizontally centered via `mx-auto`
+	/// rather than left-aligned. See #694.
+	/// </summary>
+	protected async Task AssertMaxWidthContentCenteredAsync(string label)
+	{
+		var main = Page.Locator("main");
+		await Expect(main).ToBeVisibleAsync();
+		var container = main.Locator(".max-w-2xl").First;
+		await Expect(container).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var mainBox = await main.BoundingBoxAsync();
+		var containerBox = await container.BoundingBoxAsync();
+		mainBox.Should().NotBeNull();
+		containerBox.Should().NotBeNull();
+
+		var leftGap = containerBox!.X - mainBox!.X;
+		var rightGap = mainBox.X + mainBox.Width - (containerBox.X + containerBox.Width);
+
+		Math.Abs(leftGap - rightGap).Should().BeLessThan(2,
+			$"{label}: .max-w-2xl content should be horizontally centered within <main>");
 	}
 }

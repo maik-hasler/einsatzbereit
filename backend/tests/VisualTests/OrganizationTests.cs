@@ -155,6 +155,30 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		settingsBox.X.Should().Be(calendarBox.X);
 	}
 
+	[Test]
+	public async Task PublicProfilePage_ContentIsCenteredWithinMain()
+	{
+		// Regression for #694: OrganizationProfileView's content wrapper
+		// (`max-w-2xl`) had no `mx-auto`, so it hugged the left edge of <main>
+		// instead of being centered like every other page.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual694 Centering");
+
+		var match = Regex.Match(Page.Url, @"/organizations/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = match.Groups[1].Value;
+
+		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await AssertMaxWidthContentCenteredAsync("Organization profile page");
+	}
+
 	private async Task<string> CreateOrganizationAsync(string namePrefix)
 	{
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";

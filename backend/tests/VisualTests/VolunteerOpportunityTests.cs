@@ -221,6 +221,32 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task DetailPage_ContentIsCenteredWithinMain()
+	{
+		// Regression for #694: the content wrapper (`max-w-2xl`) had no
+		// `mx-auto`, so it hugged the left edge of <main> instead of being
+		// centered within the page like every other page.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
+
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		if (await firstCard.CountAsync() == 0)
+			return; // no opportunities seeded, skip
+
+		var href = await firstCard.GetAttributeAsync("href");
+		if (href is null)
+			return;
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await AssertMaxWidthContentCenteredAsync("Opportunity detail page");
+	}
+
+	[Test]
 	public async Task HomePage_LoadsWithoutError_WhenPublishedOpportunitiesExist()
 	{
 		// Regression: EF Core 10 query translation failure caused HTTP 500 on all
