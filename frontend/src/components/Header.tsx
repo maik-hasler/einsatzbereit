@@ -5,6 +5,7 @@ import { useNavigate, Link, useLocation } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
+import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import type { NotificationSummary } from "../client/api-client";
 
 function getInitials(name: string): string {
@@ -366,7 +367,7 @@ export default function Header() {
 								</button>
 								<button
 									type="button"
-									onClick={() => auth.signinRedirect()}
+									onClick={() => void signinRedirectForRegistration()}
 									className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:border-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 								>
 									{t("nav.register")}
@@ -603,7 +604,7 @@ export default function Header() {
 								</button>
 								<button
 									type="button"
-									onClick={() => auth.signinRedirect()}
+									onClick={() => void signinRedirectForRegistration()}
 									className={`block w-full text-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 								>
 									{t("nav.register")}

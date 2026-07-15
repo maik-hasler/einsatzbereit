@@ -40,4 +40,21 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First)
 			.ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task Header_Anonymous_RegisterButton_RedirectsToKeycloakRegistrationEndpoint()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Register" }).First.ClickAsync();
+
+		// Distinct from Header_Anonymous_ShowsSignInButton: "Register" must land on
+		// Keycloak's registration form, not the login form the "Sign in" button uses.
+		await Expect(Page).ToHaveURLAsync(
+			new Regex(@"/realms/einsatzbereit/protocol/openid-connect/registrations"));
+		await Expect(Page.Locator("#kc-register-form")).ToBeVisibleAsync(new() { Timeout = 30_000 });
+	}
 }
