@@ -873,8 +873,7 @@ export default function ProfileOverviewPage() {
 						)}
 					</div>
 
-					{/* Achievements - merged into the Profile tab, matching the layout
-				    UserProfilePage.tsx already uses for the public view */}
+					{/* Achievements - merged into the Profile tab, matching the layout UserProfilePage.tsx already uses for the public view */}
 					{!profileLoading && (
 						<div className="mt-10">
 							{achievementsError && (
