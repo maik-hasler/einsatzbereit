@@ -626,15 +626,11 @@
     },
     "profileOverview": {
       "tabProfile": "Profile",
-      "tabEngagements": "Engagements",
-      "tabAchievements": "Achievements",
-      "tabInvitations": "Invitations"
+      "tabActivity": "Activity",
+      "invitationsHeading": "Open Invitations"
     },
     "invitations": {
-      "loading": "Loading…",
       "loadError": "Could not load invitations.",
-      "empty": "No pending invitations.",
-      "emptyHint": "When you're invited to join an organization, it will appear here.",
       "invitedOn": "Invited {{date}}",
       "accept": "Accept",
       "decline": "Decline",

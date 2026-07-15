@@ -626,15 +626,11 @@
     },
     "profileOverview": {
       "tabProfile": "Profil",
-      "tabEngagements": "Engagements",
-      "tabAchievements": "Errungenschaften",
-      "tabInvitations": "Einladungen"
+      "tabActivity": "Aktivität",
+      "invitationsHeading": "Offene Einladungen"
     },
     "invitations": {
-      "loading": "Wird geladen…",
       "loadError": "Einladungen konnten nicht geladen werden.",
-      "empty": "Keine ausstehenden Einladungen.",
-      "emptyHint": "Wenn du zu einer Organisation eingeladen wirst, erscheint die Einladung hier.",
       "invitedOn": "Eingeladen am {{date}}",
       "accept": "Annehmen",
       "decline": "Ablehnen",
