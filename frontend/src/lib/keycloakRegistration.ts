@@ -1,4 +1,5 @@
 import { UserManager, WebStorageStateStore } from "oidc-client-ts";
+import type { ExtraSigninRequestArgs } from "oidc-client-ts";
 import { runtimeConfig } from "./runtimeConfig";
 
 let registrationUserManager: UserManager | null = null;
@@ -25,6 +26,8 @@ function getRegistrationUserManager(): UserManager {
 	return registrationUserManager;
 }
 
-export function signinRedirectForRegistration(): Promise<void> {
-	return getRegistrationUserManager().signinRedirect();
+export function signinRedirectForRegistration(
+	args?: ExtraSigninRequestArgs,
+): Promise<void> {
+	return getRegistrationUserManager().signinRedirect(args);
 }

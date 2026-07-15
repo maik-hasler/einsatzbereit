@@ -3,6 +3,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { signinLocaleArgs } from "../lib/authLocale";
 
 const ONBOARDING_KEY = "onboarding-dismissed";
 
@@ -309,7 +310,7 @@ export default function HomePage() {
 							{!auth.isAuthenticated && (
 								<button
 									type="button"
-									onClick={() => void auth.signinRedirect()}
+									onClick={() => void auth.signinRedirect(signinLocaleArgs())}
 									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
 								>
 									{t("landing.heroCtaOrg")}
