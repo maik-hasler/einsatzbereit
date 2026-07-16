@@ -105,6 +105,19 @@ public class IntegrationTestFixture
 		await _respawner.ResetAsync(conn);
 	}
 
+	// Test-only escape hatch to simulate an opportunity row removed without
+	// going through the command handler that cancels its engagements first -
+	// e.g. data predating that cancellation safeguard (#703).
+	public async Task DeleteOpportunityRowDirectlyAsync(Guid opportunityId)
+	{
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+		await using var cmd = new NpgsqlCommand(
+			"DELETE FROM volunteer_opportunities WHERE id = @id", conn);
+		cmd.Parameters.AddWithValue("id", opportunityId);
+		await cmd.ExecuteNonQueryAsync();
+	}
+
 	public async Task ResetAsync()
 	{
 		await ResetDatabaseAsync();

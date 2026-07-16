@@ -255,6 +255,35 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		myEngagements.Items.Single().Status.Should().Be("Pending");
 	}
 
+	// ── Non-terminal engagement for a deleted opportunity (#703) ─────────────
+
+	[Test]
+	public async Task GetMyEngagements_MovesToPast_WhenOpportunityIsGoneAndEngagementIsNonTerminal(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		// Simulate the opportunity's row being gone without its engagements
+		// having been cancelled first - e.g. data predating the cancellation
+		// safeguard in DeleteVolunteerOpportunityCommandHandler. The engagement
+		// itself is left Pending, which the normal delete flow never produces.
+		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
+
+		var upcoming = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
+		upcoming.Items.Should().NotContain(e => e.Id == engagement.Id);
+
+		var past = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: false, cancellationToken);
+		past.Items.Should().ContainSingle(e => e.Id == engagement.Id && e.Status == "Pending");
+	}
+
 	// ── CheckInEngagement ────────────────────────────────────────────────────
 
 	[Test]
