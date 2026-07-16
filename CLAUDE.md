@@ -10,6 +10,7 @@ einsatzbereit/
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4  → frontend/CLAUDE.md
 ├── keycloak/       Custom Keycloak image + realm config  → keycloak/CLAUDE.md
 ├── docs/           arc42 architecture docs + ADRs        → docs/CLAUDE.md
+├── wiki/           Project LLM wiki (informal knowledge)  → wiki/CLAUDE.md
 └── .github/        CI/CD workflows + issue templates     → .github/CLAUDE.md
 ```
 
