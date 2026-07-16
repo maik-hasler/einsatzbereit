@@ -2,6 +2,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Projects;
 using TUnit.Core.Interfaces;
 
@@ -12,6 +13,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	private const string Realm = "einsatzbereit";
 
 	private DistributedApplication _app = null!;
+	private string _connectionString = null!;
 
 	public async Task InitializeAsync()
 	{
@@ -31,6 +33,22 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 		await WaitForRealmReadyAsync();
 		await WaitForBackendReadyAsync();
+
+		_connectionString = await _app.GetConnectionStringAsync("einsatzbereit")
+			?? throw new InvalidOperationException("Connection string 'einsatzbereit' not found.");
+	}
+
+	// Test-only escape hatch to simulate an opportunity row removed without
+	// going through the command handler that cancels its engagements first -
+	// e.g. data predating that cancellation safeguard (#703).
+	public async Task DeleteOpportunityRowDirectlyAsync(Guid opportunityId)
+	{
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+		await using var cmd = new NpgsqlCommand(
+			"DELETE FROM volunteer_opportunity WHERE id = @id", conn);
+		cmd.Parameters.AddWithValue("id", opportunityId);
+		await cmd.ExecuteNonQueryAsync();
 	}
 
 	private async Task WaitForBackendReadyAsync()
