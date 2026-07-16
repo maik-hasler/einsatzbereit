@@ -848,8 +848,7 @@ export default function ProfileOverviewPage() {
 									)}
 								</div>
 
-								{/* Achievements - promoted above account-management actions, side by side with
-								    the profile column on desktop instead of a mismatched full-width block below it */}
+								{/* Achievements - promoted above account-management actions, side by side with the profile column on desktop instead of a mismatched full-width block below it */}
 								<div className="lg:col-span-3">
 									{achievementsError && (
 										<p className="text-sm text-red-600">
