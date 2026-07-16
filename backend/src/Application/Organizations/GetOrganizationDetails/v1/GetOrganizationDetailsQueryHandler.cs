@@ -2,8 +2,6 @@ using Application.Common.Authorization;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
-using Domain.Organizations;
-using Domain.Primitives;
 
 namespace Application.Organizations.GetOrganizationDetails.v1;
 
@@ -16,20 +14,20 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		GetOrganizationDetailsQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		var organization = await dbContext.Organizations.FindAsync(
-			new OrganizationId(request.OrganizationId), cancellationToken);
+		var organization = await OrganizationLookup.FindByIdOrSlugAsync(
+			dbContext, request.OrganizationIdOrSlug, cancellationToken);
 
 		if (organization is null)
 			return null;
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
-			request.OrganizationId,
+			organization.Id.Value,
 			request.RequestingUserId,
 			cancellationToken);
 
 		var members = await keycloakOrganizationService.GetMembersAsync(
-			request.OrganizationId, cancellationToken);
+			organization.Id.Value, cancellationToken);
 
 		var address = organization.Address is null
 			? null
@@ -42,6 +40,7 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		return new OrganizationDetailsResponse(
 			organization.Id.Value,
 			organization.Name,
+			organization.Slug,
 			organization.Description,
 			organization.ContactEmail,
 			organization.ContactPhone,

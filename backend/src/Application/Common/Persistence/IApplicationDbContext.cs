@@ -40,6 +40,18 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
+	Task<bool> OrganizationSlugExistsAsync(
+		string slug,
+		CancellationToken cancellationToken = default);
+
+	Task<Organization?> FindOrganizationBySlugAsync(
+		string slug,
+		CancellationToken cancellationToken = default);
+
+	Task<Dictionary<Guid, string?>> GetOrganizationSlugsAsync(
+		IReadOnlyCollection<Guid> organizationIds,
+		CancellationToken cancellationToken = default);
+
 	Task<bool> HasPendingInvitationAsync(
 		OrganizationId organizationId,
 		UserId inviteeId,

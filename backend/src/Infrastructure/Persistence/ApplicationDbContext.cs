@@ -101,6 +101,30 @@ internal sealed class ApplicationDbContext(
 			.Where(m => m.OrganizationId == organizationId)
 			.ExecuteDeleteAsync(cancellationToken);
 
+	public async Task<bool> OrganizationSlugExistsAsync(
+		string slug,
+		CancellationToken cancellationToken = default) =>
+		await Set<Organization>()
+			.AnyAsync(o => o.Slug == slug, cancellationToken);
+
+	public async Task<Organization?> FindOrganizationBySlugAsync(
+		string slug,
+		CancellationToken cancellationToken = default) =>
+		await Set<Organization>()
+			.FirstOrDefaultAsync(o => o.Slug == slug, cancellationToken);
+
+	public async Task<Dictionary<Guid, string?>> GetOrganizationSlugsAsync(
+		IReadOnlyCollection<Guid> organizationIds,
+		CancellationToken cancellationToken = default)
+	{
+		var orgIds = organizationIds.Select(id => new OrganizationId(id)).ToList();
+
+		return await Set<Organization>()
+			.AsNoTracking()
+			.Where(o => orgIds.Contains(o.Id))
+			.ToDictionaryAsync(o => o.Id.Value, o => o.Slug, cancellationToken);
+	}
+
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,
 		string badgeName,

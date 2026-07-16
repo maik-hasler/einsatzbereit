@@ -40,7 +40,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().BeNull();
@@ -62,7 +62,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().NotBeNull();
@@ -87,7 +87,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result!.Address.Should().NotBeNull();
@@ -107,7 +107,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result!.Address.Should().BeNull();

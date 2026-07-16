@@ -1,6 +1,7 @@
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
@@ -31,7 +32,9 @@ internal sealed class CreateOrganizationCommandHandler(
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(
 			request.UserId, cancellationToken);
 
-		var organization = Organization.Create(new OrganizationId(keycloakId), request.Name);
+		var slug = await GenerateUniqueSlugAsync(request.Name, cancellationToken);
+
+		var organization = Organization.Create(new OrganizationId(keycloakId), request.Name, slug);
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
 
@@ -41,5 +44,26 @@ internal sealed class CreateOrganizationCommandHandler(
 		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 
 		return organization;
+	}
+
+	private async Task<string?> GenerateUniqueSlugAsync(
+		string name,
+		CancellationToken cancellationToken)
+	{
+		var baseSlug = SlugGenerator.Generate(name);
+
+		if (string.IsNullOrEmpty(baseSlug))
+			return null;
+
+		var candidate = baseSlug;
+		var suffix = 2;
+
+		while (await dbContext.OrganizationSlugExistsAsync(candidate, cancellationToken))
+		{
+			candidate = $"{baseSlug}-{suffix}";
+			suffix++;
+		}
+
+		return candidate;
 	}
 }

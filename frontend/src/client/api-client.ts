@@ -2041,7 +2041,7 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOrganizations(signal?: AbortSignal): Promise<KeycloakOrganization[]> {
+    getOrganizations(signal?: AbortSignal): Promise<OrganizationSummaryDto[]> {
         let url_ = this.baseUrl + "/v1/organizations";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2058,13 +2058,13 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetOrganizations(response: Response): Promise<KeycloakOrganization[]> {
+    protected processGetOrganizations(response: Response): Promise<OrganizationSummaryDto[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as KeycloakOrganization[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OrganizationSummaryDto[];
             return result200;
             });
         } else if (status === 401) {
@@ -2084,7 +2084,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<KeycloakOrganization[]>(null as any);
+        return Promise.resolve<OrganizationSummaryDto[]>(null as any);
     }
 
     /**
@@ -3708,13 +3708,6 @@ export interface FeedbackItemDto {
     [key: string]: any;
 }
 
-export interface KeycloakOrganization {
-    id: string;
-    name: string;
-
-    [key: string]: any;
-}
-
 export interface MemberCandidateDto {
     userId: string;
     username: string;
@@ -3771,6 +3764,7 @@ export interface OpportunityFeedbackSummary {
 
 export interface Organization {
     name?: string;
+    slug?: string | undefined;
     description?: string | undefined;
     contactEmail?: string | undefined;
     contactPhone?: string | undefined;
@@ -3807,6 +3801,7 @@ export interface OrganizationDashboardResponse {
 export interface OrganizationDetailsResponse {
     id: string;
     name: string;
+    slug: string | undefined;
     description: string | undefined;
     contactEmail: string | undefined;
     contactPhone: string | undefined;
@@ -3834,6 +3829,14 @@ export interface OrganizationMemberDto {
     lastName: string | undefined;
     email: string;
     isOrganisator: boolean;
+
+    [key: string]: any;
+}
+
+export interface OrganizationSummaryDto {
+    id: string;
+    name: string;
+    slug: string | undefined;
 
     [key: string]: any;
 }
@@ -3904,6 +3907,7 @@ export interface PublicOpportunitySummaryDto {
 export interface PublicOrganizationProfileResponse {
     id: string;
     name: string;
+    slug: string | undefined;
     description: string | undefined;
     contactEmail: string | undefined;
     contactPhone: string | undefined;

@@ -21,7 +21,7 @@ public class OrganizationSettingsTests(
 		var created = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Organization Details Test" }, cancellationToken);
 
-		var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
+		var result = await client.GetOrganizationDetailsAsync((created.Id.Value).ToString(), cancellationToken);
 
 		result.Id.Should().Be(created.Id.Value);
 		result.Name.Should().Be("Organization Details Test");
@@ -30,12 +30,46 @@ public class OrganizationSettingsTests(
 	}
 
 	[Test]
+	public async Task GetOrganizationDetails_ShouldResolveBySlug(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var created = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Slug Lookup Test Org" }, cancellationToken);
+
+		created.Slug.Should().NotBeNullOrEmpty();
+
+		var bySlug = await client.GetOrganizationDetailsAsync(created.Slug!, cancellationToken);
+
+		bySlug.Id.Should().Be(created.Id.Value);
+		bySlug.Slug.Should().Be(created.Slug);
+	}
+
+	[Test]
+	public async Task GetPublicOrganizationProfile_ShouldResolveBySlug(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var created = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Public Slug Lookup Test Org" }, cancellationToken);
+
+		created.Slug.Should().NotBeNullOrEmpty();
+
+		var bySlug = await client.GetPublicOrganizationProfileAsync(created.Slug!, cancellationToken);
+
+		bySlug.Id.Should().Be(created.Id.Value);
+		bySlug.Slug.Should().Be(created.Slug);
+	}
+
+	[Test]
 	public async Task GetOrganizationDetails_ShouldReturn401_WhenNotAuthenticated(
 		CancellationToken cancellationToken)
 	{
 		var client = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
+		var act = () => client.GetOrganizationDetailsAsync((Guid.NewGuid()).ToString(), cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(401);
@@ -47,7 +81,7 @@ public class OrganizationSettingsTests(
 	{
 		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
+		var act = () => client.GetOrganizationDetailsAsync((Guid.NewGuid()).ToString(), cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);
@@ -59,7 +93,7 @@ public class OrganizationSettingsTests(
 	{
 		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 
-		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
+		var act = () => client.GetOrganizationDetailsAsync((Guid.NewGuid()).ToString(), cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(404);
@@ -94,7 +128,7 @@ public class OrganizationSettingsTests(
 
 		await client.UpdateOrganizationAsync(created.Id.Value, updateRequest, cancellationToken);
 
-		var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
+		var result = await client.GetOrganizationDetailsAsync((created.Id.Value).ToString(), cancellationToken);
 		result.Name.Should().Be("After Update");
 		result.Description.Should().Be("New Description");
 		result.ContactEmail.Should().Be("contact@example.com");
@@ -144,7 +178,7 @@ public class OrganizationSettingsTests(
 			Address = null
 		}, cancellationToken);
 
-		var result = await client.GetOrganizationDetailsAsync(created.Id.Value, cancellationToken);
+		var result = await client.GetOrganizationDetailsAsync((created.Id.Value).ToString(), cancellationToken);
 		result.Address.Should().BeNull();
 	}
 
@@ -171,7 +205,7 @@ public class OrganizationSettingsTests(
 		var veraOrg = await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Unrelated Org" }, cancellationToken);
 		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
-		var veraOrgDetails = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
+		var veraOrgDetails = await veraClient.GetOrganizationDetailsAsync((veraOrg.Id.Value).ToString(), cancellationToken);
 		var veraUserId = veraOrgDetails.Members.Single().UserId;
 
 		// olaf is an organizer of other organizations, but not a member of vera's.
@@ -182,7 +216,7 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);
 
-		var stillThere = await veraClient.GetOrganizationDetailsAsync(veraOrg.Id.Value, cancellationToken);
+		var stillThere = await veraClient.GetOrganizationDetailsAsync((veraOrg.Id.Value).ToString(), cancellationToken);
 		stillThere.Members.Should().ContainSingle(m => m.UserId == veraUserId);
 	}
 
@@ -222,7 +256,7 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);
 
-		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var stillThere = await olafClient.GetOrganizationDetailsAsync((org.Id.Value).ToString(), cancellationToken);
 		stillThere.Name.Should().Be("Escalation Test Org");
 	}
 
@@ -354,7 +388,7 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(409);
 
-		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var stillThere = await olafClient.GetOrganizationDetailsAsync((org.Id.Value).ToString(), cancellationToken);
 		stillThere.Members.Should().ContainSingle(m => m.UserId == olaf.Id);
 	}
 
@@ -382,7 +416,7 @@ public class OrganizationSettingsTests(
 
 		await olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
 
-		var act = () => olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var act = () => olafClient.GetOrganizationDetailsAsync((org.Id.Value).ToString(), cancellationToken);
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(404);
 	}
@@ -407,7 +441,7 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(409);
 
-		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var stillThere = await olafClient.GetOrganizationDetailsAsync((org.Id.Value).ToString(), cancellationToken);
 		stillThere.Members.Should().HaveCount(2);
 	}
 
@@ -452,7 +486,7 @@ public class OrganizationSettingsTests(
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(409);
 
-		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var stillThere = await olafClient.GetOrganizationDetailsAsync((org.Id.Value).ToString(), cancellationToken);
 		stillThere.Id.Should().Be(org.Id.Value);
 	}
 
