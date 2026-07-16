@@ -113,7 +113,7 @@ public class IntegrationTestFixture
 		await using var conn = new NpgsqlConnection(_connectionString);
 		await conn.OpenAsync();
 		await using var cmd = new NpgsqlCommand(
-			"DELETE FROM volunteer_opportunities WHERE id = @id", conn);
+			"DELETE FROM volunteer_opportunity WHERE id = @id", conn);
 		cmd.Parameters.AddWithValue("id", opportunityId);
 		await cmd.ExecuteNonQueryAsync();
 	}
