@@ -16,6 +16,7 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, textareaClass } from "../lib/formClasses";
+import { formatDateTime } from "../lib/format";
 import AddToCalendarMenu from "../components/AddToCalendarMenu";
 import BadgeGrid from "../components/BadgeGrid";
 import CheckInModal from "../components/CheckInModal";
@@ -1128,6 +1129,13 @@ export default function ProfileOverviewPage() {
 												{e.message && (
 													<p className="mt-1 truncate text-sm italic text-gray-500">
 														&ldquo;{e.message}&rdquo;
+													</p>
+												)}
+												{e.timeSlotStartDateTime && e.timeSlotEndDateTime && (
+													<p className="mt-1 text-xs font-medium text-gray-700">
+														{t("myEngagements.scheduledFor", {
+															range: `${formatDateTime(e.timeSlotStartDateTime as unknown as string, i18n.language)} - ${formatDateTime(e.timeSlotEndDateTime as unknown as string, i18n.language)}`,
+														})}
 													</p>
 												)}
 												<p className="mt-1.5 text-xs text-gray-500">
