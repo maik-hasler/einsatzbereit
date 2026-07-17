@@ -109,4 +109,17 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 		await Page.WaitForURLAsync(new Regex(@"/app/.+/dashboard"), new() { Timeout = 10_000 });
 		return true;
 	}
+
+	/// <summary>
+	/// Checks a sr-only radio-card input (CreateVolunteerOpportunityModal's
+	/// occurrence/participationType/checkInMethod steps, and the edit-wizard's
+	/// check-in-method step: an `&lt;input type="radio" class="sr-only"&gt;`
+	/// whose own `&lt;label&gt;` renders the visible card). Its near-zero-size
+	/// bounding box can, under CI load, land under the label's own visible
+	/// text, so Playwright's actionability check sees that text "intercepting"
+	/// the click and retries for the full timeout. Force bypasses that check -
+	/// safe here since we know exactly what's covering it and why.
+	/// </summary>
+	protected static async Task CheckRadioCardAsync(ILocator radio) =>
+		await radio.CheckAsync(new() { Force = true });
 }

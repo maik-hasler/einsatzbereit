@@ -132,7 +132,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		// Select PINCode radio
 		var pinCodeRadio = Page.Locator("input[type='radio'][value='PINCode']");
 		await Expect(pinCodeRadio).ToBeVisibleAsync();
-		await pinCodeRadio.CheckAsync();
+		await CheckRadioCardAsync(pinCodeRadio);
 		await Expect(pinCodeRadio).ToBeCheckedAsync();
 
 		// Save

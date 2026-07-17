@@ -462,7 +462,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		// Step 3: Waitlist participation type.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("input[name='participationType'][value='Waitlist']").CheckAsync();
+		await CheckRadioCardAsync(Page.Locator("input[name='participationType'][value='Waitlist']"));
 
 		// Step 4: publishing with no time slots must still be blocked client-side.
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
@@ -504,25 +504,21 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		// The newly published opportunity is visible in the public list. The
-		// list is paginated and this VisualTests session shares one Aspire
-		// backend across ~100 test methods, so by the time this test runs a
-		// lot of other tests' opportunities may already occupy the first
-		// page(s) - page through a bounded number of "Load more" clicks
-		// rather than assuming the first page is enough.
-		await Page.GotoAsync(frontend.ToString());
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// list is fetched once on page load (no polling), so under a
+		// contended shared CI stack the publish can occasionally still be
+		// propagating when the very next request lands - waiting longer on
+		// the same page load wouldn't help. Reload a bounded number of times
+		// instead, giving each fetch a fresh chance to see the published data.
 		var listedCard = Page
 			.Locator("a[href*='/volunteer-opportunities/']")
 			.Filter(new() { HasText = uniqueTitle });
-		var loadMoreBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Load more" });
-		for (var attempt = 0; attempt < 10; attempt++)
+		for (var attempt = 0; attempt < 5; attempt++)
 		{
+			await Page.GotoAsync(frontend.ToString());
+			await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 			if (await listedCard.CountAsync() > 0)
 				break;
-			if (await loadMoreBtn.CountAsync() == 0)
-				break;
-			await loadMoreBtn.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+			await Task.Delay(2_000);
 		}
 		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}

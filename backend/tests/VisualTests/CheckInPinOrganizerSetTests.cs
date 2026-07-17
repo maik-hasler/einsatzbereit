@@ -48,14 +48,10 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		// The radio itself is sr-only (its own <label> renders the visible
-		// card); under CI load its near-zero-size bounding box can land under
-		// the label's own visible text, so Playwright's actionability check
-		// sees that text "intercepting" the click. Force bypasses that check -
-		// safe here since we know what's covering it and why.
-		await Page.Locator("input[name='participationType'][value='IndividualContact']")
-			.CheckAsync(new() { Force = true });
-		await Page.Locator("input[name='checkInMethod'][value='PINCode']").CheckAsync();
+		await CheckRadioCardAsync(
+			Page.Locator("input[name='participationType'][value='IndividualContact']"));
+		await CheckRadioCardAsync(
+			Page.Locator("input[name='checkInMethod'][value='PINCode']"));
 
 		var pinInput = Page.Locator("#create-check-in-pin");
 		await Expect(pinInput).ToBeVisibleAsync();
