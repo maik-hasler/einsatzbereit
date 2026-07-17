@@ -94,7 +94,7 @@ export default function BasicsStep({
 						<span className="text-sm font-medium text-gray-700">
 							{t("createOpportunity.bannerUpload")}
 						</span>
-						<span className="text-xs text-gray-400">
+						<span className="text-xs text-gray-500">
 							{t("createOpportunity.bannerHint")}
 						</span>
 						<input

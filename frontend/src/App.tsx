@@ -3,6 +3,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
+import OrgAppLayout from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
 import DatenschutzPage from "./pages/DatenschutzPage";
 import ImpressumPage from "./pages/ImpressumPage";
@@ -11,19 +12,18 @@ import EngagementManagementPage from "./pages/EngagementManagementPage";
 import ProfileOverviewPage from "./pages/ProfileOverviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
-import OrganizationOverviewPage from "./pages/OrganizationOverviewPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import OrgAppEntryPage from "./pages/app/OrgAppEntryPage";
+import OrgDashboardPage from "./pages/app/OrgDashboardPage";
+import OrgAppEngagementsPage from "./pages/app/OrgAppEngagementsPage";
+import OrgMembersPage from "./pages/app/OrgMembersPage";
+import OrgSettingsPage from "./pages/app/OrgSettingsPage";
 
-function OrgTabRedirect({ tab }: { tab: string }) {
+function OrgAppRedirect({ tab }: { tab: string }) {
 	const { organizationId } = useParams<{ organizationId: string }>();
-	return (
-		<Navigate
-			to={`/organizations/${organizationId}/dashboard?tab=${tab}`}
-			replace
-		/>
-	);
+	return <Navigate to={`/app/${organizationId}/${tab}`} replace />;
 }
 
 function CallbackPage() {
@@ -49,6 +49,20 @@ export default function App() {
 	return (
 		<Routes>
 			<Route path="/callback" element={<CallbackPage />} />
+			<Route
+				path="/app/:organizationId"
+				element={
+					<ProtectedRoute>
+						<OrgAppLayout />
+					</ProtectedRoute>
+				}
+			>
+				<Route index element={<Navigate to="dashboard" replace />} />
+				<Route path="dashboard" element={<OrgDashboardPage />} />
+				<Route path="engagements" element={<OrgAppEngagementsPage />} />
+				<Route path="members" element={<OrgMembersPage />} />
+				<Route path="settings" element={<OrgSettingsPage />} />
+			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
 				<Route path="/datenschutz" element={<DatenschutzPage />} />
@@ -75,6 +89,14 @@ export default function App() {
 				/>
 				<Route path="/account" element={<Navigate to="/profile" replace />} />
 				<Route
+					path="/app"
+					element={
+						<ProtectedRoute>
+							<OrgAppEntryPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
 					path="/profile"
 					element={
 						<ProtectedRoute>
@@ -82,21 +104,18 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
-				<Route
-					path="/organizations/:organizationId/settings"
-					element={<OrgTabRedirect tab="settings" />}
-				/>
+				{/* Pre-restructure bookmarks: org dashboard/settings/engagements used to live here, nested in the main site shell - now their own app context. */}
 				<Route
 					path="/organizations/:organizationId/dashboard"
-					element={
-						<ProtectedRoute>
-							<OrganizationOverviewPage />
-						</ProtectedRoute>
-					}
+					element={<OrgAppRedirect tab="dashboard" />}
+				/>
+				<Route
+					path="/organizations/:organizationId/settings"
+					element={<OrgAppRedirect tab="settings" />}
 				/>
 				<Route
 					path="/organizations/:organizationId/engagements"
-					element={<OrgTabRedirect tab="engagements" />}
+					element={<OrgAppRedirect tab="engagements" />}
 				/>
 				<Route
 					path="/achievements"

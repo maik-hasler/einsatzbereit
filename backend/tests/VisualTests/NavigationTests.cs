@@ -140,21 +140,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return;
-
-		await dashboardLink.First.ClickAsync();
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Engagements", Exact = true }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Engagements", Exact = true }).ClickAsync();
 
 		var manageLink = Page.GetByText("Manage engagements").First;
 		if (await manageLink.CountAsync() == 0)
@@ -164,6 +152,36 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToTheSameTabInThatOrg()
+	{
+		// #702: the switcher moved out of the global header into the /app shell,
+		// where selecting a different org must preserve whatever tab you're
+		// currently on rather than always resetting to the dashboard.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		await switcherBtn.ClickAsync();
+
+		var rowCount = await Page.GetByTestId("org-switch-row").CountAsync();
+		if (rowCount < 2)
+			return; // olaf needs at least two orgs in seed to prove navigation follows selection
+
+		// The active org's row carries aria-current="page" - pick a different one.
+		var otherRow = Page.Locator("[data-testid='org-switch-row']:not([aria-current='page'])").First;
+		var otherOrgName = (await otherRow.TextContentAsync() ?? "").Trim();
+		await otherRow.ClickAsync();
+
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Expect(switcherBtn).ToContainTextAsync(otherOrgName);
 	}
 
 	[Test]

@@ -21,18 +21,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		var keycloak = Fixture.GetEndpoint("keycloak");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -56,8 +45,13 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("input[name='participationType'][value='IndividualContact']").CheckAsync();
-		await Page.Locator("input[name='checkInMethod'][value='PINCode']").CheckAsync();
+		// Click the visible label card, not the sr-only radio <input>. An
+		// sr-only element (1x1px, clip:rect(0,0,0,0)) is not a reliable pointer
+		// target - Playwright's hit-test at its coordinates can resolve to the
+		// grid/label painted behind it, so clicking the input directly is
+		// position-dependent and flaky. The wrapping <label> is the real control.
+		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])").ClickAsync();
+		await Page.Locator("label:has(input[name='checkInMethod'][value='PINCode'])").ClickAsync();
 
 		var pinInput = Page.Locator("#create-check-in-pin");
 		await Expect(pinInput).ToBeVisibleAsync();

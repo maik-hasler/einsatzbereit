@@ -9,6 +9,7 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
+import OrgContextBanner from "../components/OrgContextBanner";
 import QRScannerModal from "../components/QRScannerModal";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
@@ -186,6 +187,12 @@ export default function EngagementManagementPage() {
 	return (
 		<>
 			<div className="mb-6">
+				{opportunity && (
+					<OrgContextBanner
+						organizationId={opportunity.organizationId}
+						organizationName={opportunity.organizationName}
+					/>
+				)}
 				<h1 className="text-2xl font-bold text-gray-900">
 					{t("engagementManagement.title")}
 				</h1>

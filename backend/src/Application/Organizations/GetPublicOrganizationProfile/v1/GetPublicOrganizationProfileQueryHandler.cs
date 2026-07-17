@@ -24,7 +24,7 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 
 		var opportunities = await volunteerOpportunityReadRepository
 			.GetSummariesByOrganizationAsync(
-				request.OrganizationId,
+				organization.Id.Value,
 				OpportunityStatus.Published,
 				cancellationToken);
 

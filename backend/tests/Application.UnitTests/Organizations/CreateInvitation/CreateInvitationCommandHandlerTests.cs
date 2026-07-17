@@ -33,9 +33,9 @@ public class CreateInvitationCommandHandlerTests
 		_dbContext.OrganizationInvitations.Returns(_invitationRepo);
 		_orgRepo.FindAsync(DefaultOrgId, Arg.Any<CancellationToken>())
 			.Returns(Organization.Create(DefaultOrgId, "Test Org").Value);
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(DefaultInvitedById.Value, Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
+		_dbContext
+			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, Arg.Any<CancellationToken>())
+			.Returns(true);
 		_keycloakOrgService
 			.GetMembersAsync(DefaultOrgId.Value, Arg.Any<CancellationToken>())
 			.Returns([]);
@@ -51,9 +51,9 @@ public class CreateInvitationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(DefaultInvitedById.Value, cancellationToken)
-			.Returns([]);
+		_dbContext
+			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, cancellationToken)
+			.Returns(false);
 		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, DefaultInvitedById);
 
 		// Act

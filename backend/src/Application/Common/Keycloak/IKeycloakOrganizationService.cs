@@ -1,9 +1,5 @@
 namespace Application.Common.Keycloak;
 
-public record KeycloakOrganization(
-	Guid Id,
-	string Name);
-
 public record KeycloakOrganizationMember(
 	Guid UserId,
 	string Username,
@@ -33,10 +29,6 @@ public interface IKeycloakOrganizationService
 		CancellationToken cancellationToken = default);
 
 	Task AssignOrganizerRoleAsync(
-		Guid userId,
-		CancellationToken cancellationToken = default);
-
-	Task<IReadOnlyList<KeycloakOrganization>> GetUserOrganizationsAsync(
 		Guid userId,
 		CancellationToken cancellationToken = default);
 

@@ -1,6 +1,5 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
@@ -9,8 +8,7 @@ namespace Application.Organizations.GetOrganizationDashboard.v1;
 
 internal sealed class GetOrganizationDashboardQueryHandler(
 	IApplicationDbContext dbContext,
-	IOrganizationDashboardReadRepository readRepository,
-	IKeycloakOrganizationService keycloakOrgService)
+	IOrganizationDashboardReadRepository readRepository)
 	: IQueryHandler<GetOrganizationDashboardQuery, OrganizationDashboardResponse?>
 {
 	public async ValueTask<OrganizationDashboardResponse?> Handle(
@@ -23,8 +21,8 @@ internal sealed class GetOrganizationDashboardQueryHandler(
 		if (organization is null)
 			return null;
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);

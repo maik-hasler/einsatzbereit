@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Organizations.GetOrganizations.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +15,7 @@ internal sealed class GetOrganizationsEndpoint
 	{
 		app.MapGet("/organizations", GetOrganizationsAsync)
 			.WithName("GetOrganizations")
-			.Produces<IReadOnlyList<KeycloakOrganization>>()
+			.Produces<IReadOnlyList<OrganizationSummaryDto>>()
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)

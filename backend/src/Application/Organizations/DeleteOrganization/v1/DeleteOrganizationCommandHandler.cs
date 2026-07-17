@@ -22,8 +22,8 @@ internal sealed class DeleteOrganizationCommandHandler(
 		var organization = await dbContext.Organizations.FindAsync(organizationId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrganizationService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);
@@ -49,6 +49,8 @@ internal sealed class DeleteOrganizationCommandHandler(
 
 		await keycloakOrganizationService.DeleteOrganizationAsync(
 			request.OrganizationId, cancellationToken);
+
+		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
 
 		dbContext.Organizations.Delete(organization);
 

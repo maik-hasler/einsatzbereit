@@ -25,9 +25,9 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public GetOrganizationDetailsQueryHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
-		_keycloakService
-			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId, "Test Org")]);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(true);
 		_sut = new GetOrganizationDetailsQueryHandler(_dbContext, _keycloakService);
 	}
 

@@ -13,7 +13,6 @@ namespace Application.Engagements.CancelEngagement.v1;
 internal sealed class CancelEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
-	IKeycloakOrganizationService keycloakOrgService,
 	IEmailService emailService)
 	: ICommandHandler<CancelEngagementCommand, Engagement>
 {
@@ -27,8 +26,8 @@ internal sealed class CancelEngagementCommandHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{engagement.OpportunityId.Value}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

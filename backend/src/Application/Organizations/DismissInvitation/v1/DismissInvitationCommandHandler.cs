@@ -1,6 +1,5 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
@@ -10,16 +9,15 @@ namespace Application.Organizations.DismissInvitation.v1;
 
 internal sealed class DismissInvitationCommandHandler(
 	IApplicationDbContext dbContext,
-	IUnitOfWork unitOfWork,
-	IKeycloakOrganizationService keycloakOrganizationService)
+	IUnitOfWork unitOfWork)
 	: ICommandHandler<DismissInvitationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
 		DismissInvitationCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrganizationService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

@@ -1,6 +1,5 @@
 using Application.Common.Exceptions;
 using Application.Common.Geocoding;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
@@ -25,7 +24,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
-	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
@@ -40,14 +38,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_engagementReadRepository
 			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(true);
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_engagementReadRepository,
 			_geocodingService,
-			_keycloakOrgService,
 			_pinGenerator,
 			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
