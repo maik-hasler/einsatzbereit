@@ -117,7 +117,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 
 		// Assert - one OpportunityDeleted notification per active volunteer, none for cancelled.
 		await _notifRepo.Received(2).AddAsync(
-			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityDeleted && n.RelatedEntityId == opportunityId),
+			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityDeleted && n.RelatedEntityId == opportunityId),
 			cancellationToken);
 	}
 

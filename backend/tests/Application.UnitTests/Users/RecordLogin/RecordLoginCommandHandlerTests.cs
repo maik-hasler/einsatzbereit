@@ -73,7 +73,7 @@ public class RecordLoginCommandHandlerTests
 		await _sut.Handle(new RecordLoginCommand(userId, nextDay), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "on-a-roll-7" && c.UserId == userId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "on-a-roll-7" && c.UserId == userId),
 			Arg.Any<CancellationToken>());
 	}
 
