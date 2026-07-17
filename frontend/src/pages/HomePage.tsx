@@ -1,9 +1,12 @@
 import { useEffect, useId, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
+import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { signinLocaleArgs } from "../lib/authLocale";
+import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 
 const ONBOARDING_KEY = "onboarding-dismissed";
 
@@ -114,6 +117,8 @@ export default function HomePage() {
 	const missionTitleId = useId();
 
 	const [showOnboarding, setShowOnboarding] = useState(false);
+	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
+	const [searchParams, setSearchParams] = useSearchParams();
 
 	useEffect(() => {
 		if (auth.isAuthenticated && !localStorage.getItem(ONBOARDING_KEY)) {
@@ -121,9 +126,29 @@ export default function HomePage() {
 		}
 	}, [auth.isAuthenticated]);
 
+	useEffect(() => {
+		if (searchParams.get("createOrg") === "1" && auth.isAuthenticated) {
+			setShowCreateOrgModal(true);
+			const next = new URLSearchParams(searchParams);
+			next.delete("createOrg");
+			setSearchParams(next, { replace: true });
+		}
+	}, [searchParams, auth.isAuthenticated, setSearchParams]);
+
 	function handleDismissOnboarding() {
 		localStorage.setItem(ONBOARDING_KEY, "1");
 		setShowOnboarding(false);
+	}
+
+	function handleOrgCta() {
+		if (auth.isAuthenticated) {
+			setShowCreateOrgModal(true);
+		} else {
+			void signinRedirectForRegistration({
+				...signinLocaleArgs(),
+				state: { returnTo: "/?createOrg=1" },
+			});
+		}
 	}
 
 	const steps = [
@@ -307,15 +332,13 @@ export default function HomePage() {
 							>
 								{t("landing.heroCta")}
 							</a>
-							{!auth.isAuthenticated && (
-								<button
-									type="button"
-									onClick={() => void auth.signinRedirect(signinLocaleArgs())}
-									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
-								>
-									{t("landing.heroCtaOrg")}
-								</button>
-							)}
+							<button
+								type="button"
+								onClick={handleOrgCta}
+								className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+							>
+								{t("landing.heroCtaOrg")}
+							</button>
 						</div>
 						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
 							{stats.map(({ id, value, label }) => (
@@ -465,6 +488,13 @@ export default function HomePage() {
 				)}
 				<VolunteerOpportunitiesList />
 			</div>
+
+			{showCreateOrgModal && (
+				<CreateOrganizationModal
+					onClose={() => setShowCreateOrgModal(false)}
+					onSuccess={() => setShowCreateOrgModal(false)}
+				/>
+			)}
 		</>
 	);
 }
