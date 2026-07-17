@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -20,8 +21,8 @@ internal sealed class CreateTimeSlotCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
-			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrgService,
@@ -32,12 +33,13 @@ internal sealed class CreateTimeSlotCommandHandler(
 		var count = Math.Clamp(request.RecurrenceCount, 1, MaxRecurrenceCount);
 		var duration = request.EndDateTime - request.StartDateTime;
 		var slots = new List<TimeSlot>(count);
+		var now = DateTimeOffset.UtcNow;
 
 		for (var i = 0; i < count; i++)
 		{
 			var start = Advance(request.StartDateTime, request.RecurrenceFrequency, i);
 			var end = start + duration;
-			slots.Add(opportunity.AddTimeSlot(start, end, request.MaxParticipants));
+			slots.Add(opportunity.AddTimeSlot(start, end, request.MaxParticipants, now).GetValueOrThrow());
 		}
 
 		return slots;

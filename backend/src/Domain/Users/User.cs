@@ -5,13 +5,17 @@ namespace Domain.Users;
 public sealed class User
 	: AggregateRoot<UserId>
 {
+	private List<string> _skills = [];
+
+	private List<string> _languages = [];
+
 	public string? AvatarUrl { get; private set; }
 
 	public string? Bio { get; private set; }
 
-	public IReadOnlyList<string> Skills { get; private set; } = [];
+	public IReadOnlyList<string> Skills => _skills.AsReadOnly();
 
-	public IReadOnlyList<string> Languages { get; private set; } = [];
+	public IReadOnlyList<string> Languages => _languages.AsReadOnly();
 
 	public PreferredContact? PreferredContact { get; private set; }
 
@@ -28,15 +32,23 @@ public sealed class User
 		AvatarUrl = url;
 	}
 
-	public void Update(
-		string? bio,
-		IReadOnlyList<string> skills,
-		IReadOnlyList<string> languages,
-		PreferredContact? preferredContact)
+	public void ChangeBio(string? bio)
 	{
 		Bio = bio;
-		Skills = skills;
-		Languages = languages;
+	}
+
+	public void UpdateSkills(IReadOnlyCollection<string> skills)
+	{
+		_skills = new List<string>(skills);
+	}
+
+	public void UpdateLanguages(IReadOnlyCollection<string> languages)
+	{
+		_languages = new List<string>(languages);
+	}
+
+	public void SetPreferredContact(PreferredContact? preferredContact)
+	{
 		PreferredContact = preferredContact;
 	}
 }

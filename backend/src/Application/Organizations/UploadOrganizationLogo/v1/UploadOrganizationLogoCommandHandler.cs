@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -26,8 +27,8 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var organization = await dbContext.Organizations.FindAsync(
-			new OrganizationId(request.OrganizationId), cancellationToken)
-			?? throw new DomainException($"Organization '{request.OrganizationId}' not found.");
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrgService,

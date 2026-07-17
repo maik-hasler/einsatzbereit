@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Application.Common.Exceptions;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -17,7 +18,7 @@ internal sealed class UserConfiguration
 		builder.Property(u => u.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(u => u.AvatarUrl);

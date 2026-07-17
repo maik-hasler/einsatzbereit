@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.GetOpportunityCheckInPin.v1;
 using Domain.Primitives;
@@ -33,10 +34,10 @@ internal sealed class GetOpportunityCheckInPinEndpoint
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid)
-			? new UserId(uid)
-			: throw new DomainException("Invalid user.");
+			? UserId.Create(uid).GetValueOrThrow()
+			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		var query = new GetOpportunityCheckInPinQuery(new VolunteerOpportunityId(opportunityId), userId);
+		var query = new GetOpportunityCheckInPinQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), userId);
 		var pin = await sender.Send(query, cancellationToken);
 		return pin is null ? Results.NotFound() : Results.Ok(pin);
 	}

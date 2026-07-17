@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.UpdateOrganization.v1;
@@ -21,7 +22,7 @@ public class UpdateOrganizationCommandHandlerTests
 	private readonly UpdateOrganizationCommandHandler _sut;
 
 	private static readonly Guid DefaultOrgId = Guid.NewGuid();
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public UpdateOrganizationCommandHandlerTests()
 	{
@@ -38,9 +39,9 @@ public class UpdateOrganizationCommandHandlerTests
 	{
 		// Arrange
 		var orgId = DefaultOrgId;
-		var org = Organization.Create(new OrganizationId(orgId), "Old Name");
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Old Name").Value;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 
 		var command = new UpdateOrganizationCommand(
 			orgId,
@@ -73,9 +74,9 @@ public class UpdateOrganizationCommandHandlerTests
 	{
 		// Arrange
 		var orgId = DefaultOrgId;
-		var org = Organization.Create(new OrganizationId(orgId), "Org");
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 
 		var command = new UpdateOrganizationCommand(
 			orgId, "Org", null, null, null, null, null, DefaultRequestingUserId);
@@ -96,7 +97,7 @@ public class UpdateOrganizationCommandHandlerTests
 		// Arrange
 		var orgId = DefaultOrgId;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 
 		var command = new UpdateOrganizationCommand(
 			orgId, "Name", null, null, null, null, null, DefaultRequestingUserId);
@@ -105,7 +106,7 @@ public class UpdateOrganizationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>();
+		await act.Should().ThrowAsync<ResultFailureException>();
 	}
 
 	[Test]
@@ -114,9 +115,9 @@ public class UpdateOrganizationCommandHandlerTests
 	{
 		// Arrange
 		var orgId = DefaultOrgId;
-		var org = Organization.Create(new OrganizationId(orgId), "Org");
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 
 		var command = new UpdateOrganizationCommand(
 			orgId, "   ", null, null, null, null, null, DefaultRequestingUserId);
@@ -125,7 +126,7 @@ public class UpdateOrganizationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Name must not be empty*");
 	}
 }

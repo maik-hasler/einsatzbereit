@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.UpdateUserProfile.v1;
 using Domain.Users;
@@ -51,7 +52,7 @@ internal sealed class UpdateUserProfileEndpoint
 		}
 
 		var command = new UpdateUserProfileCommand(
-			new UserId(userId),
+			UserId.Create(userId).GetValueOrThrow(),
 			request.FirstName,
 			request.LastName,
 			request.Bio,

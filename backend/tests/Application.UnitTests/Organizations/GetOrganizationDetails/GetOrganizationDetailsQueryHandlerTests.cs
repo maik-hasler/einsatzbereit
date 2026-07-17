@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.GetOrganizationDetails.v1;
@@ -19,7 +20,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 	private readonly GetOrganizationDetailsQueryHandler _sut;
 
 	private static readonly Guid DefaultOrgId = Guid.NewGuid();
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public GetOrganizationDetailsQueryHandlerTests()
 	{
@@ -37,7 +38,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		// Arrange
 		var orgId = DefaultOrgId;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 
 		// Act
 		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
@@ -54,9 +55,9 @@ public class GetOrganizationDetailsQueryHandlerTests
 		// Arrange
 		var orgId = DefaultOrgId;
 		var userId = Guid.NewGuid();
-		var org = Organization.Create(new OrganizationId(orgId), "Sample Fire Department");
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Sample Fire Department").Value;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([
 			new KeycloakOrganizationMember(userId, "olaf", "Olaf", "Miller", "olaf@test.de", true)
 		]);
@@ -79,11 +80,10 @@ public class GetOrganizationDetailsQueryHandlerTests
 	{
 		// Arrange
 		var orgId = DefaultOrgId;
-		var org = Organization.Create(new OrganizationId(orgId), "Org");
-		org.Update("Org", null, null, null, null,
-			new Address("Main Street", "1", "12345", "Berlin"));
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
+		org.Relocate(Address.Create("Main Street", "1", "12345", "Berlin").Value);
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
@@ -101,9 +101,9 @@ public class GetOrganizationDetailsQueryHandlerTests
 	{
 		// Arrange
 		var orgId = DefaultOrgId;
-		var org = Organization.Create(new OrganizationId(orgId), "Org");
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
-		_orgRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(org);
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act

@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.DeleteMyAccount.v1;
 using Domain.Users;
@@ -34,7 +35,7 @@ internal sealed class DeleteMyAccountEndpoint : IEndpoint
 				statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		await sender.Send(new DeleteMyAccountCommand(new UserId(userId)), cancellationToken);
+		await sender.Send(new DeleteMyAccountCommand(UserId.Create(userId).GetValueOrThrow()), cancellationToken);
 
 		return Results.NoContent();
 	}

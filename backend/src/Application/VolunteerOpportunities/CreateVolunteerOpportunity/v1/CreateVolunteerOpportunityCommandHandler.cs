@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -9,6 +10,7 @@ namespace Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 internal sealed class CreateVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IGeocodingService geocodingService,
+	IPinGenerator pinGenerator,
 	ILogger<CreateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<CreateVolunteerOpportunityCommand, VolunteerOpportunity>
 {
@@ -30,10 +32,11 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 			request.Occurrence,
 			request.ParticipationType,
 			request.CheckInMethod,
+			pinGenerator,
 			request.Category,
 			request.Tags,
 			request.Status,
-			request.CheckInPin);
+			request.CheckInPin).GetValueOrThrow();
 
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 

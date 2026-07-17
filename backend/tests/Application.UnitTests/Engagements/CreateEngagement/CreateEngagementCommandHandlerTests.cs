@@ -1,8 +1,10 @@
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.CreateEngagement.v1;
 using AwesomeAssertions;
+using Domain.Common;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -27,14 +29,14 @@ public class CreateEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CreateEngagementCommandHandler _sut;
 
-	private static readonly Address TestAddress = new("Main St", "1", "12345", "Berlin");
+	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
 
-	private static VolunteerOpportunity CreateTestOpportunity(VolunteerOpportunityId id)
-	{
-		var org = VolunteerOpportunity.Create(
-			new OrganizationId(Guid.NewGuid()),
+	private VolunteerOpportunity CreateTestOpportunity(VolunteerOpportunityId id) =>
+		VolunteerOpportunity.Create(
+			OrganizationId.New(),
 			"Test Opportunity",
 			"Description",
 			false,
@@ -42,9 +44,8 @@ public class CreateEngagementCommandHandlerTests
 			Occurrence.OneTime,
 			ParticipationType.Waitlist,
 			CheckInMethod.None,
-			status: OpportunityStatus.Draft);
-		return org;
-	}
+			_pinGenerator,
+			status: OpportunityStatus.Draft).Value;
 
 	public CreateEngagementCommandHandlerTests()
 	{
@@ -76,7 +77,8 @@ public class CreateEngagementCommandHandlerTests
 		var timeSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
-			10);
+			10,
+			DateTimeOffset.UtcNow).Value;
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns(opportunity);
 		return timeSlot.Id;
@@ -87,17 +89,17 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		var opportunityId = VolunteerOpportunityId.New();
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns((VolunteerOpportunity?)null);
-		var command = new CreateEngagementCommand(opportunityId, new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()), Message: null);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(),
+			TimeSlotId.New(), Message: null);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*not found*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
 	}
 
 	[Test]
@@ -105,8 +107,8 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
@@ -124,8 +126,8 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
 		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Ich helfe gerne!");
 
@@ -143,11 +145,11 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
-			new UserId(Guid.CreateVersion7()),
+			UserId.New(),
 			timeSlotId,
 			Message: null);
 
@@ -163,11 +165,11 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		var opportunityId = VolunteerOpportunityId.New();
 		SetupOpportunityExists(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
-			new UserId(Guid.CreateVersion7()),
+			UserId.New(),
 			TimeSlotId: null,
 			Message: null);
 
@@ -175,7 +177,7 @@ public class CreateEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>();
+		await act.Should().ThrowAsync<ResultFailureException>();
 	}
 
 	[Test]
@@ -183,11 +185,11 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,
-			new UserId(Guid.CreateVersion7()),
+			UserId.New(),
 			timeSlotId,
 			Message: null);
 
@@ -203,8 +205,8 @@ public class CreateEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var volunteerId = new UserId(Guid.CreateVersion7());
-		var opportunityId = new VolunteerOpportunityId(Guid.CreateVersion7());
+		var volunteerId = UserId.New();
+		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
 		var command = new CreateEngagementCommand(
 			opportunityId,

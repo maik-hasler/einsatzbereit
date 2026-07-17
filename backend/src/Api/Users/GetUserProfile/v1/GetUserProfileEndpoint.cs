@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.GetUserProfile.v1;
 using Domain.Users;
@@ -33,7 +34,7 @@ internal sealed class GetUserProfileEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		var result = await sender.Send(new GetUserProfileQuery(new UserId(userId)), cancellationToken);
+		var result = await sender.Send(new GetUserProfileQuery(UserId.Create(userId).GetValueOrThrow()), cancellationToken);
 		return Results.Ok(result);
 	}
 }

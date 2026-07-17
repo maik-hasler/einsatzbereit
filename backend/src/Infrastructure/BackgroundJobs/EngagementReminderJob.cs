@@ -91,7 +91,7 @@ internal sealed class EngagementReminderJob(
 		{
 			try
 			{
-				var user = await keycloakUserService.GetUserAsync(item.Engagement.VolunteerId.Value, ct);
+				var user = await keycloakUserService.GetUserAsync(item.Engagement.VolunteerId!.Value.Value, ct);
 
 				var displayName = $"{user.FirstName} {user.LastName}".Trim();
 				if (string.IsNullOrEmpty(displayName))

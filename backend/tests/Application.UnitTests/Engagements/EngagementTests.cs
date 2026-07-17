@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Domain.Engagements;
-using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 
 namespace Application.UnitTests.Engagements;
@@ -8,13 +7,13 @@ namespace Application.UnitTests.Engagements;
 public class EngagementTests
 {
 	private static VolunteerOpportunityId AnyOpportunityId() =>
-		new(Guid.CreateVersion7());
+		VolunteerOpportunityId.New();
 
 	private static Domain.Users.UserId AnyUserId() =>
-		new(Guid.CreateVersion7());
+		Domain.Users.UserId.New();
 
 	private static TimeSlotId AnyTimeSlotId() =>
-		new(Guid.CreateVersion7());
+		TimeSlotId.New();
 
 	// --- CreateWaitlistSignUp ---
 
@@ -49,41 +48,42 @@ public class EngagementTests
 	[Test]
 	public void CreateIndividualContact_ShouldCreateEngagement_WithPendingStatus()
 	{
-		var engagement = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Ich möchte gerne helfen.");
+		var result = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Ich möchte gerne helfen.");
 
-		engagement.Status.Should().Be(EngagementStatus.Pending);
+		result.Value.Status.Should().Be(EngagementStatus.Pending);
 	}
 
 	[Test]
 	public void CreateIndividualContact_ShouldSetMessage()
 	{
-		var engagement = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Ich bin verfügbar.");
+		var result = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Ich bin verfügbar.");
 
-		engagement.Message.Should().Be("Ich bin verfügbar.");
+		result.Value.Message.Should().Be("Ich bin verfügbar.");
 	}
 
 	[Test]
 	public void CreateIndividualContact_ShouldNotSetTimeSlotId()
 	{
-		var engagement = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Nachricht");
+		var result = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "Nachricht");
 
-		engagement.TimeSlotId.Should().BeNull();
+		result.Value.TimeSlotId.Should().BeNull();
 	}
 
 	[Test]
-	public void CreateIndividualContact_ShouldThrow_WhenMessageIsEmpty()
+	public void CreateIndividualContact_ShouldFail_WhenMessageIsEmpty()
 	{
-		Action act = () => Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "");
+		var result = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "");
 
-		act.Should().Throw<DomainException>().WithMessage("*message is required*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*message is required*");
 	}
 
 	[Test]
-	public void CreateIndividualContact_ShouldThrow_WhenMessageIsWhitespace()
+	public void CreateIndividualContact_ShouldFail_WhenMessageIsWhitespace()
 	{
-		Action act = () => Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "   ");
+		var result = Engagement.CreateIndividualContact(AnyOpportunityId(), AnyUserId(), "   ");
 
-		act.Should().Throw<DomainException>();
+		result.IsFailure.Should().BeTrue();
 	}
 
 	// --- Confirm ---
@@ -99,36 +99,39 @@ public class EngagementTests
 	}
 
 	[Test]
-	public void Confirm_ShouldThrow_WhenAlreadyConfirmed()
+	public void Confirm_ShouldFail_WhenAlreadyConfirmed()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 
-		Action act = () => engagement.Confirm();
+		var result = engagement.Confirm();
 
-		act.Should().Throw<DomainException>().WithMessage("*Only pending*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Only pending*");
 	}
 
 	[Test]
-	public void Confirm_ShouldThrow_WhenCancelled()
+	public void Confirm_ShouldFail_WhenCancelled()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Cancel();
 
-		Action act = () => engagement.Confirm();
+		var result = engagement.Confirm();
 
-		act.Should().Throw<DomainException>().WithMessage("*Only pending*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Only pending*");
 	}
 
 	[Test]
-	public void Confirm_ShouldThrow_WhenWithdrawn()
+	public void Confirm_ShouldFail_WhenWithdrawn()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
-		Action act = () => engagement.Confirm();
+		var result = engagement.Confirm();
 
-		act.Should().Throw<DomainException>().WithMessage("*Only pending*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Only pending*");
 	}
 
 	// --- Cancel ---
@@ -155,25 +158,27 @@ public class EngagementTests
 	}
 
 	[Test]
-	public void Cancel_ShouldThrow_WhenAlreadyCancelled()
+	public void Cancel_ShouldFail_WhenAlreadyCancelled()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Cancel();
 
-		Action act = () => engagement.Cancel();
+		var result = engagement.Cancel();
 
-		act.Should().Throw<DomainException>().WithMessage("*already terminated*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*already terminated*");
 	}
 
 	[Test]
-	public void Cancel_ShouldThrow_WhenWithdrawn()
+	public void Cancel_ShouldFail_WhenWithdrawn()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
-		Action act = () => engagement.Cancel();
+		var result = engagement.Cancel();
 
-		act.Should().Throw<DomainException>().WithMessage("*already terminated*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*already terminated*");
 	}
 
 	// --- Withdraw ---
@@ -200,25 +205,27 @@ public class EngagementTests
 	}
 
 	[Test]
-	public void Withdraw_ShouldThrow_WhenAlreadyWithdrawn()
+	public void Withdraw_ShouldFail_WhenAlreadyWithdrawn()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
-		Action act = () => engagement.Withdraw();
+		var result = engagement.Withdraw();
 
-		act.Should().Throw<DomainException>().WithMessage("*already terminated*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*already terminated*");
 	}
 
 	[Test]
-	public void Withdraw_ShouldThrow_WhenCancelled()
+	public void Withdraw_ShouldFail_WhenCancelled()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Cancel();
 
-		Action act = () => engagement.Withdraw();
+		var result = engagement.Withdraw();
 
-		act.Should().Throw<DomainException>().WithMessage("*already terminated*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*already terminated*");
 	}
 
 	[Test]

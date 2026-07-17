@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Organizations.CreateInvitation.v1;
 using Domain.Organizations;
@@ -39,9 +40,9 @@ internal sealed class CreateInvitationEndpoint : IEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
 		var command = new CreateInvitationCommand(
-			new OrganizationId(organizationId),
-			new UserId(request.InviteeId),
-			new UserId(invitedById));
+			OrganizationId.Create(organizationId).GetValueOrThrow(),
+			UserId.Create(request.InviteeId).GetValueOrThrow(),
+			UserId.Create(invitedById).GetValueOrThrow());
 
 		var invitationId = await sender.Send(command, cancellationToken);
 

@@ -26,40 +26,46 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 		MaxParticipants = maxParticipants;
 	}
 
-	public static TimeSlot Create(
+	public static Result<TimeSlot> Create(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
-		int maxParticipants)
+		int maxParticipants,
+		DateTimeOffset now)
 	{
-		if (startDateTime <= DateTimeOffset.UtcNow)
-			throw new DomainException("Start date must be in the future.");
-
-		if (endDateTime <= startDateTime)
-			throw new DomainException("End date must be after start date.");
-
-		if (maxParticipants <= 0)
-			throw new DomainException("Max participants must be greater than zero.");
+		var validation = Validate(startDateTime, endDateTime, maxParticipants, now);
+		if (validation.IsFailure)
+			return Result.Failure<TimeSlot>(validation.Error);
 
 		return new TimeSlot(
-			new TimeSlotId(Guid.CreateVersion7()),
+			TimeSlotId.New(),
 			startDateTime,
 			endDateTime,
 			maxParticipants);
 	}
 
-	public void Update(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants)
+	public Result Update(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants, DateTimeOffset now)
 	{
-		if (startDateTime <= DateTimeOffset.UtcNow)
-			throw new DomainException("Start date must be in the future.");
-
-		if (endDateTime <= startDateTime)
-			throw new DomainException("End date must be after start date.");
-
-		if (maxParticipants <= 0)
-			throw new DomainException("Max participants must be greater than zero.");
+		var validation = Validate(startDateTime, endDateTime, maxParticipants, now);
+		if (validation.IsFailure)
+			return validation;
 
 		StartDateTime = startDateTime;
 		EndDateTime = endDateTime;
 		MaxParticipants = maxParticipants;
+		return Result.Success();
+	}
+
+	private static Result Validate(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants, DateTimeOffset now)
+	{
+		if (startDateTime <= now)
+			return Result.Failure(Error.Validation("TimeSlot.StartMustBeFuture", "Start date must be in the future."));
+
+		if (endDateTime <= startDateTime)
+			return Result.Failure(Error.Validation("TimeSlot.EndMustBeAfterStart", "End date must be after start date."));
+
+		if (maxParticipants <= 0)
+			return Result.Failure(Error.Validation("TimeSlot.MaxParticipantsMustBePositive", "Max participants must be greater than zero."));
+
+		return Result.Success();
 	}
 }

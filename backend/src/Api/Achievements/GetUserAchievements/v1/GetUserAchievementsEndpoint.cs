@@ -2,6 +2,7 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Achievements;
 using Application.Achievements.GetUserAchievements.v1;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,7 @@ internal sealed class GetUserAchievementsEndpoint
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{
-		var query = new GetUserAchievementsQuery(new UserId(userId));
+		var query = new GetUserAchievementsQuery(UserId.Create(userId).GetValueOrThrow());
 		var result = await sender.Send(query, cancellationToken);
 		return Results.Ok(result);
 	}

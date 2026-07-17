@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -13,12 +14,12 @@ internal sealed class SubmitFeedbackCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
-			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
-		if (engagement.VolunteerId.Value != request.RequestingUserId.Value)
-			throw new DomainException("You can only submit feedback for your own engagements.");
+		if (engagement.VolunteerId!.Value.Value != request.RequestingUserId.Value)
+			throw new ResultFailureException(Error.Forbidden("Engagement.NotOwner", "You can only submit feedback for your own engagements."));
 
-		engagement.SubmitFeedback(request.Rating, request.Comment);
+		engagement.SubmitFeedback(request.Rating, request.Comment, DateTimeOffset.UtcNow).ThrowIfFailure();
 
 		return true;
 	}

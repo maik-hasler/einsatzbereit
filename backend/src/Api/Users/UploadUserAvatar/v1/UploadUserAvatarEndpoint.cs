@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.UploadUserAvatar.v1;
 using Domain.Primitives;
@@ -38,8 +39,8 @@ internal sealed class UploadUserAvatarEndpoint
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid)
-			? new UserId(uid)
-			: throw new DomainException("Invalid user.");
+			? UserId.Create(uid).GetValueOrThrow()
+			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
 		if (file.Length == 0)
 		{

@@ -1,4 +1,5 @@
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.WithdrawEngagement.v1;
@@ -41,11 +42,11 @@ public class WithdrawEngagementCommandHandlerTests
 
 	private static (Engagement engagement, UserId volunteerId) CreatePendingEngagementWithVolunteer()
 	{
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 		return (engagement, volunteerId);
 	}
 
@@ -55,7 +56,7 @@ public class WithdrawEngagementCommandHandlerTests
 	{
 		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
@@ -74,7 +75,7 @@ public class WithdrawEngagementCommandHandlerTests
 		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Confirm();
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
@@ -91,7 +92,7 @@ public class WithdrawEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new WithdrawEngagementCommand(engagementId, Guid.NewGuid());
@@ -100,7 +101,7 @@ public class WithdrawEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
 
@@ -110,7 +111,7 @@ public class WithdrawEngagementCommandHandlerTests
 	{
 		// Arrange
 		var (engagement, _) = CreatePendingEngagementWithVolunteer();
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var differentUserId = Guid.NewGuid();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -120,7 +121,7 @@ public class WithdrawEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Only the volunteer*");
 	}
 
@@ -131,7 +132,7 @@ public class WithdrawEngagementCommandHandlerTests
 		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Withdraw();
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
@@ -140,7 +141,7 @@ public class WithdrawEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
 	[Test]
@@ -150,7 +151,7 @@ public class WithdrawEngagementCommandHandlerTests
 		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Cancel();
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
@@ -159,7 +160,7 @@ public class WithdrawEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
 	[Test]

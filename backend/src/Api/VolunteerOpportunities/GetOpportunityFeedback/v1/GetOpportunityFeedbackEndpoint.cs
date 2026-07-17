@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements;
 using Application.VolunteerOpportunities.GetOpportunityFeedback.v1;
@@ -30,7 +31,7 @@ internal sealed class GetOpportunityFeedbackEndpoint : IEndpoint
 		CancellationToken cancellationToken)
 	{
 		var result = await sender.Send(
-			new GetOpportunityFeedbackQuery(new VolunteerOpportunityId(opportunityId)),
+			new GetOpportunityFeedbackQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow()),
 			cancellationToken);
 
 		return Results.Ok(result);

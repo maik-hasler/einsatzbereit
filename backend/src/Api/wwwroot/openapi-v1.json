@@ -3834,25 +3834,49 @@
         }
       },
       "Address": {
-        "required": [
-          "street",
-          "houseNumber",
-          "zipCode",
-          "city"
-        ],
         "type": "object",
         "properties": {
           "street": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "houseNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "zipCode": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "city": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "latitude": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "longitude": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -4446,7 +4470,10 @@
             ]
           },
           "volunteerId": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "timeSlotId": {

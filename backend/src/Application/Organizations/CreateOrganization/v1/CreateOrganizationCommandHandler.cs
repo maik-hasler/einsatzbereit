@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -16,10 +17,10 @@ internal sealed class CreateOrganizationCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrWhiteSpace(request.Name))
-			throw new DomainException("Name must not be empty.");
+			throw new ResultFailureException(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
 		if (request.Name.Length > 100)
-			throw new DomainException("Organization name must not exceed 100 characters.");
+			throw new ResultFailureException(Error.Validation("Organization.NameTooLong", "Organization name must not exceed 100 characters."));
 
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
 			request.Name, cancellationToken);
@@ -30,7 +31,8 @@ internal sealed class CreateOrganizationCommandHandler(
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(
 			request.UserId, cancellationToken);
 
-		var organization = Organization.Create(new OrganizationId(keycloakId), request.Name);
+		var organization = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), request.Name)
+			.GetValueOrThrow();
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
 

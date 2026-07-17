@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Organizations.RemoveMember.v1;
 using AwesomeAssertions;
@@ -14,7 +15,7 @@ public class RemoveMemberCommandHandlerTests
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly RemoveMemberCommandHandler _sut;
 
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public RemoveMemberCommandHandlerTests()
 	{
@@ -109,7 +110,7 @@ public class RemoveMemberCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>();
+		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, userId, Arg.Any<CancellationToken>());
 	}
 
@@ -127,7 +128,7 @@ public class RemoveMemberCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*only member*");
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, Arg.Any<CancellationToken>());
 	}

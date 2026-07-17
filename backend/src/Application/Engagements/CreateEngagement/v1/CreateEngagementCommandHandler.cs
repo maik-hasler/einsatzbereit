@@ -1,4 +1,5 @@
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -25,24 +26,24 @@ internal sealed class CreateEngagementCommandHandler(
 			request.OpportunityId, cancellationToken);
 
 		if (opportunity is null)
-			throw new DomainException($"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found.");
+			throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found."));
 
 		var alreadySignedUp = await dbContext.HasEngagementAsync(
 			request.VolunteerId, request.OpportunityId, cancellationToken);
 
 		if (alreadySignedUp)
-			throw new DomainException("Conflict: you are already signed up for this opportunity.");
+			throw new ResultFailureException(Error.Conflict("Engagement.AlreadySignedUp", "Conflict: you are already signed up for this opportunity."));
 
 		if (request.TimeSlotId is not null)
 		{
 			var timeSlot = opportunity.TimeSlots.FirstOrDefault(ts => ts.Id == request.TimeSlotId);
 			if (timeSlot is null)
-				throw new DomainException("The selected time slot does not belong to this opportunity.");
+				throw new ResultFailureException(Error.Validation("Engagement.TimeSlotNotInOpportunity", "The selected time slot does not belong to this opportunity."));
 
 			var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(
 				request.TimeSlotId.Value, cancellationToken);
 			if (activeCount >= timeSlot.MaxParticipants)
-				throw new DomainException("Conflict: this time slot has reached its capacity and cannot accept more sign-ups.");
+				throw new ResultFailureException(Error.Conflict("Engagement.TimeSlotFull", "Conflict: this time slot has reached its capacity and cannot accept more sign-ups."));
 		}
 
 		var existingTerminal = await dbContext.GetTerminalEngagementAsync(
@@ -51,7 +52,7 @@ internal sealed class CreateEngagementCommandHandler(
 		Engagement engagement;
 		if (existingTerminal is not null)
 		{
-			existingTerminal.Reactivate(request.TimeSlotId, request.Message);
+			existingTerminal.Reactivate(request.TimeSlotId, request.Message).ThrowIfFailure();
 			engagement = existingTerminal;
 		}
 		else
@@ -59,7 +60,7 @@ internal sealed class CreateEngagementCommandHandler(
 			engagement = request.TimeSlotId is not null
 				? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
 				: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
-					?? throw new DomainException("Message is required for individual contact."));
+					?? throw new ResultFailureException(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."))).GetValueOrThrow();
 
 			await dbContext.Engagements.AddAsync(engagement, cancellationToken);
 		}
@@ -70,7 +71,7 @@ internal sealed class CreateEngagementCommandHandler(
 		foreach (var organizer in members.Where(m => m.IsOrganisator))
 		{
 			var notification = Notification.Create(
-				new UserId(organizer.UserId),
+				UserId.Create(organizer.UserId).GetValueOrThrow(),
 				NotificationKind.EngagementCreated,
 				engagement.Id.Value);
 

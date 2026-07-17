@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Pagination;
 using Application.Engagements;
@@ -44,7 +45,7 @@ internal sealed class GetMyEngagementsEndpoint
 		}
 
 		var query = new GetMyEngagementsQuery(
-			new UserId(userId),
+			UserId.Create(userId).GetValueOrThrow(),
 			request.PageNumber,
 			request.PageSize,
 			request.Upcoming);

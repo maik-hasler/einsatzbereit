@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -20,11 +21,11 @@ internal sealed class UpdateTimeSlotCommandHandler(
 		UpdateTimeSlotCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		var opportunityId = new VolunteerOpportunityId(request.OpportunityId);
+		var opportunityId = VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow();
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			opportunityId, cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrgService,
@@ -32,16 +33,19 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var timeSlotId = new TimeSlotId(request.TimeSlotId);
+		var timeSlotId = TimeSlotId.Create(request.TimeSlotId).GetValueOrThrow();
 		var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, cancellationToken);
 		if (request.MaxParticipants < activeCount)
-			throw new DomainException($"Cannot reduce capacity below the current number of active sign-ups ({activeCount}).");
+			throw new ResultFailureException(Error.Validation(
+				"VolunteerOpportunity.TimeSlotCapacityBelowActive",
+				$"Cannot reduce capacity below the current number of active sign-ups ({activeCount})."));
 
 		opportunity.UpdateTimeSlot(
 			timeSlotId,
 			request.StartDateTime,
 			request.EndDateTime,
-			request.MaxParticipants);
+			request.MaxParticipants,
+			DateTimeOffset.UtcNow).ThrowIfFailure();
 
 		// Notify volunteers with an active engagement that a time slot changed (#406).
 		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
