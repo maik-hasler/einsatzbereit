@@ -485,6 +485,7 @@
       "scopeUpcoming": "Current & Upcoming",
       "scopePast": "Past",
       "loadMore": "Load more",
+      "scheduledFor": "Scheduled: {{range}}",
       "registeredOn": "Signed up: {{date}}",
       "deletedOpportunityTitle": "This opportunity has been removed",
       "checkIn": "Check in",
