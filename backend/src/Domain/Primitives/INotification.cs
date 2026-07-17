@@ -1,3 +1,3 @@
-﻿namespace Domain.Primitives;
+namespace Domain.Primitives;
 
 public interface INotification;
