@@ -4,7 +4,10 @@ description: Ingest a new source into the project wiki (wiki/) - read it, create
 argument-hint: [path-under-docs/notes/ | commit-sha | issue-or-PR ref | blank for a docs/notes/ coverage audit]
 ---
 
-## Ingest $0
+## Ingest $ARGUMENTS
+
+Paths here are relative to the repo root (Claude Code's working directory) -
+e.g. `wiki/scripts/validate.py`, not `scripts/validate.py`.
 
 Why this matters: the wiki is a compiled, compounding artifact, not a static
 pile of documents. A false "nothing to do" / "already ingested" verdict
@@ -17,17 +20,17 @@ Three input channels feed this wiki (see `../../../wiki/AGENTS.md`):
 - **`docs/notes/`** - loose notes dropped by hand. Fully enumerable -
   audited to strict K=0 accounting below.
 - **The repo** - commits, code, hook scripts, `CLAUDE.md` files. Ingested on
-  request (`$0` names a path or commit SHA), not exhaustively audited.
-- **GitHub issues/PRs** - ingested on request (`$0` names `#NNN` or a URL),
+  request (`$ARGUMENTS` names a path or commit SHA), not exhaustively audited.
+- **GitHub issues/PRs** - ingested on request (`$ARGUMENTS` names `#NNN` or a URL),
   not exhaustively audited either.
 
 Pick a mode before doing anything else:
 
-- **Mode A - docs/notes/ coverage audit**: `$0` is empty, a glob/wildcard,
+- **Mode A - docs/notes/ coverage audit**: `$ARGUMENTS` is empty, a glob/wildcard,
   or a vague phrase ("ingest", "what's missing", "ingest everything").
   Scoped to `docs/notes/` only - never claim this covers the repo or
   issue/PR channels too.
-- **Mode B - single-source ingest**: `$0` names one specific existing path
+- **Mode B - single-source ingest**: `$ARGUMENTS` names one specific existing path
   under `docs/notes/`, a commit SHA, or an issue/PR ref.
 
 ### Mode A - docs/notes/ coverage audit

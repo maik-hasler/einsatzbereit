@@ -39,7 +39,7 @@ einsatzbereit/
 
 Each component has its own `AGENTS.md` with component-specific conventions
 (Claude Code additionally reads a same-named `CLAUDE.md`, which imports
-`AGENTS.md` plus any Claude-Code-only notes).
+`AGENTS.md` and can also hold Claude-Code-only notes).
 
 ## How to Contribute
 

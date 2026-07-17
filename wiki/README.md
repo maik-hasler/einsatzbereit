@@ -5,8 +5,10 @@ learned while fixing bugs, why-we-picked-X-over-Y detail that doesn't warrant a
 full ADR, recurring CI failure causes, notes from `persona-simulation` runs.
 Proposed in [issue #701](https://github.com/maik-hasler/einsatzbereit/issues/701),
 following the same self-building "LLM wiki" pattern (Andrej Karpathy's
-[gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), the OKF
-v0.1 spec) already used in the author's personal wiki.
+[gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f))
+already used in the author's personal wiki. On disk it's an OKF (Open
+Knowledge Format) v0.1 bundle - a lightweight in-house storage convention,
+not an external standard.
 
 ## What this complements, not replaces
 

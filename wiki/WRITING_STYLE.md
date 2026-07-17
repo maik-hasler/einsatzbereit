@@ -1,4 +1,4 @@
-# WRITING_STYLE.md
+# Writing style
 
 Prose rule for every write to `wiki/` - ingest, query, lint, or any ad hoc
 edit. Goal: read like a knowledgeable human wrote it, not a chatbot. Based on
@@ -60,4 +60,4 @@ Before saving a page, scan for: puffery phrases (1), tell-words (2), the
 four sentence patterns (3), scattered bold / needless lists / stray Unicode
 dashes (4), any unsourced or invented claim (5), and a `# Related` section
 that's missing, blank, or says "None found" without an actual grep behind
-it (6, see `AGENTS.md`'s Ingest step 5). Cut what you find.
+it (cross-check `AGENTS.md`'s Ingest step 5). Cut what you find.

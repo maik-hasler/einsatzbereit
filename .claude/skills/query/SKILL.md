@@ -4,7 +4,10 @@ description: Answer a question using the project wiki (wiki/) instead of general
 argument-hint: [question]
 ---
 
-## Query: $0
+## Query: $ARGUMENTS
+
+Paths here are relative to the repo root (Claude Code's working directory) -
+e.g. `wiki/index.md`, `wiki/scripts/validate.py`.
 
 1. Read `wiki/index.md` (and any sub-indexes it points to) first and pick
    the handful of pages that actually look relevant. Don't scan the whole

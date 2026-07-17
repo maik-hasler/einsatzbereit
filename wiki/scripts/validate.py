@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Conformance checker for the OKF v0.1 bundle in wiki/.
+"""Conformance checker for the wiki/ bundle (an in-house OKF v0.1 layout).
 
 Every file under wiki/ other than the reserved/scaffolding names below must
 start with a YAML frontmatter block that includes a non-empty `type` field
@@ -31,6 +31,12 @@ def frontmatter(text: str):
     return text[4:end]
 
 
+def read_normalized(path: Path) -> str:
+    """Read a file as UTF-8 and normalize CRLF/CR to LF, so frontmatter and
+    heading detection work on Windows-authored pages too."""
+    return path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+
+
 def find_concept_files(bundle_root: Path):
     for path in sorted(bundle_root.rglob("*.md")):
         rel = path.relative_to(bundle_root)
@@ -44,7 +50,7 @@ def find_concept_files(bundle_root: Path):
 
 
 def check_concept(path: Path) -> list[str]:
-    text = path.read_text(encoding="utf-8")
+    text = read_normalized(path)
     raw = frontmatter(text)
     if raw is None:
         return [f"{path}: missing YAML frontmatter block"]
@@ -73,7 +79,7 @@ def check_root_index(bundle_root: Path) -> list[str]:
     index = bundle_root / "index.md"
     if not index.exists():
         return ["wiki/index.md: missing bundle root index"]
-    raw = frontmatter(index.read_text(encoding="utf-8"))
+    raw = frontmatter(read_normalized(index))
     if raw is None:
         return []
     try:

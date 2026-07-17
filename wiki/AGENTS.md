@@ -1,13 +1,20 @@
-# AGENTS.md
+# Project wiki - ingest, query, lint
 
 Informal knowledge about Einsatzbereit, stored as an OKF (Open Knowledge
-Format) bundle - see `README.md` and
+Format) bundle - a lightweight in-house storage convention, not an external
+standard. See `README.md` and
 [issue #701](https://github.com/maik-hasler/einsatzbereit/issues/701) for why
 this exists alongside `docs/` and the per-directory `CLAUDE.md` files. If you
 are a coding agent working in this repo, you are the wiki's maintainer, not
-just an editor. OKF standardizes the storage format only; the operations
-below restore the self-building behavior of the "LLM wiki" pattern this
-format is based on. Follow them whenever you touch this bundle.
+just an editor. OKF fixes only the storage layout; the operations below
+restore the self-building behavior of the "LLM wiki" pattern this format is
+based on. Follow them whenever you touch this bundle.
+
+This file assumes your working directory is `wiki/` (the bundle root): paths
+like `scripts/validate.py` and `TEMPLATE.md` are bundle-relative, while paths
+outside the bundle carry their repo-root prefix (`docs/notes/...`,
+`.claude/...`). The `/ingest`, `/query`, `/lint` skills instead run from the
+repo root and spell every path `wiki/...`.
 
 See @WRITING_STYLE.md for the prose rule - applies to every write, not just
 ingest.

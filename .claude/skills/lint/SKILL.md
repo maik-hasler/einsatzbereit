@@ -1,10 +1,13 @@
 ---
 name: lint
 description: Health-check the project wiki (wiki/) for rot - orphan pages, stale claims, contradictions, missing cross-references, frontmatter errors, uncited sources. Use periodically, or when the user asks to clean up, lint, or audit the wiki.
-allowed-tools: Read Bash(python wiki/scripts/validate.py) Bash(git status --short docs/notes/) Grep Glob Edit Write
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash(python wiki/scripts/validate.py:*), Bash(git status:*)
 ---
 
 ## Lint
+
+Paths here are relative to the repo root (Claude Code's working directory) -
+e.g. `wiki/scripts/validate.py`, not `scripts/validate.py`.
 
 The wiki is a compiled, compounding artifact, not a static pile of
 documents. A false "nothing to do" verdict silently breaks that compounding
