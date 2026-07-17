@@ -3,6 +3,7 @@ namespace Application.Organizations.GetOrganizationDetails.v1;
 public sealed record OrganizationDetailsResponse(
 	Guid Id,
 	string Name,
+	string? Slug,
 	string? Description,
 	string? ContactEmail,
 	string? ContactPhone,

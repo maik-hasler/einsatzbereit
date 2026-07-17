@@ -1,6 +1,5 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Common;
@@ -10,8 +9,7 @@ using Domain.Primitives;
 namespace Application.Organizations.UpdateOrganization.v1;
 
 internal sealed class UpdateOrganizationCommandHandler(
-	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService)
+	IApplicationDbContext dbContext)
 	: ICommandHandler<UpdateOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -22,8 +20,8 @@ internal sealed class UpdateOrganizationCommandHandler(
 			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,
 			cancellationToken);

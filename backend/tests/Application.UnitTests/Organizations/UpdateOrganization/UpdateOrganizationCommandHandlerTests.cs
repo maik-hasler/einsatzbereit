@@ -1,5 +1,4 @@
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.UpdateOrganization.v1;
 using AwesomeAssertions;
@@ -18,7 +17,6 @@ public class UpdateOrganizationCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
-	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly UpdateOrganizationCommandHandler _sut;
 
 	private static readonly Guid DefaultOrgId = Guid.NewGuid();
@@ -27,10 +25,10 @@ public class UpdateOrganizationCommandHandlerTests
 	public UpdateOrganizationCommandHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId, "Test Org")]);
-		_sut = new UpdateOrganizationCommandHandler(_dbContext, _keycloakOrgService);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(true);
+		_sut = new UpdateOrganizationCommandHandler(_dbContext);
 	}
 
 	[Test]

@@ -9,6 +9,8 @@ public sealed class Organization
 {
 	public string Name { get; private set; }
 
+	public string? Slug { get; private set; }
+
 	public string? Description { get; private set; }
 
 	public string? ContactEmail { get; private set; }
@@ -33,20 +35,23 @@ public sealed class Organization
 
 	private Organization(
 		OrganizationId id,
-		string name)
+		string name,
+		string? slug)
 		: base(id)
 	{
 		Name = name;
+		Slug = slug;
 	}
 
 	public static Result<Organization> Create(
 		OrganizationId id,
-		string name)
+		string name,
+		string? slug = null)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 			return Result.Failure<Organization>(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
-		return new Organization(id, name);
+		return new Organization(id, name, slug);
 	}
 
 	public void SetLogoUrl(string? url)

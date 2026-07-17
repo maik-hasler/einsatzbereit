@@ -1,6 +1,5 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -8,8 +7,7 @@ using Domain.Primitives;
 namespace Application.VolunteerOpportunities.GetOpportunityCheckInPin.v1;
 
 internal sealed class GetOpportunityCheckInPinQueryHandler(
-	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService)
+	IApplicationDbContext dbContext)
 	: IQueryHandler<GetOpportunityCheckInPinQuery, string?>
 {
 	public async ValueTask<string?> Handle(
@@ -19,8 +17,8 @@ internal sealed class GetOpportunityCheckInPinQueryHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(request.OpportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId.Value}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { KeycloakOrganization } from "../client/api-client";
+import type { OrganizationSummaryDto } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { getActiveOrgId, setActiveOrgCookie } from "../lib/activeOrg";
 import CreateOrganizationModal from "./CreateOrganizationModal";
@@ -14,7 +14,7 @@ export default function OrganizationSwitcher({
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	const [orgs, setOrgs] = useState<KeycloakOrganization[]>([]);
+	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
 	const [activeOrgId, setActiveOrgId] = useState<string | null>(getActiveOrgId);
 	const [loading, setLoading] = useState(true);
 	const [open, setOpen] = useState(false);
@@ -23,11 +23,14 @@ export default function OrganizationSwitcher({
 
 	const activeOrg = orgs.find((o) => o.id === activeOrgId) ?? null;
 
+	const dashboardPath = (org: OrganizationSummaryDto) =>
+		`/organizations/${org.slug ?? org.id}/dashboard`;
+
 	const fetchOrgs = () => {
 		setLoading(true);
 		api
 			.getOrganizations()
-			.then((data: KeycloakOrganization[]) => {
+			.then((data: OrganizationSummaryDto[]) => {
 				setOrgs(data);
 				if (!getActiveOrgId() && data.length > 0) {
 					setActiveOrgCookie(data[0].id);
@@ -57,9 +60,11 @@ export default function OrganizationSwitcher({
 		return () => document.removeEventListener("click", handleClick);
 	}, []);
 
-	const handleSwitch = (org: KeycloakOrganization) => {
+	const handleSwitch = (org: OrganizationSummaryDto) => {
 		setActiveOrgCookie(org.id);
 		setActiveOrgId(org.id);
+		setOpen(false);
+		navigate(dashboardPath(org));
 	};
 
 	const handleOrgCreated = () => {
@@ -67,7 +72,7 @@ export default function OrganizationSwitcher({
 		setLoading(true);
 		api
 			.getOrganizations()
-			.then((data: KeycloakOrganization[]) => {
+			.then((data: OrganizationSummaryDto[]) => {
 				setOrgs(data);
 				const newOrg = data.find((o) => !prevIds.has(o.id));
 				if (newOrg) {
@@ -170,7 +175,7 @@ export default function OrganizationSwitcher({
 											setActiveOrgCookie(org.id);
 											setActiveOrgId(org.id);
 											setOpen(false);
-											navigate(`/organizations/${org.id}/dashboard`);
+											navigate(dashboardPath(org));
 										}}
 										className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-700"
 									>

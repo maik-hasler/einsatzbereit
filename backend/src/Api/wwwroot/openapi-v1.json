@@ -1787,8 +1787,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         ],
@@ -2055,8 +2054,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         ],
@@ -2261,7 +2259,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/KeycloakOrganization"
+                    "$ref": "#/components/schemas/OrganizationSummaryDto"
                   }
                 }
               }
@@ -4620,22 +4618,6 @@
           }
         }
       },
-      "KeycloakOrganization": {
-        "required": [
-          "id",
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      },
       "MemberCandidateDto": {
         "required": [
           "userId",
@@ -4848,6 +4830,12 @@
           "name": {
             "type": "string"
           },
+          "slug": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "description": {
             "type": [
               "null",
@@ -4993,6 +4981,7 @@
         "required": [
           "id",
           "name",
+          "slug",
           "description",
           "contactEmail",
           "contactPhone",
@@ -5012,6 +5001,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "slug": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "description": {
             "type": [
@@ -5119,6 +5114,29 @@
           },
           "isOrganisator": {
             "type": "boolean"
+          }
+        }
+      },
+      "OrganizationSummaryDto": {
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5363,6 +5381,7 @@
         "required": [
           "id",
           "name",
+          "slug",
           "description",
           "contactEmail",
           "contactPhone",
@@ -5380,6 +5399,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "slug": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "description": {
             "type": [

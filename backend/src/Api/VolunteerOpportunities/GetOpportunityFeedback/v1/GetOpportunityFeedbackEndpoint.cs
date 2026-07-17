@@ -5,8 +5,11 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements;
 using Application.VolunteerOpportunities.GetOpportunityFeedback.v1;
+using Domain.Primitives;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.GetOpportunityFeedback.v1;
 
@@ -28,10 +31,13 @@ internal sealed class GetOpportunityFeedbackEndpoint : IEndpoint
 	private static async Task<IResult> GetFeedbackAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
+
 		var result = await sender.Send(
-			new GetOpportunityFeedbackQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow()),
+			new GetOpportunityFeedbackQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), userId),
 			cancellationToken);
 
 		return Results.Ok(result);

@@ -24,6 +24,34 @@ public interface IApplicationDbContext
 
 	IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> OrganizationInvitations { get; }
 
+	IAggregateRepository<OrganizationMembership, OrganizationMembershipId> OrganizationMemberships { get; }
+
+	Task<bool> IsOrganizerAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task RemoveMembershipAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task RemoveMembershipsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task<bool> OrganizationSlugExistsAsync(
+		string slug,
+		CancellationToken cancellationToken = default);
+
+	Task<Organization?> FindOrganizationBySlugAsync(
+		string slug,
+		CancellationToken cancellationToken = default);
+
+	Task<Dictionary<Guid, string?>> GetOrganizationSlugsAsync(
+		IReadOnlyCollection<Guid> organizationIds,
+		CancellationToken cancellationToken = default);
+
 	Task<bool> HasPendingInvitationAsync(
 		OrganizationId organizationId,
 		UserId inviteeId,

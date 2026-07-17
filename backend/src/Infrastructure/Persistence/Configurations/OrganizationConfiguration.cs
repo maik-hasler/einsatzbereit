@@ -22,6 +22,10 @@ internal sealed class OrganizationConfiguration
 		builder.Property(org => org.Name)
 			.IsRequired();
 
+		builder.Property(org => org.Slug);
+
+		builder.HasIndex(org => org.Slug).IsUnique();
+
 		builder.Property(org => org.Description);
 
 		builder.Property(org => org.ContactEmail);

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Domain.Achievements;
 using Domain.Engagements;
@@ -70,6 +71,60 @@ internal sealed class ApplicationDbContext(
 			Set<OrganizationInvitation>(),
 			Set<OrganizationInvitation>(),
 			i => i.Id);
+
+	public IAggregateRepository<OrganizationMembership, OrganizationMembershipId> OrganizationMemberships
+		=> new AggregateRepository<OrganizationMembership, OrganizationMembershipId>(
+			Set<OrganizationMembership>(),
+			Set<OrganizationMembership>(),
+			m => m.Id);
+
+	public async Task<bool> IsOrganizerAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.AnyAsync(m => m.OrganizationId == organizationId
+				&& m.UserId == userId
+				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
+
+	public async Task RemoveMembershipAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.Where(m => m.OrganizationId == organizationId && m.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task RemoveMembershipsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.Where(m => m.OrganizationId == organizationId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task<bool> OrganizationSlugExistsAsync(
+		string slug,
+		CancellationToken cancellationToken = default) =>
+		await Set<Organization>()
+			.AnyAsync(o => o.Slug == slug, cancellationToken);
+
+	public async Task<Organization?> FindOrganizationBySlugAsync(
+		string slug,
+		CancellationToken cancellationToken = default) =>
+		await Set<Organization>()
+			.FirstOrDefaultAsync(o => o.Slug == slug, cancellationToken);
+
+	public async Task<Dictionary<Guid, string?>> GetOrganizationSlugsAsync(
+		IReadOnlyCollection<Guid> organizationIds,
+		CancellationToken cancellationToken = default)
+	{
+		var orgIds = organizationIds.Select(id => OrganizationId.Create(id).GetValueOrThrow()).ToList();
+
+		return await Set<Organization>()
+			.AsNoTracking()
+			.Where(o => orgIds.Contains(o.Id))
+			.ToDictionaryAsync(o => o.Id.Value, o => o.Slug, cancellationToken);
+	}
 
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,

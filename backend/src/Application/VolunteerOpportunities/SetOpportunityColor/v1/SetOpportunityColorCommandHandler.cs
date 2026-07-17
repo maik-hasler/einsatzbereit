@@ -1,6 +1,5 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -9,8 +8,7 @@ using Domain.VolunteerOpportunities;
 namespace Application.VolunteerOpportunities.SetOpportunityColor.v1;
 
 internal sealed class SetOpportunityColorCommandHandler(
-	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService)
+	IApplicationDbContext dbContext)
 	: ICommandHandler<SetOpportunityColorCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -23,8 +21,8 @@ internal sealed class SetOpportunityColorCommandHandler(
 			opportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

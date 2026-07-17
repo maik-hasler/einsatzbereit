@@ -94,7 +94,9 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function OrganizationOverviewPage() {
-	const { organizationId } = useParams<{ organizationId: string }>();
+	const { organizationId: routeOrgId } = useParams<{
+		organizationId: string;
+	}>();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
@@ -113,6 +115,10 @@ export default function OrganizationOverviewPage() {
 	// ── Org details (loaded immediately for header + settings) ──────────────
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
 	const [orgLoading, setOrgLoading] = useState(true);
+
+	// routeOrgId may be a slug or a GUID (GetOrganizationDetails resolves both);
+	// every other endpoint below is GUID-only, so they wait for the real id.
+	const organizationId = org?.id;
 
 	const [form, setForm] = useState({
 		name: "",
@@ -135,16 +141,19 @@ export default function OrganizationOverviewPage() {
 		{ label: t("breadcrumb.home"), href: "/" },
 		{
 			label: org?.name ?? t("orgDashboard.title"),
-			href: organizationId ? `/organizations/${organizationId}` : undefined,
+			href:
+				(org?.slug ?? organizationId ?? routeOrgId)
+					? `/organizations/${org?.slug ?? organizationId ?? routeOrgId}`
+					: undefined,
 		},
 		{ label: t("orgDashboard.title") },
 	]);
 
 	useEffect(() => {
-		if (!organizationId) return;
+		if (!routeOrgId) return;
 		setOrgLoading(true);
 		api
-			.getOrganizationDetails(organizationId)
+			.getOrganizationDetails(routeOrgId)
 			.then((data) => {
 				setOrg(data);
 				setLogoUrl(data.logoUrl ?? null);
@@ -163,7 +172,7 @@ export default function OrganizationOverviewPage() {
 			.catch(() => {})
 			.finally(() => setOrgLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
+	}, [routeOrgId]);
 
 	// ── Create opportunity ───────────────────────────────────────────────────
 	const [showCreateModal, setShowCreateModal] = useState(false);

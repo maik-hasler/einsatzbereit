@@ -5,6 +5,7 @@ using Application.Common.Persistence;
 using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 
 namespace Application.Organizations.CreateOrganization.v1;
 
@@ -32,7 +33,9 @@ internal sealed class CreateOrganizationCommandHandler(
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(
 			request.UserId, cancellationToken);
 
-		var organization = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), request.Name)
+		var slug = await GenerateUniqueSlugAsync(request.Name, cancellationToken);
+
+		var organization = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), request.Name, slug)
 			.GetValueOrThrow();
 
 		var address = request.Address is null
@@ -49,6 +52,32 @@ internal sealed class CreateOrganizationCommandHandler(
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
 
+		var membership = OrganizationMembership.Create(
+			organization.Id, UserId.Create(request.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer);
+
+		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
+
 		return organization;
+	}
+
+	private async Task<string?> GenerateUniqueSlugAsync(
+		string name,
+		CancellationToken cancellationToken)
+	{
+		var baseSlug = SlugGenerator.Generate(name);
+
+		if (string.IsNullOrEmpty(baseSlug))
+			return null;
+
+		var candidate = baseSlug;
+		var suffix = 2;
+
+		while (await dbContext.OrganizationSlugExistsAsync(candidate, cancellationToken))
+		{
+			candidate = $"{baseSlug}-{suffix}";
+			suffix++;
+		}
+
+		return candidate;
 	}
 }

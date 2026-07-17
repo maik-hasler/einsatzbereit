@@ -6,8 +6,11 @@ using Application.Common.Messaging;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using Domain.Common;
 using Domain.Organizations;
+using Domain.Primitives;
+using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 
@@ -29,8 +32,11 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 	private static async Task<IResult> CreateVolunteerOpportunityAsync(
 		[FromBody] CreateVolunteerOpportunityRequest request,
 		[FromServices] ISender sender,
+		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
+
 		if (request.Title is { Length: > 200 })
 			return Results.Problem("Title must not exceed 200 characters.", statusCode: StatusCodes.Status400BadRequest);
 
@@ -112,6 +118,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			category,
 			[.. request.Tags ?? []],
 			status,
+			userId,
 			string.IsNullOrWhiteSpace(request.CheckInPin) ? null : request.CheckInPin);
 
 		var opportunity = await sender.Send(command, cancellationToken);

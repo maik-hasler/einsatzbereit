@@ -1,8 +1,6 @@
-using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities;
-using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 
 namespace Application.Organizations.GetPublicOrganizationProfile.v1;
@@ -16,15 +14,15 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 		GetPublicOrganizationProfileQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		var organization = await dbContext.Organizations.FindAsync(
-			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken);
+		var organization = await OrganizationLookup.FindByIdOrSlugAsync(
+			dbContext, request.OrganizationIdOrSlug, cancellationToken);
 
 		if (organization is null)
 			return null;
 
 		var opportunities = await volunteerOpportunityReadRepository
 			.GetSummariesByOrganizationAsync(
-				request.OrganizationId,
+				organization.Id.Value,
 				OpportunityStatus.Published,
 				cancellationToken);
 
@@ -54,6 +52,7 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 		return new PublicOrganizationProfileResponse(
 			organization.Id.Value,
 			organization.Name,
+			organization.Slug,
 			organization.Description,
 			organization.ContactEmail,
 			organization.ContactPhone,

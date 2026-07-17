@@ -25,9 +25,9 @@ public class GetOrganizationDetailsQueryHandlerTests
 	public GetOrganizationDetailsQueryHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
-		_keycloakService
-			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId, "Test Org")]);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(true);
 		_sut = new GetOrganizationDetailsQueryHandler(_dbContext, _keycloakService);
 	}
 
@@ -41,7 +41,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().BeNull();
@@ -63,7 +63,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result.Should().NotBeNull();
@@ -87,7 +87,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result!.Address.Should().NotBeNull();
@@ -107,7 +107,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 		_keycloakService.GetMembersAsync(orgId, cancellationToken).Returns([]);
 
 		// Act
-		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new GetOrganizationDetailsQuery(orgId.ToString(), DefaultRequestingUserId), cancellationToken);
 
 		// Assert
 		result!.Address.Should().BeNull();

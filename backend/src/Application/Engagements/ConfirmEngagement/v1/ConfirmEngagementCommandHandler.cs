@@ -15,7 +15,6 @@ namespace Application.Engagements.ConfirmEngagement.v1;
 internal sealed class ConfirmEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
-	IKeycloakOrganizationService keycloakOrgService,
 	IEmailService emailService,
 	ISender sender)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
@@ -30,8 +29,8 @@ internal sealed class ConfirmEngagementCommandHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{engagement.OpportunityId.Value}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

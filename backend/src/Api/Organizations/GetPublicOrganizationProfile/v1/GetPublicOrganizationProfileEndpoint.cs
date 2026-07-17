@@ -11,7 +11,7 @@ internal sealed class GetPublicOrganizationProfileEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app)
 	{
-		app.MapGet("/organizations/{organizationId:guid}/profile", GetPublicOrganizationProfileAsync)
+		app.MapGet("/organizations/{organizationId}/profile", GetPublicOrganizationProfileAsync)
 			.WithName("GetPublicOrganizationProfile")
 			.Produces<PublicOrganizationProfileResponse>()
 			.ProducesProblem(StatusCodes.Status404NotFound)
@@ -22,7 +22,7 @@ internal sealed class GetPublicOrganizationProfileEndpoint
 	}
 
 	private static async Task<IResult> GetPublicOrganizationProfileAsync(
-		[FromRoute] Guid organizationId,
+		[FromRoute] string organizationId,
 		[FromServices] ISender sender,
 		CancellationToken cancellationToken)
 	{

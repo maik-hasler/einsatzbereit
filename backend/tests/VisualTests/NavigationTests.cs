@@ -167,6 +167,40 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToItsDashboard()
+	{
+		// #691: selecting an org from the switcher dropdown used to only relabel
+		// the pill via a cookie - it did not navigate anywhere. Clicking the org
+		// row itself must now take the user into that org's context, the same as
+		// the dedicated dashboard-link icon button.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		if (await switcherBtn.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLinks = Page.GetByTestId("org-dashboard-link");
+		var rowCount = await dashboardLinks.CountAsync();
+		if (rowCount < 2)
+			return; // olaf needs at least two orgs in seed to prove navigation follows selection
+
+		// Click the row's name button (not the dashboard-link icon) for the org
+		// that is not currently active.
+		var secondRow = dashboardLinks.Nth(1).Locator("xpath=..");
+		var secondOrgName = await secondRow.Locator("button").First.InnerTextAsync();
+		await secondRow.Locator("button").First.ClickAsync();
+
+		await Page.WaitForURLAsync(
+			new Regex(@"/organizations/[0-9a-fA-F-]{36}/dashboard"), new() { Timeout = 15_000 });
+
+		await Expect(switcherBtn.First).ToContainTextAsync(secondOrgName.Trim());
+	}
+
+	[Test]
 	public async Task MobileMenu_LanguageSelector_HasDarkTransparentTheme_OnHero()
 	{
 		// Regression: LanguageSelector inside the mobile menu on the hero section

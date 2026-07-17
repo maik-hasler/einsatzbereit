@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.CreateOrganization.v1;
@@ -13,10 +14,13 @@ public class CreateOrganizationCommandHandlerTests
 {
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IAggregateRepository<OrganizationMembership, OrganizationMembershipId> _membershipRepo =
+		Substitute.For<IAggregateRepository<OrganizationMembership, OrganizationMembershipId>>();
 	private readonly CreateOrganizationCommandHandler _sut;
 
 	public CreateOrganizationCommandHandlerTests()
 	{
+		_dbContext.OrganizationMemberships.Returns(_membershipRepo);
 		_sut = new CreateOrganizationCommandHandler(
 			_keycloakService,
 			_dbContext);
@@ -80,6 +84,74 @@ public class CreateOrganizationCommandHandlerTests
 
 		// Assert
 		await _keycloakService.Received(1).AssignOrganizerRoleAsync(userId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldCreateOrganizerMembership_ForCreator(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _membershipRepo.Received(1).AddAsync(
+			Arg.Is<OrganizationMembership>(m =>
+				m!.OrganizationId == OrganizationId.Create(keycloakId).GetValueOrThrow() &&
+				m.UserId == Domain.Users.UserId.Create(userId).GetValueOrThrow() &&
+				m.Role == OrganizationMemberRole.Organizer),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldGenerateSlug_FromName(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Freiwillige Feuerwehr Musterstadt", userId, null, null, null, null, null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Freiwillige Feuerwehr Musterstadt", cancellationToken)
+			.Returns(keycloakId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Slug.Should().Be("freiwillige-feuerwehr-musterstadt");
+	}
+
+	[Test]
+	public async Task Handle_ShouldAppendSuffix_WhenSlugAlreadyExists(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		_dbContext.OrganizationSlugExistsAsync("test-org", cancellationToken).Returns(true);
+		_dbContext.OrganizationSlugExistsAsync("test-org-2", cancellationToken).Returns(false);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Slug.Should().Be("test-org-2");
 	}
 
 	[Test]
