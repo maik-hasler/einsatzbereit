@@ -1,66 +1,4 @@
-# Einsatzbereit
-
-Volunteer coordination platform matching helpers with regional needs. English UI and code, multilingual support.
-
-## Monorepo Structure
-
-```
-einsatzbereit/
-├── backend/        .NET 10 Clean Architecture API        → backend/CLAUDE.md
-├── frontend/       Vite SPA + React 19 + Tailwind CSS 4  → frontend/CLAUDE.md
-├── keycloak/       Custom Keycloak image + realm config  → keycloak/CLAUDE.md
-├── docs/           arc42 architecture docs + ADRs        → docs/CLAUDE.md
-├── wiki/           Project LLM wiki (informal knowledge)  → wiki/CLAUDE.md
-└── .github/        CI/CD workflows + issue templates     → .github/CLAUDE.md
-```
-
-## Tech Stack (quick ref)
-
-| | |
-|---|---|
-| Backend | .NET 10 (SDK 10.0.300, see `backend/global.json`), EF Core 9, PostgreSQL 18 |
-| Auth | Keycloak 26.6.4 (OIDC, JWT) |
-| Frontend | Vite SPA, React 19, React Router v7, Tailwind CSS 4 |
-| API client | NSwag-generated - **never hand-edit** `api-client.ts` |
-| Tests (BE) | TUnit, Aspire.Hosting.Testing, Respawn, NetArchTest |
-| Tests (FE) | E2E lives in backend `tests/VisualTests/` (TUnit.Playwright + Aspire) |
-| CI/CD | GitHub Actions → GHCR |
-
-## Development Setup
-
-Required: .NET SDK **10.0.300** (enforced via `backend/global.json`). In Claude Code web/cloud sessions, the `SessionStart` hook installs it automatically via `dotnet-install.sh` if `dotnet` is not already on `PATH`.
-
-```bash
-dotnet run --project backend/src/Aspire/AppHost
-```
-
-Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend. URLs surface in the Aspire dashboard.
-
-| Service | URL | Credentials |
-|---|---|---|
-| Frontend | http://localhost:4321 | - |
-| Backend API | http://localhost:5000 | - |
-| Keycloak admin | http://localhost:8080 | admin / admin |
-| pgAdmin | http://localhost:5050 | admin@admin.com / admin |
-| PostgreSQL | localhost:5432 | postgres / postgres |
-| Mailpit (email) | http://localhost:1080 | - (no auth required) |
-
-Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/admin123` (admin)
-
-## Key Conventions
-
-- Feature folders: `{Layer}/{Domain}/{Feature}/v1/` in both backend and frontend
-- Routes: `/v{version:apiVersion}/...`, namespaces: `.v1`
-- Commands/queries/DTOs: C# records
-- Commits: Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`)
-- No `.Result`/`.Wait()` - async all the way
-- **Never use Unicode dashes** (U+2013 en dash, U+2014 em dash) in any file - write plain ASCII hyphens (`-`) instead; CI rejects non-ASCII dashes
-- **Tab indentation is the default** (`.editorconfig`'s `[*]` rule) - shell scripts, AsciiDoc (`.adoc`), and PlantUML (`.puml`) all use tabs. Only `.md`, `.json`, and `.yml`/`.yaml` are overridden to spaces. CI's `editorconfig` job enforces this; when writing `.adoc` prose keep paragraphs on one unwrapped line rather than hand-wrapping with space-indented continuation lines
-
-## Sandbox Limitations (Claude Code on the web)
-
-- **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Testcontainers), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
-- **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
+@AGENTS.md
 
 ## Claude Code Configuration
 
@@ -93,7 +31,10 @@ edit on your own initiative):
   once before ending a turn if backend/frontend source changed, blocking
   only on an actual failure (capped at 2 blocks per session so it fails
   open rather than risk a loop) - a safety net since this routine has no
-  human review before a PR goes out.
+  human review before a PR goes out. The `SessionStart` hook installs .NET
+  SDK **10.0.300** automatically via `dotnet-install.sh` in Claude Code
+  web/cloud sessions if `dotnet` is not already on `PATH` (see root
+  `AGENTS.md`'s Development Setup for the SDK requirement itself).
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
   `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus the official
   `csharp-lsp`, `typescript-lsp`, and `playwright` (Microsoft's Playwright
@@ -102,6 +43,11 @@ edit on your own initiative):
   `playwright` plugin is for interactive poking around, not a replacement
   for the persisted smoke-test script required below - that stays as the
   reviewable, committed record of what was verified.
+
+## Sandbox Limitations (Claude Code on the web)
+
+- **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Testcontainers), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
+- **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
 
 ## Releases (autonomous from Claude Code on the web)
 

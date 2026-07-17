@@ -4,8 +4,7 @@
 Every file under wiki/ other than the reserved/scaffolding names below must
 start with a YAML frontmatter block that includes a non-empty `type` field.
 Repo scaffolding (README.md, AGENTS.md, CLAUDE.md, TEMPLATE.md,
-WRITING_STYLE.md, requirements.txt, sources/, scripts/, .claude/) is never
-scanned.
+WRITING_STYLE.md, requirements.txt, scripts/, .claude/) is never scanned.
 """
 
 import sys
@@ -15,7 +14,7 @@ import yaml
 
 RESERVED_NAMES = {"index.md", "log.md"}
 SCAFFOLD_FILES = {"README.md", "AGENTS.md", "CLAUDE.md", "TEMPLATE.md", "WRITING_STYLE.md"}
-SKIP_DIRS = {"sources", "scripts", ".claude", "node_modules", ".venv", "venv"}
+SKIP_DIRS = {"scripts", ".claude", "node_modules", ".venv", "venv"}
 
 
 def frontmatter(text: str):

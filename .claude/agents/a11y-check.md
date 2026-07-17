@@ -1,6 +1,6 @@
 ---
 name: a11y-check
-description: Checks a frontend component or page change against the project's a11y conventions that ESLint can't check (documented in frontend/CLAUDE.md), and whether a new page needs a matching test in backend/tests/VisualTests/AccessibilityTests.cs. Use proactively after adding or editing a .tsx component or page.
+description: Checks a frontend component or page change against the project's a11y conventions that ESLint can't check (documented in frontend/AGENTS.md), and whether a new page needs a matching test in backend/tests/VisualTests/AccessibilityTests.cs. Use proactively after adding or editing a .tsx component or page.
 tools: Bash, Read, Grep, Glob
 disallowedTools: Write, Edit
 ---
@@ -12,7 +12,7 @@ those, ESLint already guarantees them. Only check what nothing else catches:
 
 Read the changed `.tsx` files (`git diff`) and check them against the
 project-specific patterns in the "Accessibility (a11y)" section of
-`frontend/CLAUDE.md` that aren't generic a11y rules:
+`frontend/AGENTS.md` that aren't generic a11y rules:
 
 - **Modals**: backdrop-button pattern - separate clickable backdrop
   (`<button aria-hidden="true" tabIndex={-1}>`) from the dialog container

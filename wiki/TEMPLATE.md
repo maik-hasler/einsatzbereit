@@ -16,6 +16,6 @@ timestamp: <ISO 8601 datetime>       # recommended
 # Examples
 
 # Citations
-<!-- one entry per source used: `sources/<path>` (loose notes), a repo path
-     optionally with `@<commit-sha>` (code/CLAUDE.md/hooks), or `#NNN` / a
-     full issue-or-PR URL (GitHub) -->
+<!-- one entry per source used: `docs/notes/<path>` (loose notes), a repo
+     path optionally with `@<commit-sha>` (code/AGENTS.md or CLAUDE.md/hooks),
+     or `#NNN` / a full issue-or-PR URL (GitHub) -->

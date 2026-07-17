@@ -21,10 +21,13 @@ workflow, update both this file and the matching skill.
 
 ## Three input channels, one bundle
 
-- **`sources/`** - your own loose notes and ideas about Einsatzbereit,
-  dropped by hand as plain Markdown or text. Immutable once added: read from
-  it, never edit or delete anything in it. Fully enumerable, so this is the
-  one channel the coverage-audit rules below hold to strict K=0 accounting.
+- **`docs/notes/`** (repo-root relative; `../docs/notes/` if your cwd is
+  `wiki/`) - your own loose notes and ideas about Einsatzbereit, dropped by
+  hand as plain Markdown or text. Immutable once added: read from it, never
+  edit or delete anything in it. Fully enumerable, so this is the one
+  channel the coverage-audit rules below hold to strict K=0 accounting -
+  that guarantee comes from being hand-dropped and enumerable, not from
+  living inside `wiki/`, and holds just as well at this address.
 - **The repo itself** - commits, code, hook scripts, existing `CLAUDE.md`
   files. Cite directly by repo-relative path (optionally `@<commit-sha>`
   when the point is what a specific commit did). Not exhaustively
@@ -34,8 +37,8 @@ workflow, update both this file and the matching skill.
 - **GitHub issues and PRs** - cited directly by `#NNN` or full URL. Same
   best-effort coverage caveat as the repo channel.
 - **`wiki/`** - the OKF bundle itself. Its root is `wiki/index.md` /
-  `wiki/log.md`; everything else under it that isn't `sources/`, `scripts/`,
-  or `.claude/` is a concept file or directory. You own this layer entirely.
+  `wiki/log.md`; everything else under it that isn't `scripts/` or
+  `.claude/` is a concept file or directory. You own this layer entirely.
 
 Everything else at `wiki/`'s own root (`README.md`, `AGENTS.md`, `CLAUDE.md`,
 `TEMPLATE.md`, `WRITING_STYLE.md`, `requirements.txt`, `scripts/`, `.claude/`)
@@ -48,22 +51,22 @@ The wiki is a compiled, compounding artifact, not a static pile of documents
 (this pattern is [Andrej Karpathy's LLM-wiki
 idea](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)). A
 false "already ingested" verdict silently breaks that compounding loop, so
-treat completeness as something you prove every time for the `sources/`
+treat completeness as something you prove every time for the `docs/notes/`
 channel specifically, never something you assume from a prior session, a
 memory note, or a clean `validate.py` run - `validate.py` only checks
 frontmatter shape on pages that already exist; it has no notion of
-`sources/` and cannot detect missing ingestion.
+`docs/notes/` and cannot detect missing ingestion.
 
-Two modes for the `sources/` channel - pick one before doing anything else:
+Two modes for the `docs/notes/` channel - pick one before doing anything else:
 
 - **Targeted**: the request names one specific existing path under
-  `sources/`. Run steps 1-8 below on it.
+  `docs/notes/`. Run steps 1-8 below on it.
 - **Coverage audit**: the request is bare ("ingest", "what's missing",
   "ingest everything") or names no specific path. Never skip straight to
-  "everything's covered" here. Glob `sources/**/*` fresh (files and dirs,
-  not just top-level entries), re-run `git status --short sources/` (path is
-  `wiki/sources/` from the repo root) to catch anything added or staged
-  mid-session, and grep each enumerated path against every wiki page's
+  "everything's covered" here. Glob `docs/notes/**/*` fresh (files and dirs,
+  not just top-level entries), re-run `git status --short docs/notes/` to
+  catch anything added or staged mid-session, and grep each enumerated path
+  against every wiki page's
   `# Citations` section. Report concrete numbers - "N found, M cited, K
   uncited: `<list>`" - a bare "looks complete" is not a valid conclusion.
   Then run Targeted mode on each uncited item in turn.
@@ -74,7 +77,7 @@ audit them exhaustively - e.g. "ingest the gotcha behind commit `<sha>`" or
 coverage claim across these two channels; it isn't one this bundle can make.
 
 1. Read the source in full before writing anything (the raw file under
-   `sources/`, the commit/diff, or the issue/PR thread). For a long source
+   `docs/notes/`, the commit/diff, or the issue/PR thread). For a long source
    that doesn't fit in one read, split it into smaller pieces at whatever
    natural structure it has and ingest piece by piece, updating the same
    wiki pages incrementally rather than holding the whole thing in context.
@@ -99,7 +102,7 @@ coverage claim across these two channels; it isn't one this bundle can make.
    and the recommended fields, and place it under the most specific existing
    directory (create one if none fits). Every new or edited page must list
    what it was built from in its `# Citations` section, in whichever of the
-   three channel forms applies: `sources/<path>`, a repo path (optionally
+   three channel forms applies: `docs/notes/<path>`, a repo path (optionally
    `@<sha>`), or `#NNN` / a full issue-or-PR URL.
 5. Cross-link related concepts with bundle-relative markdown links (a
    leading `/` resolves from `wiki/`, the bundle root).
@@ -119,10 +122,10 @@ coverage claim across these two channels; it isn't one this bundle can make.
    handful of pages that actually look relevant. Don't scan the whole bundle.
 2. Read only those pages and answer with citations to the specific files
    used.
-3. Coverage tripwire: one quick grep of `sources/` for the topic's obvious
-   keywords/filenames. If that turns up source paths the pages you read
-   don't cite, say so alongside the answer. This is a single grep, not a
-   full audit - that's Lint's job, and only for the `sources/` channel.
+3. Coverage tripwire: one quick grep of `docs/notes/` for the topic's
+   obvious keywords/filenames. If that turns up source paths the pages you
+   read don't cite, say so alongside the answer. This is a single grep, not
+   a full audit - that's Lint's job, and only for the `docs/notes/` channel.
 4. If answering required synthesis that isn't captured anywhere and is
    likely to be asked again, file it back as a new concept (see Ingest)
    instead of letting it disappear into the conversation.
@@ -131,11 +134,11 @@ coverage claim across these two channels; it isn't one this bundle can make.
 
 1. Run `python scripts/validate.py` and fix anything it flags - this only
    checks frontmatter schema on files already inside `wiki/`; it has no
-   knowledge of `sources/` and cannot detect missing ingestion.
-2. **Source-coverage audit**, scoped to the `sources/` channel (the only
+   knowledge of `docs/notes/` and cannot detect missing ingestion.
+2. **Source-coverage audit**, scoped to the `docs/notes/` channel (the only
    fully enumerable one). Run this every single pass, unconditionally.
-   Glob `sources/**/*` fresh, re-check `git status --short sources/`, and
-   cross-reference every path against every page's `# Citations` section in
+   Glob `docs/notes/**/*` fresh, re-check `git status --short docs/notes/`,
+   and cross-reference every path against every page's `# Citations` section in
    both directions: every source cited by some page (else "uncited
    source"), every `sources/...` citation resolving to a real path (else
    "broken citation"). Report exact counts with the full list behind each.
@@ -149,7 +152,7 @@ coverage claim across these two channels; it isn't one this bundle can make.
    a coverage gap here - flag it and hand it to Ingest or the user.
 7. Never conclude "everything is already ingested" or "nothing to do" unless
    step 2's audit actually ran in this pass and produced that result with
-   the counts shown. This conclusion only ever covers the `sources/`
+   the counts shown. This conclusion only ever covers the `docs/notes/`
    channel - it says nothing about the repo or issue/PR channels, which
    aren't exhaustively audited.
 
@@ -159,8 +162,8 @@ coverage claim across these two channels; it isn't one this bundle can make.
   string from elsewhere in the bundle rather than inventing a
   near-duplicate.
 - `index.md` and `log.md` are reserved at every level under `wiki/`; every
-  other `.md` file under `wiki/` (outside `sources/`, `scripts/`, `.claude/`)
-  is a concept.
+  other `.md` file under `wiki/` (outside `scripts/`, `.claude/`) is a
+  concept.
 - Keep prose terse - this bundle is read by agents at least as often as
   humans.
 - Plain ASCII hyphens only, no Unicode dashes - same rule as the rest of
