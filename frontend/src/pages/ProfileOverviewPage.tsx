@@ -192,6 +192,8 @@ export default function ProfileOverviewPage() {
 	const [myOrganizations, setMyOrganizations] = useState<
 		OrganizationSummaryDto[]
 	>([]);
+	const [myOrganizationsInitialized, setMyOrganizationsInitialized] =
+		useState(false);
 
 	// --- Engagements tab state ---
 	const [engagementsScope, setEngagementsScope] =
@@ -362,13 +364,14 @@ export default function ProfileOverviewPage() {
 	// Entry point into the organizer app (#691/#702) - lets an organizer get
 	// from their own profile into /app/{slug} without the removed header switcher.
 	useEffect(() => {
-		if (activeTab !== "profile") return;
+		if (activeTab !== "profile" || myOrganizationsInitialized) return;
+		setMyOrganizationsInitialized(true);
 		api
 			.getOrganizations()
 			.then(setMyOrganizations)
 			.catch(() => setMyOrganizations([]));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeTab]);
+	}, [activeTab, myOrganizationsInitialized]);
 
 	function addChip(
 		value: string,
