@@ -317,8 +317,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// Filter the <li> card, not the stretched <a> overlay - the card link
+		// carries the title only as aria-label (empty text content), so
+		// HasText never matches it. The <li> contains the visible <h3> title.
 		var draftInPublicList = Page
-			.Locator("a[href*='/volunteer-opportunities/']")
+			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.Filter(new() { HasText = uniqueTitle });
 		await Expect(draftInPublicList).Not.ToBeVisibleAsync();
 
@@ -450,9 +453,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
-		// Step 3: Waitlist participation type.
+		// Step 3: Waitlist participation type. Click the visible label card, not
+		// the sr-only radio <input>, which is not a reliable pointer target.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("input[name='participationType'][value='Waitlist']").CheckAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='Waitlist'])").ClickAsync();
 
 		// Step 4: publishing with no time slots must still be blocked client-side.
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
@@ -493,14 +497,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		// The newly published opportunity is visible in the public list. Same
-		// 30s window as the dialog-close wait above - under the shared,
-		// contended CI stack the listing can lag behind the publish call by
-		// more than 15s even when nothing is actually wrong.
+		// The newly published opportunity is visible in the public list. Filter
+		// the <li> card, not the stretched <a> overlay - the card link carries
+		// the title only as aria-label (empty text content), so HasText never
+		// matches it; the <li> contains the visible <h3> title. Keep the 30s
+		// window: under the shared, contended CI stack the listing can lag
+		// behind the publish call by more than 15s even when nothing is wrong.
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var listedCard = Page
-			.Locator("a[href*='/volunteer-opportunities/']")
+			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.Filter(new() { HasText = uniqueTitle });
 		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}

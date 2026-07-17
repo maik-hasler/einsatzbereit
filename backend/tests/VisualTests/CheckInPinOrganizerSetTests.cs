@@ -45,8 +45,13 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("input[name='participationType'][value='IndividualContact']").CheckAsync();
-		await Page.Locator("input[name='checkInMethod'][value='PINCode']").CheckAsync();
+		// Click the visible label card, not the sr-only radio <input>. An
+		// sr-only element (1x1px, clip:rect(0,0,0,0)) is not a reliable pointer
+		// target - Playwright's hit-test at its coordinates can resolve to the
+		// grid/label painted behind it, so clicking the input directly is
+		// position-dependent and flaky. The wrapping <label> is the real control.
+		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])").ClickAsync();
+		await Page.Locator("label:has(input[name='checkInMethod'][value='PINCode'])").ClickAsync();
 
 		var pinInput = Page.Locator("#create-check-in-pin");
 		await Expect(pinInput).ToBeVisibleAsync();

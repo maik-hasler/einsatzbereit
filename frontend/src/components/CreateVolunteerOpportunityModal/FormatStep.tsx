@@ -23,7 +23,7 @@ function RadioCardGroup<T extends string>({
 			{options.map(([value, label]) => (
 				<label
 					key={value}
-					className={`relative flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 transition ${
+					className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 transition ${
 						current === value
 							? "border-brand-500 bg-brand-50 text-brand-800"
 							: "border-gray-200 bg-white text-gray-700 hover:border-brand-200 hover:bg-gray-50"
@@ -32,7 +32,7 @@ function RadioCardGroup<T extends string>({
 					<input
 						type="radio"
 						value={value}
-						className="sr-only left-0 top-0"
+						className="sr-only"
 						{...register(name)}
 					/>
 					<span className="text-sm font-medium">{label}</span>
