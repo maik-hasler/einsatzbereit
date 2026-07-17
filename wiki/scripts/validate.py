@@ -2,19 +2,24 @@
 """Conformance checker for the OKF v0.1 bundle in wiki/.
 
 Every file under wiki/ other than the reserved/scaffolding names below must
-start with a YAML frontmatter block that includes a non-empty `type` field.
-Repo scaffolding (README.md, AGENTS.md, CLAUDE.md, TEMPLATE.md,
-WRITING_STYLE.md, requirements.txt, scripts/, .claude/) is never scanned.
+start with a YAML frontmatter block that includes a non-empty `type` field
+and a non-empty `tags` list, and must contain a `# Related` section (even if
+its body is just "None found."). Repo scaffolding (README.md, AGENTS.md,
+CLAUDE.md, TEMPLATE.md, WRITING_STYLE.md, requirements.txt, scripts/) is
+never scanned.
 """
 
+import re
 import sys
 from pathlib import Path
 
 import yaml
 
+RELATED_HEADING = re.compile(r"^# Related\s*$", re.MULTILINE)
+
 RESERVED_NAMES = {"index.md", "log.md"}
 SCAFFOLD_FILES = {"README.md", "AGENTS.md", "CLAUDE.md", "TEMPLATE.md", "WRITING_STYLE.md"}
-SKIP_DIRS = {"scripts", ".claude", "node_modules", ".venv", "venv"}
+SKIP_DIRS = {"scripts", "node_modules", ".venv", "venv"}
 
 
 def frontmatter(text: str):
@@ -49,9 +54,19 @@ def check_concept(path: Path) -> list[str]:
         return [f"{path}: invalid YAML frontmatter ({exc})"]
     if not isinstance(data, dict):
         return [f"{path}: frontmatter must be a mapping"]
+
+    errors = []
     if not str(data.get("type") or "").strip():
-        return [f"{path}: missing required non-empty 'type' field"]
-    return []
+        errors.append(f"{path}: missing required non-empty 'type' field")
+    tags = data.get("tags")
+    if not isinstance(tags, list) or not [t for t in tags if str(t).strip()]:
+        errors.append(f"{path}: missing required non-empty 'tags' list")
+    if not RELATED_HEADING.search(text):
+        errors.append(
+            f"{path}: missing required '# Related' section "
+            f"(state the links found, or write 'None found.')"
+        )
+    return errors
 
 
 def check_root_index(bundle_root: Path) -> list[str]:

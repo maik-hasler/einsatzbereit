@@ -33,8 +33,9 @@ Three input channels feed this wiki, not just one:
    directly by repo-relative path, no copy into `docs/notes/` needed.
 3. **GitHub issues and PRs** - cited directly by `#NNN` or URL.
 
-See `AGENTS.md` for the full ingest/query/lint workflow, or use the
-directory-scoped skills directly: `/wiki:ingest`, `/wiki:query`, `/wiki:lint`.
+See `AGENTS.md` for the full ingest/query/lint workflow, or use the skills
+directly: `/ingest`, `/query`, `/lint` (`.claude/skills/` at the repo root -
+not wiki-scoped, available in every session).
 
 ## Structure
 
@@ -47,23 +48,18 @@ wiki/
 ├── index.md           Bundle root index.
 ├── log.md             Chronological, newest-first record of changes.
 ├── requirements.txt   `pyyaml`, for scripts/validate.py.
-├── scripts/
-│   └── validate.py    Conformance checker for this bundle.
-└── .claude/
-    └── skills/
-        ├── ingest/
-        ├── query/
-        └── lint/
+└── scripts/
+    └── validate.py    Conformance checker for this bundle.
 ```
 
 Every `.md` file directly under `wiki/` other than the files listed above is
 a concept document; every `.md` file under a subdirectory that isn't
-`scripts/` or `.claude/` is a concept document too.
+`scripts/` is a concept document too.
 
 ## Status
 
 Prototype scaffold only - no concept pages yet, no CI wiring, no hook into
-`issue-triage` or `persona-simulation`. Try it with `/wiki:ingest` against
+`issue-triage` or `persona-simulation`. Try it with `/ingest` against
 whatever you drop in `docs/notes/`, then decide via issue #701 whether it's
 worth wiring up further.
 

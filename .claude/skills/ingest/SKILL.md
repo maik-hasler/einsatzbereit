@@ -12,7 +12,7 @@ silently breaks that compounding loop. The checks below are the mechanism
 that makes "nothing to do" a falsifiable conclusion instead of a guess, and
 they are not optional for the `docs/notes/` channel.
 
-Three input channels feed this wiki (see `../../../AGENTS.md`):
+Three input channels feed this wiki (see `../../../wiki/AGENTS.md`):
 
 - **`docs/notes/`** - loose notes dropped by hand. Fully enumerable -
   audited to strict K=0 accounting below.
@@ -74,13 +74,25 @@ Then work through the K uncited sources one at a time using Mode B below.
      the old page's frontmatter pointing at the new one, keep the old page.
 3. Before creating a page, check it actually *compresses* the source. If
    grepping the source directly would answer as fast, it isn't worth a page.
-4. Copy `wiki/TEMPLATE.md` for new pages. Fill in `type` (required) and the
-   recommended fields, place it under the most specific existing directory
-   (create one if none fits). Every new or edited page lists what it was
-   built from in `# Citations`: `docs/notes/<path>`, a repo path (optionally
-   `@<sha>`), or `#NNN` / a full issue-or-PR URL.
-5. Cross-link related concepts with markdown links relative to `wiki/` (a
-   leading `/` resolves from the bundle root).
+4. Copy `wiki/TEMPLATE.md` for new pages. Fill in `type` and `tags` (both
+   required) and the recommended fields, place it under the most specific
+   existing directory (create one if none fits). Every new or edited page
+   lists what it was built from in `# Citations`: `docs/notes/<path>`, a
+   repo path (optionally `@<sha>`), or `#NNN` / a full issue-or-PR URL.
+5. **Relatedness check - mandatory, same rigor as Mode A's coverage audit.**
+   A page that stands alone when it didn't have to is the failure mode this
+   step exists to catch:
+   - Grep `wiki/**/*.md` for this page's `tags` values and 2-3 obvious
+     keywords from its title/description, before writing `# Related`, not
+     from memory of what's "probably" in the bundle.
+   - For every genuinely related page found (real shared topic, not an
+     incidental word match), link it in **both directions**: this page's
+     `# Related` section links to it, and that existing page gets edited in
+     place to link back.
+   - If nothing genuinely turns up, `# Related` still must exist - write
+     `# Related\nNone found.` rather than leaving it blank. `validate.py`
+     rejects a missing `# Related` heading but can't tell a lazy "None
+     found" from a real one - the grep has to actually happen.
 6. Update every `index.md` between the new/changed file and `wiki/index.md`.
    One line per entry. Split a section past ~20-30 entries into its own
    sub-index.
@@ -88,6 +100,8 @@ Then work through the K uncited sources one at a time using Mode B below.
    ISO 8601 date, bold action prefix: `**Added**`, `**Updated**`, `**Fixed**`,
    `**Superseded**`.
 8. Run `python wiki/scripts/validate.py`. This only checks frontmatter shape
-   on existing pages - never cite it as evidence that `docs/notes/`
-   ingestion is complete; that's Mode A's job.
-9. Report which pages were created vs. updated, and what was logged.
+   and `# Related` presence on existing pages - never cite it as evidence
+   that `docs/notes/` ingestion is complete; that's Mode A's job.
+9. Report which pages were created vs. updated, and which existing pages got
+   a backlink added as part of step 5 - a silent backlink is as easy to lose
+   track of as a silent page edit.

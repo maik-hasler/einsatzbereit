@@ -15,7 +15,7 @@ argument-hint: [question]
    topic's obvious keywords/filenames. If it turns up source paths that
    aren't cited by any page read, say so explicitly alongside the answer -
    e.g. "note: `docs/notes/<x>.md` looks relevant but isn't cited by any
-   page I read; consider running `/wiki:ingest` on it." This is a single
+   page I read; consider running `/ingest` on it." This is a single
    grep, not a full audit - that's Lint's job, and scoped to `docs/notes/`
    only (the repo and issue/PR channels aren't exhaustively checkable this
    way).

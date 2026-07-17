@@ -44,7 +44,7 @@ Overused tell-words - prefer the plain alternative:
 - **Bold** only for true key terms - never scattered through sentences for emphasis.
 - Prefer prose over bullet lists. Use a list only for genuinely discrete items; never a list of one or two.
 - No section header for a one-line section. No "Overview" / "Conclusion" headers on short pages.
-- No Unicode en/em dashes anywhere in this repo (root `CLAUDE.md`, CI enforced) - use a plain ASCII hyphen, or restructure the sentence instead of leaning on a dash as an all-purpose connector.
+- No Unicode en/em dashes anywhere in this repo (root `AGENTS.md`, CI enforced) - use a plain ASCII hyphen, or restructure the sentence instead of leaning on a dash as an all-purpose connector.
 - Headings in sentence case, not Title Case. No emoji.
 - No leftover markdown artifacts, no curly "smart" quotes pasted from elsewhere.
 
@@ -58,4 +58,6 @@ Overused tell-words - prefer the plain alternative:
 
 Before saving a page, scan for: puffery phrases (1), tell-words (2), the
 four sentence patterns (3), scattered bold / needless lists / stray Unicode
-dashes (4), and any unsourced or invented claim (5). Cut what you find.
+dashes (4), any unsourced or invented claim (5), and a `# Related` section
+that's missing, blank, or says "None found" without an actual grep behind
+it (6, see `AGENTS.md`'s Ingest step 5). Cut what you find.
