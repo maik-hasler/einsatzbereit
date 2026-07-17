@@ -177,7 +177,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// The active org's row carries aria-current="page" - pick a different one.
 		var otherRow = Page.Locator("[data-testid='org-switch-row']:not([aria-current='page'])").First;
-		var otherOrgName = (await otherRow.InnerTextAsync()).Trim();
+		var otherOrgName = (await otherRow.TextContentAsync() ?? "").Trim();
 		await otherRow.ClickAsync();
 
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });

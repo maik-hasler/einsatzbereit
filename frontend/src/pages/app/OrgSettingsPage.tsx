@@ -165,7 +165,7 @@ export default function OrgSettingsPage() {
 						website={org.website}
 						address={org.address}
 						subtitle={
-							<p className="text-xs text-gray-400">
+							<p className="text-xs text-gray-500">
 								{t("orgSettings.createdOn", {
 									date: new Date(org.createdOn).toLocaleDateString(locale, {
 										day: "2-digit",

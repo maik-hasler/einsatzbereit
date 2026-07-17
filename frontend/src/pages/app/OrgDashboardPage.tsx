@@ -166,7 +166,7 @@ export default function OrgDashboardPage() {
 					type="button"
 					onClick={() => setShowCreateModal(true)}
 					data-testid="create-opportunity-btn"
-					className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none"
+					className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none"
 				>
 					{t("orgOverview.createOpportunity")}
 				</button>

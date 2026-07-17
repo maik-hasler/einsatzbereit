@@ -101,7 +101,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 			return; // already auto-redirected - olaf organizes exactly one org here, skip
 
 		var firstRow = rows.First;
-		var orgName = (await firstRow.InnerTextAsync()).Trim();
+		var orgName = (await firstRow.TextContentAsync() ?? "").Trim();
 		await firstRow.ClickAsync();
 
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });

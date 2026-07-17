@@ -178,7 +178,7 @@ export default function OrgAppLayout() {
 				/>
 			</main>
 
-			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-400">
+			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
 				<Link to="/impressum" className="hover:text-gray-600">
 					{t("footer.imprint")}
 				</Link>
