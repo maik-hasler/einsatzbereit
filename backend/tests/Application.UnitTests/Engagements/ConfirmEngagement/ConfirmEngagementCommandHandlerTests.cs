@@ -186,7 +186,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "weekly-hero-4" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -210,7 +210,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.DidNotReceive().Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4"),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "weekly-hero-4"),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -231,7 +231,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "first-step" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "first-step" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -258,7 +258,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "dedicated-5" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "dedicated-5" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -281,7 +281,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.DidNotReceive().Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "dedicated-5"),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "dedicated-5"),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -304,7 +304,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "centurion-100" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "centurion-100" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 

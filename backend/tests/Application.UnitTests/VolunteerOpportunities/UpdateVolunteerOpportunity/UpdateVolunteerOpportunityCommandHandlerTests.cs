@@ -322,7 +322,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		await _notifRepo.Received(1).AddAsync(
-			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
+			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
 	}
 
