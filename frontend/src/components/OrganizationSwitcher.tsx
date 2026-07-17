@@ -27,7 +27,7 @@ export default function OrganizationSwitcher({
 	const currentOrg = orgs.find((o) => o.id === currentOrgId) ?? null;
 
 	function orgPath(org: OrganizationSummaryDto) {
-		return `/app/${org.slug ?? org.id}/${currentTab}`;
+		return `/app/${org.id}/${currentTab}`;
 	}
 
 	function fetchOrgs() {
@@ -65,7 +65,7 @@ export default function OrganizationSwitcher({
 
 	function handleOrgCreated(newOrg: Organization) {
 		setShowModal(false);
-		navigate(`/app/${newOrg.slug ?? newOrg.id?.value}/dashboard`);
+		navigate(`/app/${newOrg.id?.value}/dashboard`);
 	}
 
 	if (loading) {
@@ -82,9 +82,17 @@ export default function OrganizationSwitcher({
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>
-					<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
-						{(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
-					</span>
+					{currentOrg?.logoUrl ? (
+						<img
+							src={currentOrg.logoUrl}
+							alt=""
+							className="h-6 w-6 shrink-0 rounded-md object-cover"
+						/>
+					) : (
+						<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
+							{(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
+						</span>
+					)}
 					<span className="max-w-[200px] truncate">
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
@@ -120,9 +128,17 @@ export default function OrganizationSwitcher({
 												: "text-gray-700 hover:bg-gray-50"
 										}`}
 									>
-										<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
-											{org.name.charAt(0).toUpperCase()}
-										</span>
+										{org.logoUrl ? (
+											<img
+												src={org.logoUrl}
+												alt=""
+												className="h-6 w-6 shrink-0 rounded-md object-cover"
+											/>
+										) : (
+											<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
+												{org.name.charAt(0).toUpperCase()}
+											</span>
+										)}
 										<span className="truncate">{org.name}</span>
 									</button>
 								</li>

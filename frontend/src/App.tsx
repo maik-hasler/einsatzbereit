@@ -15,6 +15,7 @@ import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import OrgAppEntryPage from "./pages/app/OrgAppEntryPage";
 import OrgDashboardPage from "./pages/app/OrgDashboardPage";
 import OrgAppEngagementsPage from "./pages/app/OrgAppEngagementsPage";
 import OrgMembersPage from "./pages/app/OrgMembersPage";
@@ -49,7 +50,7 @@ export default function App() {
 		<Routes>
 			<Route path="/callback" element={<CallbackPage />} />
 			<Route
-				path="/app/:orgSlug"
+				path="/app/:organizationId"
 				element={
 					<ProtectedRoute>
 						<OrgAppLayout />
@@ -87,6 +88,14 @@ export default function App() {
 					}
 				/>
 				<Route path="/account" element={<Navigate to="/profile" replace />} />
+				<Route
+					path="/app"
+					element={
+						<ProtectedRoute>
+							<OrgAppEntryPage />
+						</ProtectedRoute>
+					}
+				/>
 				<Route
 					path="/profile"
 					element={

@@ -3780,7 +3780,6 @@ export interface OpportunityFeedbackSummary {
 
 export interface Organization {
     name?: string;
-    slug?: string | undefined;
     description?: string | undefined;
     contactEmail?: string | undefined;
     contactPhone?: string | undefined;
@@ -3817,7 +3816,6 @@ export interface OrganizationDashboardResponse {
 export interface OrganizationDetailsResponse {
     id: string;
     name: string;
-    slug: string | undefined;
     description: string | undefined;
     contactEmail: string | undefined;
     contactPhone: string | undefined;
@@ -3852,7 +3850,7 @@ export interface OrganizationMemberDto {
 export interface OrganizationSummaryDto {
     id: string;
     name: string;
-    slug: string | undefined;
+    logoUrl: string | undefined;
 
     [key: string]: any;
 }
@@ -3923,7 +3921,6 @@ export interface PublicOpportunitySummaryDto {
 export interface PublicOrganizationProfileResponse {
     id: string;
     name: string;
-    slug: string | undefined;
     description: string | undefined;
     contactEmail: string | undefined;
     contactPhone: string | undefined;

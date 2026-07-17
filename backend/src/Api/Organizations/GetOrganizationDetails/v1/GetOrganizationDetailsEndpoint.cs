@@ -16,7 +16,7 @@ internal sealed class GetOrganizationDetailsEndpoint
 {
 	public void MapEndpoint(IEndpointRouteBuilder app)
 	{
-		app.MapGet("/organizations/{organizationId}", GetOrganizationDetailsAsync)
+		app.MapGet("/organizations/{organizationId:guid}", GetOrganizationDetailsAsync)
 			.WithName("GetOrganizationDetails")
 			.Produces<OrganizationDetailsResponse>()
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -29,7 +29,7 @@ internal sealed class GetOrganizationDetailsEndpoint
 	}
 
 	private static async Task<IResult> GetOrganizationDetailsAsync(
-		[FromRoute] string organizationId,
+		[FromRoute] Guid organizationId,
 		[FromServices] ISender sender,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)

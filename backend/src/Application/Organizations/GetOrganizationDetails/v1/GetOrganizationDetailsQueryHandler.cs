@@ -3,6 +3,7 @@ using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.Organizations;
 
 namespace Application.Organizations.GetOrganizationDetails.v1;
 
@@ -15,8 +16,8 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		GetOrganizationDetailsQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		var organization = await OrganizationLookup.FindByIdOrSlugAsync(
-			dbContext, request.OrganizationIdOrSlug, cancellationToken);
+		var organization = await dbContext.Organizations.FindAsync(
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken);
 
 		if (organization is null)
 			return null;
@@ -41,7 +42,6 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		return new OrganizationDetailsResponse(
 			organization.Id.Value,
 			organization.Name,
-			organization.Slug,
 			organization.Description,
 			organization.ContactEmail,
 			organization.ContactPhone,

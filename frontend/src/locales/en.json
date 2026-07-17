@@ -36,6 +36,7 @@
       "heroSubtitle": "Fewer people volunteer each year - due to time pressure, effort, and bureaucracy. Einsatzbereit makes micro-volunteering possible: a few hours, real impact, zero overhead.",
       "heroCta": "Find opportunities",
       "heroCtaOrg": "Create an organisation",
+      "heroCtaOrgOverview": "Organization overview",
       "heroStat1Value": "2 min",
       "heroStat1Label": "to sign up",
       "heroStat2Value": "€0",
@@ -325,6 +326,14 @@
     "orgApp": {
       "backToSite": "Back to Einsatzbereit",
       "notAuthorized": "You don't have access to this organization."
+    },
+    "orgAppEntry": {
+      "title": "Organization Overview",
+      "loading": "Loading…",
+      "emptyTitle": "You don't organize any organizations yet",
+      "emptyDesc": "Create an organization to start publishing volunteer opportunities and managing your team.",
+      "pickerTitle": "Choose an organization",
+      "pickerDesc": "You organize more than one organization - pick which one to manage."
     },
     "orgEngagements": {
       "title": "Engagement Overview",
@@ -672,10 +681,7 @@
       "saveError": "Failed to save profile.",
       "loadError": "Could not load profile.",
       "loading": "Loading…",
-      "removeChip": "Remove",
-      "sectionOrganization": "Organizations",
-      "createOrgHint": "Want to organize volunteer opportunities? Create an organization to get started.",
-      "createAnotherOrgHint": "Organize more than one? Create another organization."
+      "removeChip": "Remove"
     },
     "achievements": {
       "title": "My Achievements",
@@ -731,6 +737,7 @@
     },
     "breadcrumb": {
       "home": "Home",
+      "orgApp": "Organizations",
       "volunteerOpportunities": "Volunteer Opportunities",
       "engagements": "Engagements",
       "settings": "Settings",

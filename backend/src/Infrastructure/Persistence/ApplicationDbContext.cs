@@ -101,18 +101,6 @@ internal sealed class ApplicationDbContext(
 			.Where(m => m.OrganizationId == organizationId)
 			.ExecuteDeleteAsync(cancellationToken);
 
-	public async Task<bool> OrganizationSlugExistsAsync(
-		string slug,
-		CancellationToken cancellationToken = default) =>
-		await Set<Organization>()
-			.AnyAsync(o => o.Slug == slug, cancellationToken);
-
-	public async Task<Organization?> FindOrganizationBySlugAsync(
-		string slug,
-		CancellationToken cancellationToken = default) =>
-		await Set<Organization>()
-			.FirstOrDefaultAsync(o => o.Slug == slug, cancellationToken);
-
 	public async Task<List<Organization>> GetOrganizerOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default) =>

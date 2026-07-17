@@ -3,7 +3,6 @@ namespace Application.Organizations.GetPublicOrganizationProfile.v1;
 public sealed record PublicOrganizationProfileResponse(
 	Guid Id,
 	string Name,
-	string? Slug,
 	string? Description,
 	string? ContactEmail,
 	string? ContactPhone,

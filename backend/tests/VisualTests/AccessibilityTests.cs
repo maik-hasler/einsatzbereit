@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
@@ -153,28 +152,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// "Your organizations" is the entry point into /app (only rendered when
-	// olaf organizes at least one org) - lands on /app/{slug}/dashboard.
+	// Olaf's seed data always organizes at least one org, so /app always lands
+	// on a dashboard (auto-redirect for one org, picker for several).
 	private async Task<bool> NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
 	{
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var orgLink = Page.GetByTestId("your-organizations-link");
-		try
-		{
-			await orgLink.First.WaitForAsync(new() { Timeout = 5_000 });
-		}
-		catch (TimeoutException)
-		{
-			return false; // olaf has no orgs, skip
-		}
-
-		await orgLink.First.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 		return true;
 	}
 
@@ -185,6 +168,37 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgAppEntryPage_Picker_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// Olaf organizes at least one org in seed data - covers the picker state
+		// when he has several, or the (trivially compliant) redirect otherwise.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/app");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgAppEntryPage_EmptyState_AsVera_HasNoSeriousA11yViolations()
+	{
+		// Vera organizes nothing in seed data - covers the empty-state prompt.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/app");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

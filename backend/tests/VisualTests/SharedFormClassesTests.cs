@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
 
@@ -41,18 +40,9 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	public async Task OrganizationSettingsInput_UsesSharedInputClass()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var orgLink = Page.GetByTestId("your-organizations-link");
-		if (await orgLink.CountAsync() == 0)
-			return; // olaf has no orgs in this environment, skip
-
-		await orgLink.First.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

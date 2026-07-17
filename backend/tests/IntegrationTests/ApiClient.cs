@@ -159,7 +159,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<OrganizationDetailsResponse> GetOrganizationDetailsAsync(string organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<OrganizationDetailsResponse> GetOrganizationDetailsAsync(System.Guid organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>No Content</returns>
@@ -179,7 +179,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PublicOrganizationProfileResponse> GetPublicOrganizationProfileAsync(string organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<PublicOrganizationProfileResponse> GetPublicOrganizationProfileAsync(System.Guid organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -3171,7 +3171,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<OrganizationDetailsResponse> GetOrganizationDetailsAsync(string organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<OrganizationDetailsResponse> GetOrganizationDetailsAsync(System.Guid organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (organizationId == null)
                 throw new System.ArgumentNullException("organizationId");
@@ -3611,7 +3611,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PublicOrganizationProfileResponse> GetPublicOrganizationProfileAsync(string organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<PublicOrganizationProfileResponse> GetPublicOrganizationProfileAsync(System.Guid organizationId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (organizationId == null)
                 throw new System.ArgumentNullException("organizationId");
@@ -7673,9 +7673,6 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         public string Name { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("slug")]
-        public string? Slug { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string? Description { get; set; } = default!;
 
@@ -7797,9 +7794,6 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Name { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("slug")]
-        public string? Slug { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string? Description { get; set; } = default!;
 
@@ -7909,8 +7903,8 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Name { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("slug")]
-        public string? Slug { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("logoUrl")]
+        public string? LogoUrl { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -8148,9 +8142,6 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("slug")]
-        public string? Slug { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string? Description { get; set; } = default!;

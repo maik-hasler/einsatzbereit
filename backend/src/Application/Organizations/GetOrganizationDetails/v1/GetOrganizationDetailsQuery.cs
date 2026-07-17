@@ -4,6 +4,6 @@ using Domain.Users;
 namespace Application.Organizations.GetOrganizationDetails.v1;
 
 public sealed record GetOrganizationDetailsQuery(
-	string OrganizationIdOrSlug,
+	Guid OrganizationId,
 	UserId RequestingUserId)
 	: IQuery<OrganizationDetailsResponse?>;

@@ -33,9 +33,7 @@ internal sealed class CreateOrganizationCommandHandler(
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(
 			request.UserId, cancellationToken);
 
-		var slug = await GenerateUniqueSlugAsync(request.Name, cancellationToken);
-
-		var organization = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), request.Name, slug)
+		var organization = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), request.Name)
 			.GetValueOrThrow();
 
 		var address = request.Address is null
@@ -58,26 +56,5 @@ internal sealed class CreateOrganizationCommandHandler(
 		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 
 		return organization;
-	}
-
-	private async Task<string?> GenerateUniqueSlugAsync(
-		string name,
-		CancellationToken cancellationToken)
-	{
-		var baseSlug = SlugGenerator.Generate(name);
-
-		if (string.IsNullOrEmpty(baseSlug))
-			return null;
-
-		var candidate = baseSlug;
-		var suffix = 2;
-
-		while (await dbContext.OrganizationSlugExistsAsync(candidate, cancellationToken))
-		{
-			candidate = $"{baseSlug}-{suffix}";
-			suffix++;
-		}
-
-		return candidate;
 	}
 }

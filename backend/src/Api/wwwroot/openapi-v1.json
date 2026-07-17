@@ -1787,7 +1787,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2054,7 +2055,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4830,12 +4832,6 @@
           "name": {
             "type": "string"
           },
-          "slug": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
           "description": {
             "type": [
               "null",
@@ -4981,7 +4977,6 @@
         "required": [
           "id",
           "name",
-          "slug",
           "description",
           "contactEmail",
           "contactPhone",
@@ -5001,12 +4996,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "slug": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "description": {
             "type": [
@@ -5121,7 +5110,7 @@
         "required": [
           "id",
           "name",
-          "slug"
+          "logoUrl"
         ],
         "type": "object",
         "properties": {
@@ -5132,7 +5121,7 @@
           "name": {
             "type": "string"
           },
-          "slug": {
+          "logoUrl": {
             "type": [
               "null",
               "string"
@@ -5381,7 +5370,6 @@
         "required": [
           "id",
           "name",
-          "slug",
           "description",
           "contactEmail",
           "contactPhone",
@@ -5399,12 +5387,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "slug": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "description": {
             "type": [

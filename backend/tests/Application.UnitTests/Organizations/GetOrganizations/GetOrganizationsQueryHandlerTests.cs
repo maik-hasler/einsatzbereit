@@ -19,12 +19,13 @@ public class GetOrganizationsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnOrganizerOrganizations_WithNameAndSlug(
+	public async Task Handle_ShouldReturnOrganizerOrganizations_WithNameAndLogoUrl(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var userId = Guid.NewGuid();
-		var org = Organization.Create(OrganizationId.New(), "Fire Department", "fire-department").GetValueOrThrow();
+		var org = Organization.Create(OrganizationId.New(), "Fire Department").GetValueOrThrow();
+		org.SetLogoUrl("https://example.com/logo.png");
 
 		_dbContext
 			.GetOrganizerOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
@@ -37,7 +38,7 @@ public class GetOrganizationsQueryHandlerTests
 		result.Should().HaveCount(1);
 		result[0].Id.Should().Be(org.Id.Value);
 		result[0].Name.Should().Be("Fire Department");
-		result[0].Slug.Should().Be("fire-department");
+		result[0].LogoUrl.Should().Be("https://example.com/logo.png");
 	}
 
 	[Test]

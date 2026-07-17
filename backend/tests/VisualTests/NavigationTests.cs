@@ -138,18 +138,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #574: back navigation used to only appear in the empty-application state.
 		// The revived breadcrumb must be present unconditionally.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var orgLink = Page.GetByTestId("your-organizations-link");
-		if (await orgLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await orgLink.First.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Engagements", Exact = true }).ClickAsync();
 
@@ -170,18 +161,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// where selecting a different org must preserve whatever tab you're
 		// currently on rather than always resetting to the dashboard.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var orgLink = Page.GetByTestId("your-organizations-link");
-		if (await orgLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await orgLink.First.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });

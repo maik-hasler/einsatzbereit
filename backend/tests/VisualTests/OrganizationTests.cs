@@ -28,20 +28,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// CreateInvitation and the invitee shows up under Pending Invitations,
 		// with no error banner.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// "Your organizations" links into /app from the profile page - the only
-		// entry point now that the switcher no longer lives in the global header.
-		var orgLink = Page.GetByTestId("your-organizations-link");
-		if (await orgLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await orgLink.First.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 
@@ -128,16 +117,14 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// afterwards via the Settings tab. Verifies the richer create form
 		// persists all of them in one step.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		var orgName = $"Visual712 FullDetails {Guid.NewGuid():N}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		// Creating an org is always initiated from the profile page now - it's
-		// the only entry point into /app (see CreateOrganizationAsync).
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// New orgs are created from the org switcher's "Create organization"
+		// entry now that it's the org app's only creation entry point.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
 
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
@@ -224,15 +211,14 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 	private async Task<string> CreateOrganizationAsync(string namePrefix)
 	{
-		// Creating an org is always initiated from the profile page now - it's
-		// the only entry point into /app, whether this is the user's first org
-		// or an additional one alongside others they already organize.
+		// New orgs are created via the org switcher's "Create organization" entry
+		// - reachable from within any org the caller already organizes (olaf's
+		// seed data always has at least one).
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
-		var origin = Fixture.GetEndpoint("frontend").GetLeftPart(UriPartial.Authority);
+		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
 
 		var createDialog = Page.GetByRole(AriaRole.Dialog);

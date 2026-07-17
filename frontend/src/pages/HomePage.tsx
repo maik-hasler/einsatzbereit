@@ -1,9 +1,10 @@
 import { useEffect, useId, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
+import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
@@ -109,6 +110,8 @@ function OnboardingBanner({ onDismiss }: { onDismiss: () => void }) {
 
 export default function HomePage() {
 	const auth = useAuth();
+	const api = useApiClient();
+	const navigate = useNavigate();
 	const { t } = useTranslation();
 	usePageTitle();
 
@@ -118,12 +121,33 @@ export default function HomePage() {
 
 	const [showOnboarding, setShowOnboarding] = useState(false);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
+	const [hasOrgs, setHasOrgs] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	useEffect(() => {
 		if (auth.isAuthenticated && !localStorage.getItem(ONBOARDING_KEY)) {
 			setShowOnboarding(true);
 		}
+	}, [auth.isAuthenticated]);
+
+	useEffect(() => {
+		if (!auth.isAuthenticated) {
+			setHasOrgs(false);
+			return;
+		}
+		let cancelled = false;
+		api
+			.getOrganizations()
+			.then((orgs) => {
+				if (!cancelled) setHasOrgs(orgs.length > 0);
+			})
+			.catch(() => {
+				if (!cancelled) setHasOrgs(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.isAuthenticated]);
 
 	useEffect(() => {
@@ -332,13 +356,22 @@ export default function HomePage() {
 							>
 								{t("landing.heroCta")}
 							</a>
-							<button
-								type="button"
-								onClick={handleOrgCta}
-								className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
-							>
-								{t("landing.heroCtaOrg")}
-							</button>
+							{auth.isAuthenticated && hasOrgs ? (
+								<Link
+									to="/app"
+									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+								>
+									{t("landing.heroCtaOrgOverview")}
+								</Link>
+							) : (
+								<button
+									type="button"
+									onClick={handleOrgCta}
+									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+								>
+									{t("landing.heroCtaOrg")}
+								</button>
+							)}
 						</div>
 						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
 							{stats.map(({ id, value, label }) => (
@@ -492,7 +525,10 @@ export default function HomePage() {
 			{showCreateOrgModal && (
 				<CreateOrganizationModal
 					onClose={() => setShowCreateOrgModal(false)}
-					onSuccess={() => setShowCreateOrgModal(false)}
+					onSuccess={(org) => {
+						setShowCreateOrgModal(false);
+						navigate(`/app/${org.id?.value}/dashboard`);
+					}}
 				/>
 			)}
 		</>

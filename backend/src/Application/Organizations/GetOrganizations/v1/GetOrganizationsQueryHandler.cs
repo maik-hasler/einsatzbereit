@@ -17,7 +17,7 @@ internal sealed class GetOrganizationsQueryHandler(
 			UserId.Create(request.UserId).GetValueOrThrow(), cancellationToken);
 
 		return organizations
-			.Select(o => new OrganizationSummaryDto(o.Id.Value, o.Name, o.Slug))
+			.Select(o => new OrganizationSummaryDto(o.Id.Value, o.Name, o.LogoUrl))
 			.ToList();
 	}
 }

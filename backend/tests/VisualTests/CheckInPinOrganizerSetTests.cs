@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
 
@@ -20,18 +19,9 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/profile");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var orgLink = Page.GetByTestId("your-organizations-link");
-		if (await orgLink.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await orgLink.First.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
