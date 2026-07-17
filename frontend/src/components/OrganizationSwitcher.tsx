@@ -90,11 +90,10 @@ export default function OrganizationSwitcher({
 						/>
 					) : (
 						<span
-							className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700"
+							className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
 							aria-hidden="true"
-						>
-							{(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
-						</span>
+							data-initial={(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
+						/>
 					)}
 					<span className="max-w-[200px] truncate">
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
@@ -139,11 +138,10 @@ export default function OrganizationSwitcher({
 											/>
 										) : (
 											<span
-												className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700"
+												className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700 before:content-[attr(data-initial)]"
 												aria-hidden="true"
-											>
-												{org.name.charAt(0).toUpperCase()}
-											</span>
+												data-initial={org.name.charAt(0).toUpperCase()}
+											/>
 										)}
 										<span className="truncate">{org.name}</span>
 									</button>

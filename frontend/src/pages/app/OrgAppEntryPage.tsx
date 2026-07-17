@@ -96,11 +96,10 @@ export default function OrgAppEntryPage() {
 								/>
 							) : (
 								<span
-									className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-base font-semibold text-brand-700"
+									className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-base font-semibold text-brand-700 before:content-[attr(data-initial)]"
 									aria-hidden="true"
-								>
-									{org.name.charAt(0).toUpperCase()}
-								</span>
+									data-initial={org.name.charAt(0).toUpperCase()}
+								/>
 							)}
 							<span className="min-w-0 flex-1 truncate font-medium text-gray-900">
 								{org.name}
