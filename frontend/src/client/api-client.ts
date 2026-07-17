@@ -3562,6 +3562,15 @@ export interface CheckInWithPinRequest {
     [key: string]: any;
 }
 
+export interface CreateAddressRequest {
+    street: string;
+    houseNumber: string;
+    zipCode: string;
+    city: string;
+
+    [key: string]: any;
+}
+
 export interface CreateEngagementRequest {
     type: string;
     timeSlotId: string | undefined;
@@ -3593,6 +3602,11 @@ export interface CreateInvitationResponse {
 
 export interface CreateOrganizationRequest {
     name: string;
+    description: string | undefined;
+    contactEmail: string | undefined;
+    contactPhone: string | undefined;
+    website: string | undefined;
+    address: CreateAddressRequest | undefined;
 
     [key: string]: any;
 }

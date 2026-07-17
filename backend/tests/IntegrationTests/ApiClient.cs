@@ -6949,6 +6949,37 @@ namespace IntegrationTests
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateAddressRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("street")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Street { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string HouseNumber { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ZipCode { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("city")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string City { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateEngagementRequest
     {
 
@@ -7049,6 +7080,21 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Name { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string? Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("contactEmail")]
+        public string? ContactEmail { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("contactPhone")]
+        public string? ContactPhone { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("website")]
+        public string? Website { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("address")]
+        public CreateAddressRequest? Address { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

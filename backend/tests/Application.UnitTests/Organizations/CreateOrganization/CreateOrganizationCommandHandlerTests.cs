@@ -29,7 +29,7 @@ public class CreateOrganizationCommandHandlerTests
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Sample Fire Department", userId);
+		var command = new CreateOrganizationCommand("Sample Fire Department", userId, null, null, null, null, null);
 
 		_keycloakService
 			.CreateOrganizationAsync("Sample Fire Department", cancellationToken)
@@ -49,7 +49,7 @@ public class CreateOrganizationCommandHandlerTests
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Test Org", userId);
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
 
 		_keycloakService
 			.CreateOrganizationAsync("Test Org", cancellationToken)
@@ -69,7 +69,7 @@ public class CreateOrganizationCommandHandlerTests
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Test Org", userId);
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
 
 		_keycloakService
 			.CreateOrganizationAsync("Test Org", cancellationToken)
@@ -89,7 +89,7 @@ public class CreateOrganizationCommandHandlerTests
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Test Org", userId);
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
 
 		_keycloakService
 			.CreateOrganizationAsync("Test Org", cancellationToken)
@@ -111,7 +111,7 @@ public class CreateOrganizationCommandHandlerTests
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Test Org", userId);
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
 		var callOrder = new List<string>();
 
 		_keycloakService
@@ -144,7 +144,7 @@ public class CreateOrganizationCommandHandlerTests
 	{
 		// Arrange
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Bad Org", userId);
+		var command = new CreateOrganizationCommand("Bad Org", userId, null, null, null, null, null);
 
 		_keycloakService
 			.CreateOrganizationAsync("Bad Org", cancellationToken)
@@ -160,13 +160,45 @@ public class CreateOrganizationCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldPersistOptionalFields_WhenProvided(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand(
+			"Test Org",
+			userId,
+			"A helpful description",
+			"contact@example.com",
+			"+49 30 1234567",
+			"https://example.com",
+			new CreateAddressCommand("Main Street", "1", "12345", "Berlin"));
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Description.Should().Be("A helpful description");
+		result.ContactEmail.Should().Be("contact@example.com");
+		result.ContactPhone.Should().Be("+49 30 1234567");
+		result.Website.Should().Be("https://example.com");
+		result.Address.Should().NotBeNull();
+		result.Address!.City.Should().Be("Berlin");
+	}
+
+	[Test]
 	public async Task Handle_ShouldPropagateException_WhenAddMemberFails(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var keycloakId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
-		var command = new CreateOrganizationCommand("Test Org", userId);
+		var command = new CreateOrganizationCommand("Test Org", userId, null, null, null, null, null);
 
 		_keycloakService
 			.CreateOrganizationAsync("Test Org", cancellationToken)
