@@ -95,8 +95,7 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
-				{/* Pre-restructure bookmarks: org dashboard/settings/engagements used to
-				    live here, nested in the main site shell - now their own app context. */}
+				{/* Pre-restructure bookmarks: org dashboard/settings/engagements used to live here, nested in the main site shell - now their own app context. */}
 				<Route
 					path="/organizations/:organizationId/dashboard"
 					element={<OrgAppRedirect tab="dashboard" />}
