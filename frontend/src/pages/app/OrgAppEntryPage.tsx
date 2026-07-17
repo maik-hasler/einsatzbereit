@@ -95,7 +95,10 @@ export default function OrgAppEntryPage() {
 									className="h-10 w-10 shrink-0 rounded-lg object-cover"
 								/>
 							) : (
-								<span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-base font-semibold text-brand-700">
+								<span
+									className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-base font-semibold text-brand-700"
+									aria-hidden="true"
+								>
 									{org.name.charAt(0).toUpperCase()}
 								</span>
 							)}

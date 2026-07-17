@@ -89,7 +89,10 @@ export default function OrganizationSwitcher({
 							className="h-6 w-6 shrink-0 rounded-md object-cover"
 						/>
 					) : (
-						<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
+						<span
+							className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700"
+							aria-hidden="true"
+						>
 							{(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
 						</span>
 					)}
@@ -135,7 +138,10 @@ export default function OrganizationSwitcher({
 												className="h-6 w-6 shrink-0 rounded-md object-cover"
 											/>
 										) : (
-											<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
+											<span
+												className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700"
+												aria-hidden="true"
+											>
 												{org.name.charAt(0).toUpperCase()}
 											</span>
 										)}
