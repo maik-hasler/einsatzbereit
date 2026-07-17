@@ -8,6 +8,7 @@ import type {
 	EngagementSummary,
 	MyInvitationDto,
 	MyProfileResponse,
+	OrganizationSummaryDto,
 	StreakSummary,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -188,6 +189,9 @@ export default function ProfileOverviewPage() {
 	const avatarInputRef = useRef<HTMLInputElement>(null);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 	const [editing, setEditing] = useState(false);
+	const [myOrganizations, setMyOrganizations] = useState<
+		OrganizationSummaryDto[]
+	>([]);
 
 	// --- Engagements tab state ---
 	const [engagementsScope, setEngagementsScope] =
@@ -354,6 +358,17 @@ export default function ProfileOverviewPage() {
 			.finally(() => setAchievementsLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeTab, achievementsInitialized]);
+
+	// Entry point into the organizer app (#691/#702) - lets an organizer get
+	// from their own profile into /app/{slug} without the removed header switcher.
+	useEffect(() => {
+		if (activeTab !== "profile") return;
+		api
+			.getOrganizations()
+			.then(setMyOrganizations)
+			.catch(() => setMyOrganizations([]));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTab]);
 
 	function addChip(
 		value: string,
@@ -938,6 +953,42 @@ export default function ProfileOverviewPage() {
 								<h2 className="mb-1 text-base font-semibold text-gray-900">
 									{t("profile.sectionOrganization")}
 								</h2>
+
+								{myOrganizations.length > 0 && (
+									<ul
+										className="my-4 space-y-2"
+										data-testid="my-organizations-list"
+									>
+										{myOrganizations.map((org) => (
+											<li key={org.id}>
+												<Link
+													to={`/app/${org.slug ?? org.id}/dashboard`}
+													data-testid="my-organization-link"
+													className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm transition-colors hover:border-brand-200 hover:bg-brand-50"
+												>
+													<span className="font-medium text-gray-900">
+														{org.name}
+													</span>
+													<svg
+														className="h-4 w-4 shrink-0 text-gray-400"
+														fill="none"
+														viewBox="0 0 24 24"
+														strokeWidth="2"
+														stroke="currentColor"
+														aria-hidden="true"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+														/>
+													</svg>
+												</Link>
+											</li>
+										))}
+									</ul>
+								)}
+
 								<p className="mb-4 text-sm text-gray-600">
 									{t("profile.createOrgHint")}
 								</p>
@@ -1257,7 +1308,13 @@ export default function ProfileOverviewPage() {
 			{showCreateOrgModal && (
 				<CreateOrganizationModal
 					onClose={() => setShowCreateOrgModal(false)}
-					onSuccess={() => setShowCreateOrgModal(false)}
+					onSuccess={() => {
+						setShowCreateOrgModal(false);
+						api
+							.getOrganizations()
+							.then(setMyOrganizations)
+							.catch(() => {});
+					}}
 				/>
 			)}
 

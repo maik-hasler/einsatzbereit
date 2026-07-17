@@ -12,18 +12,22 @@ src/
 ├── hooks/
 │   └── useApiClient.ts     React hook: returns api-client instance with token from useAuth()
 ├── components/
-│   ├── Header.tsx          Header with auth state (login/logout buttons, org switcher)
+│   ├── Header.tsx          Header with auth state (login/logout buttons) - no org switcher, see below
 │   ├── Footer.tsx          Footer with links and social icons
-│   ├── OrganizationSwitcher.tsx        Dropdown to switch active org; reads/writes active-org cookie
+│   ├── OrgSwitcher.tsx                 Dropdown to switch active org; lives only inside OrgAppLayout
+│   ├── OrgContextBanner.tsx            Link back into an org's /app dashboard from an org-scoped page
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
 │   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, gated create button
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
 ├── layouts/
-│   ├── AppLayout.tsx       Header + <Outlet /> + Footer
+│   ├── AppLayout.tsx       Header + <Outlet /> + Footer (public Main Page shell)
+│   ├── OrgAppLayout.tsx    Organizer app shell at /app/:organizationId/* - org switcher + tab nav
 │   └── ProtectedRoute.tsx  Redirects to Keycloak if not authenticated
 ├── pages/
 │   ├── HomePage.tsx                    Main page with VolunteerOpportunitiesList
-│   ├── OrganizationOverviewPage.tsx    Org dashboard: calendar/engagements/members/settings tabs
+│   ├── OrganizationOverviewPage.tsx    Organizer dashboard content: calendar/engagements/members/settings,
+│   │                                   rendered at /app/:organizationId/:tab inside OrgAppLayout
+│   ├── OrganizationProfilePage.tsx     Public org profile at /organizations/:organizationId (unauthenticated)
 │   ├── DatenschutzPage.tsx             Privacy policy (static)
 │   └── ImpressumPage.tsx               Legal notice (static)
 ├── styles/global.css       Tailwind directives + custom brand theme
@@ -46,7 +50,6 @@ User clicks "Anmelden"
 
 - `auth.user?.profile` - decoded id_token claims (sub, email, name, preferred_username, roles)
 - `auth.user?.access_token` - Bearer token for API calls
-- `active-org` cookie - active organization id (set by OrganizationSwitcher)
 - Roles: `auth.user?.profile?.roles` - flat string array from Keycloak custom mapper
 
 ## API Client
@@ -102,7 +105,9 @@ Routes declared in `src/App.tsx`. Add new routes there.
 
 Current protected routes:
 
-- `/organizations/:organizationId/settings` → `OrganizationSettingsPage` (requires `organisator`)
+- `/app/:organizationId/:tab` (`dashboard`/`engagements`/`members`/`settings`) → `OrganizationOverviewPage`
+  inside `OrgAppLayout` (requires `organisator` for that org; `organizationId` accepts a slug or a GUID).
+  Old `/organizations/:organizationId/{dashboard,settings,engagements}` URLs redirect here.
 
 **Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
 

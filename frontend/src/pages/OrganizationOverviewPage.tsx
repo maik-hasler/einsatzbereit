@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -65,11 +65,14 @@ function CalEventChip({ event }: { event: object }) {
 
 type Tab = "calendar" | "engagements" | "members" | "settings";
 
-const VALID_TABS: Tab[] = ["calendar", "engagements", "members", "settings"];
-
-function isTab(v: string | null): v is Tab {
-	return VALID_TABS.includes(v as Tab);
-}
+// OrgAppLayout's route segments (/app/:organizationId/:tab) - "dashboard"
+// maps to the "calendar" tab, matching the Calendar nav label.
+const TAB_BY_SEGMENT: Record<string, Tab> = {
+	dashboard: "calendar",
+	engagements: "engagements",
+	members: "members",
+	settings: "settings",
+};
 
 function Field({
 	label,
@@ -94,10 +97,10 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function OrganizationOverviewPage() {
-	const { organizationId: routeOrgId } = useParams<{
+	const { organizationId: routeOrgId, tab: routeTab } = useParams<{
 		organizationId: string;
+		tab: string;
 	}>();
-	const [searchParams, setSearchParams] = useSearchParams();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const auth = useAuth();
@@ -105,12 +108,7 @@ export default function OrganizationOverviewPage() {
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 	const currentUserId = auth.user?.profile?.sub;
 
-	const rawTab = searchParams.get("tab");
-	const activeTab: Tab = isTab(rawTab) ? rawTab : "calendar";
-
-	function switchTab(tab: Tab) {
-		setSearchParams(tab === "calendar" ? {} : { tab }, { replace: true });
-	}
+	const activeTab: Tab = (routeTab && TAB_BY_SEGMENT[routeTab]) || "calendar";
 
 	// ── Org details (loaded immediately for header + settings) ──────────────
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
@@ -539,13 +537,6 @@ export default function OrganizationOverviewPage() {
 
 	// ── Render ───────────────────────────────────────────────────────────────
 
-	const tabs: { key: Tab; label: string }[] = [
-		{ key: "calendar", label: t("orgOverview.tabCalendar") },
-		{ key: "engagements", label: t("orgOverview.tabEngagements") },
-		{ key: "members", label: t("orgOverview.tabMembers") },
-		{ key: "settings", label: t("orgOverview.tabSettings") },
-	];
-
 	return (
 		<div>
 			<div className="mb-6 flex items-center justify-between gap-3">
@@ -562,27 +553,6 @@ export default function OrganizationOverviewPage() {
 						{t("orgOverview.createOpportunity")}
 					</button>
 				)}
-			</div>
-
-			{/* Tab bar */}
-			<div className="mb-6 border-b border-gray-200">
-				<nav className="-mb-px flex gap-6" aria-label={t("orgDashboard.title")}>
-					{tabs.map(({ key, label }) => (
-						<button
-							key={key}
-							type="button"
-							onClick={() => switchTab(key)}
-							className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
-								activeTab === key
-									? "border-brand-700 text-brand-700"
-									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-							}`}
-							aria-current={activeTab === key ? "page" : undefined}
-						>
-							{label}
-						</button>
-					))}
-				</nav>
 			</div>
 
 			<div

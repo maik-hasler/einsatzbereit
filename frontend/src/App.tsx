@@ -1,8 +1,15 @@
-import { Routes, Route, Navigate, useParams } from "react-router";
+import {
+	Routes,
+	Route,
+	Navigate,
+	useParams,
+	useSearchParams,
+} from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
+import OrgAppLayout from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
 import DatenschutzPage from "./pages/DatenschutzPage";
 import ImpressumPage from "./pages/ImpressumPage";
@@ -16,14 +23,22 @@ import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
 
-function OrgTabRedirect({ tab }: { tab: string }) {
+// Pre-#691 URLs (bookmarks, sent links) redirect into the organizer app.
+// The old dashboard page read its tab from ?tab=, so an old
+// .../dashboard?tab=members link is honored here rather than always
+// landing on the default tab.
+const DEEP_LINK_TAB_SEGMENTS: Record<string, string> = {
+	engagements: "engagements",
+	members: "members",
+	settings: "settings",
+};
+
+function RedirectToOrgApp({ tab }: { tab: string }) {
 	const { organizationId } = useParams<{ organizationId: string }>();
-	return (
-		<Navigate
-			to={`/organizations/${organizationId}/dashboard?tab=${tab}`}
-			replace
-		/>
-	);
+	const [searchParams] = useSearchParams();
+	const queryTab = searchParams.get("tab");
+	const resolvedTab = (queryTab && DEEP_LINK_TAB_SEGMENTS[queryTab]) || tab;
+	return <Navigate to={`/app/${organizationId}/${resolvedTab}`} replace />;
 }
 
 function CallbackPage() {
@@ -84,20 +99,27 @@ export default function App() {
 				/>
 				<Route
 					path="/organizations/:organizationId/settings"
-					element={<OrgTabRedirect tab="settings" />}
+					element={<RedirectToOrgApp tab="settings" />}
 				/>
 				<Route
 					path="/organizations/:organizationId/dashboard"
-					element={
-						<ProtectedRoute>
-							<OrganizationOverviewPage />
-						</ProtectedRoute>
-					}
+					element={<RedirectToOrgApp tab="dashboard" />}
 				/>
 				<Route
 					path="/organizations/:organizationId/engagements"
-					element={<OrgTabRedirect tab="engagements" />}
+					element={<RedirectToOrgApp tab="engagements" />}
 				/>
+				<Route
+					path="/app/:organizationId"
+					element={
+						<ProtectedRoute>
+							<OrgAppLayout />
+						</ProtectedRoute>
+					}
+				>
+					<Route index element={<Navigate to="dashboard" replace />} />
+					<Route path=":tab" element={<OrganizationOverviewPage />} />
+				</Route>
 				<Route
 					path="/achievements"
 					element={<Navigate to="/profile?tab=achievements" replace />}
