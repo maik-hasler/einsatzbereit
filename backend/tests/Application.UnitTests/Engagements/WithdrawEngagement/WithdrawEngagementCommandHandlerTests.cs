@@ -171,7 +171,7 @@ public class WithdrawEngagementCommandHandlerTests
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		engagement.Confirm();
 		engagement.CheckIn();
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
@@ -180,6 +180,6 @@ public class WithdrawEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*checked-in*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*checked-in*");
 	}
 }

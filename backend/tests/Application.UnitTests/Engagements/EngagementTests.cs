@@ -229,15 +229,16 @@ public class EngagementTests
 	}
 
 	[Test]
-	public void Withdraw_ShouldThrow_WhenCheckedIn()
+	public void Withdraw_ShouldFail_WhenCheckedIn()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 		engagement.CheckIn();
 
-		Action act = () => engagement.Withdraw();
+		var result = engagement.Withdraw();
 
-		act.Should().Throw<DomainException>().WithMessage("*checked-in*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*checked-in*");
 	}
 
 	// --- Reactivate ---
@@ -267,12 +268,13 @@ public class EngagementTests
 	}
 
 	[Test]
-	public void Reactivate_ShouldThrow_WhenPending()
+	public void Reactivate_ShouldFail_WhenPending()
 	{
 		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
-		Action act = () => engagement.Reactivate(AnyTimeSlotId(), message: null);
+		var result = engagement.Reactivate(AnyTimeSlotId(), message: null);
 
-		act.Should().Throw<DomainException>().WithMessage("*withdrawn or cancelled*");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*withdrawn or cancelled*");
 	}
 }

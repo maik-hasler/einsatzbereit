@@ -118,7 +118,7 @@ public sealed class Engagement
 			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
 
 		if (IsCheckedIn)
-			throw new DomainException("A checked-in engagement can no longer be withdrawn.");
+			return Result.Failure(Error.Conflict("Engagement.CheckedIn", "A checked-in engagement can no longer be withdrawn."));
 
 		Status = EngagementStatus.Withdrawn;
 		AddEvent(new EngagementWithdrawnDomainEvent(Id, VolunteerId!.Value, OpportunityId));

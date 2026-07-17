@@ -74,7 +74,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).Value, cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(

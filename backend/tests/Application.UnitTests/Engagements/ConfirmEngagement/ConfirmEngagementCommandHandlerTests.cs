@@ -218,12 +218,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldAwardFirstStepBadge_WhenVolunteerHasNoPriorStreak(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns((UserStreak?)null);
@@ -243,12 +243,12 @@ public class ConfirmEngagementCommandHandlerTests
 		// pulled back down by an unrelated opportunity deletion/cancellation elsewhere.
 		// Milestone eligibility must key off the monotonic lifetime counter on the
 		// volunteer's UserStreak, not that live count.
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -266,12 +266,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldNotAwardDedicatedBadge_WhenLifetimeConfirmationsAreBelow5(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -289,12 +289,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldAwardCenturionBadge_WhenLifetimeConfirmationsReach100(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
