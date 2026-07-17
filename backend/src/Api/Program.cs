@@ -143,6 +143,7 @@ if (app.Environment.IsDevelopment())
 
 	await initializer.MigrateAsync();
 	await initializer.SeedAsync();
+	await initializer.BackfillOrganizationMembershipsAsync();
 
 	app.MapOpenApi();
 }
@@ -153,6 +154,7 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
 
 	await initializer.MigrateAsync();
+	await initializer.BackfillOrganizationMembershipsAsync();
 }
 
 app.MapDefaultEndpoints();
