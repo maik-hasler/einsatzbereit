@@ -126,6 +126,67 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task CreateOrganizationModal_AcceptsFullDetails_AndAppliesThemAtCreation()
+	{
+		// #712: the create-organization modal used to collect only Name -
+		// description, contact info, address and logo were only reachable
+		// afterwards via the Settings tab. Verifies the richer create form
+		// persists all of them in one step.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var orgName = $"Visual712 FullDetails {Guid.NewGuid():N}";
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		if (await switcherBtn.CountAsync() > 0)
+		{
+			await switcherBtn.First.ClickAsync();
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+		}
+		else
+		{
+			await Page.GotoAsync($"{origin}/profile");
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+		}
+
+		var createDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(createDialog).ToBeVisibleAsync();
+		await createDialog.Locator("#create-org-name").FillAsync(orgName);
+		await createDialog.Locator("#create-org-description").FillAsync("A helpful description for volunteers.");
+		await createDialog.Locator("#create-org-contact-email").FillAsync("contact@visual712.example.com");
+		await createDialog.Locator("#create-org-phone").FillAsync("+49 30 1234567");
+		await createDialog.Locator("#create-org-website").FillAsync("https://visual712.example.com");
+		await createDialog.Locator("#create-org-street").FillAsync("Main Street");
+		await createDialog.Locator("#create-org-house-number").FillAsync("1");
+		await createDialog.Locator("#create-org-zip").FillAsync("12345");
+		await createDialog.Locator("#create-org-city").FillAsync("Berlin");
+
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.GotoAsync(origin);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).First.ClickAsync();
+		var orgRow = Page.Locator("li", new() { HasText = orgName });
+		await orgRow.GetByTestId("org-dashboard-link").ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/organizations/.+/dashboard"), new() { Timeout = 10_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+
+		await Expect(Page.GetByText("A helpful description for volunteers.")).ToBeVisibleAsync(
+			new() { Timeout = 10_000 });
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "contact@visual712.example.com" }))
+			.ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "+49 30 1234567" })).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "https://visual712.example.com" }))
+			.ToBeVisibleAsync();
+		await Expect(Page.GetByText("Main Street 1, 12345 Berlin")).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task TabBar_StaysFullWidth_AcrossTabSwitches()
 	{
 		// Regression for #641: the header/tab-bar used to be wrapped in the same

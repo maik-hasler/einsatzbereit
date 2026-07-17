@@ -3971,6 +3971,29 @@
           }
         }
       },
+      "CreateAddressRequest": {
+        "required": [
+          "street",
+          "houseNumber",
+          "zipCode",
+          "city"
+        ],
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "houseNumber": {
+            "type": "string"
+          },
+          "zipCode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          }
+        }
+      },
       "CreateEngagementRequest": {
         "required": [
           "type",
@@ -4049,12 +4072,51 @@
       },
       "CreateOrganizationRequest": {
         "required": [
-          "name"
+          "name",
+          "description",
+          "contactEmail",
+          "contactPhone",
+          "website",
+          "address"
         ],
         "type": "object",
         "properties": {
           "name": {
             "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "address": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CreateAddressRequest"
+              }
+            ]
           }
         }
       },

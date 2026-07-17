@@ -1,6 +1,7 @@
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 
@@ -31,6 +32,22 @@ internal sealed class CreateOrganizationCommandHandler(
 			request.UserId, cancellationToken);
 
 		var organization = Organization.Create(new OrganizationId(keycloakId), request.Name);
+
+		var address = request.Address is null
+			? null
+			: new Address(
+				request.Address.Street,
+				request.Address.HouseNumber,
+				request.Address.ZipCode,
+				request.Address.City);
+
+		organization.Update(
+			request.Name,
+			request.Description,
+			request.ContactEmail,
+			request.ContactPhone,
+			request.Website,
+			address);
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
 
