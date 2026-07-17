@@ -134,17 +134,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() > 0)
-		{
-			await switcherBtn.First.ClickAsync();
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
-		else
-		{
-			await Page.GotoAsync($"{origin}/profile");
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
+		// Creating an org is always initiated from the profile page now - it's
+		// the only entry point into /app (see CreateOrganizationAsync).
+		await Page.GotoAsync($"{origin}/profile");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
 
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(createDialog).ToBeVisibleAsync();
@@ -159,17 +153,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await createDialog.Locator("#create-org-city").FillAsync("Berlin");
 
 		await Page.GetByTestId("modal-submit").ClickAsync();
-		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		await Page.GotoAsync(origin);
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// Creating an org navigates straight into its new /app dashboard.
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).First.ClickAsync();
-		var orgRow = Page.Locator("li", new() { HasText = orgName });
-		await orgRow.GetByTestId("org-dashboard-link").ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/organizations/.+/dashboard"), new() { Timeout = 10_000 });
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 
 		await Expect(Page.GetByText("A helpful description for volunteers.")).ToBeVisibleAsync(
 			new() { Timeout = 10_000 });
