@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.CreateInvitation.v1;
@@ -22,16 +23,16 @@ public class CreateInvitationCommandHandlerTests
 		Substitute.For<IAggregateRepository<OrganizationInvitation, OrganizationInvitationId>>();
 	private readonly CreateInvitationCommandHandler _sut;
 
-	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
-	private static readonly UserId DefaultInvitedById = new(Guid.CreateVersion7());
-	private static readonly UserId DefaultInviteeId = new(Guid.CreateVersion7());
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly UserId DefaultInvitedById = UserId.New();
+	private static readonly UserId DefaultInviteeId = UserId.New();
 
 	public CreateInvitationCommandHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
 		_dbContext.OrganizationInvitations.Returns(_invitationRepo);
 		_orgRepo.FindAsync(DefaultOrgId, Arg.Any<CancellationToken>())
-			.Returns(Organization.Create(DefaultOrgId, "Test Org"));
+			.Returns(Organization.Create(DefaultOrgId, "Test Org").Value);
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, Arg.Any<CancellationToken>())
 			.Returns(true);
@@ -59,7 +60,7 @@ public class CreateInvitationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _keycloakUserService.DidNotReceive().GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _invitationRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>());

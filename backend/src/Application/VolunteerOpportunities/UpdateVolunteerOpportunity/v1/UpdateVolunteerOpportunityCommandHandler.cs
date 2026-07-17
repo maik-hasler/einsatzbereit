@@ -1,9 +1,11 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Notifications;
+using Domain.Common;
 using Domain.Notifications;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
@@ -15,6 +17,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
 	IGeocodingService geocodingService,
+	IPinGenerator pinGenerator,
 	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
@@ -22,11 +25,11 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		UpdateVolunteerOpportunityCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		var opportunityId = new VolunteerOpportunityId(request.OpportunityId);
+		var opportunityId = VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow();
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			opportunityId, cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
@@ -43,8 +46,9 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 				e.Status is "Pending" or "Confirmed");
 
 			if (hasActiveEngagements)
-				throw new DomainException(
-					"ParticipationType cannot be changed while active engagements exist.");
+				throw new ResultFailureException(Error.Conflict(
+					"VolunteerOpportunity.ParticipationTypeLocked",
+					"ParticipationType cannot be changed while active engagements exist."));
 		}
 
 		var title = opportunity.Status == OpportunityStatus.Draft
@@ -62,17 +66,13 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		var prevAddress = opportunity.Address;
 		var prevOccurrence = opportunity.Occurrence;
 
-		opportunity.Update(
-			title,
-			request.Description,
-			request.IsRemote,
-			address,
-			request.Occurrence,
-			request.ParticipationType,
-			request.CheckInMethod,
-			request.Category,
-			request.Tags,
-			request.CheckInPin);
+		opportunity.Rename(title).ThrowIfFailure();
+		opportunity.ChangeDescription(request.Description).ThrowIfFailure();
+		opportunity.Relocate(request.IsRemote, address).ThrowIfFailure();
+		opportunity.Reschedule(request.Occurrence);
+		opportunity.Recategorize(request.Category, request.Tags);
+		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, request.CheckInPin).ThrowIfFailure();
+		opportunity.SwitchParticipationType(request.ParticipationType);
 
 		// Only notify on material changes (location or schedule); cosmetic edits
 		// (title, description, tags) must not spam engaged volunteers.

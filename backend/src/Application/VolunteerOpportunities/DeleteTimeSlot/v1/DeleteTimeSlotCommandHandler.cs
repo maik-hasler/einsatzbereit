@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -15,8 +16,8 @@ internal sealed class DeleteTimeSlotCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
-			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
@@ -24,14 +25,15 @@ internal sealed class DeleteTimeSlotCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var timeSlotId = new TimeSlotId(request.TimeSlotId);
+		var timeSlotId = TimeSlotId.Create(request.TimeSlotId).GetValueOrThrow();
 
 		var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, cancellationToken);
 		if (activeCount > 0)
-			throw new DomainException(
-				$"Cannot delete a time slot that has {activeCount} active sign-up(s). Cancel the affected engagements first.");
+			throw new ResultFailureException(Error.Conflict(
+				"VolunteerOpportunity.TimeSlotHasActiveEngagements",
+				$"Cannot delete a time slot that has {activeCount} active sign-up(s). Cancel the affected engagements first."));
 
-		opportunity.RemoveTimeSlot(timeSlotId);
+		opportunity.RemoveTimeSlot(timeSlotId).ThrowIfFailure();
 
 		return true;
 	}

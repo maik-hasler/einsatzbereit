@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Application.Organizations.GetOrganizations.v1;
 using AwesomeAssertions;
@@ -23,10 +24,10 @@ public class GetOrganizationsQueryHandlerTests
 	{
 		// Arrange
 		var userId = Guid.NewGuid();
-		var org = Organization.Create(new OrganizationId(Guid.NewGuid()), "Fire Department", "fire-department");
+		var org = Organization.Create(OrganizationId.New(), "Fire Department", "fire-department").GetValueOrThrow();
 
 		_dbContext
-			.GetOrganizerOrganizationsAsync(new UserId(userId), cancellationToken)
+			.GetOrganizerOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
 			.Returns([org]);
 
 		// Act
@@ -47,7 +48,7 @@ public class GetOrganizationsQueryHandlerTests
 		var userId = Guid.NewGuid();
 
 		_dbContext
-			.GetOrganizerOrganizationsAsync(new UserId(userId), cancellationToken)
+			.GetOrganizerOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
 			.Returns([]);
 
 		// Act

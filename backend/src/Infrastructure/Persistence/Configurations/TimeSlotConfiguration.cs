@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -15,7 +16,7 @@ internal sealed class TimeSlotConfiguration
 		builder.Property(ts => ts.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new TimeSlotId(guid))
+				guid => TimeSlotId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(ts => ts.StartDateTime).IsRequired();

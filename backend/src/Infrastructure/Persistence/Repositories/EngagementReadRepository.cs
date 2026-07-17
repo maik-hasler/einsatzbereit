@@ -1,5 +1,6 @@
 using Application.Common.Pagination;
 using Application.Engagements;
+using Domain.Common;
 using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
@@ -64,7 +65,7 @@ internal sealed class EngagementReadRepository(
 			x.OpportunityTitle,
 			x.OrganizationId.Value,
 			x.OrganizationName,
-			x.VolunteerId.Value,
+			x.VolunteerId?.Value,
 			x.TimeSlotId?.Value,
 			x.Message,
 			x.Status.ToString(),
@@ -91,14 +92,28 @@ internal sealed class EngagementReadRepository(
 		// Current/upcoming vs. past split (#675): a checked-in Confirmed engagement
 		// represents a shift that has already happened, so it counts as past even
 		// though its status is not yet terminal.
+		//
+		// opportunityExists is only used to reclassify bucket membership below,
+		// not to join in opportunity data - that still happens separately further
+		// down per the no-inner-join note above, so a deleted opportunity's
+		// engagements keep appearing here rather than vanishing per #667.
+		var opportunityExists = dbContext.VolunteerOpportunitiesQuery.Select(o => o.Id);
+
+		// A non-terminal engagement whose opportunity was deleted can never be
+		// confirmed, checked into, or otherwise acted on again, so it belongs in
+		// Past rather than staying in "Current & Upcoming" forever (#703).
 		scopedQuery = upcoming
 			? scopedQuery.Where(e =>
-				e.Status == EngagementStatus.Pending
-				|| (e.Status == EngagementStatus.Confirmed && !e.IsCheckedIn))
+				(e.Status == EngagementStatus.Pending
+					|| (e.Status == EngagementStatus.Confirmed && !e.IsCheckedIn))
+				&& opportunityExists.Contains(e.OpportunityId))
 			: scopedQuery.Where(e =>
 				e.Status == EngagementStatus.Cancelled
 				|| e.Status == EngagementStatus.Withdrawn
-				|| (e.Status == EngagementStatus.Confirmed && e.IsCheckedIn));
+				|| (e.Status == EngagementStatus.Confirmed && e.IsCheckedIn)
+				|| ((e.Status == EngagementStatus.Pending
+						|| (e.Status == EngagementStatus.Confirmed && !e.IsCheckedIn))
+					&& !opportunityExists.Contains(e.OpportunityId)));
 
 		var totalCount = await scopedQuery.CountAsync(cancellationToken);
 
@@ -157,7 +172,7 @@ internal sealed class EngagementReadRepository(
 				opportunity?.Title,
 				organization?.Id.Value,
 				organization?.Name,
-				e.VolunteerId.Value,
+				e.VolunteerId?.Value,
 				e.TimeSlotId?.Value,
 				e.Message,
 				e.Status.ToString(),

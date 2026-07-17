@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Domain.Organizations;
 using Domain.Primitives;
@@ -14,9 +15,11 @@ public static class OwnershipGuard
 		CancellationToken cancellationToken)
 	{
 		var isOrganizer = await dbContext.IsOrganizerAsync(
-			new OrganizationId(organizationId), requestingUserId, cancellationToken);
+			OrganizationId.Create(organizationId).GetValueOrThrow(), requestingUserId, cancellationToken);
 
 		if (!isOrganizer)
-			throw new DomainException("You do not have permission to modify this resource.");
+			throw new ResultFailureException(Error.Forbidden(
+				"Organization.NotOrganizer",
+				"You do not have permission to modify this resource."));
 	}
 }

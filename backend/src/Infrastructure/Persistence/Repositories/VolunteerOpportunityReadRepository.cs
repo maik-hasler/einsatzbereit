@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Pagination;
 using Application.Organizations.GetOrganizationCalendarEvents.v1;
 using Application.VolunteerOpportunities;
@@ -185,7 +186,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			CancellationToken cancellationToken)
 	{
 		var opportunityIds = opportunityGuids
-			.Select(g => new VolunteerOpportunityId(g))
+			.Select(g => VolunteerOpportunityId.Create(g).GetValueOrThrow())
 			.ToList();
 
 		var maxParticipants = await dbContext.VolunteerOpportunitiesQuery
@@ -215,7 +216,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		Guid? requestingUserId = null,
 		CancellationToken cancellationToken = default)
 	{
-		var opportunityId_ = new VolunteerOpportunityId(opportunityId);
+		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
 
 		var result = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Id == opportunityId_)
@@ -270,7 +271,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		CurrentUserEngagementInfo? currentUserEngagement = null;
 		if (requestingUserId is Guid uid)
 		{
-			var userId_ = new UserId(uid);
+			var userId_ = UserId.Create(uid).GetValueOrThrow();
 			var engagement = await dbContext.EngagementsQuery
 				.Where(e =>
 					e.OpportunityId == opportunityId_ &&
@@ -318,7 +319,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		OpportunityStatus? status = null,
 		CancellationToken cancellationToken = default)
 	{
-		var organizationId_ = new OrganizationId(organizationId);
+		var organizationId_ = OrganizationId.Create(organizationId).GetValueOrThrow();
 
 		var orgQuery = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == organizationId_);
@@ -382,7 +383,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		Guid opportunityId,
 		CancellationToken cancellationToken = default)
 	{
-		var opportunityId_ = new VolunteerOpportunityId(opportunityId);
+		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
 
 		return await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Id == opportunityId_)
@@ -394,7 +395,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		Guid organizationId,
 		CancellationToken cancellationToken = default)
 	{
-		var orgId = new OrganizationId(organizationId);
+		var orgId = OrganizationId.Create(organizationId).GetValueOrThrow();
 
 		var rows = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == orgId)
@@ -412,7 +413,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			})
 			.ToListAsync(cancellationToken);
 
-		var opportunityIds = rows.Select(r => new VolunteerOpportunityId(r.Id)).ToList();
+		var opportunityIds = rows.Select(r => VolunteerOpportunityId.Create(r.Id).GetValueOrThrow()).ToList();
 		var slotCounts = opportunityIds.Count == 0
 			? new Dictionary<Guid, int>()
 			: await dbContext.VolunteerOpportunitiesQuery

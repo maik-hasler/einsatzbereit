@@ -1,8 +1,10 @@
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.CancelEngagement.v1;
 using AwesomeAssertions;
+using Domain.Common;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -24,11 +26,12 @@ public class CancelEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CancelEngagementCommandHandler _sut;
 
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
-	private static readonly OrganizationId DefaultOrgId = new(Guid.Empty);
-	private static readonly Address DefaultAddress = new("Teststraße", "1", "12345", "Berlin");
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly Address DefaultAddress = Address.Create("Teststraße", "1", "12345", "Berlin").Value;
 
 	public CancelEngagementCommandHandlerTests()
 	{
@@ -47,21 +50,21 @@ public class CancelEngagementCommandHandlerTests
 		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService);
 	}
 
-	private static VolunteerOpportunity CreateDefaultOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, status: OpportunityStatus.Draft);
+	private VolunteerOpportunity CreateDefaultOpportunity() =>
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	private static Engagement CreatePendingWaitlistEngagement() =>
 		Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
-			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()));
+			VolunteerOpportunityId.New(),
+			UserId.New(),
+			TimeSlotId.New());
 
 	[Test]
 	public async Task Handle_ShouldCancelEngagement_WhenEngagementIsPending(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = CreatePendingWaitlistEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -77,7 +80,7 @@ public class CancelEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = CreatePendingWaitlistEngagement();
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -94,14 +97,14 @@ public class CancelEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
 
@@ -110,7 +113,7 @@ public class CancelEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = CreatePendingWaitlistEngagement();
 		engagement.Cancel();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -119,7 +122,7 @@ public class CancelEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
 	[Test]
@@ -127,7 +130,7 @@ public class CancelEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = CreatePendingWaitlistEngagement();
 		engagement.Withdraw();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -136,7 +139,7 @@ public class CancelEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*already terminated*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
 	[Test]
@@ -144,7 +147,7 @@ public class CancelEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = CreatePendingWaitlistEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 

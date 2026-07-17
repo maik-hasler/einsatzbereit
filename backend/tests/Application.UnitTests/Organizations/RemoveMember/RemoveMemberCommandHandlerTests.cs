@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.RemoveMember.v1;
@@ -17,7 +18,7 @@ public class RemoveMemberCommandHandlerTests
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly RemoveMemberCommandHandler _sut;
 
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public RemoveMemberCommandHandlerTests()
 	{
@@ -26,7 +27,7 @@ public class RemoveMemberCommandHandlerTests
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>
 		_dbContext
-			.IsOrganizerAsync(new OrganizationId(orgId), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
 			.Returns(true);
 
 	private void SetMembers(Guid orgId, params KeycloakOrganizationMember[] members) =>
@@ -104,7 +105,7 @@ public class RemoveMemberCommandHandlerTests
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		_dbContext
-			.IsOrganizerAsync(new OrganizationId(orgId), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
 			.Returns(false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
@@ -112,7 +113,7 @@ public class RemoveMemberCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>();
+		await act.Should().ThrowAsync<ResultFailureException>();
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, userId, Arg.Any<CancellationToken>());
 	}
 
@@ -130,7 +131,7 @@ public class RemoveMemberCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*only member*");
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, Arg.Any<CancellationToken>());
 	}

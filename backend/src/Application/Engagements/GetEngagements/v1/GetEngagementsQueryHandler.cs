@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -17,7 +18,7 @@ internal sealed class GetEngagementsQueryHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(request.OpportunityId, cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId.Value}' not found."));
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
@@ -27,11 +28,20 @@ internal sealed class GetEngagementsQueryHandler(
 
 		var engagements = await readRepository.GetByOpportunityAsync(request.OpportunityId, cancellationToken);
 
-		var volunteerIds = engagements.Select(e => e.VolunteerId).Distinct().ToList();
+		var volunteerIds = engagements
+			.Where(e => e.VolunteerId is not null)
+			.Select(e => e.VolunteerId!.Value)
+			.Distinct()
+			.ToList();
 		var nameMap = await keycloakUserService.GetDisplayNamesAsync(volunteerIds, cancellationToken);
 
 		return engagements
-			.Select(e => e with { VolunteerName = nameMap.GetValueOrDefault(e.VolunteerId) })
+			.Select(e => e with
+			{
+				VolunteerName = e.VolunteerId is Guid volunteerId
+					? nameMap.GetValueOrDefault(volunteerId)
+					: null,
+			})
 			.ToList();
 	}
 }

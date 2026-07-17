@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.CreateTimeSlot.v1;
 using Domain.Primitives;
@@ -32,7 +33,7 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
 		var recurrenceCount = request.RecurrenceCount <= 0 ? 1 : request.RecurrenceCount;
 		if (recurrenceCount > 52)

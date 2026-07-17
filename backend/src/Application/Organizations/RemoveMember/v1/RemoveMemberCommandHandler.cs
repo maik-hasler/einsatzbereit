@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -27,14 +28,17 @@ internal sealed class RemoveMemberCommandHandler(
 			request.OrganizationId, cancellationToken);
 
 		if (members.Count == 1 && members[0].UserId == request.UserId)
-			throw new DomainException(
-				"Conflict: you are the only member of this organization. Delete the organization instead of leaving it.");
+			throw new ResultFailureException(Error.Conflict(
+				"Organization.SoleMember",
+				"Conflict: you are the only member of this organization. Delete the organization instead of leaving it."));
 
 		await keycloakOrganizationService.RemoveMemberAsync(
 			request.OrganizationId, request.UserId, cancellationToken);
 
 		await dbContext.RemoveMembershipAsync(
-			new OrganizationId(request.OrganizationId), new UserId(request.UserId), cancellationToken);
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(),
+			UserId.Create(request.UserId).GetValueOrThrow(),
+			cancellationToken);
 
 		return true;
 	}

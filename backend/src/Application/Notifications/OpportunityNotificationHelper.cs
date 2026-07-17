@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Domain.Notifications;
@@ -26,14 +27,14 @@ internal static class OpportunityNotificationHelper
 			opportunityId, cancellationToken);
 
 		var volunteerIds = engagements
-			.Where(e => ActiveStatuses.Contains(e.Status))
-			.Select(e => e.VolunteerId)
+			.Where(e => ActiveStatuses.Contains(e.Status) && e.VolunteerId is not null)
+			.Select(e => e.VolunteerId!.Value)
 			.Distinct();
 
 		foreach (var volunteerId in volunteerIds)
 		{
 			var notification = Notification.Create(
-				new UserId(volunteerId),
+				UserId.Create(volunteerId).GetValueOrThrow(),
 				kind,
 				opportunityId.Value);
 

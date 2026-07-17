@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Organizations;
 
 namespace Application.Common.Persistence;
@@ -9,6 +10,6 @@ public static class OrganizationLookup
 		string idOrSlug,
 		CancellationToken cancellationToken) =>
 		Guid.TryParse(idOrSlug, out var guid)
-			? await dbContext.Organizations.FindAsync(new OrganizationId(guid), cancellationToken)
+			? await dbContext.Organizations.FindAsync(OrganizationId.Create(guid).GetValueOrThrow(), cancellationToken)
 			: await dbContext.FindOrganizationBySlugAsync(idOrSlug, cancellationToken);
 }

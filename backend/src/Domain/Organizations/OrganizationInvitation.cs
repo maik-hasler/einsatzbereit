@@ -51,24 +51,37 @@ public sealed class OrganizationInvitation
 		string inviteeName,
 		UserId invitedById) =>
 		new(
-			new OrganizationInvitationId(Guid.CreateVersion7()),
+			OrganizationInvitationId.New(),
 			organizationId,
 			organizationName,
 			inviteeId,
 			inviteeName,
 			invitedById);
 
-	public void Accept()
+	private Result EnsurePending() =>
+		Status == InvitationStatus.Pending
+			? Result.Success()
+			: Result.Failure(Error.Conflict("OrganizationInvitation.NotPending", "Invitation is not pending."));
+
+	public Result Accept()
 	{
-		if (Status != InvitationStatus.Pending)
-			throw new DomainException("Invitation is not pending.");
+		var pending = EnsurePending();
+		if (pending.IsFailure)
+			return pending;
+
 		Status = InvitationStatus.Accepted;
+		AddEvent(new OrganizationInvitationAcceptedDomainEvent(Id, OrganizationId, InviteeId));
+		return Result.Success();
 	}
 
-	public void Decline()
+	public Result Decline()
 	{
-		if (Status != InvitationStatus.Pending)
-			throw new DomainException("Invitation is not pending.");
+		var pending = EnsurePending();
+		if (pending.IsFailure)
+			return pending;
+
 		Status = InvitationStatus.Declined;
+		AddEvent(new OrganizationInvitationDeclinedDomainEvent(Id, OrganizationId, InviteeId));
+		return Result.Success();
 	}
 }

@@ -1,4 +1,5 @@
 using Application.Common.Messaging;
+using Domain.Common;
 using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;

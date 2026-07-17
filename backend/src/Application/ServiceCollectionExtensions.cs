@@ -10,9 +10,11 @@ public static class ServiceCollectionExtensions
 		this IServiceCollection services)
 	{
 		services.AddTransient<ISender, Sender>();
+		services.AddTransient<IPublisher, Publisher>();
 
 		services.AddHandlersFromAssembly(Assembly.GetExecutingAssembly());
 		services.AddBehaviorsFromAssembly(Assembly.GetExecutingAssembly());
+		services.AddNotifcationHandlersFromAssembly(Assembly.GetExecutingAssembly());
 
 		return services;
 	}
@@ -61,6 +63,24 @@ public static class ServiceCollectionExtensions
 
 				services.AddTransient(serviceType, behavior);
 			}
+		}
+	}
+
+	private static void AddNotifcationHandlersFromAssembly(
+		this IServiceCollection services,
+		Assembly assembly)
+	{
+		var handlerType = typeof(INotificationHandler<>);
+
+		var handlers = assembly.GetTypes()
+			.Where(t => t is { IsAbstract: false, IsInterface: false })
+			.SelectMany(t => t.GetInterfaces()
+				.Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerType)
+				.Select(i => new { Service = i, Implementation = t }));
+
+		foreach (var handler in handlers)
+		{
+			services.AddTransient(handler.Service, handler.Implementation);
 		}
 	}
 }

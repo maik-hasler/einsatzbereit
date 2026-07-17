@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Organizations;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -14,13 +15,13 @@ internal sealed class OrganizationInvitationConfiguration : IEntityTypeConfigura
 		builder.Property(i => i.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new OrganizationInvitationId(guid))
+				guid => OrganizationInvitationId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(i => i.OrganizationId)
 			.HasConversion(
 				id => id.Value,
-				guid => new OrganizationId(guid))
+				guid => OrganizationId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(i => i.OrganizationName).IsRequired();
@@ -28,7 +29,7 @@ internal sealed class OrganizationInvitationConfiguration : IEntityTypeConfigura
 		builder.Property(i => i.InviteeId)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(i => i.InviteeName).IsRequired();
@@ -36,7 +37,7 @@ internal sealed class OrganizationInvitationConfiguration : IEntityTypeConfigura
 		builder.Property(i => i.InvitedById)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(i => i.Status)

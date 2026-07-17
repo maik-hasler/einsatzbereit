@@ -1,6 +1,7 @@
 using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Authorization;
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -23,10 +24,10 @@ internal sealed class ConfirmEngagementCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
-			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{engagement.OpportunityId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{engagement.OpportunityId.Value}' not found."));
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
@@ -34,10 +35,12 @@ internal sealed class ConfirmEngagementCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		engagement.Confirm();
+		engagement.Confirm().ThrowIfFailure();
+
+		var volunteerId = engagement.VolunteerId!.Value;
 
 		var notification = Notification.Create(
-			engagement.VolunteerId,
+			volunteerId,
 			NotificationKind.EngagementConfirmed,
 			engagement.Id.Value);
 
@@ -48,11 +51,11 @@ internal sealed class ConfirmEngagementCommandHandler(
 		var isoYear = System.Globalization.ISOWeek.GetYear(now);
 		var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
 		var totalConfirmedEngagements = await RecordActivityStreakAndConfirmationAsync(
-			engagement.VolunteerId, isoYear, isoWeek, cancellationToken);
+			volunteerId, isoYear, isoWeek, cancellationToken);
 
-		await EvaluateMilestoneAchievementsAsync(engagement.VolunteerId, totalConfirmedEngagements, cancellationToken);
+		await EvaluateMilestoneAchievementsAsync(volunteerId, totalConfirmedEngagements, cancellationToken);
 
-		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId.Value, cancellationToken);
+		var volunteer = await keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken);
 
 		await emailService.SendAsync(
 			volunteer.Email,

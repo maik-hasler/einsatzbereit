@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -15,7 +16,7 @@ internal sealed class OrganizationConfiguration
 		builder.Property(org => org.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new OrganizationId(guid))
+				guid => OrganizationId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(org => org.Name)
@@ -44,6 +45,8 @@ internal sealed class OrganizationConfiguration
 			address.Property(a => a.HouseNumber).IsRequired();
 			address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
 			address.Property(a => a.City).IsRequired();
+			address.Property(a => a.Latitude);
+			address.Property(a => a.Longitude);
 		});
 
 		builder.Property(org => org.IsVerified)

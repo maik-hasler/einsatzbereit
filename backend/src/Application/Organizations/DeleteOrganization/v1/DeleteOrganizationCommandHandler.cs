@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -16,10 +17,10 @@ internal sealed class DeleteOrganizationCommandHandler(
 		DeleteOrganizationCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		var organizationId = new OrganizationId(request.OrganizationId);
+		var organizationId = OrganizationId.Create(request.OrganizationId).GetValueOrThrow();
 
 		var organization = await dbContext.Organizations.FindAsync(organizationId, cancellationToken)
-			?? throw new DomainException($"Organization '{request.OrganizationId}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
@@ -31,8 +32,9 @@ internal sealed class DeleteOrganizationCommandHandler(
 			request.OrganizationId, cancellationToken);
 
 		if (members.Count > 1)
-			throw new DomainException(
-				"Conflict: only the organization's sole remaining member can delete it. Remove the other members first.");
+			throw new ResultFailureException(Error.Conflict(
+				"Organization.MultipleMembers",
+				"Conflict: only the organization's sole remaining member can delete it. Remove the other members first."));
 
 		var blockingOpportunities = await dbContext.GetBlockingOpportunitiesForOrganizationAsync(
 			organizationId, cancellationToken);
@@ -40,8 +42,9 @@ internal sealed class DeleteOrganizationCommandHandler(
 		if (blockingOpportunities.Count > 0)
 		{
 			var titles = string.Join(", ", blockingOpportunities.Select(o => $"'{o.Title}'"));
-			throw new DomainException(
-				$"Conflict: cannot delete organization while it has opportunities with future time slots or active engagements: {titles}. Resolve or cancel these first.");
+			throw new ResultFailureException(Error.Conflict(
+				"Organization.HasBlockingOpportunities",
+				$"Conflict: cannot delete organization while it has opportunities with future time slots or active engagements: {titles}. Resolve or cancel these first."));
 		}
 
 		await keycloakOrganizationService.DeleteOrganizationAsync(

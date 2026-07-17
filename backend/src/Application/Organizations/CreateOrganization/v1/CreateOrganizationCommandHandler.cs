@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -18,10 +19,10 @@ internal sealed class CreateOrganizationCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrWhiteSpace(request.Name))
-			throw new DomainException("Name must not be empty.");
+			throw new ResultFailureException(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
 		if (request.Name.Length > 100)
-			throw new DomainException("Organization name must not exceed 100 characters.");
+			throw new ResultFailureException(Error.Validation("Organization.NameTooLong", "Organization name must not exceed 100 characters."));
 
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
 			request.Name, cancellationToken);
@@ -34,12 +35,25 @@ internal sealed class CreateOrganizationCommandHandler(
 
 		var slug = await GenerateUniqueSlugAsync(request.Name, cancellationToken);
 
-		var organization = Organization.Create(new OrganizationId(keycloakId), request.Name, slug);
+		var organization = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), request.Name, slug)
+			.GetValueOrThrow();
+
+		var address = request.Address is null
+			? null
+			: Address.Create(
+				request.Address.Street,
+				request.Address.HouseNumber,
+				request.Address.ZipCode,
+				request.Address.City).GetValueOrThrow();
+
+		organization.ChangeDescription(request.Description);
+		organization.ChangeContactInfo(request.ContactEmail, request.ContactPhone, request.Website);
+		organization.Relocate(address);
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
 
 		var membership = OrganizationMembership.Create(
-			organization.Id, new UserId(request.UserId), OrganizationMemberRole.Organizer);
+			organization.Id, UserId.Create(request.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer);
 
 		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 

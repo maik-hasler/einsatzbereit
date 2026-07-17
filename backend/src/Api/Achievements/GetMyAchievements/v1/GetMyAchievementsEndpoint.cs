@@ -3,6 +3,7 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Achievements;
 using Application.Achievements.GetMyAchievements.v1;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,7 @@ internal sealed class GetMyAchievementsEndpoint
 		if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
-		var query = new GetMyAchievementsQuery(new UserId(userId));
+		var query = new GetMyAchievementsQuery(UserId.Create(userId).GetValueOrThrow());
 		var result = await sender.Send(query, cancellationToken);
 		return Results.Ok(result);
 	}

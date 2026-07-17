@@ -1,4 +1,6 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Domain.Common;
 using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
@@ -11,6 +13,7 @@ namespace Infrastructure.Persistence;
 internal sealed class ApplicationDbContextInitializer(
 	ApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
+	IPinGenerator pinGenerator,
 	ILogger<ApplicationDbContextInitializer> logger)
 	: IApplicationDbContextInitializer
 {
@@ -59,37 +62,40 @@ internal sealed class ApplicationDbContextInitializer(
 				"Erste Hilfe Kurs",
 				"Lernen Sie lebensrettende Erste-Hilfe-Massnahmen in unserem praxisnahen Tageskurs.",
 				isRemote: false,
-				new Domain.VolunteerOpportunities.Address("Hauptstrasse", "1", "12345", "Musterstadt"),
+				Address.Create("Hauptstrasse", "1", "12345", "Musterstadt").GetValueOrThrow(),
 				Occurrence.OneTime,
 				ParticipationType.Waitlist,
 				CheckInMethod.Manual,
-				status: OpportunityStatus.Draft);
-			opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20);
-			opp1.Publish();
+				pinGenerator,
+				status: OpportunityStatus.Draft).GetValueOrThrow();
+			opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20, now).GetValueOrThrow();
+			opp1.Publish().ThrowIfFailure();
 
 			var opp2 = VolunteerOpportunity.Create(
 				org1Id,
 				"Blutspende-Aktion",
 				"Unterstutzen Sie unsere regelmasige Blutspende-Aktion und helfen Sie, Leben zu retten.",
 				isRemote: false,
-				new Domain.VolunteerOpportunities.Address("Rathausplatz", "1", "12345", "Musterstadt"),
+				Address.Create("Rathausplatz", "1", "12345", "Musterstadt").GetValueOrThrow(),
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
-				CheckInMethod.None);
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
 
 			var opp3 = VolunteerOpportunity.Create(
 				org2Id,
 				"Tierheim Helfer gesucht",
 				"Helfen Sie uns bei der Betreuung und Pflege der Tiere in unserem Tierheim.",
 				isRemote: false,
-				new Domain.VolunteerOpportunities.Address("Tiergartenweg", "5", "12345", "Musterstadt"),
+				Address.Create("Tiergartenweg", "5", "12345", "Musterstadt").GetValueOrThrow(),
 				Occurrence.Recurring,
 				ParticipationType.Waitlist,
 				CheckInMethod.QRCode,
-				status: OpportunityStatus.Draft);
-			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5);
-			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), 5);
-			opp3.Publish();
+				pinGenerator,
+				status: OpportunityStatus.Draft).GetValueOrThrow();
+			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5, now).GetValueOrThrow();
+			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), 5, now).GetValueOrThrow();
+			opp3.Publish().ThrowIfFailure();
 
 			var opp4 = VolunteerOpportunity.Create(
 				org2Id,
@@ -99,18 +105,19 @@ internal sealed class ApplicationDbContextInitializer(
 				address: null,
 				Occurrence.OneTime,
 				ParticipationType.IndividualContact,
-				CheckInMethod.None);
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
 
 			dbContext.Set<VolunteerOpportunity>().AddRange(opp1, opp2, opp3, opp4);
 
-			var veraUserId = new UserId(VeraId);
+			var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
 			dbContext.Set<Engagement>().AddRange(
 				Engagement.CreateWaitlistSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
 				Engagement.CreateIndividualContact(
 					opp2.Id,
 					veraUserId,
-					"Ich wuerde gerne bei der nachsten Blutspende-Aktion als Helfer dabei sein."),
+					"Ich wuerde gerne bei der nachsten Blutspende-Aktion als Helfer dabei sein.").GetValueOrThrow(),
 				Engagement.CreateWaitlistSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
 
 			await dbContext.SaveChangesAsync(cancellationToken);
@@ -145,7 +152,7 @@ internal sealed class ApplicationDbContextInitializer(
 				{
 					dbContext.Set<OrganizationMembership>().Add(
 						OrganizationMembership.Create(
-							organizationId, new UserId(member.UserId), OrganizationMemberRole.Organizer));
+							organizationId, UserId.Create(member.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
 				}
 			}
 
@@ -173,19 +180,16 @@ internal sealed class ApplicationDbContextInitializer(
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(OlafId, cancellationToken);
 		await keycloakOrganizationService.AddMemberAsync(keycloakId, VeraId, cancellationToken);
 
-		var org = Organization.Create(new OrganizationId(keycloakId), "Rotes Kreuz Musterstadt");
-		org.Update(
-			"Rotes Kreuz Musterstadt",
-			"Ihr lokaler Verband des Deutschen Roten Kreuzes - wir helfen Menschen in Not.",
-			"info@rk-musterstadt.de",
-			"+49 1234 567890",
-			"https://www.drk.de",
-			new Domain.Common.Address("Hauptstrasse", "1", "12345", "Musterstadt"));
+		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Rotes Kreuz Musterstadt")
+			.GetValueOrThrow();
+		org.ChangeDescription("Ihr lokaler Verband des Deutschen Roten Kreuzes - wir helfen Menschen in Not.");
+		org.ChangeContactInfo("info@rk-musterstadt.de", "+49 1234 567890", "https://www.drk.de");
+		org.Relocate(Address.Create("Hauptstrasse", "1", "12345", "Musterstadt").GetValueOrThrow());
 
 		dbContext.Set<Organization>().Add(org);
 
 		dbContext.Set<OrganizationMembership>().Add(
-			OrganizationMembership.Create(org.Id, new UserId(OlafId), OrganizationMemberRole.Organizer));
+			OrganizationMembership.Create(org.Id, UserId.Create(OlafId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
 
 		return org.Id;
 	}
@@ -199,19 +203,16 @@ internal sealed class ApplicationDbContextInitializer(
 		await keycloakOrganizationService.AddMemberAsync(keycloakId, OlafId, cancellationToken);
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(OlafId, cancellationToken);
 
-		var org = Organization.Create(new OrganizationId(keycloakId), "Tierschutzverein Musterstadt");
-		org.Update(
-			"Tierschutzverein Musterstadt",
-			"Wir setzen uns fur das Wohl von Tieren in Musterstadt und Umgebung ein.",
-			"info@tsv-musterstadt.de",
-			"+49 1234 567891",
-			null,
-			new Domain.Common.Address("Tiergartenweg", "5", "12345", "Musterstadt"));
+		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Tierschutzverein Musterstadt")
+			.GetValueOrThrow();
+		org.ChangeDescription("Wir setzen uns fur das Wohl von Tieren in Musterstadt und Umgebung ein.");
+		org.ChangeContactInfo("info@tsv-musterstadt.de", "+49 1234 567891", null);
+		org.Relocate(Address.Create("Tiergartenweg", "5", "12345", "Musterstadt").GetValueOrThrow());
 
 		dbContext.Set<Organization>().Add(org);
 
 		dbContext.Set<OrganizationMembership>().Add(
-			OrganizationMembership.Create(org.Id, new UserId(OlafId), OrganizationMemberRole.Organizer));
+			OrganizationMembership.Create(org.Id, UserId.Create(OlafId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
 
 		return org.Id;
 	}

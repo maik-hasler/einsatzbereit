@@ -42,7 +42,25 @@ internal sealed class CreateOrganizationEndpoint
 		if (request.Name.Length > 100)
 			return Results.Problem("Name must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
 
-		var command = new CreateOrganizationCommand(request.Name, userId);
+		if (request.Description is { Length: > 1000 })
+			return Results.Problem("Description must not exceed 1000 characters.", statusCode: StatusCodes.Status400BadRequest);
+
+		var addressCommand = request.Address is null
+			? null
+			: new CreateAddressCommand(
+				request.Address.Street,
+				request.Address.HouseNumber,
+				request.Address.ZipCode,
+				request.Address.City);
+
+		var command = new CreateOrganizationCommand(
+			request.Name,
+			userId,
+			request.Description,
+			request.ContactEmail,
+			request.ContactPhone,
+			request.Website,
+			addressCommand);
 
 		var result = await sender.Send(command, cancellationToken);
 

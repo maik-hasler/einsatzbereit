@@ -6,7 +6,7 @@ public sealed record EngagementSummary(
 	string? OpportunityTitle,
 	Guid? OrganizationId,
 	string? OrganizationName,
-	Guid VolunteerId,
+	Guid? VolunteerId,
 	Guid? TimeSlotId,
 	string? Message,
 	string Status,

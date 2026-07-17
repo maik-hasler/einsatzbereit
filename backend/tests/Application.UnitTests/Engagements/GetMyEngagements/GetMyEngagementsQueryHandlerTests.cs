@@ -12,7 +12,7 @@ public class GetMyEngagementsQueryHandlerTests
 	private readonly IEngagementReadRepository _readRepository =
 		Substitute.For<IEngagementReadRepository>();
 	private readonly GetMyEngagementsQueryHandler _sut;
-	private readonly UserId _volunteerId = new(Guid.CreateVersion7());
+	private readonly UserId _volunteerId = UserId.New();
 
 	public GetMyEngagementsQueryHandlerTests()
 	{

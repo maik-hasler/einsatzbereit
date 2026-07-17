@@ -41,7 +41,7 @@ public sealed class Notification
 		NotificationKind kind,
 		Guid relatedEntityId) =>
 		new(
-			new NotificationId(Guid.CreateVersion7()),
+			NotificationId.New(),
 			recipientId,
 			kind,
 			relatedEntityId);

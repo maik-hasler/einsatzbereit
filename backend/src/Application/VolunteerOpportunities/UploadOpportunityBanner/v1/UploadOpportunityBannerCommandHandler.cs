@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
@@ -24,8 +25,8 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
-			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrganizerAsync(
 			dbContext,
@@ -39,7 +40,7 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 		using var stream = new MemoryStream(request.Content);
 		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, request.ContentType, cancellationToken);
 
-		opportunity.SetBannerImageUrl(url);
+		opportunity.SetBannerImageUrl(url).ThrowIfFailure();
 
 		return true;
 	}

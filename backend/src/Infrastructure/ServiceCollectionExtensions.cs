@@ -20,6 +20,8 @@ using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Storage;
+using Infrastructure.VolunteerOpportunities;
+using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,8 +37,10 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<ConnectionStringOptionsSetup>();
 
 		services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
-		services.AddScoped<IDomainEventDispatcher, NullDomainEventDispatcher>();
+		services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 		services.AddScoped<ISaveChangesInterceptor, DomainEventInterceptor>();
+
+		services.AddSingleton<IPinGenerator, RandomPinGenerator>();
 
 		services.AddDbContext<ApplicationDbContext>((sp, options) =>
 		{

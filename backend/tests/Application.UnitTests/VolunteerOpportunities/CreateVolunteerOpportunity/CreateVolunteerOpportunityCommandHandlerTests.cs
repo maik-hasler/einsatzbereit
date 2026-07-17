@@ -1,7 +1,9 @@
+using Application.Common.Exceptions;
 using Application.Common.Geocoding;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using AwesomeAssertions;
+using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
@@ -9,17 +11,17 @@ using Domain.VolunteerOpportunities;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
-
 namespace Application.UnitTests.VolunteerOpportunities.CreateVolunteerOpportunity;
 
 public class CreateVolunteerOpportunityCommandHandlerTests
 {
-	private static readonly OrganizationId TestOrganizationId = new(Guid.NewGuid());
-	private static readonly Address TestAddress = new("Sample Street", "1", "12345", "Berlin");
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly OrganizationId TestOrganizationId = OrganizationId.New();
+	private static readonly Address TestAddress = Address.Create("Sample Street", "1", "12345", "Berlin").Value;
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CreateVolunteerOpportunityCommandHandler _sut;
 
 	public CreateVolunteerOpportunityCommandHandlerTests()
@@ -30,6 +32,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		_sut = new CreateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_geocodingService,
+			_pinGenerator,
 			NullLogger<CreateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
@@ -145,7 +148,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Waitlist opportunity*");
 		await _dbContext
 			.VolunteerOpportunities

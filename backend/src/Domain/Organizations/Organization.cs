@@ -43,13 +43,13 @@ public sealed class Organization
 		Slug = slug;
 	}
 
-	public static Organization Create(
+	public static Result<Organization> Create(
 		OrganizationId id,
 		string name,
 		string? slug = null)
 	{
 		if (string.IsNullOrWhiteSpace(name))
-			throw new DomainException("Name must not be empty.");
+			return Result.Failure<Organization>(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
 		return new Organization(id, name, slug);
 	}
@@ -59,28 +59,49 @@ public sealed class Organization
 		LogoUrl = url;
 	}
 
-	public void SetVerified(bool isVerified)
+	public Result Verify()
 	{
-		IsVerified = isVerified;
+		if (IsVerified)
+			return Result.Failure(Error.Conflict("Organization.AlreadyVerified", "Organization is already verified."));
+
+		IsVerified = true;
+		AddEvent(new OrganizationVerifiedDomainEvent(Id));
+		return Result.Success();
 	}
 
-	public void Update(
-		string name,
-		string? description,
-		string? contactEmail,
-		string? contactPhone,
-		string? website,
-		Address? address)
+	public Result RevokeVerification()
+	{
+		if (!IsVerified)
+			return Result.Failure(Error.Conflict("Organization.NotVerified", "Organization is not verified."));
+
+		IsVerified = false;
+		AddEvent(new OrganizationVerificationRevokedDomainEvent(Id));
+		return Result.Success();
+	}
+
+	public Result Rename(string name)
 	{
 		if (string.IsNullOrWhiteSpace(name))
-			throw new DomainException("Name must not be empty.");
+			return Result.Failure(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
 		Name = name;
+		return Result.Success();
+	}
+
+	public void ChangeDescription(string? description)
+	{
 		Description = description;
+	}
+
+	public void ChangeContactInfo(string? contactEmail, string? contactPhone, string? website)
+	{
 		ContactEmail = contactEmail;
 		ContactPhone = contactPhone;
 		Website = website;
-		Address = address;
 	}
 
+	public void Relocate(Address? address)
+	{
+		Address = address;
+	}
 }

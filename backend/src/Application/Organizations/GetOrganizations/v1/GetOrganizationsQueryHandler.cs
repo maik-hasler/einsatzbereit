@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Users;
@@ -13,7 +14,7 @@ internal sealed class GetOrganizationsQueryHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var organizations = await dbContext.GetOrganizerOrganizationsAsync(
-			new UserId(request.UserId), cancellationToken);
+			UserId.Create(request.UserId).GetValueOrThrow(), cancellationToken);
 
 		return organizations
 			.Select(o => new OrganizationSummaryDto(o.Id.Value, o.Name, o.Slug))

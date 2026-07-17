@@ -38,7 +38,7 @@ public sealed class OrganizationMembership
 		UserId userId,
 		OrganizationMemberRole role) =>
 		new(
-			new OrganizationMembershipId(Guid.CreateVersion7()),
+			OrganizationMembershipId.New(),
 			organizationId,
 			userId,
 			role);

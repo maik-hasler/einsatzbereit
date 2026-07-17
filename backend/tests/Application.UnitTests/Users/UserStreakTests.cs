@@ -10,7 +10,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldInitializeStreakToOne_OnFirstLogin()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		streak.RecordLogin(Today);
 
@@ -21,7 +21,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldIncrementStreak_OnConsecutiveDays()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 		streak.RecordLogin(Today);
 
 		streak.RecordLogin(Today.AddDays(1));
@@ -32,7 +32,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldResetStreakToOne_WhenDayIsSkipped()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 		streak.RecordLogin(Today);
 
 		streak.RecordLogin(Today.AddDays(2));
@@ -43,7 +43,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldBeIdempotent_ForSameDay()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 		streak.RecordLogin(Today);
 
 		streak.RecordLogin(Today);
@@ -55,7 +55,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldReach7_AfterSevenConsecutiveDays()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		for (var i = 0; i < 7; i++)
 		{
@@ -68,7 +68,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldContinuePastSeven_OnDay8()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		for (var i = 0; i < 8; i++)
 		{
@@ -81,7 +81,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordLogin_ShouldResetAfterBreak_EvenAfterLongStreak()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		for (var i = 0; i < 7; i++)
 		{
@@ -97,7 +97,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordConfirmedEngagement_ShouldStartAtZero_BeforeAnyConfirmation()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		streak.TotalConfirmedEngagements.Should().Be(0);
 	}
@@ -105,7 +105,7 @@ public class UserStreakTests
 	[Test]
 	public void RecordConfirmedEngagement_ShouldIncrementByOne_PerCall()
 	{
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		streak.RecordConfirmedEngagement();
 		streak.RecordConfirmedEngagement();
@@ -120,7 +120,7 @@ public class UserStreakTests
 		// The counter has no "undo" - it must stay monotonic even if unrelated
 		// engagements are later cancelled or their opportunities deleted, since
 		// those transitions never call this method.
-		var streak = UserStreak.Create(new UserId(Guid.CreateVersion7()));
+		var streak = UserStreak.Create(UserId.New());
 
 		for (var i = 0; i < 5; i++)
 			streak.RecordConfirmedEngagement();

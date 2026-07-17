@@ -86,7 +86,7 @@ builder.Services.AddHttpLogging(logging =>
 });
 
 builder.Services.AddProblemDetails();
-builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddExceptionHandler<ResultFailureExceptionHandler>();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
 
 builder.Services.AddOpenApi("v1", options =>

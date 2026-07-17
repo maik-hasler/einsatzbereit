@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
@@ -17,25 +18,24 @@ internal sealed class EngagementConfiguration
 		builder.Property(e => e.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new EngagementId(guid))
+				guid => EngagementId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(e => e.OpportunityId)
 			.HasConversion(
 				id => id.Value,
-				guid => new VolunteerOpportunityId(guid))
+				guid => VolunteerOpportunityId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(e => e.VolunteerId)
 			.HasConversion(
-				id => id.Value,
-				guid => new UserId(guid))
-			.IsRequired();
+				id => id.HasValue ? id.Value.Value : (Guid?)null,
+				guid => guid.HasValue ? UserId.Create(guid.Value).GetValueOrThrow() : null);
 
 		builder.Property(e => e.TimeSlotId)
 			.HasConversion(
 				id => id.HasValue ? id.Value.Value : (Guid?)null,
-				guid => guid.HasValue ? new TimeSlotId(guid.Value) : null);
+				guid => guid.HasValue ? TimeSlotId.Create(guid.Value).GetValueOrThrow() : null);
 
 		builder.Property(e => e.Message);
 

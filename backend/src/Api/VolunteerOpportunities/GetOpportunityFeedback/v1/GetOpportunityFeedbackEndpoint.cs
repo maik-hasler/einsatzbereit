@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements;
 using Application.VolunteerOpportunities.GetOpportunityFeedback.v1;
@@ -33,10 +34,12 @@ internal sealed class GetOpportunityFeedbackEndpoint : IEndpoint
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid)
+			? UserId.Create(uid).GetValueOrThrow()
+			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
 		var result = await sender.Send(
-			new GetOpportunityFeedbackQuery(new VolunteerOpportunityId(opportunityId), userId),
+			new GetOpportunityFeedbackQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), userId),
 			cancellationToken);
 
 		return Results.Ok(result);

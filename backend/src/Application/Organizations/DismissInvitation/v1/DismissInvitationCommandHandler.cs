@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
@@ -22,13 +23,13 @@ internal sealed class DismissInvitationCommandHandler(
 			cancellationToken);
 
 		var invitation = await dbContext.OrganizationInvitations.FindAsync(request.InvitationId, cancellationToken)
-			?? throw new DomainException("Invitation not found.");
+			?? throw new ResultFailureException(Error.NotFound("OrganizationInvitation.NotFound", "Invitation not found."));
 
 		if (invitation.OrganizationId != request.OrganizationId)
-			throw new DomainException("Invitation does not belong to this organization.");
+			throw new ResultFailureException(Error.Validation("OrganizationInvitation.WrongOrganization", "Invitation does not belong to this organization."));
 
 		if (invitation.Status != InvitationStatus.Declined)
-			throw new DomainException("Only declined invitations can be dismissed.");
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.NotDeclined", "Only declined invitations can be dismissed."));
 
 		dbContext.OrganizationInvitations.Delete(invitation);
 		await unitOfWork.SaveChangesAsync(cancellationToken);

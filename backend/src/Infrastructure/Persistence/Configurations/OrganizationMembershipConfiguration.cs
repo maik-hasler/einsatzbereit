@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Organizations;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -14,19 +15,19 @@ internal sealed class OrganizationMembershipConfiguration : IEntityTypeConfigura
 		builder.Property(m => m.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new OrganizationMembershipId(guid))
+				guid => OrganizationMembershipId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(m => m.OrganizationId)
 			.HasConversion(
 				id => id.Value,
-				guid => new OrganizationId(guid))
+				guid => OrganizationId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(m => m.UserId)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(m => m.Role)

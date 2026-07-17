@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Primitives;
@@ -14,12 +15,12 @@ internal sealed class DeclineInvitationCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var invitation = await dbContext.OrganizationInvitations.FindAsync(request.InvitationId, cancellationToken)
-			?? throw new DomainException("Invitation not found.");
+			?? throw new ResultFailureException(Error.NotFound("OrganizationInvitation.NotFound", "Invitation not found."));
 
 		if (invitation.InviteeId != request.UserId)
-			throw new DomainException("You are not the recipient of this invitation.");
+			throw new ResultFailureException(Error.Forbidden("OrganizationInvitation.NotRecipient", "You are not the recipient of this invitation."));
 
-		invitation.Decline();
+		invitation.Decline().ThrowIfFailure();
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
 		return true;
