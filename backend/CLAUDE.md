@@ -25,28 +25,30 @@ src/
 ├── Application/                Business logic only - no EF Core, no HTTP
 │   ├── ServiceCollectionExtensions.cs   Reflection-based handler registration
 │   ├── Common/
-│   │   ├── Messaging/          ISender, ICommand<T>, IQuery<T>, IPipelineBehavior<T,R>
+│   │   ├── Messaging/          ISender, ICommand<T>, IQuery<T>, IPipelineBehavior<T,R>, IPublisher, INotificationHandler<T>
 │   │   ├── Persistence/        IApplicationDbContext, IUnitOfWork, IAggregateRepository<T,TId>
 │   │   ├── Keycloak/           IKeycloakOrganizationService
 │   │   ├── Pagination/         PagedList<T>
+│   │   ├── Exceptions/         ResultFailureException, ResultExtensions (GetValueOrThrow/ThrowIfFailure)
 │   │   └── PipelineBehaviors/  TransactionPipelineBehavior, PerformancePipelineBehavior
 │   ├── Organizations/
 │   └── VolunteerOpportunities/
 │
 ├── Domain/                     Zero external dependencies
-│   ├── Primitives/             AggregateRoot<TId>, Entity<TId>, DomainEvent, DomainException
-│   ├── Common/                 Address (shared value object)
+│   ├── Primitives/             AggregateRoot<TId>, Entity<TId>, DomainEvent, Result/Error/ErrorType, IValueObject, INotification
+│   ├── Common/                 Address (shared value object, used by both Organization and VolunteerOpportunity)
 │   ├── Organizations/          Organization (aggregate), OrganizationId (value object)
-│   ├── VolunteerOpportunities/ VolunteerOpportunity (aggregate), Address, Occurrence, ParticipationType
+│   ├── VolunteerOpportunities/ VolunteerOpportunity (aggregate), Occurrence, ParticipationType, IPinGenerator
 │   ├── Engagements/            Engagement (aggregate), EngagementStatus
 │   └── Users/                  UserId (Keycloak user reference)
 │
 └── Infrastructure/             Implements Application interfaces
     ├── ServiceCollectionExtensions.cs   EF Core, Keycloak HTTP client, repositories
+    ├── DomainEventDispatcher.cs         IDomainEventDispatcher -> IPublisher (see "Domain events" below)
     ├── Persistence/
     │   ├── ApplicationDbContext.cs       EF Core DbContext + IUnitOfWork
     │   ├── Configurations/               Fluent API entity mappings
-    │   ├── Interceptors/                 AuditableEntityInterceptor (created_on/modified_on)
+    │   ├── Interceptors/                 AuditableEntityInterceptor (created_on/modified_on), DomainEventInterceptor
     │   ├── Repositories/                 AggregateRepository<T,TId>, read repositories
     │   └── Migrations/                   EF Core migrations
     └── Keycloak/                         KeycloakOrganizationService (HttpClient wrapper)
@@ -102,6 +104,34 @@ var result = await sender.SendAsync(new MyCommand(...), cancellationToken);
 ### Handler registration
 Auto-scanned from Application assembly - no manual DI registration needed.  
 Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's picked up.
+
+### Error handling (Result pattern)
+Domain and Application logic signals failure with `Result`/`Result<T>` (`Domain/Primitives/Result.cs`), not exceptions. A domain method that can fail returns `Result` (or `Result<T>` when it also produces a value) built from `Error.Validation/NotFound/Conflict/Forbidden(code, description)`:
+```csharp
+public Result Confirm()
+{
+	if (Status != EngagementStatus.Pending)
+		return Result.Failure(Error.Conflict("Engagement.NotPending", "Only pending engagements can be confirmed."));
+	...
+	return Result.Success();
+}
+```
+Command/query handlers convert a `Result` to an exception at the Application boundary with `Application/Common/Exceptions/ResultExtensions.cs`:
+- `result.ThrowIfFailure()` for a plain `Result`
+- `result.GetValueOrThrow()` for a `Result<T>`, returning `T` on success
+
+Both throw `ResultFailureException(Error)`, caught by `Api/Common/ExceptionHandlers/ResultFailureExceptionHandler.cs` and mapped to a `ProblemDetails` response (`Validation`->400, `NotFound`->404, `Conflict`->409, `Forbidden`->403) with `errorCode` + `traceId`. Only use this Application-boundary throw; don't invent a second convention for new endpoints, and don't thread `Result` all the way to the endpoint layer.
+
+Reserve a raw `throw` (not wrapped in a `Result`) for truly exceptional/programmer-error cases that aren't part of a use case's expected failure modes.
+
+### Domain events
+Aggregates raise events via `AddEvent(...)` (see `EngagementConfirmedDomainEvent` etc. in `Domain/Engagements/`). `Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs` collects an aggregate's events and calls `IDomainEventDispatcher.DispatchAsync` from inside `DbContext.SaveChangesAsync`'s `SavedChangesAsync` callback - i.e. **after the DB write for the triggering command but before `TransactionPipelineBehavior` commits the transaction**.
+
+This timing means an `INotificationHandler<T>` for a domain event **cannot safely**:
+- call `ISender.Send(...)` to dispatch a nested command - `TransactionPipelineBehavior` would call `BeginTransactionAsync` again on a `DbContext` that already has an open transaction, and EF Core throws.
+- add/modify entities on the injected `IApplicationDbContext` expecting them to persist - no further `SaveChangesAsync` call happens before the outer transaction commits, so those changes are silently dropped.
+
+As of this writing no domain event has a registered `INotificationHandler` - the pipe (`IPublisher`/`Publisher`) exists but nothing consumes it yet (see #710). Wiring one up requires first resolving the timing issue above (e.g. dispatching after commit, or handlers writing through a fresh scope/DbContext) - don't add a handler that writes to the database or calls `ISender` without addressing it first.
 
 ### Pipeline behaviors (run in this order)
 1. `TransactionPipelineBehavior` - wraps commands in a DB transaction
