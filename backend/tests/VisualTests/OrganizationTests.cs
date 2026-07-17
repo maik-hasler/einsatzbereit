@@ -28,27 +28,22 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// CreateInvitation and the invitee shows up under Pending Invitations,
 		// with no error banner.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The switcher toggle has aria-label "Switch organization" (en) /
-		// "Organisation wechseln" (de). Match on that specifically rather than
-		// the generic `button[aria-expanded]` selector, since the header also
-		// has other aria-expanded buttons (notifications, mobile menu,
-		// language selector) whose DOM order isn't stable across seed state.
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		// "Your organizations" links into /app from the profile page - the only
+		// entry point now that the switcher no longer lives in the global header.
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return; // no org selected in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
-		await dashboardLink.First.ClickAsync();
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 
@@ -87,7 +82,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual580 Leave");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
 		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -109,7 +104,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var orgName = await CreateOrganizationAsync("Visual580 Delete");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 
 		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -128,11 +123,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task TabBar_StaysFullWidth_AcrossTabSwitches()
 	{
-		// Regression for #641: the header/tab-bar used to be wrapped in the same
-		// `max-w-2xl` container as the per-tab content, so switching off the
-		// Calendar tab shrank the tab bar itself (and left-aligned it, since
-		// that container had no `mx-auto`) instead of leaving it full width and
-		// only constraining the content beneath it.
+		// Regression for #641 (and a guard against reintroducing it): the tab
+		// bar now lives in the persistent /app header (OrgAppLayout), decoupled
+		// from any individual tab page's own content-width wrapper - it must not
+		// shrink or shift when navigating between tabs.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
@@ -141,18 +135,18 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await CreateOrganizationAsync("Visual641 Alignment");
 
 		var tabBar = Page.Locator("nav").Filter(new() { HasText = "Settings" });
-		var calendarBox = await tabBar.BoundingBoxAsync();
-		calendarBox.Should().NotBeNull();
+		var dashboardBox = await tabBar.BoundingBoxAsync();
+		dashboardBox.Should().NotBeNull();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Edit" })).ToBeVisibleAsync(
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true })).ToBeVisibleAsync(
 			new() { Timeout = 10_000 });
 
 		var settingsBox = await tabBar.BoundingBoxAsync();
 		settingsBox.Should().NotBeNull();
 
-		settingsBox!.Width.Should().Be(calendarBox!.Width);
-		settingsBox.X.Should().Be(calendarBox.X);
+		settingsBox!.Width.Should().Be(dashboardBox!.Width);
+		settingsBox.X.Should().Be(dashboardBox.X);
 	}
 
 	[Test]
@@ -169,7 +163,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual694 Centering");
 
-		var match = Regex.Match(Page.Url, @"/organizations/([^/]+)/dashboard");
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
 		var organizationId = match.Groups[1].Value;
 
@@ -181,39 +175,24 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 	private async Task<string> CreateOrganizationAsync(string namePrefix)
 	{
+		// Creating an org is always initiated from the profile page now - it's
+		// the only entry point into /app, whether this is the user's first org
+		// or an additional one alongside others they already organize.
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
 		var origin = Fixture.GetEndpoint("frontend").GetLeftPart(UriPartial.Authority);
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() > 0)
-		{
-			await switcherBtn.First.ClickAsync();
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
-		else
-		{
-			// No orgs yet - the switcher is hidden from the header entirely,
-			// so create from the profile page instead.
-			await Page.GotoAsync($"{origin}/profile");
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
+		await Page.GotoAsync($"{origin}/profile");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
 
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(createDialog).ToBeVisibleAsync();
 		await createDialog.Locator("input[type='text']").FillAsync(orgName);
 		await Page.GetByTestId("modal-submit").ClickAsync();
-		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		// Reload so the header's org switcher (fetched once on mount) picks up
-		// the newly created org - creating it doesn't refresh the switcher in place.
-		await Page.GotoAsync(origin);
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcher = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		await switcher.First.ClickAsync();
-		var orgRow = Page.Locator("li", new() { HasText = orgName });
-		await orgRow.GetByTestId("org-dashboard-link").ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/organizations/.+/dashboard"), new() { Timeout = 10_000 });
+		// Creating an org navigates straight into its new /app dashboard.
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
 		return orgName;
 	}

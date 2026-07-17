@@ -138,23 +138,20 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// #574: back navigation used to only appear in the empty-application state.
 		// The revived breadcrumb must be present unconditionally.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return; // no org selected in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return;
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
-		await dashboardLink.First.ClickAsync();
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Engagements", Exact = true }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Engagements", Exact = true }).ClickAsync();
 
 		var manageLink = Page.GetByText("Manage engagements").First;
 		if (await manageLink.CountAsync() == 0)
@@ -167,37 +164,42 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToItsDashboard()
+	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToTheSameTabInThatOrg()
 	{
-		// #691: selecting an org from the switcher dropdown used to only relabel
-		// the pill via a cookie - it did not navigate anywhere. Clicking the org
-		// row itself must now take the user into that org's context, the same as
-		// the dedicated dashboard-link icon button.
+		// #702: the switcher moved out of the global header into the /app shell,
+		// where selecting a different org must preserve whatever tab you're
+		// currently on rather than always resetting to the dashboard.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return; // no org selected in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLinks = Page.GetByTestId("org-dashboard-link");
-		var rowCount = await dashboardLinks.CountAsync();
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		await switcherBtn.ClickAsync();
+
+		var rowCount = await Page.GetByTestId("org-switch-row").CountAsync();
 		if (rowCount < 2)
 			return; // olaf needs at least two orgs in seed to prove navigation follows selection
 
-		// Click the row's name button (not the dashboard-link icon) for the org
-		// that is not currently active.
-		var secondRow = dashboardLinks.Nth(1).Locator("xpath=..");
-		var secondOrgName = await secondRow.Locator("button").First.InnerTextAsync();
-		await secondRow.Locator("button").First.ClickAsync();
+		// The active org's row carries aria-current="page" - pick a different one.
+		var otherRow = Page.Locator("[data-testid='org-switch-row']:not([aria-current='page'])").First;
+		var otherOrgName = (await otherRow.InnerTextAsync()).Trim();
+		await otherRow.ClickAsync();
 
-		await Page.WaitForURLAsync(
-			new Regex(@"/organizations/[0-9a-fA-F-]{36}/dashboard"), new() { Timeout = 15_000 });
-
-		await Expect(switcherBtn.First).ToContainTextAsync(secondOrgName.Trim());
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Expect(switcherBtn).ToContainTextAsync(otherOrgName);
 	}
 
 	[Test]

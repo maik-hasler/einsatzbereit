@@ -118,7 +118,7 @@ Add a class implementing `ICommandHandler<,>` or `IQueryHandler<,>` and it's pic
 
 `Organization` aggregate fields: `Id`, `Name`, `Description?`, `ContactEmail?`, `ContactPhone?`, `Website?`, `Address?` (`Domain.Common.Address`), `CreatedOn`, `ModifiedOn`.
 
-`IKeycloakOrganizationService` methods: `CreateOrganizationAsync`, `AddMemberAsync`, `RemoveMemberAsync`, `AssignOrganizerRoleAsync`, `GetUserOrganizationsAsync`, `GetMembersAsync`.
+`IKeycloakOrganizationService` methods: `CreateOrganizationAsync`, `AddMemberAsync`, `RemoveMemberAsync`, `AssignOrganizerRoleAsync`, `GetMembersAsync`, `SearchUsersAsync`, `DeleteOrganizationAsync`. Which organizations a user organizes is answered from the local `organization_membership` table (`IApplicationDbContext.GetOrganizerOrganizationsAsync`), not Keycloak.
 
 ## Implemented endpoints (Organizations)
 

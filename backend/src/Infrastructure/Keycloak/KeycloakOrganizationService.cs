@@ -87,26 +87,6 @@ internal sealed class KeycloakOrganizationService(
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
-	public async Task<IReadOnlyList<KeycloakOrganization>> GetUserOrganizationsAsync(
-		Guid userId,
-		CancellationToken cancellationToken = default)
-	{
-		await EnsureAuthenticatedAsync(cancellationToken);
-
-		var response = await httpClient.GetAsync(
-			$"/admin/realms/{_options.Realm}/organizations/members/{userId}/organizations",
-			cancellationToken);
-
-		await EnsureSuccessAsync(response, cancellationToken);
-
-		var organizations = await response.Content.ReadFromJsonAsync<List<KeycloakOrganizationResponse>>(
-			JsonOptions, cancellationToken) ?? [];
-
-		return organizations
-			.Select(o => new KeycloakOrganization(Guid.Parse(o.Id), o.Name))
-			.ToList();
-	}
-
 	public async Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default)
@@ -283,10 +263,6 @@ internal sealed class KeycloakOrganizationService(
 	}
 
 	private sealed record KeycloakRole(
-		string Id,
-		string Name);
-
-	private sealed record KeycloakOrganizationResponse(
 		string Id,
 		string Name);
 

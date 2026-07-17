@@ -322,6 +322,10 @@
       "unknownError": "Unknown error",
       "contextBanner": "Managing {{name}}"
     },
+    "orgApp": {
+      "backToSite": "Back to Einsatzbereit",
+      "notAuthorized": "You don't have access to this organization."
+    },
     "orgEngagements": {
       "title": "Engagement Overview",
       "loading": "Loading…",
@@ -668,7 +672,8 @@
       "loading": "Loading…",
       "removeChip": "Remove",
       "sectionOrganization": "Organizations",
-      "createOrgHint": "Want to organize volunteer opportunities? Create an organization to get started."
+      "createOrgHint": "Want to organize volunteer opportunities? Create an organization to get started.",
+      "createAnotherOrgHint": "Organize more than one? Create another organization."
     },
     "achievements": {
       "title": "My Achievements",

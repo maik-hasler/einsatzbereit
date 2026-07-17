@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Organization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 
 interface Props {
 	onClose: () => void;
-	onSuccess: () => void;
+	onSuccess: (organization: Organization) => void;
 }
 
 export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
@@ -28,8 +29,8 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 		setError(null);
 
 		try {
-			await api.createOrganization({ name });
-			onSuccess();
+			const organization = await api.createOrganization({ name });
+			onSuccess(organization);
 			onClose();
 		} catch (err: unknown) {
 			setError(

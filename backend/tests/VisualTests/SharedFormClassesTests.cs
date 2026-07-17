@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
 
@@ -6,12 +7,12 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
-	// Regression: ProfileOverviewPage and OrganizationOverviewPage (settings tab)
-	// used to each define their own local "inputClass" string constant. PR #570
-	// (#536) extracted a single shared constant into lib/formClasses.ts. Assert
-	// both pages' inputs still carry that exact class attribute, so a future edit
-	// to one page's input styling can't silently drift from the other without
-	// touching the shared module.
+	// Regression: ProfileOverviewPage and OrgSettingsPage used to each define
+	// their own local "inputClass" string constant. PR #570 (#536) extracted a
+	// single shared constant into lib/formClasses.ts. Assert both pages' inputs
+	// still carry that exact class attribute, so a future edit to one page's
+	// input styling can't silently drift from the other without touching the
+	// shared module.
 	private const string ExpectedInputClass =
 		"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
 
@@ -43,19 +44,17 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var switcherBtn = Page.GetByLabel("Switch organization");
-		if (await switcherBtn.CountAsync() == 0)
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return; // olaf has no orgs in this environment, skip
 
-		await switcherBtn.ClickAsync();
-		var settingsLink = Page.GetByTestId("org-settings-link");
-		if (await settingsLink.CountAsync() == 0)
-			return; // olaf has no org, skip
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
-		await settingsLink.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/organizations/**/settings");
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Org general-info fields also render read-only until "Edit" is clicked.

@@ -12,7 +12,7 @@ export default function OrgContextBanner({
 
 	return (
 		<Link
-			to={`/organizations/${organizationId}/dashboard`}
+			to={`/app/${organizationId}/dashboard`}
 			className="mb-4 inline-flex items-center gap-2 rounded-lg border border-brand-100 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100"
 		>
 			<svg

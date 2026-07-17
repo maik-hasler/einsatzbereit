@@ -322,6 +322,10 @@
       "unknownError": "Unbekannter Fehler",
       "contextBanner": "Verwaltung von {{name}}"
     },
+    "orgApp": {
+      "backToSite": "Zurueck zu Einsatzbereit",
+      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
+    },
     "orgEngagements": {
       "title": "Bewerbungen",
       "loading": "Wird geladen…",
@@ -668,7 +672,8 @@
       "loading": "Wird geladen…",
       "removeChip": "Entfernen",
       "sectionOrganization": "Organisationen",
-      "createOrgHint": "Moechtest du Freiwilligeneinsaetze organisieren? Erstelle eine Organisation, um loszulegen."
+      "createOrgHint": "Moechtest du Freiwilligeneinsaetze organisieren? Erstelle eine Organisation, um loszulegen.",
+      "createAnotherOrgHint": "Organisierst du mehr als eine? Erstelle eine weitere Organisation."
     },
     "achievements": {
       "title": "Meine Errungenschaften",

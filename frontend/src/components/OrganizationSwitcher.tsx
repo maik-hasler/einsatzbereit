@@ -1,52 +1,49 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { OrganizationSummaryDto } from "../client/api-client";
+import type {
+	Organization,
+	OrganizationSummaryDto,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { getActiveOrgId, setActiveOrgCookie } from "../lib/activeOrg";
 import CreateOrganizationModal from "./CreateOrganizationModal";
 
 export default function OrganizationSwitcher({
-	transparent = false,
+	currentOrgId,
+	currentTab,
 }: {
-	transparent?: boolean;
+	currentOrgId: string;
+	currentTab: string;
 }) {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
 	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
-	const [activeOrgId, setActiveOrgId] = useState<string | null>(getActiveOrgId);
 	const [loading, setLoading] = useState(true);
 	const [open, setOpen] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const activeOrg = orgs.find((o) => o.id === activeOrgId) ?? null;
+	const currentOrg = orgs.find((o) => o.id === currentOrgId) ?? null;
 
-	const dashboardPath = (org: OrganizationSummaryDto) =>
-		`/organizations/${org.slug ?? org.id}/dashboard`;
+	function orgPath(org: OrganizationSummaryDto) {
+		return `/app/${org.slug ?? org.id}/${currentTab}`;
+	}
 
-	const fetchOrgs = () => {
+	function fetchOrgs() {
 		setLoading(true);
 		api
 			.getOrganizations()
-			.then((data: OrganizationSummaryDto[]) => {
-				setOrgs(data);
-				if (!getActiveOrgId() && data.length > 0) {
-					setActiveOrgCookie(data[0].id);
-					setActiveOrgId(data[0].id);
-				}
-			})
+			.then((data: OrganizationSummaryDto[]) => setOrgs(data))
 			.catch(() => setOrgs([]))
 			.finally(() => setLoading(false));
-	};
+	}
 
 	useEffect(() => {
 		fetchOrgs();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Close dropdown on outside click
 	useEffect(() => {
 		const handleClick = (e: MouseEvent) => {
 			if (
@@ -60,45 +57,19 @@ export default function OrganizationSwitcher({
 		return () => document.removeEventListener("click", handleClick);
 	}, []);
 
-	const handleSwitch = (org: OrganizationSummaryDto) => {
-		setActiveOrgCookie(org.id);
-		setActiveOrgId(org.id);
+	function handleSwitch(org: OrganizationSummaryDto) {
 		setOpen(false);
-		navigate(dashboardPath(org));
-	};
-
-	const handleOrgCreated = () => {
-		const prevIds = new Set(orgs.map((o) => o.id));
-		setLoading(true);
-		api
-			.getOrganizations()
-			.then((data: OrganizationSummaryDto[]) => {
-				setOrgs(data);
-				const newOrg = data.find((o) => !prevIds.has(o.id));
-				if (newOrg) {
-					setActiveOrgCookie(newOrg.id);
-					setActiveOrgId(newOrg.id);
-				} else if (!getActiveOrgId() && data.length > 0) {
-					setActiveOrgCookie(data[0].id);
-					setActiveOrgId(data[0].id);
-				}
-			})
-			.catch(() => setOrgs([]))
-			.finally(() => setLoading(false));
-	};
-
-	if (loading) {
-		return (
-			<div
-				className={`h-9 w-32 animate-pulse rounded-lg ${transparent ? "bg-white/20" : "bg-gray-100"}`}
-			/>
-		);
+		if (org.id === currentOrgId) return;
+		navigate(orgPath(org));
 	}
 
-	// No orgs - hide the switcher from the header entirely.
-	// Users can create an org from their profile page instead.
-	if (orgs.length === 0) {
-		return null;
+	function handleOrgCreated(newOrg: Organization) {
+		setShowModal(false);
+		navigate(`/app/${newOrg.slug ?? newOrg.id?.value}/dashboard`);
+	}
+
+	if (loading) {
+		return <div className="h-9 w-48 animate-pulse rounded-lg bg-gray-100" />;
 	}
 
 	return (
@@ -107,33 +78,18 @@ export default function OrganizationSwitcher({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${transparent ? "border-white/30 bg-white/10 text-white hover:bg-white/20" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+					className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>
-					{/* Building icon */}
-					<svg
-						className={`w-4 h-4 ${transparent ? "text-white/70" : "text-gray-400"}`}
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21"
-						/>
-					</svg>
-
-					<span className="max-w-[150px] truncate">
-						{activeOrg ? activeOrg.name : t("organization.selectPlaceholder")}
+					<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
+						{(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
 					</span>
-
-					{/* Chevron */}
+					<span className="max-w-[200px] truncate">
+						{currentOrg?.name ?? t("organization.selectPlaceholder")}
+					</span>
 					<svg
-						className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
+						className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="2"
@@ -148,51 +104,26 @@ export default function OrganizationSwitcher({
 					</svg>
 				</button>
 
-				{/* Dropdown */}
 				{open && (
-					<div className="absolute left-0 top-full mt-2 w-56 rounded-lg border shadow-lg z-50 bg-white border-gray-200">
-						<ul className="py-1 max-h-60 overflow-y-auto">
+					<div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
+						<ul className="max-h-60 overflow-y-auto py-1">
 							{orgs.map((org) => (
-								<li
-									key={org.id}
-									className={`flex items-center gap-2 px-3 py-2 ${org.id === activeOrgId ? "bg-brand-50" : ""}`}
-								>
+								<li key={org.id}>
 									<button
 										type="button"
+										data-testid="org-switch-row"
 										onClick={() => handleSwitch(org)}
-										className={`flex flex-1 items-center gap-2 min-w-0 text-sm ${org.id === activeOrgId ? "text-brand-700 font-medium" : "text-gray-700 hover:text-gray-900"}`}
+										aria-current={org.id === currentOrgId ? "page" : undefined}
+										className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+											org.id === currentOrgId
+												? "bg-brand-50 font-medium text-brand-700"
+												: "text-gray-700 hover:bg-gray-50"
+										}`}
 									>
-										<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold bg-brand-100 text-brand-700">
+										<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
 											{org.name.charAt(0).toUpperCase()}
 										</span>
 										<span className="truncate">{org.name}</span>
-									</button>
-									<button
-										type="button"
-										data-testid="org-dashboard-link"
-										aria-label={t("organization.dashboard")}
-										onClick={() => {
-											setActiveOrgCookie(org.id);
-											setActiveOrgId(org.id);
-											setOpen(false);
-											navigate(dashboardPath(org));
-										}}
-										className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-brand-700"
-									>
-										<svg
-											className="w-4 h-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											strokeWidth="1.5"
-											stroke="currentColor"
-											aria-hidden="true"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-											/>
-										</svg>
 									</button>
 								</li>
 							))}
@@ -205,10 +136,10 @@ export default function OrganizationSwitcher({
 									setOpen(false);
 									setShowModal(true);
 								}}
-								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-brand-700 hover:bg-brand-50"
+								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-brand-700 transition-colors hover:bg-brand-50"
 							>
 								<svg
-									className="w-4 h-4"
+									className="h-4 w-4"
 									fill="none"
 									viewBox="0 0 24 24"
 									strokeWidth="1.5"

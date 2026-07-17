@@ -101,30 +101,27 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task CreateWizard_HasStepperFreeNavigationAndDraftButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Create opportunity now lives on the organization dashboard - navigate there
-		// via the org switcher. Switcher toggle has aria-label "Switch organization"
-		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		// Create opportunity lives on the organization dashboard - navigate there
+		// via the "Your organizations" entry point on the profile page.
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return; // no org membership in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
-		// Guard: the dialog may not open if no active-org cookie is set yet.
+		// Guard: the dialog may not open in an unexpected state.
 		var dialog = Page.Locator("[role='dialog']");
 		try
 		{
@@ -302,24 +299,21 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task CreateDraft_DoesNotAppearInPublicList_AppearOnDashboardWithAmberBadge()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		var uniqueTitle = $"Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Create opportunity lives on the organization dashboard - navigate there
-		// via the org switcher. Switcher toggle has aria-label "Switch organization"
-		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		// via the "Your organizations" entry point on the profile page.
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return;
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return;
-
-		await dashboardLink.First.ClickAsync();
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -375,24 +369,21 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Verifies the UI still blocks publishing with no slots, and that the
 		// supported draft -> add-slot -> publish flow succeeds.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		var uniqueTitle = $"Waitlist Publish Gap Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Create opportunity lives on the organization dashboard - navigate there
-		// via the org switcher. Switcher toggle has aria-label "Switch organization"
-		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		// via the "Your organizations" entry point on the profile page.
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		if (await orgLink.CountAsync() == 0)
 			return; // no org membership in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });

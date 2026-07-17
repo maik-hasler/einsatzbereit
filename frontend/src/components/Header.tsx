@@ -2,7 +2,6 @@ import { useAuth } from "react-oidc-context";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, Link, useLocation } from "react-router";
-import OrganizationSwitcher from "./OrganizationSwitcher";
 import LanguageSelector from "./LanguageSelector";
 import { useApiClient } from "../hooks/useApiClient";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
@@ -150,12 +149,6 @@ export default function Header() {
 					<nav className="hidden md:flex items-center gap-3">
 						{isLoggedIn ? (
 							<>
-								<OrganizationSwitcher transparent={isTransparent} />
-
-								<div
-									className={`w-px h-6 ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
-								/>
-
 								{/* Bell icon */}
 								<div className="relative" ref={notifRef}>
 									<button
@@ -577,9 +570,6 @@ export default function Header() {
 									>
 										{displayName}
 									</span>
-								</div>
-								<div className="px-3 py-2">
-									<OrganizationSwitcher transparent={isTransparent} />
 								</div>
 								<Link
 									to="/profile"

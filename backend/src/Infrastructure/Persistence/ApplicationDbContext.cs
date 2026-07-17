@@ -113,17 +113,19 @@ internal sealed class ApplicationDbContext(
 		await Set<Organization>()
 			.FirstOrDefaultAsync(o => o.Slug == slug, cancellationToken);
 
-	public async Task<Dictionary<Guid, string?>> GetOrganizationSlugsAsync(
-		IReadOnlyCollection<Guid> organizationIds,
-		CancellationToken cancellationToken = default)
-	{
-		var orgIds = organizationIds.Select(id => new OrganizationId(id)).ToList();
-
-		return await Set<Organization>()
+	public async Task<List<Organization>> GetOrganizerOrganizationsAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
 			.AsNoTracking()
-			.Where(o => orgIds.Contains(o.Id))
-			.ToDictionaryAsync(o => o.Id.Value, o => o.Slug, cancellationToken);
-	}
+			.Where(m => m.UserId == userId && m.Role == OrganizationMemberRole.Organizer)
+			.Join(
+				Set<Organization>().AsNoTracking(),
+				m => m.OrganizationId,
+				o => o.Id,
+				(m, o) => o)
+			.OrderBy(o => o.Name)
+			.ToListAsync(cancellationToken);
 
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,

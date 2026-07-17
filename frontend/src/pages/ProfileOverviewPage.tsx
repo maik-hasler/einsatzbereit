@@ -8,6 +8,7 @@ import type {
 	EngagementSummary,
 	MyInvitationDto,
 	MyProfileResponse,
+	OrganizationSummaryDto,
 	StreakSummary,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -186,6 +187,9 @@ export default function ProfileOverviewPage() {
 	const [avatarError, setAvatarError] = useState<string | null>(null);
 	const avatarInputRef = useRef<HTMLInputElement>(null);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
+	const [organizations, setOrganizations] = useState<OrganizationSummaryDto[]>(
+		[],
+	);
 	const [editing, setEditing] = useState(false);
 
 	// --- Engagements tab state ---
@@ -279,6 +283,15 @@ export default function ProfileOverviewPage() {
 		return () => {
 			cancelled = true;
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [accessToken]);
+
+	// Organizations the user organizes - entry point into the /app management context.
+	useEffect(() => {
+		api
+			.getOrganizations()
+			.then(setOrganizations)
+			.catch(() => setOrganizations([]));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [accessToken]);
 
@@ -841,8 +854,48 @@ export default function ProfileOverviewPage() {
 									<h2 className="mb-1 text-base font-semibold text-gray-900">
 										{t("profile.sectionOrganization")}
 									</h2>
+
+									{organizations.length > 0 && (
+										<ul className="mb-4 mt-3 space-y-2">
+											{organizations.map((org) => (
+												<li key={org.id}>
+													<Link
+														to={`/app/${org.slug ?? org.id}/dashboard`}
+														data-testid="your-organizations-link"
+														className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm transition-colors hover:border-brand-200 hover:shadow-md"
+													>
+														<span className="flex min-w-0 items-center gap-2">
+															<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-100 text-xs font-semibold text-brand-700">
+																{org.name.charAt(0).toUpperCase()}
+															</span>
+															<span className="truncate font-medium text-gray-900">
+																{org.name}
+															</span>
+														</span>
+														<svg
+															className="h-4 w-4 shrink-0 text-gray-400"
+															fill="none"
+															viewBox="0 0 24 24"
+															strokeWidth="2"
+															stroke="currentColor"
+															aria-hidden="true"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+															/>
+														</svg>
+													</Link>
+												</li>
+											))}
+										</ul>
+									)}
+
 									<p className="mb-4 text-sm text-gray-600">
-										{t("profile.createOrgHint")}
+										{organizations.length > 0
+											? t("profile.createAnotherOrgHint")
+											: t("profile.createOrgHint")}
 									</p>
 									<button
 										type="button"
@@ -1240,7 +1293,9 @@ export default function ProfileOverviewPage() {
 			{showCreateOrgModal && (
 				<CreateOrganizationModal
 					onClose={() => setShowCreateOrgModal(false)}
-					onSuccess={() => setShowCreateOrgModal(false)}
+					onSuccess={(org) =>
+						navigate(`/app/${org.slug ?? org.id?.value}/dashboard`)
+					}
 				/>
 			)}
 

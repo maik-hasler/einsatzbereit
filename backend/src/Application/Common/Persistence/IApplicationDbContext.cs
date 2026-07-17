@@ -48,8 +48,8 @@ public interface IApplicationDbContext
 		string slug,
 		CancellationToken cancellationToken = default);
 
-	Task<Dictionary<Guid, string?>> GetOrganizationSlugsAsync(
-		IReadOnlyCollection<Guid> organizationIds,
+	Task<List<Organization>> GetOrganizerOrganizationsAsync(
+		UserId userId,
 		CancellationToken cancellationToken = default);
 
 	Task<bool> HasPendingInvitationAsync(

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
@@ -152,35 +153,80 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// "Your organizations" is the entry point into /app (only rendered when
+	// olaf organizes at least one org) - lands on /app/{slug}/dashboard.
+	private async Task<bool> NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
+	{
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var orgLink = Page.GetByTestId("your-organizations-link");
+		try
+		{
+			await orgLink.First.WaitForAsync(new() { Timeout = 5_000 });
+		}
+		catch (TimeoutException)
+		{
+			return false; // olaf has no orgs, skip
+		}
+
+		await orgLink.First.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		return true;
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgEngagementsPage_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Engagements", Exact = true }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgMembersPage_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	[Test]
 	public async Task OrganizationSettingsPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		// Open org switcher (only rendered when olaf has at least one org)
-		var switcherBtn = Page.GetByLabel("Switch organization");
-
-		try
-		{
-			await switcherBtn.WaitForAsync(new() { Timeout = 5_000 });
-		}
-		catch (TimeoutException)
-		{
-			return; // olaf has no orgs, skip
-		}
-
-		await switcherBtn.ClickAsync();
-		var settingsBtn = Page.GetByTestId("org-settings-link");
-
-		if (await settingsBtn.CountAsync() == 0)
-			return; // olaf has no org, skip
-
-		await settingsBtn.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/organizations/**/settings");
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -309,20 +355,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// nested unsaved-changes ConfirmDialog) that a plain page-load axe
 		// scan can't reach, since the modal only exists in the DOM while open.
 		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });

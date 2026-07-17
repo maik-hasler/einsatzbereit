@@ -71,7 +71,7 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 		feedback.GetProperty("feedbackCount").GetInt32().Should().Be(0);
 		feedback.GetProperty("items").GetArrayLength().Should().Be(0);
 
-		await Page.GotoAsync($"{origin}/organizations/{organizationId}/dashboard?tab=engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var row = Page.Locator("li", new() { HasText = oppTitle });
