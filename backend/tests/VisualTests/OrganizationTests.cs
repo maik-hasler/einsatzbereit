@@ -141,8 +141,13 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByTestId("modal-submit").ClickAsync();
 
-		// Creating an org navigates straight into its new /app dashboard.
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		// Creating an org makes it the active org and navigates into its new
+		// /app dashboard. Wait for the switcher to reflect the NEW org before
+		// opening Settings: a bare WaitForURLAsync(/app/.../dashboard) is already
+		// satisfied by the dashboard GoToOrgAppDashboardAsync left us on, so it
+		// races the navigation and can open the previous org's Settings instead.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
+			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 
@@ -226,7 +231,13 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await createDialog.Locator("input[type='text']").FillAsync(orgName);
 		await Page.GetByTestId("modal-submit").ClickAsync();
 
-		// Creating an org navigates straight into its new /app dashboard.
+		// Creating an org makes it the active org and navigates into its new
+		// /app dashboard. Wait for the switcher to reflect the NEW org: a bare
+		// WaitForURLAsync(/app/.../dashboard) is already satisfied by the
+		// dashboard GoToOrgAppDashboardAsync left us on, so it would race the
+		// navigation and return while still on the previous org.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
+			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
 		return orgName;
