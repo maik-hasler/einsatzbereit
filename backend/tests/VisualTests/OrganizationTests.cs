@@ -32,23 +32,12 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The switcher toggle has aria-label "Switch organization" (en) /
-		// "Organisation wechseln" (de). Match on that specifically rather than
-		// the generic `button[aria-expanded]` selector, since the header also
-		// has other aria-expanded buttons (notifications, mobile menu,
-		// language selector) whose DOM order isn't stable across seed state.
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		// The org switcher lives inside the app shell now (#691/#702) - get
+		// there via /profile's "Your organizations" list.
+		if (!await GoToFirstOrganizationDashboardAsync())
 			return; // no org selected in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members" }).ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 
@@ -87,7 +76,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual580 Leave");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members" }).ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
 		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -109,7 +98,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var orgName = await CreateOrganizationAsync("Visual580 Delete");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings" }).ClickAsync();
 
 		var deleteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Delete Organization" });
 		await Expect(deleteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -139,17 +128,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() > 0)
-		{
-			await switcherBtn.First.ClickAsync();
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
-		else
-		{
-			await Page.GotoAsync($"{origin}/profile");
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
+		// Org creation is only reachable from /profile now (#691/#702 removed
+		// the header switcher entirely).
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("create-org-btn").ClickAsync();
 
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(createDialog).ToBeVisibleAsync();
@@ -166,15 +149,15 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		await Page.GotoAsync(origin);
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		// The profile page's create flow does not auto-navigate (unlike the
+		// in-shell OrgSwitcher's create flow) - follow the new org's own link
+		// into its dashboard ourselves.
+		var orgLink = Page.GetByTestId("my-organization-link").Filter(new() { HasText = orgName });
+		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await orgLink.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/.+/dashboard"), new() { Timeout = 10_000 });
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).First.ClickAsync();
-		var orgRow = Page.Locator("li", new() { HasText = orgName });
-		await orgRow.GetByTestId("org-dashboard-link").ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/organizations/.+/dashboard"), new() { Timeout = 10_000 });
-
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings" }).ClickAsync();
 
 		await Expect(Page.GetByText("A helpful description for volunteers.")).ToBeVisibleAsync(
 			new() { Timeout = 10_000 });
@@ -205,7 +188,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var calendarBox = await tabBar.BoundingBoxAsync();
 		calendarBox.Should().NotBeNull();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Settings" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings" }).ClickAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Edit" })).ToBeVisibleAsync(
 			new() { Timeout = 10_000 });
 
@@ -230,7 +213,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual694 Centering");
 
-		var match = Regex.Match(Page.Url, @"/organizations/([^/]+)/dashboard");
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
 		var organizationId = match.Groups[1].Value;
 
@@ -245,19 +228,11 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
 		var origin = Fixture.GetEndpoint("frontend").GetLeftPart(UriPartial.Authority);
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() > 0)
-		{
-			await switcherBtn.First.ClickAsync();
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
-		else
-		{
-			// No orgs yet - the switcher is hidden from the header entirely,
-			// so create from the profile page instead.
-			await Page.GotoAsync($"{origin}/profile");
-			await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
-		}
+		// Org creation is only reachable from /profile now (#691/#702 removed
+		// the header switcher entirely).
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("create-org-btn").ClickAsync();
 
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(createDialog).ToBeVisibleAsync();
@@ -265,16 +240,14 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(createDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		// Reload so the header's org switcher (fetched once on mount) picks up
-		// the newly created org - creating it doesn't refresh the switcher in place.
-		await Page.GotoAsync(origin);
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcher = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		await switcher.First.ClickAsync();
-		var orgRow = Page.Locator("li", new() { HasText = orgName });
-		await orgRow.GetByTestId("org-dashboard-link").ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/organizations/.+/dashboard"), new() { Timeout = 10_000 });
+		// ProfileOverviewPage's create-org success handler only refetches
+		// "Your organizations" in place (unlike the in-shell OrgSwitcher's
+		// create flow, it does not auto-navigate) - follow the new org's own
+		// link into its dashboard ourselves.
+		var orgLink = Page.GetByTestId("my-organization-link").Filter(new() { HasText = orgName });
+		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await orgLink.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/.+/dashboard"), new() { Timeout = 10_000 });
 
 		return orgName;
 	}

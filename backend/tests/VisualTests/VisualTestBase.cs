@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
 using TUnit.Playwright;
@@ -72,5 +73,40 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 
 		Math.Abs(leftGap - rightGap).Should().BeLessThan(2,
 			$"{label}: .max-w-2xl content should be horizontally centered within <main>");
+	}
+
+	/// <summary>
+	/// Entry point into the organizer app shell (#691/#702): the org switcher
+	/// no longer lives in the global Header, so the only way in from
+	/// elsewhere in the site is /profile's "Your organizations" list. Navigates
+	/// there and, if the logged-in user organizes at least one organization,
+	/// clicks the first entry and lands on /app/{id}/dashboard. Returns false
+	/// (having navigated to /profile but nothing further) if the list is
+	/// absent or empty, so callers can skip gracefully the same way former
+	/// callers skipped an absent header switcher.
+	/// </summary>
+	protected async Task<bool> GoToFirstOrganizationDashboardAsync()
+	{
+		var origin = Fixture.GetEndpoint("frontend").GetLeftPart(UriPartial.Authority);
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var orgList = Page.GetByTestId("my-organizations-list");
+		try
+		{
+			await orgList.WaitForAsync(new() { Timeout = 5_000 });
+		}
+		catch (TimeoutException)
+		{
+			return false; // no orgs in seed for this user - skip
+		}
+
+		var firstLink = Page.GetByTestId("my-organization-link").First;
+		if (await firstLink.CountAsync() == 0)
+			return false; // list rendered empty - skip
+
+		await firstLink.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/.+/dashboard"), new() { Timeout = 10_000 });
+		return true;
 	}
 }

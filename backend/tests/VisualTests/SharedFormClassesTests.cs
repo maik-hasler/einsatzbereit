@@ -40,22 +40,16 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	public async Task OrganizationSettingsInput_UsesSharedInputClass()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var switcherBtn = Page.GetByLabel("Switch organization");
-		if (await switcherBtn.CountAsync() == 0)
+		// Org switcher lives inside the app shell now (#691/#702) - get there
+		// via /profile's "Your organizations" list.
+		if (!await GoToFirstOrganizationDashboardAsync())
 			return; // olaf has no orgs in this environment, skip
 
-		await switcherBtn.ClickAsync();
-		var settingsLink = Page.GetByTestId("org-settings-link");
-		if (await settingsLink.CountAsync() == 0)
-			return; // olaf has no org, skip
-
-		await settingsLink.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/organizations/**/settings");
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Org general-info fields also render read-only until "Edit" is clicked.

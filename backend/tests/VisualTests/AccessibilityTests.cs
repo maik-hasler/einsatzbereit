@@ -156,31 +156,16 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrganizationSettingsPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Open org switcher (only rendered when olaf has at least one org)
-		var switcherBtn = Page.GetByLabel("Switch organization");
-
-		try
-		{
-			await switcherBtn.WaitForAsync(new() { Timeout = 5_000 });
-		}
-		catch (TimeoutException)
-		{
+		// Org switcher lives inside the app shell now (#691/#702) - get there
+		// via /profile's "Your organizations" list.
+		if (!await GoToFirstOrganizationDashboardAsync())
 			return; // olaf has no orgs, skip
-		}
 
-		await switcherBtn.ClickAsync();
-		var settingsBtn = Page.GetByTestId("org-settings-link");
-
-		if (await settingsBtn.CountAsync() == 0)
-			return; // olaf has no org, skip
-
-		await settingsBtn.ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/organizations/**/settings");
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -313,16 +298,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		if (!await GoToFirstOrganizationDashboardAsync())
 			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });

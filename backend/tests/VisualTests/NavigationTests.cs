@@ -142,19 +142,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		if (!await GoToFirstOrganizationDashboardAsync())
 			return; // no org selected in seed - skip
 
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return;
-
-		await dashboardLink.First.ClickAsync();
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Engagements", Exact = true }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Engagements", Exact = true }).ClickAsync();
 
 		var manageLink = Page.GetByText("Manage engagements").First;
 		if (await manageLink.CountAsync() == 0)
@@ -169,35 +162,38 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToItsDashboard()
 	{
-		// #691: selecting an org from the switcher dropdown used to only relabel
-		// the pill via a cookie - it did not navigate anywhere. Clicking the org
-		// row itself must now take the user into that org's context, the same as
-		// the dedicated dashboard-link icon button.
+		// #691/#702: selecting an org from the switcher dropdown must navigate
+		// to that org's dashboard. #702 merged the row's separate name button
+		// and dashboard-link icon button into a single button per row (inside
+		// the app shell, selecting a row always means "navigate there"), so
+		// this only needs to click a second row's org-dashboard-link button.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
+		// The switcher only lives inside the app shell now - get there via
+		// /profile's "Your organizations" list first.
+		if (!await GoToFirstOrganizationDashboardAsync())
 			return; // no org selected in seed - skip
 
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.First.ClickAsync();
 		var dashboardLinks = Page.GetByTestId("org-dashboard-link");
 		var rowCount = await dashboardLinks.CountAsync();
 		if (rowCount < 2)
 			return; // olaf needs at least two orgs in seed to prove navigation follows selection
 
-		// Click the row's name button (not the dashboard-link icon) for the org
-		// that is not currently active.
-		var secondRow = dashboardLinks.Nth(1).Locator("xpath=..");
-		var secondOrgName = await secondRow.Locator("button").First.InnerTextAsync();
-		await secondRow.Locator("button").First.ClickAsync();
+		// Click a *second* row (not the first/active one) - there is now only
+		// one button per row, doing both "select" and "navigate".
+		var secondRow = dashboardLinks.Nth(1);
+		var secondOrgName = (await secondRow.Locator("span.truncate").InnerTextAsync()).Trim();
+		await secondRow.ClickAsync();
 
 		await Page.WaitForURLAsync(
-			new Regex(@"/organizations/[0-9a-fA-F-]{36}/dashboard"), new() { Timeout = 15_000 });
+			new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
-		await Expect(switcherBtn.First).ToContainTextAsync(secondOrgName.Trim());
+		await Expect(switcherBtn.First).ToContainTextAsync(secondOrgName);
 	}
 
 	[Test]
