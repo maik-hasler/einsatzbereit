@@ -503,12 +503,27 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		// The newly published opportunity is visible in the public list.
+		// The newly published opportunity is visible in the public list. The
+		// list is paginated and this VisualTests session shares one Aspire
+		// backend across ~100 test methods, so by the time this test runs a
+		// lot of other tests' opportunities may already occupy the first
+		// page(s) - page through a bounded number of "Load more" clicks
+		// rather than assuming the first page is enough.
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var listedCard = Page
 			.Locator("a[href*='/volunteer-opportunities/']")
 			.Filter(new() { HasText = uniqueTitle });
+		var loadMoreBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Load more" });
+		for (var attempt = 0; attempt < 10; attempt++)
+		{
+			if (await listedCard.CountAsync() > 0)
+				break;
+			if (await loadMoreBtn.CountAsync() == 0)
+				break;
+			await loadMoreBtn.ClickAsync();
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		}
 		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 }
