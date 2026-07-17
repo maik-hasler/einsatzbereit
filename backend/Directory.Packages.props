@@ -31,7 +31,7 @@
 		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="[1.16.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="[1.16.0]" />
 		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="[1.16.0]" />
-		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.15.1]" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="[1.16.0]" />
 		<!-- Transitive pinning: override vulnerable transitive deps -->
 		<PackageVersion Include="MessagePack" Version="3.1.8" />
 		<PackageVersion Include="MessagePack.Annotations" Version="3.1.8" />
