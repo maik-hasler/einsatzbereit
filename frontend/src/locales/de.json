@@ -511,6 +511,7 @@
       "noApplications": "Noch keine Bewerbungen.",
       "noApplicationsHint": "Sobald sich Freiwillige für diesen Bedarf bewerben, erscheinen sie hier.",
       "volunteer": "Freiwilliger: {{id}}",
+      "anonymizedVolunteer": "Anonymisierter Freiwilliger",
       "timeSlot": "Zeitslot: {{id}}",
       "receivedOn": "Eingegangen: {{date}}",
       "confirm": "Bestätigen",
