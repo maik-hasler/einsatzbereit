@@ -106,10 +106,10 @@ export function FloatingField({
 			? "border-red-300 focus:border-red-400 focus:ring-red-400/30"
 			: "border-gray-200 focus:border-brand-400 focus:ring-brand-400/30"
 	}`;
-	const labelClass = `pointer-events-none absolute left-4 top-1.5 text-[11px] font-medium transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-500 peer-focus:top-1.5 peer-focus:text-[11px] peer-focus:font-medium ${
+	const labelClass = `pointer-events-none absolute left-4 top-1.5 text-[11px] font-medium transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-600 peer-focus:top-1.5 peer-focus:text-[11px] peer-focus:font-medium ${
 		error
 			? "text-red-500 peer-focus:text-red-500"
-			: "text-gray-500 peer-focus:text-brand-600"
+			: "text-gray-600 peer-focus:text-brand-600"
 	}`;
 	const errorId = error ? `${id}-error` : undefined;
 
