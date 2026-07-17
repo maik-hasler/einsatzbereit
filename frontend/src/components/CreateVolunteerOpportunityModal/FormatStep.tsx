@@ -32,7 +32,7 @@ function RadioCardGroup<T extends string>({
 					<input
 						type="radio"
 						value={value}
-						className="sr-only"
+						className="sr-only left-0 top-0"
 						{...register(name)}
 					/>
 					<span className="text-sm font-medium">{label}</span>

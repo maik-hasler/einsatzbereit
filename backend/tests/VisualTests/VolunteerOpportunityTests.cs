@@ -493,12 +493,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		// The newly published opportunity is visible in the public list.
+		// The newly published opportunity is visible in the public list. Same
+		// 30s window as the dialog-close wait above - under the shared,
+		// contended CI stack the listing can lag behind the publish call by
+		// more than 15s even when nothing is actually wrong.
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var listedCard = Page
 			.Locator("a[href*='/volunteer-opportunities/']")
 			.Filter(new() { HasText = uniqueTitle });
-		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}
 }
