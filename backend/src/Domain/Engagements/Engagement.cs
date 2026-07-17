@@ -150,7 +150,7 @@ public sealed class Engagement
 	public Result CheckIn()
 	{
 		if (Status != EngagementStatus.Confirmed)
-			return Result.Failure(Error.Conflict("Engagement.NotConfirmed", "Only confirmed engagements can be checked in."));
+			return Result.Failure(Error.Validation("Engagement.NotConfirmed", "Only confirmed engagements can be checked in."));
 
 		IsCheckedIn = true;
 		AddEvent(new EngagementCheckedInDomainEvent(Id, VolunteerId!.Value, OpportunityId));

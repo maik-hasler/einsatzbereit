@@ -24,7 +24,7 @@ internal sealed class CheckInWithPinCommandHandler(
 			throw new ResultFailureException(Error.Validation("Engagement.InvalidPin", "Invalid PIN."));
 
 		if (engagement.VolunteerId!.Value.Value != request.RequestingUserId.Value)
-			throw new ResultFailureException(Error.Forbidden("Engagement.NotOwner", "You can only check in your own engagement."));
+			throw new ResultFailureException(Error.Validation("Engagement.NotOwner", "You can only check in your own engagement."));
 
 		engagement.CheckIn().ThrowIfFailure();
 
