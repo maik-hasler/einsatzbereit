@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Achievements;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +17,13 @@ internal sealed class AchievementConfiguration
 		builder.Property(a => a.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new AchievementId(guid))
+				guid => AchievementId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(a => a.UserId)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(a => a.Type)

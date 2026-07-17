@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.VolunteerOpportunities;
 using Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +17,13 @@ internal sealed class VolunteerOpportunityConfiguration
 		builder.Property(vo => vo.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new VolunteerOpportunityId(guid))
+				guid => VolunteerOpportunityId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(vo => vo.OrganizationId)
 			.HasConversion(
 				id => id.Value,
-				guid => new OrganizationId(guid))
+				guid => OrganizationId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(vo => vo.Title)

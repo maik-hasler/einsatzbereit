@@ -6780,20 +6780,24 @@ namespace IntegrationTests
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("street")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Street { get; set; } = default!;
+        public string? Street { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("houseNumber")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string HouseNumber { get; set; } = default!;
+        public string? HouseNumber { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("zipCode")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ZipCode { get; set; } = default!;
+        public string? ZipCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("city")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string City { get; set; } = default!;
+        public string? City { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("latitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Latitude { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("longitude")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")]
+        public double? Longitude { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -7362,8 +7366,7 @@ namespace IntegrationTests
         public string? OrganizationName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("volunteerId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid VolunteerId { get; set; } = default!;
+        public System.Guid? VolunteerId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("timeSlotId")]
         public System.Guid? TimeSlotId { get; set; } = default!;

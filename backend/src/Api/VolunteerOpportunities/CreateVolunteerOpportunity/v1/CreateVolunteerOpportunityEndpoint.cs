@@ -1,8 +1,10 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
+using Domain.Common;
 using Domain.Organizations;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
@@ -88,11 +90,11 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 
 		var address = request.IsRemote || (status == OpportunityStatus.Draft && !hasAnyAddressField)
 			? null
-			: new Address(
+			: Address.Create(
 				request.Street ?? string.Empty,
 				request.HouseNumber ?? string.Empty,
 				request.ZipCode ?? string.Empty,
-				request.City ?? string.Empty);
+				request.City ?? string.Empty).GetValueOrThrow();
 
 		var title = status == OpportunityStatus.Draft && string.IsNullOrWhiteSpace(request.Title)
 			? "Unbenannt"
@@ -101,7 +103,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 		var command = new CreateVolunteerOpportunityCommand(
 			title,
 			request.Description ?? string.Empty,
-			new OrganizationId(request.OrganizationId),
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(),
 			request.IsRemote,
 			address,
 			occurrence,

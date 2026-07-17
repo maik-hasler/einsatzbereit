@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -21,7 +22,7 @@ internal sealed class CreateInvitationCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var org = await dbContext.Organizations.FindAsync(request.OrganizationId, cancellationToken)
-			?? throw new DomainException("Organization not found.");
+			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", "Organization not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrganizationService,
@@ -33,12 +34,12 @@ internal sealed class CreateInvitationCommandHandler(
 
 		var members = await keycloakOrganizationService.GetMembersAsync(request.OrganizationId.Value, cancellationToken);
 		if (members.Any(m => m.UserId == request.InviteeId.Value))
-			throw new DomainException("User is already a member of this organization.");
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyMember", "User is already a member of this organization."));
 
 		var alreadyInvited = await dbContext.HasPendingInvitationAsync(
 			request.OrganizationId, request.InviteeId, cancellationToken);
 		if (alreadyInvited)
-			throw new DomainException("A pending invitation already exists for this user.");
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyInvited", "A pending invitation already exists for this user."));
 
 		var inviteeName = inviteeProfile.FirstName is not null && inviteeProfile.LastName is not null
 			? $"{inviteeProfile.FirstName} {inviteeProfile.LastName}"

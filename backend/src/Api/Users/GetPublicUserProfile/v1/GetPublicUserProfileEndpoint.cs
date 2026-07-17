@@ -1,5 +1,6 @@
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.GetPublicUserProfile.v1;
 using Domain.Users;
@@ -26,7 +27,7 @@ internal sealed class GetPublicUserProfileEndpoint : IEndpoint
 		CancellationToken cancellationToken)
 	{
 		var result = await sender.Send(
-			new GetPublicUserProfileQuery(new UserId(userId)),
+			new GetPublicUserProfileQuery(UserId.Create(userId).GetValueOrThrow()),
 			cancellationToken);
 
 		return result is null ? Results.NotFound() : Results.Ok(result);

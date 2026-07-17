@@ -1,5 +1,6 @@
 using Application.Common.Authorization;
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -21,10 +22,10 @@ internal sealed class CancelEngagementCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
-			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{engagement.OpportunityId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{engagement.OpportunityId.Value}' not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrgService,
@@ -32,15 +33,15 @@ internal sealed class CancelEngagementCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		engagement.Cancel(request.Reason);
+		engagement.Cancel(request.Reason).ThrowIfFailure();
 
 		var notification = Notification.Create(
-			engagement.VolunteerId,
+			engagement.VolunteerId!.Value,
 			NotificationKind.EngagementCancelled,
 			engagement.Id.Value);
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
-		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId.Value, cancellationToken);
+		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId!.Value.Value, cancellationToken);
 
 		var reasonText = string.IsNullOrWhiteSpace(request.Reason)
 			? string.Empty

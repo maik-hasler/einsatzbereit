@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.RecordLogin.v1;
 using Domain.Users;
@@ -51,7 +52,7 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next)
 					try
 					{
 						await sender.Send(
-							new RecordLoginCommand(new UserId(userId), today),
+							new RecordLoginCommand(UserId.Create(userId).GetValueOrThrow(), today),
 							context.RequestAborted);
 					}
 					catch

@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Domain.Engagements;
 
@@ -11,5 +12,5 @@ internal sealed class GetEngagementCalendarInfoQueryHandler(
 		GetEngagementCalendarInfoQuery request,
 		CancellationToken cancellationToken = default) =>
 			await readRepository.GetCalendarInfoAsync(
-				new EngagementId(request.EngagementId), cancellationToken);
+				EngagementId.Create(request.EngagementId).GetValueOrThrow(), cancellationToken);
 }

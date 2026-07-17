@@ -3511,10 +3511,12 @@ export interface AddMemberRequest {
 }
 
 export interface Address {
-    street: string;
-    houseNumber: string;
-    zipCode: string;
-    city: string;
+    street?: string | undefined;
+    houseNumber?: string | undefined;
+    zipCode?: string | undefined;
+    city?: string | undefined;
+    latitude?: number | undefined;
+    longitude?: number | undefined;
 
     [key: string]: any;
 }
@@ -3685,7 +3687,7 @@ export interface EngagementSummary {
     opportunityTitle: string | undefined;
     organizationId: string | undefined;
     organizationName: string | undefined;
-    volunteerId: string;
+    volunteerId: string | undefined;
     timeSlotId: string | undefined;
     message: string | undefined;
     status: string;

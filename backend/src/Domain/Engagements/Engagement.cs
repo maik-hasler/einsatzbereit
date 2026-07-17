@@ -10,7 +10,7 @@ public sealed class Engagement
 {
 	public VolunteerOpportunityId OpportunityId { get; private set; }
 
-	public UserId VolunteerId { get; private set; }
+	public UserId? VolunteerId { get; private set; }
 
 	public TimeSlotId? TimeSlotId { get; private set; }
 
@@ -30,9 +30,13 @@ public sealed class Engagement
 
 	public DateTimeOffset? FeedbackSubmittedAt { get; private set; }
 
+	public bool IsAnonymized => VolunteerId is null;
+
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
+
+	private bool IsTerminated => Status is EngagementStatus.Withdrawn or EngagementStatus.Cancelled;
 
 #pragma warning disable CS8618
 	private Engagement() : base(default) { }
@@ -60,7 +64,7 @@ public sealed class Engagement
 		TimeSlotId timeSlotId)
 	{
 		return new Engagement(
-			new EngagementId(Guid.CreateVersion7()),
+			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId,
@@ -68,16 +72,18 @@ public sealed class Engagement
 			EngagementStatus.Pending);
 	}
 
-	public static Engagement CreateIndividualContact(
+	public static Result<Engagement> CreateIndividualContact(
 		VolunteerOpportunityId opportunityId,
 		UserId volunteerId,
 		string message)
 	{
 		if (string.IsNullOrWhiteSpace(message))
-			throw new DomainException("A message is required when expressing interest via individual contact.");
+			return Result.Failure<Engagement>(Error.Validation(
+				"Engagement.MessageRequired",
+				"A message is required when expressing interest via individual contact."));
 
 		return new Engagement(
-			new EngagementId(Guid.CreateVersion7()),
+			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId: null,
@@ -85,42 +91,47 @@ public sealed class Engagement
 			EngagementStatus.Pending);
 	}
 
-	public void Confirm()
+	public Result Confirm()
 	{
 		if (Status != EngagementStatus.Pending)
-			throw new DomainException("Only pending engagements can be confirmed.");
+			return Result.Failure(Error.Conflict("Engagement.NotPending", "Only pending engagements can be confirmed."));
 
 		Status = EngagementStatus.Confirmed;
+		AddEvent(new EngagementConfirmedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
+		return Result.Success();
 	}
 
-	public void Cancel(string? reason = null)
+	public Result Cancel(string? reason = null)
 	{
-		if (Status is EngagementStatus.Withdrawn or EngagementStatus.Cancelled)
-			throw new DomainException("Engagement is already terminated.");
+		if (IsTerminated)
+			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
 
 		CancellationReason = reason;
 		Status = EngagementStatus.Cancelled;
-		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId, OpportunityId, reason));
+		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason));
+		return Result.Success();
 	}
 
-	public void Withdraw()
+	public Result Withdraw()
 	{
-		if (Status is EngagementStatus.Cancelled or EngagementStatus.Withdrawn)
-			throw new DomainException("Engagement is already terminated.");
+		if (IsTerminated)
+			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
 
 		if (IsCheckedIn)
-			throw new DomainException("A checked-in engagement can no longer be withdrawn.");
+			return Result.Failure(Error.Conflict("Engagement.CheckedIn", "A checked-in engagement can no longer be withdrawn."));
 
 		Status = EngagementStatus.Withdrawn;
+		AddEvent(new EngagementWithdrawnDomainEvent(Id, VolunteerId!.Value, OpportunityId));
+		return Result.Success();
 	}
 
-	public void Reactivate(TimeSlotId? timeSlotId, string? message)
+	public Result Reactivate(TimeSlotId? timeSlotId, string? message)
 	{
-		if (Status is not (EngagementStatus.Withdrawn or EngagementStatus.Cancelled))
-			throw new DomainException("Only withdrawn or cancelled engagements can be reactivated.");
+		if (!IsTerminated)
+			return Result.Failure(Error.Conflict("Engagement.NotTerminated", "Only withdrawn or cancelled engagements can be reactivated."));
 
 		if (timeSlotId is null && string.IsNullOrWhiteSpace(message))
-			throw new DomainException("Message is required for individual contact.");
+			return Result.Failure(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."));
 
 		TimeSlotId = timeSlotId;
 		Message = message;
@@ -132,14 +143,18 @@ public sealed class Engagement
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
 		CreatedOn = DateTimeOffset.UtcNow;
+		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
+		return Result.Success();
 	}
 
-	public void CheckIn()
+	public Result CheckIn()
 	{
 		if (Status != EngagementStatus.Confirmed)
-			throw new DomainException("Only confirmed engagements can be checked in.");
+			return Result.Failure(Error.Validation("Engagement.NotConfirmed", "Only confirmed engagements can be checked in."));
 
 		IsCheckedIn = true;
+		AddEvent(new EngagementCheckedInDomainEvent(Id, VolunteerId!.Value, OpportunityId));
+		return Result.Success();
 	}
 
 	public void MarkReminderSent(DateTimeOffset sentAt)
@@ -147,28 +162,30 @@ public sealed class Engagement
 		ReminderSentAt = sentAt;
 	}
 
-	public void SubmitFeedback(int rating, string? comment)
+	public Result SubmitFeedback(int rating, string? comment, DateTimeOffset now)
 	{
 		if (!IsCheckedIn)
-			throw new DomainException("Feedback can only be submitted for checked-in engagements.");
+			return Result.Failure(Error.Conflict("Engagement.NotCheckedIn", "Feedback can only be submitted for checked-in engagements."));
 
 		if (FeedbackSubmittedAt.HasValue)
-			throw new DomainException("Feedback has already been submitted for this engagement.");
+			return Result.Failure(Error.Conflict("Engagement.FeedbackAlreadySubmitted", "Feedback has already been submitted for this engagement."));
 
 		if (rating is < 1 or > 5)
-			throw new DomainException("Rating must be between 1 and 5.");
+			return Result.Failure(Error.Validation("Engagement.RatingOutOfRange", "Rating must be between 1 and 5."));
 
 		if (comment is not null && comment.Length > 500)
-			throw new DomainException("Comment must not exceed 500 characters.");
+			return Result.Failure(Error.Validation("Engagement.CommentTooLong", "Comment must not exceed 500 characters."));
 
 		FeedbackRating = rating;
 		FeedbackComment = comment;
-		FeedbackSubmittedAt = DateTimeOffset.UtcNow;
+		FeedbackSubmittedAt = now;
+		AddEvent(new EngagementFeedbackSubmittedDomainEvent(Id, VolunteerId!.Value, OpportunityId, rating));
+		return Result.Success();
 	}
 
 	public void Anonymize()
 	{
-		VolunteerId = new UserId(Guid.Empty);
+		VolunteerId = null;
 		Message = null;
 		FeedbackComment = null;
 		FeedbackRating = null;

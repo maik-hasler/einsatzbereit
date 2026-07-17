@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 using Domain.Primitives;
@@ -8,6 +9,7 @@ using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Domain.Common;
 
 namespace Api.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 
@@ -34,7 +36,7 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
-		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
 		if (request.Title is { Length: > 200 })
 			return Results.Problem("Title must not exceed 200 characters.", statusCode: StatusCodes.Status400BadRequest);
@@ -51,11 +53,11 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 
 		Address? address = null;
 		if (!request.IsRemote && !string.IsNullOrWhiteSpace(request.Street))
-			address = new Address(
+			address = Address.Create(
 				request.Street ?? string.Empty,
 				request.HouseNumber ?? string.Empty,
 				request.ZipCode ?? string.Empty,
-				request.City ?? string.Empty);
+				request.City ?? string.Empty).GetValueOrThrow();
 
 		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence))
 		{

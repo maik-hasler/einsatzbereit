@@ -511,6 +511,7 @@
       "noApplications": "No applications yet.",
       "noApplicationsHint": "Once volunteers apply for this opportunity, their applications will appear here.",
       "volunteer": "Volunteer: {{id}}",
+      "anonymizedVolunteer": "Anonymized volunteer",
       "timeSlot": "Time slot: {{id}}",
       "receivedOn": "Received: {{date}}",
       "confirm": "Confirm",

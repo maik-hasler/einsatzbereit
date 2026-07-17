@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements.CreateEngagement.v1;
 using Domain.Users;
@@ -42,12 +43,12 @@ internal sealed class CreateEngagementEndpoint
 			return Results.Problem("Message must not exceed 500 characters.", statusCode: StatusCodes.Status400BadRequest);
 
 		TimeSlotId? timeSlotId = request.TimeSlotId.HasValue
-			? new TimeSlotId(request.TimeSlotId.Value)
+			? TimeSlotId.Create(request.TimeSlotId.Value).GetValueOrThrow()
 			: null;
 
 		var command = new CreateEngagementCommand(
-			new VolunteerOpportunityId(opportunityId),
-			new UserId(volunteerId),
+			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(),
+			UserId.Create(volunteerId).GetValueOrThrow(),
 			timeSlotId,
 			request.Message);
 

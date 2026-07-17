@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.DeleteOrganization.v1;
@@ -16,9 +17,10 @@ public class DeleteOrganizationCommandHandlerTests
 	private readonly IAggregateRepository<Organization, OrganizationId> _organizationRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly DeleteOrganizationCommandHandler _sut;
 
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public DeleteOrganizationCommandHandlerTests()
 	{
@@ -42,13 +44,13 @@ public class DeleteOrganizationCommandHandlerTests
 				.ToList());
 
 	private static Organization CreateOrganization(Guid id) =>
-		Organization.Create(new OrganizationId(id), "Test Org");
+		Organization.Create(OrganizationId.Create(id).GetValueOrThrow(), "Test Org").Value;
 
-	private static VolunteerOpportunity CreateOpportunityWithFutureTimeSlot(OrganizationId orgId)
+	private VolunteerOpportunity CreateOpportunityWithFutureTimeSlot(OrganizationId orgId)
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			orgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, status: OpportunityStatus.Draft);
-		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 5);
+			orgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 5, DateTimeOffset.UtcNow);
 		return opportunity;
 	}
 
@@ -59,7 +61,7 @@ public class DeleteOrganizationCommandHandlerTests
 		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
-		_organizationRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(organization);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 		AllowRequestingUserInOrg(orgId);
 		SetMembers(orgId, DefaultRequestingUserId.Value);
 		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
@@ -79,14 +81,14 @@ public class DeleteOrganizationCommandHandlerTests
 	{
 		// Arrange
 		var orgId = Guid.NewGuid();
-		_organizationRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns((Organization?)null);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns((Organization?)null);
 		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{orgId}*");
 	}
 
@@ -97,7 +99,7 @@ public class DeleteOrganizationCommandHandlerTests
 		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
-		_organizationRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(organization);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 		_keycloakService
 			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
 			.Returns([new KeycloakOrganization(Guid.NewGuid(), "Unrelated Org")]);
@@ -107,7 +109,7 @@ public class DeleteOrganizationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>();
+		await act.Should().ThrowAsync<ResultFailureException>();
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
 	}
 
@@ -118,7 +120,7 @@ public class DeleteOrganizationCommandHandlerTests
 		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
-		_organizationRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(organization);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 		AllowRequestingUserInOrg(orgId);
 		SetMembers(orgId, DefaultRequestingUserId.Value, Guid.NewGuid());
 		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
@@ -127,7 +129,7 @@ public class DeleteOrganizationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*sole remaining member*");
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
 		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -140,12 +142,12 @@ public class DeleteOrganizationCommandHandlerTests
 		// Arrange
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
-		_organizationRepo.FindAsync(new OrganizationId(orgId), cancellationToken).Returns(organization);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
 		AllowRequestingUserInOrg(orgId);
 		SetMembers(orgId, DefaultRequestingUserId.Value);
-		var blockingOpportunity = CreateOpportunityWithFutureTimeSlot(new OrganizationId(orgId));
+		var blockingOpportunity = CreateOpportunityWithFutureTimeSlot(OrganizationId.Create(orgId).GetValueOrThrow());
 		_dbContext
-			.GetBlockingOpportunitiesForOrganizationAsync(new OrganizationId(orgId), cancellationToken)
+			.GetBlockingOpportunitiesForOrganizationAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken)
 			.Returns([blockingOpportunity]);
 		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
 
@@ -153,7 +155,7 @@ public class DeleteOrganizationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Titel*");
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
 		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());

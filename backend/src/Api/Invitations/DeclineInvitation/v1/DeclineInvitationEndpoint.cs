@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Invitations.DeclineInvitation.v1;
 using Domain.Organizations;
@@ -37,8 +38,8 @@ internal sealed class DeclineInvitationEndpoint : IEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
 		var command = new DeclineInvitationCommand(
-			new OrganizationInvitationId(invitationId),
-			new UserId(userId));
+			OrganizationInvitationId.Create(invitationId).GetValueOrThrow(),
+			UserId.Create(userId).GetValueOrThrow());
 
 		await sender.Send(command, cancellationToken);
 		return Results.NoContent();

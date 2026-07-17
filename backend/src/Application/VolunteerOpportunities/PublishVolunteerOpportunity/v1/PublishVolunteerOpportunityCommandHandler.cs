@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -17,8 +18,8 @@ internal sealed class PublishVolunteerOpportunityCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
-			new VolunteerOpportunityId(request.OpportunityId), cancellationToken)
-			?? throw new DomainException($"Volunteer opportunity '{request.OpportunityId}' not found.");
+			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrgService,
@@ -26,7 +27,7 @@ internal sealed class PublishVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		opportunity.Publish();
+		opportunity.Publish().ThrowIfFailure();
 
 		return true;
 	}

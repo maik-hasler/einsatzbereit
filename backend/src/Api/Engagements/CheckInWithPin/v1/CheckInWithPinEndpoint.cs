@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements.CheckInWithPin.v1;
 using Domain.Engagements;
@@ -34,10 +35,10 @@ internal sealed class CheckInWithPinEndpoint
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid)
-			? new UserId(uid)
-			: throw new DomainException("Invalid user.");
+			? UserId.Create(uid).GetValueOrThrow()
+			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		var command = new CheckInWithPinCommand(new EngagementId(engagementId), request.Pin, userId);
+		var command = new CheckInWithPinCommand(EngagementId.Create(engagementId).GetValueOrThrow(), request.Pin, userId);
 		var engagement = await sender.Send(command, cancellationToken);
 		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
 	}

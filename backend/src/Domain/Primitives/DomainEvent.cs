@@ -1,3 +1,4 @@
 namespace Domain.Primitives;
 
-public abstract record DomainEvent;
+public abstract record DomainEvent
+	: INotification;

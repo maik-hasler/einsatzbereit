@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Engagements.WithdrawEngagement.v1;
 using Domain.Engagements;
@@ -39,17 +40,17 @@ internal sealed class WithdrawEngagementEndpoint
 
 		try
 		{
-			var command = new WithdrawEngagementCommand(new EngagementId(engagementId), userId);
+			var command = new WithdrawEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
 			var engagement = await sender.Send(command, cancellationToken);
 			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
 		}
-		catch (DomainException ex) when (ex.Message.Contains("not found"))
+		catch (ResultFailureException ex) when (ex.Error.Type == ErrorType.NotFound)
 		{
 			return Results.NotFound();
 		}
-		catch (DomainException ex)
+		catch (ResultFailureException ex)
 		{
-			return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
+			return Results.Problem(ex.Error.Description, statusCode: StatusCodes.Status400BadRequest);
 		}
 	}
 }

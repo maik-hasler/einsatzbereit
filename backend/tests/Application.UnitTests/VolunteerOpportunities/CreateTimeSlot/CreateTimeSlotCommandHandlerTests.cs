@@ -1,7 +1,9 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities.CreateTimeSlot.v1;
 using AwesomeAssertions;
+using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
@@ -16,11 +18,12 @@ public class CreateTimeSlotCommandHandlerTests
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CreateTimeSlotCommandHandler _sut;
 
-	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
-	private static readonly Address DefaultAddress = new("Hauptstrasse", "1", "12345", "Berlin");
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
+	private static readonly Address DefaultAddress = Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value;
 	private static readonly DateTimeOffset BaseStart = DateTimeOffset.UtcNow.AddDays(7);
 	private static readonly DateTimeOffset BaseEnd = DateTimeOffset.UtcNow.AddDays(7).AddHours(2);
 
@@ -33,11 +36,11 @@ public class CreateTimeSlotCommandHandlerTests
 		_sut = new CreateTimeSlotCommandHandler(_dbContext, _keycloakOrgService);
 	}
 
-	private static VolunteerOpportunity CreateOpportunity() =>
+	private VolunteerOpportunity CreateOpportunity() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None,
-			status: OpportunityStatus.Draft);
+			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldCreateSingleSlot_WhenNoRecurrence(
@@ -46,7 +49,7 @@ public class CreateTimeSlotCommandHandlerTests
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new CreateTimeSlotCommand(
@@ -66,7 +69,7 @@ public class CreateTimeSlotCommandHandlerTests
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new CreateTimeSlotCommand(
@@ -87,7 +90,7 @@ public class CreateTimeSlotCommandHandlerTests
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new CreateTimeSlotCommand(
@@ -109,7 +112,7 @@ public class CreateTimeSlotCommandHandlerTests
 		var opportunity = CreateOpportunity();
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new CreateTimeSlotCommand(
@@ -129,7 +132,7 @@ public class CreateTimeSlotCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 		var expectedDuration = BaseEnd - BaseStart;
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new CreateTimeSlotCommand(
@@ -148,13 +151,13 @@ public class CreateTimeSlotCommandHandlerTests
 	{
 		var opportunityId = Guid.CreateVersion7();
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
 		Func<Task> act = async () => await _sut.Handle(
 			new CreateTimeSlotCommand(opportunityId, BaseStart, BaseEnd, 10, DefaultRequestingUserId),
 			cancellationToken);
 
-		await act.Should().ThrowAsync<DomainException>().WithMessage($"*{opportunityId}*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage($"*{opportunityId}*");
 	}
 }

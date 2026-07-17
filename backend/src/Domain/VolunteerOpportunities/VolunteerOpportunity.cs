@@ -1,3 +1,4 @@
+using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 
@@ -8,6 +9,8 @@ public sealed class VolunteerOpportunity
 		IAuditableEntity
 {
 	private readonly List<TimeSlot> _timeSlots = [];
+
+	private List<string> _tags = [];
 
 	public OrganizationId OrganizationId { get; private set; }
 
@@ -27,7 +30,7 @@ public sealed class VolunteerOpportunity
 
 	public Category? Category { get; private set; }
 
-	public List<string> Tags { get; private set; } = [];
+	public IReadOnlyList<string> Tags => _tags.AsReadOnly();
 
 	public OpportunityStatus Status { get; private set; }
 
@@ -58,8 +61,9 @@ public sealed class VolunteerOpportunity
 		ParticipationType participationType,
 		CheckInMethod checkInMethod,
 		Category? category,
-		List<string> tags,
+		IReadOnlyCollection<string> tags,
 		OpportunityStatus status,
+		IPinGenerator pinGenerator,
 		string? checkInPin)
 		: base(id)
 	{
@@ -72,22 +76,21 @@ public sealed class VolunteerOpportunity
 		ParticipationType = participationType;
 		CheckInMethod = checkInMethod;
 		Category = category;
-		Tags = tags;
+		_tags = new List<string>(tags);
 		Status = status;
 		if (checkInMethod == CheckInMethod.PINCode)
-			CheckInPin = checkInPin ?? GeneratePin();
+			CheckInPin = checkInPin ?? pinGenerator.GeneratePin();
 	}
 
-	private static string GeneratePin() =>
-		Random.Shared.Next(1000, 10000).ToString("D4");
-
-	private static void EnsureValidPin(string pin)
+	private static Result EnsureValidPin(string pin)
 	{
 		if (pin.Length is < 4 or > 6 || !pin.All(char.IsAsciiDigit))
-			throw new DomainException("Check-in PIN must be 4 to 6 digits.");
+			return Result.Failure(Error.Validation("VolunteerOpportunity.InvalidCheckInPin", "Check-in PIN must be 4 to 6 digits."));
+
+		return Result.Success();
 	}
 
-	public static VolunteerOpportunity Create(
+	public static Result<VolunteerOpportunity> Create(
 		OrganizationId organizationId,
 		string title,
 		string description,
@@ -96,31 +99,40 @@ public sealed class VolunteerOpportunity
 		Occurrence occurrence,
 		ParticipationType participationType,
 		CheckInMethod checkInMethod,
+		IPinGenerator pinGenerator,
 		Category? category = null,
-		List<string>? tags = null,
+		IReadOnlyCollection<string>? tags = null,
 		OpportunityStatus status = OpportunityStatus.Published,
 		string? checkInPin = null)
 	{
 		if (string.IsNullOrWhiteSpace(title))
-			throw new DomainException("Title must not be empty.");
+			return Result.Failure<VolunteerOpportunity>(Error.Validation("VolunteerOpportunity.TitleRequired", "Title must not be empty."));
 
 		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
-			EnsureValidPin(checkInPin);
+		{
+			var validPin = EnsureValidPin(checkInPin);
+			if (validPin.IsFailure)
+				return Result.Failure<VolunteerOpportunity>(validPin.Error);
+		}
 
 		if (status == OpportunityStatus.Published)
 		{
-			EnsurePublishable(description, isRemote, address);
+			var publishable = EnsurePublishable(description, isRemote, address);
+			if (publishable.IsFailure)
+				return Result.Failure<VolunteerOpportunity>(publishable.Error);
 
 			// Time slots can only be added after the aggregate is created (see
 			// AddTimeSlot), so a Waitlist opportunity can never satisfy the
 			// "at least one time slot" rule at construction time. Callers must
 			// create it as a Draft, add slots, then call Publish().
 			if (participationType == ParticipationType.Waitlist)
-				throw new DomainException("A Waitlist opportunity must be created as a draft and published after adding at least one time slot.");
+				return Result.Failure<VolunteerOpportunity>(Error.Validation(
+					"VolunteerOpportunity.WaitlistMustStartAsDraft",
+					"A Waitlist opportunity must be created as a draft and published after adding at least one time slot."));
 		}
 
 		return new VolunteerOpportunity(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			organizationId,
 			title,
 			description,
@@ -132,40 +144,50 @@ public sealed class VolunteerOpportunity
 			category,
 			tags ?? [],
 			status,
+			pinGenerator,
 			checkInPin);
 	}
 
-	private static void EnsurePublishable(
+	private static Result EnsurePublishable(
 		string description,
 		bool isRemote,
 		Address? address)
 	{
 		if (string.IsNullOrWhiteSpace(description))
-			throw new DomainException("Description must not be empty.");
+			return Result.Failure(Error.Validation("VolunteerOpportunity.DescriptionRequired", "Description must not be empty."));
 
 		if (!isRemote && address is null)
-			throw new DomainException("Address is required for non-remote opportunities.");
+			return Result.Failure(Error.Validation("VolunteerOpportunity.AddressRequired", "Address is required for non-remote opportunities."));
+
+		return Result.Success();
 	}
 
-	public void Publish()
+	public Result Publish()
 	{
 		if (Status == OpportunityStatus.Published)
-			throw new DomainException("Opportunity is already published.");
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.AlreadyPublished", "Opportunity is already published."));
 
-		EnsurePublishable(Description, IsRemote, Address);
+		var publishable = EnsurePublishable(Description, IsRemote, Address);
+		if (publishable.IsFailure)
+			return publishable;
 
 		if (ParticipationType == ParticipationType.Waitlist && _timeSlots.Count == 0)
-			throw new DomainException("A Waitlist opportunity must have at least one time slot before it can be published.");
+			return Result.Failure(Error.Validation(
+				"VolunteerOpportunity.WaitlistRequiresTimeSlot",
+				"A Waitlist opportunity must have at least one time slot before it can be published."));
 
 		Status = OpportunityStatus.Published;
+		AddEvent(new VolunteerOpportunityPublishedDomainEvent(Id, OrganizationId));
+		return Result.Success();
 	}
 
-	public void SetBannerImageUrl(string url)
+	public Result SetBannerImageUrl(string url)
 	{
 		if (string.IsNullOrWhiteSpace(url))
-			throw new DomainException("Banner image URL must not be empty.");
+			return Result.Failure(Error.Validation("VolunteerOpportunity.BannerImageUrlRequired", "Banner image URL must not be empty."));
 
 		BannerImageUrl = url;
+		return Result.Success();
 	}
 
 	public void ClearBannerImageUrl()
@@ -178,77 +200,121 @@ public sealed class VolunteerOpportunity
 		Color = color;
 	}
 
-	public void Update(
-		string title,
-		string description,
-		bool isRemote,
-		Address? address,
-		Occurrence occurrence,
-		ParticipationType participationType,
-		CheckInMethod checkInMethod,
-		Category? category,
-		List<string> tags,
-		string? checkInPin = null)
+	public Result Rename(string title)
 	{
 		if (string.IsNullOrWhiteSpace(title))
-			throw new DomainException("Title must not be empty.");
-
-		if (Status == OpportunityStatus.Published)
-			EnsurePublishable(description, isRemote, address);
-
-		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
-			EnsureValidPin(checkInPin);
+			return Result.Failure(Error.Validation("VolunteerOpportunity.TitleRequired", "Title must not be empty."));
 
 		Title = title;
+		return Result.Success();
+	}
+
+	public Result ChangeDescription(string description)
+	{
+		if (Status == OpportunityStatus.Published)
+		{
+			var publishable = EnsurePublishable(description, IsRemote, Address);
+			if (publishable.IsFailure)
+				return publishable;
+		}
+
 		Description = description;
+		return Result.Success();
+	}
+
+	public Result Relocate(bool isRemote, Address? address)
+	{
+		if (Status == OpportunityStatus.Published)
+		{
+			var publishable = EnsurePublishable(Description, isRemote, address);
+			if (publishable.IsFailure)
+				return publishable;
+		}
+
 		IsRemote = isRemote;
 		Address = address;
+		return Result.Success();
+	}
+
+	public void Reschedule(Occurrence occurrence)
+	{
 		Occurrence = occurrence;
+	}
+
+	public void Recategorize(Category? category, IReadOnlyCollection<string> tags)
+	{
+		Category = category;
+		_tags = new List<string>(tags);
+	}
+
+	public Result ChangeCheckInMethod(CheckInMethod checkInMethod, IPinGenerator pinGenerator, string? checkInPin = null)
+	{
+		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
+		{
+			var validPin = EnsureValidPin(checkInPin);
+			if (validPin.IsFailure)
+				return validPin;
+		}
+
+		CheckInMethod = checkInMethod;
+		if (checkInMethod == CheckInMethod.PINCode)
+		{
+			if (checkInPin is not null)
+				CheckInPin = checkInPin;
+			else if (CheckInPin is null)
+				CheckInPin = pinGenerator.GeneratePin();
+		}
+
+		return Result.Success();
+	}
+
+	public void SwitchParticipationType(ParticipationType participationType)
+	{
 		// Time slots are only meaningful for Waitlist opportunities (see AddTimeSlot).
 		// Clearing them when switching away prevents orphaned slots from lingering
 		// once the opportunity no longer surfaces them. Callers must ensure no
 		// active engagements reference these slots before switching away.
 		if (participationType != ParticipationType.Waitlist && ParticipationType == ParticipationType.Waitlist)
 			_timeSlots.Clear();
+
 		ParticipationType = participationType;
-		CheckInMethod = checkInMethod;
-		Category = category;
-		Tags = tags;
-		if (checkInMethod == CheckInMethod.PINCode)
-		{
-			if (checkInPin is not null)
-				CheckInPin = checkInPin;
-			else if (CheckInPin is null)
-				CheckInPin = GeneratePin();
-		}
 	}
 
-	public TimeSlot AddTimeSlot(
+	public Result<TimeSlot> AddTimeSlot(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
-		int maxParticipants)
+		int maxParticipants,
+		DateTimeOffset now)
 	{
 		if (ParticipationType != ParticipationType.Waitlist)
-			throw new DomainException("Time slots can only be added to opportunities with Waitlist participation type.");
+			return Result.Failure<TimeSlot>(Error.Validation(
+				"VolunteerOpportunity.TimeSlotNotAllowed",
+				"Time slots can only be added to opportunities with Waitlist participation type."));
 
-		var timeSlot = TimeSlot.Create(startDateTime, endDateTime, maxParticipants);
-		_timeSlots.Add(timeSlot);
-		return timeSlot;
+		var timeSlotResult = TimeSlot.Create(startDateTime, endDateTime, maxParticipants, now);
+		if (timeSlotResult.IsFailure)
+			return timeSlotResult;
+
+		_timeSlots.Add(timeSlotResult.Value);
+		return timeSlotResult;
 	}
 
-	public void UpdateTimeSlot(TimeSlotId timeSlotId, DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants)
+	public Result UpdateTimeSlot(TimeSlotId timeSlotId, DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants, DateTimeOffset now)
 	{
-		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId)
-			?? throw new DomainException($"Time slot with id '{timeSlotId.Value}' not found.");
+		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId);
+		if (timeSlot is null)
+			return Result.Failure(Error.NotFound("VolunteerOpportunity.TimeSlotNotFound", $"Time slot with id '{timeSlotId.Value}' not found."));
 
-		timeSlot.Update(startDateTime, endDateTime, maxParticipants);
+		return timeSlot.Update(startDateTime, endDateTime, maxParticipants, now);
 	}
 
-	public void RemoveTimeSlot(TimeSlotId timeSlotId)
+	public Result RemoveTimeSlot(TimeSlotId timeSlotId)
 	{
-		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId)
-			?? throw new DomainException($"Time slot with id '{timeSlotId.Value}' not found.");
+		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId);
+		if (timeSlot is null)
+			return Result.Failure(Error.NotFound("VolunteerOpportunity.TimeSlotNotFound", $"Time slot with id '{timeSlotId.Value}' not found."));
 
 		_timeSlots.Remove(timeSlot);
+		return Result.Success();
 	}
 }

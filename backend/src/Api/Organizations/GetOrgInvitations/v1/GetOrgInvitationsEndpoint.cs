@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Organizations.GetOrgInvitations.v1;
 using Domain.Organizations;
@@ -35,7 +36,7 @@ internal sealed class GetOrgInvitationsEndpoint : IEndpoint
 		if (subClaim is null || !Guid.TryParse(subClaim, out var requestingUserId))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
-		var query = new GetOrgInvitationsQuery(new OrganizationId(organizationId), new UserId(requestingUserId));
+		var query = new GetOrgInvitationsQuery(OrganizationId.Create(organizationId).GetValueOrThrow(), UserId.Create(requestingUserId).GetValueOrThrow());
 		var result = await sender.Send(query, cancellationToken);
 		return Results.Ok(result);
 	}

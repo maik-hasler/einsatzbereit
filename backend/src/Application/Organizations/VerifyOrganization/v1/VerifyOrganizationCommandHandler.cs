@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
@@ -14,10 +15,13 @@ internal sealed class VerifyOrganizationCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var organization = await dbContext.Organizations.FindAsync(
-			new OrganizationId(request.OrganizationId), cancellationToken)
-			?? throw new DomainException($"Organization '{request.OrganizationId}' not found.");
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
-		organization.SetVerified(request.IsVerified);
+		if (request.IsVerified)
+			organization.Verify().ThrowIfFailure();
+		else
+			organization.RevokeVerification().ThrowIfFailure();
 
 		return true;
 	}

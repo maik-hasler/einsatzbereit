@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Organizations;
 using Application.Organizations.GetOrganizationDashboard.v1;
 using Domain.Engagements;
@@ -14,7 +15,7 @@ internal sealed class OrganizationDashboardReadRepository(
 		Guid organizationId,
 		CancellationToken cancellationToken = default)
 	{
-		var orgId = new OrganizationId(organizationId);
+		var orgId = OrganizationId.Create(organizationId).GetValueOrThrow();
 		var now = DateTimeOffset.UtcNow;
 		var sevenDaysLater = now.AddDays(7);
 

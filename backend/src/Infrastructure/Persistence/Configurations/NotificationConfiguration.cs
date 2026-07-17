@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Notifications;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +17,13 @@ internal sealed class NotificationConfiguration
 		builder.Property(n => n.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new NotificationId(guid))
+				guid => NotificationId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(n => n.RecipientId)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(n => n.Kind)

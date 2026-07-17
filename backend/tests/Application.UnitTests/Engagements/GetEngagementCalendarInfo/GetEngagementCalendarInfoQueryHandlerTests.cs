@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Engagements;
 using Application.Engagements.GetEngagementCalendarInfo.v1;
 using AwesomeAssertions;
@@ -32,7 +33,7 @@ public class GetEngagementCalendarInfoQueryHandlerTests
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2));
 		_readRepository
-			.GetCalendarInfoAsync(new EngagementId(engagementId), cancellationToken)
+			.GetCalendarInfoAsync(EngagementId.Create(engagementId).GetValueOrThrow(), cancellationToken)
 			.Returns(info);
 
 		var query = new GetEngagementCalendarInfoQuery(engagementId);
@@ -51,7 +52,7 @@ public class GetEngagementCalendarInfoQueryHandlerTests
 		// Arrange
 		var engagementId = Guid.CreateVersion7();
 		_readRepository
-			.GetCalendarInfoAsync(new EngagementId(engagementId), cancellationToken)
+			.GetCalendarInfoAsync(EngagementId.Create(engagementId).GetValueOrThrow(), cancellationToken)
 			.Returns((EngagementCalendarInfo?)null);
 
 		var query = new GetEngagementCalendarInfoQuery(engagementId);
