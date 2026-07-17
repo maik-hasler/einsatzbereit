@@ -37,19 +37,15 @@ internal sealed class CreateOrganizationCommandHandler(
 
 		var address = request.Address is null
 			? null
-			: new Address(
+			: Address.Create(
 				request.Address.Street,
 				request.Address.HouseNumber,
 				request.Address.ZipCode,
-				request.Address.City);
+				request.Address.City).GetValueOrThrow();
 
-		organization.Update(
-			request.Name,
-			request.Description,
-			request.ContactEmail,
-			request.ContactPhone,
-			request.Website,
-			address);
+		organization.ChangeDescription(request.Description);
+		organization.ChangeContactInfo(request.ContactEmail, request.ContactPhone, request.Website);
+		organization.Relocate(address);
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
 
