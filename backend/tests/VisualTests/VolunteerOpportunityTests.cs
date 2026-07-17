@@ -367,6 +367,82 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task EditWizard_ReopenedDraft_ShowsSaveAsDraftAndAcceptsPartialSave()
+	{
+		// Regression for #707: reopening a saved draft via "Edit" hid the
+		// "Save as draft" action entirely (gated on create-vs-edit mode
+		// instead of the opportunity's actual Draft/Published status), so an
+		// organizer could not persist further incremental edits without
+		// first satisfying full publish-level validation.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var uniqueTitle = $"Edit Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		if (await switcherBtn.CountAsync() == 0)
+			return; // no org membership in seed - skip
+
+		await switcherBtn.First.ClickAsync();
+		var dashboardLink = Page.GetByTestId("org-dashboard-link");
+		if (await dashboardLink.CountAsync() == 0)
+			return; // no org selected in seed - skip
+
+		await dashboardLink.First.ClickAsync();
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return; // modal did not open - skip remaining assertions
+		}
+
+		// Deliberately leave the draft incomplete - only a title, no address,
+		// no description - the exact situation "save as draft" exists for.
+		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
+		await Page.GetByTestId("modal-save-draft").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+
+		// Reopen the draft via the dashboard's Drafts section.
+		var draftsSection = Page.GetByTestId("drafts-section");
+		await Expect(draftsSection).ToBeVisibleAsync();
+		await draftsSection.GetByRole(AriaRole.Link, new() { Name = uniqueTitle }).ClickAsync();
+
+		// On the draft's own detail page, open the edit wizard.
+		var editBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
+		await Expect(editBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await editBtn.ClickAsync();
+
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+
+		// The regression: this action must be available in edit mode too,
+		// since the opportunity being edited is still a Draft.
+		var saveDraftBtn = Page.GetByTestId("modal-save-draft");
+		await Expect(saveDraftBtn).ToBeVisibleAsync();
+
+		// Make an incremental edit - still no address, still no time slots -
+		// and persist it via "Save as draft" rather than the strict "Save".
+		var updatedTitle = $"{uniqueTitle} Updated";
+		await Page.Locator("#opportunity-title").FillAsync(updatedTitle);
+		await saveDraftBtn.ClickAsync();
+
+		// A lenient partial save must succeed without full-publish validation
+		// blocking it - the dialog closes and no validation error is shown.
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+
+		// The edit persisted - the detail page reloads the opportunity after
+		// a successful save and reflects the new title.
+		await Expect(Page.Locator("h1").GetByText(updatedTitle)).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task PublishWaitlist_BlockedWithNoTimeSlots_SucceedsAfterAddingOne()
 	{
 		// Regression for #542: a Waitlist opportunity could be published with

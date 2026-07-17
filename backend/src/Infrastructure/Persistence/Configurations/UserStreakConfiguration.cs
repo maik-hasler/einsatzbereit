@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -15,13 +16,13 @@ internal sealed class UserStreakConfiguration
 		builder.Property(s => s.Id)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserStreakId(guid))
+				guid => UserStreakId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
 		builder.Property(s => s.UserId)
 			.HasConversion(
 				id => id.Value,
-				guid => new UserId(guid))
+				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
 		builder.Property(s => s.LoginStreak)

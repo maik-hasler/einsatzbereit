@@ -30,13 +30,16 @@ public class GetPublicUserProfileQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(userId.Value, cancellationToken)
 			.Returns(new KeycloakUserProfile(userId.Value, "vera", "Vera", "Volunteer", "vera@test.de"));
 
 		var user = User.Create(userId);
-		user.Update("Loves helping out", ["First aid"], ["German", "English"], PreferredContact.Phone);
+		user.ChangeBio("Loves helping out");
+		user.UpdateSkills(["First aid"]);
+		user.UpdateLanguages(["German", "English"]);
+		user.SetPreferredContact(PreferredContact.Phone);
 		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
 
 		// Act
@@ -55,7 +58,7 @@ public class GetPublicUserProfileQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		_keycloakUserService
 			.GetUserAsync(userId.Value, cancellationToken)
 			.Returns(new KeycloakUserProfile(userId.Value, "vera", "Vera", "Volunteer", "vera@test.de"));

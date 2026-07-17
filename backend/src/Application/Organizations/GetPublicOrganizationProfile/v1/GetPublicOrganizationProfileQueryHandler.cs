@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities;
@@ -16,7 +17,7 @@ internal sealed class GetPublicOrganizationProfileQueryHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var organization = await dbContext.Organizations.FindAsync(
-			new OrganizationId(request.OrganizationId), cancellationToken);
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken);
 
 		if (organization is null)
 			return null;

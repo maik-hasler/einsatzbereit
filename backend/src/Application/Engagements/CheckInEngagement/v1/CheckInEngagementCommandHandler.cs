@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -17,7 +18,7 @@ internal sealed class CheckInEngagementCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
-			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
 		if (opportunity is not null)
@@ -29,7 +30,7 @@ internal sealed class CheckInEngagementCommandHandler(
 				cancellationToken);
 		}
 
-		engagement.CheckIn();
+		engagement.CheckIn().ThrowIfFailure();
 
 		return engagement;
 	}

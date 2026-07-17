@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Notifications.MarkAllNotificationsRead.v1;
 using Domain.Users;
@@ -31,7 +32,7 @@ internal sealed class MarkAllNotificationsReadEndpoint
 		if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
-		var command = new MarkAllNotificationsReadCommand(new UserId(userId));
+		var command = new MarkAllNotificationsReadCommand(UserId.Create(userId).GetValueOrThrow());
 		await sender.Send(command, cancellationToken);
 		return Results.NoContent();
 	}

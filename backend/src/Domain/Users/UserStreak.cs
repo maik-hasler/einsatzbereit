@@ -36,7 +36,7 @@ public sealed class UserStreak
 	}
 
 	public static UserStreak Create(UserId userId) =>
-		new(new UserStreakId(Guid.CreateVersion7()), userId);
+		new(UserStreakId.New(), userId);
 
 	public void RecordLogin(DateOnly today)
 	{

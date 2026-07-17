@@ -1,3 +1,5 @@
+using Application.Common.Exceptions;
+using Domain.Common;
 using Domain.VolunteerOpportunities;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +19,7 @@ internal static class GeocodingHelper
 				address.Street, address.HouseNumber, address.ZipCode, address.City, cancellationToken);
 
 			if (coordinates is not null)
-				return address.WithCoordinates(coordinates.Latitude, coordinates.Longitude);
+				return address.WithCoordinates(coordinates.Latitude, coordinates.Longitude).GetValueOrThrow();
 
 			logger.LogWarning(
 				"Geocoding returned no result for address {Street} {HouseNumber}, {ZipCode} {City}.",

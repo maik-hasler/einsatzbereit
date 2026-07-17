@@ -269,11 +269,15 @@ export default function EngagementManagementPage() {
 											>
 												{e.volunteerName}
 											</Link>
-										) : (
+										) : e.volunteerId ? (
 											<span className="font-mono text-xs text-gray-400">
 												{t("engagementManagement.volunteer", {
 													id: e.volunteerId.slice(0, 8) + "...",
 												})}
+											</span>
+										) : (
+											<span className="text-xs italic text-gray-400">
+												{t("engagementManagement.anonymizedVolunteer")}
 											</span>
 										)}
 									</p>

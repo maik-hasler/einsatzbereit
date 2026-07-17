@@ -103,6 +103,10 @@ export default function CreateVolunteerOpportunityModal({
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const isEditMode = initialOpportunity !== undefined;
+	// A still-unpublished draft accepts lenient partial saves from any step,
+	// same as during initial creation - an already-published opportunity
+	// keeps the stricter publish-level validation on its single "Save" button.
+	const canSaveDraft = !isEditMode || initialOpportunity.status === "Draft";
 
 	const schema = useMemo(() => buildOpportunityFormSchema(t), [t]);
 	const {
@@ -749,7 +753,7 @@ export default function CreateVolunteerOpportunityModal({
 					</button>
 
 					<div className="flex items-center gap-2">
-						{!isEditMode && (
+						{canSaveDraft && (
 							<button
 								type="button"
 								data-testid="modal-save-draft"

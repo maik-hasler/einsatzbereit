@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 using Domain.Primitives;
@@ -33,12 +34,12 @@ internal sealed class DeleteVolunteerOpportunityEndpoint
 	{
 		try
 		{
-			var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? new UserId(uid) : throw new DomainException("Invalid user.");
+			var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 			var command = new DeleteVolunteerOpportunityCommand(opportunityId, userId);
 			await sender.Send(command, cancellationToken);
 			return Results.NoContent();
 		}
-		catch (DomainException ex) when (ex.Message.Contains("not found"))
+		catch (ResultFailureException ex) when (ex.Error.Type == ErrorType.NotFound)
 		{
 			return Results.NotFound();
 		}

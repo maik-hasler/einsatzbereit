@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Organizations.DismissInvitation.v1;
 using Domain.Organizations;
@@ -39,9 +40,9 @@ internal sealed class DismissInvitationEndpoint : IEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
 		var command = new DismissInvitationCommand(
-			new OrganizationId(organizationId),
-			new OrganizationInvitationId(invitationId),
-			new UserId(requestingUserId));
+			OrganizationId.Create(organizationId).GetValueOrThrow(),
+			OrganizationInvitationId.Create(invitationId).GetValueOrThrow(),
+			UserId.Create(requestingUserId).GetValueOrThrow());
 
 		await sender.Send(command, cancellationToken);
 		return Results.NoContent();

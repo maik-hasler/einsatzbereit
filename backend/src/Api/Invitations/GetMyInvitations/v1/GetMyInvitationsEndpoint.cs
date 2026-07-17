@@ -1,6 +1,7 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
+using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Invitations.GetMyInvitations.v1;
 using Domain.Users;
@@ -32,7 +33,7 @@ internal sealed class GetMyInvitationsEndpoint : IEndpoint
 		if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
-		var query = new GetMyInvitationsQuery(new UserId(userId));
+		var query = new GetMyInvitationsQuery(UserId.Create(userId).GetValueOrThrow());
 		var result = await sender.Send(query, cancellationToken);
 		return Results.Ok(result);
 	}

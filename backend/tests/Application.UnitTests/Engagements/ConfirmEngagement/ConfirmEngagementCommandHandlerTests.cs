@@ -1,10 +1,13 @@
 using Application.Achievements.AwardAchievement.v1;
+using Application.Common.Authorization;
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements.ConfirmEngagement.v1;
 using AwesomeAssertions;
+using Domain.Common;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -29,12 +32,13 @@ public class ConfirmEngagementCommandHandlerTests
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly ISender _sender = Substitute.For<ISender>();
 	private readonly ConfirmEngagementCommandHandler _sut;
 
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
-	private static readonly OrganizationId DefaultOrgId = new(Guid.Empty);
-	private static readonly Address DefaultAddress = new("Teststraße", "1", "12345", "Berlin");
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly Address DefaultAddress = Address.Create("Teststraße", "1", "12345", "Berlin").Value;
 
 	public ConfirmEngagementCommandHandlerTests()
 	{
@@ -50,7 +54,7 @@ public class ConfirmEngagementCommandHandlerTests
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
 		_keycloakOrgService
 			.GetUserOrganizationsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(Guid.Empty, "any")]);
+			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "any")]);
 		_sut = new ConfirmEngagementCommandHandler(_dbContext, _keycloakUserService, _keycloakOrgService, _emailService, _sender);
 	}
 
@@ -59,11 +63,11 @@ public class ConfirmEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
-			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()));
+			VolunteerOpportunityId.New(),
+			UserId.New(),
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -81,11 +85,11 @@ public class ConfirmEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
-			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()));
+			VolunteerOpportunityId.New(),
+			UserId.New(),
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -103,7 +107,7 @@ public class ConfirmEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns((Engagement?)null);
 
 		var command = new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId);
@@ -112,7 +116,7 @@ public class ConfirmEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{engagementId.Value}*");
 	}
 
@@ -121,11 +125,11 @@ public class ConfirmEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
-			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()));
+			VolunteerOpportunityId.New(),
+			UserId.New(),
+			TimeSlotId.New());
 		engagement.Confirm();
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -136,7 +140,7 @@ public class ConfirmEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*Only pending*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Only pending*");
 	}
 
 	[Test]
@@ -144,11 +148,11 @@ public class ConfirmEngagementCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var engagementId = new EngagementId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
-			new UserId(Guid.CreateVersion7()),
-			new TimeSlotId(Guid.CreateVersion7()));
+			VolunteerOpportunityId.New(),
+			UserId.New(),
+			TimeSlotId.New());
 		engagement.Cancel();
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
@@ -159,19 +163,19 @@ public class ConfirmEngagementCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>().WithMessage("*Only pending*");
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*Only pending*");
 	}
 
 	[Test]
 	public async Task Handle_ShouldAwardWeeklyHeroBadge_WhenActivityStreakReaches4(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -182,7 +186,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "weekly-hero-4" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -190,12 +194,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldNotAwardWeeklyHeroBadge_WhenActivityStreakIsBelow3(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -206,7 +210,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.DidNotReceive().Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "weekly-hero-4"),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "weekly-hero-4"),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -214,12 +218,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldAwardFirstStepBadge_WhenVolunteerHasNoPriorStreak(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns((UserStreak?)null);
@@ -227,7 +231,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "first-step" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "first-step" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -239,25 +243,22 @@ public class ConfirmEngagementCommandHandlerTests
 		// pulled back down by an unrelated opportunity deletion/cancellation elsewhere.
 		// Milestone eligibility must key off the monotonic lifetime counter on the
 		// volunteer's UserStreak, not that live count.
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 4);
 		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
-		// Live confirmed count deliberately stubbed lower than the lifetime counter,
-		// to prove milestone evaluation no longer depends on it at all.
-		_dbContext.CountConfirmedEngagementsForVolunteerAsync(volunteerId, cancellationToken).Returns(1);
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "dedicated-5" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "dedicated-5" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -265,12 +266,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldNotAwardDedicatedBadge_WhenLifetimeConfirmationsAreBelow5(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -280,7 +281,7 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.DidNotReceive().Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "dedicated-5"),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "dedicated-5"),
 			Arg.Any<CancellationToken>());
 	}
 
@@ -288,12 +289,12 @@ public class ConfirmEngagementCommandHandlerTests
 	public async Task Handle_ShouldAwardCenturionBadge_WhenLifetimeConfirmationsReach100(
 		CancellationToken cancellationToken)
 	{
-		var engagementId = new EngagementId(Guid.CreateVersion7());
-		var volunteerId = new UserId(Guid.CreateVersion7());
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
 		var engagement = Engagement.CreateWaitlistSignUp(
-			new VolunteerOpportunityId(Guid.CreateVersion7()),
+			VolunteerOpportunityId.New(),
 			volunteerId,
-			new TimeSlotId(Guid.CreateVersion7()));
+			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -303,12 +304,12 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "centurion-100" && c.UserId == volunteerId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "centurion-100" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
 	}
 
-	private static VolunteerOpportunity CreateDefaultOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, status: OpportunityStatus.Draft);
+	private VolunteerOpportunity CreateDefaultOpportunity() =>
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	private static UserStreak BuildStreakWithTotalConfirmedEngagementsOf(UserId userId, int count)
 	{

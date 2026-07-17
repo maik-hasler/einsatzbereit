@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Notifications;
 using Domain.Engagements;
 using Domain.Notifications;
@@ -43,7 +44,7 @@ internal sealed class NotificationReadRepository(
 		Dictionary<Guid, Guid> engagementToOpportunity = [];
 		if (engagementIds.Count > 0)
 		{
-			var engagementIdVOs = engagementIds.Select(id => new EngagementId(id)).ToList();
+			var engagementIdVOs = engagementIds.Select(id => EngagementId.Create(id).GetValueOrThrow()).ToList();
 			var engagementRows = await dbContext.EngagementsQuery
 				.Where(e => engagementIdVOs.Contains(e.Id))
 				.Select(e => new { e.Id, e.OpportunityId })
@@ -58,7 +59,7 @@ internal sealed class NotificationReadRepository(
 		Dictionary<Guid, string> opportunityTitles = [];
 		if (allOpportunityIds.Count > 0)
 		{
-			var opportunityIdVOs = allOpportunityIds.Select(id => new VolunteerOpportunityId(id)).ToList();
+			var opportunityIdVOs = allOpportunityIds.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow()).ToList();
 			var opportunityRows = await dbContext.VolunteerOpportunitiesQuery
 				.Where(o => opportunityIdVOs.Contains(o.Id))
 				.Select(o => new { o.Id, o.Title })

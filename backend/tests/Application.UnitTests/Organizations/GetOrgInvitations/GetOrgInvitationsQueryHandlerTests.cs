@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.GetOrgInvitations.v1;
@@ -16,8 +17,8 @@ public class GetOrgInvitationsQueryHandlerTests
 	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly GetOrgInvitationsQueryHandler _sut;
 
-	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public GetOrgInvitationsQueryHandlerTests()
 	{
@@ -41,7 +42,7 @@ public class GetOrgInvitationsQueryHandlerTests
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _dbContext.DidNotReceive().GetInvitationsForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>());
 	}
@@ -52,7 +53,7 @@ public class GetOrgInvitationsQueryHandlerTests
 	{
 		// Arrange
 		var invitation = OrganizationInvitation.Create(
-			DefaultOrgId, "Test Org", new UserId(Guid.CreateVersion7()), "Vera", new UserId(Guid.CreateVersion7()));
+			DefaultOrgId, "Test Org", UserId.New(), "Vera", UserId.New());
 		_dbContext.GetInvitationsForOrganizationAsync(DefaultOrgId, cancellationToken)
 			.Returns([invitation]);
 		var query = new GetOrgInvitationsQuery(DefaultOrgId, DefaultRequestingUserId);

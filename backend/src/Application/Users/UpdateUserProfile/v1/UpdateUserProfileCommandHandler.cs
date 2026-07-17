@@ -29,11 +29,10 @@ internal sealed class UpdateUserProfileCommandHandler(
 			await dbContext.Users.AddAsync(user, cancellationToken);
 		}
 
-		user.Update(
-			request.Bio,
-			request.Skills,
-			request.Languages,
-			request.PreferredContactValue);
+		user.ChangeBio(request.Bio);
+		user.UpdateSkills(request.Skills);
+		user.UpdateLanguages(request.Languages);
+		user.SetPreferredContact(request.PreferredContactValue);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 

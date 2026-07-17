@@ -1,9 +1,11 @@
+using Application.Common.Exceptions;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 using AwesomeAssertions;
+using Domain.Common;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
@@ -24,11 +26,12 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
+	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
-	private static readonly Address DefaultAddress = new("Hauptstraße", "1", "12345", "Berlin");
-	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public UpdateVolunteerOpportunityCommandHandlerTests()
 	{
@@ -45,18 +48,19 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			_engagementReadRepository,
 			_geocodingService,
 			_keycloakOrgService,
+			_pinGenerator,
 			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
-	private static VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
-		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None);
+	private VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
+		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).Value;
 
-	private static VolunteerOpportunity CreatePublishedWaitlistOpportunity()
+	private VolunteerOpportunity CreatePublishedWaitlistOpportunity()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None,
-			status: OpportunityStatus.Draft);
-		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10);
+			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Draft).Value;
+		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10, DateTimeOffset.UtcNow);
 		opportunity.Publish();
 		return opportunity;
 	}
@@ -70,7 +74,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).Value, cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -91,10 +95,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
-		var newAddress = new Address("Neue Straße", "99", "20095", "Hamburg");
+		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -119,7 +123,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -142,11 +146,11 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		_engagementReadRepository
-			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.GetByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(
 			[
 				new EngagementSummary(Guid.NewGuid(), opportunityId, "Test Opportunity", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Pending", false, false, DateTimeOffset.UtcNow)
@@ -159,7 +163,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*ParticipationType cannot be changed*");
 	}
 
@@ -172,11 +176,11 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		_engagementReadRepository
-			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.GetByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(
 			[
 				new EngagementSummary(Guid.NewGuid(), opportunityId, "Test Opportunity", Guid.NewGuid(), "Org", Guid.NewGuid(), null, null, "Cancelled", false, false, DateTimeOffset.UtcNow)
@@ -202,7 +206,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		_geocodingService
@@ -210,7 +214,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(new GeoCoordinates(53.55, 9.99));
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, new Address("Neue Straße", "99", "20095", "Hamburg"), Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, Address.Create("Neue Straße", "99", "20095", "Hamburg").Value, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -229,7 +233,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -251,7 +255,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns((VolunteerOpportunity?)null);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -261,7 +265,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage($"*{opportunityId}*");
 	}
 
@@ -274,7 +278,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -284,7 +288,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Title must not be empty*");
 	}
 
@@ -298,18 +302,18 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var activeVolunteer = Guid.NewGuid();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		_engagementReadRepository
-			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.GetByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(
 			[
 				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
 			]);
 
 		// Material change: new address (city changed).
-		var newAddress = new Address("Neue Straße", "99", "20095", "Hamburg");
+		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
@@ -318,7 +322,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		await _notifRepo.Received(1).AddAsync(
-			Arg.Is<Notification>(n => n.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
+			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
 	}
 
@@ -332,11 +336,11 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var activeVolunteer = Guid.NewGuid();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		_engagementReadRepository
-			.GetByOpportunityAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.GetByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(
 			[
 				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
@@ -364,7 +368,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunity = CreateOpportunity();
 
 		_opportunityRepo
-			.FindAsync(new VolunteerOpportunityId(opportunityId), cancellationToken)
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -374,7 +378,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Address is required*");
 	}
 }

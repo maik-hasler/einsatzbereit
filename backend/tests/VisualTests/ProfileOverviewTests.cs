@@ -88,6 +88,44 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
+	public async Task ProfilePage_RendersAchievementsAboveAccountActionCards()
+	{
+		// #706: achievements used to render last on the Profile tab, below the
+		// "Create organization" and "Danger zone" cards, in a full-width block
+		// that visually broke away from the narrower profile column above it.
+		// They should now render above both account-action cards.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var badgesHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" });
+		var organizationsHeading = Page.GetByRole(
+			AriaRole.Heading,
+			new() { Name = "Organizations" }
+		);
+		var dangerZoneHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" });
+
+		await Expect(badgesHeading).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(organizationsHeading).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(dangerZoneHeading).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var badgesBox = await badgesHeading.BoundingBoxAsync();
+		var organizationsBox = await organizationsHeading.BoundingBoxAsync();
+		var dangerZoneBox = await dangerZoneHeading.BoundingBoxAsync();
+
+		badgesBox.Should().NotBeNull();
+		organizationsBox.Should().NotBeNull();
+		dangerZoneBox.Should().NotBeNull();
+
+		badgesBox!.Y.Should().BeLessThan(organizationsBox!.Y, "achievements must render above the account cards");
+		badgesBox.Y.Should().BeLessThan(dangerZoneBox!.Y, "achievements must render above the account cards");
+	}
+
+	[Test]
 	public async Task PublicUserProfile_ShowsBioSkillsLanguagesAndPreferredContact()
 	{
 		// #576: bio/skills/languages/preferredContact were captured on the owner's

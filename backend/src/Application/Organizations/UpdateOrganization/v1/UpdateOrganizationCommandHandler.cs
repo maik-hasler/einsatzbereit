@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -18,8 +19,8 @@ internal sealed class UpdateOrganizationCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var organization = await dbContext.Organizations.FindAsync(
-			new OrganizationId(request.OrganizationId), cancellationToken)
-			?? throw new DomainException($"Organization '{request.OrganizationId}' not found.");
+			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
 		await OwnershipGuard.EnsureIsOrgMemberAsync(
 			keycloakOrgService,
@@ -29,19 +30,16 @@ internal sealed class UpdateOrganizationCommandHandler(
 
 		var address = request.Address is null
 			? null
-			: new Address(
+			: Address.Create(
 				request.Address.Street,
 				request.Address.HouseNumber,
 				request.Address.ZipCode,
-				request.Address.City);
+				request.Address.City).GetValueOrThrow();
 
-		organization.Update(
-			request.Name,
-			request.Description,
-			request.ContactEmail,
-			request.ContactPhone,
-			request.Website,
-			address);
+		organization.Rename(request.Name).ThrowIfFailure();
+		organization.ChangeDescription(request.Description);
+		organization.ChangeContactInfo(request.ContactEmail, request.ContactPhone, request.Website);
+		organization.Relocate(address);
 
 		return true;
 	}

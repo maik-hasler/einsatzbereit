@@ -31,7 +31,8 @@ internal sealed class AwardAchievementCommandHandler(
 			definition.Type,
 			definition.Key,
 			definition.Name,
-			definition.Description);
+			definition.Description,
+			DateTimeOffset.UtcNow);
 
 		await dbContext.Achievements.AddAsync(achievement, cancellationToken);
 

@@ -1,8 +1,6 @@
 using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
-using Domain.Primitives;
-
 
 namespace Application.UnitTests.Organizations;
 
@@ -12,11 +10,14 @@ public class OrganizationTests
 	public void Update_ShouldSetAllFields()
 	{
 		// Arrange
-		var org = Organization.Create(new OrganizationId(Guid.NewGuid()), "Original");
-		var address = new Address("Sample Street", "1", "12345", "Berlin");
+		var org = Organization.Create(OrganizationId.New(), "Original").Value;
+		var address = Address.Create("Sample Street", "1", "12345", "Berlin").Value;
 
 		// Act
-		org.Update("Updated", "Description", "mail@test.de", "+49 30 123", "https://test.de", address);
+		org.Rename("Updated");
+		org.ChangeDescription("Description");
+		org.ChangeContactInfo("mail@test.de", "+49 30 123", "https://test.de");
+		org.Relocate(address);
 
 		// Assert
 		org.Name.Should().Be("Updated");
@@ -28,14 +29,14 @@ public class OrganizationTests
 	}
 
 	[Test]
-	public void Update_ShouldClearAddress_WhenNullPassed()
+	public void Relocate_ShouldClearAddress_WhenNullPassed()
 	{
 		// Arrange
-		var org = Organization.Create(new OrganizationId(Guid.NewGuid()), "Org");
-		org.Update("Org", null, null, null, null, new Address("St", "1", "12345", "City"));
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+		org.Relocate(Address.Create("St", "1", "12345", "City").Value);
 
 		// Act
-		org.Update("Org", null, null, null, null, null);
+		org.Relocate(null);
 
 		// Assert
 		org.Address.Should().BeNull();
@@ -45,23 +46,24 @@ public class OrganizationTests
 	[Arguments("")]
 	[Arguments("   ")]
 	[Arguments(null)]
-	public void Update_ShouldThrow_WhenNameIsEmpty(string? name)
+	public void Rename_ShouldFail_WhenNameIsEmpty(string? name)
 	{
 		// Arrange
-		var org = Organization.Create(new OrganizationId(Guid.NewGuid()), "Org");
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
 
 		// Act
-		var act = () => org.Update(name!, null, null, null, null, null);
+		var result = org.Rename(name!);
 
 		// Assert
-		act.Should().Throw<DomainException>()
-			.WithMessage("Name must not be empty.");
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Name must not be empty.");
 	}
 
 	[Test]
-	public void Create_ShouldThrow_WhenNameIsEmpty()
+	public void Create_ShouldFail_WhenNameIsEmpty()
 	{
-		var act = () => Organization.Create(new OrganizationId(Guid.NewGuid()), "");
-		act.Should().Throw<DomainException>();
+		var result = Organization.Create(OrganizationId.New(), "");
+
+		result.IsFailure.Should().BeTrue();
 	}
 }

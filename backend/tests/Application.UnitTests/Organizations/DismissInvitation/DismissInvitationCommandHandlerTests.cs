@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.DismissInvitation.v1;
@@ -19,8 +20,8 @@ public class DismissInvitationCommandHandlerTests
 		Substitute.For<IAggregateRepository<OrganizationInvitation, OrganizationInvitationId>>();
 	private readonly DismissInvitationCommandHandler _sut;
 
-	private static readonly OrganizationId DefaultOrgId = new(Guid.CreateVersion7());
-	private static readonly UserId DefaultRequestingUserId = new(Guid.CreateVersion7());
+	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
+	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	public DismissInvitationCommandHandlerTests()
 	{
@@ -34,7 +35,7 @@ public class DismissInvitationCommandHandlerTests
 	private static OrganizationInvitation CreateDeclinedInvitation(OrganizationId orgId)
 	{
 		var invitation = OrganizationInvitation.Create(
-			orgId, "Test Org", new UserId(Guid.CreateVersion7()), "Vera", new UserId(Guid.CreateVersion7()));
+			orgId, "Test Org", UserId.New(), "Vera", UserId.New());
 		invitation.Decline();
 		return invitation;
 	}
@@ -54,7 +55,7 @@ public class DismissInvitationCommandHandlerTests
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<DomainException>()
+		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _invitationRepo.DidNotReceive().FindAsync(Arg.Any<OrganizationInvitationId>(), Arg.Any<CancellationToken>());
 	}

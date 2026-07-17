@@ -25,7 +25,7 @@ public class RecordLoginCommandHandlerTests
 	[Test]
 	public async Task Handle_ShouldReturnTrue(CancellationToken cancellationToken)
 	{
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
 
 		var result = await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
@@ -36,7 +36,7 @@ public class RecordLoginCommandHandlerTests
 	[Test]
 	public async Task Handle_ShouldCreateNewStreak_WhenNoStreakExists(CancellationToken cancellationToken)
 	{
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
 
 		await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
@@ -47,7 +47,7 @@ public class RecordLoginCommandHandlerTests
 	[Test]
 	public async Task Handle_ShouldNotSendAwardCommand_WhenStreakIsBelow7(CancellationToken cancellationToken)
 	{
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		// Streak of 6: login 6 consecutive days then record the 7th day NOT via the handler
 		var streak = BuildStreakWithLoginCount(userId, 5);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
@@ -65,7 +65,7 @@ public class RecordLoginCommandHandlerTests
 	[Test]
 	public async Task Handle_ShouldSendAwardCommand_WhenStreakReaches7(CancellationToken cancellationToken)
 	{
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		var streak = BuildStreakWithLoginCount(userId, 6);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 
@@ -73,14 +73,14 @@ public class RecordLoginCommandHandlerTests
 		await _sut.Handle(new RecordLoginCommand(userId, nextDay), cancellationToken);
 
 		await _sender.Received(1).Send(
-			Arg.Is<AwardAchievementCommand>(c => c.BadgeKey == "on-a-roll-7" && c.UserId == userId),
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "on-a-roll-7" && c.UserId == userId),
 			Arg.Any<CancellationToken>());
 	}
 
 	[Test]
 	public async Task Handle_ShouldNotSendAwardCommand_WhenStreakExceeds7(CancellationToken cancellationToken)
 	{
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		var streak = BuildStreakWithLoginCount(userId, 8);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 
@@ -96,7 +96,7 @@ public class RecordLoginCommandHandlerTests
 	[Test]
 	public async Task Handle_ShouldNotSendAwardCommand_WhenSameDayLogin(CancellationToken cancellationToken)
 	{
-		var userId = new UserId(Guid.CreateVersion7());
+		var userId = UserId.New();
 		var streak = BuildStreakWithLoginCount(userId, 7);
 		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
 

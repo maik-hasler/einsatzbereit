@@ -1,4 +1,5 @@
 using Application.Common.Email;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -21,12 +22,12 @@ internal sealed class WithdrawEngagementCommandHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
-			?? throw new DomainException($"Engagement '{request.EngagementId.Value}' not found.");
+			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
-		if (engagement.VolunteerId.Value != request.VolunteerId)
-			throw new DomainException("Only the volunteer who created this engagement can withdraw it.");
+		if (engagement.VolunteerId!.Value.Value != request.VolunteerId)
+			throw new ResultFailureException(Error.Forbidden("Engagement.NotOwner", "Only the volunteer who created this engagement can withdraw it."));
 
-		engagement.Withdraw();
+		engagement.Withdraw().ThrowIfFailure();
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			engagement.OpportunityId, cancellationToken);
@@ -42,7 +43,7 @@ internal sealed class WithdrawEngagementCommandHandler(
 			foreach (var organizer in members.Where(m => m.IsOrganisator))
 			{
 				var notification = Notification.Create(
-					new UserId(organizer.UserId),
+					UserId.Create(organizer.UserId).GetValueOrThrow(),
 					NotificationKind.EngagementWithdrawn,
 					engagement.Id.Value);
 

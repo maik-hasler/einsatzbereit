@@ -1,5 +1,6 @@
 using Application.Common.Pagination;
 using Application.Engagements;
+using Domain.Common;
 using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Users;
@@ -64,7 +65,7 @@ internal sealed class EngagementReadRepository(
 			x.OpportunityTitle,
 			x.OrganizationId.Value,
 			x.OrganizationName,
-			x.VolunteerId.Value,
+			x.VolunteerId?.Value,
 			x.TimeSlotId?.Value,
 			x.Message,
 			x.Status.ToString(),
@@ -171,7 +172,7 @@ internal sealed class EngagementReadRepository(
 				opportunity?.Title,
 				organization?.Id.Value,
 				organization?.Name,
-				e.VolunteerId.Value,
+				e.VolunteerId?.Value,
 				e.TimeSlotId?.Value,
 				e.Message,
 				e.Status.ToString(),
