@@ -59,10 +59,10 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 	public async Task Authenticated_WithOrgs_HeroOrgCta_LinksToOrgOverviewInstead()
 	{
 		// Olaf already organizes orgs in seed data - the hero CTA must swap to
-		// an "Organization overview" link into /app instead of offering to
-		// create yet another one from the homepage.
+		// an "Organization overview" link that resolves straight to his dashboard
+		// (#747: the /app intermediate picker page no longer exists) instead of
+		// offering to create yet another one from the homepage.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -74,6 +74,6 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(cta.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await cta.First.ClickAsync();
 
-		await Expect(Page).ToHaveURLAsync($"{origin}/app");
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
 }

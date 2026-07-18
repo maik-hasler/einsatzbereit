@@ -328,14 +328,6 @@
       "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
       "tabsLabel": "Organisationsbereiche"
     },
-    "orgAppEntry": {
-      "title": "Organisationsübersicht",
-      "loading": "Wird geladen…",
-      "emptyTitle": "Du organisierst noch keine Organisation",
-      "emptyDesc": "Erstelle eine Organisation, um Einsatzmöglichkeiten zu veröffentlichen und dein Team zu verwalten.",
-      "pickerTitle": "Organisation auswählen",
-      "pickerDesc": "Du organisierst mehr als eine Organisation - wähle aus, welche du verwalten möchtest."
-    },
     "orgEngagements": {
       "title": "Bewerbungen",
       "loading": "Wird geladen…",
@@ -751,7 +743,6 @@
     "breadcrumb": {
       "label": "Navigationspfad",
       "home": "Startseite",
-      "orgApp": "Organisationen",
       "volunteerOpportunities": "Einsatzmöglichkeiten",
       "engagements": "Bewerbungen",
       "settings": "Einstellungen",

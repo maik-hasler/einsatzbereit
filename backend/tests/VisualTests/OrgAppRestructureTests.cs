@@ -9,8 +9,9 @@ namespace VisualTests;
 /// management pages (dashboard/engagements/members/settings) became their own
 /// application context under /app/{organizationId}/..., separate from the
 /// public Main Page, and the org switcher no longer renders in the global
-/// header. Also covers the later /app entry point (empty state / picker) and
-/// the removal of the "Your organizations" section from the profile page.
+/// header. Also covers the removal of the "Your organizations" section from
+/// the profile page, and (#747) the removal of the /app intermediate picker
+/// page in favor of the home page CTA resolving directly into the shell.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -40,7 +41,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	public async Task ProfilePage_NoLongerShowsOrganizationsSection()
 	{
 		// Regression guard: the "Your organizations" card (org list + its own
-		// "Create organization" button) moved entirely to the /app entry point -
+		// "Create organization" button) moved entirely into the org app shell -
 		// the profile page must not still surface it, even for a user who
 		// organizes orgs and would previously have populated it.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -55,26 +56,33 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	}
 
 	[Test]
-	public async Task OrgAppEntry_ZeroOrgs_ShowsEmptyState_AndCreatingOrgEntersItsDashboard()
+	public async Task HomeCta_ZeroOrgs_CreatingOrgEntersItsDashboardDirectly()
 	{
-		// Vera organizes nothing in seed data - /app must show an empty-state
-		// prompt rather than a blank picker, and creating an org there enters
-		// its dashboard directly like every other creation entry point.
+		// Vera organizes nothing in seed data - the home page's "Create an
+		// organisation" CTA opens org creation in place (#747: there is no
+		// /app entry point to route through anymore), and submitting it must
+		// still land her directly in the new org's dashboard.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		var orgName = $"Visual OrgAppEntry Empty {Guid.NewGuid():N}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/app");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// The hero CTA renders the "Create an organisation" button until the
+		// async org-count fetch resolves, then swaps to a dashboard Link if the
+		// user turns out to have orgs after all - wait for that fetch to settle
+		// first so we never click a button that's about to be swapped out from
+		// under us (which would hang waiting for it to reappear).
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" });
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
 		if (await createBtn.CountAsync() == 0)
 			return; // a previous retry already gave vera an org - skip
 
-		await createBtn.ClickAsync();
+		await Expect(createBtn.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await createBtn.First.ClickAsync();
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
-		await Expect(createDialog).ToBeVisibleAsync();
+		await Expect(createDialog).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await createDialog.Locator("input[type='text']").FillAsync(orgName);
 		await Page.GetByTestId("modal-submit").ClickAsync();
 
@@ -84,10 +92,11 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	}
 
 	[Test]
-	public async Task OrgAppEntry_MultipleOrgs_ShowsPickerAndNavigatesToSelection()
+	public async Task LegacyAppEntryUrl_NoLongerRoutes_FallsThroughToNotFound()
 	{
-		// Olaf organizes at least two orgs in seed data - /app must show a
-		// picker rather than guessing which one to enter.
+		// #747: /app was removed as a distinct route (no more picker/loading
+		// intermediate) - a direct visit must now fall through to the
+		// catch-all NotFoundPage instead.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -95,18 +104,9 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Page.GotoAsync($"{origin}/app");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var rows = Page.GetByTestId("org-entry-picker-row");
-		var rowCount = await rows.CountAsync();
-		if (rowCount == 0)
-			return; // already auto-redirected - olaf organizes exactly one org here, skip
-
-		var firstRow = rows.First;
-		var orgName = (await firstRow.TextContentAsync() ?? "").Trim();
-		await firstRow.ClickAsync();
-
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
-			.ToContainTextAsync(orgName);
+		await Expect(Page).ToHaveURLAsync($"{origin}/app");
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
 	[Test]

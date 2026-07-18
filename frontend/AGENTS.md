@@ -14,7 +14,7 @@ src/
 ├── components/
 │   ├── Header.tsx          Header with auth state (login/logout buttons, org switcher)
 │   ├── Footer.tsx          Footer with links and social icons
-│   ├── OrganizationSwitcher.tsx        Dropdown to switch active org; reads/writes active-org cookie
+│   ├── OrganizationSwitcher.tsx        Dropdown to switch active org
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
 │   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, gated create button
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
@@ -46,7 +46,7 @@ User clicks "Anmelden"
 
 - `auth.user?.profile` - decoded id_token claims (sub, email, name, preferred_username, roles)
 - `auth.user?.access_token` - Bearer token for API calls
-- `active-org` cookie - active organization id (set by OrganizationSwitcher)
+- `active-org` cookie - last-opened organization id (set by `OrgAppLayout` on every successful org load; read by `HomePage`'s org-app resolution to skip straight to the right dashboard, see `lib/activeOrg.ts`)
 - Roles: `auth.user?.profile?.roles` - flat string array from Keycloak custom mapper
 
 ## API Client

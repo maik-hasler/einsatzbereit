@@ -152,8 +152,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// Olaf's seed data always organizes at least one org, so /app always lands
-	// on a dashboard (auto-redirect for one org, picker for several).
+	// Olaf's seed data always organizes at least one org, so the home page's
+	// "Organization overview" CTA always resolves straight to a dashboard.
 	private async Task<bool> NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
 	{
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
@@ -168,37 +168,6 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
-	public async Task OrgAppEntryPage_Picker_AsOlaf_HasNoSeriousA11yViolations()
-	{
-		// Olaf organizes at least one org in seed data - covers the picker state
-		// when he has several, or the (trivially compliant) redirect otherwise.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
-	public async Task OrgAppEntryPage_EmptyState_AsVera_HasNoSeriousA11yViolations()
-	{
-		// Vera organizes nothing in seed data - covers the empty-state prompt.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{origin}/app");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
