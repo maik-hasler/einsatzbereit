@@ -78,7 +78,7 @@ export default function OrganizationSwitcher({
 				<button
 					type="button"
 					onClick={() => setOpen(!open)}
-					className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+					className="flex w-full min-w-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 					aria-expanded={open}
 					aria-label={t("organization.switchLabel")}
 				>
@@ -95,7 +95,7 @@ export default function OrganizationSwitcher({
 							data-initial={(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
 						/>
 					)}
-					<span className="max-w-[200px] truncate">
+					<span className="min-w-0 max-w-[200px] flex-1 truncate">
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
 					<svg

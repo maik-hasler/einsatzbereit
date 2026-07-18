@@ -6,6 +6,7 @@
       "description": "Einsatzbereit connects committed volunteers with regional needs. Spontaneous, fast, and effective."
     },
     "nav": {
+      "accountLabel": "Account",
       "userMenu": "User menu",
       "myEngagements": "My Engagements",
       "myProfile": "My Profile",
