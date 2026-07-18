@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useOutletContext } from "react-router";
+import { Link, useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import type { View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS, de } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import type {
-	OrganizationCalendarEventDto,
-	VolunteerOpportunitySummary,
-} from "../../client/api-client";
+import type { OrganizationCalendarEventDto } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -57,23 +54,10 @@ export default function OrgDashboardPage() {
 	const { org } = useOutletContext<OrgAppContext>();
 	const { t } = useTranslation();
 	const api = useApiClient();
+	const navigate = useNavigate();
 	const organizationId = org.id;
 
 	const [showCreateModal, setShowCreateModal] = useState(false);
-
-	const [drafts, setDrafts] = useState<VolunteerOpportunitySummary[]>([]);
-
-	function loadDrafts() {
-		api
-			.getOrganizationOpportunityDrafts(organizationId)
-			.then(setDrafts)
-			.catch(() => {});
-	}
-
-	useEffect(() => {
-		loadDrafts();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
 
 	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
 	const [calLoading, setCalLoading] = useState(true);
@@ -153,9 +137,16 @@ export default function OrgDashboardPage() {
 		}
 	}
 
-	function handleOpportunityCreated() {
+	function handleOpportunityCreated(createdDraftId?: string) {
 		loadCalendarEvents();
-		loadDrafts();
+		// Drafts live on the Opportunities tab now. When one is saved from here,
+		// take the organizer there with the new draft highlighted so it is never
+		// lost (issue #708). A published opportunity just refreshes the calendar.
+		if (createdDraftId) {
+			navigate(
+				`/app/${organizationId}/opportunities?highlight=${createdDraftId}`,
+			);
+		}
 	}
 
 	return (
@@ -171,46 +162,6 @@ export default function OrgDashboardPage() {
 					{t("orgOverview.createOpportunity")}
 				</button>
 			</div>
-
-			{drafts.length > 0 && (
-				<section className="mb-8" data-testid="drafts-section">
-					<h2 className="text-lg font-semibold text-gray-900">
-						{t("orgDashboard.draftsTitle")}
-					</h2>
-					<p className="mt-1 text-sm text-gray-500">
-						{t("orgDashboard.draftsDesc")}
-					</p>
-					<ul className="mt-4 space-y-3">
-						{drafts.map((draft) => (
-							<li
-								key={draft.id}
-								className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
-							>
-								<Link
-									to={`/volunteer-opportunities/${draft.id}`}
-									className="absolute inset-0"
-									aria-label={draft.title || t("orgDashboard.unnamedDraft")}
-								/>
-								<div className="flex items-center justify-between gap-3">
-									<div className="min-w-0">
-										<p className="truncate text-sm font-semibold text-gray-900">
-											{draft.title || t("orgDashboard.unnamedDraft")}
-										</p>
-										{draft.description && (
-											<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-												{draft.description}
-											</p>
-										)}
-									</div>
-									<span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-										{t("opportunities.draftBadge")}
-									</span>
-								</div>
-							</li>
-						))}
-					</ul>
-				</section>
-			)}
 
 			{calLoading && (
 				<div className="flex items-center justify-center py-16">

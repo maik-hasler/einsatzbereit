@@ -2,9 +2,9 @@ using Application.Common.Messaging;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Domain.Users;
 
-namespace Application.VolunteerOpportunities.GetOrganizationOpportunityDrafts.v1;
+namespace Application.VolunteerOpportunities.GetOrganizationOpportunities.v1;
 
-public sealed record GetOrganizationOpportunityDraftsQuery(
+public sealed record GetOrganizationOpportunitiesQuery(
 	Guid OrganizationId,
 	UserId RequestingUserId)
 	: IQuery<IReadOnlyList<VolunteerOpportunitySummary>>;

@@ -17,7 +17,7 @@ import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import OrgAppEntryPage from "./pages/app/OrgAppEntryPage";
 import OrgDashboardPage from "./pages/app/OrgDashboardPage";
-import OrgAppEngagementsPage from "./pages/app/OrgAppEngagementsPage";
+import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
 import OrgMembersPage from "./pages/app/OrgMembersPage";
 import OrgSettingsPage from "./pages/app/OrgSettingsPage";
 
@@ -59,7 +59,12 @@ export default function App() {
 			>
 				<Route index element={<Navigate to="dashboard" replace />} />
 				<Route path="dashboard" element={<OrgDashboardPage />} />
-				<Route path="engagements" element={<OrgAppEngagementsPage />} />
+				<Route path="opportunities" element={<OrgOpportunitiesPage />} />
+				{/* Old tab key: the "Engagements" tab is now the Opportunities hub - keep old bookmarks working. */}
+				<Route
+					path="engagements"
+					element={<OrgAppRedirect tab="opportunities" />}
+				/>
 				<Route path="members" element={<OrgMembersPage />} />
 				<Route path="settings" element={<OrgSettingsPage />} />
 			</Route>
@@ -115,7 +120,7 @@ export default function App() {
 				/>
 				<Route
 					path="/organizations/:organizationId/engagements"
-					element={<OrgAppRedirect tab="engagements" />}
+					element={<OrgAppRedirect tab="opportunities" />}
 				/>
 				<Route
 					path="/achievements"

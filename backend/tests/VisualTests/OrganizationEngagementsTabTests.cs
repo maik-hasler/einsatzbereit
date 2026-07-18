@@ -9,13 +9,14 @@ namespace VisualTests;
 public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	/// <summary>
-	/// Regression for #628 and #629. On the org dashboard's "Engagements" tab:
+	/// Regression for #628 and #629, on the org "Opportunities" hub (formerly
+	/// the "Engagements" tab):
 	/// - GetOpportunityFeedback must not 500 (previously an EF Core query
 	///   ordered results after projecting into a DTO, which failed
 	///   translation on every call, regardless of engagement data).
-	/// - The "Manage engagements" link must show exactly one arrow (the SVG
-	///   icon), not a doubled arrow from a literal "→" baked into the
-	///   translation string plus the adjacent icon.
+	/// - The published row's "Manage applications" link must show exactly one
+	///   arrow (the SVG icon), not a doubled arrow from a literal "→" baked
+	///   into the translation string plus the adjacent icon.
 	/// </summary>
 	[Test]
 	public async Task EngagementsTab_ShowsSingleArrowAndNoFeedbackError_ForFreshOpportunity()
@@ -71,13 +72,16 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 		feedback.GetProperty("feedbackCount").GetInt32().Should().Be(0);
 		feedback.GetProperty("items").GetArrayLength().Should().Be(0);
 
-		await Page.GotoAsync($"{origin}/app/{organizationId}/engagements");
+		// The org "Engagements" tab became the unified "Opportunities" hub. A
+		// published opportunity is listed under the Published section with a
+		// single-arrow "Manage applications" link.
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var row = Page.Locator("li", new() { HasText = oppTitle });
+		var row = Page.GetByTestId("published-section").Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var manageLink = row.GetByRole(AriaRole.Link, new() { Name = "Manage engagements" });
+		var manageLink = row.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
 		await Expect(manageLink).ToBeVisibleAsync();
 
 		var linkText = (await manageLink.InnerTextAsync()).Trim();

@@ -142,11 +142,14 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Engagements", Exact = true }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var manageLink = Page.GetByText("Manage engagements").First;
+		// "Manage applications" only appears for published opportunities on the
+		// Opportunities hub.
+		var manageLink = Page.GetByText("Manage applications").First;
 		if (await manageLink.CountAsync() == 0)
-			return; // organizer has no opportunities in seed - skip
+			return; // organizer has no published opportunities in seed - skip
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

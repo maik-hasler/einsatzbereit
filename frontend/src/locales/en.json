@@ -223,7 +223,7 @@
       "publish": "Publish",
       "saveDraft": "Save as draft",
       "savingDraft": "Saving…",
-      "draftSavedToast": "Draft saved. You can find it on your organization dashboard.",
+      "draftSavedToast": "Draft saved. Find it under the Opportunities tab.",
       "fieldBanner": "Banner image (optional)",
       "bannerUpload": "Upload image",
       "bannerHint": "JPG, PNG or WebP, max. 2 MB",
@@ -344,6 +344,20 @@
       "noOpportunitiesHint": "Create a volunteer opportunity to start receiving applications.",
       "manageEngagements": "Manage engagements"
     },
+    "orgOpportunities": {
+      "loading": "Loading…",
+      "error": "Error: {{message}}",
+      "emptyTitle": "No opportunities yet",
+      "emptyDesc": "Create your first volunteer opportunity to get started.",
+      "draftsHeading": "Drafts",
+      "draftsDesc": "Not publicly visible yet. Finish editing, then publish.",
+      "publishedHeading": "Published",
+      "publishedDesc": "Live and visible to volunteers.",
+      "publishedBadge": "Published",
+      "manageApplications": "Manage applications",
+      "participants": "{{booked}}/{{max}} participants",
+      "editLoading": "Opening…"
+    },
     "orgDashboard": {
       "title": "Organization Dashboard",
       "loading": "Loading…",
@@ -359,8 +373,6 @@
       "cancelledEngagementsDesc": "Total cancelled across all opportunities",
       "viewOpportunities": "View opportunities →",
       "viewEngagements": "View engagements →",
-      "draftsTitle": "Drafts",
-      "draftsDesc": "These opportunities are not publicly visible yet. Open a draft to edit or publish it.",
       "unnamedDraft": "Unnamed Draft"
     },
     "orgSettings": {
@@ -790,7 +802,7 @@
     },
     "orgOverview": {
       "tabCalendar": "Calendar",
-      "tabEngagements": "Engagements",
+      "tabOpportunities": "Opportunities",
       "tabMembers": "Members",
       "tabSettings": "Settings",
       "calendarLoading": "Loading calendar...",

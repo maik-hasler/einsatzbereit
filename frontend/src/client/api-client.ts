@@ -853,8 +853,8 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOrganizationOpportunityDrafts(organizationId: string, signal?: AbortSignal): Promise<VolunteerOpportunitySummary[]> {
-        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunity-drafts";
+    getOrganizationOpportunities(organizationId: string, signal?: AbortSignal): Promise<VolunteerOpportunitySummary[]> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunities";
         if (organizationId === undefined || organizationId === null)
             throw new globalThis.Error("The parameter 'organizationId' must be defined.");
         url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
@@ -869,11 +869,11 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetOrganizationOpportunityDrafts(_response);
+            return this.processGetOrganizationOpportunities(_response);
         });
     }
 
-    protected processGetOrganizationOpportunityDrafts(response: Response): Promise<VolunteerOpportunitySummary[]> {
+    protected processGetOrganizationOpportunities(response: Response): Promise<VolunteerOpportunitySummary[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {

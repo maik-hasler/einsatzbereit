@@ -991,12 +991,12 @@
         }
       }
     },
-    "/v1/organizations/{organizationId}/opportunity-drafts": {
+    "/v1/organizations/{organizationId}/opportunities": {
       "get": {
         "tags": [
-          "GetOrganizationOpportunityDraftsEndpoint"
+          "GetOrganizationOpportunitiesEndpoint"
         ],
-        "operationId": "GetOrganizationOpportunityDrafts",
+        "operationId": "GetOrganizationOpportunities",
         "parameters": [
           {
             "name": "organizationId",
@@ -6195,7 +6195,7 @@
       "name": "CreateVolunteerOpportunityEndpoint"
     },
     {
-      "name": "GetOrganizationOpportunityDraftsEndpoint"
+      "name": "GetOrganizationOpportunitiesEndpoint"
     },
     {
       "name": "VolunteerOpportunities"
