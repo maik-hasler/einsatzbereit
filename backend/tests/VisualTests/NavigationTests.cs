@@ -137,6 +137,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #574: back navigation used to only appear in the empty-application state.
 		// The revived breadcrumb must be present unconditionally.
+		//
+		// #751 review follow-up: the breadcrumb must show the specific
+		// opportunity being managed - Home > Opportunities > {title}, with
+		// "Opportunities" demoted to a link back to the tab - instead of a
+		// fixed "Opportunities" label plus a separate context line in the page.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
@@ -147,14 +152,22 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// "Manage applications" only appears for published opportunities on the
 		// Opportunities hub.
-		var manageLink = Page.GetByText("Manage applications").First;
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
 		if (await manageLink.CountAsync() == 0)
 			return; // organizer has no published opportunities in seed - skip
+
+		var row = Page.Locator("li").Filter(new() { Has = manageLink });
+		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToBeVisibleAsync();
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+		await Expect(breadcrumb).ToBeVisibleAsync();
+		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
+			.ToBeVisibleAsync();
+		await Expect(breadcrumb.GetByText(opportunityTitle, new() { Exact = true }))
+			.ToBeVisibleAsync();
 	}
 
 	[Test]
