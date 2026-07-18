@@ -325,7 +325,8 @@
     },
     "orgApp": {
       "backToSite": "Zurueck zu Einsatzbereit",
-      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
+      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
+      "tabsLabel": "Organisationsbereiche"
     },
     "orgAppEntry": {
       "title": "Organisationsübersicht",
@@ -736,6 +737,7 @@
       }
     },
     "breadcrumb": {
+      "label": "Navigationspfad",
       "home": "Startseite",
       "orgApp": "Organisationen",
       "volunteerOpportunities": "Einsatzmöglichkeiten",
