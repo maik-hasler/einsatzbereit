@@ -10,14 +10,14 @@ ifndef::imagesdir[:imagesdir: ../images]
 |===
 |Constraint |Rationale
 
-|Docker and Docker Compose required for local development
-|All services (frontend, backend, Keycloak, PostgreSQL, pgAdmin) run in containers. This ensures a consistent development environment across all contributor machines.
+|Docker required for local development
+|The .NET Aspire AppHost (`dotnet run --project backend/src/Aspire/AppHost`) provisions PostgreSQL, pgAdmin, Keycloak, MinIO, and Mailpit as containers, while the backend API and Vite frontend run as Aspire-managed host processes. This ensures a consistent development environment across all contributor machines. Docker Compose is the deployment mechanism (see chapter 7), not the local-development one.
 
 |GNU AGPL v3.0 license
 |All dependencies must be compatible with AGPL v3.0. Commercial or proprietary dependencies are excluded. Any deployment of the platform - including modifications - must be released under the same license.
 
-|Self-hosted only - no US cloud dependencies
-|Keycloak, PostgreSQL, and all supporting infrastructure run self-hosted. No dependency on US-based cloud providers (AWS, Azure, Google Cloud) to ensure data sovereignty and GDPR compliance.
+|Self-hosted runtime - no US cloud dependencies for user data
+|Keycloak, PostgreSQL, and object storage run self-hosted; no US-based cloud provider (AWS, Azure, Google Cloud) handles user data, ensuring data sovereignty and GDPR compliance. Source hosting, CI/CD, and container image distribution use GitHub and GHCR.
 
 |PlantUML for architecture diagrams
 |All architecture diagrams are written as PlantUML source files and rendered via `asciidoctor-diagram`. No binary diagram files are committed to the repository.
@@ -46,7 +46,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Every external service dependency is an operational responsibility. Dependencies are added only when they provide significant value that cannot be achieved with reasonable effort otherwise.
 
 |Conventional Commits for all commits
-|All commits follow the Conventional Commits specification (`feat:`, `fix:`, `docs:`, etc.) to enable automated changelog generation and clear history.
+|All commits follow the Conventional Commits specification (`feat:`, `fix:`, `docs:`, etc.) for a clear, machine-readable history. PR titles are validated against the specification in CI (`.github/workflows/pr-title.yml`).
 |===
 
 === Conventions
@@ -56,8 +56,8 @@ ifndef::imagesdir[:imagesdir: ../images]
 |===
 |Convention |Description
 
-|Feature folder structure
-|Both backend and frontend organize code by feature: `{Layer}/{Domain}/{Feature}/v1/`. This keeps related code co-located and makes finding things predictable.
+|Feature folder structure (backend)
+|The backend organizes code by feature: `{Layer}/{Domain}/{Feature}/v1/`. The frontend uses a conventional React layout (`components/`, `pages/`, `hooks/`, `contexts/`, `layouts/`, `lib/`). This keeps related code co-located and makes finding things predictable.
 
 |API versioning via URL path
 |All API routes include the version in the path (`/v1/...`). Breaking changes require a new version namespace.
@@ -67,4 +67,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 |English UI and code, multilingual support
 |The user interface, end-user documentation, and all code, commits, issues, and pull requests are in English. The UI supports multiple languages via internationalization.
+
+|ASCII-only formatting
+|Plain ASCII hyphens only (no U+2013 en dash or U+2014 em dash); tab indentation per `.editorconfig`. Both are enforced by CI (`.github/workflows/lint.yml`).
 |===

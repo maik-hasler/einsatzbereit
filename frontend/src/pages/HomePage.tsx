@@ -2,12 +2,14 @@ import { useEffect, useId, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import type { OrganizationSummaryDto } from "../client/api-client";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
+import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
 
 const ONBOARDING_KEY = "onboarding-dismissed";
 
@@ -121,7 +123,7 @@ export default function HomePage() {
 
 	const [showOnboarding, setShowOnboarding] = useState(false);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
-	const [hasOrgs, setHasOrgs] = useState(false);
+	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	useEffect(() => {
@@ -132,23 +134,25 @@ export default function HomePage() {
 
 	useEffect(() => {
 		if (!auth.isAuthenticated) {
-			setHasOrgs(false);
+			setOrgs([]);
 			return;
 		}
 		let cancelled = false;
 		api
 			.getOrganizations()
-			.then((orgs) => {
-				if (!cancelled) setHasOrgs(orgs.length > 0);
+			.then((data) => {
+				if (!cancelled) setOrgs(data);
 			})
 			.catch(() => {
-				if (!cancelled) setHasOrgs(false);
+				if (!cancelled) setOrgs([]);
 			});
 		return () => {
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.isAuthenticated]);
+
+	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 
 	useEffect(() => {
 		if (searchParams.get("createOrg") === "1" && auth.isAuthenticated) {
@@ -356,9 +360,9 @@ export default function HomePage() {
 							>
 								{t("landing.heroCta")}
 							</a>
-							{auth.isAuthenticated && hasOrgs ? (
+							{auth.isAuthenticated && orgAppPath ? (
 								<Link
-									to="/app"
+									to={orgAppPath}
 									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
 								>
 									{t("landing.heroCtaOrgOverview")}

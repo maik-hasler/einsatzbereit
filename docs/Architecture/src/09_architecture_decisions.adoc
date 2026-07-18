@@ -31,4 +31,13 @@ The following table lists the relevant architecture decisions. Each decision lin
 |2026-03-25
 |link:ADRs/3_keycloak.html[Keycloak]
 
+|4
+|Geocoding
+|Geocode addresses at write time via Nominatim; spatial filtering by bounding box plus in-memory Haversine (no PostGIS).
+|Accepted
+|2026-05-13
+|link:ADRs/4_geocoding_and_geo_search.html[Geocoding]
+
 |===
+
+See <<section-solution-strategy>> for how the key decisions map to the quality goals.

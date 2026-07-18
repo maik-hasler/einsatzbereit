@@ -3,18 +3,27 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-technical-risks]]
 == Risks and Technical Debt
 
-The following table lists the relevant risks and technical debts. Each risk or technical debt links to the corresponding Technical Debt Record (TDR) with full context.
+The following table lists the relevant risks and technical debts. Each risk or technical debt links to the corresponding Technical Debt Record (TDR) with full context. The *No.* column is a stable, chronological record identifier; the *Severity* column carries the prioritization (which risks the team is most uncomfortable with).
 
 .Risks and technical debts
-[cols="1,4,8,3,3,3" options="header"]
+[cols="1,3,6,2,2,2,3" options="header"]
 |===
-|No. |Context |Description |Status |Date |TDR
+|No. |Context |Description |Severity |Status |Date |TDR
 
 |1
 |Rate Limiting
 |Missing rate limitation.
+|Medium
 |Resolved
 |2026-05-03
 |link:TDRs/1_rate_limiting.html[Rate Limiting]
+
+|2
+|CI Pipeline Performance
+|Slow, steadily growing backend CI pipeline dominated by end-to-end tests.
+|Low-Medium
+|Analyzed
+|2026-07-18
+|link:TDRs/2_slow_ci_pipeline.html[Slow CI Pipeline]
 
 |===

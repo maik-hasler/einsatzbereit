@@ -15,7 +15,6 @@ import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
 import UserProfilePage from "./pages/UserProfilePage";
-import OrgAppEntryPage from "./pages/app/OrgAppEntryPage";
 import OrgDashboardPage from "./pages/app/OrgDashboardPage";
 import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
 import OrgMembersPage from "./pages/app/OrgMembersPage";
@@ -89,14 +88,6 @@ export default function App() {
 					element={<Navigate to="/profile?tab=engagements" replace />}
 				/>
 				<Route path="/account" element={<Navigate to="/profile" replace />} />
-				<Route
-					path="/app"
-					element={
-						<ProtectedRoute>
-							<OrgAppEntryPage />
-						</ProtectedRoute>
-					}
-				/>
 				<Route
 					path="/profile"
 					element={

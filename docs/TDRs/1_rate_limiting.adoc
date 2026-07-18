@@ -14,24 +14,24 @@ All endpoints can be accessed without restriction, regardless of request frequen
 
 ==== Technical Impact
 
-- *[System Stability]:* Unrestricted traffic can overload the server, leading to degraded performance or downtime.
-- *[Scalability]:* The system cannot safely handle sudden traffic spikes (e.g., bots, crawlers, or malicious requests).
-- *[Security]:* Increased exposure to abuse scenarios such as brute force attacks or denial-of-service (DoS).
-- *[Maintainability]:* Lack of centralized request control makes future scaling or protection mechanisms harder to introduce cleanly.
+- *System Stability:* Unrestricted traffic can overload the server, leading to degraded performance or downtime.
+- *Scalability:* The system cannot safely handle sudden traffic spikes (e.g., bots, crawlers, or malicious requests).
+- *Security:* Increased exposure to abuse scenarios such as brute force attacks or denial-of-service (DoS).
+- *Maintainability:* Lack of centralized request control makes future scaling or protection mechanisms harder to introduce cleanly.
 
 Current impact is low due to limited user traffic, but risk increases significantly with growth or public exposure.
 
 ==== Business Impact
 
-- *[Cost Control]:* Without rate limiting, excessive traffic (intentional or accidental) can increase hosting or bandwidth costs-critical for a non-profit with limited budget.
-- *[Availability]:* Service outages reduce trust and reliability for users and stakeholders.
-- *[Resource Allocation]:* Time spent reacting to outages or abuse detracts from mission-focused development.
+- *Cost Control:* Without rate limiting, excessive traffic (intentional or accidental) can increase hosting or bandwidth costs - critical for a non-profit with limited budget.
+- *Availability:* Service outages reduce trust and reliability for users and stakeholders.
+- *Resource Allocation:* Time spent reacting to outages or abuse detracts from mission-focused development.
 
 === Symptoms
 
-- *[Performance Degradation]:* API response times increase under unexpected load.
-- *[Service Instability]:* Occasional crashes or restarts under traffic spikes.
-- *[Unusual Traffic Patterns]:* High request rates from single IPs or automated clients.
+- *Performance Degradation:* API response times increase under unexpected load.
+- *Service Instability:* Occasional crashes or restarts under traffic spikes.
+- *Unusual Traffic Patterns:* High request rates from single IPs or automated clients.
 
 
 === Severity
@@ -42,8 +42,8 @@ Currently acceptable due to low usage, but becomes critical before scaling or wi
 
 === Proposed Solution
 
-- *[Progressive Enhancement Approach]:* Start with a basic fixed-window or token-bucket strategy. Avoid complex distributed systems initially.
-- *[Future Option]:* If traffic grows, consider moving rate limiting to a reverse proxy or edge layer for better performance and scalability.
+- *Progressive Enhancement Approach:* Start with a basic fixed-window or token-bucket strategy. Avoid complex distributed systems initially.
+- *Future Option:* If traffic grows, consider moving rate limiting to a reverse proxy or edge layer for better performance and scalability.
 
 === Consequences of Delay
 
