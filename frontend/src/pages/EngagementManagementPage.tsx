@@ -189,7 +189,7 @@ export default function EngagementManagementPage() {
 					<p className="mt-1 font-mono text-2xl font-bold tracking-widest text-brand-800">
 						{checkInPin}
 					</p>
-					<p className="mt-1 text-xs text-brand-600">
+					<p className="mt-1 text-xs text-brand-700">
 						{t("checkIn.organizerPinHint")}
 					</p>
 				</div>
