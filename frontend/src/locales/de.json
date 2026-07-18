@@ -373,8 +373,6 @@
       "cancelledEngagementsDesc": "Insgesamt abgesagt über alle Einsätze",
       "viewOpportunities": "Einsätze anzeigen →",
       "viewEngagements": "Engagements anzeigen →",
-      "draftsTitle": "Entwürfe",
-      "draftsDesc": "Diese Bedarfe sind noch nicht öffentlich sichtbar. Öffne einen Entwurf, um ihn zu bearbeiten oder zu veröffentlichen.",
       "unnamedDraft": "Unbenannter Entwurf"
     },
     "orgSettings": {
@@ -804,7 +802,6 @@
     },
     "orgOverview": {
       "tabCalendar": "Kalender",
-      "tabEngagements": "Bewerbungen",
       "tabOpportunities": "Einsätze",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",

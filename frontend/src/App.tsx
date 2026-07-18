@@ -60,8 +60,7 @@ export default function App() {
 				<Route index element={<Navigate to="dashboard" replace />} />
 				<Route path="dashboard" element={<OrgDashboardPage />} />
 				<Route path="opportunities" element={<OrgOpportunitiesPage />} />
-				{/* Old tab key: the org "Engagements" tab became the unified
-				    "Opportunities" hub - keep existing bookmarks working. */}
+				{/* Old tab key: the "Engagements" tab is now the Opportunities hub - keep old bookmarks working. */}
 				<Route
 					path="engagements"
 					element={<OrgAppRedirect tab="opportunities" />}

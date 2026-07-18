@@ -373,8 +373,6 @@
       "cancelledEngagementsDesc": "Total cancelled across all opportunities",
       "viewOpportunities": "View opportunities →",
       "viewEngagements": "View engagements →",
-      "draftsTitle": "Drafts",
-      "draftsDesc": "These opportunities are not publicly visible yet. Open a draft to edit or publish it.",
       "unnamedDraft": "Unnamed Draft"
     },
     "orgSettings": {
@@ -804,7 +802,6 @@
     },
     "orgOverview": {
       "tabCalendar": "Calendar",
-      "tabEngagements": "Engagements",
       "tabOpportunities": "Opportunities",
       "tabMembers": "Members",
       "tabSettings": "Settings",
