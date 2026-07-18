@@ -6,6 +6,7 @@
       "description": "Einsatzbereit bringt engagierte Helfer:innen mit regionalen Bedarfen zusammen. Spontan, schnell und wirksam."
     },
     "nav": {
+      "accountLabel": "Konto",
       "userMenu": "Benutzermenü",
       "myEngagements": "Meine Engagements",
       "myProfile": "Mein Profil",

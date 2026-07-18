@@ -1,25 +1,15 @@
 import { useEffect, useState } from "react";
-import {
-	Link,
-	Outlet,
-	useLocation,
-	useNavigate,
-	useParams,
-} from "react-router";
-import { useAuth } from "react-oidc-context";
+import { Link, Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { useAccountMenu } from "../hooks/useAccountMenu";
 import { setActiveOrgId } from "../lib/activeOrg";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
 } from "../contexts/OrgBreadcrumbContext";
-import OrganizationSwitcher from "../components/OrganizationSwitcher";
-import LanguageSelector from "../components/LanguageSelector";
-import AccountControls from "../components/AccountControls";
+import Header from "../components/Header";
 
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
@@ -32,12 +22,6 @@ const TABS = [
 	{ key: "members", labelKey: "orgOverview.tabMembers" },
 	{ key: "settings", labelKey: "orgOverview.tabSettings" },
 ] as const;
-
-function getInitials(name: string): string {
-	const parts = name.trim().split(/\s+/);
-	if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
-	return name.slice(0, 2).toUpperCase();
-}
 
 // Trailing breadcrumb segment(s) after the home icon. Normally just the
 // active tab's own name, current-page style; a nested page (e.g. engagement
@@ -84,16 +68,12 @@ function OrgBreadcrumbTrail({
 export default function OrgAppLayout() {
 	const { organizationId } = useParams<{ organizationId: string }>();
 	const api = useApiClient();
-	const auth = useAuth();
 	const { t } = useTranslation();
 	const location = useLocation();
-	const navigate = useNavigate();
-	const menu = useAccountMenu();
 
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [forbidden, setForbidden] = useState(false);
-	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
 	function load() {
 		if (!organizationId) return;
@@ -126,11 +106,6 @@ export default function OrgAppLayout() {
 		TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
 	const activeTab = TABS.find((tab) => tab.key === activeTabKey) ?? TABS[0];
 
-	const displayName = (auth.user?.profile?.name ??
-		auth.user?.profile?.preferred_username ??
-		"") as string;
-	const initials = getInitials(displayName || "?");
-
 	if (loading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -158,83 +133,9 @@ export default function OrgAppLayout() {
 	return (
 		<OrgBreadcrumbProvider>
 			<div className="flex min-h-screen flex-col bg-gray-50">
-				<header className="border-b border-gray-200 bg-white">
-					<div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
-						<Link to="/" className="flex shrink-0 items-center">
-							<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
-						</Link>
-
-						<div className="min-w-0 flex-1 sm:flex-none">
-							<OrganizationSwitcher
-								currentOrgId={org.id}
-								currentTab={activeTabKey}
-							/>
-						</div>
-
-						<div className="flex shrink-0 items-center gap-2 sm:gap-3">
-							<AccountControls
-								menu={menu}
-								displayName={displayName}
-								initials={initials}
-								onSignOut={() => auth.signoutRedirect()}
-								onNotificationNavigate={(actionUrl) =>
-									navigate(actionUrl ?? "/my-engagements")
-								}
-							/>
-
-							<div className="hidden items-center gap-3 md:flex">
-								<div className="h-6 w-px bg-gray-200" />
-								<LanguageSelector />
-							</div>
-
-							<button
-								type="button"
-								onClick={() => setMobileMenuOpen((o) => !o)}
-								className="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-brand-50 hover:text-brand-600 md:hidden"
-								aria-label={t("nav.openMenu")}
-								aria-expanded={mobileMenuOpen}
-							>
-								{mobileMenuOpen ? (
-									<svg
-										className="h-6 w-6"
-										fill="none"
-										viewBox="0 0 24 24"
-										strokeWidth="1.5"
-										stroke="currentColor"
-										aria-hidden="true"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											d="M6 18 18 6M6 6l12 12"
-										/>
-									</svg>
-								) : (
-									<svg
-										className="h-6 w-6"
-										fill="none"
-										viewBox="0 0 24 24"
-										strokeWidth="1.5"
-										stroke="currentColor"
-										aria-hidden="true"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-										/>
-									</svg>
-								)}
-							</button>
-						</div>
-					</div>
-
-					{mobileMenuOpen && (
-						<div className="border-t border-gray-100 bg-white px-4 py-3 md:hidden">
-							<LanguageSelector />
-						</div>
-					)}
-				</header>
+				<Header
+					orgSwitcher={{ currentOrgId: org.id, currentTab: activeTabKey }}
+				/>
 
 				<div className="border-b border-gray-200 bg-white">
 					<div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">

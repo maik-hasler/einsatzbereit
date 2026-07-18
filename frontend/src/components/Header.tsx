@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, Link, useLocation } from "react-router";
 import LanguageSelector from "./LanguageSelector";
 import AccountControls from "./AccountControls";
+import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../hooks/useAccountMenu";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../lib/authLocale";
@@ -14,7 +15,14 @@ function getInitials(name: string): string {
 	return name.slice(0, 2).toUpperCase();
 }
 
-export default function Header() {
+export default function Header({
+	orgSwitcher,
+}: {
+	// When set, this header is rendered inside the org app shell: it grows an
+	// extra middle slot for the active organization's switcher between the
+	// brand logo and the account controls. Omitted entirely on the public site.
+	orgSwitcher?: { currentOrgId: string; currentTab: string };
+} = {}) {
 	const auth = useAuth();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
@@ -64,9 +72,11 @@ export default function Header() {
 			}`}
 		>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="flex items-center justify-between h-16">
+				<div
+					className={`flex items-center justify-between h-16 ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
+				>
 					{/* Brand */}
-					<Link to="/" className="flex items-center">
+					<Link to="/" className="flex shrink-0 items-center">
 						<img
 							src="/logo.svg"
 							alt={t("brand.name")}
@@ -74,8 +84,20 @@ export default function Header() {
 						/>
 					</Link>
 
+					{orgSwitcher && (
+						<div className="min-w-0 flex-1 sm:flex-none">
+							<OrganizationSwitcher
+								currentOrgId={orgSwitcher.currentOrgId}
+								currentTab={orgSwitcher.currentTab}
+							/>
+						</div>
+					)}
+
 					{/* Desktop Nav */}
-					<nav className="hidden md:flex items-center gap-3">
+					<nav
+						aria-label={t("nav.accountLabel")}
+						className="hidden md:flex items-center gap-3"
+					>
 						{isLoggedIn ? (
 							<AccountControls
 								transparent={isTransparent}
