@@ -68,6 +68,7 @@ export default function OrgAppLayout() {
 	const activeTabKey =
 		TABS.find((tab) => location.pathname.endsWith(`/${tab.key}`))?.key ??
 		"dashboard";
+	const activeTab = TABS.find((tab) => tab.key === activeTabKey) ?? TABS[0];
 
 	const displayName = (auth.user?.profile?.name ??
 		auth.user?.profile?.preferred_username ??
@@ -102,25 +103,8 @@ export default function OrgAppLayout() {
 		<div className="flex min-h-screen flex-col bg-gray-50">
 			<header className="border-b border-gray-200 bg-white">
 				<div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-					<Link
-						to="/"
-						className="flex shrink-0 items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-brand-700"
-					>
-						<svg
-							className="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							strokeWidth="2"
-							stroke="currentColor"
-							aria-hidden="true"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-							/>
-						</svg>
-						<span className="hidden sm:inline">{t("orgApp.backToSite")}</span>
+					<Link to="/" className="flex shrink-0 items-center">
+						<img src="/logo.svg" alt={t("brand.name")} className="h-8" />
 					</Link>
 
 					<div className="min-w-0 flex-1 sm:flex-none">
@@ -146,12 +130,50 @@ export default function OrgAppLayout() {
 						<LanguageSelector />
 					</div>
 				</div>
+			</header>
 
-				<nav
-					className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
-					aria-label={org.name}
-				>
-					<div className="flex gap-6 border-t border-gray-100">
+			<div className="border-b border-gray-200 bg-white">
+				<div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+					<nav
+						aria-label={t("breadcrumb.label")}
+						className="flex min-w-0 items-center gap-1.5 text-sm"
+					>
+						<Link
+							to={`/app/${organizationId}/dashboard`}
+							aria-label={t("breadcrumb.home")}
+							className="flex shrink-0 items-center text-gray-400 transition-colors hover:text-brand-700"
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth="1.5"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+								/>
+							</svg>
+						</Link>
+						<span className="shrink-0 text-gray-300" aria-hidden="true">
+							&rsaquo;
+						</span>
+						<span
+							className="truncate font-medium text-gray-900"
+							aria-current="page"
+						>
+							{t(activeTab.labelKey)}
+						</span>
+					</nav>
+				</div>
+			</div>
+
+			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+				<nav aria-label={t("orgApp.tabsLabel")} className="mb-6 sm:mb-8">
+					<div className="flex gap-6 border-b border-gray-200">
 						{TABS.map((tab) => (
 							<Link
 								key={tab.key}
@@ -168,9 +190,7 @@ export default function OrgAppLayout() {
 						))}
 					</div>
 				</nav>
-			</header>
 
-			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
 				<Outlet
 					context={{ org, reloadOrg: load } satisfies OrgAppContext}
 					// Outlet re-mounts children on org identity change so per-tab state resets cleanly

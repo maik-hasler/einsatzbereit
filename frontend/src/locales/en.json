@@ -325,7 +325,8 @@
     },
     "orgApp": {
       "backToSite": "Back to Einsatzbereit",
-      "notAuthorized": "You don't have access to this organization."
+      "notAuthorized": "You don't have access to this organization.",
+      "tabsLabel": "Organization sections"
     },
     "orgAppEntry": {
       "title": "Organization Overview",
@@ -736,6 +737,7 @@
       }
     },
     "breadcrumb": {
+      "label": "Breadcrumb",
       "home": "Home",
       "orgApp": "Organizations",
       "volunteerOpportunities": "Volunteer Opportunities",
