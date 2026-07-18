@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
+import Modal from "./Modal";
 
 interface SubmitFeedbackModalProps {
 	engagementId: string;
@@ -36,14 +37,6 @@ export default function SubmitFeedbackModal({
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	useEffect(() => {
-		const handler = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", handler);
-		return () => document.removeEventListener("keydown", handler);
-	}, [onClose]);
-
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		if (rating === 0) return;
@@ -66,96 +59,82 @@ export default function SubmitFeedbackModal({
 	const displayRating = hovered || rating;
 
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4">
-			<button
-				type="button"
-				className="absolute inset-0 bg-black/50"
-				onClick={onClose}
-				tabIndex={-1}
-				aria-hidden="true"
-			/>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="feedback-title"
-				className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+		<Modal onClose={onClose} labelledBy="feedback-title" maxWidth="max-w-md">
+			<h2
+				id="feedback-title"
+				className="mb-1 text-lg font-semibold text-gray-900"
 			>
-				<h2
-					id="feedback-title"
-					className="mb-1 text-lg font-semibold text-gray-900"
-				>
-					{t("feedback.title")}
-				</h2>
-				<p className="mb-5 text-sm text-gray-500">{opportunityTitle}</p>
+				{t("feedback.title")}
+			</h2>
+			<p className="mb-5 text-sm text-gray-500">{opportunityTitle}</p>
 
-				<form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
-					<div>
-						<p className="mb-2 text-sm font-medium text-gray-700">
-							{t("feedback.ratingLabel")}
-						</p>
-						<div
-							className="flex gap-1"
-							role="group"
-							aria-label={t("feedback.ratingLabel")}
-						>
-							{[1, 2, 3, 4, 5].map((star) => (
-								<button
-									key={star}
-									type="button"
-									aria-label={t("feedback.starLabel", { count: star })}
-									aria-pressed={rating === star}
-									onClick={() => setRating(star)}
-									onMouseEnter={() => setHovered(star)}
-									onMouseLeave={() => setHovered(0)}
-									className="rounded focus:outline-none focus:ring-2 focus:ring-brand-500"
-								>
-									<StarIcon filled={star <= displayRating} />
-								</button>
-							))}
-						</div>
+			<form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
+				<div>
+					<p className="mb-2 text-sm font-medium text-gray-700">
+						{t("feedback.ratingLabel")}
+					</p>
+					<div
+						className="flex gap-1"
+						role="group"
+						aria-label={t("feedback.ratingLabel")}
+					>
+						{[1, 2, 3, 4, 5].map((star) => (
+							<button
+								key={star}
+								type="button"
+								aria-label={t("feedback.starLabel", { count: star })}
+								aria-pressed={rating === star}
+								onClick={() => setRating(star)}
+								onMouseEnter={() => setHovered(star)}
+								onMouseLeave={() => setHovered(0)}
+								className="rounded focus:outline-none focus:ring-2 focus:ring-brand-500"
+							>
+								<StarIcon filled={star <= displayRating} />
+							</button>
+						))}
 					</div>
+				</div>
 
-					<div>
-						<label
-							htmlFor="feedback-comment"
-							className="block text-sm font-medium text-gray-700"
-						>
-							{t("feedback.commentLabel")}
-						</label>
-						<textarea
-							id="feedback-comment"
-							rows={3}
-							maxLength={500}
-							value={comment}
-							onChange={(e) => setComment(e.target.value)}
-							placeholder={t("feedback.commentPlaceholder")}
-							className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-						/>
-						<p className="mt-1 text-right text-xs text-gray-400">
-							{comment.length}/500
-						</p>
-					</div>
+				<div>
+					<label
+						htmlFor="feedback-comment"
+						className="block text-sm font-medium text-gray-700"
+					>
+						{t("feedback.commentLabel")}
+					</label>
+					<textarea
+						id="feedback-comment"
+						rows={3}
+						maxLength={500}
+						value={comment}
+						onChange={(e) => setComment(e.target.value)}
+						placeholder={t("feedback.commentPlaceholder")}
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+					/>
+					<p className="mt-1 text-right text-xs text-gray-400">
+						{comment.length}/500
+					</p>
+				</div>
 
-					{error && <p className="text-sm text-red-600">{error}</p>}
+				{error && <p className="text-sm text-red-600">{error}</p>}
 
-					<div className="flex gap-3">
-						<button
-							type="button"
-							onClick={onClose}
-							className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-						>
-							{t("feedback.cancel")}
-						</button>
-						<button
-							type="submit"
-							disabled={submitting || rating === 0}
-							className="flex-1 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-						>
-							{submitting ? t("feedback.submitting") : t("feedback.submit")}
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
+				<div className="flex gap-3">
+					<button
+						type="button"
+						onClick={onClose}
+						className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+					>
+						{t("feedback.cancel")}
+					</button>
+					<button
+						type="submit"
+						disabled={submitting || rating === 0}
+						className="flex-1 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+					>
+						{submitting ? t("feedback.submitting") : t("feedback.submit")}
+					</button>
+				</div>
+			</form>
+		</Modal>
 	);
 }

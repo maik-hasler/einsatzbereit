@@ -10,14 +10,6 @@ import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
 import "./styles/global.css";
 
-if ("serviceWorker" in navigator) {
-	window.addEventListener("load", () => {
-		navigator.serviceWorker.register("/sw.js").catch(() => {
-			// Service worker registration is best-effort
-		});
-	});
-}
-
 const oidcConfig = {
 	authority: runtimeConfig.keycloakAuthorityUrl,
 	client_id: runtimeConfig.keycloakClientId,

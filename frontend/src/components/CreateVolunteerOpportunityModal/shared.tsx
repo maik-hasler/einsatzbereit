@@ -1,7 +1,7 @@
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-export function RequiredMark() {
+function RequiredMark() {
 	return (
 		<span className="ml-0.5 text-red-400" aria-hidden="true">
 			*

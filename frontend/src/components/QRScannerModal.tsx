@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import Modal from "./Modal";
 
 declare global {
 	class BarcodeDetector {
@@ -126,93 +127,71 @@ export default function QRScannerModal({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [supported]);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onClose]);
-
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4">
+		<Modal onClose={onClose} labelledBy="qr-scanner-title" maxWidth="max-w-sm">
+			<h2
+				id="qr-scanner-title"
+				className="mb-4 text-lg font-semibold text-gray-900"
+			>
+				{t("checkIn.qrScanTitle")}
+			</h2>
+
+			{supported === null && (
+				<p className="text-sm text-gray-500">{t("opportunities.loading")}</p>
+			)}
+
+			{supported === false && (
+				<p className="text-sm text-red-600">{t("checkIn.qrNotSupported")}</p>
+			)}
+
+			{supported === true && !success && (
+				<>
+					{cameraError ? (
+						<p className="text-sm text-red-600">{cameraError}</p>
+					) : (
+						<div className="relative overflow-hidden rounded-lg bg-black">
+							<video
+								ref={videoRef}
+								autoPlay
+								muted
+								playsInline
+								className="h-64 w-full object-cover"
+								aria-label={t("checkIn.qrVideoLabel")}
+							/>
+							<div
+								aria-hidden="true"
+								className="pointer-events-none absolute inset-0 flex items-center justify-center"
+							>
+								<div className="h-40 w-40 rounded-xl border-2 border-white opacity-60" />
+							</div>
+						</div>
+					)}
+					{scanError && (
+						<p className="mt-2 text-sm text-red-600" role="alert">
+							{scanError}
+						</p>
+					)}
+					{!cameraError && !scanError && (
+						<p className="mt-3 text-sm text-gray-500">
+							{t("checkIn.qrScanHint")}
+						</p>
+					)}
+				</>
+			)}
+
+			{success && (
+				<p className="text-sm font-medium text-green-700">
+					{t("checkIn.qrSuccess")}
+				</p>
+			)}
+
 			<button
 				type="button"
-				className="absolute inset-0 bg-black/50"
 				onClick={onClose}
-				tabIndex={-1}
-				aria-hidden="true"
-			/>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="qr-scanner-title"
-				className="relative z-10 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+				className="mt-5 w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
 			>
-				<h2
-					id="qr-scanner-title"
-					className="mb-4 text-lg font-semibold text-gray-900"
-				>
-					{t("checkIn.qrScanTitle")}
-				</h2>
-
-				{supported === null && (
-					<p className="text-sm text-gray-500">{t("opportunities.loading")}</p>
-				)}
-
-				{supported === false && (
-					<p className="text-sm text-red-600">{t("checkIn.qrNotSupported")}</p>
-				)}
-
-				{supported === true && !success && (
-					<>
-						{cameraError ? (
-							<p className="text-sm text-red-600">{cameraError}</p>
-						) : (
-							<div className="relative overflow-hidden rounded-lg bg-black">
-								<video
-									ref={videoRef}
-									autoPlay
-									muted
-									playsInline
-									className="h-64 w-full object-cover"
-									aria-label={t("checkIn.qrVideoLabel")}
-								/>
-								<div
-									aria-hidden="true"
-									className="pointer-events-none absolute inset-0 flex items-center justify-center"
-								>
-									<div className="h-40 w-40 rounded-xl border-2 border-white opacity-60" />
-								</div>
-							</div>
-						)}
-						{scanError && (
-							<p className="mt-2 text-sm text-red-600" role="alert">
-								{scanError}
-							</p>
-						)}
-						{!cameraError && !scanError && (
-							<p className="mt-3 text-sm text-gray-500">
-								{t("checkIn.qrScanHint")}
-							</p>
-						)}
-					</>
-				)}
-
-				{success && (
-					<p className="text-sm font-medium text-green-700">
-						{t("checkIn.qrSuccess")}
-					</p>
-				)}
-
-				<button
-					type="button"
-					onClick={onClose}
-					className="mt-5 w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-				>
-					{t("checkIn.close")}
-				</button>
-			</div>
-		</div>
+				{t("checkIn.close")}
+			</button>
+		</Modal>
 	);
 }

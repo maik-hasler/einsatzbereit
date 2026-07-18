@@ -4,6 +4,7 @@ import type { Organization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
+import Modal from "./Modal";
 
 interface Props {
 	onClose: () => void;
@@ -29,16 +30,9 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const [logoPreview, setLogoPreview] = useState<string | null>(null);
 	const [logoError, setLogoError] = useState<string | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
+	const nameFieldRef = useRef<HTMLDivElement>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === "Escape") onClose();
-		}
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [onClose]);
 
 	useEffect(() => {
 		return () => {
@@ -103,231 +97,220 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	};
 
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden p-3 sm:p-4">
-			<button
-				type="button"
-				className="absolute inset-0 bg-black/50"
-				onClick={onClose}
-				tabIndex={-1}
-				aria-hidden="true"
-			/>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="create-org-dialog-title"
-				className="relative z-10 flex max-h-[min(85vh,720px)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+		<Modal
+			onClose={onClose}
+			labelledBy="create-org-dialog-title"
+			maxWidth="max-w-md"
+			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+			initialFocusRef={nameFieldRef}
+		>
+			<h2
+				id="create-org-dialog-title"
+				className="border-b border-gray-100 px-6 py-4 text-lg font-semibold"
 			>
-				<h2
-					id="create-org-dialog-title"
-					className="border-b border-gray-100 px-6 py-4 text-lg font-semibold"
-				>
-					{t("organization.create")}
-				</h2>
+				{t("organization.create")}
+			</h2>
 
-				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
-						<div>
-							<p className={labelClass}>{t("orgSettings.fieldLogo")}</p>
-							<div className="mt-1 flex items-center gap-4">
-								{logoPreview ? (
-									<img
-										src={logoPreview}
-										alt=""
-										className="h-14 w-14 rounded-lg object-contain ring-1 ring-gray-200"
-									/>
-								) : (
-									<span className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-100 text-xl font-semibold text-brand-700">
-										{name.charAt(0).toUpperCase() || "?"}
-									</span>
+			<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+				<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+					<div>
+						<p className={labelClass}>{t("orgSettings.fieldLogo")}</p>
+						<div className="mt-1 flex items-center gap-4">
+							{logoPreview ? (
+								<img
+									src={logoPreview}
+									alt=""
+									className="h-14 w-14 rounded-lg object-contain ring-1 ring-gray-200"
+								/>
+							) : (
+								<span className="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-100 text-xl font-semibold text-brand-700">
+									{name.charAt(0).toUpperCase() || "?"}
+								</span>
+							)}
+							<div>
+								<label
+									htmlFor="create-org-logo-upload"
+									className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+								>
+									{t("orgSettings.logoUpload")}
+								</label>
+								<input
+									ref={logoInputRef}
+									id="create-org-logo-upload"
+									type="file"
+									accept="image/jpeg,image/png,image/webp"
+									className="sr-only"
+									onChange={handleLogoChange}
+								/>
+								<p className="mt-1 text-xs text-gray-500">
+									{t("orgSettings.logoHint")}
+								</p>
+								{logoError && (
+									<p className="mt-1 text-xs text-red-600">{logoError}</p>
 								)}
-								<div>
-									<label
-										htmlFor="create-org-logo-upload"
-										className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-									>
-										{t("orgSettings.logoUpload")}
-									</label>
-									<input
-										ref={logoInputRef}
-										id="create-org-logo-upload"
-										type="file"
-										accept="image/jpeg,image/png,image/webp"
-										className="sr-only"
-										onChange={handleLogoChange}
-									/>
-									<p className="mt-1 text-xs text-gray-500">
-										{t("orgSettings.logoHint")}
-									</p>
-									{logoError && (
-										<p className="mt-1 text-xs text-red-600">{logoError}</p>
-									)}
-								</div>
 							</div>
 						</div>
+					</div>
 
-						<div>
-							<label
-								htmlFor="create-org-name"
-								className="mb-1 block text-sm font-medium"
-							>
-								{t("organization.nameLabel")}
-							</label>
-							<input
-								id="create-org-name"
-								type="text"
-								required
-								maxLength={100}
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								placeholder={t("organization.namePlaceholder")}
-								className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-							/>
-						</div>
+					<div ref={nameFieldRef}>
+						<label
+							htmlFor="create-org-name"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("organization.nameLabel")}
+						</label>
+						<input
+							id="create-org-name"
+							type="text"
+							required
+							maxLength={100}
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder={t("organization.namePlaceholder")}
+							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+						/>
+					</div>
 
-						<div>
-							<label
-								htmlFor="create-org-description"
-								className="mb-1 block text-sm font-medium"
-							>
-								{t("orgSettings.fieldDescription")}
-							</label>
-							<textarea
-								id="create-org-description"
-								rows={3}
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
-								className={textareaClass}
-							/>
-						</div>
+					<div>
+						<label
+							htmlFor="create-org-description"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("orgSettings.fieldDescription")}
+						</label>
+						<textarea
+							id="create-org-description"
+							rows={3}
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							className={textareaClass}
+						/>
+					</div>
 
-						<div>
-							<label
-								htmlFor="create-org-contact-email"
-								className="mb-1 block text-sm font-medium"
-							>
-								{t("orgSettings.fieldContactEmail")}
-							</label>
-							<input
-								id="create-org-contact-email"
-								type="email"
-								value={contactEmail}
-								onChange={(e) => setContactEmail(e.target.value)}
-								className={inputClass}
-							/>
-						</div>
+					<div>
+						<label
+							htmlFor="create-org-contact-email"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("orgSettings.fieldContactEmail")}
+						</label>
+						<input
+							id="create-org-contact-email"
+							type="email"
+							value={contactEmail}
+							onChange={(e) => setContactEmail(e.target.value)}
+							className={inputClass}
+						/>
+					</div>
 
-						<div>
-							<label
-								htmlFor="create-org-phone"
-								className="mb-1 block text-sm font-medium"
-							>
-								{t("orgSettings.fieldPhone")}
-							</label>
-							<input
-								id="create-org-phone"
-								type="tel"
-								value={contactPhone}
-								onChange={(e) => setContactPhone(e.target.value)}
-								className={inputClass}
-							/>
-						</div>
+					<div>
+						<label
+							htmlFor="create-org-phone"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("orgSettings.fieldPhone")}
+						</label>
+						<input
+							id="create-org-phone"
+							type="tel"
+							value={contactPhone}
+							onChange={(e) => setContactPhone(e.target.value)}
+							className={inputClass}
+						/>
+					</div>
 
-						<div>
-							<label
-								htmlFor="create-org-website"
-								className="mb-1 block text-sm font-medium"
-							>
-								{t("orgSettings.fieldWebsite")}
-							</label>
-							<input
-								id="create-org-website"
-								type="url"
-								value={website}
-								onChange={(e) => setWebsite(e.target.value)}
-								placeholder="https://"
-								className={inputClass}
-							/>
-						</div>
+					<div>
+						<label
+							htmlFor="create-org-website"
+							className="mb-1 block text-sm font-medium"
+						>
+							{t("orgSettings.fieldWebsite")}
+						</label>
+						<input
+							id="create-org-website"
+							type="url"
+							value={website}
+							onChange={(e) => setWebsite(e.target.value)}
+							placeholder="https://"
+							className={inputClass}
+						/>
+					</div>
 
-						<fieldset className="rounded-md border border-gray-200 p-4">
-							<legend className="px-1 text-sm font-medium text-gray-700">
-								{t("orgSettings.fieldAddress")}
-							</legend>
-							<div className="mt-3 grid grid-cols-3 gap-3">
-								<div className="col-span-2">
-									<label htmlFor="create-org-street" className={labelClass}>
-										{t("orgSettings.fieldStreet")}
-									</label>
-									<input
-										id="create-org-street"
-										value={street}
-										onChange={(e) => setStreet(e.target.value)}
-										className={inputClass}
-									/>
-								</div>
-								<div>
-									<label
-										htmlFor="create-org-house-number"
-										className={labelClass}
-									>
-										{t("orgSettings.fieldHouseNumber")}
-									</label>
-									<input
-										id="create-org-house-number"
-										value={houseNumber}
-										onChange={(e) => setHouseNumber(e.target.value)}
-										className={inputClass}
-									/>
-								</div>
-								<div>
-									<label htmlFor="create-org-zip" className={labelClass}>
-										{t("orgSettings.fieldZip")}
-									</label>
-									<input
-										id="create-org-zip"
-										maxLength={5}
-										value={zipCode}
-										onChange={(e) => setZipCode(e.target.value)}
-										className={inputClass}
-									/>
-								</div>
-								<div className="col-span-2">
-									<label htmlFor="create-org-city" className={labelClass}>
-										{t("orgSettings.fieldCity")}
-									</label>
-									<input
-										id="create-org-city"
-										value={city}
-										onChange={(e) => setCity(e.target.value)}
-										className={inputClass}
-									/>
-								</div>
+					<fieldset className="rounded-md border border-gray-200 p-4">
+						<legend className="px-1 text-sm font-medium text-gray-700">
+							{t("orgSettings.fieldAddress")}
+						</legend>
+						<div className="mt-3 grid grid-cols-3 gap-3">
+							<div className="col-span-2">
+								<label htmlFor="create-org-street" className={labelClass}>
+									{t("orgSettings.fieldStreet")}
+								</label>
+								<input
+									id="create-org-street"
+									value={street}
+									onChange={(e) => setStreet(e.target.value)}
+									className={inputClass}
+								/>
 							</div>
-						</fieldset>
+							<div>
+								<label htmlFor="create-org-house-number" className={labelClass}>
+									{t("orgSettings.fieldHouseNumber")}
+								</label>
+								<input
+									id="create-org-house-number"
+									value={houseNumber}
+									onChange={(e) => setHouseNumber(e.target.value)}
+									className={inputClass}
+								/>
+							</div>
+							<div>
+								<label htmlFor="create-org-zip" className={labelClass}>
+									{t("orgSettings.fieldZip")}
+								</label>
+								<input
+									id="create-org-zip"
+									maxLength={5}
+									value={zipCode}
+									onChange={(e) => setZipCode(e.target.value)}
+									className={inputClass}
+								/>
+							</div>
+							<div className="col-span-2">
+								<label htmlFor="create-org-city" className={labelClass}>
+									{t("orgSettings.fieldCity")}
+								</label>
+								<input
+									id="create-org-city"
+									value={city}
+									onChange={(e) => setCity(e.target.value)}
+									className={inputClass}
+								/>
+							</div>
+						</div>
+					</fieldset>
 
-						{error && <p className="text-sm text-red-600">{error}</p>}
-					</div>
+					{error && <p className="text-sm text-red-600">{error}</p>}
+				</div>
 
-					<div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-						<button
-							type="button"
-							onClick={onClose}
-							data-testid="modal-cancel"
-							className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
-						>
-							{t("organization.cancel")}
-						</button>
-						<button
-							type="submit"
-							disabled={loading}
-							data-testid="modal-submit"
-							className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
-						>
-							{loading ? t("organization.creating") : t("organization.submit")}
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
+				<div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
+					<button
+						type="button"
+						onClick={onClose}
+						data-testid="modal-cancel"
+						className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+					>
+						{t("organization.cancel")}
+					</button>
+					<button
+						type="submit"
+						disabled={loading}
+						data-testid="modal-submit"
+						className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
+					>
+						{loading ? t("organization.creating") : t("organization.submit")}
+					</button>
+				</div>
+			</form>
+		</Modal>
 	);
 }

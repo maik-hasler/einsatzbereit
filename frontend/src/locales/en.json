@@ -748,9 +748,6 @@
       "boundaryMessage": "An unexpected error occurred. You can try going back or reloading the page.",
       "goBack": "Go back",
       "reload": "Reload",
-      "500Title": "Server Error",
-      "500Message": "An unexpected server error occurred. Please try again later.",
-      "backHome": "Back to home",
       "dismiss": "Dismiss"
     },
     "onboarding": {

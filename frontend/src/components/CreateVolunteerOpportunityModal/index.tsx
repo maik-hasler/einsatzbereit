@@ -12,6 +12,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../ConfirmDialog";
+import Modal from "../Modal";
 import { Stepper } from "./shared";
 import BasicsStep from "./BasicsStep";
 import LocationStep from "./LocationStep";
@@ -168,7 +169,6 @@ export default function CreateVolunteerOpportunityModal({
 	const [recurrenceFrequency, setRecurrenceFrequency] = useState("Weekly");
 	const [recurrenceCount, setRecurrenceCount] = useState(1);
 
-	const dialogRef = useRef<HTMLDivElement>(null);
 	const bodyRef = useRef<HTMLDivElement>(null);
 
 	const occurrence = watch("occurrence");
@@ -230,60 +230,6 @@ export default function CreateVolunteerOpportunityModal({
 		if (isDirty) setShowDiscardConfirm(true);
 		else onClose();
 	}
-
-	useEffect(() => {
-		function handleKeyDown(e: KeyboardEvent) {
-			// While the discard-changes confirmation is open, it owns Escape
-			// (and its own focus trap) - let it handle its own keydowns
-			// instead of racing with this dialog's handler.
-			if (showDiscardConfirm) return;
-			if (e.key === "Escape") requestClose();
-		}
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [onClose, isDirty, showDiscardConfirm]);
-
-	// Move focus into the dialog on open, landing on the first field so a
-	// keyboard user lands somewhere useful. Step changes are announced via
-	// the aria-live region below (moving focus too, on top of that, risks a
-	// double/competing screen-reader announcement).
-	const isFirstFocusRef = useRef(true);
-	useEffect(() => {
-		if (!isFirstFocusRef.current) return;
-		isFirstFocusRef.current = false;
-		// Scoped to the step body (not the whole dialog) so the header's
-		// close button doesn't win over the step's first actual field.
-		bodyRef.current
-			?.querySelector<HTMLElement>(
-				'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-			)
-			?.focus();
-	}, [step]);
-
-	useEffect(() => {
-		function trapTab(e: KeyboardEvent) {
-			// The discard-changes confirmation traps its own Tab cycle while open.
-			if (showDiscardConfirm || e.key !== "Tab" || !dialogRef.current) return;
-			const focusables = Array.from(
-				dialogRef.current.querySelectorAll<HTMLElement>(
-					'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-				),
-			).filter((el) => el.offsetParent !== null);
-			if (focusables.length === 0) return;
-			const first = focusables[0];
-			const last = focusables[focusables.length - 1];
-			if (e.shiftKey && document.activeElement === first) {
-				e.preventDefault();
-				last.focus();
-			} else if (!e.shiftKey && document.activeElement === last) {
-				e.preventDefault();
-				first.focus();
-			}
-		}
-		document.addEventListener("keydown", trapTab);
-		return () => document.removeEventListener("keydown", trapTab);
-	}, [showDiscardConfirm]);
 
 	function applyOrgAddress() {
 		if (!orgAddress) return;
@@ -606,20 +552,15 @@ export default function CreateVolunteerOpportunityModal({
 		: pendingSlots.map((s) => ({ ...s, persisted: false as const }));
 
 	return (
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden p-3 sm:p-4">
-			<button
-				type="button"
-				className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-				onClick={requestClose}
-				tabIndex={-1}
-				aria-hidden="true"
-			/>
-			<div
-				ref={dialogRef}
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="create-opportunity-dialog-title"
-				className="relative z-10 flex min-w-0 w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+		<>
+			<Modal
+				onClose={requestClose}
+				labelledBy="create-opportunity-dialog-title"
+				maxWidth="max-w-xl"
+				className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				backdropClassName="bg-black/60 backdrop-blur-sm"
+				suspended={showDiscardConfirm}
+				initialFocusRef={bodyRef}
 			>
 				{/* Plain header, matching the app's other modals. */}
 				<div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
@@ -803,7 +744,7 @@ export default function CreateVolunteerOpportunityModal({
 						)}
 					</div>
 				</div>
-			</div>
+			</Modal>
 
 			{showDiscardConfirm && (
 				<ConfirmDialog
@@ -817,6 +758,6 @@ export default function CreateVolunteerOpportunityModal({
 					onClose={() => setShowDiscardConfirm(false)}
 				/>
 			)}
-		</div>
+		</>
 	);
 }

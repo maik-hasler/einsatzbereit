@@ -3,17 +3,9 @@ import type { TFunction } from "i18next";
 
 export const TOTAL_STEPS = 4;
 
-export const OCCURRENCE_VALUES = ["OneTime", "Recurring"] as const;
-export const PARTICIPATION_TYPE_VALUES = [
-	"Waitlist",
-	"IndividualContact",
-] as const;
-export const CHECK_IN_METHOD_VALUES = [
-	"None",
-	"QRCode",
-	"PINCode",
-	"Manual",
-] as const;
+const OCCURRENCE_VALUES = ["OneTime", "Recurring"] as const;
+const PARTICIPATION_TYPE_VALUES = ["Waitlist", "IndividualContact"] as const;
+const CHECK_IN_METHOD_VALUES = ["None", "QRCode", "PINCode", "Manual"] as const;
 
 /** Built inside the component (via useMemo) so validation messages are translated. */
 export function buildOpportunityFormSchema(t: TFunction) {
