@@ -5,17 +5,18 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Visual tests for the redesigned org app shell header requested in #742: the
-/// plain "Back to Einsatzbereit" text link became the Einsatzbereit logo (linking
-/// to the main site), an icon-led breadcrumb (home icon + current subpage label)
-/// was added, the org switcher stayed as a separate control, and the tab bar moved
-/// out of the <c>&lt;header&gt;</c> into its own landmark directly beneath it.
+/// Visual tests for the redesigned org app shell requested in #742 (and refined
+/// in the #744 review): the plain "Back to Einsatzbereit" text link became the
+/// Einsatzbereit logo (linking to the main site); the section tabs were removed
+/// from the header entirely and relocated into the org page's main content area;
+/// and an icon-led breadcrumb (home icon + current subpage label) now occupies
+/// the action bar directly beneath the header, where the tab bar used to sit.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task OrgAppShellHeader_ShowsLogoAndBreadcrumb_WithTabBarBelowHeader()
+	public async Task OrgAppShell_LogoInHeader_BreadcrumbInActionBar_TabsInMainContent()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -36,22 +37,28 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Expect(logoLink.Locator("img")).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Back to Einsatzbereit")).Not.ToBeVisibleAsync();
 
-		// Breadcrumb: home-icon link + the current subpage label ("Settings").
+		// Breadcrumb: home-icon link + the current subpage label ("Settings"). It
+		// lives in the action bar beneath the header, NOT inside <header> itself.
 		var breadcrumb = Page.GetByRole(AriaRole.Navigation, new() { Name = "Breadcrumb" });
 		await Expect(breadcrumb).ToBeVisibleAsync();
 		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Home" }))
 			.ToBeVisibleAsync();
 		await Expect(breadcrumb).ToContainTextAsync("Settings");
+		(await Page.Locator("header nav[aria-label='Breadcrumb']").CountAsync())
+			.Should().Be(0, "the breadcrumb moved out of the header into the action bar");
 
-		// The org switcher remains present as its own separate control.
+		// The org switcher remains present in the header as its own separate control.
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync();
 
-		// The tab bar is its own landmark and a sibling of <header>, not nested in it.
+		// The section tabs are gone from the header/action bar and now render inside
+		// the org page's main content area.
 		var tabBar = Page.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" });
 		await Expect(tabBar).ToBeVisibleAsync();
 		(await Page.Locator("header nav[aria-label='Organization sections']").CountAsync())
-			.Should().Be(0, "the tab bar must render beneath <header>, not inside it");
+			.Should().Be(0, "the tabs must not remain in the header");
+		(await Page.Locator("main nav[aria-label='Organization sections']").CountAsync())
+			.Should().Be(1, "the tabs moved into the org page's main content area");
 
 		// Active-tab logic is preserved: the Settings tab is marked current.
 		await Expect(tabBar.GetByRole(AriaRole.Link, new() { Name = "Settings" }))
