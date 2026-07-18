@@ -84,6 +84,11 @@ edit on your own initiative):
   product call as `needs-decision`, which `issue-triage` then leaves alone.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
+  `.claude/skills/deep-lens-review/` is a separate, on-demand routine: one
+  whole-repo lens (bugs, dead code, dead features, repo hygiene, docs drift,
+  test gaps, CI health, security, or contributor accessibility) reviewed in
+  full depth per run, report-only, never substituting for the diff-scoped
+  `self-review`.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
