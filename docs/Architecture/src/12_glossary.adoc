@@ -16,6 +16,9 @@ ifndef::imagesdir[:imagesdir: ../images]
 |arc42
 |A template for documenting software and system architectures, structured into 12 chapters. Widely used in German-speaking countries. See https://arc42.org.
 
+|Aspire (.NET Aspire)
+|.NET's local orchestration framework. The AppHost project provisions PostgreSQL, pgAdmin, Keycloak, MinIO, Mailpit, the backend API, and the Vite frontend with a single `dotnet run`.
+
 |CQRS
 |Command Query Responsibility Segregation. An architectural pattern that separates read operations (queries) from write operations (commands). In Einsatzbereit, implemented via MediatR in the Application layer.
 
@@ -31,17 +34,17 @@ ifndef::imagesdir[:imagesdir: ../images]
 |IAM
 |Identity and Access Management. The discipline of managing who users are (authentication) and what they are allowed to do (authorization). Handled by Keycloak in Einsatzbereit.
 
-|JWT
-|JSON Web Token. A signed, compact token format used to carry authentication and authorization claims. The backend validates the JWT's signature against Keycloak's public JWKS keys on every request.
-
 |JWKS
 |JSON Web Key Set. A published set of public keys from Keycloak used by the backend to verify JWT signatures without contacting Keycloak on every request.
+
+|JWT
+|JSON Web Token. A signed, compact token format used to carry authentication and authorization claims. The backend validates the JWT's signature against Keycloak's public JWKS keys on every request.
 
 |Keycloak
 |An open-source Identity and Access Management server. Used in Einsatzbereit for user authentication (OIDC), user management, and role-based access control.
 
-|MediatR
-|A .NET library implementing the Mediator pattern. Used in the Application layer to dispatch commands and queries to their respective handlers, decoupling the API layer from use case implementation.
+|Mediator (ISender)
+|The application's small in-house CQRS dispatcher (`ISender`). Routes commands and queries to their handlers, decoupling the API layer from use-case implementation. The project deliberately uses this instead of the external MediatR library.
 
 |NSwag
 |A .NET toolchain for generating API clients from OpenAPI specifications. The frontend TypeScript client (`api-client.ts`) is generated via NSwag and must never be hand-edited.
@@ -49,14 +52,17 @@ ifndef::imagesdir[:imagesdir: ../images]
 |OIDC
 |OpenID Connect. An identity layer built on top of OAuth 2.0. Used for the authentication flow between the frontend, Keycloak, and the backend.
 
-|Organizer
-|A user with the `organisator` role. Represents a person who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
-
 |Organization
 |A club, NGO, or other entity that posts volunteer opportunities on the platform.
 
+|Organizer
+|A user with the `organisator` role. Represents a person who manages an organization's volunteer opportunities. Test persona: Olaf (`olaf` / `olaf123`).
+
 |PKCE
 |Proof Key for Code Exchange. An extension to the OAuth 2.0 Authorization Code Flow that prevents authorization code interception attacks. Required for public clients (SPAs) where a client secret cannot be kept confidential.
+
+|TDR
+|Technical Debt Record. Captures a known technical debt or risk with its context, impact, severity, and proposed mitigation. Stored under `docs/TDRs/` and referenced from chapter 11.
 
 |Volunteer
 |A user who searches for and signs up for volunteer opportunities. Test persona: Vera (`vera` / `vera123`).

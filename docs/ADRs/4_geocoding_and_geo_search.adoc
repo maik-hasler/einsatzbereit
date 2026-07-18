@@ -22,7 +22,7 @@ refinement for radius queries. We do not adopt PostGIS.
 
 === Rationale
 * Geocoding once at write time keeps reads fast and deterministic, and avoids hammering Nominatim on every list request.
-* A bounding box on indexable nullable `address_latitude` / `address_longitude` columns is sufficient for the platform's expected dataset size; results are paginated regardless.
+* A bounding-box filter on plain nullable `address_latitude` / `address_longitude` columns (no dedicated spatial index) is sufficient for the platform's expected dataset size; results are paginated regardless.
 * Haversine refinement happens in memory only on the bbox-bounded candidate set, which is small by construction.
 * Nominatim has no API key, is free, and aligns with the project's open-source self-hosting principle. The HTTP client is throttled to one request per second per the public usage policy, with a short request timeout so unreachable hosts do not stall command handlers.
 
@@ -60,4 +60,4 @@ Raise `OpportunityCreated`, handle it asynchronously, update coordinates later.
 === Consequences
 * On-site opportunities created or updated while Nominatim is unreachable are persisted with null coordinates; they appear in the list but not on the map until a subsequent update succeeds.
 * Geocoding adds a per-request latency of up to one second plus network round-trip on create/update; acceptable for a low-write workload.
-* If the platform scales or expands beyond Germany / dense geographic filtering becomes a hotspot, revisit and consider PostGIS in a future TDR.
+* If the platform scales or expands beyond Germany, or dense geographic filtering becomes a hotspot, record the scaling risk as a TDR and, if triggered, capture the PostGIS adoption in a new ADR that supersedes this one.

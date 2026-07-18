@@ -11,11 +11,11 @@ The following table summarizes the key architectural decisions and how they addr
 |Quality Goal |Architectural Decision |Rationale
 
 |Simplicity
-|Clean Architecture with flat layer hierarchy (Domain → Application → Infrastructure → API)
+|Clean Architecture with a flat, inward-pointing layer hierarchy (API → Application → Domain; Infrastructure → Domain)
 |Clear separation of concerns without deep nesting. Each layer has a single, well-defined responsibility. New contributors can navigate the codebase without understanding the whole system.
 
 |Simplicity
-|CQRS via MediatR (commands and queries as C# records)
+|CQRS via a lightweight in-house mediator (commands and queries as C# records)
 |Each use case is encapsulated in one handler class. Finding the code for a feature means finding one file. No large service classes accumulating unrelated logic.
 
 |Appropriateness
@@ -36,7 +36,7 @@ The following table summarizes the key architectural decisions and how they addr
 
 |Maintainability
 |GitHub Actions CI/CD → GHCR
-|Automated builds, tests, and image publishing on every push to `main`. No manual release steps.
+|Builds and tests run automatically on every push and pull request to `main`; container images are built and published to GHCR on version tags. No manual release steps.
 
 |Usability
 |Keycloak for authentication and authorization
@@ -46,7 +46,7 @@ The following table summarizes the key architectural decisions and how they addr
 |React 19 SPA with Tailwind CSS 4
 |Modern, responsive single-page application. Fast navigation without full page reloads. Tailwind enables consistent styling without large CSS frameworks.
 
-|Openness
+|Open and sustainable (business goal)
 |GNU AGPL v3.0 license
 |Ensures all derivative works remain open source. Prevents the platform from being forked into a closed-source product.
 |===
@@ -61,10 +61,10 @@ The following table summarizes the key architectural decisions and how they addr
 |.NET 10, ASP.NET Core Minimal API
 
 |ORM
-|EF Core 9 with PostgreSQL provider
+|EF Core 10 with PostgreSQL provider
 
 |CQRS / Mediator
-|MediatR
+|Custom in-house mediator (`ISender`, no external library)
 
 |Authentication / Authorization
 |Keycloak 26.7.0, OIDC, JWT Bearer

@@ -94,6 +94,10 @@ include::../images/quality-tree.puml[]
 |QS-3.3
 |A new person takes over maintenance of the project.
 |Through standard tooling, automated pipelines, and the monorepo structure, onboarding into maintenance is possible without extensive training.
+
+|QS-3.4
+|A contributor opens a pull request.
+|The backend CI quality gate (`dotnet.yml`) returns a pass/fail verdict within about 10 minutes, keeping the contribution feedback loop short. See TDR-2.
 |===
 
 ==== Usability

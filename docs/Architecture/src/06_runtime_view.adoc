@@ -3,6 +3,8 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-runtime-view]]
 == Runtime View
 
+The following three scenarios cover the platform's most representative flows across the two primary personas: signing in, browsing opportunities (the main volunteer read path), and creating an opportunity (the main organizer write path).
+
 === User Login (OIDC Authorization Code Flow)
 
 A volunteer or organizer opens the application and authenticates via Keycloak using the OIDC Authorization Code Flow with PKCE.
@@ -17,12 +19,12 @@ Key aspects of this flow:
 
 * The frontend never handles passwords - authentication is fully delegated to Keycloak.
 * PKCE prevents authorization code interception attacks in the public client (SPA).
-* Tokens are stored in memory (not `localStorage`) to reduce XSS risk.
+* Tokens are persisted in `localStorage` via the OIDC client's `WebStorageStateStore`, so a page reload keeps the session (and end-to-end tests can capture it).
 * The access token is a short-lived JWT; the refresh token is used to obtain new access tokens silently.
 
 === Browse Volunteer Opportunities
 
-A volunteer opens the opportunities page. The frontend fetches the list from the backend API, which validates the JWT and queries PostgreSQL.
+A volunteer opens the opportunities page. The frontend fetches the list from the backend API, which queries PostgreSQL. Browsing opportunities is a public, anonymous read - no token is required.
 
 .Runtime: Browse Volunteer Opportunities
 [plantuml, "runtime-browse", png]
@@ -32,13 +34,13 @@ include::../images/runtime-browse.puml[]
 
 Key aspects:
 
-* Every API request carries the JWT Bearer token in the `Authorization` header.
-* The backend validates the token signature using Keycloak's public JWKS keys (cached locally).
+* Browsing opportunities is public: the list and detail endpoints allow anonymous access, so no token is required for this flow.
+* Authenticated endpoints (for example creating an opportunity or signing up) validate the JWT signature using Keycloak's public JWKS keys, cached locally.
 * No session state is held server-side - the backend is stateless.
 
 === Create Volunteer Opportunity
 
-An organizer fills out the opportunity form and submits it. The backend validates the JWT, checks the `organisator` role, and persists the new opportunity.
+An organizer fills out the opportunity form and submits it. The backend validates the JWT, checks the `organisator` role, geocodes the address, and persists the new opportunity.
 
 .Runtime: Create Volunteer Opportunity
 [plantuml, "runtime-create", png]
@@ -48,6 +50,7 @@ include::../images/runtime-create.puml[]
 
 Key aspects:
 
-* Role authorization (`organisator`) is enforced at the endpoint level via ASP.NET Core authorization policies.
-* The MediatR command handler performs input validation before writing to the database.
+* Role authorization (`organisator`) is enforced declaratively at the endpoint; the command handler additionally verifies that the caller organizes the target organization.
+* Request-payload validation happens in the API endpoint before the command is dispatched via `ISender`; the handler then enforces domain invariants.
+* For on-site opportunities the handler geocodes the address synchronously via Nominatim (see ADR-4); if Nominatim is unreachable the opportunity is still saved, without coordinates, and appears in the list but not on the map.
 * The response includes the created opportunity's ID so the frontend can redirect to the detail page.

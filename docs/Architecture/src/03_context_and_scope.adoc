@@ -45,7 +45,7 @@ include::../images/technical-context.puml[]
 
 |Frontend → Backend API
 |Outbound
-|The SPA communicates with the backend via a versioned REST API over HTTPS. All requests carry a JWT Bearer token for authentication.
+|The SPA communicates with the backend via a versioned REST API over HTTPS. Authenticated requests carry a JWT Bearer token; public browsing (opportunity search and detail views) is anonymous.
 
 |Frontend → Keycloak
 |Outbound
@@ -57,11 +57,23 @@ include::../images/technical-context.puml[]
 
 |Backend → PostgreSQL
 |Outbound
-|The backend persists all application data (volunteer opportunities, organizations, engagements) in PostgreSQL via EF Core.
+|The backend persists structured application data (volunteer opportunities, organizations, engagements) in PostgreSQL via EF Core. Binary assets are stored in object storage, not the database.
+
+|Backend → Nominatim (OpenStreetMap)
+|Outbound
+|The backend geocodes opportunity addresses via the public OpenStreetMap Nominatim service, throttled to about one request per second. The frontend additionally calls it for city autocomplete and loads OSM map tiles. See ADR-4.
+
+|Backend → SMTP mail server
+|Outbound
+|The backend sends notification and reminder emails via SMTP (Mailpit locally, a real SMTP server in production).
+
+|Backend → Object storage (MinIO / S3)
+|Outbound
+|The backend stores binary assets (organization logos, user avatars, opportunity banners) in S3-compatible object storage.
 
 |GitHub Actions → GHCR
 |Outbound
-|CI/CD pipelines build Docker images on push to `main` and publish them to GitHub Container Registry.
+|On a version tag (`vX.Y.Z` or `vX.Y.Z-rc.N`), CI builds Docker images and publishes them to GitHub Container Registry; RC tags additionally deploy to staging.
 |===
 
 .Mapping: Business Interface → Technical Interface
@@ -70,14 +82,14 @@ include::../images/technical-context.puml[]
 |Business Interaction |Technical Realization
 
 |Volunteer searches for opportunities
-|`GET /v1/volunteer-opportunities` with optional filter parameters, authenticated via JWT
+|`GET /v1/volunteer-opportunities` with optional filter parameters (public, anonymous)
 
 |Volunteer signs up for an opportunity
-|`POST /v1/engagements` with opportunity ID, authenticated via JWT
+|`POST /v1/volunteer-opportunities/{id}/engagements`, authenticated via JWT (requires `user` role)
 
 |Organizer creates a volunteer opportunity
 |`POST /v1/volunteer-opportunities` with opportunity data, requires `organisator` role in JWT
 
 |Organizer manages their opportunities
-|`GET`, `PUT`, `DELETE /v1/volunteer-opportunities/{id}`, requires `organisator` role
+|`GET /v1/volunteer-opportunities/{id}` is public; `PUT` and `DELETE` require the `organisator` role
 |===

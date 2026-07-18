@@ -1,31 +1,39 @@
 @startuml CI/CD Pipeline
 
-title Deployment View - CI/CD (GitHub Actions → GHCR)
+title Deployment View - CI/CD (GitHub Actions -> GHCR)
 
 actor "Developer" as dev
 participant "GitHub\n(main branch / tag)" as github
 participant "GitHub Actions" as ci
 participant "GitHub Container\nRegistry (GHCR)" as ghcr
+participant "Staging host\n(Docker Compose)" as staging
 
 == Quality Gate (every push to main / PR) ==
 
 dev -> github: Push commit or open PR
-github -> ci: Trigger workflow
-ci -> ci: Backend: dotnet build + dotnet test\n(Testcontainers, PostgreSQL)
-ci -> ci: Frontend: npx playwright test\n(full Docker Compose stack)
-ci -> ci: Docs: asciidoctor build\n(arc42 → HTML5)
+github -> ci: Trigger workflows
+ci -> ci: Backend (dotnet.yml): build, then\nUnit + Architecture + Integration + Visual tests\n(Integration/Visual boot the Aspire stack)
+ci -> ci: Frontend (frontend.yml): lint + build
+ci -> ci: Lint (lint.yml): ASCII dashes + EditorConfig
+
+== Docs (push to main, docs/** only) ==
+
+dev -> github: Push to main (docs/**)
+github -> ci: Trigger docs.yml
+ci -> ci: asciidoctor build (arc42 -> HTML5)
 ci -> github: Deploy docs to GitHub Pages
 
-== Image Publishing (version tag push) ==
+== Release (version tag push) ==
 
-dev -> github: Push tag (e.g. frontend/v1.0.0)
-github -> ci: Trigger release workflow
-ci -> ci: Build Docker image for tagged component
-ci -> ghcr: Push image\nghcr.io/maik-hasler/einsatzbereit/<component>:v1.0.0
+dev -> github: Push tag vX.Y.Z (or vX.Y.Z-rc.N)
+github -> ci: Trigger publish.yml
+ci -> ci: Run full test suite
+ci -> ghcr: Build + push backend, frontend, keycloak images\nghcr.io/maik-hasler/einsatzbereit-<component>
+ci -> staging: Deploy RC to staging (SSH: docker compose pull + up)\nhealth-gated, auto-rollback on failure
 
 note over ci,ghcr
-	Each component is versioned independently.
-	Tags: frontend/v*, backend/v*, keycloak/v*
+	One tag (vX.Y.Z) releases all three components at the same version.
+	RC tags (-rc.N) publish images and deploy to staging without moving 'latest'.
 	See VERSIONING.md for the full strategy.
 end note
 

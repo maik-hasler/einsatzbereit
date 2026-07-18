@@ -8,13 +8,12 @@ participant "Backend API\n(.NET 10)" as backend
 database "PostgreSQL" as db
 
 user -> frontend: Opens opportunities page
-frontend -> backend: GET /v1/volunteer-opportunities\n[Authorization: Bearer <access_token>]
-backend -> backend: Validate JWT signature\n(Keycloak JWKS, cached)
-backend -> backend: Dispatch GetVolunteerOpportunitiesQuery\nvia MediatR
-backend -> db: SELECT * FROM volunteer_opportunities\nWHERE is_active = true
+frontend -> backend: GET /v1/volunteer-opportunities\n(public, no token required)
+backend -> backend: Dispatch GetVolunteerOpportunitiesQuery\nvia ISender
+backend -> db: SELECT ... WHERE status = 'Published'\nAND at least one time slot is upcoming
 db -> backend: Result set
 backend -> backend: Map to response DTOs
-backend -> frontend: 200 OK - List<VolunteerOpportunityDto> (JSON)
+backend -> frontend: 200 OK - PagedList<VolunteerOpportunitySummary> (JSON)
 frontend -> user: Render opportunity cards
 
 @enduml

@@ -5,24 +5,29 @@ title Runtime View - Create Volunteer Opportunity
 actor "Organizer" as organizer
 participant "Frontend\n(React SPA)" as frontend
 participant "Backend API\n(.NET 10)" as backend
+participant "Geocoding\n(Nominatim)" as geocoding
 database "PostgreSQL" as db
 
 organizer -> frontend: Fill out opportunity form
 organizer -> frontend: Submit form
-frontend -> backend: POST /v1/volunteer-opportunities\n[Authorization: Bearer <access_token>]\n{title, description, location, date, ...}
+frontend -> backend: POST /v1/volunteer-opportunities\n[Authorization: Bearer <access_token>]\n{title, description, organizationId, isRemote, address?, occurrence, ...}
 backend -> backend: Validate JWT signature
 backend -> backend: Check 'organisator' role claim
-backend -> backend: Dispatch CreateVolunteerOpportunityCommand\nvia MediatR
-backend -> backend: Validate request payload
+backend -> backend: Validate request payload (endpoint)
+backend -> backend: Dispatch CreateVolunteerOpportunityCommand\nvia ISender
+backend -> backend: Verify caller organizes the organization
+backend -> geocoding: Geocode address (on-site opportunities)
+geocoding -> backend: Coordinates (or none if unreachable)
 backend -> db: INSERT INTO volunteer_opportunities
 db -> backend: Created record (with generated ID)
-backend -> frontend: 201 Created\n{id, title, ...}
+backend -> frontend: 200 OK\n{id, title, ...}
 frontend -> organizer: Show success notification\nRedirect to opportunity detail page
 
 note over backend
 	If JWT is invalid: 401 Unauthorized
 	If role check fails: 403 Forbidden
 	If validation fails: 400 Bad Request
+	If Nominatim is unreachable: opportunity saved without coordinates
 end note
 
 @enduml

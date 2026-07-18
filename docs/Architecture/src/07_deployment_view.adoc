@@ -3,7 +3,9 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-deployment-view]]
 == Deployment View
 
-=== Infrastructure Level 1: Local Development (.NET Aspire)
+Einsatzbereit runs in three environments: the local developer stack (orchestrated by .NET Aspire), the CI/CD pipeline (GitHub Actions), and the deployed staging/production host.
+
+=== Local Development (.NET Aspire)
 
 .Deployment View - Local Development
 [plantuml, "deployment-local", png]
@@ -12,43 +14,53 @@ include::../images/deployment-local.puml[]
 ....
 
 Motivation::
-The entire stack runs locally via the .NET Aspire AppHost: a single `dotnet run --project backend/src/Aspire/AppHost` command provisions Postgres, Keycloak, the backend API, and the Vite frontend. This ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
+The entire stack runs locally via the .NET Aspire AppHost: a single `dotnet run --project backend/src/Aspire/AppHost` command provisions PostgreSQL, pgAdmin, Keycloak, MinIO, and Mailpit as containers, and runs the backend API and Vite frontend as host processes from source. This ensures environment parity across all contributor machines and eliminates manual setup of databases, Keycloak, or service dependencies.
 
 Quality and Performance Characteristics::
-Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak realm configuration is imported automatically on first start from a versioned JSON file.
+Local development is optimized for fast iteration, not production performance. All services run on `localhost` with no TLS. Keycloak runs the upstream image with a dev-file database and a relaxed, auto-imported realm; the backend and frontend run from source with hot reload.
 
 .Service Allocation
-[cols="2,1,1,2" options="header"]
+[cols="2,2,1,2" options="header"]
 |===
-|Service |Image |Port |Notes
+|Service |Image / Source |Port |Notes
 
 |Frontend
-|`ghcr.io/maik-hasler/einsatzbereit/frontend`
+|Vite dev server (from source)
 |4321
-|Vite dev server with hot module replacement
+|Hot module replacement
 
 |Backend API
-|`ghcr.io/maik-hasler/einsatzbereit/backend`
+|ASP.NET Core project (from source)
 |5000
-|ASP.NET Core, runs EF Core migrations on startup
+|Runs EF Core migrations on startup (Development)
 
 |Keycloak
-|`ghcr.io/maik-hasler/einsatzbereit/keycloak`
+|`quay.io/keycloak/keycloak:26.6.1`
 |8080
-|Custom image with pre-imported `einsatzbereit` realm
+|Upstream image, dev-file DB, realm auto-imported (relaxed for local)
 
 |PostgreSQL
-|`postgres:18`
+|`postgres:18` (Aspire default)
 |5432
-|Two databases: `einsatzbereit` (app data) and `keycloak` (realm data)
+|Application database `einsatzbereit`
 
 |pgAdmin
 |`dpage/pgadmin4`
 |5050
 |Pre-configured server connection to PostgreSQL
+
+|Mailpit
+|`ghcr.io/axllent/mailpit`
+|1080 / 1025
+|Captures outbound email (web UI on 1080, SMTP on 1025)
+
+|MinIO
+|`quay.io/minio/minio`
+|9000 / 9001
+|S3-compatible object storage (API on 9000, console on 9001)
 |===
 
-=== Infrastructure Level 2: CI/CD Pipeline
+=== CI/CD Pipeline
 
 .Deployment View - CI/CD (GitHub Actions)
 [plantuml, "deployment-cicd", png]
@@ -56,19 +68,24 @@ Local development is optimized for fast iteration, not production performance. A
 include::../images/deployment-cicd.puml[]
 ....
 
-The CI/CD pipeline runs on GitHub Actions and covers two concerns: quality gates and image publishing.
+The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gates on every change, docs deployment, and release-time image publishing plus staging deployment.
 
-==== Quality Gate (on every push / PR)
+==== Quality Gate (on every push / PR to `main`)
 
-* Backend: `dotnet build` + `dotnet test` (integration tests via Testcontainers)
-* E2E: `dotnet test backend/tests/VisualTests` (TUnit.Playwright against the full Aspire-provisioned stack)
-* Architecture docs: Asciidoctor build → GitHub Pages deployment
+The backend workflow (`dotnet.yml`) runs `dotnet build`, then four test projects sequentially via `dotnet run`:
+
+* `Application.UnitTests` and `ArchitectureTests` - fast, no containers.
+* `IntegrationTests` and `VisualTests` - both boot the Aspire AppHost stack (the same stack as local development) under Docker; `VisualTests` adds Playwright end-to-end checks.
+
+A parallel `format-check` job verifies `dotnet format`. The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. Typical `dotnet.yml` runtime is about 10 minutes, dominated by `VisualTests` - see TDR-2.
+
+The architecture docs build (`docs.yml`) is a separate, main-branch-only deployment to GitHub Pages, not a pull-request gate.
 
 ==== Image Publishing (on tag push)
 
-Images are published to GitHub Container Registry (GHCR) on version tag pushes.
-A single Git tag triggers the release of all components with the same version:
+Images are published to GitHub Container Registry (GHCR) on version tag pushes. A single Git tag triggers the release of all components at the same version:
 
+.Published Images
 [cols="1,2,2" options="header"]
 |===
 |Component |Tag format |Example
@@ -86,4 +103,61 @@ A single Git tag triggers the release of all components with the same version:
 |`v1.0.0`
 |===
 
-See [VERSIONING.md](../../VERSIONING.md) for the full versioning and publishing strategy.
+Release candidate tags (`v{semver}-rc.N`) publish images and deploy to staging without moving the `latest` tag. See link:https://github.com/maik-hasler/einsatzbereit/blob/main/VERSIONING.md[VERSIONING.md] for the full versioning and publishing strategy.
+
+=== Staging and Production
+
+.Deployment View - Staging / Production
+[plantuml, "deployment-staging", png]
+....
+include::../images/deployment-staging.puml[]
+....
+
+Motivation::
+The deployed environment serves real users at `*.maik-hasler.de`. It runs `docker-compose.yml` on a single host, behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt). This is the environment every release candidate is verified against before a change is considered done.
+
+Quality and Performance Characteristics::
+All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with tiered retention. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`).
+
+.Service Allocation
+[cols="2,2,2,2" options="header"]
+|===
+|Service |Image |Hostname |Notes
+
+|Frontend
+|`einsatzbereit-frontend:staging`
+|`einsatzbereit.maik-hasler.de`
+|Static SPA assets
+
+|Backend API
+|`einsatzbereit-backend:staging`
+|`api.maik-hasler.de`
+|`ASPNETCORE_ENVIRONMENT=Staging`; migrates on startup
+
+|Keycloak
+|`einsatzbereit-keycloak:staging`
+|`login.maik-hasler.de`
+|Custom image with committed realm; PostgreSQL-backed
+
+|PostgreSQL
+|`postgres:18`
+|internal
+|Two databases: `einsatzbereit` and `keycloak`
+
+|db-backup
+|`prodrigestivill/postgres-backup-local:18`
+|internal
+|Daily backups, retention 7 days / 4 weeks / 6 months
+
+|MinIO
+|`quay.io/minio/minio`
+|`storage.maik-hasler.de`
+|S3-compatible object storage
+
+|Traefik
+|host-level (shared)
+|`*.maik-hasler.de`
+|Reverse proxy, TLS termination via ACME / Let's Encrypt
+|===
+
+Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`). The deploy is health-gated (backend `/alive` and `/health`) and rolls back to the previous images on failure.

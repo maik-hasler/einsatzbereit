@@ -1,0 +1,152 @@
+== 2. Slow CI Pipeline
+
+- *Author:* @maik-hasler
+- *Version:* identified in v1.0.0
+- *Date:* 2026-07-18
+- *Status:* Analyzed
+
+=== Description
+
+The backend CI workflow (`.github/workflows/dotnet.yml`) is the slowest quality gate on the project. It runs on every pull request and every push to `main` that touches `backend/**`, `frontend/**`, or `keycloak/**`, and it must pass before a change can be merged or released. The workflow builds the backend and then runs four test projects sequentially in a single job; the two that boot the full Aspire stack under Docker - `IntegrationTests` and especially `VisualTests` (TUnit.Playwright) - dominate its runtime.
+
+The debt is not that the pipeline is unacceptably slow today, but that its runtime grows steadily and is concentrated in a single, ever-expanding job with no mechanism to keep it bounded. Left unmanaged, feedback latency keeps rising as the `VisualTests` suite grows.
+
+=== Empirical Timing
+
+Measured from the GitHub Actions API over recent `main` and pull-request runs (July 2026).
+
+.Workflow wall-clock duration
+[cols="2,1,2,3" options="header"]
+|===
+|Workflow |Median |Range |Notes
+
+|`dotnet.yml` (backend build + test)
+|~9.6 min
+|8.5 - 10.5 min
+|PR/push quality gate; the bottleneck (n=23)
+
+|`frontend.yml` (lint + build)
+|~1.1 min
+|1.0 - 1.3 min
+|runs independently; not a concern
+
+|`docs.yml` (AsciiDoc + Pages)
+|~0.9 min
+|0.7 - 4.2 min
+|docs-only path filter
+
+|`publish.yml` (full suite + image build/push + deploy-staging)
+|~11.7 min
+|on tag push only
+|same test suite plus Docker build and deploy
+|===
+
+Within a representative `dotnet.yml` run, the `build-and-test` job (~10.3 min) breaks down as follows.
+
+.`build-and-test` job step breakdown (representative run)
+[cols="3,1,1" options="header"]
+|===
+|Step |Duration |Share
+
+|Setup (.NET, Node, pnpm, NuGet cache restore, dependency install)
+|~60 s
+|~10 %
+
+|Build backend
+|~55 s
+|~9 %
+
+|Pre-pull Docker images
+|~13 s
+|~2 %
+
+|`Application.UnitTests`
+|~3 s
+|<1 %
+
+|`ArchitectureTests`
+|~3 s
+|<1 %
+
+|`IntegrationTests` (Aspire + Docker)
+|~124 s
+|~20 %
+
+|`VisualTests` (Aspire + Docker + Playwright)
+|~350 s
+|~57 %
+|===
+
+`VisualTests` alone accounts for roughly 57 % of the job; together the two Aspire-backed test projects (`IntegrationTests` and `VisualTests`) account for about 77 % (~8 minutes). A separate `format-check` job runs in parallel in ~1.2 min and is not on the critical path.
+
+*Trend:* the same workflow measured ~4.5 min in late May 2026, ~5-6 min in mid-June, and ~8-10 min in July - it has roughly doubled in about two months as end-to-end coverage grew.
+
+[NOTE]
+====
+Earlier project documentation described this workflow as taking "~20-30 minutes". That figure does not match the measured data (median ~9.6 min) and has been corrected in `.github/AGENTS.md` alongside this record. The real risk is the growth trajectory, not the present absolute duration.
+====
+
+=== Links
+
+- ADR-1: Monorepo - the path filters that decide which workflow runs stem from the monorepo strategy.
+- TDR-1: Rate Limiting - the previous backend quality-gate / robustness debt.
+- QualityGoal Maintainability - scenario QS-3.4 (the quality gate returns a verdict within a bounded time) is the quality target this debt threatens.
+
+=== Impact
+
+==== Technical Impact
+
+- *Developer feedback loop:* Every pull request and push waits ~10 minutes for the backend gate before it is known green; release candidates wait on `publish.yml` (~12 min) for the same suite. This is the single largest source of iteration latency.
+- *Suite scalability:* All four test projects run sequentially in one job with no sharding or parallelism, so runtime grows linearly with every new `VisualTests` scenario - the suite cannot be extended without directly extending the critical path.
+- *Maintainability:* Because `VisualTests` boots the full Aspire stack under Docker, a slow or flaky run is expensive to reproduce and diagnose, and any re-run costs the full ~10 minutes.
+
+==== Business Impact
+
+- *Cost control:* Longer runs consume more GitHub Actions minutes per pull request - relevant for a non-profit, volunteer-driven project with a minimal budget. Any parallelization that adds runners trades wall-clock time for total compute minutes.
+- *Contributor experience:* Slow feedback raises the barrier to casual weekend contributions (persona Contributor Caro), working against the project's low-entry-barrier goal.
+
+=== Symptoms
+
+- *Dominant single step:* One step (`VisualTests`) consumes the majority of every backend CI run.
+- *Rising duration over time:* Median run time roughly doubled over two months with no infrastructure change.
+- *Full re-run cost:* A single flaky end-to-end assertion forces a complete ~10 minute re-run.
+- *Stale documentation:* Earlier docs quoted a "20-30 minute" runtime that no longer reflected reality, a sign that pipeline cost was not being tracked.
+
+=== Severity
+
+Low to Medium.
+
+The absolute runtime (~10 min) is currently tolerable and well below the point of blocking work. The debt is the trajectory and structure: a single, unbounded, sequential job dominated by one test project, growing steadily. Severity rises toward High as the `VisualTests` suite expands or if the project opens up to more contributors who each feel the feedback latency.
+
+=== Proposed Solution
+
+Ordered from cheapest quick win to larger strategic change. The project's Appropriateness and minimal-maintenance goals argue for stopping at the first options that keep runtime bounded.
+
+Quick wins (low effort, low risk):
+
+- *Keep the fast checks first:* `Application.UnitTests` and `ArchitectureTests` (~3 s each) already give near-instant feedback and run before the expensive Docker steps; keep that ordering so obvious failures fail fast.
+- *Confirm caching is effective:* NuGet (`actions/cache`) and pnpm (`setup-node` cache) are already configured. Verify cache hit rates in the logs; the setup phase (~60 s) is already small, so there is little further to gain - do not over-invest here.
+- *Skip Docker layer caching:* Image pull is only ~13 s (pre-pull step), so Docker layer caching is not worth the added workflow complexity at current numbers.
+
+Structural (medium effort):
+
+- *Split the two Aspire test projects into parallel jobs:* Run `IntegrationTests` and `VisualTests` as separate jobs so their wall-clock overlaps instead of summing. The critical path drops from ~10 min to roughly ~8 min (the longer job plus setup), at the cost of roughly doubled compute minutes and a duplicated build per job (mitigate by sharing the build output as an artifact).
+- *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker.
+
+Strategic (larger change, defer until justified):
+
+- *Move end-to-end tests off the per-PR critical path:* Keep build, unit, architecture, and integration tests on every pull request (fast and deterministic) and run the full `VisualTests` suite on a merge queue or nightly schedule instead of every push. This is the largest feedback-time win and best fits the Maintainability goal, at the cost of slightly later end-to-end signal.
+- *Larger or self-hosted runners:* GitHub-hosted larger runners are paid (conflicts with the minimal-budget constraint); a self-hosted runner fits the self-hosting principle (ADR-3 rationale) but adds operational burden that the single-maintainer constraint discourages. Revisit only if the suite outgrows the hosted two-core runner.
+
+=== Consequences of Delay
+
+Deferring is acceptable in the short term - the pipeline is not yet a hard blocker. However:
+
+- Runtime keeps climbing with each new end-to-end scenario, and the fix becomes more disruptive the larger the single job grows.
+- Contributor feedback latency erodes the low-entry-barrier goal precisely as the project tries to attract more contributors.
+- The gap between documented ("20-30 min") and actual (~10 min) runtime showed that pipeline cost was going untracked; without a tracked budget, regressions go unnoticed until they hurt.
+
+=== Dependencies
+
+- *Test isolation:* Sharding or parallelizing depends on `VisualTests` scenarios being independent and safe to run against separate Aspire stacks.
+- *Budget:* Any option that adds runners or minutes depends on the project's tolerance for additional GitHub Actions cost.

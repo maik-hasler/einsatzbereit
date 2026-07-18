@@ -26,7 +26,8 @@ docs/
 ├── ADRs/
 │   ├── 1_monorepository.adoc   Accepted 2026-03-23
 │   ├── 2_arc42.adoc            Accepted 2026-03-25
-│   └── 3_keycloak.adoc         Accepted 2026-03-25
+│   ├── 3_keycloak.adoc         Accepted 2026-03-25
+│   └── 4_geocoding_and_geo_search.adoc  Accepted 2026-05-13
 ├── TDRs/                       Technical debt/risk records - see TDR Conventions below
 └── notes/                      Loose notes feeding the project wiki - see notes/README.md
 ```
