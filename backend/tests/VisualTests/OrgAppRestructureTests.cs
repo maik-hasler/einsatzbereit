@@ -72,6 +72,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		if (await createBtn.CountAsync() == 0)
 			return; // a previous retry already gave vera an org - skip
 
+		await Expect(createBtn.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await createBtn.First.ClickAsync();
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(createDialog).ToBeVisibleAsync(new() { Timeout = 10_000 });
