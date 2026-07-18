@@ -55,16 +55,20 @@ internal sealed class NotificationReadRepository(
 		var opportunityIdsFromEngagements = engagementToOpportunity.Values.ToHashSet();
 		var allOpportunityIds = opportunityIdsFromEngagements.Union(directOpportunityIds).ToHashSet();
 
-		// Batch-fetch opportunity titles
+		// Batch-fetch opportunity titles and their owning organization (the
+		// latter is needed to build the org-app deep link below; both are
+		// null for a since-deleted opportunity).
 		Dictionary<Guid, string> opportunityTitles = [];
+		Dictionary<Guid, Guid> opportunityOrganizations = [];
 		if (allOpportunityIds.Count > 0)
 		{
 			var opportunityIdVOs = allOpportunityIds.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow()).ToList();
 			var opportunityRows = await dbContext.VolunteerOpportunitiesQuery
 				.Where(o => opportunityIdVOs.Contains(o.Id))
-				.Select(o => new { o.Id, o.Title })
+				.Select(o => new { o.Id, o.Title, o.OrganizationId })
 				.ToListAsync(cancellationToken);
 			opportunityTitles = opportunityRows.ToDictionary(x => x.Id.Value, x => x.Title);
+			opportunityOrganizations = opportunityRows.ToDictionary(x => x.Id.Value, x => x.OrganizationId.Value);
 		}
 
 		return notifications.Select(n =>
@@ -78,7 +82,9 @@ internal sealed class NotificationReadRepository(
 				opportunityTitles.TryGetValue(opportunityId, out relatedTitle);
 
 				actionUrl = n.Kind is NotificationKind.EngagementCreated or NotificationKind.EngagementWithdrawn
-					? $"/volunteer-opportunities/{opportunityId}/engagements"
+					? (opportunityOrganizations.TryGetValue(opportunityId, out var organizationId)
+						? $"/app/{organizationId}/opportunities/{opportunityId}/engagements"
+						: null)
 					: "/my-engagements";
 			}
 			else if (!EngagementKinds.Contains(n.Kind))

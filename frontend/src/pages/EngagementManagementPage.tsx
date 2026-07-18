@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, useOutletContext, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -9,20 +9,20 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
-import OrgContextBanner from "../components/OrgContextBanner";
 import QRScannerModal from "../components/QRScannerModal";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
+import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
+	const { org } = useOutletContext<OrgAppContext>();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 	const [opportunity, setOpportunity] =
@@ -31,22 +31,6 @@ export default function EngagementManagementPage() {
 		opportunity?.title
 			? `${t("engagementManagement.title")} - ${opportunity.title}`
 			: t("engagementManagement.title"),
-	);
-	usePageToolbar(
-		opportunity
-			? [
-					{ label: t("breadcrumb.home"), href: "/" },
-					{
-						label: opportunity.organizationName,
-						href: `/organizations/${opportunity.organizationId}`,
-					},
-					{
-						label: opportunity.title,
-						href: `/volunteer-opportunities/${opportunityId}`,
-					},
-					{ label: t("engagementManagement.title") },
-				]
-			: [{ label: t("breadcrumb.home"), href: "/" }],
 	);
 
 	const STATUS_LABELS: Record<string, string> = {
@@ -188,10 +172,9 @@ export default function EngagementManagementPage() {
 		<>
 			<div className="mb-6">
 				{opportunity && (
-					<OrgContextBanner
-						organizationId={opportunity.organizationId}
-						organizationName={opportunity.organizationName}
-					/>
+					<p className="mb-1 text-sm text-gray-500">
+						{org.name} &middot; {opportunity.title}
+					</p>
 				)}
 				<h1 className="text-2xl font-bold text-gray-900">
 					{t("engagementManagement.title")}

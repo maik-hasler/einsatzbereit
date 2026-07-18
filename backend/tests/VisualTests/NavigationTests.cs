@@ -158,6 +158,39 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_WithOpportunitiesTabActive()
+	{
+		// #751: engagement management moved into the org app as a nested route
+		// under /app/:organizationId/opportunities/:opportunityId/engagements -
+		// the org switcher and tab nav must stay visible (with "Opportunities"
+		// active) instead of swapping to the public site header/footer, and
+		// leaving via the tab nav must return to the opportunities list.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
+		if (await manageLink.CountAsync() == 0)
+			return; // organizer has no published opportunities in seed - skip
+
+		await manageLink.ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var opportunitiesTab = Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true });
+		await Expect(opportunitiesTab).ToHaveAttributeAsync("aria-current", "page");
+
+		await opportunitiesTab.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities$"), new() { Timeout = 15_000 });
+	}
+
+	[Test]
 	public async Task OrganizationSwitcher_SelectingAnOrgRow_NavigatesToTheSameTabInThatOrg()
 	{
 		// #702: the switcher moved out of the global header into the /app shell,

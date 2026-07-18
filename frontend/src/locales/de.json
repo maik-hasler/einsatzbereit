@@ -152,7 +152,6 @@
       "deleteError": "Fehler beim Löschen",
       "availableTimeSlots": "Verfügbare Zeitslots",
       "maxParticipants": "(max. {{count}} Personen)",
-      "manageApplications": "Bewerbungen verwalten →",
       "joinWaitlist": "Zeitslot auswählen",
       "expressInterest": "Interesse bekunden",
       "signupSuccess": "Anmeldung erfolgreich! Deine Bewerbung wurde übermittelt.",
@@ -168,7 +167,6 @@
       "fewSpotsLeft_other": "Nur noch {{count}} Plätze!",
       "noSpotsLeft": "Dieser Bedarf ist aktuell ausgebucht.",
       "draftBadge": "Entwurf",
-      "draftNotice": "Dieser Bedarf ist ein Entwurf und noch nicht öffentlich sichtbar.",
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
@@ -320,8 +318,7 @@
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
-      "unknownError": "Unbekannter Fehler",
-      "contextBanner": "Verwaltung von {{name}}"
+      "unknownError": "Unbekannter Fehler"
     },
     "orgApp": {
       "backToSite": "Zurueck zu Einsatzbereit",
@@ -335,14 +332,6 @@
       "emptyDesc": "Erstelle eine Organisation, um Einsatzmöglichkeiten zu veröffentlichen und dein Team zu verwalten.",
       "pickerTitle": "Organisation auswählen",
       "pickerDesc": "Du organisierst mehr als eine Organisation - wähle aus, welche du verwalten möchtest."
-    },
-    "orgEngagements": {
-      "title": "Bewerbungen",
-      "loading": "Wird geladen…",
-      "error": "Fehler: {{message}}",
-      "noOpportunities": "Keine offenen Einsatzmöglichkeiten",
-      "noOpportunitiesHint": "Erstelle eine Einsatzmöglichkeit, um Bewerbungen zu erhalten.",
-      "manageEngagements": "Bewerbungen verwalten"
     },
     "orgOpportunities": {
       "loading": "Wird geladen…",

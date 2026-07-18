@@ -25,7 +25,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "CheckInPinNone", "None");
+		var (opportunityId, organizationId) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "CheckInPinNone", "None");
 
 		var pinRequested = false;
 		await Page.RouteAsync("**/*check-in-pin*", async route =>
@@ -35,7 +35,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		});
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}/engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		pinRequested.Should().BeFalse(
@@ -50,7 +50,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "CheckInPinPin", "PINCode");
+		var (opportunityId, organizationId) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "CheckInPinPin", "PINCode");
 
 		var pinResponseStatuses = new List<int>();
 		Page.Response += (_, response) =>
@@ -60,7 +60,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		};
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}/engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		pinResponseStatuses.Should().ContainSingle().Which.Should().Be(200);
@@ -84,7 +84,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		return body.GetProperty("access_token").GetString()!;
 	}
 
-	private static async Task<string> CreateIndividualContactOpportunityAsync(
+	private static async Task<(string OpportunityId, string OrganizationId)> CreateIndividualContactOpportunityAsync(
 		Uri keycloak, Uri backend, string label, string checkInMethod)
 	{
 		var suffix = Guid.NewGuid().ToString("N");
@@ -105,7 +105,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		// aggregate (unlike GetOrganizations, which projects to a DTO), so
 		// its strongly-typed OrganizationId record struct serializes as a
 		// nested { "value": "<guid>" } object rather than a plain string.
-		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
@@ -120,6 +120,6 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		});
 		oppResponse.EnsureSuccessStatusCode();
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
-		return opportunity.GetProperty("id").GetString()!;
+		return (opportunity.GetProperty("id").GetString()!, organizationId);
 	}
 }

@@ -65,9 +65,14 @@ export default function OrgAppLayout() {
 
 	usePageTitle(org?.name ?? t("orgDashboard.title"));
 
+	// Matches the tab segment directly rather than endsWith(), so nested
+	// routes under a tab (e.g. opportunities/:opportunityId/engagements) still
+	// keep that tab active.
+	const tabSegment = location.pathname
+		.slice(`/app/${organizationId}/`.length)
+		.split("/")[0];
 	const activeTabKey =
-		TABS.find((tab) => location.pathname.endsWith(`/${tab.key}`))?.key ??
-		"dashboard";
+		TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
 	const activeTab = TABS.find((tab) => tab.key === activeTabKey) ?? TABS[0];
 
 	const displayName = (auth.user?.profile?.name ??

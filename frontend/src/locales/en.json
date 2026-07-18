@@ -152,7 +152,6 @@
       "deleteError": "Error deleting",
       "availableTimeSlots": "Available time slots",
       "maxParticipants": "(max. {{count}} people)",
-      "manageApplications": "Manage applications →",
       "joinWaitlist": "Select a slot",
       "expressInterest": "Express interest",
       "signupSuccess": "Sign-up successful! Your application has been submitted.",
@@ -168,7 +167,6 @@
       "fewSpotsLeft_other": "Only {{count}} spots left!",
       "noSpotsLeft": "This opportunity is currently full.",
       "draftBadge": "Draft",
-      "draftNotice": "This opportunity is a draft and not publicly visible yet.",
       "publish": "Publish",
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
@@ -320,8 +318,7 @@
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
-      "unknownError": "Unknown error",
-      "contextBanner": "Managing {{name}}"
+      "unknownError": "Unknown error"
     },
     "orgApp": {
       "backToSite": "Back to Einsatzbereit",
@@ -335,14 +332,6 @@
       "emptyDesc": "Create an organization to start publishing volunteer opportunities and managing your team.",
       "pickerTitle": "Choose an organization",
       "pickerDesc": "You organize more than one organization - pick which one to manage."
-    },
-    "orgEngagements": {
-      "title": "Engagement Overview",
-      "loading": "Loading…",
-      "error": "Error: {{message}}",
-      "noOpportunities": "No open opportunities",
-      "noOpportunitiesHint": "Create a volunteer opportunity to start receiving applications.",
-      "manageEngagements": "Manage engagements"
     },
     "orgOpportunities": {
       "loading": "Loading…",

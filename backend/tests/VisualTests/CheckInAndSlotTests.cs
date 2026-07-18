@@ -138,14 +138,15 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Open the edit wizard (owner-only control - its presence also confirms
-		// olaf is recognised as the organizer of this opportunity).
-		var editBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
-		await Expect(editBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await editBtn.ClickAsync();
+		// Open the edit wizard from the org app's Opportunities tab - editing
+		// (like engagement management) now lives exclusively there, not on
+		// the public detail page (#751).
+		var oppRow = Page.Locator("li", new() { HasText = oppTitle });
+		await Expect(oppRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await oppRow.GetByTestId("opportunity-edit").ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		// Step 3 (Format): switch the check-in method to PINCode and type a PIN.
@@ -164,10 +165,11 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The organizer's manage-applications page surfaces the PIN exactly.
-		var manageBtn = Page.GetByText("Manage applications →");
-		await Expect(manageBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await manageBtn.ClickAsync();
+		// The organizer's manage-applications page (nested in the org app)
+		// surfaces the PIN exactly.
+		var manageLink = oppRow.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
+		await Expect(manageLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var pinDisplay = Page.Locator("p.font-mono");
