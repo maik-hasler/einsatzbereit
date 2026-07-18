@@ -1,7 +1,9 @@
 # wiki/notes/
 
-Loose notes and ideas about Einsatzbereit as plain Markdown or text (e.g.
-`2026-07-16-idea.md`). Read-only by convention once added: a file here is not
+Loose notes and ideas about Einsatzbereit as plain Markdown or text, named
+`N-title.md` with an ever-incrementing counter (e.g. `1-idea.md`,
+`2-other-idea.md`) - check the highest existing number in this folder before
+picking the next one. Read-only by convention once added: a file here is not
 edited or deleted to "correct" it after the fact. A later note that
 contradicts an earlier one is added as its own note, and `/ingest` records the
 supersession in `../bundle/`, not here.
