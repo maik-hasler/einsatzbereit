@@ -73,11 +73,6 @@ html {
 	background: none;
 }
 
-/*
- * Brand-Farbpalette - hier ändern, um die gesamte App umzufärben.
- * Aktuell: Helles Grün (Tailwind green). Tausche die Hex-Werte
- * gegen eine andere Palette und alles passt sich an.
- */
 /* ── datetime-local / date / time input normalization ────────────────────── */
 input[type="datetime-local"],
 input[type="date"],
