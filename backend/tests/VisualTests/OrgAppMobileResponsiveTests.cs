@@ -78,12 +78,16 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		foreach (var y in tabYPositions.Skip(1))
 			Math.Abs(y - firstY).Should().BeLessThan(2, "tabs must stay on a single row, not wrap");
 
-		// The tab bar itself must be horizontally scrollable so an overflowing
-		// tab set is reachable rather than clipped.
-		var overflows = await tabBar.EvaluateAsync<bool>(
-			"el => el.firstElementChild.scrollWidth > el.firstElementChild.clientWidth");
-		overflows.Should().BeTrue(
-			"the tab row should overflow its container width at 375px so overflow-x scrolling is meaningful");
+		// The tab row must be configured to scroll horizontally rather than wrap
+		// or clip once a translation/tab set overflows the 375px container -
+		// checked via the CSS mechanism itself (overflow-x: auto) rather than
+		// scrollWidth > clientWidth, since whether today's specific English tab
+		// labels happen to overflow at this exact viewport is a font-rendering
+		// detail, not the thing this test should be pinned to.
+		var overflowX = await tabBar.EvaluateAsync<string>(
+			"el => getComputedStyle(el.firstElementChild).overflowX");
+		overflowX.Should().Be("auto",
+			"the tab row must allow horizontal scrolling so a longer/translated tab set stays reachable");
 	}
 
 	[Test]
