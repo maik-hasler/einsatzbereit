@@ -128,7 +128,7 @@ export default function OrgOpportunitiesPage() {
 						: "border-gray-100"
 				}`}
 			>
-				<div className="flex items-start justify-between gap-3">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">
 						<div className="flex items-center gap-2">
 							<Link
@@ -163,7 +163,7 @@ export default function OrgOpportunitiesPage() {
 							</p>
 						)}
 					</div>
-					<div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+					<div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
 						<button
 							type="button"
 							onClick={() => void openEdit(item.id)}
@@ -220,13 +220,15 @@ export default function OrgOpportunitiesPage() {
 
 	return (
 		<div>
-			<div className="mb-6 flex items-center justify-between gap-3">
-				<h1 className="text-2xl font-bold text-gray-900">{org.name}</h1>
+			<div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<h1 className="min-w-0 break-words text-2xl font-bold text-gray-900">
+					{org.name}
+				</h1>
 				<button
 					type="button"
 					onClick={() => setShowCreate(true)}
 					data-testid="create-opportunity-btn"
-					className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none"
+					className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none sm:w-auto"
 				>
 					{t("orgOverview.createOpportunity")}
 				</button>
