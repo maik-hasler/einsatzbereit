@@ -42,7 +42,7 @@ what's missing from `docs/notes/`.
 0. Glob `docs/notes/**/*` recursively - files and dirs, not just top-level
    entries. This step must run and its output must be visible before any
    completeness statement.
-0b. For each path returned, grep `wiki/**/*.md` for a reference to it - in
+0b. For each path returned, grep `wiki/bundle/**/*.md` for a reference to it - in
     particular each page's `# Citations` section. Zero hits = "uncited."
 0c. Run `git status --short docs/notes/` to catch anything added or
     staged mid-session. Re-run this again immediately before the final
@@ -79,13 +79,14 @@ Then work through the K uncited sources one at a time using Mode B below.
    grepping the source directly would answer as fast, it isn't worth a page.
 4. Copy `wiki/TEMPLATE.md` for new pages. Fill in `type` and `tags` (both
    required) and the recommended fields, place it under the most specific
-   existing directory (create one if none fits). Every new or edited page
-   lists what it was built from in `# Citations`: `docs/notes/<path>`, a
+   existing directory in `wiki/bundle/` (create one if none fits). Every new
+   or edited page lists what it was built from in `# Citations`:
+   `docs/notes/<path>`, a
    repo path (optionally `@<sha>`), or `#NNN` / a full issue-or-PR URL.
 5. **Relatedness check - mandatory, same rigor as Mode A's coverage audit.**
    A page that stands alone when it didn't have to is the failure mode this
    step exists to catch:
-   - Grep `wiki/**/*.md` for this page's `tags` values and 2-3 obvious
+   - Grep `wiki/bundle/**/*.md` for this page's `tags` values and 2-3 obvious
      keywords from its title/description, before writing `# Related`, not
      from memory of what's "probably" in the bundle.
    - For every genuinely related page found (real shared topic, not an
@@ -96,10 +97,10 @@ Then work through the K uncited sources one at a time using Mode B below.
      `# Related\nNone found.` rather than leaving it blank. `validate.py`
      rejects a missing `# Related` heading but can't tell a lazy "None
      found" from a real one - the grep has to actually happen.
-6. Update every `index.md` between the new/changed file and `wiki/index.md`.
-   One line per entry. Split a section past ~20-30 entries into its own
-   sub-index.
-7. Append one entry to `wiki/log.md` (or the nearest sub-log), newest-first,
+6. Update every `index.md` between the new/changed file and
+   `wiki/bundle/index.md`. One line per entry. Split a section past ~20-30
+   entries into its own sub-index.
+7. Append one entry to `wiki/bundle/log.md` (or the nearest sub-log), newest-first,
    ISO 8601 date, bold action prefix: `**Added**`, `**Updated**`, `**Fixed**`,
    `**Superseded**`.
 8. Run `python wiki/scripts/validate.py`. This only checks frontmatter shape

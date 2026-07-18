@@ -17,7 +17,7 @@ timestamp: <ISO 8601 datetime>       # recommended
 
 # Related
 <!-- bundle-relative links to other concept pages this one connects to (a
-     leading `/` resolves from wiki/, the bundle root). Required on every
+     leading `/` resolves from wiki/bundle/, the bundle root). Required on every
      page - if the search in AGENTS.md's Ingest step 5 genuinely finds
      nothing, write "None found." rather than leaving this blank. -->
 

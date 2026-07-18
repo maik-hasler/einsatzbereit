@@ -1,15 +1,15 @@
 ---
 name: query
-description: Answer a question using the project wiki (wiki/) instead of general knowledge - search wiki/index.md first, read only the relevant concept pages, cite them, and file genuinely new synthesis back into the wiki. Use when the user asks a question this bundle should be able to answer.
+description: Answer a question using the project wiki (wiki/) instead of general knowledge - search wiki/bundle/index.md first, read only the relevant concept pages, cite them, and file genuinely new synthesis back into the wiki. Use when the user asks a question this bundle should be able to answer.
 argument-hint: [question]
 ---
 
 ## Query: $ARGUMENTS
 
 Paths here are relative to the repo root (Claude Code's working directory) -
-e.g. `wiki/index.md`, `wiki/scripts/validate.py`.
+e.g. `wiki/bundle/index.md`, `wiki/scripts/validate.py`.
 
-1. Read `wiki/index.md` (and any sub-indexes it points to) first and pick
+1. Read `wiki/bundle/index.md` (and any sub-indexes it points to) first and pick
    the handful of pages that actually look relevant. Don't scan the whole
    bundle.
 2. Read only those pages and answer with citations to the specific files

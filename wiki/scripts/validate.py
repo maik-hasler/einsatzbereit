@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Conformance checker for the wiki/ bundle (an in-house OKF v0.1 layout).
+"""Conformance checker for the wiki/bundle/ OKF v0.1 bundle.
 
-Every file under wiki/ other than the reserved/scaffolding names below must
-start with a YAML frontmatter block that includes a non-empty `type` field
-and a non-empty `tags` list, and must contain a `# Related` section (even if
-its body is just "None found."). Repo scaffolding (README.md, AGENTS.md,
-CLAUDE.md, TEMPLATE.md, WRITING_STYLE.md, requirements.txt, scripts/) is
+The bundle is the `wiki/bundle/` subfolder: index.md, log.md, and the
+concept pages. Every `.md` under it other than the reserved index.md/log.md
+must start with a YAML frontmatter block that includes a non-empty `type`
+field and a non-empty `tags` list, and must contain a `# Related` section
+(even if its body is just "None found."). Everything at wiki/'s own root
+(README.md, AGENTS.md, CLAUDE.md, TEMPLATE.md, WRITING_STYLE.md,
+requirements.txt, scripts/) is scaffolding, lives outside the bundle, and is
 never scanned.
 """
 
@@ -18,8 +20,7 @@ import yaml
 RELATED_HEADING = re.compile(r"^# Related\s*$", re.MULTILINE)
 
 RESERVED_NAMES = {"index.md", "log.md"}
-SCAFFOLD_FILES = {"README.md", "AGENTS.md", "CLAUDE.md", "TEMPLATE.md", "WRITING_STYLE.md"}
-SKIP_DIRS = {"scripts", "node_modules", ".venv", "venv"}
+SKIP_DIRS = {"node_modules", ".venv", "venv"}
 
 
 def frontmatter(text: str):
@@ -43,8 +44,6 @@ def find_concept_files(bundle_root: Path):
         if any(part in SKIP_DIRS for part in rel.parts):
             continue
         if path.name in RESERVED_NAMES:
-            continue
-        if rel.parent == Path(".") and path.name in SCAFFOLD_FILES:
             continue
         yield path
 
@@ -78,21 +77,21 @@ def check_concept(path: Path) -> list[str]:
 def check_root_index(bundle_root: Path) -> list[str]:
     index = bundle_root / "index.md"
     if not index.exists():
-        return ["wiki/index.md: missing bundle root index"]
+        return ["wiki/bundle/index.md: missing bundle root index"]
     raw = frontmatter(read_normalized(index))
     if raw is None:
         return []
     try:
         yaml.safe_load(raw)
     except yaml.YAMLError as exc:
-        return [f"wiki/index.md: invalid YAML frontmatter ({exc})"]
+        return [f"wiki/bundle/index.md: invalid YAML frontmatter ({exc})"]
     return []
 
 
 def main() -> int:
-    bundle_root = Path(__file__).resolve().parent.parent
+    bundle_root = Path(__file__).resolve().parent.parent / "bundle"
     if not bundle_root.is_dir():
-        print("OKF validation failed: wiki/ directory is missing.")
+        print("OKF validation failed: wiki/bundle/ directory is missing.")
         return 1
 
     errors = check_root_index(bundle_root)
@@ -102,7 +101,7 @@ def main() -> int:
         errors.extend(check_concept(path))
 
     if not (bundle_root / "log.md").exists():
-        errors.append("wiki/log.md: missing bundle root log")
+        errors.append("wiki/bundle/log.md: missing bundle root log")
 
     if errors:
         print(f"OKF validation failed ({len(errors)} error(s)):")
@@ -110,7 +109,7 @@ def main() -> int:
             print(f"  - {error}")
         return 1
 
-    print(f"OKF validation passed: {len(concept_files)} concept file(s) checked in wiki/.")
+    print(f"OKF validation passed: {len(concept_files)} concept file(s) checked in wiki/bundle/.")
     return 0
 
 

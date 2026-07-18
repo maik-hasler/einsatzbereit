@@ -45,18 +45,20 @@ not wiki-scoped, available in every session).
 wiki/
 ├── AGENTS.md          Ingest/query/lint workflow, vendor-neutral.
 ├── CLAUDE.md          `@AGENTS.md` - one-line import so Claude Code loads it.
-├── TEMPLATE.md        Copy into wiki/ to start a new concept by hand.
+├── TEMPLATE.md        Copy into bundle/ to start a new concept by hand.
 ├── WRITING_STYLE.md   Prose rule for every write to this bundle.
-├── index.md           Bundle root index.
-├── log.md             Chronological, newest-first record of changes.
 ├── requirements.txt   `pyyaml`, for scripts/validate.py.
-└── scripts/
-    └── validate.py    Conformance checker for this bundle.
+├── scripts/
+│   └── validate.py    Conformance checker for the bundle.
+└── bundle/            The OKF bundle - the only part validate.py scans.
+    ├── index.md       Bundle root index.
+    ├── log.md         Chronological, newest-first record of changes.
+    └── ...            Concept pages (and sub-directories) live here.
 ```
 
-Every `.md` file directly under `wiki/` other than the files listed above is
-a concept document; every `.md` file under a subdirectory that isn't
-`scripts/` is a concept document too.
+Everything at `wiki/`'s own root is scaffolding. The bundle is the
+`wiki/bundle/` subfolder: every `.md` under it other than `index.md` and
+`log.md` (at any level) is a concept document.
 
 ## Status
 

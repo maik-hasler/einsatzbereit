@@ -10,11 +10,12 @@ just an editor. OKF fixes only the storage layout; the operations below
 restore the self-building behavior of the "LLM wiki" pattern this format is
 based on. Follow them whenever you touch this bundle.
 
-This file assumes your working directory is `wiki/` (the bundle root): paths
-like `scripts/validate.py` and `TEMPLATE.md` are bundle-relative, while paths
-outside the bundle carry their repo-root prefix (`docs/notes/...`,
-`.claude/...`). The `/ingest`, `/query`, `/lint` skills instead run from the
-repo root and spell every path `wiki/...`.
+This file assumes your working directory is `wiki/`: scaffolding paths like
+`scripts/validate.py` and `TEMPLATE.md` are wiki-relative, the bundle itself
+lives in the `bundle/` subfolder (`bundle/index.md`, `bundle/log.md`, and the
+concept pages), and paths outside `wiki/` carry their repo-root prefix
+(`docs/notes/...`, `.claude/...`). The `/ingest`, `/query`, `/lint` skills
+instead run from the repo root and spell every path `wiki/...`.
 
 See @WRITING_STYLE.md for the prose rule - applies to every write, not just
 ingest.
@@ -42,14 +43,14 @@ this file and the matching skill.
   issue #x") rather than something a lint pass can claim complete.
 - **GitHub issues and PRs** - cited directly by `#NNN` or full URL. Same
   best-effort coverage caveat as the repo channel.
-- **`wiki/`** - the OKF bundle itself. Its root is `wiki/index.md` /
-  `wiki/log.md`; everything else under it that isn't `scripts/` is a
-  concept file or directory. You own this layer entirely.
+- **`wiki/bundle/`** - the OKF bundle itself. Its root is
+  `wiki/bundle/index.md` / `wiki/bundle/log.md`; every other `.md` under it
+  is a concept file or directory. You own this layer entirely.
 
-Everything else at `wiki/`'s own root (`README.md`, `AGENTS.md`, `CLAUDE.md`,
-`TEMPLATE.md`, `WRITING_STYLE.md`, `requirements.txt`, `scripts/`)
-is repo scaffolding - not part of the bundle, not scanned by
-`scripts/validate.py`.
+Everything at `wiki/`'s own root (`README.md`, `AGENTS.md`, `CLAUDE.md`,
+`TEMPLATE.md`, `WRITING_STYLE.md`, `requirements.txt`, `scripts/`) is repo
+scaffolding - not part of the bundle, and not scanned by
+`scripts/validate.py`, which reads only `bundle/`.
 
 ## Ingest - when given a new source, or asked what's missing
 
@@ -104,9 +105,9 @@ coverage claim across these two channels; it isn't one this bundle can make.
 3. Before creating a page, check it actually *compresses* the source. If the
    concept is small enough that grepping the source directly would answer
    as fast, it isn't worth a page.
-4. Copy `TEMPLATE.md` into `wiki/` for new pages. Fill in `type` and `tags`
-   (both required) and the recommended fields, and place it under the most
-   specific existing directory (create one if none fits). Every new or
+4. Copy `TEMPLATE.md` into `wiki/bundle/` for new pages. Fill in `type` and
+   `tags` (both required) and the recommended fields, and place it under the
+   most specific existing directory in `wiki/bundle/` (create one if none fits). Every new or
    edited page must list what it was built from in its `# Citations`
    section, in whichever of the three channel forms applies:
    `docs/notes/<path>`, a repo path (optionally `@<sha>`), or `#NNN` / a
@@ -114,7 +115,7 @@ coverage claim across these two channels; it isn't one this bundle can make.
 5. **Relatedness check - mandatory, not optional, same rigor as the
    coverage audit above.** A page that stands alone when it didn't have to
    is exactly the failure mode this step exists to catch:
-   - Grep `wiki/**/*.md` for the new/edited page's `tags` values and 2-3
+   - Grep `wiki/bundle/**/*.md` for the new/edited page's `tags` values and 2-3
      obvious keywords from its title/description. Do this before writing
      the `# Related` section, not from memory of what's "probably" in the
      bundle.
@@ -129,10 +130,11 @@ coverage claim across these two channels; it isn't one this bundle can make.
      blank or skipping it. `scripts/validate.py` rejects a concept page
      with no `# Related` heading at all, but it cannot tell a lazy "None
      found" from a genuine one - the grep has to actually happen.
-6. Update every `index.md` between the new/changed file and `wiki/index.md`.
-   Keep entries to one line each. If a section grows past ~20-30 entries,
-   split it into its own sub-index and link it from the parent.
-7. Append one entry to `wiki/log.md` (or the nearest sub-log), newest-first,
+6. Update every `index.md` between the new/changed file and
+   `wiki/bundle/index.md`. Keep entries to one line each. If a section grows
+   past ~20-30 entries, split it into its own sub-index and link it from the
+   parent.
+7. Append one entry to `wiki/bundle/log.md` (or the nearest sub-log), newest-first,
    ISO 8601 date, bold action prefix: `**Added**`, `**Updated**`, `**Fixed**`,
    `**Superseded**`.
 8. Run `python scripts/validate.py` (from `wiki/`) before finishing -
@@ -145,7 +147,7 @@ coverage claim across these two channels; it isn't one this bundle can make.
 
 ## Query - when asked a question about this bundle's knowledge
 
-1. Read `wiki/index.md` (and any sub-indexes it points to) first and pick the
+1. Read `wiki/bundle/index.md` (and any sub-indexes it points to) first and pick the
    handful of pages that actually look relevant. Don't scan the whole bundle.
 2. Read only those pages and answer with citations to the specific files
    used.
@@ -162,8 +164,8 @@ coverage claim across these two channels; it isn't one this bundle can make.
 
 1. Run `python scripts/validate.py` and fix anything it flags - this only
    checks frontmatter schema and `# Related`-section presence on files
-   already inside `wiki/`; it has no knowledge of `docs/notes/` and cannot
-   detect missing ingestion.
+   already inside `wiki/bundle/`; it has no knowledge of `docs/notes/` and
+   cannot detect missing ingestion.
 2. **Source-coverage audit**, scoped to the `docs/notes/` channel (the only
    fully enumerable one). Run this every single pass, unconditionally.
    Glob `docs/notes/**/*` fresh, re-check `git status --short docs/notes/`,
@@ -183,7 +185,7 @@ coverage claim across these two channels; it isn't one this bundle can make.
    for source coverage. A page whose `# Related` section says "None found"
    despite an obvious shared-tag match is a **false "none found"** and gets
    reported the same way a false "already ingested" would.
-4. Look for orphan concepts under `wiki/`: files no `index.md` links to.
+4. Look for orphan concepts under `wiki/bundle/`: files no `index.md` links to.
    Separate from step 3's unlinked-but-otherwise-findable pairs - an orphan
    isn't in any index at all.
 5. Look for stale claims: pages whose source material has since changed but
@@ -208,8 +210,8 @@ coverage claim across these two channels; it isn't one this bundle can make.
   list quietly breaks that mechanism for the page. Reuse an existing `type`
   string from elsewhere in the bundle rather than inventing a
   near-duplicate.
-- `index.md` and `log.md` are reserved at every level under `wiki/`; every
-  other `.md` file under `wiki/` (outside `scripts/`) is a concept.
+- `index.md` and `log.md` are reserved at every level under `wiki/bundle/`;
+  every other `.md` file under `wiki/bundle/` is a concept.
 - Every concept page has a `# Related` section (see Ingest step 5) -
   `scripts/validate.py` enforces its presence, not its honesty.
 - Keep prose terse - this bundle is read by agents at least as often as
