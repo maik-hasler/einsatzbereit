@@ -51,11 +51,44 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 **Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
 
 ### Publish flow (backend/frontend)
-1. Run full test suite (same as CI workflow)
+1. `require-green` gate (see below) - proves CI already passed on this tree; no re-test here
 2. Login to GHCR
 3. Extract version from tag (strips component prefix)
 4. Build and push Docker image
 5. Tag with version + `latest` (if not RC)
+
+### Release green gate (`require-green` in `publish.yml`)
+
+`publish.yml` no longer re-runs the test suite. Instead its first job,
+`require-green`, is a hard precondition for every publish job: it proves the
+deployed tree is green and fails closed otherwise. This removes ~8 min of
+duplicated backend tests + frontend lint/build from every deploy - the same
+tests already ran once on the PR / `main`.
+
+How it decides:
+- Resolves the tag commit to the **tested tree**. Handles both tag shapes: a tag
+  on a real commit (its own sha carries the CI run) and the empty `release: vX`
+  commit (byte-identical tree to its parent - it walks first-parents while the
+  tree is unchanged).
+- Requires a **successful `dotnet.yml` run** for that tree, from `main` or
+  `release/*`. While CI is still running it polls (up to ~45 min) rather than
+  failing; a completed non-success blocks the deploy.
+- `frontend.yml` is block-if-present: it must be green **if** it ran on the tree
+  (a backend-only change legitimately has no frontend run).
+
+**Recovery when the gate fails closed** ("No successful dotnet.yml run for tree
+... within deadline"): the deployed commit was never tested by `dotnet.yml`
+(push trigger is `main`-only). In order of preference:
+1. Route the fix through a normal PR to `main`, let CI go green, then cut
+   `release/vX.Y.Z-rc.N` **from that green `main` commit`** (the intended flow -
+   the empty-commit tree-walk then finds the parent's proof).
+2. For a hotfix committed directly on a `release/*` branch, dispatch CI on it
+   first: `gh workflow run dotnet.yml --ref <branch>`, wait for green, then
+   promote.
+
+Do not "cut the release branch from a feature branch" - a PR's CI proof lives on
+the throwaway `refs/pull/N/merge` sha, which the gate cannot see, so it fails
+closed. Always cut from `main`.
 
 ## Cutting a release from Claude Code on the web
 

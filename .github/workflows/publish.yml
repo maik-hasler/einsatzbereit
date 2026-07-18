@@ -14,8 +14,140 @@ permissions:
   packages: write
 
 jobs:
+  require-green:
+    name: Require green CI for tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      # Full-suite CI workflow whose success is the authoritative proof that the
+      # deployed tree is green. This filename (and dotnet.yml's push:main trigger)
+      # are load-bearing for the release gate - see .github/AGENTS.md
+      # "Release green gate".
+      CI_WORKFLOW: dotnet.yml
+      # Component CI that must not be red IF it ran on this tree. Path-filtered,
+      # so a legitimate absence (e.g. a backend-only change) is fine.
+      BLOCK_IF_PRESENT: "frontend.yml"
+      # Branches whose CI run we accept as proof for the deployed tree.
+      ALLOWED_BRANCHES: "main release/"
+      # Fail closed if no successful CI_WORKFLOW run appears within this window
+      # (covers a tag cut right after merge while CI is still running).
+      GATE_DEADLINE_SECONDS: "2700"
+      GATE_POLL_SECONDS: "30"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 10
+
+      - name: Require successful CI for the deployed tree
+        run: |
+          set -uo pipefail
+
+          # 1. Resolve tree-identical candidate commits for BOTH tag shapes.
+          #    Recent shape: the tag sits on a real commit; its own sha carries
+          #    the CI run. Older shape: an empty "release: vX" commit whose tree
+          #    is byte-identical to its parent - walk first-parents while the tree
+          #    is unchanged (also survives doubly-stacked empty commits).
+          HEAD_SHA="$(git rev-parse HEAD)"
+          HEAD_TREE="$(git rev-parse "HEAD^{tree}")"
+          CANDIDATES=("$HEAD_SHA"); sha="$HEAD_SHA"
+          for _ in $(seq 1 8); do
+            parent="$(git rev-parse --verify --quiet "${sha}^" || true)"
+            [ -z "$parent" ] && break
+            [ "$(git rev-parse "${parent}^{tree}")" != "$HEAD_TREE" ] && break
+            CANDIDATES+=("$parent"); sha="$parent"
+          done
+          echo "Deployable tree: $HEAD_TREE"
+          echo "Candidate commits: ${CANDIDATES[*]}"
+
+          branch_allowed() {
+            local b="$1" p
+            for p in $ALLOWED_BRANCHES; do
+              case "$b" in "$p"|"$p"*) return 0 ;; esac
+            done
+            return 1
+          }
+
+          # Latest COMPLETED run of a workflow across the candidate shas.
+          # Emits "<conclusion>\t<head_branch>"; empty if none completed.
+          latest_completed_run() {
+            local wf="$1" s out=""
+            for s in "${CANDIDATES[@]}"; do
+              out="${out}$(gh api --paginate \
+                "repos/${REPO}/actions/workflows/${wf}/runs?head_sha=${s}&per_page=100" \
+                --jq '.workflow_runs[] | select(.status=="completed")
+                      | [.created_at, .conclusion, .head_branch] | @tsv' 2>/dev/null)"$'\n'
+            done
+            printf '%s\n' "$out" | awk 'NF' | sort -r | head -n1 | cut -f2,3
+          }
+
+          any_pending_run() {
+            local wf="$1" s n
+            for s in "${CANDIDATES[@]}"; do
+              n="$(gh api --paginate \
+                "repos/${REPO}/actions/workflows/${wf}/runs?head_sha=${s}&per_page=100" \
+                --jq '[.workflow_runs[] | select(.status!="completed")] | length' 2>/dev/null || echo 0)"
+              [ "${n:-0}" -gt 0 ] && return 0
+            done
+            return 1
+          }
+
+          # 2. Poll for authoritative proof from CI_WORKFLOW. Absent means it has
+          #    not run yet / is still running: keep waiting until the deadline,
+          #    then fail closed. A completed non-success is a red tree - block.
+          DEADLINE=$(( $(date +%s) + GATE_DEADLINE_SECONDS ))
+          while :; do
+            RES="$(latest_completed_run "$CI_WORKFLOW")"
+            CONCL="$(printf '%s' "$RES" | cut -f1)"
+            BRANCH="$(printf '%s' "$RES" | cut -f2)"
+            if [ -n "$CONCL" ]; then
+              if ! branch_allowed "$BRANCH"; then
+                echo "::error::${CI_WORKFLOW} proof ran on untrusted branch '${BRANCH}'."
+                exit 1
+              fi
+              if [ "$CONCL" = "success" ]; then
+                echo "Proof: ${CI_WORKFLOW} succeeded on '${BRANCH}' for tree ${HEAD_TREE}."
+                break
+              fi
+              echo "::error::${CI_WORKFLOW} concluded '${CONCL}' for the deployed tree. Refusing to publish red code."
+              exit 1
+            fi
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+              echo "::error::No successful ${CI_WORKFLOW} run for tree ${HEAD_TREE} within ${GATE_DEADLINE_SECONDS}s. Failing closed."
+              echo "::error::Hotfix committed directly on a release/* branch? See recovery in .github/AGENTS.md."
+              exit 1
+            fi
+            if any_pending_run "$CI_WORKFLOW"; then
+              echo "${CI_WORKFLOW} still running; polling again in ${GATE_POLL_SECONDS}s..."
+            else
+              echo "No ${CI_WORKFLOW} run yet; waiting ${GATE_POLL_SECONDS}s for the post-merge run..."
+            fi
+            sleep "$GATE_POLL_SECONDS"
+          done
+
+          # 3. Block-if-present: component CI that DID run on this tree must be green.
+          for wf in $BLOCK_IF_PRESENT; do
+            RES="$(latest_completed_run "$wf")"
+            CONCL="$(printf '%s' "$RES" | cut -f1)"
+            if [ -z "$CONCL" ]; then
+              echo "${wf}: not run on this tree (path-filtered); ok."
+              continue
+            fi
+            if [ "$CONCL" != "success" ]; then
+              echo "::error::${wf} concluded '${CONCL}' for the deployed tree. Refusing."
+              exit 1
+            fi
+            echo "${wf}: success; ok."
+          done
+          echo "Green gate passed for ${HEAD_SHA}."
+
   publish-backend:
     name: Publish Backend
+    needs: require-green
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ${{ github.repository }}-backend
@@ -24,49 +156,8 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        with:
-          global-json-file: backend/global.json
-
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-        with:
-          package_json_file: frontend/package.json
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: frontend/package.json
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Restore backend
-        working-directory: backend
-        run: dotnet restore
-
-      - name: Build backend
-        working-directory: backend
-        run: dotnet build --no-restore
-
-      - name: Test - Application.UnitTests
-        working-directory: backend
-        run: dotnet run --project tests/Application.UnitTests --no-build
-
-      - name: Test - ArchitectureTests
-        working-directory: backend
-        run: dotnet run --project tests/ArchitectureTests --no-build
-
-      - name: Test - IntegrationTests
-        working-directory: backend
-        run: dotnet run --project tests/IntegrationTests --no-build
-
-      - name: Test - VisualTests
-        working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-build
-
+      # No build/test here: require-green already proved dotnet.yml passed on this
+      # exact tree. The image is built from source inside backend/src/Api/Dockerfile.
       - name: Log in to Container Registry
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
@@ -106,37 +197,15 @@ jobs:
 
   publish-frontend:
     name: Publish Frontend
+    needs: require-green
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ${{ github.repository }}-frontend
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-        with:
-          package_json_file: frontend/package.json
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: frontend/package.json
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - run: pnpm install --frozen-lockfile
-        working-directory: frontend
-
-      - name: Lint
-        working-directory: frontend
-        run: pnpm lint
-
-      - name: Type check
-        working-directory: frontend
-        run: pnpm check
-
-      - name: Build
-        working-directory: frontend
-        run: pnpm build
-
+      # No lint/check/build here: require-green already proved frontend.yml passed
+      # on this tree. The image is built from source inside frontend/Dockerfile.
       - name: Log in to Container Registry
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
@@ -175,6 +244,7 @@ jobs:
 
   publish-keycloak:
     name: Publish Keycloak
+    needs: require-green
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ${{ github.repository }}-keycloak

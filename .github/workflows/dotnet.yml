@@ -1,5 +1,12 @@
 name: Build and Test Backend
 
+# LOAD-BEARING for the release gate: publish.yml's require-green job proves a
+# deploy is safe by requiring a successful run of THIS workflow (by filename
+# 'dotnet.yml') on the deployed tree, from the main / release/* branches. Do not
+# rename this file, change its `name`, or drop the `push: branches: [main]`
+# trigger without updating require-green in publish.yml - otherwise every release
+# fails closed.
+
 on:
   push:
     branches: [main]
@@ -8,6 +15,10 @@ on:
       - 'frontend/**'
       - 'keycloak/**'
       - '.github/workflows/dotnet.yml'
+      # The release gate (publish.yml require-green) needs a build-and-test run to
+      # exist for release-machinery-only changes too, so gate them through CI.
+      - '.github/workflows/publish.yml'
+      - '.github/workflows/release-rc.yml'
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +26,10 @@ on:
       - 'frontend/**'
       - 'keycloak/**'
       - '.github/workflows/dotnet.yml'
+      # The release gate (publish.yml require-green) needs a build-and-test run to
+      # exist for release-machinery-only changes too, so gate them through CI.
+      - '.github/workflows/publish.yml'
+      - '.github/workflows/release-rc.yml'
   workflow_dispatch:
 
 permissions:
