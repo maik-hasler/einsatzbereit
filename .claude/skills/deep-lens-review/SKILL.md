@@ -143,7 +143,7 @@ Severity rubric:
 
 ### Step 4 — Write the report
 
-File name: `einsatzbereit-review-<lens>-<YYYY-MM-DD>.md`, structured
+File name: `deep-lens-review-<lens>-<YYYY-MM-DD>.md`, structured
 exactly as below. Location: the environment's output directory
 (`/mnt/user-data/outputs/` in claude.ai — share it via the
 file-presentation tool); in a local checkout, write outside the repo
