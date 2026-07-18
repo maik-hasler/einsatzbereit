@@ -45,16 +45,25 @@ Important Interfaces::
 |Interface |Description
 
 |Frontend ↔ Backend API
-|REST over HTTPS, versioned (`/v1/...`). All requests carry a JWT Bearer token. Response format is JSON. The TypeScript client is generated from the OpenAPI spec.
+|REST over HTTPS, versioned (`/v1/...`). Authenticated requests carry a JWT Bearer token; public browsing is anonymous. Response format is JSON. The TypeScript client is generated from the OpenAPI spec.
 
 |Frontend ↔ Keycloak
 |OIDC Authorization Code Flow with PKCE. Frontend redirects to Keycloak for login; receives access and refresh tokens on success.
 
 |Backend ↔ Keycloak
-|Backend fetches Keycloak's JWKS endpoint to validate JWT signatures. No direct Keycloak admin API calls in the application path.
+|Backend fetches Keycloak's JWKS endpoint to validate JWT signatures. For organization and user management it also calls Keycloak's Admin REST API (`/admin/realms/...`) using a service-account admin token.
 
 |Backend ↔ PostgreSQL
-|EF Core 9 over TCP. Migrations are applied on startup.
+|EF Core 10 over TCP. Migrations are applied on startup in Development, and in other environments only when `Database:MigrateOnStartup` is enabled.
+
+|Backend ↔ Object storage (MinIO / S3)
+|Stores and serves binary assets: organization logos, user avatars, and opportunity banners.
+
+|Backend ↔ Mail server (SMTP)
+|Sends notification and reminder emails (Mailpit locally, a real SMTP server in production).
+
+|Backend ↔ Geocoding (Nominatim)
+|Geocodes opportunity addresses at write time, throttled to about one request per second. See ADR-4.
 |===
 
 === Level 2: Backend API (Whitebox)
@@ -71,7 +80,7 @@ The backend follows Clean Architecture with four layers. Dependencies flow inwar
 
 Responsibility:: Routes HTTP requests to the Application layer. Applies authentication middleware. Handles versioning and request/response serialization.
 
-Interfaces:: Exposes versioned ASP.NET Core Minimal API endpoints. Registers MediatR and reads JWT Bearer tokens via ASP.NET Core middleware.
+Interfaces:: Exposes versioned ASP.NET Core Minimal API endpoints. Dispatches use cases through the application's `ISender` and reads JWT Bearer tokens via ASP.NET Core middleware.
 
 Location:: `backend/src/Api/`
 
@@ -79,7 +88,7 @@ Location:: `backend/src/Api/`
 
 Responsibility:: Implements all use cases as CQRS command and query handlers. Defines repository interfaces used for data access.
 
-Interfaces:: MediatR `IRequest`/`IRequestHandler` contracts. Repository interfaces (`IVolunteerOpportunityReadRepository`, etc.).
+Interfaces:: In-house messaging contracts (`ICommand`/`IQuery` with `ICommandHandler`/`IQueryHandler`, dispatched via `ISender`). Repository interfaces (`IVolunteerOpportunityReadRepository`, etc.).
 
 Location:: `backend/src/Application/`
 
@@ -91,7 +100,7 @@ Location:: `backend/src/Domain/`
 
 ==== Infrastructure Layer
 
-Responsibility:: Implements repository interfaces using EF Core. Manages database schema via migrations. Wires up all services in `ServiceCollectionExtensions`.
+Responsibility:: Implements the interfaces (ports) defined in the Application layer. Persistence via EF Core (repositories, migrations); adapters for the external systems (Keycloak Admin API, SMTP email, Nominatim geocoding, MinIO object storage); domain-event dispatch and background jobs. Wires up all services in `ServiceCollectionExtensions`.
 
 Location:: `backend/src/Infrastructure/`
 
@@ -114,3 +123,15 @@ Location:: `frontend/src/components/`
 Responsibility:: NSwag-generated TypeScript client. Provides typed methods for all backend endpoints. Never hand-edited.
 
 Location:: `frontend/src/client/api-client.ts`
+
+==== Layouts
+
+Responsibility:: App shells (`AppLayout`, `OrgAppLayout`) and the `ProtectedRoute` authentication gate that guards routes requiring a signed-in user.
+
+Location:: `frontend/src/layouts/`
+
+==== Contexts and Hooks
+
+Responsibility:: Global UI state (`ToastContext`, `ToolbarContext`) and reusable logic (`useApiClient`, `useAchievementNotifier`, and others).
+
+Location:: `frontend/src/contexts/`, `frontend/src/hooks/`

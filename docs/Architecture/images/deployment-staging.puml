@@ -1,0 +1,48 @@
+@startuml Staging Deployment
+
+!include <C4/C4_Deployment>
+
+title Deployment View - Staging / Production
+
+Deployment_Node(host, "Staging Host (VM)", "Docker Compose") {
+
+	Deployment_Node(traefik_node, "Traefik (host-level, shared)", "Reverse proxy, TLS via ACME / Let's Encrypt") {
+		Container(traefik, "Traefik", "Routes *.maik-hasler.de")
+	}
+
+	Deployment_Node(fe_node, "frontend", "einsatzbereit-frontend:staging") {
+		Container(fe, "Single Page Application", "static assets", "einsatzbereit.maik-hasler.de")
+	}
+
+	Deployment_Node(be_node, "backend", "einsatzbereit-backend:staging") {
+		Container(be, "Backend API", "ASP.NET Core (.NET 10)", "api.maik-hasler.de")
+	}
+
+	Deployment_Node(kc_node, "keycloak", "einsatzbereit-keycloak:staging") {
+		Container(kc, "Identity Provider", "Keycloak", "login.maik-hasler.de")
+	}
+
+	Deployment_Node(mo_node, "minio", "quay.io/minio/minio") {
+		Container(mo, "Object storage", "MinIO (S3)", "storage.maik-hasler.de")
+	}
+
+	Deployment_Node(pg_node, "postgres", "postgres:18") {
+		ContainerDb(pg, "PostgreSQL", "einsatzbereit + keycloak databases")
+	}
+
+	Deployment_Node(bk_node, "db-backup", "postgres-backup-local:18") {
+		Container(bk, "Daily backups", "retention 7d / 4w / 6m")
+	}
+}
+
+Rel(traefik, fe, "HTTPS")
+Rel(traefik, be, "HTTPS")
+Rel(traefik, kc, "HTTPS")
+Rel(traefik, mo, "HTTPS")
+Rel(be, pg, "SQL / EF Core")
+Rel(be, kc, "JWKS + Admin API")
+Rel(be, mo, "S3 API")
+Rel(kc, pg, "Realm data")
+Rel(bk, pg, "pg_dump")
+
+@enduml

@@ -35,11 +35,11 @@ Role-based access control is enforced at the API endpoint level using ASP.NET Co
 
 *Token handling in the frontend:*
 
-Access tokens are stored in memory (React state / context), not in `localStorage` or `sessionStorage`, to reduce XSS attack surface. The refresh token is used to obtain new access tokens silently when the access token expires.
+Access and refresh tokens are stored in `localStorage` via the OIDC client's `WebStorageStateStore`, so the session survives a page reload. The refresh token is used to obtain new access tokens silently when the access token expires.
 
 === CQRS (Command Query Responsibility Segregation)
 
-All use cases in the application layer follow the CQRS pattern via MediatR.
+All use cases in the application layer follow the CQRS pattern, dispatched through a small in-house mediator (`ISender`, no external library) with reflection-registered handlers. Two pipeline behaviors wrap every command: one opens a database transaction, the other logs slow requests.
 
 * *Queries* are read-only operations. They return data and do not modify state. Queries use dedicated read repository interfaces (`IVolunteerOpportunityReadRepository`) and may use optimized read paths (e.g., projections) without loading full aggregate state.
 * *Commands* are state-changing operations. They return only what is needed (e.g., the created entity's ID) and enforce business rules before writing.
@@ -52,10 +52,14 @@ Error handling follows a consistent pattern across the stack:
 
 *Backend:*
 
-* Domain validation errors are returned as `400 Bad Request` with a structured error body.
-* Authorization failures result in `401 Unauthorized` or `403 Forbidden`.
-* Not-found cases return `404 Not Found`.
-* Unhandled exceptions are caught by global exception middleware and returned as `500 Internal Server Error` with a correlation ID for log tracing - no stack traces leak to clients.
+Domain and application logic signal failure with a `Result` / `Result<T>` type (`Error.Validation` / `NotFound` / `Conflict` / `Forbidden`) rather than exceptions. At the application boundary a failed result becomes a `ResultFailureException`, mapped to an RFC 7807 `ProblemDetails` response carrying `errorCode` and `traceId`:
+
+* Validation errors -> `400 Bad Request`.
+* Not-found cases -> `404 Not Found`.
+* Conflicts -> `409 Conflict`.
+* Authorization failures -> `401 Unauthorized` or `403 Forbidden`.
+* Rate-limited requests -> `429 Too Many Requests` (see Rate Limiting below).
+* Unhandled exceptions are caught by a global exception handler and returned as `500 Internal Server Error` with the OpenTelemetry trace ID (also sent as the `X-Trace-Id` response header) - no stack traces leak to clients.
 
 *Frontend:*
 
@@ -63,14 +67,22 @@ Error handling follows a consistent pattern across the stack:
 * Network errors (offline, timeout) are handled gracefully with retry options where appropriate.
 * The NSwag-generated client throws typed exceptions matching the backend's HTTP status codes.
 
+=== Rate Limiting
+
+All endpoints are rate-limited using ASP.NET Core's built-in rate limiter (see TDR-1). Two fixed-window policies apply:
+
+* `rate-limit-read` - 200 requests/minute for authenticated users (partitioned by the `sub` claim), 60 requests/minute for anonymous callers (partitioned by client IP).
+* `rate-limit-write` - 100 requests/minute, partitioned by user (falling back to client IP).
+
+Rejected requests receive `429 Too Many Requests`. The limiter runs after authentication so per-user partitioning has the user identity available. Limits are configurable per environment via `appsettings.json` and environment variables.
+
 === Database Migrations
 
 Database schema changes are managed via EF Core migrations.
 
 * Migrations are stored under `backend/src/Infrastructure/Persistence/Migrations/`.
-* On application startup, pending migrations are applied automatically (`database.MigrateAsync()`).
+* In Development the application applies pending migrations automatically on startup; in other environments it does so only when `Database:MigrateOnStartup` is enabled (staging sets this), otherwise the schema is applied out of band (`dotnet ef database update`).
 * Migration files are committed to the repository alongside the code changes that require them.
-* There is no separate migration deployment step - the application handles its own schema.
 
 === API Versioning
 
@@ -81,15 +93,24 @@ All API routes include the version in the URL path: `/v{version}/...`.
 * Non-breaking additions (new optional fields, new endpoints) can be added to the existing version.
 * The NSwag-generated client is regenerated after any API change to keep the frontend in sync.
 
+=== Internationalization (i18n)
+
+The user interface is translated with i18next (`react-i18next`), backed by resource bundles under `frontend/src/locales/` (`en.json`, `de.json`). The active language is resolved from the user's Keycloak profile locale on sign-in, then from `localStorage`, then from the browser. Backend and domain content are not localized - i18n is a frontend-only concern. CI enforces `en` / `de` key parity.
+
+=== Geocoding and Geo-Search
+
+Opportunity addresses are geocoded at write time, and spatial search uses a bounding-box prefilter plus in-memory Haversine refinement (no PostGIS). This concept is documented in full as an architecture decision - see ADR-4.
+
 === Logging and Observability
 
-The backend uses the .NET built-in `ILogger<T>` abstraction. Structured logging is configured to output JSON in production environments and human-readable format during local development.
+The backend uses the .NET built-in `ILogger<T>` abstraction. Every request runs inside a logging scope that enriches its entries with the OpenTelemetry trace ID and the authenticated user ID.
+
+Observability is built on OpenTelemetry (via the Aspire service defaults): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP - collected by the Aspire dashboard in development, and by any OTLP-compatible backend in production when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 
 Key logged events:
 
-* All unhandled exceptions (with correlation ID)
-* Authentication failures
-* Database migration execution
-* Startup configuration summary
+* HTTP request logs (method, path, status, duration)
+* Unhandled exceptions (with trace ID)
+* Slow requests (flagged by the performance pipeline behavior)
 
-No external observability service (Datadog, Grafana, etc.) is currently integrated - this is a deliberate trade-off to keep operational complexity minimal.
+No third-party observability SaaS (Datadog, Grafana Cloud, etc.) is wired in by default - a deliberate trade-off to keep operational complexity minimal; any OTLP backend can be pointed at the exporter.

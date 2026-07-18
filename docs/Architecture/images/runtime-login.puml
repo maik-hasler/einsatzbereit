@@ -15,7 +15,7 @@ keycloak -> keycloak: Validate credentials, issue authorization code
 keycloak -> frontend: Redirect to redirect_uri\nwith authorization code
 frontend -> keycloak: POST /token\n(code, code_verifier, client_id)
 keycloak -> frontend: Access token (JWT) + Refresh token
-frontend -> frontend: Store access token in memory\n(NOT in localStorage)
+frontend -> frontend: Store tokens in localStorage\n(WebStorageStateStore)
 frontend -> user: Render authenticated UI
 
 note over frontend,keycloak

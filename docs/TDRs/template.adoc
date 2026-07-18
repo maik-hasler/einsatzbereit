@@ -1,4 +1,6 @@
-== [TECHNICAL DEBT TITLE]
+// Replace all [bracketed] placeholders below; the square brackets are not literal.
+
+== [N]. [TECHNICAL DEBT TITLE]
 
 - *Author:* (optional) [Name of the person who identified the debt]
 - *Version:* (optional) [Project version or component]
@@ -36,7 +38,7 @@ How long has it existed?]
 
 === Severity
 
-*[Critical / High / Medium / Low]*
+[Low / Medium / High / Critical], optionally with a one-line qualifier (e.g. "Medium, rising to High under load").
 
 === Proposed Solution (optional)
 
@@ -46,6 +48,10 @@ How long has it existed?]
 === Consequences of Delay (optional)
 
 [Description of the consequences if resolving the debt is delayed]
+
+=== Resolution (optional)
+
+[Populated when Status reaches Resolved or Completed: the issue/PR reference and a short summary of the implemented fix.]
 
 === Dependencies (optional)
 

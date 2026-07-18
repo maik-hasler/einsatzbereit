@@ -16,21 +16,7 @@ We use a monorepo. All components of the system live in a single repository.
 
 === Monorepo Structure
 
-----
-.github/
-└── workflows/
-docs/
-├── Architecture/
-└── ADRs/
-keycloak/
-├── Dockerfile
-└── realms/
-frontend/
-backend/
-CONTRIBUTING.md
-VERSIONING.md
-README.md
-----
+All components (`backend/`, `frontend/`, `keycloak/`, `docs/`, `wiki/`) together with shared CI, tooling, and documentation live in the single repository. See the root `AGENTS.md` for the authoritative, current layout.
 
 === Rationale
 * Small team: A single repository reduces coordination overhead and avoids maintaining multiple repositories.

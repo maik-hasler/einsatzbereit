@@ -10,8 +10,8 @@ Container_Boundary(api, "API Layer  [backend/src/Api/]") {
 }
 
 Container_Boundary(application, "Application Layer  [backend/src/Application/]") {
-		Component(queries, "Query Handlers", "MediatR IRequestHandler", "Read-only use cases. Return data without modifying state. Use read repository interfaces.")
-		Component(commands, "Command Handlers", "MediatR IRequestHandler", "State-changing use cases. Enforce business rules. Use write repository interfaces.")
+		Component(queries, "Query Handlers", "In-house IQueryHandler", "Read-only use cases. Return data without modifying state. Use read repository interfaces.")
+		Component(commands, "Command Handlers", "In-house ICommandHandler", "State-changing use cases. Enforce business rules. Use write repository interfaces.")
 		Component(repo_interfaces, "Repository Interfaces", "C# Interfaces", "Abstractions for data access. Implemented by Infrastructure layer.")
 }
 
@@ -20,13 +20,13 @@ Container_Boundary(domain, "Domain Layer  [backend/src/Domain/]") {
 }
 
 Container_Boundary(infrastructure, "Infrastructure Layer  [backend/src/Infrastructure/]") {
-		Component(db_context, "ApplicationDbContext", "EF Core 9", "ORM context. Configures entity mappings and applies migrations.")
+		Component(db_context, "ApplicationDbContext", "EF Core 10", "ORM context. Configures entity mappings and applies migrations.")
 		Component(repositories, "Repositories", "EF Core Repositories", "Implement repository interfaces. Map between EF entities and domain objects.")
-		Component(migrations, "Migrations", "EF Core Migrations", "Database schema history. Applied automatically on startup.")
+		Component(migrations, "Migrations", "EF Core Migrations", "Database schema history. Applied on startup in Development.")
 }
 
-Rel(endpoints, queries, "Dispatches via MediatR")
-Rel(endpoints, commands, "Dispatches via MediatR")
+Rel(endpoints, queries, "Dispatches via ISender")
+Rel(endpoints, commands, "Dispatches via ISender")
 Rel(auth_mw, endpoints, "Populates ClaimsPrincipal")
 Rel(queries, repo_interfaces, "Uses")
 Rel(commands, repo_interfaces, "Uses")
