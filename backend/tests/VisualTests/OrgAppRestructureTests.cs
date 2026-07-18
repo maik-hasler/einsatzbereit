@@ -68,6 +68,13 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// The hero CTA renders the "Create an organisation" button until the
+		// async org-count fetch resolves, then swaps to a dashboard Link if the
+		// user turns out to have orgs after all - wait for that fetch to settle
+		// first so we never click a button that's about to be swapped out from
+		// under us (which would hang waiting for it to reappear).
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
 		if (await createBtn.CountAsync() == 0)
 			return; // a previous retry already gave vera an org - skip
