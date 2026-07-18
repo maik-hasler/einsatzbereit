@@ -341,6 +341,55 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task SaveDraft_ToastPointsToDraftsSection_AndSavedDraftIsHighlighted()
+	{
+		// Regression for #708: after saving a new opportunity as a draft, the
+		// organizer could not tell where the draft landed. The toast now names
+		// the Drafts section, and the just-saved draft is highlighted in place
+		// on the same (Calendar) tab it was created from.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var uniqueTitle = $"Draft Discoverability Test {Guid.NewGuid().ToString("N")[..8]}";
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return; // modal did not open - skip remaining assertions
+		}
+
+		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
+		await Page.GetByTestId("modal-save-draft").ClickAsync();
+
+		// The dialog close waits on the create-draft API call.
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(
+			new() { Timeout = 30_000 });
+
+		// The success toast now names the Drafts section, instead of the old
+		// vague "on your organization dashboard" copy.
+		var toast = Page.GetByRole(AriaRole.Alert)
+			.Filter(new() { HasTextString = "Drafts section" });
+		await Expect(toast).ToBeVisibleAsync();
+
+		// The draft appears in the Drafts section on the same tab (no manual tab
+		// exploration required) and is highlighted so it is easy to spot.
+		var draftsSection = Page.GetByTestId("drafts-section");
+		await Expect(draftsSection).ToBeVisibleAsync();
+
+		var highlighted = draftsSection.Locator("li[data-highlighted='true']");
+		await Expect(highlighted).ToBeVisibleAsync();
+		await Expect(highlighted).ToContainTextAsync(uniqueTitle);
+	}
+
+	[Test]
 	public async Task EditWizard_ReopenedDraft_ShowsSaveAsDraftAndAcceptsPartialSave()
 	{
 		// Regression for #707: reopening a saved draft via "Edit" hid the

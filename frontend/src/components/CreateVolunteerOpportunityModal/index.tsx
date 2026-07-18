@@ -45,7 +45,12 @@ function advanceDate(
 interface Props {
 	organizationId: string;
 	onClose: () => void;
-	onSuccess: () => void;
+	/**
+	 * Called after a successful save. When a brand-new opportunity was saved as
+	 * a draft, its id is passed so the dashboard can scroll to and highlight it
+	 * in the Drafts section (publish/edit paths pass nothing).
+	 */
+	onSuccess: (createdDraftId?: string) => void;
 	/** When provided the modal operates in edit mode. */
 	initialOpportunity?: VolunteerOpportunityDetails;
 }
@@ -454,6 +459,9 @@ export default function CreateVolunteerOpportunityModal({
 		}
 		setSubmitting(asDraft ? "draft" : "publish");
 		setError(null);
+		// Set only on the create-as-draft path so the dashboard knows which
+		// freshly saved draft to reveal in its Drafts section.
+		let createdDraftId: string | undefined;
 		try {
 			if (isEditMode && initialOpportunity) {
 				await api.updateVolunteerOpportunity(initialOpportunity.id, {
@@ -540,10 +548,11 @@ export default function CreateVolunteerOpportunityModal({
 					await api.publishVolunteerOpportunity(opportunity.id);
 				}
 				if (asDraft) {
+					createdDraftId = opportunity.id;
 					dispatchToast("success", t("createOpportunity.draftSavedToast"));
 				}
 			}
-			onSuccess();
+			onSuccess(createdDraftId);
 			onClose();
 		} catch (err: unknown) {
 			setError(

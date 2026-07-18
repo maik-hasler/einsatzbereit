@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -62,6 +62,12 @@ export default function OrgDashboardPage() {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	const [drafts, setDrafts] = useState<VolunteerOpportunitySummary[]>([]);
+	// Id of a just-saved draft to reveal, so the organizer can see where a
+	// draft saved from the wizard actually landed (issue #708).
+	const [highlightedDraftId, setHighlightedDraftId] = useState<string | null>(
+		null,
+	);
+	const highlightRef = useRef<HTMLLIElement | null>(null);
 
 	function loadDrafts() {
 		api
@@ -74,6 +80,23 @@ export default function OrgDashboardPage() {
 		loadDrafts();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
+
+	// Once the highlighted draft has actually rendered (drafts reloaded), scroll
+	// it into view and let the highlight ring linger briefly before clearing.
+	// A screen reader already learns where the draft landed from the "Drafts
+	// section" toast (role="alert"); this is the sighted equivalent.
+	useEffect(() => {
+		if (!highlightedDraftId || !highlightRef.current) return;
+		const prefersReducedMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+		highlightRef.current.scrollIntoView({
+			behavior: prefersReducedMotion ? "auto" : "smooth",
+			block: "center",
+		});
+		const timer = setTimeout(() => setHighlightedDraftId(null), 2500);
+		return () => clearTimeout(timer);
+	}, [highlightedDraftId, drafts]);
 
 	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
 	const [calLoading, setCalLoading] = useState(true);
@@ -153,9 +176,10 @@ export default function OrgDashboardPage() {
 		}
 	}
 
-	function handleOpportunityCreated() {
+	function handleOpportunityCreated(createdDraftId?: string) {
 		loadCalendarEvents();
 		loadDrafts();
+		setHighlightedDraftId(createdDraftId ?? null);
 	}
 
 	return (
@@ -184,7 +208,15 @@ export default function OrgDashboardPage() {
 						{drafts.map((draft) => (
 							<li
 								key={draft.id}
-								className="relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+								ref={draft.id === highlightedDraftId ? highlightRef : null}
+								data-highlighted={
+									draft.id === highlightedDraftId ? "true" : undefined
+								}
+								className={`relative scroll-mt-24 rounded-2xl border bg-white p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md ${
+									draft.id === highlightedDraftId
+										? "border-brand-400 ring-2 ring-brand-500 ring-offset-2"
+										: "border-gray-100"
+								}`}
 							>
 								<Link
 									to={`/volunteer-opportunities/${draft.id}`}

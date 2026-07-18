@@ -223,7 +223,7 @@
       "publish": "Publish",
       "saveDraft": "Save as draft",
       "savingDraft": "Saving…",
-      "draftSavedToast": "Draft saved. You can find it on your organization dashboard.",
+      "draftSavedToast": "Draft saved. Find it in the Drafts section above your calendar.",
       "fieldBanner": "Banner image (optional)",
       "bannerUpload": "Upload image",
       "bannerHint": "JPG, PNG or WebP, max. 2 MB",
