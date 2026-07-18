@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation, Trans } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
@@ -10,7 +10,6 @@ import {
 	formatParticipationType,
 } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
-import CreateVolunteerOpportunityModal from "../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -21,7 +20,6 @@ import { signinLocaleArgs } from "../lib/authLocale";
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
-	const navigate = useNavigate();
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
@@ -47,11 +45,6 @@ export default function VolunteerOpportunityDetailPage() {
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
-	const [showEdit, setShowEdit] = useState(false);
-	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-	const [deleting, setDeleting] = useState(false);
-	const [deleteError, setDeleteError] = useState<string | null>(null);
-	const [publishing, setPublishing] = useState(false);
 
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
@@ -130,21 +123,6 @@ export default function VolunteerOpportunityDetailPage() {
 		}
 	}
 
-	async function handleDeleteConfirm() {
-		if (!opportunityId) return;
-		setDeleting(true);
-		setDeleteError(null);
-		try {
-			await api.deleteVolunteerOpportunity(opportunityId);
-			navigate("/");
-		} catch (err) {
-			setDeleteError(
-				err instanceof Error ? err.message : t("opportunities.deleteError"),
-			);
-			setDeleting(false);
-		}
-	}
-
 	if (loading)
 		return <p className="text-gray-500">{t("opportunities.loading")}</p>;
 	if (error)
@@ -160,20 +138,6 @@ export default function VolunteerOpportunityDetailPage() {
 	const isOwner =
 		isOrganisator && userOrgIds.includes(opportunity.organizationId);
 	const isDraft = opportunity.status === "Draft";
-
-	async function handlePublish() {
-		if (!opportunityId) return;
-		setPublishing(true);
-		try {
-			await api.publishVolunteerOpportunity(opportunityId);
-			dispatchToast("success", t("opportunities.publishSuccess"));
-			load();
-		} catch (err) {
-			dispatchToast("error", getApiErrorMessage(err, t("error.serverError")));
-		} finally {
-			setPublishing(false);
-		}
-	}
 
 	const cue = opportunity.currentUserEngagement;
 
@@ -199,27 +163,6 @@ export default function VolunteerOpportunityDetailPage() {
 					alt=""
 					className="mb-6 h-56 w-full rounded-2xl object-cover shadow-sm sm:h-72"
 				/>
-			)}
-
-			{/* Draft notice */}
-			{isDraft && (
-				<div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-					<p className="text-sm text-amber-800">
-						{t("opportunities.draftNotice")}
-					</p>
-					{isOwner && (
-						<button
-							onClick={() => void handlePublish()}
-							disabled={publishing}
-							data-testid="publish-opportunity"
-							className="shrink-0 rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
-						>
-							{publishing
-								? t("opportunities.publishing")
-								: t("opportunities.publish")}
-						</button>
-					)}
-				</div>
 			)}
 
 			{/* Org chip + action buttons */}
@@ -253,25 +196,6 @@ export default function VolunteerOpportunityDetailPage() {
 						</svg>
 						<span className="hidden sm:inline">{t("opportunities.share")}</span>
 					</button>
-					{isOwner && (
-						<>
-							<button
-								onClick={() => setShowEdit(true)}
-								className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-							>
-								{t("opportunities.edit")}
-							</button>
-							<button
-								onClick={() => setShowDeleteConfirm(true)}
-								disabled={deleting}
-								className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-							>
-								{deleting
-									? t("opportunities.deleting")
-									: t("opportunities.delete")}
-							</button>
-						</>
-					)}
 				</div>
 			</div>
 
@@ -443,20 +367,6 @@ export default function VolunteerOpportunityDetailPage() {
 					</div>
 				)}
 
-			{/* Manage applications */}
-			{isOwner && (
-				<div className="mb-6">
-					<button
-						onClick={() =>
-							navigate(`/volunteer-opportunities/${opportunityId}/engagements`)
-						}
-						className="text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
-					>
-						{t("opportunities.manageApplications")}
-					</button>
-				</div>
-			)}
-
 			{/* Your application status */}
 			{isAuthenticated && !isOwner && cue && !isDraft && (
 				<div className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
@@ -545,30 +455,6 @@ export default function VolunteerOpportunityDetailPage() {
 						setShowSignUp(false);
 						load();
 					}}
-				/>
-			)}
-
-			{showEdit && (
-				<CreateVolunteerOpportunityModal
-					organizationId={opportunity.organizationId}
-					initialOpportunity={opportunity}
-					onClose={() => setShowEdit(false)}
-					onSuccess={load}
-				/>
-			)}
-
-			{showDeleteConfirm && (
-				<ConfirmDialog
-					title={t("confirmDialog.delete.title")}
-					message={t("confirmDialog.delete.message")}
-					confirmLabel={t("confirmDialog.delete.confirm")}
-					onConfirm={handleDeleteConfirm}
-					onClose={() => {
-						setShowDeleteConfirm(false);
-						setDeleteError(null);
-					}}
-					loading={deleting}
-					error={deleteError}
 				/>
 			)}
 

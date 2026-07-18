@@ -276,7 +276,7 @@ export default function OrgDashboardPage() {
 										{t("orgOverview.eventNavigate")}
 									</Link>
 									<Link
-										to={`/volunteer-opportunities/${selectedEvent.opportunityId}/engagements`}
+										to={`/app/${organizationId}/opportunities/${selectedEvent.opportunityId}/engagements`}
 										className="text-sm text-brand-700 hover:underline"
 										onClick={() => setSelectedEvent(null)}
 									>

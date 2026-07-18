@@ -219,41 +219,28 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
+		// Engagement management is nested in the org app (#751) - reachable
+		// from the Opportunities tab's "Manage applications" link, not from
+		// the public opportunity detail page anymore.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-
-		// Wait for opportunity cards to appear on the home page (up to 15s)
-		var firstCard = Page.Locator("ul > li a").First;
-		try
-		{
-			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
-		}
-		catch (TimeoutException)
-		{
-			return; // no opportunities seeded or page not ready, skip
-		}
-
-		var cardHref = await firstCard.GetAttributeAsync("href");
-		if (cardHref is null)
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GotoAsync($"{origin}{cardHref}");
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var manageLink = Page.Locator("a[href$='/engagements']");
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
 		try
 		{
 			await manageLink.First.WaitForAsync(new() { Timeout = 10_000 });
 		}
 		catch (TimeoutException)
 		{
-			return; // olaf does not manage this opportunity, skip
+			return; // olaf has no published opportunity with the manage-applications action, skip
 		}
 
-		var engagementsHref = await manageLink.First.GetAttributeAsync("href");
-		await Page.GotoAsync($"{origin}{engagementsHref}");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await manageLink.First.ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

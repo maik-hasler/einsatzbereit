@@ -9,6 +9,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
@@ -28,6 +29,9 @@ export default function OrgOpportunitiesPage() {
 		useState<VolunteerOpportunityDetails | null>(null);
 	const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
 	const [publishingId, setPublishingId] = useState<string | null>(null);
+	const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const [searchParams, setSearchParams] = useSearchParams();
 	// Id of a just-saved / just-arrived-at draft to reveal, so the organizer
@@ -113,6 +117,23 @@ export default function OrgOpportunitiesPage() {
 		load();
 	}
 
+	async function handleDeleteConfirm() {
+		if (!deleteTargetId) return;
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			await api.deleteVolunteerOpportunity(deleteTargetId);
+			setDeleteTargetId(null);
+			load();
+		} catch (err) {
+			setDeleteError(
+				err instanceof Error ? err.message : t("opportunities.deleteError"),
+			);
+		} finally {
+			setDeleting(false);
+		}
+	}
+
 	function renderRow(item: VolunteerOpportunitySummary) {
 		const isDraft = item.status === "Draft";
 		const isHighlighted = item.id === highlightedId;
@@ -175,6 +196,17 @@ export default function OrgOpportunitiesPage() {
 								? t("orgOpportunities.editLoading")
 								: t("opportunities.edit")}
 						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setDeleteTargetId(item.id);
+								setDeleteError(null);
+							}}
+							data-testid="opportunity-delete"
+							className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
+						>
+							{t("opportunities.delete")}
+						</button>
 						{isDraft ? (
 							<button
 								type="button"
@@ -189,7 +221,7 @@ export default function OrgOpportunitiesPage() {
 							</button>
 						) : (
 							<Link
-								to={`/volunteer-opportunities/${item.id}/engagements`}
+								to={`/app/${organizationId}/opportunities/${item.id}/engagements`}
 								className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
 							>
 								{t("orgOpportunities.manageApplications")}
@@ -297,6 +329,22 @@ export default function OrgOpportunitiesPage() {
 					initialOpportunity={editDetails}
 					onClose={() => setEditDetails(null)}
 					onSuccess={handleEdited}
+				/>
+			)}
+
+			{deleteTargetId && (
+				<ConfirmDialog
+					title={t("confirmDialog.delete.title")}
+					message={t("confirmDialog.delete.message")}
+					confirmLabel={t("confirmDialog.delete.confirm")}
+					onConfirm={handleDeleteConfirm}
+					onClose={() => {
+						if (deleting) return;
+						setDeleteTargetId(null);
+						setDeleteError(null);
+					}}
+					loading={deleting}
+					error={deleteError}
 				/>
 			)}
 		</div>

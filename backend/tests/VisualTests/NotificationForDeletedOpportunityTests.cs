@@ -22,7 +22,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
 
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedTitle");
+		var (opportunityId, _) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedTitle");
 
 		using var veraHttp = new HttpClient { BaseAddress = backend };
 		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "vera", "vera123")}");
@@ -34,13 +34,13 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
 		deleteResponse.EnsureSuccessStatusCode();
 
-		var notification = await GetEngagementCreatedNotificationAsync(olafHttp, opportunityId);
+		var notification = await GetEngagementCreatedNotificationAsync(olafHttp);
 
 		notification.TryGetProperty("relatedTitle", out var relatedTitle).Should().BeTrue();
 		(relatedTitle.ValueKind is JsonValueKind.Null).Should().BeTrue(
 			"the opportunity backing this notification no longer exists, so its title can no longer be resolved");
-		notification.GetProperty("actionUrl").GetString().Should().Be(
-			$"/volunteer-opportunities/{opportunityId}/engagements");
+		notification.GetProperty("actionUrl").ValueKind.Should().Be(JsonValueKind.Null,
+			"the opportunity's organization can no longer be resolved either, so no org-app deep link can be built");
 	}
 
 	[Test]
@@ -51,7 +51,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var opportunityId = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedUi");
+		var (opportunityId, organizationId) = await CreateIndividualContactOpportunityAsync(keycloak, backend, "NotifDeletedUi");
 
 		using var olafHttp = new HttpClient { BaseAddress = backend };
 		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
@@ -60,7 +60,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		deleteResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}/engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
@@ -77,14 +77,13 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		return body.GetProperty("id").GetString()!;
 	}
 
-	private static async Task<JsonElement> GetEngagementCreatedNotificationAsync(HttpClient http, string opportunityId)
+	private static async Task<JsonElement> GetEngagementCreatedNotificationAsync(HttpClient http)
 	{
 		var response = await http.GetAsync("/v1/notifications");
 		response.EnsureSuccessStatusCode();
 		var notifications = await response.Content.ReadFromJsonAsync<JsonElement>();
 		return notifications.EnumerateArray()
-			.First(n => n.GetProperty("kind").GetString() == "EngagementCreated"
-				&& n.GetProperty("actionUrl").GetString() == $"/volunteer-opportunities/{opportunityId}/engagements");
+			.First(n => n.GetProperty("kind").GetString() == "EngagementCreated");
 	}
 
 	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
@@ -105,7 +104,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		return body.GetProperty("access_token").GetString()!;
 	}
 
-	private static async Task<string> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)
+	private static async Task<(string OpportunityId, string OrganizationId)> CreateIndividualContactOpportunityAsync(Uri keycloak, Uri backend, string label)
 	{
 		var suffix = Guid.NewGuid().ToString("N");
 
@@ -125,7 +124,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		// aggregate (unlike GetOrganizations, which projects to a DTO), so
 		// its strongly-typed OrganizationId record struct serializes as a
 		// nested { "value": "<guid>" } object rather than a plain string.
-		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString()!;
 
 		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
@@ -140,6 +139,6 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		});
 		oppResponse.EnsureSuccessStatusCode();
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
-		return opportunity.GetProperty("id").GetString()!;
+		return (opportunity.GetProperty("id").GetString()!, organizationId);
 	}
 }
