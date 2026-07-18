@@ -24,26 +24,22 @@ public static class AuthHelper
 	}
 
 	/// <summary>
-	/// Navigates a logged-in user into the org app shell via the /app entry point
-	/// (org-count-conditional: auto-redirects for a single org, shows a picker for
-	/// several - olaf's seed data always has two). Replaces the previous pattern of
-	/// clicking "Your organizations" on the profile page, which no longer exists.
+	/// Navigates a logged-in user (assumed to be on the home page, as they are
+	/// right after <see cref="LoginAsync"/>) into the org app shell by clicking
+	/// the "Organization overview" hero CTA, which resolves directly to
+	/// /app/{organizationId}/dashboard - the /app intermediate picker page no
+	/// longer exists (#747).
 	/// </summary>
 	public static async Task GoToOrgAppDashboardAsync(IPage page, Uri frontendUrl)
 	{
-		var origin = frontendUrl.GetLeftPart(UriPartial.Authority);
-		await page.GotoAsync($"{origin}/app");
+		// Defensive: resolves instantly if the caller is already there (the
+		// common case, right after LoginAsync), but also makes this helper
+		// safe to call from elsewhere.
+		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new() { Timeout = 15_000 });
 
-		var pickerRow = page.GetByTestId("org-entry-picker-row").First;
-		try
-		{
-			await pickerRow.WaitForAsync(new() { Timeout = 3_000 });
-			await pickerRow.ClickAsync();
-		}
-		catch (TimeoutException)
-		{
-			// A single org auto-redirects straight to its dashboard - no picker shown.
-		}
+		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
+		await cta.First.WaitForAsync(new() { Timeout = 15_000 });
+		await cta.First.ClickAsync();
 
 		await page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}

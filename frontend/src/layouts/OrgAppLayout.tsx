@@ -12,6 +12,7 @@ import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useAccountMenu } from "../hooks/useAccountMenu";
+import { setActiveOrgId } from "../lib/activeOrg";
 import OrganizationSwitcher from "../components/OrganizationSwitcher";
 import LanguageSelector from "../components/LanguageSelector";
 import AccountControls from "../components/AccountControls";
@@ -53,7 +54,10 @@ export default function OrgAppLayout() {
 		setForbidden(false);
 		api
 			.getOrganizationDetails(organizationId)
-			.then(setOrg)
+			.then((data) => {
+				setOrg(data);
+				setActiveOrgId(organizationId);
+			})
 			.catch(() => setForbidden(true))
 			.finally(() => setLoading(false));
 	}
