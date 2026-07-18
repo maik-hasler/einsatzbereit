@@ -27,3 +27,8 @@ indent_size = 2
 [*.md]
 indent_style = space
 trim_trailing_whitespace = false
+
+# Python: PEP 8 mandates space indentation, not tabs
+[*.py]
+indent_style = space
+indent_size = 4

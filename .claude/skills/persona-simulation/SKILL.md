@@ -43,7 +43,7 @@ with real triage work - if there's an issue to implement, do that instead.
 
 ## Personas
 
-Use the real seeded test accounts (root `CLAUDE.md`, "Development Setup").
+Use the real seeded test accounts (root `AGENTS.md`, "Development Setup").
 Run at least one full pass per persona per invocation - don't cherry-pick a
 single screen.
 
@@ -71,7 +71,7 @@ single screen.
 
 ## Method
 
-Live staging only - see root `CLAUDE.md`'s "Sandbox Limitations" for why no
+Live staging only - see root `AGENTS.md`'s "Sandbox Limitations" for why no
 local Aspire/Docker stack is available. Drive it with Playwright the same
 way the smoke-test scripts do:
 

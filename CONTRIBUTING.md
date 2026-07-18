@@ -33,10 +33,13 @@ einsatzbereit/
 ├── keycloak/       Custom Keycloak image + realm config
 ├── postgres/       DB init script
 ├── docs/           arc42 architecture docs + ADRs
+├── wiki/           Project LLM wiki (informal knowledge)
 └── .github/        CI/CD workflows
 ```
 
-Each component has its own `CLAUDE.md` with component-specific conventions.
+Each component has its own `AGENTS.md` with component-specific conventions
+(Claude Code additionally reads a same-named `CLAUDE.md`, which imports
+`AGENTS.md` and can also hold Claude-Code-only notes).
 
 ## How to Contribute
 
