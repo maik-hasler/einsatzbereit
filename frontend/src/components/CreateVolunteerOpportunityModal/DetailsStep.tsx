@@ -6,7 +6,7 @@ import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
 import type { OpportunityFormValues } from "./schema";
 
-export interface TimeSlotRow {
+interface TimeSlotRow {
 	id: string;
 	startDateTime: string;
 	endDateTime: string;
