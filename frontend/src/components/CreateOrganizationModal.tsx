@@ -30,6 +30,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const [logoPreview, setLogoPreview] = useState<string | null>(null);
 	const [logoError, setLogoError] = useState<string | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
+	const nameFieldRef = useRef<HTMLDivElement>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +102,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			labelledBy="create-org-dialog-title"
 			maxWidth="max-w-md"
 			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+			initialFocusRef={nameFieldRef}
 		>
 			<h2
 				id="create-org-dialog-title"
@@ -150,7 +152,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						</div>
 					</div>
 
-					<div>
+					<div ref={nameFieldRef}>
 						<label
 							htmlFor="create-org-name"
 							className="mb-1 block text-sm font-medium"
