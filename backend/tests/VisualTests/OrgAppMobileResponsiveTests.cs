@@ -121,9 +121,11 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 			headingBox!.Y + headingBox.Height - 1,
 			"the create-opportunity button should stack below the org name on mobile instead of squeezing beside it");
 
-		// Full-width touch target on mobile.
-		buttonBox.Width.Should().BeGreaterThan(
-			headingBox.Width,
-			"the button should span the available width when stacked, not stay pill-sized");
+		// Full-width touch target on mobile: stacked, both the heading and the
+		// button span the same full container width (rather than the button
+		// merely being wider than a heading that happens to be narrow - the org
+		// name can be long enough to need the full width too, see #750 follow-up).
+		Math.Abs(buttonBox.Width - headingBox.Width).Should().BeLessThan(2,
+			"the button should span the same full stacked width as the heading, not stay pill-sized");
 	}
 }
