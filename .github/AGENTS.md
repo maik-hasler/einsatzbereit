@@ -30,7 +30,7 @@
 - **No E2E job** - E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
 
 ### `docs.yml`
-- **Trigger:** `docs/**` path filter (excluding `docs/notes/**`) or manual
+- **Trigger:** `docs/**` path filter or manual
 - **Jobs:** build AsciiDoc → deploy to GitHub Pages
 - Uses `tonynv/asciidoctor-action` with `asciidoctor-diagram` for PlantUML
 

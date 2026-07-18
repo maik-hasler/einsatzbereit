@@ -22,6 +22,6 @@ timestamp: <ISO 8601 datetime>       # recommended
      nothing, write "None found." rather than leaving this blank. -->
 
 # Citations
-<!-- one entry per source used: `docs/notes/<path>` (loose notes), a repo
+<!-- one entry per source used: `wiki/notes/<path>` (loose notes), a repo
      path optionally with `@<commit-sha>` (code/AGENTS.md or CLAUDE.md/hooks),
      or `#NNN` / a full issue-or-PR URL (GitHub) -->

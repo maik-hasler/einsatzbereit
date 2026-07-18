@@ -6,9 +6,5 @@
 # Root-level node_modules (Playwright smoke-test scripts)
 node_modules/
 
-# Python bytecode cache (wiki/scripts)
-__pycache__/
-*.pyc
-
 # Playwright screenshots from exploratory testing
 scripts/screenshots/

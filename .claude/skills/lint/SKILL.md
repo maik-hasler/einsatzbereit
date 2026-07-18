@@ -15,24 +15,24 @@ loop - so steps 2 and 3 below are mandatory, not bureaucratic overhead.
 
 1. Run `python wiki/scripts/validate.py`; fix anything it flags. This only
    checks frontmatter schema and `# Related`-section presence on files
-   already inside `wiki/bundle/` - it has no knowledge of `docs/notes/` and
+   already inside `wiki/bundle/` - it has no knowledge of `wiki/notes/` and
    cannot detect missing ingestion.
-2. **Source-coverage audit**, scoped to `docs/notes/` (the only fully
+2. **Source-coverage audit**, scoped to `wiki/notes/` (the only fully
    enumerable channel - the repo and issue/PR channels aren't audited this
    way, see `wiki/AGENTS.md`). Run this in full, every single invocation.
-   a. `Glob docs/notes/**/*` recursively for the live, current list.
+   a. `Glob wiki/notes/**/*` recursively for the live, current list.
    b. For each source path, grep `wiki/bundle/**/*.md` for a citing reference to it
-      (the `docs/notes/...` string in a page's Citations section). Zero
+      (the `wiki/notes/...` string in a page's Citations section). Zero
       hits -> **uncited source** - report the full path.
-   c. Check the reverse direction: grep `wiki/bundle/**/*.md` for `docs/notes/...`
+   c. Check the reverse direction: grep `wiki/bundle/**/*.md` for `wiki/notes/...`
       citation strings and confirm each still exists on disk. A citation
       pointing at a path that's gone -> **broken source citation** - report
       the full path and the citing page.
-   d. Run `git status --short docs/notes/` to catch anything added,
+   d. Run `git status --short wiki/notes/` to catch anything added,
       renamed, or moved since any earlier snapshot. Re-run it again right
       before declaring the audit done.
    e. Report exact counts for both directions - "X paths under
-      docs/notes/, Y uncited, Z broken citations" - with the full list
+      wiki/notes/, Y uncited, Z broken citations" - with the full list
       behind each count.
 3. **Relatedness audit - the check this bundle previously skipped
    entirely.** For every concept page, compare its `tags` (and
@@ -60,5 +60,5 @@ loop - so steps 2 and 3 below are mandatory, not bureaucratic overhead.
    directions).
 8. Never conclude "everything is already ingested" or "nothing to do" unless
    steps 2 and 3 actually ran in this pass and produced that result with
-   the counts shown. This conclusion only ever covers `docs/notes/` and the
+   the counts shown. This conclusion only ever covers `wiki/notes/` and the
    relatedness graph - say nothing about the repo or issue/PR channels.

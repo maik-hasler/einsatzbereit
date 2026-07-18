@@ -1,7 +1,7 @@
 ---
 name: ingest
-description: Ingest a new source into the project wiki (wiki/) - read it, create or update the concept pages it touches, update indexes, and log the change. Use when the user drops a note into docs/notes/, or asks to file/ingest/add something to the wiki, or names a commit/issue/PR to distill into it.
-argument-hint: [path-under-docs/notes/ | commit-sha | issue-or-PR ref | blank for a docs/notes/ coverage audit]
+description: Ingest a new source into the project wiki (wiki/) - read it, create or update the concept pages it touches, update indexes, and log the change. Use when the user drops a note into wiki/notes/, or asks to file/ingest/add something to the wiki, or names a commit/issue/PR to distill into it.
+argument-hint: [path-under-wiki/notes/ | commit-sha | issue-or-PR ref | blank for a wiki/notes/ coverage audit]
 ---
 
 ## Ingest $ARGUMENTS
@@ -13,41 +13,41 @@ Why this matters: the wiki is a compiled, compounding artifact, not a static
 pile of documents. A false "nothing to do" / "already ingested" verdict
 silently breaks that compounding loop. The checks below are the mechanism
 that makes "nothing to do" a falsifiable conclusion instead of a guess, and
-they are not optional for the `docs/notes/` channel.
+they are not optional for the `wiki/notes/` channel.
 
 Three input channels feed this wiki (see `../../../wiki/AGENTS.md`):
 
-- **`docs/notes/`** - loose notes dropped by hand. Fully enumerable -
+- **`wiki/notes/`** - loose notes dropped by hand. Fully enumerable -
   audited to strict K=0 accounting below.
 - **The repo** - commits, code, hook scripts, `CLAUDE.md` files. Ingested on
   request (`$ARGUMENTS` names a path or commit SHA), not exhaustively audited.
 - **GitHub issues/PRs** - ingested on request (`$ARGUMENTS` names `#NNN` or a URL),
   not exhaustively audited either.
 
-Pick a mode before doing anything else:
+Two request shapes, keyed to what the request names:
 
-- **Mode A - docs/notes/ coverage audit**: `$ARGUMENTS` is empty, a glob/wildcard,
+- **Mode A - wiki/notes/ coverage audit**: `$ARGUMENTS` is empty, a glob/wildcard,
   or a vague phrase ("ingest", "what's missing", "ingest everything").
-  Scoped to `docs/notes/` only - never claim this covers the repo or
+  Scoped to `wiki/notes/` only - never claim this covers the repo or
   issue/PR channels too.
 - **Mode B - single-source ingest**: `$ARGUMENTS` names one specific existing path
-  under `docs/notes/`, a commit SHA, or an issue/PR ref.
+  under `wiki/notes/`, a commit SHA, or an issue/PR ref.
 
-### Mode A - docs/notes/ coverage audit
+### Mode A - wiki/notes/ coverage audit
 
 `scripts/validate.py` passing is not evidence of completeness here - it only
 checks frontmatter shape on pages that already exist; it says nothing about
-what's missing from `docs/notes/`.
+what's missing from `wiki/notes/`.
 
-0. Glob `docs/notes/**/*` recursively - files and dirs, not just top-level
+0. Glob `wiki/notes/**/*` recursively - files and dirs, not just top-level
    entries. This step must run and its output must be visible before any
    completeness statement.
 0b. For each path returned, grep `wiki/bundle/**/*.md` for a reference to it - in
     particular each page's `# Citations` section. Zero hits = "uncited."
-0c. Run `git status --short docs/notes/` to catch anything added or
+0c. Run `git status --short wiki/notes/` to catch anything added or
     staged mid-session. Re-run this again immediately before the final
     report, not only at the start.
-0d. Report concrete numbers: "Found N paths under docs/notes/, M already
+0d. Report concrete numbers: "Found N paths under wiki/notes/, M already
     cited, K uncited: `<list>`." Prose like "looks complete" with no
     accompanying counts is not a valid output. "Already ingested" is only
     a valid conclusion when K=0, shown with the numbers.
@@ -61,7 +61,7 @@ Then work through the K uncited sources one at a time using Mode B below.
 ### Mode B - single-source ingest
 
 1. Read the source in full before writing anything - the raw file under
-   `docs/notes/`, the commit/diff, or the issue/PR thread. For a long
+   `wiki/notes/`, the commit/diff, or the issue/PR thread. For a long
    source that doesn't fit in one read, split it into smaller pieces at
    whatever natural structure it has and ingest piece by piece, updating the
    same wiki pages incrementally.
@@ -81,7 +81,7 @@ Then work through the K uncited sources one at a time using Mode B below.
    required) and the recommended fields, place it under the most specific
    existing directory in `wiki/bundle/` (create one if none fits). Every new
    or edited page lists what it was built from in `# Citations`:
-   `docs/notes/<path>`, a
+   `wiki/notes/<path>`, a
    repo path (optionally `@<sha>`), or `#NNN` / a full issue-or-PR URL.
 5. **Relatedness check - mandatory, same rigor as Mode A's coverage audit.**
    A page that stands alone when it didn't have to is the failure mode this
@@ -105,7 +105,7 @@ Then work through the K uncited sources one at a time using Mode B below.
    `**Superseded**`.
 8. Run `python wiki/scripts/validate.py`. This only checks frontmatter shape
    and `# Related` presence on existing pages - never cite it as evidence
-   that `docs/notes/` ingestion is complete; that's Mode A's job.
+   that `wiki/notes/` ingestion is complete; that's Mode A's job.
 9. Report which pages were created vs. updated, and which existing pages got
    a backlink added as part of step 5 - a silent backlink is as easy to lose
    track of as a silent page edit.

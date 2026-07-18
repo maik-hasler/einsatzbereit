@@ -1,43 +1,40 @@
 # Project wiki
 
-Informal knowledge about Einsatzbereit that doesn't fit anywhere else: gotchas
-learned while fixing bugs, why-we-picked-X-over-Y detail that doesn't warrant a
-full ADR, recurring CI failure causes, notes from `persona-simulation` runs.
-Proposed in [issue #701](https://github.com/maik-hasler/einsatzbereit/issues/701),
-following the same self-building "LLM wiki" pattern (Andrej Karpathy's
-[gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f))
-already used in the author's personal wiki. On disk it's an OKF (Open
-Knowledge Format) v0.1 bundle - a lightweight in-house storage convention,
-not an external standard.
+Informal knowledge about Einsatzbereit that doesn't fit elsewhere: gotchas
+learned while fixing bugs, why-X-over-Y detail too small for a full ADR,
+recurring CI failure causes, notes from `persona-simulation` runs. It follows
+a self-building "LLM wiki" pattern - sources are distilled into short,
+cross-linked concept pages rather than piled up raw. On disk it's an OKF (Open
+Knowledge Format) v0.1 bundle, a lightweight in-house storage convention
+rather than an external standard.
 
 ## What this complements, not replaces
 
-- `docs/` - formal, reviewed arc42 architecture documentation, ADRs, TDRs
-  (and, since this move, `docs/notes/` for this wiki's own raw input notes -
-  see "Where things come from" below). AsciiDoc for the formal parts, built
-  to GitHub Pages. Stays authoritative for anything that belongs there.
+- `docs/` - formal, reviewed arc42 architecture documentation, ADRs, TDRs.
+  AsciiDoc, built to GitHub Pages. Authoritative for anything that belongs
+  there.
 - The per-directory `CLAUDE.md` files (root, `backend/`, `frontend/`,
   `keycloak/`, `docs/`, `.github/`) - stable conventions an agent needs on
   every session.
-- This wiki - informal, fast-moving, agent-maintained. Markdown, not
-  AsciiDoc: lower ceremony than arc42, matching the personal wiki this is
-  based on rather than the `docs/` format.
+- This wiki - informal, fast-moving, agent-maintained. Markdown, lower
+  ceremony than the arc42 docs.
 
-## Where things come from
+## Input channels
 
-Three input channels feed this wiki, not just one:
+Three kinds of source feed the wiki, all cited the same way once distilled,
+none ranking above the others:
 
-1. **`docs/notes/`** - your own loose notes and ideas about Einsatzbereit,
-   dropped by hand as plain Markdown (see `docs/notes/README.md`). Raw and
-   immutable once added, same convention as the personal wiki's `sources/`.
-2. **The repo itself** - commits, code, hook scripts, existing `CLAUDE.md`
-   files. A gotcha or decision already baked into the codebase gets cited
-   directly by repo-relative path, no copy into `docs/notes/` needed.
+1. **`notes/`** - loose notes and ideas about Einsatzbereit, dropped in by
+   hand as plain Markdown (see `notes/README.md`). Raw and read-only once
+   added.
+2. **The repo** - commits, code, hook scripts, `CLAUDE.md` files. A gotcha or
+   decision already in the codebase is cited directly by repo-relative path,
+   with no copy into `notes/`.
 3. **GitHub issues and PRs** - cited directly by `#NNN` or URL.
 
-See `AGENTS.md` for the full ingest/query/lint workflow, or use the skills
-directly: `/ingest`, `/query`, `/lint` (`.claude/skills/` at the repo root -
-not wiki-scoped, available in every session).
+See `AGENTS.md` for the full ingest/query/lint workflow, or the skills
+directly: `/ingest`, `/query`, `/lint` (`.claude/skills/` at the repo root,
+available in every session).
 
 ## Structure
 
@@ -50,22 +47,22 @@ wiki/
 ├── requirements.txt   `pyyaml`, for scripts/validate.py.
 ├── scripts/
 │   └── validate.py    Conformance checker for the bundle.
+├── notes/             Loose hand-dropped input notes (one of three channels).
 └── bundle/            The OKF bundle - the only part validate.py scans.
     ├── index.md       Bundle root index.
     ├── log.md         Chronological, newest-first record of changes.
     └── ...            Concept pages (and sub-directories) live here.
 ```
 
-Everything at `wiki/`'s own root is scaffolding. The bundle is the
-`wiki/bundle/` subfolder: every `.md` under it other than `index.md` and
-`log.md` (at any level) is a concept document.
+Everything at the wiki root, plus `notes/`, is scaffolding or raw input. The
+bundle is the `wiki/bundle/` subfolder: every `.md` under it other than
+`index.md` and `log.md` (at any level) is a concept document.
 
 ## Status
 
-Prototype scaffold only - no concept pages yet, no CI wiring, no hook into
-`issue-triage` or `persona-simulation`. Try it with `/ingest` against
-whatever you drop in `docs/notes/`, then decide via issue #701 whether it's
-worth wiring up further.
+Prototype scaffold: no concept pages yet, no CI wiring, no hook into
+`issue-triage` or `persona-simulation`. Run `/ingest` against whatever lands
+in `notes/` to try it, then decide whether it's worth wiring up further.
 
 ## Validating
 

@@ -41,7 +41,7 @@ docs/
 
 ## Build
 
-Triggered by `.github/workflows/docs.yml` on push to `main` (paths: `docs/**`, excluding `docs/notes/**` - loose notes don't build).
+Triggered by `.github/workflows/docs.yml` on push to `main` (paths: `docs/**`).
 
 Local build requires Asciidoctor + asciidoctor-diagram gem. Easier to push and let CI build.
 

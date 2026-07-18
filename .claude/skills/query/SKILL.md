@@ -14,12 +14,12 @@ e.g. `wiki/bundle/index.md`, `wiki/scripts/validate.py`.
    bundle.
 2. Read only those pages and answer with citations to the specific files
    used.
-3. Coverage tripwire: run one quick grep over `docs/notes/` for the
+3. Coverage tripwire: run one quick grep over `wiki/notes/` for the
    topic's obvious keywords/filenames. If it turns up source paths that
    aren't cited by any page read, say so explicitly alongside the answer -
-   e.g. "note: `docs/notes/<x>.md` looks relevant but isn't cited by any
-   page I read; consider running `/ingest` on it." This is a single
-   grep, not a full audit - that's Lint's job, and scoped to `docs/notes/`
+   e.g. "note: `wiki/notes/<x>.md` looks relevant but isn't cited by any
+   page read here; consider running `/ingest` on it." This is a single
+   grep, not a full audit - that's Lint's job, and scoped to `wiki/notes/`
    only (the repo and issue/PR channels aren't exhaustively checkable this
    way).
 4. If answering required synthesis that isn't captured anywhere and is

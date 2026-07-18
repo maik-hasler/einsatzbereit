@@ -50,7 +50,7 @@ Overused tell-words - prefer the plain alternative:
 
 ## 5. Citations and facts
 
-- Every non-obvious claim is verifiable; cite the specific source - `docs/notes/<path>`, a repo path (optionally `@<commit-sha>`), or `#NNN` / a full issue-or-PR URL. Never invent a reference, commit SHA, issue number, or date.
+- Every non-obvious claim is verifiable; cite the specific source - `wiki/notes/<path>`, a repo path (optionally `@<commit-sha>`), or `#NNN` / a full issue-or-PR URL. Never invent a reference, commit SHA, issue number, or date.
 - If a fact is unverified, say so or leave it out - don't hedge it into existence ("some sources suggest").
 - Match the claim to what the source actually says.
 

@@ -7,8 +7,8 @@ must start with a YAML frontmatter block that includes a non-empty `type`
 field and a non-empty `tags` list, and must contain a `# Related` section
 (even if its body is just "None found."). Everything at wiki/'s own root
 (README.md, AGENTS.md, CLAUDE.md, TEMPLATE.md, WRITING_STYLE.md,
-requirements.txt, scripts/) is scaffolding, lives outside the bundle, and is
-never scanned.
+requirements.txt, scripts/) and the notes/ input folder sit outside the
+bundle and are never scanned.
 """
 
 import re
