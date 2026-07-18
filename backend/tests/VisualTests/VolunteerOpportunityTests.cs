@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -284,7 +286,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task CreateDraft_DoesNotAppearInPublicList_AppearOnDashboardWithAmberBadge()
+	public async Task CreateDraft_DoesNotAppearInPublicList_AppearsOnOpportunitiesTabWithAmberBadge()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
@@ -309,9 +311,18 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Fill title (minimum required for draft save).
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 
-		// Save as draft.
+		// Save as draft - this now routes to the Opportunities tab, where drafts
+		// live (they no longer sit above the calendar).
 		await Page.GetByTestId("modal-save-draft").ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities"), new() { Timeout = 30_000 });
+
+		var draftsSection = Page.GetByTestId("drafts-section");
+		await Expect(draftsSection).ToBeVisibleAsync();
+		await Expect(draftsSection.GetByText(uniqueTitle)).ToBeVisibleAsync();
+
+		// Amber badge present (bg-amber-100 class applied to the draft status pill).
+		var amberBadge = draftsSection.Locator("[class*='bg-amber-100']").First;
+		await Expect(amberBadge).ToBeVisibleAsync();
 
 		// The public home page must NOT show the draft.
 		await Page.GotoAsync(frontend.ToString());
@@ -324,29 +335,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.Filter(new() { HasText = uniqueTitle });
 		await Expect(draftInPublicList).Not.ToBeVisibleAsync();
-
-		// Navigate back to the org dashboard - the draft is listed there.
-		await Page.GoBackAsync();
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var draftsSection = Page.GetByTestId("drafts-section");
-		await Expect(draftsSection).ToBeVisibleAsync();
-
-		// Draft entry with the title is listed.
-		await Expect(draftsSection.GetByText(uniqueTitle)).ToBeVisibleAsync();
-
-		// Amber badge present (bg-amber-100 class applied to the draft status pill).
-		var amberBadge = draftsSection.Locator("[class*='bg-amber-100']").First;
-		await Expect(amberBadge).ToBeVisibleAsync();
 	}
 
 	[Test]
-	public async Task SaveDraft_ToastPointsToDraftsSection_AndSavedDraftIsHighlighted()
+	public async Task SaveDraft_RoutesToOpportunitiesTab_ToastAndHighlight()
 	{
-		// Regression for #708: after saving a new opportunity as a draft, the
-		// organizer could not tell where the draft landed. The toast now names
-		// the Drafts section, and the just-saved draft is highlighted in place
-		// on the same (Calendar) tab it was created from.
+		// Regression for #708: after saving a new opportunity as a draft from the
+		// Calendar tab, the organizer could not tell where the draft landed.
+		// Drafts now live on the Opportunities tab; saving one routes there, the
+		// toast names that tab, and the just-saved draft is highlighted.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Draft Discoverability Test {Guid.NewGuid().ToString("N")[..8]}";
 
@@ -369,18 +366,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.GetByTestId("modal-save-draft").ClickAsync();
 
-		// The dialog close waits on the create-draft API call.
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(
-			new() { Timeout = 30_000 });
+		// Saving a draft routes to the Opportunities tab.
+		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities"), new() { Timeout = 30_000 });
 
-		// The success toast now names the Drafts section, instead of the old
+		// The success toast now names the Opportunities tab, instead of the old
 		// vague "on your organization dashboard" copy.
 		var toast = Page.GetByRole(AriaRole.Alert)
-			.Filter(new() { HasTextString = "Drafts section" });
+			.Filter(new() { HasTextString = "Opportunities" });
 		await Expect(toast).ToBeVisibleAsync();
 
-		// The draft appears in the Drafts section on the same tab (no manual tab
-		// exploration required) and is highlighted so it is easy to spot.
+		// The just-saved draft is highlighted so it is easy to spot.
 		var draftsSection = Page.GetByTestId("drafts-section");
 		await Expect(draftsSection).ToBeVisibleAsync();
 
@@ -431,21 +426,21 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// no description - the exact situation "save as draft" exists for.
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.GetByTestId("modal-save-draft").ClickAsync();
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
 
-		// Reopen the draft via the dashboard's Drafts section.
+		// Saving routes to the Opportunities tab, where the draft is listed.
+		await Expect(Page).ToHaveURLAsync(new Regex(@"/opportunities"), new() { Timeout = 30_000 });
+
 		var draftsSection = Page.GetByTestId("drafts-section");
 		await Expect(draftsSection).ToBeVisibleAsync();
-		await draftsSection.GetByRole(AriaRole.Link, new() { Name = uniqueTitle }).ClickAsync();
 
-		// On the draft's own detail page, open the edit wizard.
-		var editBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
-		await Expect(editBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await editBtn.ClickAsync();
+		// Reopen the draft's edit wizard directly from the list row (inline edit).
+		var draftRow = draftsSection.Locator("li", new() { HasText = uniqueTitle });
+		await Expect(draftRow).ToBeVisibleAsync();
+		await draftRow.GetByTestId("opportunity-edit").ClickAsync();
 
-		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 10_000 });
 
-		// The regression: this action must be available in edit mode too,
+		// The #707 regression: this action must be available in edit mode too,
 		// since the opportunity being edited is still a Draft.
 		var saveDraftBtn = Page.GetByTestId("modal-save-draft");
 		await Expect(saveDraftBtn).ToBeVisibleAsync();
@@ -458,11 +453,93 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		// A lenient partial save must succeed without full-publish validation
 		// blocking it - the dialog closes and no validation error is shown.
-		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The edit persisted - the detail page reloads the opportunity after
-		// a successful save and reflects the new title.
-		await Expect(Page.Locator("h1").GetByText(updatedTitle)).ToBeVisibleAsync();
+		// The edit persisted - the Opportunities list reloads and reflects the
+		// new title.
+		await Expect(draftsSection.GetByText(updatedTitle)).ToBeVisibleAsync(new() { Timeout = 15_000 });
+	}
+
+	[Test]
+	public async Task OpportunitiesHub_ShowsDraftAndPublished_AndPublishesDraftInline()
+	{
+		// The org "Engagements" tab is now the unified "Opportunities" hub: it
+		// lists every opportunity grouped by status (Draft / Published), lets the
+		// organizer publish a draft straight from the list, and reflects the move.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"VisualOppHub {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var draftTitle = $"Hub Draft {suffix}";
+		var publishedTitle = $"Hub Published {suffix}";
+
+		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = draftTitle,
+			description = "Seeded draft for OpportunitiesHub test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		draftResponse.EnsureSuccessStatusCode();
+
+		var publishedResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = publishedTitle,
+			description = "Seeded published for OpportunitiesHub test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		publishedResponse.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var draftsSection = Page.GetByTestId("drafts-section");
+		var publishedSection = Page.GetByTestId("published-section");
+
+		// Both statuses are visible in one place, each under its own heading.
+		await Expect(draftsSection.GetByText(draftTitle)).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(publishedSection.GetByText(publishedTitle)).ToBeVisibleAsync();
+
+		// Publish the draft directly from the list (no slots needed for an
+		// IndividualContact opportunity).
+		var draftRow = draftsSection.Locator("li", new() { HasText = draftTitle });
+		await draftRow.GetByTestId("opportunity-publish").ClickAsync();
+
+		// It moves out of Drafts and into the Published section.
+		await Expect(publishedSection.GetByText(draftTitle)).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 
 	[Test]

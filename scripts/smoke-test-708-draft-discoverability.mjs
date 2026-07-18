@@ -94,19 +94,21 @@ async function main() {
 			await page.locator("#opportunity-title").fill(draftTitle);
 			await page.getByTestId("modal-save-draft").click();
 
-			// Dialog close waits on the create-draft API call.
-			await dialog.waitFor({ state: "hidden", timeout: 30000 });
+			// 1. Saving a draft routes to the Opportunities tab (drafts live
+			//    there now, not above the calendar).
+			await page.waitForURL(/\/opportunities/, { timeout: 30000 });
+			console.log("OK  Saving a draft routed to the Opportunities tab");
 
-			// 1. Toast copy now names the Drafts section instead of the old
+			// 2. Toast copy now names the Opportunities tab instead of the old
 			//    vague "on your organization dashboard" wording.
 			const toast = page
 				.getByRole("alert")
-				.filter({ hasText: "Drafts section" });
+				.filter({ hasText: "Opportunities" });
 			await toast.waitFor({ state: "visible", timeout: 4000 });
-			console.log('OK  Success toast names the "Drafts section" (#708 copy)');
+			console.log('OK  Success toast names the "Opportunities" tab (#708 copy)');
 
-			// 2. The draft is revealed in the Drafts section on the same tab,
-			//    highlighted so it is easy to spot.
+			// 3. The draft is revealed in the Drafts section, highlighted so it
+			//    is easy to spot.
 			const draftsSection = page.getByTestId("drafts-section");
 			await draftsSection.waitFor({ state: "visible", timeout: 10000 });
 

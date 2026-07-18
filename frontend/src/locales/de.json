@@ -223,7 +223,7 @@
       "publish": "Veröffentlichen",
       "saveDraft": "Als Entwurf speichern",
       "savingDraft": "Wird gespeichert…",
-      "draftSavedToast": "Entwurf gespeichert. Du findest ihn im Bereich \"Entwürfe\" über deinem Kalender.",
+      "draftSavedToast": "Entwurf gespeichert. Du findest ihn im Tab \"Einsätze\".",
       "fieldBanner": "Bannerbild (optional)",
       "bannerUpload": "Bild hochladen",
       "bannerHint": "JPG, PNG oder WebP, max. 2 MB",
@@ -343,6 +343,20 @@
       "noOpportunities": "Keine offenen Einsatzmöglichkeiten",
       "noOpportunitiesHint": "Erstelle eine Einsatzmöglichkeit, um Bewerbungen zu erhalten.",
       "manageEngagements": "Bewerbungen verwalten"
+    },
+    "orgOpportunities": {
+      "loading": "Wird geladen…",
+      "error": "Fehler: {{message}}",
+      "emptyTitle": "Noch keine Einsätze",
+      "emptyDesc": "Erstelle deinen ersten Einsatz, um loszulegen.",
+      "draftsHeading": "Entwürfe",
+      "draftsDesc": "Noch nicht öffentlich sichtbar. Bearbeite den Entwurf und veröffentliche ihn dann.",
+      "publishedHeading": "Veröffentlicht",
+      "publishedDesc": "Live und für Freiwillige sichtbar.",
+      "publishedBadge": "Veröffentlicht",
+      "manageApplications": "Bewerbungen verwalten",
+      "participants": "{{booked}}/{{max}} Teilnehmende",
+      "editLoading": "Wird geöffnet…"
     },
     "orgDashboard": {
       "title": "Organisations-Dashboard",
@@ -791,6 +805,7 @@
     "orgOverview": {
       "tabCalendar": "Kalender",
       "tabEngagements": "Bewerbungen",
+      "tabOpportunities": "Einsätze",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",
       "calendarLoading": "Kalender wird geladen...",

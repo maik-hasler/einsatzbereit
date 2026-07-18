@@ -1055,6 +1055,70 @@
         }
       }
     },
+    "/v1/organizations/{organizationId}/opportunities": {
+      "get": {
+        "tags": [
+          "GetOrganizationOpportunitiesEndpoint"
+        ],
+        "operationId": "GetOrganizationOpportunities",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VolunteerOpportunitySummary"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/volunteer-opportunities/{opportunityId}/feedback": {
       "get": {
         "tags": [
@@ -6196,6 +6260,9 @@
     },
     {
       "name": "GetOrganizationOpportunityDraftsEndpoint"
+    },
+    {
+      "name": "GetOrganizationOpportunitiesEndpoint"
     },
     {
       "name": "VolunteerOpportunities"

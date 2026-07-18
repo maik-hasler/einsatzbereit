@@ -23,7 +23,7 @@ export interface OrgAppContext {
 
 const TABS = [
 	{ key: "dashboard", labelKey: "orgOverview.tabCalendar" },
-	{ key: "engagements", labelKey: "orgOverview.tabEngagements" },
+	{ key: "opportunities", labelKey: "orgOverview.tabOpportunities" },
 	{ key: "members", labelKey: "orgOverview.tabMembers" },
 	{ key: "settings", labelKey: "orgOverview.tabSettings" },
 ] as const;

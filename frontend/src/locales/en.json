@@ -223,7 +223,7 @@
       "publish": "Publish",
       "saveDraft": "Save as draft",
       "savingDraft": "Saving…",
-      "draftSavedToast": "Draft saved. Find it in the Drafts section above your calendar.",
+      "draftSavedToast": "Draft saved. Find it under the Opportunities tab.",
       "fieldBanner": "Banner image (optional)",
       "bannerUpload": "Upload image",
       "bannerHint": "JPG, PNG or WebP, max. 2 MB",
@@ -343,6 +343,20 @@
       "noOpportunities": "No open opportunities",
       "noOpportunitiesHint": "Create a volunteer opportunity to start receiving applications.",
       "manageEngagements": "Manage engagements"
+    },
+    "orgOpportunities": {
+      "loading": "Loading…",
+      "error": "Error: {{message}}",
+      "emptyTitle": "No opportunities yet",
+      "emptyDesc": "Create your first volunteer opportunity to get started.",
+      "draftsHeading": "Drafts",
+      "draftsDesc": "Not publicly visible yet. Finish editing, then publish.",
+      "publishedHeading": "Published",
+      "publishedDesc": "Live and visible to volunteers.",
+      "publishedBadge": "Published",
+      "manageApplications": "Manage applications",
+      "participants": "{{booked}}/{{max}} participants",
+      "editLoading": "Opening…"
     },
     "orgDashboard": {
       "title": "Organization Dashboard",
@@ -791,6 +805,7 @@
     "orgOverview": {
       "tabCalendar": "Calendar",
       "tabEngagements": "Engagements",
+      "tabOpportunities": "Opportunities",
       "tabMembers": "Members",
       "tabSettings": "Settings",
       "calendarLoading": "Loading calendar...",
