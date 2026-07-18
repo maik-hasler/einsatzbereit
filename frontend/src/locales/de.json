@@ -36,6 +36,7 @@
       "heroSubtitle": "Immer weniger Menschen engagieren sich - aus Zeitmangel, Aufwand und Bürokratie. Einsatzbereit macht Mikro-Ehrenamt möglich: ein paar Stunden, echter Impact, null Overhead.",
       "heroCta": "Einsätze finden",
       "heroCtaOrg": "Organisation erstellen",
+      "heroCtaOrgOverview": "Organisationsübersicht",
       "heroStat1Value": "2 min",
       "heroStat1Label": "bis zur Anmeldung",
       "heroStat2Value": "0 €",
@@ -319,7 +320,20 @@
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
-      "unknownError": "Unbekannter Fehler"
+      "unknownError": "Unbekannter Fehler",
+      "contextBanner": "Verwaltung von {{name}}"
+    },
+    "orgApp": {
+      "backToSite": "Zurueck zu Einsatzbereit",
+      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
+    },
+    "orgAppEntry": {
+      "title": "Organisationsübersicht",
+      "loading": "Wird geladen…",
+      "emptyTitle": "Du organisierst noch keine Organisation",
+      "emptyDesc": "Erstelle eine Organisation, um Einsatzmöglichkeiten zu veröffentlichen und dein Team zu verwalten.",
+      "pickerTitle": "Organisation auswählen",
+      "pickerDesc": "Du organisierst mehr als eine Organisation - wähle aus, welche du verwalten möchtest."
     },
     "orgEngagements": {
       "title": "Bewerbungen",
@@ -667,9 +681,7 @@
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
-      "removeChip": "Entfernen",
-      "sectionOrganization": "Organisationen",
-      "createOrgHint": "Moechtest du Freiwilligeneinsaetze organisieren? Erstelle eine Organisation, um loszulegen."
+      "removeChip": "Entfernen"
     },
     "achievements": {
       "title": "Meine Errungenschaften",
@@ -725,6 +737,7 @@
     },
     "breadcrumb": {
       "home": "Startseite",
+      "orgApp": "Organisationen",
       "volunteerOpportunities": "Einsatzmöglichkeiten",
       "engagements": "Bewerbungen",
       "settings": "Einstellungen",

@@ -2261,7 +2261,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/KeycloakOrganization"
+                    "$ref": "#/components/schemas/OrganizationSummaryDto"
                   }
                 }
               }
@@ -4620,22 +4620,6 @@
           }
         }
       },
-      "KeycloakOrganization": {
-        "required": [
-          "id",
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      },
       "MemberCandidateDto": {
         "required": [
           "userId",
@@ -5119,6 +5103,29 @@
           },
           "isOrganisator": {
             "type": "boolean"
+          }
+        }
+      },
+      "OrganizationSummaryDto": {
+        "required": [
+          "id",
+          "name",
+          "logoUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

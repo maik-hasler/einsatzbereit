@@ -24,8 +24,8 @@ internal sealed class CreateInvitationCommandHandler(
 		var org = await dbContext.Organizations.FindAsync(request.OrganizationId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", "Organization not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrganizationService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			request.OrganizationId.Value,
 			request.InvitedById,
 			cancellationToken);

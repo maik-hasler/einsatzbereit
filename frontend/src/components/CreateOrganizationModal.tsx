@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Organization } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
 
 interface Props {
 	onClose: () => void;
-	onSuccess: () => void;
+	onSuccess: (organization: Organization) => void;
 }
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -92,7 +93,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					// logo can still be added later from the Settings tab.
 				}
 			}
-			onSuccess();
+			onSuccess(organization);
 			onClose();
 		} catch (err: unknown) {
 			setError(getApiErrorMessage(err, t("organization.unknownError")));

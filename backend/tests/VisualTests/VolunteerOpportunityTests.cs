@@ -101,30 +101,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	public async Task CreateWizard_HasStepperFreeNavigationAndDraftButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Create opportunity now lives on the organization dashboard - navigate there
-		// via the org switcher. Switcher toggle has aria-label "Switch organization"
-		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
-		// Guard: the dialog may not open if no active-org cookie is set yet.
+		// Guard: the dialog may not open in an unexpected state.
 		var dialog = Page.Locator("[role='dialog']");
 		try
 		{
@@ -305,21 +290,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var uniqueTitle = $"Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Create opportunity lives on the organization dashboard - navigate there
-		// via the org switcher. Switcher toggle has aria-label "Switch organization"
-		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return;
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return;
-
-		await dashboardLink.First.ClickAsync();
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -346,8 +317,11 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// Filter the <li> card, not the stretched <a> overlay - the card link
+		// carries the title only as aria-label (empty text content), so
+		// HasText never matches it. The <li> contains the visible <h3> title.
 		var draftInPublicList = Page
-			.Locator("a[href*='/volunteer-opportunities/']")
+			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.Filter(new() { HasText = uniqueTitle });
 		await Expect(draftInPublicList).Not.ToBeVisibleAsync();
 
@@ -454,21 +428,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var uniqueTitle = $"Waitlist Publish Gap Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		// Create opportunity lives on the organization dashboard - navigate there
-		// via the org switcher. Switcher toggle has aria-label "Switch organization"
-		// (en) / "Organisation wechseln" (de).
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -493,9 +453,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
-		// Step 3: Waitlist participation type.
+		// Step 3: Waitlist participation type. Click the visible label card, not
+		// the sr-only radio <input>, which is not a reliable pointer target.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("input[name='participationType'][value='Waitlist']").CheckAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='Waitlist'])").ClickAsync();
 
 		// Step 4: publishing with no time slots must still be blocked client-side.
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
@@ -536,12 +497,17 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
-		// The newly published opportunity is visible in the public list.
+		// The newly published opportunity is visible in the public list. Filter
+		// the <li> card, not the stretched <a> overlay - the card link carries
+		// the title only as aria-label (empty text content), so HasText never
+		// matches it; the <li> contains the visible <h3> title. Keep the 30s
+		// window: under the shared, contended CI stack the listing can lag
+		// behind the publish call by more than 15s even when nothing is wrong.
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var listedCard = Page
-			.Locator("a[href*='/volunteer-opportunities/']")
+			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.Filter(new() { HasText = uniqueTitle });
-		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}
 }

@@ -1,5 +1,4 @@
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.DismissInvitation.v1;
 using AwesomeAssertions;
@@ -15,7 +14,6 @@ public class DismissInvitationCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
-	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> _invitationRepo =
 		Substitute.For<IAggregateRepository<OrganizationInvitation, OrganizationInvitationId>>();
 	private readonly DismissInvitationCommandHandler _sut;
@@ -26,10 +24,10 @@ public class DismissInvitationCommandHandlerTests
 	public DismissInvitationCommandHandlerTests()
 	{
 		_dbContext.OrganizationInvitations.Returns(_invitationRepo);
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(DefaultOrgId.Value, "Test Org")]);
-		_sut = new DismissInvitationCommandHandler(_dbContext, _unitOfWork, _keycloakOrgService);
+		_dbContext
+			.IsOrganizerAsync(DefaultOrgId, DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(true);
+		_sut = new DismissInvitationCommandHandler(_dbContext, _unitOfWork);
 	}
 
 	private static OrganizationInvitation CreateDeclinedInvitation(OrganizationId orgId)
@@ -45,9 +43,9 @@ public class DismissInvitationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		_keycloakOrgService
-			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, cancellationToken)
-			.Returns([]);
+		_dbContext
+			.IsOrganizerAsync(DefaultOrgId, DefaultRequestingUserId, cancellationToken)
+			.Returns(false);
 		var invitation = CreateDeclinedInvitation(DefaultOrgId);
 		var command = new DismissInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 

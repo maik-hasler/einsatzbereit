@@ -32,9 +32,9 @@ public class DeleteOrganizationCommandHandlerTests
 	}
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>
-		_keycloakService
-			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(orgId, "Test Org")]);
+		_dbContext
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(true);
 
 	private void SetMembers(Guid orgId, params Guid[] memberIds) =>
 		_keycloakService
@@ -100,9 +100,9 @@ public class DeleteOrganizationCommandHandlerTests
 		var orgId = Guid.NewGuid();
 		var organization = CreateOrganization(orgId);
 		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
-		_keycloakService
-			.GetUserOrganizationsAsync(DefaultRequestingUserId.Value, Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganization(Guid.NewGuid(), "Unrelated Org")]);
+		_dbContext
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(false);
 		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
 
 		// Act

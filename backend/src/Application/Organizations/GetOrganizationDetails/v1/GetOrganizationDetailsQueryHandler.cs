@@ -4,7 +4,6 @@ using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
-using Domain.Primitives;
 
 namespace Application.Organizations.GetOrganizationDetails.v1;
 
@@ -23,14 +22,14 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		if (organization is null)
 			return null;
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrganizationService,
-			request.OrganizationId,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
+			organization.Id.Value,
 			request.RequestingUserId,
 			cancellationToken);
 
 		var members = await keycloakOrganizationService.GetMembersAsync(
-			request.OrganizationId, cancellationToken);
+			organization.Id.Value, cancellationToken);
 
 		var address = organization.Address is null
 			? null

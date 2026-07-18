@@ -1,9 +1,12 @@
+using Application.Common.Authorization;
 using Application.Common.Messaging;
+using Application.Common.Persistence;
 using Application.VolunteerOpportunities;
 
 namespace Application.Organizations.GetOrganizationCalendarEvents.v1;
 
 internal sealed class GetOrganizationCalendarEventsQueryHandler(
+	IApplicationDbContext dbContext,
 	IVolunteerOpportunityReadRepository readRepository)
 	: IQueryHandler<GetOrganizationCalendarEventsQuery, IReadOnlyList<OrganizationCalendarEventDto>>
 {
@@ -11,6 +14,12 @@ internal sealed class GetOrganizationCalendarEventsQueryHandler(
 		GetOrganizationCalendarEventsQuery request,
 		CancellationToken cancellationToken = default)
 	{
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
+			request.OrganizationId,
+			request.RequestingUserId,
+			cancellationToken);
+
 		return await readRepository.GetCalendarEventsAsync(
 			request.OrganizationId,
 			cancellationToken);

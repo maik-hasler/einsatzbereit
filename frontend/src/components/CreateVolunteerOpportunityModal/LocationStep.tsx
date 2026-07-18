@@ -77,7 +77,7 @@ export default function LocationStep({
 							<p className="mt-2 text-xs leading-relaxed text-brand-700">
 								{t("createOpportunity.orgAddressTip")}{" "}
 								<Link
-									to={`/organizations/${organizationId}/settings`}
+									to={`/app/${organizationId}/settings`}
 									className="font-semibold underline hover:text-brand-900"
 								>
 									{t("createOpportunity.orgSettingsLink")}

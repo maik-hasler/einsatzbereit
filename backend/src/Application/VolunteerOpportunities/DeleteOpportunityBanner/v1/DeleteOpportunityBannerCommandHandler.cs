@@ -1,6 +1,5 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
@@ -11,7 +10,6 @@ namespace Application.VolunteerOpportunities.DeleteOpportunityBanner.v1;
 
 internal sealed class DeleteOpportunityBannerCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrgService,
 	IFileStorageService fileStorage)
 	: ICommandHandler<DeleteOpportunityBannerCommand, bool>
 {
@@ -25,8 +23,8 @@ internal sealed class DeleteOpportunityBannerCommandHandler(
 			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
-		await OwnershipGuard.EnsureIsOrgMemberAsync(
-			keycloakOrgService,
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
 			cancellationToken);

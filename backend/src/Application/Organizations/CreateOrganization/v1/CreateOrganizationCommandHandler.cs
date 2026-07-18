@@ -5,6 +5,7 @@ using Application.Common.Persistence;
 using Domain.Common;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Users;
 
 namespace Application.Organizations.CreateOrganization.v1;
 
@@ -48,6 +49,11 @@ internal sealed class CreateOrganizationCommandHandler(
 		organization.Relocate(address);
 
 		await dbContext.Organizations.AddAsync(organization, cancellationToken);
+
+		var membership = OrganizationMembership.Create(
+			organization.Id, UserId.Create(request.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer);
+
+		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 
 		return organization;
 	}
