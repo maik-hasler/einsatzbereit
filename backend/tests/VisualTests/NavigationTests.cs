@@ -137,6 +137,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #574: back navigation used to only appear in the empty-application state.
 		// The revived breadcrumb must be present unconditionally.
+		//
+		// #751 review follow-up: the breadcrumb must show the specific
+		// opportunity being managed - Home > Opportunities > {title}, with
+		// "Opportunities" demoted to a link back to the tab - instead of a
+		// fixed "Opportunities" label plus a separate context line in the page.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
@@ -147,14 +152,55 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// "Manage applications" only appears for published opportunities on the
 		// Opportunities hub.
-		var manageLink = Page.GetByText("Manage applications").First;
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
+		if (await manageLink.CountAsync() == 0)
+			return; // organizer has no published opportunities in seed - skip
+
+		var row = Page.Locator("li").Filter(new() { Has = manageLink });
+		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
+
+		await manageLink.ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+		await Expect(breadcrumb).ToBeVisibleAsync();
+		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }))
+			.ToBeVisibleAsync();
+		await Expect(breadcrumb.GetByText(opportunityTitle, new() { Exact = true }))
+			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_WithOpportunitiesTabActive()
+	{
+		// #751: engagement management moved into the org app as a nested route
+		// under /app/:organizationId/opportunities/:opportunityId/engagements -
+		// the org switcher and tab nav must stay visible (with "Opportunities"
+		// active) instead of swapping to the public site header/footer, and
+		// leaving via the tab nav must return to the opportunities list.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
 		if (await manageLink.CountAsync() == 0)
 			return; // organizer has no published opportunities in seed - skip
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var opportunitiesTab = Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true });
+		await Expect(opportunitiesTab).ToHaveAttributeAsync("aria-current", "page");
+
+		await opportunitiesTab.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities$"), new() { Timeout = 15_000 });
 	}
 
 	[Test]

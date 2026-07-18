@@ -9,12 +9,11 @@ import type {
 import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
-import OrgContextBanner from "../components/OrgContextBanner";
 import QRScannerModal from "../components/QRScannerModal";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { usePageToolbar } from "../contexts/ToolbarContext";
+import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
@@ -32,22 +31,7 @@ export default function EngagementManagementPage() {
 			? `${t("engagementManagement.title")} - ${opportunity.title}`
 			: t("engagementManagement.title"),
 	);
-	usePageToolbar(
-		opportunity
-			? [
-					{ label: t("breadcrumb.home"), href: "/" },
-					{
-						label: opportunity.organizationName,
-						href: `/organizations/${opportunity.organizationId}`,
-					},
-					{
-						label: opportunity.title,
-						href: `/volunteer-opportunities/${opportunityId}`,
-					},
-					{ label: t("engagementManagement.title") },
-				]
-			: [{ label: t("breadcrumb.home"), href: "/" }],
-	);
+	useSetOrgBreadcrumbExtra(opportunity?.title);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("engagementManagement.status.Pending"),
@@ -187,12 +171,6 @@ export default function EngagementManagementPage() {
 	return (
 		<>
 			<div className="mb-6">
-				{opportunity && (
-					<OrgContextBanner
-						organizationId={opportunity.organizationId}
-						organizationName={opportunity.organizationName}
-					/>
-				)}
 				<h1 className="text-2xl font-bold text-gray-900">
 					{t("engagementManagement.title")}
 				</h1>
@@ -206,7 +184,7 @@ export default function EngagementManagementPage() {
 					<p className="mt-1 font-mono text-2xl font-bold tracking-widest text-brand-800">
 						{checkInPin}
 					</p>
-					<p className="mt-1 text-xs text-brand-600">
+					<p className="mt-1 text-xs text-brand-700">
 						{t("checkIn.organizerPinHint")}
 					</p>
 				</div>

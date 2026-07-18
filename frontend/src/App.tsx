@@ -59,6 +59,10 @@ export default function App() {
 				<Route index element={<Navigate to="dashboard" replace />} />
 				<Route path="dashboard" element={<OrgDashboardPage />} />
 				<Route path="opportunities" element={<OrgOpportunitiesPage />} />
+				<Route
+					path="opportunities/:opportunityId/engagements"
+					element={<EngagementManagementPage />}
+				/>
 				{/* Old tab key: the "Engagements" tab is now the Opportunities hub - keep old bookmarks working. */}
 				<Route
 					path="engagements"
@@ -82,14 +86,6 @@ export default function App() {
 				<Route
 					path="/my-engagements"
 					element={<Navigate to="/profile?tab=engagements" replace />}
-				/>
-				<Route
-					path="/volunteer-opportunities/:opportunityId/engagements"
-					element={
-						<ProtectedRoute>
-							<EngagementManagementPage />
-						</ProtectedRoute>
-					}
 				/>
 				<Route path="/account" element={<Navigate to="/profile" replace />} />
 				<Route

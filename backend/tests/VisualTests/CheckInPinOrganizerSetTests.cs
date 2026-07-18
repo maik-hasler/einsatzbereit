@@ -113,12 +113,14 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var editBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" });
-		await Expect(editBtn).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await editBtn.ClickAsync();
+		// Editing now lives exclusively in the org app's Opportunities tab,
+		// not the public detail page (#751).
+		var oppRow = Page.Locator("li", new() { HasText = oppTitle });
+		await Expect(oppRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await oppRow.GetByTestId("opportunity-edit").ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();

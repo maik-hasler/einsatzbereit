@@ -22,11 +22,14 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task MobileHeader_LanguageSelectorHiddenUntilHamburgerOpened_BellAndAvatarAlwaysVisible()
 	{
-		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-
+		// Log in at the default (desktop) viewport - AuthHelper.LoginAsync looks
+		// for the "Sign in" button that only exists in the public header's
+		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
+		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		// Bell + avatar (AccountControls) render at every viewport width.
 		await Expect(Page.GetByTestId("notification-bell")).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -48,11 +51,14 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task TabBar_AllFourTabs_StayOnOneRow_NoWrapOnMobile()
 	{
-		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-
+		// Log in at the default (desktop) viewport - AuthHelper.LoginAsync looks
+		// for the "Sign in" button that only exists in the public header's
+		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
+		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		var tabBar = Page.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" });
 		await Expect(tabBar).ToBeVisibleAsync();
@@ -83,11 +89,14 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task OpportunitiesPageHeader_StacksTitleAboveButton_OnMobile()
 	{
-		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-
+		// Log in at the default (desktop) viewport - AuthHelper.LoginAsync looks
+		// for the "Sign in" button that only exists in the public header's
+		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
+		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		await Page.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" })
 			.GetByRole(AriaRole.Link, new() { Name = "Opportunities" })
