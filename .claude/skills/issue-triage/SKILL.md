@@ -45,7 +45,7 @@ For each open issue:
   merge the PR yourself, under any circumstances** - merging is the
   repository owner's decision alone, regardless of how green CI is or how
   clean the live-verification result looks. (Direct pushes to `main` are
-  also blocked in this sandbox anyway - see root `CLAUDE.md`, "Sandbox
+  also blocked in this sandbox anyway - see root `AGENTS.md`, "Sandbox
   Limitations" - but the point is broader than that restriction: even where
   merging were possible, it's still not this routine's call to make.)
 - **Never use a GitHub closing keyword** (`Fixes`/`Closes`/`Resolves`, any
@@ -66,7 +66,7 @@ For each open issue:
 
 - Test the change against the live application before considering it done.
 - Docker/Aspire (`IntegrationTests`, `VisualTests`, the AppHost) is not
-  reliably available in this sandbox - see root `CLAUDE.md`, "Sandbox
+  reliably available in this sandbox - see root `AGENTS.md`, "Sandbox
   Limitations". Validate locally with what doesn't need Docker (build,
   `Application.UnitTests`, `ArchitectureTests`); rely on CI for the full
   suite; do live-application verification via the release-candidate +

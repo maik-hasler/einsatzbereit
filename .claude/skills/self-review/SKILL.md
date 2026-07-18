@@ -10,7 +10,7 @@ description: >
 
 # Self-review
 
-Required step before opening a PR (see root `CLAUDE.md`, "Mandatory: Deploy
+Required step before opening a PR (see root `AGENTS.md`, "Mandatory: Deploy
 and verify"). Report only - never silently fix findings, surface them.
 
 ## Scope
