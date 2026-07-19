@@ -13,7 +13,8 @@
  *    switcher remains a separate control
  *  - the legal pages (previously missed, still German-slugged) now show the
  *    action bar too, at their renamed English slugs /imprint and
- *    /privacy-policy, with /impressum and /datenschutz redirecting there
+ *    /privacy-policy - the old /impressum and /datenschutz slugs are removed
+ *    outright (no redirect kept) and now 404
  *
  * Run: node scripts/smoke-test-758-header-breadcrumb.mjs
  */
@@ -143,14 +144,14 @@ async function main() {
 		console.log("OK  /privacy-policy shows the header-level action bar");
 
 		await page.goto(`${BASE}/impressum`, { waitUntil: "networkidle" });
-		if (!page.url().endsWith("/imprint")) {
-			throw new Error(`/impressum should redirect to /imprint, landed on ${page.url()}`);
+		if ((await page.getByRole("link", { name: "Back to home" }).count()) === 0) {
+			throw new Error("/impressum should 404 (NotFoundPage) now that the old slug is removed");
 		}
 		await page.goto(`${BASE}/datenschutz`, { waitUntil: "networkidle" });
-		if (!page.url().endsWith("/privacy-policy")) {
-			throw new Error(`/datenschutz should redirect to /privacy-policy, landed on ${page.url()}`);
+		if ((await page.getByRole("link", { name: "Back to home" }).count()) === 0) {
+			throw new Error("/datenschutz should 404 (NotFoundPage) now that the old slug is removed");
 		}
-		console.log("OK  Old German slugs (/impressum, /datenschutz) redirect to the new English routes");
+		console.log("OK  Old German slugs (/impressum, /datenschutz) are removed and now 404");
 
 		const footerLegalLinks = page.locator("footer a[href='/imprint'], footer a[href='/privacy-policy']");
 		if ((await footerLegalLinks.count()) < 2) {

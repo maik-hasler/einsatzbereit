@@ -130,16 +130,23 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	}
 
 	[Test]
-	public async Task OldGermanSlugs_RedirectToNewEnglishRoutes()
+	public async Task OldGermanSlugs_AreRemoved_404sInstead()
 	{
+		// The old /impressum and /datenschutz routes are removed outright (no
+		// redirect kept) - visiting them now falls through to the catch-all
+		// NotFoundPage, same as any other unknown path.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await Page.GotoAsync($"{origin}/impressum");
-		await Page.WaitForURLAsync($"{origin}/imprint", new() { Timeout = 10_000 });
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.GotoAsync($"{origin}/datenschutz");
-		await Page.WaitForURLAsync($"{origin}/privacy-policy", new() { Timeout = 10_000 });
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Back to home" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
 	[Test]

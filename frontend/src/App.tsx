@@ -75,12 +75,6 @@ export default function App() {
 				<Route path="/" element={<HomePage />} />
 				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 				<Route path="/imprint" element={<ImprintPage />} />
-				{/* Pre-#758 German slugs: keep old bookmarks/external links working. */}
-				<Route
-					path="/datenschutz"
-					element={<Navigate to="/privacy-policy" replace />}
-				/>
-				<Route path="/impressum" element={<Navigate to="/imprint" replace />} />
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}
