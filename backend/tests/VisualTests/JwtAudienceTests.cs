@@ -38,4 +38,36 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 				$"JWT audience validation rejected {authErrors.Count} request(s): "
 				+ string.Join(", ", authErrors));
 	}
+
+	[Test]
+	public async Task AdminOrganizations_AuthenticatedAdmin_LoadsWithoutAuthError()
+	{
+		// Regression for #760: the "admin" realm role had no composite roles,
+		// so an admin-only token was missing "user"/"organisator" and every
+		// baseline authenticated endpoint (including GET /v1/organizations)
+		// returned 403 for the admin account specifically.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend").GetLeftPart(UriPartial.Authority);
+
+		var authErrors = new List<string>();
+		Page.Response += (_, resp) =>
+		{
+			if (resp.Url.StartsWith(backend, StringComparison.Ordinal)
+				&& (resp.Status == 401 || resp.Status == 403))
+				authErrors.Add($"{resp.Status} {resp.Url}");
+		};
+
+		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/admin/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByText("Failed to load organizations.")).Not.ToBeVisibleAsync();
+
+		if (authErrors.Count > 0)
+			throw new Exception(
+				$"Admin token rejected on baseline endpoint(s): "
+				+ string.Join(", ", authErrors));
+	}
 }

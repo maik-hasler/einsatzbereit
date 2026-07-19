@@ -37,7 +37,14 @@
     "realm": [
       {
         "name": "admin",
-        "description": "Administrator"
+        "description": "Administrator",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user",
+            "organisator"
+          ]
+        }
       },
       {
         "name": "user",
