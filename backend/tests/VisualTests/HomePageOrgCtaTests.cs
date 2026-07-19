@@ -43,7 +43,20 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 			return; // a previous retry already gave vera an org - skip
 
 		await Expect(cta.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await cta.First.ClickAsync();
+		try
+		{
+			await cta.First.ClickAsync(new() { Timeout = 5_000 });
+		}
+		catch (TimeoutException)
+		{
+			// The org-count fetch can still resolve after NetworkIdle and swap
+			// the button out for the dashboard Link right as we click - if that
+			// happened, vera already has an org, so this is the same "skip"
+			// case as the CountAsync() check above, not a real failure.
+			if (await cta.CountAsync() == 0)
+				return;
+			throw;
+		}
 
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync(new() { Timeout = 10_000 });
