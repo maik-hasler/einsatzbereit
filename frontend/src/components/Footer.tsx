@@ -36,6 +36,14 @@ export default function Footer() {
 									{t("footer.participate")}
 								</Link>
 							</li>
+							<li>
+								<Link
+									to="/organizations"
+									className="hover:text-white transition-colors"
+								>
+									{t("footer.browseOrganizations")}
+								</Link>
+							</li>
 						</ul>
 
 						<h3 className="text-white font-semibold mb-4 mt-6 uppercase text-xs tracking-wider">
