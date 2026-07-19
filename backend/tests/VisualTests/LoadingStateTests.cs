@@ -140,7 +140,7 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		});
 		oppResponse.EnsureSuccessStatusCode();
 		var opp = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
-		return opp.GetProperty("id").GetProperty("value").GetString()
+		return opp.GetProperty("id").GetString()
 			?? throw new InvalidOperationException("Created opportunity had no id.");
 	}
 }
