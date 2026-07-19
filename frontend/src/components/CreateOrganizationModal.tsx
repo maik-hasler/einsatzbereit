@@ -130,7 +130,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							<div>
 								<label
 									htmlFor="create-org-logo-upload"
-									className="cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+									className="cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 								>
 									{t("orgSettings.logoUpload")}
 								</label>
@@ -167,7 +167,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder={t("organization.namePlaceholder")}
-							className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+							className={inputClass}
 						/>
 					</div>
 
@@ -236,7 +236,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						/>
 					</div>
 
-					<fieldset className="rounded-md border border-gray-200 p-4">
+					<fieldset className="rounded-xl border border-gray-200 p-4">
 						<legend className="px-1 text-sm font-medium text-gray-700">
 							{t("orgSettings.fieldAddress")}
 						</legend>
@@ -297,7 +297,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						type="button"
 						onClick={onClose}
 						data-testid="modal-cancel"
-						className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+						className="rounded-xl px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100"
 					>
 						{t("organization.cancel")}
 					</button>
@@ -305,7 +305,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						type="submit"
 						disabled={loading}
 						data-testid="modal-submit"
-						className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
+						className="rounded-xl bg-brand-700 px-4 py-2 text-sm text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
 					>
 						{loading ? t("organization.creating") : t("organization.submit")}
 					</button>

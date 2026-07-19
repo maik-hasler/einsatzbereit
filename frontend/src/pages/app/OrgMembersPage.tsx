@@ -8,6 +8,7 @@ import type {
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { inputClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -133,12 +134,12 @@ export default function OrgMembersPage() {
 
 			<div className="mx-auto max-w-2xl">
 				{successMessage && (
-					<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+					<div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
 						{successMessage}
 					</div>
 				)}
 				{settingsError && (
-					<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+					<div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
 						{settingsError}
 					</div>
 				)}
@@ -156,7 +157,7 @@ export default function OrgMembersPage() {
 						value={memberSearch}
 						onChange={(e) => handleMemberSearchChange(e.target.value)}
 						placeholder={t("orgSettings.invitePlaceholder")}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none"
+						className={inputClass}
 					/>
 					{memberSearchLoading && (
 						<p className="mt-1 text-xs text-gray-500">
@@ -164,7 +165,7 @@ export default function OrgMembersPage() {
 						</p>
 					)}
 					{memberCandidates.length > 0 && (
-						<ul className="mt-1 divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+						<ul className="mt-1 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
 							{memberCandidates.map((candidate) => (
 								<li
 									key={candidate.userId}
@@ -183,7 +184,7 @@ export default function OrgMembersPage() {
 									<button
 										type="button"
 										onClick={() => handleInviteMember(candidate.userId)}
-										className="ml-3 shrink-0 rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-800"
+										className="ml-3 shrink-0 rounded-xl bg-brand-700 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800"
 									>
 										{t("orgSettings.invite")}
 									</button>
@@ -205,7 +206,7 @@ export default function OrgMembersPage() {
 						<h2 className="mb-2 text-sm font-medium text-gray-700">
 							{t("orgSettings.pendingInvitations")}
 						</h2>
-						<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+						<ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
 							{invitations
 								.filter((i) => i.status === "Pending")
 								.map((invitation) => (
@@ -240,7 +241,7 @@ export default function OrgMembersPage() {
 						<h2 className="mb-2 text-sm font-medium text-gray-700">
 							{t("orgSettings.declinedInvitations")}
 						</h2>
-						<ul className="divide-y divide-gray-100 rounded-md border border-gray-200 bg-white shadow-sm">
+						<ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
 							{invitations
 								.filter((i) => i.status === "Declined")
 								.map((invitation) => (
