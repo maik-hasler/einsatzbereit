@@ -8,6 +8,7 @@ import type {
 } from "../client/api-client";
 import BadgeGrid from "../components/BadgeGrid";
 import ProfileFieldsView from "../components/ProfileFieldsView";
+import Spinner from "../components/Spinner";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -40,7 +41,11 @@ export default function UserProfilePage() {
 	}, [userId]);
 
 	if (loading)
-		return <p className="text-gray-500">{t("userProfile.loading")}</p>;
+		return (
+			<div className="flex items-center justify-center py-16">
+				<Spinner label={t("userProfile.loading")} />
+			</div>
+		);
 	if (error) return <p className="text-red-600">{error}</p>;
 	if (!profile)
 		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;

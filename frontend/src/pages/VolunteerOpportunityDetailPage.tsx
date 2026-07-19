@@ -12,6 +12,7 @@ import {
 import SignUpModal from "../components/SignUpModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import SingleMarkerMap from "../components/SingleMarkerMap";
+import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
@@ -123,7 +124,20 @@ export default function VolunteerOpportunityDetailPage() {
 	}
 
 	if (loading)
-		return <p className="text-gray-500">{t("opportunities.loading")}</p>;
+		return (
+			<div className="mx-auto max-w-2xl" role="status">
+				<span className="sr-only">{t("opportunities.loading")}</span>
+				<Skeleton className="mb-6 h-56 w-full sm:h-72" />
+				<div className="mb-3 flex items-center justify-between gap-3">
+					<Skeleton className="h-6 w-32 rounded-full" />
+					<Skeleton className="h-8 w-20 rounded-lg" />
+				</div>
+				<Skeleton className="mb-3 h-8 w-3/4" />
+				<Skeleton className="mb-2 h-4 w-full" />
+				<Skeleton className="mb-6 h-4 w-2/3" />
+				<Skeleton className="h-32 w-full" />
+			</div>
+		);
 	if (error)
 		return (
 			<p className="text-red-600">

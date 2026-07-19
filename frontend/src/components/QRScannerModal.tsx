@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
+import Spinner from "./Spinner";
 
 declare global {
 	class BarcodeDetector {
@@ -137,7 +138,9 @@ export default function QRScannerModal({
 			</h2>
 
 			{supported === null && (
-				<p className="text-sm text-gray-500">{t("opportunities.loading")}</p>
+				<div className="flex items-center justify-center py-6">
+					<Spinner label={t("opportunities.loading")} size="sm" />
+				</div>
 			)}
 
 			{supported === false && (

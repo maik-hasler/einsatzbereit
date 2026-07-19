@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { PublicOrganizationProfileResponse } from "../client/api-client";
 import OrganizationProfileView from "../components/OrganizationProfileView";
+import Spinner from "../components/Spinner";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -33,7 +34,11 @@ export default function OrganizationProfilePage() {
 	}, [organizationId]);
 
 	if (loading)
-		return <p className="text-gray-500">{t("orgProfile.loading")}</p>;
+		return (
+			<div className="flex items-center justify-center py-16">
+				<Spinner label={t("orgProfile.loading")} />
+			</div>
+		);
 	if (error)
 		return (
 			<p className="text-red-600">

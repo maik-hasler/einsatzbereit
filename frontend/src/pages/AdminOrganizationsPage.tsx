@@ -6,6 +6,7 @@ import { runtimeConfig } from "../lib/runtimeConfig";
 import { dispatchToast } from "../lib/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import Spinner from "../components/Spinner";
 
 interface OrgRow {
 	id: string;
@@ -78,7 +79,12 @@ export default function AdminOrganizationsPage() {
 		}
 	}
 
-	if (loading) return <p className="text-gray-500">{t("adminOrgs.loading")}</p>;
+	if (loading)
+		return (
+			<div className="flex items-center justify-center py-16">
+				<Spinner label={t("adminOrgs.loading")} />
+			</div>
+		);
 	if (error) return <p className="text-red-600">{error}</p>;
 	if (rows.length === 0)
 		return <p className="text-gray-500">{t("adminOrgs.noOrgs")}</p>;

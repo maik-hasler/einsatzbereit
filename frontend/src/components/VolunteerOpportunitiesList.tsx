@@ -7,6 +7,7 @@ import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import EmptyState from "./EmptyState";
+import Skeleton from "./Skeleton";
 
 const LIST_PAGE_SIZE = 10;
 
@@ -1551,7 +1552,23 @@ export default function VolunteerOpportunitiesList() {
 			</div>
 
 			{loading && items.length === 0 && (
-				<p className="text-gray-500">{t("opportunities.loading")}</p>
+				<div role="status" className="space-y-3">
+					<span className="sr-only">{t("opportunities.loading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							aria-hidden="true"
+							className="flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm sm:flex-row"
+						>
+							<Skeleton className="h-24 w-full shrink-0 rounded-none sm:h-auto sm:w-36 lg:w-44" />
+							<div className="flex-1 space-y-2 p-4">
+								<Skeleton className="h-4 w-2/3" />
+								<Skeleton className="h-3 w-1/2" />
+								<Skeleton className="h-3 w-1/3" />
+							</div>
+						</div>
+					))}
+				</div>
 			)}
 			{error && (
 				<p className="text-red-600" data-testid="opportunities-error">
