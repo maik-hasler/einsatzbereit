@@ -9,6 +9,7 @@
 ├── docs.yml          Docs: AsciiDoc build → GitHub Pages deploy
 ├── publish.yml       Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging
 ├── release-rc.yml    Promotes a release/v* branch into a real tag (used by Claude Code on the web)
+├── reset-staging.yml Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
 ├── lint.yml          Ban em/en dashes + EditorConfig check
 └── pr-title.yml      Validate PR title against Conventional Commits
 ```
@@ -94,6 +95,16 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 1. Poll the publish workflow's checks for the new tag (via `mcp__github__get_commit` → check_runs, or fetch `https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs`).
 2. Once `deploy-staging` reports success, smoke-test live: `curl https://api.maik-hasler.de/health`, then HEAD-check `https://einsatzbereit.maik-hasler.de`.
 3. If any publish job fails, diagnose from logs; if the deploy step itself fails, the SSH/GHCR secrets in the `staging` GitHub Environment are the most likely cause.
+
+## Reset Workflow (manual)
+
+`reset-staging.yml` wipes all staging test data - Postgres (`einsatzbereit` + `keycloak` databases, one instance) and MinIO uploads - then restarts the stack. It does **not** run `docker compose pull`, so the exact image tags/versions already running come back up unchanged; only data is reset.
+
+- Trigger: `workflow_dispatch` only, with a required `confirm` input that must equal exactly `RESET`
+- Runs in the `staging` GitHub Environment, reusing the same SSH secrets as `deploy-staging`
+- Removes only the `postgres_data` and `minio_data` volumes - `postgres_backups` is left alone on purpose, as the recovery path if a reset needs to be walked back
+- Because Keycloak's realm import runs with `OVERWRITE_EXISTING` (see `deploy-staging` in `publish.yml`) and the backend has `Database__MigrateOnStartup: true`, the stack re-migrates and re-imports `keycloak/realms/einsatzbereit-realm.json` on restart - the standard `vera`/`olaf`/`admin` test accounts come back automatically since they are defined in that checked-in realm config, not created ad hoc
+- Ends with the same post-deploy health gate (`/health` polling) used by `deploy-staging`
 
 ## Issue Templates
 
