@@ -70,26 +70,33 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 
 		// The hero CTA renders the "Create an organisation" button until the
 		// async org-count fetch resolves, then swaps to a dashboard Link if the
-		// user turns out to have orgs after all - wait for that fetch to settle
-		// first so we never click a button that's about to be swapped out from
-		// under us (which would hang waiting for it to reappear).
+		// user turns out to have orgs after all - vera is shared across this
+		// whole test session (no DB reset between tests), so another test (e.g.
+		// OrganizationTests inviting her as a member elsewhere) can flip that
+		// fetch's result at any point up to and including the moment we click.
+		// Wait for whichever of the two the fetch actually resolves to, rather
+		// than asserting the button specifically - a separate, later Expect on
+		// just the button re-opens exactly this race, which is what actually
+		// broke this test previously (see git blame).
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
-		if (await createBtn.CountAsync() == 0)
-			return; // a previous retry already gave vera an org - skip
+		var overviewLink = Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
+		await Expect(createBtn.Or(overviewLink).First).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		await Expect(createBtn.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		if (await overviewLink.CountAsync() > 0)
+			return; // vera already organizes an org - skip, nothing to exercise here
+
 		try
 		{
 			await createBtn.First.ClickAsync(new() { Timeout = 5_000 });
 		}
 		catch (TimeoutException)
 		{
-			// The org-count fetch can still resolve after NetworkIdle and swap
-			// the button out for the dashboard Link right as we click - if that
-			// happened, vera already has an org, so this is the same "skip"
-			// case as the CountAsync() check above, not a real failure.
+			// The org-count fetch can still resolve and swap the button out for
+			// the dashboard Link in the narrow window right as we click - if
+			// that happened, vera already has an org, so this is the same
+			// "skip" case as the check above, not a real failure.
 			if (await createBtn.CountAsync() == 0)
 				return;
 			throw;
