@@ -132,7 +132,7 @@ export default function AdminUsersPage() {
 				</div>
 				<button
 					type="submit"
-					className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+					className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800"
 				>
 					{t("adminUsers.searchButton")}
 				</button>
@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
 										<td className="flex shrink-0 items-center gap-2">
 											{isSelf ? (
 												<span
-													className="text-xs text-gray-400"
+													className="text-xs text-gray-500"
 													title={t("adminUsers.selfActionDisabledHint")}
 												>
 													{t("adminUsers.selfActionDisabledHint")}

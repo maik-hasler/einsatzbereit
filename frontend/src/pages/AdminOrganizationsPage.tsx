@@ -124,7 +124,7 @@ export default function AdminOrganizationsPage() {
 												type="button"
 												disabled={toggling === row.id}
 												onClick={() => void toggleVerified(row.id, true)}
-												className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+												className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
 											>
 												{t("adminOrgs.verify")}
 											</button>
