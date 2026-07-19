@@ -18,10 +18,10 @@
 
 ### `dotnet.yml`
 - **Trigger:** `backend/**`, `frontend/**`, `keycloak/**` path filter or manual (frontend + keycloak included because VisualTests boots full stack via Aspire)
-- **Steps:** setup .NET + Node + pnpm → frontend `pnpm install` → `dotnet restore` → `dotnet build` → run each test project sequentially via `dotnet run --project ... --no-build`
+- **Jobs (all parallel, no `needs` between them):** `format-check`, `fast-tests` (Application.UnitTests + ArchitectureTests, scoped to just their own build graphs - no pnpm/Docker setup needed), `integration-tests` (IntegrationTests, needs pnpm + Docker pre-pull for the Aspire stack), `visual-tests` (VisualTests, same setup as `integration-tests`). Each of the three test jobs does its own `dotnet restore`/`dotnet build` (deliberately not shared via a build artifact, to keep each job's whole-solution compile-error fail-fast intact) then runs its test project(s) via `dotnet run --project ... --no-build` (`fast-tests`' two projects instead run without `--no-build`, since their restore/build is intentionally scoped down to just those two projects rather than the whole solution).
 - **Test projects:** Application.UnitTests, ArchitectureTests, IntegrationTests, VisualTests
 - **Why `dotnet run` not `dotnet test`:** TUnit uses Microsoft.Testing.Platform; `dotnet test` on .NET 10 requires opt-in to new experience. `dotnet run` invokes the test runner directly.
-- **Typical duration:** ~10 minutes end to end (median ~9.6 min; grew from ~4.5 min in May 2026), dominated by the `VisualTests` job (~57% of the run: boots the full Aspire stack, then drives it with Playwright). See `docs/TDRs/2_slow_ci_pipeline.adoc`. When polling for this workflow's checks, don't re-poll more often than every ~5 minutes while it's in progress - shorter intervals just burn turns without new information.
+- **Typical duration:** previously ~10 minutes end to end (median ~9.6 min; grew from ~4.5 min in May 2026) with all four test projects running sequentially in one job, dominated by `VisualTests` (~57% of the run: boots the full Aspire stack, then drives it with Playwright). As of issue #773, that single job is split into the three parallel jobs above, and `VisualTests` itself no longer drives a real interactive Keycloak login for most of its 117 tests (`AuthHelper.FastSignInAsync` mints a token directly instead - see `docs/TDRs/2_slow_ci_pipeline.adoc`). First real run (2026-07-19, n=1): `format-check` ~1 min, `fast-tests` ~1 min, `integration-tests` ~4 min, `visual-tests` ~6 min, all parallel - critical path ~6 min. Treat that as preliminary until re-measured over more runs (n=20+), same methodology as the TDR's original figure. When polling for this workflow's checks, don't re-poll more often than every ~2-3 minutes while it's in progress (was ~5 min when the job ran ~10 min total - the critical path is shorter now), and poll all three test-job checks (not just one) since they now run independently.
 
 ### `frontend.yml`
 - **Trigger:** `frontend/**` path filter or manual
@@ -52,7 +52,7 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 **Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
 
 ### Publish flow (backend/frontend)
-1. Run full test suite (same as CI workflow)
+1. Run full test suite - for backend, this is three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend` waits on via `needs:` before building anything
 2. Login to GHCR
 3. Extract version from tag (strips component prefix)
 4. Build and push Docker image

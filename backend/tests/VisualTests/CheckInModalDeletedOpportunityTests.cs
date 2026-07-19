@@ -59,7 +59,7 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
 			.EnsureSuccessStatusCode();
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

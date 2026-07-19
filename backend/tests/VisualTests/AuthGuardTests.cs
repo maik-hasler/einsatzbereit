@@ -29,6 +29,27 @@ public class AuthGuardTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page).ToHaveURLAsync(new Regex(@"/realms/einsatzbereit/protocol/openid-connect/auth"));
 	}
 
+	// Kept as a real, uncompromised login (not AuthHelper.FastSignInAsync) on
+	// purpose: this is the one test whose entire job is proving the interactive
+	// Keycloak round trip - submit credentials, redirect, /callback, authenticated
+	// state - still works end to end. Every other test's real login was converted
+	// to token injection for speed; this one (plus JwtAudienceTests, which guards
+	// the frontend/frontend-test protocol-mapper parity that injection relies on)
+	// is what keeps that round trip under actual test coverage instead of just
+	// incidental setup.
+	[Test]
+	public async Task SignIn_WithValidCredentials_ReachesAuthenticatedHomePage()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "User menu" }))
+			.ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }))
+			.Not.ToBeVisibleAsync();
+	}
+
 	[Test]
 	public async Task Header_Anonymous_ShowsSignInButton()
 	{

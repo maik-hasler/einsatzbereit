@@ -71,7 +71,7 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 		withdrawResponse.EnsureSuccessStatusCode();
 		var reactivatedEngagementId = await ApplyAsync(http, opportunityId, "Re-application after withdrawal.");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

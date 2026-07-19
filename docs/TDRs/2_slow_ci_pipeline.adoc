@@ -3,7 +3,7 @@
 - *Author:* @maik-hasler
 - *Version:* identified in v1.0.0
 - *Date:* 2026-07-18
-- *Status:* Analyzed
+- *Status:* In Progress
 
 === Description
 
@@ -36,9 +36,9 @@ Measured from the GitHub Actions API over recent `main` and pull-request runs (J
 |docs-only path filter
 
 |`publish.yml` (full suite + image build/push + deploy-staging)
-|~11.7 min
+|~11.7 min (pre-split)
 |on tag push only
-|same test suite plus Docker build and deploy
+|same test suite plus Docker build and deploy - now split the same way as `dotnet.yml` (see note below), not yet re-measured
 |===
 
 Within a representative `dotnet.yml` run, the `build-and-test` job (~10.3 min) breaks down as follows.
@@ -131,7 +131,19 @@ Quick wins (low effort, low risk):
 Structural (medium effort):
 
 - *Split the two Aspire test projects into parallel jobs:* Run `IntegrationTests` and `VisualTests` as separate jobs so their wall-clock overlaps instead of summing. The critical path drops from ~10 min to roughly ~8 min (the longer job plus setup), at the cost of roughly doubled compute minutes and a duplicated build per job (mitigate by sharing the build output as an artifact).
-- *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker.
++
+[NOTE]
+====
+*Implemented (issue #773):*
+
+- *`dotnet.yml` split into 3 parallel jobs:* `fast-tests` (`Application.UnitTests` + `ArchitectureTests`, scoped so it skips `VisualTests`' Playwright install), `integration-tests`, `visual-tests`. No `needs` between them.
+- *Housekeeping:* added a `concurrency` group (cancels superseded runs on the same PR), added `timeout-minutes` to every job (there was none before - a hang would have run the full 360-minute default), and added the NuGet `actions/cache` step `publish.yml` was missing.
+- *Cost: $0.* Public repo, plain `ubuntu-latest`, nowhere near the ~20 concurrent-job cap.
+- *`VisualTests` login cost cut:* 78 of 117 tests only needed a login as setup. `AuthHelper.FastSignInAsync` mints a token directly (same mechanism `IntegrationTestFixture` already used) and seeds it into browser storage instead of driving the login UI. Two logins stay real on purpose - `JwtAudienceTests` and a new round-trip test in `AuthGuardTests` - so the actual login flow and the frontend/frontend-test mapper parity the fast path relies on stay under real coverage.
+- *First real run (2026-07-19, n=1):* `format-check` ~1 min, `fast-tests` ~1 min, `integration-tests` ~4 min, `visual-tests` ~6 min, all parallel → critical path ~6 min. Down from ~9.6 min, better than the ~8 min estimate above (that estimate predated the login-cost fix). Preliminary - re-measure at n=20+ before treating 6 min as the new baseline.
+- *`publish.yml` got the same split* (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests` → `publish-backend`), since this project cuts an RC per bug fix/feature (not just on releases), so it runs often enough to matter. `publish-backend` keeps its job id for `deploy-staging`'s reference, now just version-extract → GHCR login → build → push, gated on all three test jobs. Not yet observed on a real tag push.
+====
+- *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker. Not warranted yet: even the slowest job today (`visual-tests`, ~6 min) is well short of being the pipeline's own blocker, consistent with this document's policy of stopping at the first option that keeps runtime bounded.
 
 Strategic (larger change, defer until justified):
 

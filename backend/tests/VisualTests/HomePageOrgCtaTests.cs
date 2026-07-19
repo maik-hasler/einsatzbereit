@@ -35,7 +35,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var cta = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
@@ -77,7 +77,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		// offering to create yet another one from the homepage.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" }))

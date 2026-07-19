@@ -12,7 +12,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// before PR #475 added OrganizationId/OrganizationName to EngagementSummary.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
