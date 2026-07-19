@@ -6,6 +6,7 @@ import { dispatchToast } from "../lib/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import Spinner from "../components/Spinner";
+import AdminNav from "../components/AdminNav";
 
 interface OrgRow {
 	id: string;
@@ -69,70 +70,72 @@ export default function AdminOrganizationsPage() {
 		}
 	}
 
-	if (loading)
-		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("adminOrgs.loading")} />
-			</div>
-		);
-	if (error) return <p className="text-red-600">{error}</p>;
-	if (rows.length === 0)
-		return <p className="text-gray-500">{t("adminOrgs.noOrgs")}</p>;
-
 	return (
 		<>
+			<AdminNav />
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("adminOrgs.title")}
 			</h1>
-			<div className="overflow-hidden rounded-2xl border border-gray-200">
-				<table className="w-full text-sm">
-					<tbody className="divide-y divide-gray-100">
-						{rows.map((row) => (
-							<tr key={row.id} className="flex items-center gap-4 px-4 py-3">
-								<td className="flex flex-1 items-center gap-2 font-medium text-gray-900">
-									{row.name}
-									{row.isVerified && (
-										<svg
-											className="h-4 w-4 shrink-0 text-brand-600"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											aria-label={t("organizations.verified")}
-											role="img"
-										>
-											<path
-												fillRule="evenodd"
-												d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
-												clipRule="evenodd"
-											/>
-										</svg>
-									)}
-								</td>
-								<td>
-									{row.isVerified ? (
-										<button
-											type="button"
-											disabled={toggling === row.id}
-											onClick={() => void toggleVerified(row.id, false)}
-											className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-										>
-											{t("adminOrgs.unverify")}
-										</button>
-									) : (
-										<button
-											type="button"
-											disabled={toggling === row.id}
-											onClick={() => void toggleVerified(row.id, true)}
-											className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
-										>
-											{t("adminOrgs.verify")}
-										</button>
-									)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+
+			{loading ? (
+				<div className="flex items-center justify-center py-16">
+					<Spinner label={t("adminOrgs.loading")} />
+				</div>
+			) : error ? (
+				<p className="text-red-600">{error}</p>
+			) : rows.length === 0 ? (
+				<p className="text-gray-500">{t("adminOrgs.noOrgs")}</p>
+			) : (
+				<div className="overflow-hidden rounded-2xl border border-gray-200">
+					<table className="w-full text-sm">
+						<tbody className="divide-y divide-gray-100">
+							{rows.map((row) => (
+								<tr key={row.id} className="flex items-center gap-4 px-4 py-3">
+									<td className="flex flex-1 items-center gap-2 font-medium text-gray-900">
+										{row.name}
+										{row.isVerified && (
+											<svg
+												className="h-4 w-4 shrink-0 text-brand-600"
+												viewBox="0 0 20 20"
+												fill="currentColor"
+												aria-label={t("organizations.verified")}
+												role="img"
+											>
+												<path
+													fillRule="evenodd"
+													d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
+													clipRule="evenodd"
+												/>
+											</svg>
+										)}
+									</td>
+									<td>
+										{row.isVerified ? (
+											<button
+												type="button"
+												disabled={toggling === row.id}
+												onClick={() => void toggleVerified(row.id, false)}
+												className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+											>
+												{t("adminOrgs.unverify")}
+											</button>
+										) : (
+											<button
+												type="button"
+												disabled={toggling === row.id}
+												onClick={() => void toggleVerified(row.id, true)}
+												className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+											>
+												{t("adminOrgs.verify")}
+											</button>
+										)}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
 		</>
 	);
 }

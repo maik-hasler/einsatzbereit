@@ -14,6 +14,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import OrgDashboardPage from "./pages/app/OrgDashboardPage";
 import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
@@ -123,6 +124,14 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							<AdminOrganizationsPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/admin/users"
+					element={
+						<ProtectedRoute>
+							<AdminUsersPage />
 						</ProtectedRoute>
 					}
 				/>

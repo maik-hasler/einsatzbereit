@@ -778,6 +778,37 @@
       "verify": "Verify",
       "unverify": "Unverify"
     },
+    "adminNav": {
+      "label": "Admin sections",
+      "organizations": "Organizations",
+      "users": "Users"
+    },
+    "adminUsers": {
+      "title": "Admin - Users",
+      "loading": "Loading users...",
+      "error": "Failed to load users.",
+      "noUsers": "No users found.",
+      "searchLabel": "Search users",
+      "searchPlaceholder": "Search by name, username, or email",
+      "searchButton": "Search",
+      "staleness": "Changes take effect the next time this person signs in.",
+      "statusActive": "Active",
+      "statusBlocked": "Blocked",
+      "adminBadge": "Admin",
+      "block": "Block",
+      "unblock": "Unblock",
+      "promote": "Promote to admin",
+      "demote": "Remove admin",
+      "selfActionDisabledHint": "You cannot change your own account here.",
+      "blockSuccess": "User blocked.",
+      "blockError": "Failed to block user.",
+      "unblockSuccess": "User unblocked.",
+      "unblockError": "Failed to unblock user.",
+      "promoteSuccess": "User promoted to admin.",
+      "promoteError": "Failed to promote user.",
+      "demoteSuccess": "Admin access removed.",
+      "demoteError": "Failed to remove admin access."
+    },
     "orgOverview": {
       "tabCalendar": "Calendar",
       "tabOpportunities": "Opportunities",

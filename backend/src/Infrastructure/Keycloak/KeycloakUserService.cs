@@ -105,6 +105,163 @@ internal sealed class KeycloakUserService(
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
+	public async Task<IReadOnlyList<AdminUserListItem>> ListUsersAsync(
+		string? search,
+		int max = 100,
+		CancellationToken cancellationToken = default)
+	{
+		var query = string.IsNullOrWhiteSpace(search)
+			? $"max={max}"
+			: $"search={Uri.EscapeDataString(search)}&max={max}";
+
+		var response = await SendAuthorizedAsync(
+			() => httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/users?{query}",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+			JsonOptions, cancellationToken) ?? [];
+
+		var items = new List<AdminUserListItem>(users.Count);
+
+		// Sequential, not Task.WhenAll: SendAuthorizedAsync mutates the shared
+		// httpClient.DefaultRequestHeaders.Authorization on every call, so
+		// concurrent calls on this one instance would race on that header
+		// collection. GetDisplayNamesAsync above has the same per-user-lookup
+		// shape and is sequential for the same reason - match it.
+		foreach (var user in users)
+		{
+			if (user.ServiceAccountClientId is not null)
+				continue;
+
+			var roles = await GetCompositeRealmRoleNamesAsync(user.Id, cancellationToken);
+
+			items.Add(new AdminUserListItem(
+				Guid.Parse(user.Id),
+				user.Username,
+				NullIfEmpty(user.FirstName),
+				NullIfEmpty(user.LastName),
+				user.Email ?? string.Empty,
+				user.Enabled,
+				roles));
+		}
+
+		return items
+			.OrderBy(u => u.Username, StringComparer.OrdinalIgnoreCase)
+			.ToList();
+	}
+
+	public async Task SetUserEnabledAsync(
+		Guid userId,
+		bool enabled,
+		CancellationToken cancellationToken = default)
+	{
+		var response = await SendAuthorizedAsync(
+			() => httpClient.PutAsJsonAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}",
+				new { enabled },
+				JsonOptions,
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
+	public async Task AssignAdminRoleAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		var role = await GetRealmRoleAsync("admin", cancellationToken);
+
+		var response = await SendAuthorizedAsync(
+			() => httpClient.PostAsJsonAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm",
+				new[] { role },
+				JsonOptions,
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
+	public async Task RemoveAdminRoleAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		var role = await GetRealmRoleAsync("admin", cancellationToken);
+
+		// A new HttpRequestMessage per attempt: SendAuthorizedAsync may invoke
+		// the delegate twice (retry-after-401), and a message can only be sent once.
+		var response = await SendAuthorizedAsync(
+			() => httpClient.SendAsync(
+				new HttpRequestMessage(
+					HttpMethod.Delete,
+					$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm")
+				{
+					Content = JsonContent.Create(new[] { role }, options: JsonOptions),
+				},
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
+	public async Task<bool> IsServiceAccountAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		var response = await SendAuthorizedAsync(
+			() => httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var user = await response.Content.ReadFromJsonAsync<KeycloakUserResponse>(
+			JsonOptions, cancellationToken);
+
+		return user?.ServiceAccountClientId is not null;
+	}
+
+	private async Task<IReadOnlyList<string>> GetCompositeRealmRoleNamesAsync(
+		string userId,
+		CancellationToken cancellationToken)
+	{
+		var response = await SendAuthorizedAsync(
+			() => httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm/composite",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var roles = await response.Content.ReadFromJsonAsync<List<KeycloakRole>>(
+			JsonOptions, cancellationToken) ?? [];
+
+		return roles.Select(r => r.Name).ToList();
+	}
+
+	private async Task<KeycloakRole> GetRealmRoleAsync(
+		string roleName,
+		CancellationToken cancellationToken)
+	{
+		var response = await SendAuthorizedAsync(
+			() => httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/roles/{roleName}",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		return await response.Content.ReadFromJsonAsync<KeycloakRole>(
+			JsonOptions, cancellationToken)
+			?? throw new InvalidOperationException($"Keycloak role '{roleName}' not found.");
+	}
+
 	private async Task<HttpResponseMessage> SendAuthorizedAsync(
 		Func<Task<HttpResponseMessage>> send,
 		CancellationToken cancellationToken)
@@ -158,5 +315,11 @@ internal sealed class KeycloakUserService(
 		string Username,
 		string? FirstName,
 		string? LastName,
-		string? Email);
+		string? Email,
+		bool Enabled = true,
+		string? ServiceAccountClientId = null);
+
+	private sealed record KeycloakRole(
+		string Id,
+		string Name);
 }
