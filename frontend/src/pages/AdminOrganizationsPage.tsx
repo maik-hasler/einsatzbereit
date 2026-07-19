@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
-import { runtimeConfig } from "../lib/runtimeConfig";
+import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -16,7 +15,6 @@ interface OrgRow {
 
 export default function AdminOrganizationsPage() {
 	const { t } = useTranslation();
-	const auth = useAuth();
 	const api = useApiClient();
 	const [rows, setRows] = useState<OrgRow[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -56,24 +54,16 @@ export default function AdminOrganizationsPage() {
 	async function toggleVerified(orgId: string, next: boolean) {
 		setToggling(orgId);
 		try {
-			const res = await fetch(
-				`${runtimeConfig.apiUrl}/v1/organizations/${orgId}/verify`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${auth.user?.access_token ?? ""}`,
-					},
-					body: JSON.stringify({ isVerified: next }),
-				},
-			);
-			if (!res.ok) throw new Error();
+			await api.verifyOrganization(orgId, { isVerified: next });
 			setRows((prev) =>
 				prev.map((r) => (r.id === orgId ? { ...r, isVerified: next } : r)),
 			);
 			dispatchToast("success", t("organizations.verifySuccess"));
-		} catch {
-			dispatchToast("error", t("organizations.verifyError"));
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("organizations.verifyError")),
+			);
 		} finally {
 			setToggling(null);
 		}
