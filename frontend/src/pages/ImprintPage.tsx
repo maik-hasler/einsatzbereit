@@ -1,65 +1,67 @@
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageToolbar } from "../contexts/ToolbarContext";
 
-export default function ImpressumPage() {
+export default function ImprintPage() {
 	const { t } = useTranslation();
-	usePageTitle(t("impressum.title"));
+	usePageTitle(t("imprint.title"));
+	usePageToolbar([{ label: t("imprint.title") }]);
 
 	return (
 		<>
-			<h1 className="mb-8 text-3xl font-bold">{t("impressum.title")}</h1>
+			<h1 className="mb-8 text-3xl font-bold">{t("imprint.title")}</h1>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
-					{t("impressum.section1Title")}
+					{t("imprint.section1Title")}
 				</h2>
 				<p
 					className="text-gray-700 leading-relaxed"
 					style={{ whiteSpace: "pre-line" }}
 				>
-					{t("impressum.section1Body")}
+					{t("imprint.section1Body")}
 				</p>
 			</section>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
-					{t("impressum.section2Title")}
+					{t("imprint.section2Title")}
 				</h2>
 				<p
 					className="text-gray-700 leading-relaxed"
 					style={{ whiteSpace: "pre-line" }}
 				>
-					{t("impressum.section2Body")}
+					{t("imprint.section2Body")}
 				</p>
 			</section>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
-					{t("impressum.section3Title")}
+					{t("imprint.section3Title")}
 				</h2>
 				<p
 					className="text-gray-700 leading-relaxed"
 					style={{ whiteSpace: "pre-line" }}
 				>
-					{t("impressum.section3Body")}
+					{t("imprint.section3Body")}
 				</p>
 			</section>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
-					{t("impressum.section4Title")}
+					{t("imprint.section4Title")}
 				</h2>
 				<h3 className="mb-1 text-lg font-medium">
-					{t("impressum.section4aTitle")}
+					{t("imprint.section4aTitle")}
 				</h3>
 				<p className="text-gray-700 leading-relaxed mb-4">
-					{t("impressum.section4aBody")}
+					{t("imprint.section4aBody")}
 				</p>
 				<h3 className="mb-1 text-lg font-medium">
-					{t("impressum.section4bTitle")}
+					{t("imprint.section4bTitle")}
 				</h3>
 				<p className="text-gray-700 leading-relaxed">
-					{t("impressum.section4bBody")}
+					{t("imprint.section4bBody")}
 				</p>
 			</section>
 		</>

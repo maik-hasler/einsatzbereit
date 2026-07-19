@@ -11,6 +11,9 @@
  *  - the org app shell's action bar still behaves as before (no regression):
  *    home icon links to the org dashboard, current tab is shown, and the org
  *    switcher remains a separate control
+ *  - the legal pages (previously missed, still German-slugged) now show the
+ *    action bar too, at their renamed English slugs /imprint and
+ *    /privacy-policy, with /impressum and /datenschutz redirecting there
  *
  * Run: node scripts/smoke-test-758-header-breadcrumb.mjs
  */
@@ -127,6 +130,33 @@ async function main() {
 				console.log("OK  Organization profile page shows the header-level action bar with Home link");
 			}
 		}
+
+		// --- Legal pages: previously missed, now show the action bar too, at renamed English slugs ---
+		await page.goto(`${BASE}/imprint`, { waitUntil: "networkidle" });
+		const imprintBar = await assertActionBarBesideHeaderNotInside(page, "/imprint");
+		await imprintBar.getByText("Imprint", { exact: true }).waitFor({ state: "visible", timeout: 5000 });
+		console.log("OK  /imprint shows the header-level action bar");
+
+		await page.goto(`${BASE}/privacy-policy`, { waitUntil: "networkidle" });
+		const privacyBar = await assertActionBarBesideHeaderNotInside(page, "/privacy-policy");
+		await privacyBar.getByText("Privacy Policy", { exact: true }).waitFor({ state: "visible", timeout: 5000 });
+		console.log("OK  /privacy-policy shows the header-level action bar");
+
+		await page.goto(`${BASE}/impressum`, { waitUntil: "networkidle" });
+		if (!page.url().endsWith("/imprint")) {
+			throw new Error(`/impressum should redirect to /imprint, landed on ${page.url()}`);
+		}
+		await page.goto(`${BASE}/datenschutz`, { waitUntil: "networkidle" });
+		if (!page.url().endsWith("/privacy-policy")) {
+			throw new Error(`/datenschutz should redirect to /privacy-policy, landed on ${page.url()}`);
+		}
+		console.log("OK  Old German slugs (/impressum, /datenschutz) redirect to the new English routes");
+
+		const footerLegalLinks = page.locator("footer a[href='/imprint'], footer a[href='/privacy-policy']");
+		if ((await footerLegalLinks.count()) < 2) {
+			throw new Error("Footer legal links should point directly at the new English slugs");
+		}
+		console.log("OK  Footer legal links point directly at the new English slugs");
 
 		// --- Org app shell: no regression - action bar still works, org switcher separate ---
 		await signIn(page, "olaf", "olaf123");

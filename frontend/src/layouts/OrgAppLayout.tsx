@@ -93,11 +93,11 @@ function OrgAppShell({
 			</main>
 
 			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
-				<Link to="/impressum" className="hover:text-gray-600">
+				<Link to="/imprint" className="hover:text-gray-600">
 					{t("footer.imprint")}
 				</Link>
 				<span className="mx-2">&middot;</span>
-				<Link to="/datenschutz" className="hover:text-gray-600">
+				<Link to="/privacy-policy" className="hover:text-gray-600">
 					{t("footer.privacy")}
 				</Link>
 			</footer>

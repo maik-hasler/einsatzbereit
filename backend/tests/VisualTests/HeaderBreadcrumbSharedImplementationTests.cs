@@ -100,4 +100,60 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await Expect(actionBar.GetByText("Achievements", new() { Exact = true }))
 			.ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task ImprintAndPrivacyPolicyPages_ShowActionBar_AtTheirNewEnglishSlugs()
+	{
+		// Follow-up to #758: the legal pages were missed in the initial rollout
+		// (still on ToolbarContext.tsx, no action bar) and used German slugs
+		// (/impressum, /datenschutz) while every other route is English -
+		// renamed to /imprint and /privacy-policy, with the action bar now
+		// shared via Header.tsx like every other subpage.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/imprint");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		var imprintBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
+		await Expect(imprintBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(imprintBar.GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToBeVisibleAsync();
+		await Expect(imprintBar.GetByText("Imprint", new() { Exact = true }))
+			.ToBeVisibleAsync();
+
+		await Page.GotoAsync($"{origin}/privacy-policy");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		var privacyBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
+		await Expect(privacyBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(privacyBar.GetByText("Privacy Policy", new() { Exact = true }))
+			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task OldGermanSlugs_RedirectToNewEnglishRoutes()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync($"{origin}/impressum");
+		await Page.WaitForURLAsync($"{origin}/imprint", new() { Timeout = 10_000 });
+
+		await Page.GotoAsync($"{origin}/datenschutz");
+		await Page.WaitForURLAsync($"{origin}/privacy-policy", new() { Timeout = 10_000 });
+	}
+
+	[Test]
+	public async Task Footer_LegalLinks_PointDirectlyAtNewEnglishSlugs()
+	{
+		// The footer itself should link straight to the new slugs, not rely on
+		// the legacy redirect for its own internal navigation.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var footer = Page.Locator("footer");
+		await Expect(footer.Locator("a[href='/imprint']")).ToBeVisibleAsync();
+		await Expect(footer.Locator("a[href='/privacy-policy']")).ToBeVisibleAsync();
+	}
 }
