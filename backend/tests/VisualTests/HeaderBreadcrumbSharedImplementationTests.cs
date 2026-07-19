@@ -1,0 +1,103 @@
+using AwesomeAssertions;
+using Microsoft.Playwright;
+
+namespace VisualTests;
+
+/// <summary>
+/// Visual tests for #758: the org app shell's icon-led breadcrumb action bar
+/// moved out of OrgAppLayout.tsx into the shared Header.tsx component, which
+/// both the org app shell and the public site (via AppLayout.tsx +
+/// usePageToolbar) now render through. Public-site pages previously used a
+/// separate mechanism (ToolbarContext/Breadcrumb.tsx) that rendered plain-text
+/// chips inside &lt;main&gt;, with no icon and no Home entry beneath &lt;header&gt;
+/// specifically - these tests pin the new, shared behaviour.
+/// </summary>
+[ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : VisualTestBase(fixture)
+{
+	[Test]
+	public async Task ProfilePage_ActionBar_RendersDirectlyBeneathHeader_IconLed()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// The action bar sits immediately after </header> as a sibling - the
+		// same placement the org app shell already used - not inside <main>
+		// where the old Breadcrumb.tsx/ToolbarContext mechanism rendered it.
+		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
+		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Home crumb is icon-led (aria-label only, no visible "Home" text),
+		// matching the org app shell's style instead of the old plain-text chip.
+		var homeLink = actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" });
+		await Expect(homeLink).ToBeVisibleAsync();
+		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
+		(await homeLink.InnerTextAsync()).Trim().Should().BeEmpty(
+			"the home crumb should be icon-only (aria-label='Home'), not a visible text link");
+		await Expect(homeLink.Locator("svg")).ToBeVisibleAsync();
+
+		await Expect(actionBar.GetByText("Profile", new() { Exact = true })).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task OrgAppShell_ActionBar_StillSitsImmediatelyAfterHeader_NoRegression()
+	{
+		// #758 acceptance criterion: the org app shell's action bar must behave
+		// exactly as before now that it shares Header.tsx's implementation
+		// instead of its own copy - home icon + current tab label, directly
+		// beneath <header>, with the org switcher remaining a separate control.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
+		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToBeVisibleAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
+			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task UserAchievementsPage_ActionBar_ShowsUserThenAchievementsSegment()
+	{
+		// Reconciled onto the shared mechanism alongside the four pages the
+		// issue names explicitly - a nested two-item trail (user profile link,
+		// then the current "Achievements" page) must still render correctly.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		var userId = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.profile?.sub) return entry.profile.sub;
+				}
+			}
+			return null;
+		}");
+		if (userId is null)
+			return; // could not resolve the logged-in user's id, skip
+
+		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
+		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" }))
+			.ToBeVisibleAsync();
+		await Expect(actionBar.Locator($"a[href='/users/{userId}']"))
+			.ToBeVisibleAsync();
+		await Expect(actionBar.GetByText("Achievements", new() { Exact = true }))
+			.ToBeVisibleAsync();
+	}
+}

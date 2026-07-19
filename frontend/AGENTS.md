@@ -12,7 +12,7 @@ src/
 ├── hooks/
 │   └── useApiClient.ts     React hook: returns api-client instance with token from useAuth()
 ├── components/
-│   ├── Header.tsx          Header with auth state (login/logout buttons, org switcher)
+│   ├── Header.tsx          Header with auth state (login/logout buttons, org switcher) + optional per-page breadcrumb/action bar (see `breadcrumb` prop)
 │   ├── Footer.tsx          Footer with links and social icons
 │   ├── OrganizationSwitcher.tsx        Dropdown to switch active org
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation

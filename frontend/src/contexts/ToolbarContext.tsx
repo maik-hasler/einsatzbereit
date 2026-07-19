@@ -46,6 +46,11 @@ export function useToolbarConfig() {
 	return useToolbarCtx().config;
 }
 
+// The single opt-in mechanism for the public site's header-level action bar
+// (rendered by Header.tsx's `breadcrumb` prop, wired up in AppLayout.tsx): a
+// page calls this with its trailing breadcrumb items (no Home entry - Header
+// always renders that itself). Not calling it at all (e.g. HomePage) means no
+// action bar renders for that page.
 export function usePageToolbar(breadcrumbs: BreadcrumbItem[]) {
 	const { setConfig } = useToolbarCtx();
 	const key = JSON.stringify(breadcrumbs);

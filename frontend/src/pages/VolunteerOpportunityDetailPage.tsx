@@ -30,14 +30,13 @@ export default function VolunteerOpportunityDetailPage() {
 	usePageToolbar(
 		opportunity
 			? [
-					{ label: t("breadcrumb.home"), href: "/" },
 					{
 						label: opportunity.organizationName,
 						href: `/organizations/${opportunity.organizationId}`,
 					},
 					{ label: opportunity.title },
 				]
-			: [{ label: t("breadcrumb.home"), href: "/" }],
+			: [],
 	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

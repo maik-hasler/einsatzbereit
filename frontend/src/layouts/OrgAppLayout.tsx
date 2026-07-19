@@ -23,45 +23,85 @@ const TABS = [
 	{ key: "settings", labelKey: "orgOverview.tabSettings" },
 ] as const;
 
-// Trailing breadcrumb segment(s) after the home icon. Normally just the
-// active tab's own name, current-page style; a nested page (e.g. engagement
-// management) can add a further segment via useSetOrgBreadcrumbExtra, which
-// demotes the tab name to a link back to that tab.
-function OrgBreadcrumbTrail({
+// Renders the org app shell body inside OrgBreadcrumbProvider so it can read
+// the nested-page breadcrumb extra (see useSetOrgBreadcrumbExtra) and pass
+// the resulting trail into Header's shared breadcrumb/action-bar prop -
+// normally just the active tab's own name, current-page style; a nested page
+// (e.g. engagement management) can add a further segment, which demotes the
+// tab name to a link back to that tab.
+function OrgAppShell({
 	organizationId,
+	org,
 	activeTabKey,
-	activeTab,
+	activeTabLabel,
+	load,
 }: {
 	organizationId: string | undefined;
+	org: OrganizationDetailsResponse;
 	activeTabKey: string;
-	activeTab: (typeof TABS)[number];
+	activeTabLabel: string;
+	load: () => void;
 }) {
 	const { t } = useTranslation();
 	const extra = useOrgBreadcrumbExtra();
 
-	if (!extra) {
-		return (
-			<span className="truncate font-medium text-gray-900" aria-current="page">
-				{t(activeTab.labelKey)}
-			</span>
-		);
-	}
+	const breadcrumbItems = extra
+		? [
+				{
+					label: activeTabLabel,
+					href: `/app/${organizationId}/${activeTabKey}`,
+				},
+				{ label: extra },
+			]
+		: [{ label: activeTabLabel }];
 
 	return (
-		<>
-			<Link
-				to={`/app/${organizationId}/${activeTabKey}`}
-				className="shrink-0 truncate font-medium text-gray-500 transition-colors hover:text-brand-700"
-			>
-				{t(activeTab.labelKey)}
-			</Link>
-			<span className="shrink-0 text-gray-300" aria-hidden="true">
-				&rsaquo;
-			</span>
-			<span className="truncate font-medium text-gray-900" aria-current="page">
-				{extra}
-			</span>
-		</>
+		<div className="flex min-h-screen flex-col bg-gray-50">
+			<Header
+				orgSwitcher={{ currentOrgId: org.id, currentTab: activeTabKey }}
+				breadcrumb={{
+					homeHref: `/app/${organizationId}/dashboard`,
+					items: breadcrumbItems,
+				}}
+			/>
+
+			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+				<nav aria-label={t("orgApp.tabsLabel")} className="mb-6 sm:mb-8">
+					<div className="flex gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						{TABS.map((tab) => (
+							<Link
+								key={tab.key}
+								to={`/app/${organizationId}/${tab.key}`}
+								aria-current={activeTabKey === tab.key ? "page" : undefined}
+								className={`shrink-0 whitespace-nowrap border-b-2 pb-3 pt-3 text-sm font-medium transition-colors ${
+									activeTabKey === tab.key
+										? "border-brand-700 text-brand-700"
+										: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+								}`}
+							>
+								{t(tab.labelKey)}
+							</Link>
+						))}
+					</div>
+				</nav>
+
+				<Outlet
+					context={{ org, reloadOrg: load } satisfies OrgAppContext}
+					// Outlet re-mounts children on org identity change so per-tab state resets cleanly
+					key={org.id}
+				/>
+			</main>
+
+			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
+				<Link to="/impressum" className="hover:text-gray-600">
+					{t("footer.imprint")}
+				</Link>
+				<span className="mx-2">&middot;</span>
+				<Link to="/datenschutz" className="hover:text-gray-600">
+					{t("footer.privacy")}
+				</Link>
+			</footer>
+		</div>
 	);
 }
 
@@ -105,6 +145,7 @@ export default function OrgAppLayout() {
 	const activeTabKey =
 		TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
 	const activeTab = TABS.find((tab) => tab.key === activeTabKey) ?? TABS[0];
+	const activeTabLabel = t(activeTab.labelKey);
 
 	if (loading) {
 		return (
@@ -132,86 +173,13 @@ export default function OrgAppLayout() {
 
 	return (
 		<OrgBreadcrumbProvider>
-			<div className="flex min-h-screen flex-col bg-gray-50">
-				<Header
-					orgSwitcher={{ currentOrgId: org.id, currentTab: activeTabKey }}
-				/>
-
-				<div className="border-b border-gray-200 bg-white">
-					<div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-						<nav
-							aria-label={t("breadcrumb.label")}
-							className="flex min-w-0 items-center gap-1.5 text-sm"
-						>
-							<Link
-								to={`/app/${organizationId}/dashboard`}
-								aria-label={t("breadcrumb.home")}
-								className="flex shrink-0 items-center text-gray-400 transition-colors hover:text-brand-700"
-							>
-								<svg
-									className="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-									aria-hidden="true"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-									/>
-								</svg>
-							</Link>
-							<span className="shrink-0 text-gray-300" aria-hidden="true">
-								&rsaquo;
-							</span>
-							<OrgBreadcrumbTrail
-								organizationId={organizationId}
-								activeTabKey={activeTabKey}
-								activeTab={activeTab}
-							/>
-						</nav>
-					</div>
-				</div>
-
-				<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-					<nav aria-label={t("orgApp.tabsLabel")} className="mb-6 sm:mb-8">
-						<div className="flex gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-							{TABS.map((tab) => (
-								<Link
-									key={tab.key}
-									to={`/app/${organizationId}/${tab.key}`}
-									aria-current={activeTabKey === tab.key ? "page" : undefined}
-									className={`shrink-0 whitespace-nowrap border-b-2 pb-3 pt-3 text-sm font-medium transition-colors ${
-										activeTabKey === tab.key
-											? "border-brand-700 text-brand-700"
-											: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-									}`}
-								>
-									{t(tab.labelKey)}
-								</Link>
-							))}
-						</div>
-					</nav>
-
-					<Outlet
-						context={{ org, reloadOrg: load } satisfies OrgAppContext}
-						// Outlet re-mounts children on org identity change so per-tab state resets cleanly
-						key={org.id}
-					/>
-				</main>
-
-				<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
-					<Link to="/impressum" className="hover:text-gray-600">
-						{t("footer.imprint")}
-					</Link>
-					<span className="mx-2">&middot;</span>
-					<Link to="/datenschutz" className="hover:text-gray-600">
-						{t("footer.privacy")}
-					</Link>
-				</footer>
-			</div>
+			<OrgAppShell
+				organizationId={organizationId}
+				org={org}
+				activeTabKey={activeTabKey}
+				activeTabLabel={activeTabLabel}
+				load={load}
+			/>
 		</OrgBreadcrumbProvider>
 	);
 }
