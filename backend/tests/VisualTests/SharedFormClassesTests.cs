@@ -13,7 +13,7 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	// input styling can't silently drift from the other without touching the
 	// shared module.
 	private const string ExpectedInputClass =
-		"mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-700 focus:outline-none";
+		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
 
 	[Test]
 	public async Task ProfilePageInput_UsesSharedInputClass()
