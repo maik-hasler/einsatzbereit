@@ -18,7 +18,7 @@ public class EngagementTimezoneTests(AspireFixture fixture) : VisualTestBase(fix
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 
 		// Extract the OIDC access token stored by oidc-client-ts in localStorage.
 		var token = await Page.EvaluateAsync<string?>(@"() => {

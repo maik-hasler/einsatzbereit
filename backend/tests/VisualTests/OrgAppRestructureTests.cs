@@ -22,7 +22,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Olaf organizes at least one org in seed data - if the switcher were
@@ -47,7 +47,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/profile");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -65,7 +65,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual OrgAppEntry Empty {Guid.NewGuid():N}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// The hero CTA renders the "Create an organisation" button until the
@@ -113,7 +113,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/app");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -130,7 +130,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");

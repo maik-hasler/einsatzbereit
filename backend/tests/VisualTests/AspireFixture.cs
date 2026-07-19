@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
@@ -11,6 +13,15 @@ namespace VisualTests;
 public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 {
 	private const string Realm = "einsatzbereit";
+
+	// ROPC-enabled test-only client (see keycloak/AGENTS.md) - same one
+	// IntegrationTestFixture.GetAccessTokenAsync already uses. Its protocol
+	// mappers (roles, realm-name, backend-audience) are documented as
+	// identical to the real "frontend" client's, which is what makes minting
+	// through it here a valid stand-in for a real browser login - see
+	// JwtAudienceTests, which keeps a real login specifically to guard that
+	// the two clients' mappers don't drift apart.
+	private const string FrontendTestClientId = "frontend-test";
 
 	private DistributedApplication _app = null!;
 	private string _connectionString = null!;
@@ -36,6 +47,40 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 		_connectionString = await _app.GetConnectionStringAsync("einsatzbereit")
 			?? throw new InvalidOperationException("Connection string 'einsatzbereit' not found.");
+	}
+
+	// Mints a real Keycloak token via direct grant (ROPC), bypassing the
+	// interactive login UI - see AuthHelper.FastSignInAsync, which seeds this
+	// into the browser's localStorage instead of driving Keycloak's login form.
+	public async Task<KeycloakSession> SignInAsync(string username, string password)
+	{
+		using var client = _app.CreateHttpClient("keycloak");
+
+		var content = new FormUrlEncodedContent([
+			new KeyValuePair<string, string>("grant_type", "password"),
+			new KeyValuePair<string, string>("client_id", FrontendTestClientId),
+			new KeyValuePair<string, string>("username", username),
+			new KeyValuePair<string, string>("password", password),
+			new KeyValuePair<string, string>("scope", "openid"),
+		]);
+
+		var response = await client.PostAsync(
+			$"/realms/{Realm}/protocol/openid-connect/token", content);
+		response.EnsureSuccessStatusCode();
+
+		var token = await response.Content.ReadFromJsonAsync<KeycloakTokenResponse>()
+			?? throw new InvalidOperationException("Keycloak returned no token.");
+
+		// Must match VITE_KEYCLOAK_AUTHORITY_URL exactly (AppHost.cs builds it the
+		// same way: "{keycloakEndpoint}/realms/{realm}") since it becomes part of
+		// oidc-client-ts's storage key. GetEndpoint(...).ToString() carries a
+		// trailing slash (System.Uri's default for a bare authority) that Aspire's
+		// EndpointReference interpolation does not, so it must be trimmed first
+		// or the concatenation produces a double slash and a key that never matches.
+		var authority = $"{GetEndpoint("keycloak").ToString().TrimEnd('/')}/realms/{Realm}";
+
+		return new KeycloakSession(
+			token.AccessToken, token.IdToken, token.RefreshToken, token.ExpiresIn, token.TokenType, authority);
 	}
 
 	// Test-only escape hatch to simulate an opportunity row removed without
@@ -113,4 +158,19 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		await _app.DisposeAsync();
 		GC.SuppressFinalize(this);
 	}
+
+	private sealed record KeycloakTokenResponse(
+		[property: JsonPropertyName("access_token")] string AccessToken,
+		[property: JsonPropertyName("id_token")] string IdToken,
+		[property: JsonPropertyName("refresh_token")] string? RefreshToken,
+		[property: JsonPropertyName("expires_in")] int ExpiresIn,
+		[property: JsonPropertyName("token_type")] string TokenType);
 }
+
+public sealed record KeycloakSession(
+	string AccessToken,
+	string IdToken,
+	string? RefreshToken,
+	int ExpiresIn,
+	string TokenType,
+	string Authority);

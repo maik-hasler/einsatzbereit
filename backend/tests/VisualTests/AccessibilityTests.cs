@@ -40,7 +40,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -83,7 +83,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -130,7 +130,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var userId = await Page.EvaluateAsync<string?>(@"() => {
 			for (let i = 0; i < localStorage.length; i++) {
@@ -156,7 +156,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	// "Organization overview" CTA always resolves straight to a dashboard.
 	private async Task<bool> NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
 	{
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 		return true;
 	}
@@ -290,7 +290,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// axe-clean, not just the page around it.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });

@@ -19,7 +19,7 @@ public class SmokeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 		await Expect(Page).ToHaveURLAsync($"{origin}/");
@@ -30,7 +30,7 @@ public class SmokeTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var banners = Page.GetByRole(AriaRole.Region, new() { Name = "Welcome banner" });
 		await Expect(banners).ToHaveCountAsync(1);

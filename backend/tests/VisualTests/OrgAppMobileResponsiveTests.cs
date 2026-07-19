@@ -31,7 +31,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
 		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
@@ -71,7 +71,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
 		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
@@ -113,7 +113,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
 		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 

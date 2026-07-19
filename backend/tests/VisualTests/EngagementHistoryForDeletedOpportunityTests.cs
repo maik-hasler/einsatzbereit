@@ -71,7 +71,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
 		deleteResponse.EnsureSuccessStatusCode();
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -110,7 +110,7 @@ public class EngagementHistoryForDeletedOpportunityTests(AspireFixture fixture) 
 
 		await Fixture.DeleteOpportunityRowDirectlyAsync(Guid.Parse(opportunityId));
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

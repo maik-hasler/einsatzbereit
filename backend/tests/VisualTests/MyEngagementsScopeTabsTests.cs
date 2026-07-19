@@ -33,7 +33,7 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 		var withdrawResponse = await veraHttp.PostAsync($"/v1/engagements/{pastEngagementId}/withdraw", content: null);
 		withdrawResponse.EnsureSuccessStatusCode();
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

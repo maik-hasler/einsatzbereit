@@ -59,7 +59,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		var deleteResponse = await olafHttp.DeleteAsync($"/v1/volunteer-opportunities/{opportunityId}");
 		deleteResponse.EnsureSuccessStatusCode();
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

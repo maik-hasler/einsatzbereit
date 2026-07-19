@@ -34,7 +34,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 			await route.ContinueAsync();
 		});
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -59,7 +59,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 				pinResponseStatuses.Add(response.Status);
 		};
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

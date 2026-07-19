@@ -62,7 +62,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		(await http.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
 			.EnsureSuccessStatusCode();
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -137,7 +137,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -238,7 +238,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			.EnsureSuccessStatusCode();
 
 		// admin is not an organizer and has no engagement, so the sign-up CTA is shown.
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

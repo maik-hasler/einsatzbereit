@@ -10,7 +10,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var bell = Page.GetByTestId("notification-bell");
 		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -21,7 +21,7 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var bell = Page.GetByTestId("notification-bell");
 		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });

@@ -12,7 +12,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -29,7 +29,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// with no error banner.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
@@ -66,7 +66,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// their own row, never "Remove" - removing them would orphan the org.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await CreateOrganizationAsync("Visual580 Leave");
@@ -88,7 +88,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgName = await CreateOrganizationAsync("Visual580 Delete");
@@ -119,7 +119,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual712 FullDetails {Guid.NewGuid():N}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		// New orgs are created from the org switcher's "Create organization"
@@ -171,7 +171,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// between tabs.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await CreateOrganizationAsync("Visual641 Alignment");
@@ -208,7 +208,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await CreateOrganizationAsync("Visual694 Centering");

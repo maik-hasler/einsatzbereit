@@ -23,7 +23,7 @@ public class SignUpModalMessageFieldTests(AspireFixture fixture) : VisualTestBas
 		var opportunityId = await CreateIndividualContactOpportunityAsync("MessageFieldA11y");
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -49,7 +49,7 @@ public class SignUpModalMessageFieldTests(AspireFixture fixture) : VisualTestBas
 		var opportunityId = await CreateIndividualContactOpportunityAsync("MessageFieldLabel");
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

@@ -28,7 +28,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		var opportunityId = await CreateIndividualContactOpportunityAsync("HardNav");
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.GotoAsync(detailUrl);
@@ -58,7 +58,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		var opportunityId = await CreateIndividualContactOpportunityAsync("RaceGuard");
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.GotoAsync(detailUrl);
@@ -100,7 +100,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		var opportunityId = await CreateIndividualContactOpportunityAsync("DuplicateError");
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.GotoAsync(detailUrl);

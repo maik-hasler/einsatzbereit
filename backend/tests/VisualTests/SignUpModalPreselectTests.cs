@@ -30,7 +30,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		var opportunityId = await CreateWaitlistOpportunityAsync("SingleSlot", slotCount: 1);
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -54,7 +54,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		var opportunityId = await CreateWaitlistOpportunityAsync("MultiSlot", slotCount: 2);
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
