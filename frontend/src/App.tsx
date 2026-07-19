@@ -12,6 +12,7 @@ import EngagementManagementPage from "./pages/EngagementManagementPage";
 import ProfileOverviewPage from "./pages/ProfileOverviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
+import OrganizationsPage from "./pages/OrganizationsPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
 import AdministrationPage from "./pages/AdministrationPage";
 import UserProfilePage from "./pages/UserProfilePage";
@@ -130,7 +131,7 @@ export default function App() {
 					path="/opportunities"
 					element={<Navigate to="/#opportunities" replace />}
 				/>
-				<Route path="/organizations" element={<Navigate to="/" replace />} />
+				<Route path="/organizations" element={<OrganizationsPage />} />
 				<Route path="*" element={<NotFoundPage />} />
 			</Route>
 		</Routes>

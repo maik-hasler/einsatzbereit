@@ -22,6 +22,7 @@
       "platform": "Platform",
       "findOpportunities": "Find opportunities",
       "participate": "Get involved",
+      "browseOrganizations": "Browse organizations",
       "legal": "Legal",
       "imprint": "Imprint",
       "privacy": "Privacy Policy",
@@ -740,7 +741,8 @@
       "account": "Account",
       "profile": "Profile",
       "achievements": "My Achievements",
-      "userAchievements": "Achievements"
+      "userAchievements": "Achievements",
+      "organizations": "Organizations"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",
@@ -810,6 +812,18 @@
         "demoteError": "Failed to remove admin access.",
         "loadMore": "Load more"
       }
+    },
+    "organizationsPage": {
+      "title": "Organizations",
+      "subtitle": "Browse and search organizations to find one you already know.",
+      "searchPlaceholder": "Search organizations by name…",
+      "loading": "Loading organizations…",
+      "error": "Error: {{message}}",
+      "noResults": "No organizations found.",
+      "noResultsWithSearch": "No organizations match \"{{search}}\".",
+      "clearSearch": "Clear search",
+      "loadMore": "Load more",
+      "verified": "Verified organization"
     },
     "orgOverview": {
       "tabCalendar": "Calendar",
