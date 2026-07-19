@@ -1,0 +1,89 @@
+name: Reset Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type RESET to confirm - this permanently deletes all staging data (Postgres + Keycloak + MinIO). Currently running images/tags are kept.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  reset-staging:
+    name: Reset Staging Data
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRM_INPUT: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM_INPUT" != "RESET" ]; then
+            echo "::error::Confirmation input must be exactly 'RESET' to proceed. Got: '$CONFIRM_INPUT'"
+            exit 1
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Wipe data volumes and restart stack
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            set -euo pipefail
+            cd /opt/einsatzbereit
+
+            echo "Stopping stack..."
+            docker compose down
+
+            # postgres_data holds both the "einsatzbereit" and "keycloak" databases
+            # (single Postgres instance, see docker-compose.yml). minio_data holds
+            # uploaded files. postgres_backups is deliberately NOT removed - it is
+            # the safety net if this reset needs to be walked back.
+            echo "Removing data volumes (postgres_data, minio_data)..."
+            docker volume rm einsatzbereit_postgres_data einsatzbereit_minio_data
+
+            # No `docker compose pull` here on purpose: we restart with whatever
+            # images are already cached locally, i.e. the exact same tags/versions
+            # that were running before the reset. Only data is wiped.
+            echo "Starting stack..."
+            docker compose up -d --remove-orphans
+          EOF
+
+      - name: Post-reset health gate
+        run: |
+          set -uo pipefail
+          echo "Waiting for https://api.maik-hasler.de/health to report ready..."
+          for i in $(seq 1 30); do
+            code=$(curl -fsS -o /dev/null -w "%{http_code}" https://api.maik-hasler.de/health || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "API healthy (HTTP 200) after attempt $i."
+              exit 0
+            fi
+            echo "Attempt $i/30: /health -> $code; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::API did not report healthy within 5 minutes after reset."
+          exit 1
+
+      - name: Capture container logs on failure
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
+            set +e
+            cd /opt/einsatzbereit
+            for svc in backend keycloak postgres minio; do
+              echo "::group::docker inspect ${svc} (state)"
+              docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
+              echo "::endgroup::"
+              echo "::group::docker logs ${svc} (tail 200)"
+              docker logs --tail 200 "${svc}" 2>&1 || true
+              echo "::endgroup::"
+            done
+          EOF
