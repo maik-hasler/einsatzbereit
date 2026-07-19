@@ -3,7 +3,7 @@
 - *Author:* @maik-hasler
 - *Version:* identified in v1.0.0
 - *Date:* 2026-07-18
-- *Status:* Analyzed
+- *Status:* In Progress
 
 === Description
 
@@ -131,6 +131,13 @@ Quick wins (low effort, low risk):
 Structural (medium effort):
 
 - *Split the two Aspire test projects into parallel jobs:* Run `IntegrationTests` and `VisualTests` as separate jobs so their wall-clock overlaps instead of summing. The critical path drops from ~10 min to roughly ~8 min (the longer job plus setup), at the cost of roughly doubled compute minutes and a duplicated build per job (mitigate by sharing the build output as an artifact).
++
+[NOTE]
+====
+*Implemented* (issue #773): `dotnet.yml`'s `build-and-test` job is split into `fast-tests` (`Application.UnitTests` + `ArchitectureTests`, scoped to just those two projects' own build graphs so it never triggers `VisualTests`' Playwright-install step), `integration-tests`, and `visual-tests`, all running in parallel with no `needs` between them. A `concurrency` group with `cancel-in-progress` was added to cancel superseded runs on the same PR, and `timeout-minutes` was added to every job (previously none existed anywhere in the repo's workflows, leaving every job on GitHub's implicit 360-minute default - a real tail-risk gap for Aspire/Docker-backed jobs that are more prone to hanging than failing fast). `publish.yml`'s `publish-backend` job was also missing the NuGet `actions/cache` step that `dotnet.yml` has (verifying AC1 - NuGet/pnpm caching is otherwise already effective) and now has it too. Since the repo is public and every job runs on plain `ubuntu-latest`, none of this adds any monetary cost - only transient use of the ~20 concurrent-job account cap, which this repo is nowhere near.
+
+The critical path should now be roughly the `visual-tests` job alone (~8 min per the estimate above), but this has not yet been confirmed against a real run at time of writing - re-measure with the same methodology (n=20+ runs) once the change has been live for a few days and update the numbers above and the `.github/AGENTS.md` duration line accordingly.
+====
 - *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker.
 
 Strategic (larger change, defer until justified):
