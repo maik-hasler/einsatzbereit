@@ -4,6 +4,7 @@ import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatDateTime } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
+import { textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
 
@@ -88,7 +89,7 @@ export default function SignUpModal({
 								value={selectedTimeSlotId}
 								onChange={setSelectedTimeSlotId}
 								placeholder={t("signUp.selectPlaceholder")}
-								className="rounded border px-3 py-2 text-sm"
+								className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
 								options={timeSlots.map((ts) => {
 									const spotsLeft = ts.maxParticipants - ts.bookedCount;
 									const slotFull = spotsLeft <= 0;
@@ -128,7 +129,7 @@ export default function SignUpModal({
 							required
 							rows={4}
 							placeholder={t("signUp.messagePlaceholder")}
-							className="w-full rounded border px-3 py-2 text-sm"
+							className={textareaClass}
 						/>
 					</div>
 				)}
@@ -139,14 +140,14 @@ export default function SignUpModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+						className="rounded-xl px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100"
 					>
 						{t("signUp.cancel")}
 					</button>
 					<button
 						type="submit"
 						disabled={submitting || (isWaitlist && timeSlots.length === 0)}
-						className="rounded bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800 disabled:opacity-50"
+						className="rounded-xl bg-brand-700 px-4 py-2 text-sm text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
 					>
 						{submitting ? t("signUp.submitting") : t("signUp.submit")}
 					</button>

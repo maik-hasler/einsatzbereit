@@ -195,7 +195,7 @@ export default function EngagementManagementPage() {
 					<button
 						type="button"
 						onClick={() => setQrScannerOpen(true)}
-						className="inline-flex items-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
+						className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800"
 					>
 						<svg
 							className="h-4 w-4"
@@ -318,7 +318,7 @@ export default function EngagementManagementPage() {
 											<button
 												onClick={() => handleConfirm(e.id)}
 												disabled={confirming === e.id}
-												className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+												className="rounded-xl bg-green-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
 											>
 												{confirming === e.id
 													? t("engagementManagement.processing")
@@ -326,7 +326,7 @@ export default function EngagementManagementPage() {
 											</button>
 											<button
 												onClick={() => setConfirmCancelId(e.id)}
-												className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
+												className="rounded-xl border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
 											>
 												{t("engagementManagement.cancel")}
 											</button>
@@ -338,7 +338,7 @@ export default function EngagementManagementPage() {
 												<button
 													onClick={() => handleCheckIn(e.id)}
 													disabled={checkingIn === e.id}
-													className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+													className="rounded-xl bg-brand-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
 												>
 													{checkingIn === e.id
 														? t("checkIn.markingCheckedIn")

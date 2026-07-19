@@ -179,7 +179,7 @@ export default function OrgSettingsPage() {
 							<button
 								type="button"
 								onClick={() => setEditing(true)}
-								className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+								className="shrink-0 rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 							>
 								{t("orgSettings.edit")}
 							</button>
@@ -187,12 +187,12 @@ export default function OrgSettingsPage() {
 						beforeContent={
 							<>
 								{successMessage && (
-									<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+									<div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
 										{successMessage}
 									</div>
 								)}
 								{settingsError && (
-									<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+									<div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
 										{settingsError}
 									</div>
 								)}
@@ -210,7 +210,7 @@ export default function OrgSettingsPage() {
 								type="button"
 								onClick={() => setShowDeleteConfirm(true)}
 								disabled={!isSoleMember}
-								className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
+								className="mt-3 rounded-xl border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
 							>
 								{t("orgSettings.deleteOrganization")}
 							</button>
@@ -221,7 +221,7 @@ export default function OrgSettingsPage() {
 				{editing && (
 					<>
 						{settingsError && (
-							<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+							<div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
 								{settingsError}
 							</div>
 						)}
@@ -246,7 +246,7 @@ export default function OrgSettingsPage() {
 									<div>
 										<label
 											htmlFor="logo-upload"
-											className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
+											className={`cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
 										>
 											{uploadingLogo
 												? t("orgSettings.logoUploading")
@@ -338,7 +338,7 @@ export default function OrgSettingsPage() {
 								/>
 							</Field>
 
-							<fieldset className="rounded-md border border-gray-200 p-4">
+							<fieldset className="rounded-xl border border-gray-200 p-4">
 								<legend className="px-1 text-sm font-medium text-gray-700">
 									{t("orgSettings.fieldAddress")}
 								</legend>
@@ -403,14 +403,14 @@ export default function OrgSettingsPage() {
 								<button
 									type="button"
 									onClick={handleCancelEdit}
-									className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+									className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
 								>
 									{t("orgSettings.cancel")}
 								</button>
 								<button
 									type="submit"
 									disabled={saving}
-									className="rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+									className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
 								>
 									{saving ? t("orgSettings.saving") : t("orgSettings.save")}
 								</button>
