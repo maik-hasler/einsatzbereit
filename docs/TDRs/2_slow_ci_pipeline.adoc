@@ -36,9 +36,9 @@ Measured from the GitHub Actions API over recent `main` and pull-request runs (J
 |docs-only path filter
 
 |`publish.yml` (full suite + image build/push + deploy-staging)
-|~11.7 min
+|~11.7 min (pre-split)
 |on tag push only
-|same test suite plus Docker build and deploy
+|same test suite plus Docker build and deploy - now split the same way as `dotnet.yml` (see note below), not yet re-measured
 |===
 
 Within a representative `dotnet.yml` run, the `build-and-test` job (~10.3 min) breaks down as follows.
@@ -139,6 +139,8 @@ Structural (medium effort):
 Alongside the split, `VisualTests`' own internal composition was addressed too: 78 of 117 tests were paying for a full interactive Keycloak login purely as setup. `AuthHelper.FastSignInAsync` now mints a token directly (the same direct-grant mechanism `IntegrationTestFixture` already used) and seeds it into the browser's storage instead of driving the login UI, cutting that cost to near zero for those tests. Two real logins are kept deliberately (`JwtAudienceTests`, plus a new dedicated round-trip test in `AuthGuardTests`) so the actual interactive flow - and the frontend/frontend-test protocol-mapper parity the fast path depends on - stay under real coverage.
 
 *First real run (2026-07-19, n=1 - GitHub's rounded PR-check durations, not yet a stable median):* `format-check` ~1 min, `fast-tests` ~1 min, `integration-tests` ~4 min, `visual-tests` ~6 min, all in parallel - critical path ~6 min, down from the ~9.6 min median and better than this section's own ~8 min job-split-only estimate, because the estimate predated the login-injection change above landing in the same PR. Re-measure with the TDR's original methodology (n=20+ runs) once this has been live for a few days before treating 6 min as the new baseline.
+
+`publish.yml`'s `publish-backend` job ran the identical four-project sequential suite even after the above landed - it is tag-triggered rather than every PR, but this project cuts a release candidate for every bug fix/feature via the autonomous Claude-Code-on-the-web flow (see root `AGENTS.md`), so it fires often enough to be worth the same fix. Split into `backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests` (identical shape to the three `dotnet.yml` jobs), with `publish-backend` keeping its job id (so `deploy-staging`'s `needs`/`if` reference stays valid) but now only extracting the version, logging into GHCR, and building/pushing the image, gated on `needs:` all three test jobs - preserving "only push what was tested at this exact tag" without re-running tests inside the image-build job itself. `backend/src/Api/Dockerfile` does its own from-scratch `dotnet restore`/`build`/`publish` inside the build context, so the final job needed no .NET setup at all once the tests moved out of it. Not yet observed on a real tag push at time of writing.
 ====
 - *Shard `VisualTests`:* Split the Playwright suite across N parallel shards, each on its own Aspire stack. This is the only lever that scales sub-linearly as the suite grows, but each shard multiplies Docker and compute cost - adopt only once a single `VisualTests` job is the clear blocker. Not warranted yet: even the slowest job today (`visual-tests`, ~6 min) is well short of being the pipeline's own blocker, consistent with this document's policy of stopping at the first option that keeps runtime bounded.
 

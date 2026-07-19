@@ -52,7 +52,7 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 **Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
 
 ### Publish flow (backend/frontend)
-1. Run full test suite (same as CI workflow)
+1. Run full test suite - for backend, this is three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend` waits on via `needs:` before building anything
 2. Login to GHCR
 3. Extract version from tag (strips component prefix)
 4. Build and push Docker image
