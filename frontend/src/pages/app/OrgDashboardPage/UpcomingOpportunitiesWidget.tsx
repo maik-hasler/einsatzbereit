@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
+import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
 
 const MAX_ITEMS = 5;
@@ -81,9 +82,7 @@ export default function UpcomingOpportunitiesWidget({
 			title={t("orgDashboard.upcomingWidgetTitle")}
 		>
 			{items === null && !error && (
-				<p className="text-sm text-gray-500">
-					{t("orgDashboard.upcomingLoading")}
-				</p>
+				<Spinner label={t("orgDashboard.upcomingLoading")} />
 			)}
 			{error && (
 				<p className="text-sm text-red-600">

@@ -18,7 +18,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await CreateOrganizationAsync("Visual762 Widgets");

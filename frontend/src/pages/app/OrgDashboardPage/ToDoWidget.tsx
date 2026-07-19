@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../../hooks/useApiClient";
+import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
 
 interface Kpis {
@@ -42,9 +43,7 @@ export default function ToDoWidget({ organizationId }: Props) {
 			titleId="widget-todo-title"
 			title={t("orgDashboard.todoWidgetTitle")}
 		>
-			{loading && (
-				<p className="text-sm text-gray-500">{t("orgDashboard.loading")}</p>
-			)}
+			{loading && <Spinner label={t("orgDashboard.loading")} />}
 			{!loading && error && <p className="text-sm text-red-600">{error}</p>}
 			{!loading && !error && kpis && (
 				<div className="grid grid-cols-2 gap-4">
