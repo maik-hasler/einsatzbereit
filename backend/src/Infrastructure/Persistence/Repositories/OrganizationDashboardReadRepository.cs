@@ -41,6 +41,9 @@ internal sealed class OrganizationDashboardReadRepository(
 		var cancelledEngagements = countsByStatus
 			.FirstOrDefault(c => c.Status == EngagementStatus.Cancelled)?.Count ?? 0;
 
+		var confirmedEngagementsTotal = countsByStatus
+			.FirstOrDefault(c => c.Status == EngagementStatus.Confirmed)?.Count ?? 0;
+
 		// The "next 7 days" metric needs a join to time slots plus a date filter,
 		// so it stays a dedicated query (still using the materialized id list).
 		var confirmedEngagementsNext7Days = await dbContext.EngagementsQuery
@@ -56,6 +59,7 @@ internal sealed class OrganizationDashboardReadRepository(
 			openOpportunities,
 			pendingEngagements,
 			confirmedEngagementsNext7Days,
+			confirmedEngagementsTotal,
 			cancelledEngagements);
 	}
 }

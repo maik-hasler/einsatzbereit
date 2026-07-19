@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useOutletContext } from "react-router";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import type { View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS, de } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import type { OrganizationCalendarEventDto } from "../../client/api-client";
-import { useApiClient } from "../../hooks/useApiClient";
-import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
-import Spinner from "../../components/Spinner";
-import type { OrgAppContext } from "../../layouts/OrgAppLayout";
+import type { OrganizationCalendarEventDto } from "../../../client/api-client";
+import { useApiClient } from "../../../hooks/useApiClient";
+import Spinner from "../../../components/Spinner";
+import WidgetCard from "./WidgetCard";
 
 const rbcLocales = {
 	"en-US": enUS,
@@ -51,14 +50,14 @@ function CalEventChip({ event }: { event: object }) {
 	);
 }
 
-export default function OrgDashboardPage() {
-	const { org } = useOutletContext<OrgAppContext>();
+interface Props {
+	organizationId: string;
+	refreshKey: number;
+}
+
+export default function CalendarWidget({ organizationId, refreshKey }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
-	const navigate = useNavigate();
-	const organizationId = org.id;
-
-	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
 	const [calLoading, setCalLoading] = useState(true);
@@ -94,7 +93,7 @@ export default function OrgDashboardPage() {
 	useEffect(() => {
 		loadCalendarEvents();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
+	}, [organizationId, refreshKey]);
 
 	const calEvents: CalEvent[] = calData.flatMap((opp) =>
 		opp.timeSlots.map((slot) => ({
@@ -138,34 +137,11 @@ export default function OrgDashboardPage() {
 		}
 	}
 
-	function handleOpportunityCreated(createdDraftId?: string) {
-		loadCalendarEvents();
-		// Drafts live on the Opportunities tab now. When one is saved from here,
-		// take the organizer there with the new draft highlighted so it is never
-		// lost (issue #708). A published opportunity just refreshes the calendar.
-		if (createdDraftId) {
-			navigate(
-				`/app/${organizationId}/opportunities?highlight=${createdDraftId}`,
-			);
-		}
-	}
-
 	return (
-		<div>
-			<div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h1 className="w-full min-w-0 break-words text-2xl font-bold text-gray-900 sm:w-auto">
-					{org.name}
-				</h1>
-				<button
-					type="button"
-					onClick={() => setShowCreateModal(true)}
-					data-testid="create-opportunity-btn"
-					className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none sm:w-auto"
-				>
-					{t("orgOverview.createOpportunity")}
-				</button>
-			</div>
-
+		<WidgetCard
+			titleId="widget-calendar-title"
+			title={t("orgDashboard.calendarWidgetTitle")}
+		>
 			{calLoading && (
 				<div className="flex items-center justify-center py-16">
 					<Spinner label={t("orgOverview.calendarLoading")} />
@@ -231,12 +207,12 @@ export default function OrgDashboardPage() {
 						aria-labelledby="color-dialog-title"
 						className="relative z-10 w-80 rounded-xl bg-white p-6 shadow-xl"
 					>
-						<h2
+						<h3
 							id="color-dialog-title"
 							className="mb-4 text-lg font-semibold text-gray-900"
 						>
 							{selectedEvent.title}
-						</h2>
+						</h3>
 						<div className="space-y-4">
 							{selectedEvent.maxParticipants > 0 && (
 								<p className="text-sm text-gray-600">
@@ -308,14 +284,6 @@ export default function OrgDashboardPage() {
 					</div>
 				</div>
 			)}
-
-			{showCreateModal && (
-				<CreateVolunteerOpportunityModal
-					organizationId={organizationId}
-					onClose={() => setShowCreateModal(false)}
-					onSuccess={handleOpportunityCreated}
-				/>
-			)}
-		</div>
+		</WidgetCard>
 	);
 }

@@ -3808,6 +3808,7 @@ export interface OrganizationDashboardResponse {
     openOpportunities: number;
     pendingEngagements: number;
     confirmedEngagementsNext7Days: number;
+    confirmedEngagementsTotal: number;
     cancelledEngagements: number;
 
     [key: string]: any;
