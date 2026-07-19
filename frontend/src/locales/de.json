@@ -537,7 +537,7 @@
         "Withdrawn": "Zurückgezogen"
       }
     },
-    "datenschutz": {
+    "privacyPolicy": {
       "title": "Datenschutzerklärung",
       "section1Title": "Verantwortliche Stelle",
       "section1Body": "Maik Hasler\nAdresse: Auf Anfrage per E-Mail\nE-Mail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
@@ -551,7 +551,7 @@
       "section5Title": "Ihre Rechte",
       "section5Body": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Wenden Sie sich dazu an die oben genannte verantwortliche Stelle."
     },
-    "impressum": {
+    "imprint": {
       "title": "Impressum",
       "section1Title": "Angaben gemäß § 5 TMG",
       "section1Body": "Maik Hasler\nAdresse auf Anfrage",

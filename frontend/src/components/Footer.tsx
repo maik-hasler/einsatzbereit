@@ -44,7 +44,7 @@ export default function Footer() {
 						<ul className="space-y-2 text-sm">
 							<li>
 								<Link
-									to="/impressum"
+									to="/imprint"
 									className="hover:text-white transition-colors"
 								>
 									{t("footer.imprint")}
@@ -52,7 +52,7 @@ export default function Footer() {
 							</li>
 							<li>
 								<Link
-									to="/datenschutz"
+									to="/privacy-policy"
 									className="hover:text-white transition-colors"
 								>
 									{t("footer.privacy")}

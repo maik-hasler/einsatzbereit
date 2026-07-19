@@ -23,10 +23,7 @@ export default function AdminOrganizationsPage() {
 	const [toggling, setToggling] = useState<string | null>(null);
 
 	usePageTitle(t("adminOrgs.title"));
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("adminOrgs.title") },
-	]);
+	usePageToolbar([{ label: t("adminOrgs.title") }]);
 
 	useEffect(() => {
 		async function load() {

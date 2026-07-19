@@ -247,11 +247,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task DatenschutzPage_HasNoSeriousA11yViolations()
+	public async Task PrivacyPolicyPage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/datenschutz");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/privacy-policy");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -259,11 +259,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task ImpressumPage_HasNoSeriousA11yViolations()
+	public async Task ImprintPage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/impressum");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/imprint");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

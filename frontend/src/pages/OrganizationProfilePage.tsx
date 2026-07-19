@@ -20,10 +20,7 @@ export default function OrganizationProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 
 	usePageTitle(profile?.name ?? t("orgProfile.loading"));
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: profile?.name ?? t("orgProfile.loading") },
-	]);
+	usePageToolbar([{ label: profile?.name ?? t("orgProfile.loading") }]);
 
 	useEffect(() => {
 		if (!organizationId) return;

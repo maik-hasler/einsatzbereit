@@ -24,10 +24,7 @@ export default function UserProfilePage() {
 	const [error, setError] = useState<string | null>(null);
 
 	usePageTitle(profile?.displayName ?? t("userProfile.loading"));
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: profile?.displayName ?? t("userProfile.loading") },
-	]);
+	usePageToolbar([{ label: profile?.displayName ?? t("userProfile.loading") }]);
 
 	useEffect(() => {
 		if (!userId) return;

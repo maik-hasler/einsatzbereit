@@ -147,10 +147,7 @@ export default function ProfileOverviewPage() {
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 	usePageTitle(t("profile.title"));
-	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
-		{ label: t("breadcrumb.profile") },
-	]);
+	usePageToolbar([{ label: t("breadcrumb.profile") }]);
 
 	const rawTab = searchParams.get("tab");
 	const activeTab: Tab = resolveTab(rawTab);

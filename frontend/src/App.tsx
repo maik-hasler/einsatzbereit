@@ -5,8 +5,8 @@ import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
-import DatenschutzPage from "./pages/DatenschutzPage";
-import ImpressumPage from "./pages/ImpressumPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import ImprintPage from "./pages/ImprintPage";
 import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import ProfileOverviewPage from "./pages/ProfileOverviewPage";
@@ -73,8 +73,8 @@ export default function App() {
 			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
-				<Route path="/datenschutz" element={<DatenschutzPage />} />
-				<Route path="/impressum" element={<ImpressumPage />} />
+				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+				<Route path="/imprint" element={<ImprintPage />} />
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}

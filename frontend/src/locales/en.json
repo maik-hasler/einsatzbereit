@@ -537,7 +537,7 @@
         "Withdrawn": "Withdrawn"
       }
     },
-    "datenschutz": {
+    "privacyPolicy": {
       "title": "Privacy Policy",
       "section1Title": "Responsible party",
       "section1Body": "Maik Hasler\nAddress: Available on request via email\nEmail: maikhslr@gmail.com\nWebsite: https://einsatzbereit.maik-hasler.de",
@@ -551,7 +551,7 @@
       "section5Title": "Your rights",
       "section5Body": "You have the right to access, rectification, erasure and restriction of processing of your personal data. Please contact the responsible party listed above."
     },
-    "impressum": {
+    "imprint": {
       "title": "Imprint",
       "section1Title": "Information according to § 5 TMG",
       "section1Body": "Maik Hasler\nAddress available on request",

@@ -25,7 +25,6 @@ export default function UserAchievementsPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	usePageToolbar([
-		{ label: t("breadcrumb.home"), href: "/" },
 		{
 			label: displayName ?? t("userProfile.loading"),
 			href: userId ? `/users/${userId}` : undefined,
