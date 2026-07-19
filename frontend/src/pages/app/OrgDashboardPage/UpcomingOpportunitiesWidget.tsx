@@ -105,6 +105,7 @@ export default function UpcomingOpportunitiesWidget({
 							<Link
 								to={`/app/${organizationId}/opportunities/${item.id}/engagements`}
 								className="absolute inset-0"
+								aria-label={item.title}
 							/>
 							<p className="truncate text-sm font-medium text-gray-900">
 								{item.title}
