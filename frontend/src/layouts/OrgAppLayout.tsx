@@ -10,6 +10,7 @@ import {
 	useOrgBreadcrumbExtra,
 } from "../contexts/OrgBreadcrumbContext";
 import Header from "../components/Header";
+import Spinner from "../components/Spinner";
 
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
@@ -150,7 +151,7 @@ export default function OrgAppLayout() {
 	if (loading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-gray-50">
-				<span className="text-gray-500">{t("orgDashboard.loading")}</span>
+				<Spinner label={t("orgDashboard.loading")} size="lg" />
 			</div>
 		);
 	}

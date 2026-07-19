@@ -3,6 +3,7 @@ import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
 } from "../client/api-client";
+import Spinner from "./Spinner";
 
 const TYPE_ICON: Record<string, string> = {
 	Milestone: "🏆",
@@ -119,7 +120,11 @@ export default function BadgeGrid({
 	const { t } = useTranslation();
 
 	if (loading) {
-		return <p className="text-sm text-gray-500">{t("achievements.loading")}</p>;
+		return (
+			<div className="flex items-center justify-center py-6">
+				<Spinner label={t("achievements.loading")} size="sm" />
+			</div>
+		);
 	}
 
 	const earnedByKey = new Map(

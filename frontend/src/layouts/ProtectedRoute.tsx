@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import type { ReactNode } from "react";
 import { signinLocaleArgs } from "../lib/authLocale";
+import Spinner from "../components/Spinner";
 
 interface Props {
 	children: ReactNode;
@@ -16,7 +17,7 @@ export default function ProtectedRoute({ children }: Props) {
 	if (auth.isLoading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
-				<span className="text-gray-500">{t("auth.loading")}</span>
+				<Spinner label={t("auth.loading")} size="lg" />
 			</div>
 		);
 	}

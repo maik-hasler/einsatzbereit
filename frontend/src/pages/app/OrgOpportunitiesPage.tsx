@@ -11,6 +11,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
+import Spinner from "../../components/Spinner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 export default function OrgOpportunitiesPage() {
@@ -268,7 +269,7 @@ export default function OrgOpportunitiesPage() {
 
 			{items === null && !error && (
 				<div className="flex items-center justify-center py-16">
-					<span className="text-gray-500">{t("orgOpportunities.loading")}</span>
+					<Spinner label={t("orgOpportunities.loading")} />
 				</div>
 			)}
 

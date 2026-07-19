@@ -9,6 +9,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import type { OrganizationCalendarEventDto } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
+import Spinner from "../../components/Spinner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const rbcLocales = {
@@ -167,9 +168,7 @@ export default function OrgDashboardPage() {
 
 			{calLoading && (
 				<div className="flex items-center justify-center py-16">
-					<span className="text-gray-500">
-						{t("orgOverview.calendarLoading")}
-					</span>
+					<Spinner label={t("orgOverview.calendarLoading")} />
 				</div>
 			)}
 			{calError && (

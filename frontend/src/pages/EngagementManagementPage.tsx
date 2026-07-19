@@ -10,6 +10,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import QRScannerModal from "../components/QRScannerModal";
+import Spinner from "../components/Spinner";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -222,7 +223,9 @@ export default function EngagementManagementPage() {
 			)}
 
 			{loading && (
-				<p className="text-gray-500">{t("engagementManagement.loading")}</p>
+				<div className="flex items-center justify-center py-16">
+					<Spinner label={t("engagementManagement.loading")} />
+				</div>
 			)}
 			{error && (
 				<p className="text-red-600">

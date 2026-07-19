@@ -26,6 +26,7 @@ import EmptyState from "../components/EmptyState";
 import ProfileFieldsView from "../components/ProfileFieldsView";
 import ShareAchievementsModal from "../components/ShareAchievementsModal";
 import SubmitFeedbackModal from "../components/SubmitFeedbackModal";
+import Spinner from "../components/Spinner";
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -557,7 +558,7 @@ export default function ProfileOverviewPage() {
 				<>
 					{profileLoading && (
 						<div className="flex items-center justify-center py-16">
-							<span className="text-gray-500">{t("profile.loading")}</span>
+							<Spinner label={t("profile.loading")} />
 						</div>
 					)}
 
@@ -1056,7 +1057,9 @@ export default function ProfileOverviewPage() {
 					</div>
 
 					{engagementsLoading && (
-						<p className="text-gray-500">{t("myEngagements.loading")}</p>
+						<div className="flex items-center justify-center py-16">
+							<Spinner label={t("myEngagements.loading")} />
+						</div>
 					)}
 					{engagementsError && (
 						<p className="text-red-600">
