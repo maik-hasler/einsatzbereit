@@ -21,6 +21,7 @@
       "platform": "Plattform",
       "findOpportunities": "Einsätze finden",
       "participate": "Mitmachen",
+      "browseOrganizations": "Organisationen durchsuchen",
       "legal": "Rechtliches",
       "imprint": "Impressum",
       "privacy": "Datenschutz",
@@ -739,7 +740,8 @@
       "account": "Konto",
       "profile": "Profil",
       "achievements": "Meine Errungenschaften",
-      "userAchievements": "Errungenschaften"
+      "userAchievements": "Errungenschaften",
+      "organizations": "Organisationen"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",
@@ -769,6 +771,18 @@
       "verifyToggle": "Verifizierung umschalten",
       "verifySuccess": "Organisations-Verifizierung aktualisiert.",
       "verifyError": "Verifizierung konnte nicht aktualisiert werden."
+    },
+    "organizationsPage": {
+      "title": "Organisationen",
+      "subtitle": "Durchsuche Organisationen, um eine bereits bekannte zu finden.",
+      "searchPlaceholder": "Organisationen nach Namen suchen…",
+      "loading": "Organisationen werden geladen…",
+      "error": "Fehler: {{message}}",
+      "noResults": "Keine Organisationen gefunden.",
+      "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
+      "clearSearch": "Suche zurücksetzen",
+      "loadMore": "Mehr laden",
+      "verified": "Verifizierte Organisation"
     },
     "adminOrgs": {
       "title": "Admin - Organisationen",

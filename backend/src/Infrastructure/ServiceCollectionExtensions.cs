@@ -62,6 +62,8 @@ public static class ServiceCollectionExtensions
 
 		services.AddScoped<IVolunteerOpportunityReadRepository, VolunteerOpportunityReadRepository>();
 
+		services.AddScoped<IOrganizationReadRepository, OrganizationReadRepository>();
+
 		services.AddScoped<IEngagementReadRepository, EngagementReadRepository>();
 
 		services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
