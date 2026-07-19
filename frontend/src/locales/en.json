@@ -356,7 +356,20 @@
       "cancelledEngagementsDesc": "Total cancelled across all opportunities",
       "viewOpportunities": "View opportunities →",
       "viewEngagements": "View engagements →",
-      "unnamedDraft": "Unnamed Draft"
+      "unnamedDraft": "Unnamed Draft",
+      "signedUpVolunteers": "Signed-up Volunteers",
+      "signedUpVolunteersDesc": "Confirmed engagements across all opportunities",
+      "todoWidgetTitle": "Needs Your Attention",
+      "todoError": "Failed to load summary.",
+      "calendarWidgetTitle": "Calendar",
+      "upcomingWidgetTitle": "Upcoming Opportunities",
+      "upcomingLoading": "Loading…",
+      "upcomingError": "Failed to load opportunities.",
+      "upcomingEmpty": "No upcoming opportunities.",
+      "upcomingViewAll": "View all opportunities →",
+      "settingsWidgetTitle": "Organization",
+      "settingsMemberCount": "{{count}} members",
+      "settingsEditLink": "Edit settings →"
     },
     "orgSettings": {
       "title": "Edit Organisation",
@@ -812,7 +825,7 @@
       }
     },
     "orgOverview": {
-      "tabCalendar": "Calendar",
+      "tabDashboard": "Dashboard",
       "tabOpportunities": "Opportunities",
       "tabMembers": "Members",
       "tabSettings": "Settings",

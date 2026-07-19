@@ -5318,6 +5318,7 @@
           "openOpportunities",
           "pendingEngagements",
           "confirmedEngagementsNext7Days",
+          "confirmedEngagementsTotal",
           "cancelledEngagements"
         ],
         "type": "object",
@@ -5339,6 +5340,14 @@
             "format": "int32"
           },
           "confirmedEngagementsNext7Days": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "confirmedEngagementsTotal": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",

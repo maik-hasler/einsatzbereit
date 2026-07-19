@@ -78,7 +78,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		var tabBar = Page.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" });
 		await Expect(tabBar).ToBeVisibleAsync();
 
-		var tabNames = new[] { "Calendar", "Opportunities", "Members", "Settings" };
+		var tabNames = new[] { "Dashboard", "Opportunities", "Members", "Settings" };
 		var tabYPositions = new List<float>();
 		foreach (var name in tabNames)
 		{

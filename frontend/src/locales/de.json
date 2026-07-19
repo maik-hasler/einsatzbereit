@@ -356,7 +356,20 @@
       "cancelledEngagementsDesc": "Insgesamt abgesagt über alle Einsätze",
       "viewOpportunities": "Einsätze anzeigen →",
       "viewEngagements": "Engagements anzeigen →",
-      "unnamedDraft": "Unbenannter Entwurf"
+      "unnamedDraft": "Unbenannter Entwurf",
+      "signedUpVolunteers": "Angemeldete Freiwillige",
+      "signedUpVolunteersDesc": "Bestätigte Engagements über alle Einsätze",
+      "todoWidgetTitle": "Erfordert deine Aufmerksamkeit",
+      "todoError": "Zusammenfassung konnte nicht geladen werden.",
+      "calendarWidgetTitle": "Kalender",
+      "upcomingWidgetTitle": "Bevorstehende Einsätze",
+      "upcomingLoading": "Wird geladen…",
+      "upcomingError": "Einsätze konnten nicht geladen werden.",
+      "upcomingEmpty": "Keine bevorstehenden Einsätze.",
+      "upcomingViewAll": "Alle Einsätze anzeigen →",
+      "settingsWidgetTitle": "Organisation",
+      "settingsMemberCount": "{{count}} Mitglieder",
+      "settingsEditLink": "Einstellungen bearbeiten →"
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",
@@ -812,7 +825,7 @@
       }
     },
     "orgOverview": {
-      "tabCalendar": "Kalender",
+      "tabDashboard": "Dashboard",
       "tabOpportunities": "Einsätze",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",

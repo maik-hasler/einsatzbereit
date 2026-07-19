@@ -175,6 +175,35 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_CalendarWidgetColorDialog_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #762 rebuilt the dashboard as a widget grid; the Calendar widget's
+		// color-picker dialog only exists in the DOM while open, so the plain
+		// page-load scan above can't reach it.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var calendarEvent = Page.Locator(".rbc-event").First;
+		try
+		{
+			await calendarEvent.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			return; // olaf's org has no calendar events seeded for the current month, skip
+		}
+
+		await calendarEvent.ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']");
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrgOpportunitiesPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

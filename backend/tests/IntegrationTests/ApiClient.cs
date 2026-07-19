@@ -8315,6 +8315,11 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
         public int ConfirmedEngagementsNext7Days { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("confirmedEngagementsTotal")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int ConfirmedEngagementsTotal { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("cancelledEngagements")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
