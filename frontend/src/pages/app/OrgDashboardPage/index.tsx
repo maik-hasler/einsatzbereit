@@ -3,12 +3,15 @@ import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
 	DndContext,
+	DragOverlay,
 	closestCenter,
 	KeyboardSensor,
-	PointerSensor,
+	MouseSensor,
+	TouchSensor,
 	useSensor,
 	useSensors,
 	type DragEndEvent,
+	type DragStartEvent,
 } from "@dnd-kit/core";
 import {
 	SortableContext,
@@ -17,14 +20,14 @@ import {
 	sortableKeyboardCoordinates,
 	useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { OrgAppContext } from "../../../layouts/OrgAppLayout";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { useEditModeQuickActions } from "../../../hooks/useEditModeQuickActions";
 import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import { PlusIcon, CancelIcon } from "../../../components/QuickActionIcons";
-import AddWidgetModal from "./AddWidgetModal";
+import EmptyState from "../../../components/EmptyState";
+import AddWidgetModal, { WidgetPreview } from "./AddWidgetModal";
 import CalendarWidget from "./CalendarWidget";
 import UpcomingOpportunitiesWidget from "./UpcomingOpportunitiesWidget";
 import ToDoWidget from "./ToDoWidget";
@@ -74,45 +77,60 @@ function EditableWidgetTile({
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
-	const {
-		attributes,
-		listeners,
-		setNodeRef,
-		transform,
-		transition,
-		isDragging,
-	} = useSortable({ id: placement.widgetKey });
+	const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+		id: placement.widgetKey,
+	});
 	const catalogEntry = WIDGET_CATALOG[placement.widgetKey];
 
-	// Keep the same tree shape (wrapper > inner div > children, toolbar as an
-	// optional sibling) whether editing is on or off - branching the returned
-	// JSX shape itself (e.g. an extra wrapper only in one branch) would shift
-	// `children` to a different position in the tree on every edit-mode
-	// toggle, and React would remount every widget (losing its fetched data
-	// and any open state) instead of just updating this wrapper in place.
-	const style = editing
-		? { transform: CSS.Transform.toString(transform), transition }
-		: undefined;
-
+	// No transform/transition from useSortable is applied here on purpose -
+	// dnd-kit's built-in sortable animation projects a translate offset
+	// assuming every item is the same size, which falls apart on this grid
+	// (mixed col-spans + grid-flow-dense) and produced the "other widgets...
+	// look so weirdly" glitch from #771 follow-up review feedback. The
+	// dragged tile is hidden in place (opacity-0 below) while
+	// OrgDashboardPage's <DragOverlay> shows a floating clone that actually
+	// follows the pointer/keyboard; every other tile just stays put until the
+	// drop reorders the array, then snaps straight to its new dense-packed
+	// slot - no mid-drag animation left to get wrong.
 	return (
+		// The grip button below keeps its own {...attributes} {...listeners}
+		// as the accessible, keyboard-operable drag handle (dnd-kit's
+		// KeyboardSensor needs a focusable element with those attributes, and
+		// a whole free-shaped card exposed as one giant nested-interactive
+		// control would trip the "no interactive control inside another" a11y
+		// rule against the toolbar's own buttons). onMouseDown/onTouchStart
+		// below additionally let mouse/touch users grab the card ANYWHERE, not
+		// just the grip icon - purely as a supplementary trigger for the same
+		// drag dnd-kit's KeyboardSensor already makes fully keyboard-operable
+		// via that button, which is why suppressing the static-element-
+		// interactions rule here is safe: this div never needs its own
+		// role/keyboard handling, the real interactive element is the grip
+		// button beside it. The sensors' activationConstraint (see
+		// OrgDashboardPage) keeps this from swallowing plain clicks on the
+		// resize/remove buttons, which live inside the same element. Touch
+		// specifically uses TouchSensor's delay (not MouseSensor's distance),
+		// which - unlike distance-based activation - doesn't require disabling
+		// touch-action, so a quick swipe still scrolls the page normally and
+		// only a deliberate hold claims the gesture for dragging (#771
+		// follow-up review feedback - "moving doesnt work at all on mobile" -
+		// without also breaking scroll while editing).
+		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div
 			ref={setNodeRef}
-			style={style}
 			data-testid={`widget-tile-${placement.widgetKey}`}
-			// The grip button below keeps its own {...attributes} {...listeners}
-			// as the accessible, keyboard-operable drag handle (dnd-kit's
-			// KeyboardSensor needs a focusable element with those attributes,
-			// and a whole free-shaped card exposed as one giant nested-interactive
-			// control would trip the "no interactive control inside another"
-			// a11y rule against the toolbar's own buttons). This onPointerDown
-			// additionally lets mouse/touch users grab the card ANYWHERE, not
-			// just the small grip icon (#771 review feedback) - PointerSensor's
-			// activationConstraint below keeps this from swallowing plain clicks
-			// on the resize/remove buttons, which live inside the same element.
-			onPointerDown={(event) => {
-				if (editing) listeners?.onPointerDown?.(event);
+			onMouseDown={(event) => {
+				if (editing) listeners?.onMouseDown?.(event);
 			}}
-			className={`relative h-full ${widgetColSpanClass(placement.size)} ${editing && isDragging ? "z-10 cursor-grabbing opacity-50" : ""}`}
+			onTouchStart={(event) => {
+				if (editing) listeners?.onTouchStart?.(event);
+			}}
+			// A low but nonzero opacity (not opacity-0) while dragging - a
+			// keyboard-initiated drag (KeyboardSensor) leaves real DOM focus on
+			// the grip button inside this tile, and a fully invisible ancestor
+			// would take its focus ring with it (WCAG 2.4.7 Focus Visible),
+			// since <DragOverlay>'s floating clone has no focus of its own to
+			// show one instead.
+			className={`relative h-full ${widgetColSpanClass(placement.size)} ${editing && isDragging ? "opacity-20" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-75" : ""}`}>
 				{children}
@@ -159,6 +177,35 @@ function EditableWidgetTile({
 	);
 }
 
+// Static, non-interactive preview shown in <DragOverlay> while a widget is
+// being dragged - reuses AddWidgetModal's per-widget mockup rather than
+// rendering the real widget a second time, which would mount a second live
+// instance (double data fetch, duplicate side effects) for however long the
+// drag lasts.
+function WidgetDragPreview({
+	widgetKey,
+	size,
+}: {
+	widgetKey: WidgetKey;
+	size: { width: number; height: number } | null;
+}) {
+	const { t } = useTranslation();
+	const catalogEntry = WIDGET_CATALOG[widgetKey];
+	return (
+		<div
+			style={size ? { width: size.width, height: size.height } : undefined}
+			className="cursor-grabbing rounded-2xl border border-gray-100 bg-white p-5 shadow-lg ring-2 ring-brand-300"
+		>
+			<div className="mb-4 flex items-center justify-between gap-3">
+				<h2 className="text-base font-semibold text-gray-900">
+					{t(catalogEntry.titleKey)}
+				</h2>
+			</div>
+			<WidgetPreview widgetKey={widgetKey} />
+		</div>
+	);
+}
+
 export default function OrgDashboardPage() {
 	const { org } = useOutletContext<OrgAppContext>();
 	const { t } = useTranslation();
@@ -183,6 +230,14 @@ export default function OrgDashboardPage() {
 	);
 	const [saving, setSaving] = useState(false);
 	const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
+	// Tracks which widget (if any) is mid-drag so <DragOverlay> can render a
+	// floating clone of it - see EditableWidgetTile's comment on why the
+	// dragged tile itself no longer carries a dnd-kit transform.
+	const [activeDragKey, setActiveDragKey] = useState<WidgetKey | null>(null);
+	const [activeDragSize, setActiveDragSize] = useState<{
+		width: number;
+		height: number;
+	} | null>(null);
 
 	useEffect(() => {
 		api
@@ -191,7 +246,14 @@ export default function OrgDashboardPage() {
 				const sanitized = response.widgets
 					.map(sanitizePlacement)
 					.filter((w): w is WidgetPlacement => w !== null);
-				setSavedLayout(sanitized.length === 0 ? DEFAULT_LAYOUT : sanitized);
+				// Only a brand-new organizer (no saved layout row at all,
+				// hasCustomLayout=false) gets the default layout applied. An
+				// organizer who deliberately removed every widget and saved that
+				// has hasCustomLayout=true with an empty list - respecting that
+				// as a real empty layout, instead of silently reapplying the
+				// default, is the #771 follow-up fix for "remove all widgets,
+				// it resets back to the default set on refresh".
+				setSavedLayout(response.hasCustomLayout ? sanitized : DEFAULT_LAYOUT);
 			})
 			.catch(() => setSavedLayout(DEFAULT_LAYOUT));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,6 +302,19 @@ export default function OrgDashboardPage() {
 		setDraftLayout(null);
 	}
 
+	function startEditing() {
+		setDraftLayout(savedLayout);
+		setEditing(true);
+	}
+
+	// Used by EmptyState's CTA when the dashboard has zero widgets and isn't
+	// already in edit mode - jumps straight into editing and opens the picker,
+	// rather than making the organizer find the "Edit" quick action first.
+	function handleStartEditingAndAddWidget() {
+		if (!editing) startEditing();
+		setShowAddWidgetModal(true);
+	}
+
 	// Memoized on just the primitive/visual deps (see useQuickActions) - the
 	// "Add Widget" action only needs to change when there's actually nothing
 	// left to add, not on every render.
@@ -262,10 +337,7 @@ export default function OrgDashboardPage() {
 	useEditModeQuickActions({
 		editing,
 		saving,
-		onEdit: () => {
-			setDraftLayout(savedLayout ?? DEFAULT_LAYOUT);
-			setEditing(true);
-		},
+		onEdit: startEditing,
 		onSave: () => void handleSave(),
 		onCancel: handleCancel,
 		extraEditingActions,
@@ -295,17 +367,34 @@ export default function OrgDashboardPage() {
 
 	const sensors = useSensors(
 		// A movement threshold before a drag activates, now that the whole
-		// tile (not just the grip button) carries a pointerdown listener -
+		// tile (not just the grip button) carries a mousedown listener -
 		// without it, a plain click on the resize/remove buttons (which live
 		// inside that same tile) would be swallowed as a zero-distance drag
 		// instead of firing their own onClick.
-		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+		useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+		// Touch gets a short hold instead of a distance threshold. Unlike
+		// MouseSensor/PointerSensor's distance-based activation, dnd-kit's
+		// delay-based TouchSensor doesn't need `touch-action: none` to work
+		// (see EditableWidgetTile's comment) - a quick swipe still scrolls the
+		// page as normal, and only a deliberate ~200ms hold on a tile claims
+		// the gesture for dragging.
+		useSensor(TouchSensor, {
+			activationConstraint: { delay: 200, tolerance: 8 },
+		}),
 		useSensor(KeyboardSensor, {
 			coordinateGetter: sortableKeyboardCoordinates,
 		}),
 	);
 
+	function handleDragStart(event: DragStartEvent) {
+		setActiveDragKey(event.active.id as WidgetKey);
+		const rect = event.active.rect.current.initial;
+		setActiveDragSize(rect ? { width: rect.width, height: rect.height } : null);
+	}
+
 	function handleDragEnd(event: DragEndEvent) {
+		setActiveDragKey(null);
+		setActiveDragSize(null);
 		const { active, over } = event;
 		if (!over || active.id === over.id) return;
 		setDraftLayout((prev) => {
@@ -315,6 +404,15 @@ export default function OrgDashboardPage() {
 			if (oldIndex === -1 || newIndex === -1) return current;
 			return arrayMove(current, oldIndex, newIndex);
 		});
+	}
+
+	// dnd-kit fires this on Escape (and a few other abandon paths) instead of
+	// onDragEnd - without it, an escaped drag would leave the source tile
+	// permanently hidden (opacity-0, see EditableWidgetTile) with no overlay
+	// to show for it.
+	function handleDragCancel() {
+		setActiveDragKey(null);
+		setActiveDragSize(null);
 	}
 
 	function renderWidget(key: WidgetKey) {
@@ -351,12 +449,33 @@ export default function OrgDashboardPage() {
 		}
 	}
 
+	// An empty layout is ambiguous only in the API response (see the
+	// useEffect above) - once resolved into `layout`, zero widgets always
+	// means "genuinely nothing here right now" (either a deliberately
+	// emptied saved layout, or a draft mid-edit), so it always gets the same
+	// empty state rather than silently falling back to the default set.
+	const isEmpty = layout.length === 0;
+
 	// grid-flow-row-dense backfills gaps left by mixed widget sizes (e.g. a
 	// Small next to two Mediums doesn't evenly divide the 4 columns) with a
 	// later widget that DOES fit, instead of leaving ragged empty cells -
 	// #771 review feedback ("sizes... dont fully align with the layout").
-	const grid = (
-		<div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:grid-flow-row-dense">
+	const grid = isEmpty ? (
+		<div data-testid="dashboard-empty-state">
+			<EmptyState
+				title={t("orgDashboard.emptyStateTitle")}
+				message={t("orgDashboard.emptyStateMessage")}
+				action={{
+					label: t("orgDashboard.addWidgetHeading"),
+					onClick: handleStartEditingAndAddWidget,
+				}}
+			/>
+		</div>
+	) : (
+		<div
+			data-testid="dashboard-widget-grid"
+			className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:grid-flow-row-dense"
+		>
 			{layout.map((placement) => (
 				<EditableWidgetTile
 					key={placement.widgetKey}
@@ -382,7 +501,9 @@ export default function OrgDashboardPage() {
 			<DndContext
 				sensors={sensors}
 				collisionDetection={closestCenter}
+				onDragStart={handleDragStart}
 				onDragEnd={handleDragEnd}
+				onDragCancel={handleDragCancel}
 			>
 				<SortableContext
 					items={layout.map((w) => w.widgetKey)}
@@ -390,6 +511,14 @@ export default function OrgDashboardPage() {
 				>
 					{grid}
 				</SortableContext>
+				<DragOverlay>
+					{activeDragKey && (
+						<WidgetDragPreview
+							widgetKey={activeDragKey}
+							size={activeDragSize}
+						/>
+					)}
+				</DragOverlay>
 			</DndContext>
 
 			{showAddWidgetModal && (

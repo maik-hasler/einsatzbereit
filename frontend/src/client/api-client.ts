@@ -4099,6 +4099,7 @@ export interface CurrentUserEngagementInfo {
 }
 
 export interface DashboardLayoutResponse {
+    hasCustomLayout: boolean;
     widgets: DashboardWidgetPlacementResponse[];
 
     [key: string]: any;

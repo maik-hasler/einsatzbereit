@@ -8152,6 +8152,9 @@ namespace IntegrationTests
     public partial class DashboardLayoutResponse
     {
 
+        [System.Text.Json.Serialization.JsonPropertyName("hasCustomLayout")]
+        public bool HasCustomLayout { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("widgets")]
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.ICollection<DashboardWidgetPlacementResponse> Widgets { get; set; } = new System.Collections.ObjectModel.Collection<DashboardWidgetPlacementResponse>();

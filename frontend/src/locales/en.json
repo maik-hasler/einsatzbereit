@@ -396,7 +396,9 @@
       "addWidgetHeading": "Add a widget",
       "addWidgetModalDesc": "Choose a widget to add to your dashboard.",
       "addWidgetAllAdded": "All widgets have been added.",
-      "addWidgetDone": "Done"
+      "addWidgetDone": "Done",
+      "emptyStateTitle": "Your dashboard is empty",
+      "emptyStateMessage": "Add a widget to get started."
     },
     "orgSettings": {
       "title": "Edit Organisation",

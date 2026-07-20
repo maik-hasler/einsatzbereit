@@ -57,7 +57,7 @@ public class GetDashboardLayoutQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnEmptyWidgets_WhenNoLayoutSaved(
+	public async Task Handle_ShouldReturnEmptyWidgetsAndHasCustomLayoutFalse_WhenNoLayoutSaved(
 		CancellationToken cancellationToken)
 	{
 		_dbContext
@@ -68,10 +68,12 @@ public class GetDashboardLayoutQueryHandlerTests
 		var result = await _sut.Handle(query, cancellationToken);
 
 		result.Widgets.Should().BeEmpty();
+		result.HasCustomLayout.Should().BeFalse(
+			"no OrganizationDashboardLayout row exists yet - the frontend should apply its own default layout");
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnWidgets_WhenLayoutExists(
+	public async Task Handle_ShouldReturnWidgetsAndHasCustomLayoutTrue_WhenLayoutExists(
 		CancellationToken cancellationToken)
 	{
 		var layout = OrganizationDashboardLayout.Create(
@@ -88,10 +90,34 @@ public class GetDashboardLayoutQueryHandlerTests
 
 		var result = await _sut.Handle(query, cancellationToken);
 
+		result.HasCustomLayout.Should().BeTrue();
 		result.Widgets.Should().BeEquivalentTo(
 		[
 			new DashboardWidgetPlacementResponse("ToDo", "Medium"),
 			new DashboardWidgetPlacementResponse("Calendar", "Large"),
 		], options => options.WithStrictOrdering());
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnHasCustomLayoutTrue_WhenLayoutExistsWithZeroWidgets(
+		CancellationToken cancellationToken)
+	{
+		// Regression guard for #771 review feedback: an organizer who removes
+		// every widget and saves that must NOT be indistinguishable from a
+		// brand-new organizer who never customized anything - both have an
+		// empty Widgets list, but only this one has a saved layout row.
+		var layout = OrganizationDashboardLayout.Create(
+			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
+			DefaultRequestingUserId,
+			[]);
+		_dbContext
+			.GetDashboardLayoutAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
+			.Returns(layout);
+		var query = new GetDashboardLayoutQuery(DefaultOrgId, DefaultRequestingUserId);
+
+		var result = await _sut.Handle(query, cancellationToken);
+
+		result.HasCustomLayout.Should().BeTrue();
+		result.Widgets.Should().BeEmpty();
 	}
 }

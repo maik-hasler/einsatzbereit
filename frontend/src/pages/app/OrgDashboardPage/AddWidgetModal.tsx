@@ -19,8 +19,11 @@ function Bar({ className = "" }: { className?: string }) {
 // Small, static mockups hinting at each widget's shape - deliberately not a
 // live render of the organizer's real data (that would mean extra API calls
 // just to browse the picker, and isn't really "an example" so much as a
-// leak of whatever happens to be in this org right now).
-function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
+// leak of whatever happens to be in this org right now). Also reused by
+// OrgDashboardPage's drag overlay (see EditableWidgetTile) for the same
+// reason: the floating clone shown while dragging must not mount a second
+// live instance of the widget (double data fetch, duplicate side effects).
+export function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 	switch (widgetKey) {
 		case "ToDo":
 			return (

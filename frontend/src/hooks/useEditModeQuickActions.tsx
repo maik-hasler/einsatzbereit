@@ -57,6 +57,13 @@ export function useEditModeQuickActions({
 		}
 		const nextKey = editing ? "cancel" : "edit";
 		const frame = requestAnimationFrame(() => {
+			// Skip if a dialog opened in the same tick as this edit-mode toggle
+			// (e.g. OrgDashboardPage's empty state jumping straight into "Edit"
+			// + the Add Widget picker together) - the dialog already moved focus
+			// into itself and owns it while open, so refocusing the action bar
+			// here would yank focus back out from behind the backdrop and break
+			// the dialog's focus containment.
+			if (document.querySelector('[role="dialog"]')) return;
 			document
 				.querySelector<HTMLButtonElement>(
 					`[data-testid="quick-action-${nextKey}"]`,

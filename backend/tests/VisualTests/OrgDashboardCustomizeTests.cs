@@ -159,6 +159,61 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")).ToBeVisibleAsync();
 	}
 
+	[Test]
+	public async Task RemovingAllWidgets_AndSaving_ShowsEmptyState_NotDefaultLayoutAfterReload()
+	{
+		// Regression guard for the #771 follow-up review feedback bug: an
+		// organizer who removes every widget and saves that must see a
+		// genuinely empty dashboard (with an "add a widget" empty state) on
+		// the next load - not silently reset back to the default widget set,
+		// which is what happened before HasCustomLayout distinguished "never
+		// customized" from "customized to empty" (see DashboardLayoutResponse.cs).
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashEmpty");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		foreach (var (testId, widgetTitle) in new[]
+		{
+			("CreateOpportunity", "Create Opportunity"),
+			("ToDo", "Needs Your Attention"),
+			("UpcomingOpportunities", "Upcoming Opportunities"),
+			("Calendar", "Calendar"),
+			("Settings", "Organization"),
+		})
+		{
+			await Page.GetByTestId($"widget-tile-{testId}")
+				.GetByRole(AriaRole.Button, new() { Name = $"Remove {widgetTitle} widget" })
+				.ClickAsync();
+		}
+
+		(await Page.GetByTestId("dashboard-widget-grid").CountAsync()).Should().Be(0);
+		await Expect(Page.GetByTestId("dashboard-empty-state")).ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(Page.GetByTestId("dashboard-empty-state")).ToBeVisibleAsync();
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("dashboard-empty-state")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		(await Page.GetByTestId("widget-tile-CreateOpportunity").CountAsync())
+			.Should().Be(0, "the layout was saved as genuinely empty (HasCustomLayout=true) - "
+				+ "it must not silently reset back to the default widget set after a reload");
+
+		// The empty state's own CTA should get an organizer straight back into
+		// edit mode with the picker open, not just the "Edit" quick action.
+		await Page.GetByTestId("dashboard-empty-state")
+			.GetByRole(AriaRole.Button, new() { Name = "Add a widget" })
+			.ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+	}
+
 	private async Task CreateOrganizationAsync(string namePrefix)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry

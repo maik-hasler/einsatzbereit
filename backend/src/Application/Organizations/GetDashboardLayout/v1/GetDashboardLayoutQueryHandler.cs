@@ -33,6 +33,6 @@ internal sealed class GetDashboardLayoutQueryHandler(
 			.Select(w => new DashboardWidgetPlacementResponse(w.WidgetKey.ToString(), w.Size.ToString()))
 			.ToList() ?? [];
 
-		return new DashboardLayoutResponse(widgets);
+		return new DashboardLayoutResponse(layout is not null, widgets);
 	}
 }

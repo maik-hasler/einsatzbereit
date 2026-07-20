@@ -396,7 +396,9 @@
       "addWidgetHeading": "Widget hinzufügen",
       "addWidgetModalDesc": "Wähle ein Widget aus, das du deinem Dashboard hinzufügen möchtest.",
       "addWidgetAllAdded": "Alle Widgets wurden hinzugefügt.",
-      "addWidgetDone": "Fertig"
+      "addWidgetDone": "Fertig",
+      "emptyStateTitle": "Dein Dashboard ist leer",
+      "emptyStateMessage": "Füge ein Widget hinzu, um loszulegen."
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",

@@ -4992,10 +4992,14 @@
       },
       "DashboardLayoutResponse": {
         "required": [
+          "hasCustomLayout",
           "widgets"
         ],
         "type": "object",
         "properties": {
+          "hasCustomLayout": {
+            "type": "boolean"
+          },
           "widgets": {
             "type": "array",
             "items": {
