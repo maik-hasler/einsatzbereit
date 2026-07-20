@@ -210,7 +210,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach the page via the dashboard's own
+		// widget links instead.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -224,7 +226,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach the page via the Settings widget's
+		// member-count link instead.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -238,7 +242,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach the page via the Settings widget's
+		// "Edit settings" link instead.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -249,13 +255,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Engagement management is nested in the org app (#751) - reachable
-		// from the Opportunities tab's "Manage applications" link, not from
+		// from the Opportunities page's "Manage applications" link, not from
 		// the public opportunity detail page anymore.
 		var frontend = Fixture.GetEndpoint("frontend");
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });

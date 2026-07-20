@@ -171,12 +171,6 @@ export default function EngagementManagementPage() {
 
 	return (
 		<>
-			<div className="mb-6">
-				<h1 className="text-2xl font-bold text-gray-900">
-					{t("engagementManagement.title")}
-				</h1>
-			</div>
-
 			{checkInMethod === "PINCode" && checkInPin && (
 				<div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-4">
 					<p className="text-sm font-medium text-brand-900">

@@ -253,10 +253,7 @@ export default function OrgOpportunitiesPage() {
 
 	return (
 		<div>
-			<div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h1 className="w-full min-w-0 break-words text-2xl font-bold text-gray-900 sm:w-auto">
-					{org.name}
-				</h1>
+			<div className="mb-6 flex justify-end">
 				<button
 					type="button"
 					onClick={() => setShowCreate(true)}
