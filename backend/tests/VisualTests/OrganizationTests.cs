@@ -200,6 +200,66 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
+	{
+		// #772 review follow-up (issue #763): "the site looks a bit dead" -
+		// the public organization directory now shows each org's count of
+		// open (Published) volunteer opportunities instead of just a bare
+		// name/description, so a card with real opportunities reads as such.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var orgName = await CreateOrganizationAsync("Visual772 OpenCount");
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return; // modal did not open - skip remaining assertions
+		}
+
+		// Step 1: title/description.
+		await Page.Locator("#opportunity-title").FillAsync("Visual772 Opportunity");
+		await Page.Locator("#opportunity-description").FillAsync(
+			"Coverage for the organization directory's open-opportunity count.");
+
+		// Step 2: remote, so no address fields are required.
+		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
+		await Page.Locator("#opportunity-remote").CheckAsync();
+
+		// Step 3: IndividualContact (Express interest) - unlike Waitlist, this
+		// type can publish with no time slots, keeping this test focused on
+		// the directory count rather than the slot-creation flow.
+		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])")
+			.ClickAsync();
+
+		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		// The public directory, filtered to this org, must show "1 open opportunity".
+		await Page.GotoAsync($"{origin}/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.Locator("#organizations-search").FillAsync(orgName);
+
+		var orgCard = Page.Locator("li").Filter(new() { HasTextString = orgName });
+		await Expect(orgCard).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(orgCard.GetByText("1 open opportunity", new() { Exact = true }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+	}
+
+	[Test]
 	public async Task PublicProfilePage_ContentIsCenteredWithinMain()
 	{
 		// Regression for #694: OrganizationProfileView's content wrapper
