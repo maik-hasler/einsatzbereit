@@ -258,13 +258,13 @@ export default function EngagementManagementPage() {
 												{e.volunteerName}
 											</Link>
 										) : e.volunteerId ? (
-											<span className="font-mono text-xs text-gray-400">
+											<span className="font-mono text-xs text-gray-500">
 												{t("engagementManagement.volunteer", {
 													id: e.volunteerId.slice(0, 8) + "...",
 												})}
 											</span>
 										) : (
-											<span className="text-xs italic text-gray-400">
+											<span className="text-xs italic text-gray-500">
 												{t("engagementManagement.anonymizedVolunteer")}
 											</span>
 										)}
@@ -280,14 +280,14 @@ export default function EngagementManagementPage() {
 												(s) => s.id === e.timeSlotId,
 											);
 											return (
-												<p className="mt-1 text-xs text-gray-400">
+												<p className="mt-1 text-xs text-gray-500">
 													{slot
 														? `${formatDateTime(slot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(slot.endDateTime as unknown as string, i18n.language)}`
 														: e.timeSlotId.slice(0, 8) + "..."}
 												</p>
 											);
 										})()}
-									<p className="mt-1 text-xs text-gray-400">
+									<p className="mt-1 text-xs text-gray-500">
 										{t("engagementManagement.receivedOn", {
 											date: new Date(e.createdOn).toLocaleDateString(locale),
 										})}
@@ -422,7 +422,7 @@ export default function EngagementManagementPage() {
 													<path d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" />
 												</svg>
 											))}
-											<span className="ml-1 text-xs text-gray-400">
+											<span className="ml-1 text-xs text-gray-500">
 												{new Date(item.submittedAt).toLocaleDateString(locale)}
 											</span>
 										</div>

@@ -25,6 +25,21 @@ public class GetUserProfileTests(
 	}
 
 	[Test]
+	public async Task GetUserProfile_ShouldReturnProfile_WhenAuthenticatedAsAdmin(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #760: the "admin" realm role was not composite over
+		// "user"/"organisator", so an admin-only token failed the DefaultUser
+		// policy that GetUserProfile (and every other baseline endpoint) requires.
+		var client = await CreateAuthenticatedClientAsync("admin", "admin123");
+
+		var result = await client.GetUserProfileAsync(cancellationToken);
+
+		result.Id.Should().NotBeEmpty();
+		result.Username.Should().Be("admin");
+	}
+
+	[Test]
 	public async Task GetUserProfile_ShouldReturn401_WhenNotAuthenticated(
 		CancellationToken cancellationToken)
 	{

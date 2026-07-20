@@ -13,7 +13,7 @@ import ProfileOverviewPage from "./pages/ProfileOverviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
-import AdminOrganizationsPage from "./pages/AdminOrganizationsPage";
+import AdministrationPage from "./pages/AdministrationPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import OrgDashboardPage from "./pages/app/OrgDashboardPage";
 import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
@@ -119,10 +119,10 @@ export default function App() {
 				/>
 				<Route path="/users/:userId" element={<UserProfilePage />} />
 				<Route
-					path="/admin/organizations"
+					path="/administration"
 					element={
 						<ProtectedRoute>
-							<AdminOrganizationsPage />
+							<AdministrationPage />
 						</ProtectedRoute>
 					}
 				/>

@@ -23,7 +23,7 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 |---|---|
 | `user` | Default - can browse opportunities |
 | `organisator` | Can create and manage volunteer opportunities |
-| `admin` | Full admin access |
+| `admin` | Full admin access - composite role, includes `user` + `organisator` so admin tokens also satisfy `EinsatzbereitDefaultUserPolicy`/`EinsatzbereitOrganisatorPolicy` |
 
 ### Clients
 

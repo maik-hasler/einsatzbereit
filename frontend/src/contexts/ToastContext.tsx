@@ -23,7 +23,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 	useEffect(() => {
 		const unsub = subscribeToasts((event) => {
-			setToasts((prev) => [...prev, event]);
+			setToasts((prev) => {
+				const isDuplicate = prev.some(
+					(t) => t.level === event.level && t.message === event.message,
+				);
+				return isDuplicate ? prev : [...prev, event];
+			});
 			setTimeout(() => {
 				setToasts((prev) => prev.filter((t) => t.id !== event.id));
 			}, 5000);

@@ -69,26 +69,34 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task AdminOrganizationsPage_ShowsSpinner_WhileOrganizationsFetch()
+	public async Task AdministrationPage_ShowsSpinnerForOrganizationsSection_WhileOrganizationsFetch()
 	{
 		// Covers the shared Spinner component's contract (role="status", a
 		// visible label, an aria-hidden spin icon) used by every other
 		// converted loading spot in this diff (ProtectedRoute, OrgAppLayout,
 		// EngagementManagementPage, etc.) - they all render the exact same
 		// component, so exercising it once here is representative.
+		//
+		// /admin/organizations was consolidated into /administration (single
+		// page, Organizations + Users sections stacked) after this test was
+		// written, backed by a real admin-wide GET /v1/admin/organizations
+		// instead of the old caller-scoped GET /v1/organizations - only the
+		// route/URL changed here, the Spinner contract being tested has not.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
 
-		await Page.RouteAsync("**/v1/organizations", async route =>
+		await Page.RouteAsync("**/v1/admin/organizations?*", async route =>
 		{
 			if (route.Request.Method == "GET")
 				await Task.Delay(1500);
 			await route.ContinueAsync();
 		});
 
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/admin/organizations");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
 
+		// The Organizations section renders before the Users section, so its
+		// Spinner (the one actually delayed above) is the first [role='status'].
 		var loadingStatus = Page.Locator("[role='status']").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
 		await Expect(loadingStatus).ToContainTextAsync("Loading");

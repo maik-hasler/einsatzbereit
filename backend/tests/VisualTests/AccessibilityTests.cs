@@ -354,4 +354,17 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var nestedResult = await Page.RunAxe();
 		AssertNoViolations(nestedResult);
 	}
+
+	[Test]
+	public async Task AdministrationPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
 }
