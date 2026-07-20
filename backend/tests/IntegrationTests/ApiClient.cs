@@ -8703,6 +8703,11 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("isVerified")]
         public bool IsVerified { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("openOpportunityCount")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int OpenOpportunityCount { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

@@ -210,6 +210,13 @@ export default function OrganizationsPage() {
 										{org.city && (
 											<p className="mt-1 text-xs text-gray-400">{org.city}</p>
 										)}
+										{org.openOpportunityCount > 0 && (
+											<p className="mt-1 text-xs font-medium text-brand-700">
+												{t("organizationsPage.openOpportunities", {
+													count: org.openOpportunityCount,
+												})}
+											</p>
+										)}
 									</div>
 								</li>
 							))}

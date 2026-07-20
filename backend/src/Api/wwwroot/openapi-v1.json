@@ -5834,7 +5834,8 @@
           "description",
           "city",
           "logoUrl",
-          "isVerified"
+          "isVerified",
+          "openOpportunityCount"
         ],
         "type": "object",
         "properties": {
@@ -5865,6 +5866,14 @@
           },
           "isVerified": {
             "type": "boolean"
+          },
+          "openOpportunityCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

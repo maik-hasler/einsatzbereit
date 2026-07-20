@@ -4474,6 +4474,7 @@ export interface PublicOrganizationSummary {
     city: string | undefined;
     logoUrl: string | undefined;
     isVerified: boolean;
+    openOpportunityCount: number;
 
     [key: string]: any;
 }
