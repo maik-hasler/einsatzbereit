@@ -208,7 +208,7 @@ export default function OrganizationsPage() {
 											</p>
 										)}
 										{org.city && (
-											<p className="mt-1 text-xs text-gray-400">{org.city}</p>
+											<p className="mt-1 text-xs text-gray-500">{org.city}</p>
 										)}
 										{org.openOpportunityCount > 0 && (
 											<p className="mt-1 text-xs font-medium text-brand-700">
