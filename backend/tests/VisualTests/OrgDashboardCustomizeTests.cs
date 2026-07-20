@@ -192,6 +192,50 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task AutoFitGrid_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt()
+	{
+		// Regression guard for the #762 follow-up feedback bug: real widget
+		// tiles fell out of the CSS grid's auto-placement entirely (rendered
+		// as a separate stack of cards below the whole green backdrop)
+		// because they only carried a `span N` gridColumn/gridRow with no
+		// explicit start line, while the green backdrop cells claim every
+		// single cell of the grid explicitly - leaving no auto-placement
+		// room left for the widgets to land in. Confirms the fix (explicit
+		// `col / span N` placement using the same coordinates the packer
+		// already gave the backdrop) by checking a widget tile's top edge
+		// lands within the backdrop's own vertical bounds, not far below it.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashOverlay");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		var backdropCells = Page.GetByTestId("dashboard-grid-guide-cell");
+		await backdropCells.First.WaitForAsync();
+		var firstCellBox = await backdropCells.First.BoundingBoxAsync();
+		var lastCellBox = await backdropCells.Last.BoundingBoxAsync();
+		firstCellBox.Should().NotBeNull();
+		lastCellBox.Should().NotBeNull();
+
+		// CreateOpportunity is the first widget in the default layout, so the
+		// packer places it at row 1 - its tile's top edge should sit right at
+		// (accounting for the backdrop's `-m-1` bleed) the very first
+		// backdrop cell's top edge. Under the bug, the tile was pushed
+		// hundreds of pixels below the backdrop's very last cell instead.
+		var widgetBox = await Page.GetByTestId("widget-tile-CreateOpportunity").BoundingBoxAsync();
+		widgetBox.Should().NotBeNull();
+
+		Math.Abs(widgetBox!.Y - firstCellBox!.Y).Should().BeLessThan(20,
+			"the first widget should render at the top of the grid, aligned with the first backdrop "
+				+ "cell - not pushed below the entire backdrop into a separate stack of cards");
+		widgetBox.Y.Should().BeLessThan(lastCellBox!.Y + lastCellBox.Height,
+			"the widget tile must render within the backdrop's own bounds, not below all of it");
+	}
+
+	[Test]
 	public async Task RemovingAllWidgets_AndSaving_ShowsEmptyState_NotDefaultLayoutAfterReload()
 	{
 		// Regression guard for the #771 follow-up review feedback bug: an

@@ -159,10 +159,11 @@ function EditableWidgetTile({
 			// CreateOpportunityWidget's wizard) would then be scoped to THIS
 			// tile's stacking order instead of the page's, so a later sibling
 			// tile (also positioned) could paint over the modal despite its own
-			// z-[2000] and swallow clicks meant for it. DOM order alone (the
-			// green backdrop cells render before the tiles below) already
-			// makes tiles paint above the backdrop without needing z-index at
-			// all - a real regression this caused, caught by CI.
+			// z-[2000] and swallow clicks meant for it. The green backdrop
+			// cells are plain `position: static` divs, so per CSS painting
+			// order this positioned-but-z-index-less tile already paints
+			// above them with no z-index needed at all - a real regression
+			// this caused, caught by CI.
 			className={`relative h-full ${editing ? "cursor-grab active:cursor-grabbing" : ""} ${editing && isDragging ? "opacity-20" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
@@ -549,8 +550,21 @@ export default function OrgDashboardPage() {
 						gridStyle={
 							isLargeViewport
 								? {
-										gridColumn: `span ${packed.colSpan}`,
-										gridRow: `span ${packed.rowSpan}`,
+										// Explicit start line (not just `span N`) is required
+										// here: the green backdrop cells above claim every
+										// single cell of the grid explicitly, which fully
+										// saturates CSS Grid's auto-placement algorithm for this
+										// row range. A widget tile placed with only a span (no
+										// start) would have nowhere left to auto-place into and
+										// would overflow into new auto-generated rows below the
+										// entire backdrop - exactly the "widgets render below
+										// the green grid instead of on top of it" bug from #762
+										// follow-up feedback. Matching the same explicit
+										// coordinates `packWidgets` gave the backdrop is what
+										// makes the real tile land in - and paint over, per DOM
+										// order - its intended cells instead.
+										gridColumn: `${packed.col} / span ${packed.colSpan}`,
+										gridRow: `${packed.row} / span ${packed.rowSpan}`,
 									}
 								: undefined
 						}

@@ -101,42 +101,69 @@ export interface PackedWidget {
 	rowSpan: number;
 }
 
-// Shelf/skyline packer: each widget greedily takes up to its own maxCols of
-// whatever room is left in the current shelf (row band), wrapping to a
-// fresh shelf once even its minCols doesn't fit - this is what gives
-// "takes as much space as is left" without a manual size picker. Every
-// catalog minCols is <= GRID_COLUMNS, so a widget always fits somewhere
-// (worst case, its own full-width shelf) - there's no "doesn't fit"
-// failure mode this needs to report back.
+// True skyline/masonry packer (not a row-shelf packer): tracks the next
+// free row per column independently, so one column can run taller than its
+// neighbor - e.g. a wide widget spanning two rows next to two narrower
+// widgets stacked in the remaining columns. A shelf packer can never
+// produce that (it always advances every column to the same row together),
+// which is exactly the arrangement organizers asked for (#762 follow-up
+// feedback - "widget 3 spans two rows while widgets 1 and 2 stack next to
+// it"). For each widget, every (start column, span width) combination
+// between its minCols and maxCols is scored by the row it would land on
+// (the tallest already-occupied column under that span) - the lowest row
+// wins, so a widget only wraps to a new row when nothing shallower is
+// available. Spans are tried widest-first, so a narrower span only
+// displaces the current best by finding a strictly lower row than any
+// wider span could - on an equal row, whichever span got there first (the
+// widest one) keeps it, still giving "take as much room as is left"; ties
+// at that same span are broken by the leftmost column. Every catalog
+// minCols is <= GRID_COLUMNS, so a placement always exists - there's no
+// "doesn't fit" failure mode this needs to report back.
 export function packWidgets(order: WidgetKey[]): {
 	placed: PackedWidget[];
 	totalRows: number;
 } {
-	let col = 0;
-	let rowStart = 1;
-	let shelfHeight = 0;
+	// heights[c] = next free row (1-based) in column c.
+	const heights = new Array<number>(GRID_COLUMNS).fill(1);
 	const placed: PackedWidget[] = [];
 
 	for (const widgetKey of order) {
 		const entry = WIDGET_CATALOG[widgetKey];
-		if (col > 0 && entry.minCols > GRID_COLUMNS - col) {
-			rowStart += shelfHeight;
-			col = 0;
-			shelfHeight = 0;
+		let bestCol = 0;
+		let bestSpan = entry.minCols;
+		let bestRow = Infinity;
+
+		for (let span = entry.maxCols; span >= entry.minCols; span--) {
+			for (let col = 0; col + span <= GRID_COLUMNS; col++) {
+				let row = 1;
+				for (let c = col; c < col + span; c++) {
+					row = Math.max(row, heights[c]);
+				}
+				const better =
+					row < bestRow ||
+					(row === bestRow && span === bestSpan && col < bestCol);
+				if (better) {
+					bestRow = row;
+					bestSpan = span;
+					bestCol = col;
+				}
+			}
 		}
-		const colSpan = Math.min(entry.maxCols, GRID_COLUMNS - col);
+
 		placed.push({
 			widgetKey,
-			col: col + 1,
-			colSpan,
-			row: rowStart,
+			col: bestCol + 1,
+			colSpan: bestSpan,
+			row: bestRow,
 			rowSpan: entry.rows,
 		});
-		col += colSpan;
-		shelfHeight = Math.max(shelfHeight, entry.rows);
+		for (let c = bestCol; c < bestCol + bestSpan; c++) {
+			heights[c] = bestRow + entry.rows;
+		}
 	}
 
-	return { placed, totalRows: rowStart + shelfHeight - 1 };
+	const totalRows = Math.max(...heights) - 1;
+	return { placed, totalRows };
 }
 
 export function classifyWidth(colSpan: number): WidgetSizeClass {
