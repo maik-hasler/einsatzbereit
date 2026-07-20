@@ -36,6 +36,22 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrganizationsDirectoryPage_HasNoSeriousA11yViolations()
+	{
+		// #763: the public organization directory page - not covered by any
+		// existing a11y test, which is exactly how the text-gray-400 city-line
+		// contrast violation (same defect as the "Received:" meta line fixed
+		// alongside it) would have shipped unnoticed.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task MyEngagementsPage_AsVera_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
