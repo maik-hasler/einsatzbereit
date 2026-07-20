@@ -81,7 +81,10 @@
       "heroRightCard1": "Publish in minutes",
       "heroRightCard2": "Manage volunteers easily",
       "heroRightCard3": "Free & open source",
-      "heroRightCardActive": "Opportunities available now"
+      "heroRightCardActive": "Opportunities available now",
+      "orgsTeaserTitle": "Already know an organization?",
+      "orgsTeaserDesc": "Search the directory to find an organization you already know, like the Red Cross, and see what they're up to.",
+      "orgsTeaserCta": "Browse organizations"
     },
     "opportunities": {
       "currentNeeds": "Current Opportunities",

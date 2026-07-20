@@ -187,13 +187,6 @@ export default function Header({
 							aria-label={t("nav.primaryLabel")}
 							className="hidden md:flex items-center gap-3"
 						>
-							<Link
-								to="/organizations"
-								data-testid="desktop-nav-organizations-link"
-								className={`text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-brand-600"}`}
-							>
-								{t("breadcrumb.organizations")}
-							</Link>
 							{isLoggedIn ? (
 								<AccountControls
 									transparent={isTransparent}
@@ -393,14 +386,6 @@ export default function Header({
 							<div className="pb-2">
 								<LanguageSelector transparent={isTransparent} />
 							</div>
-							<Link
-								to="/organizations"
-								data-testid="mobile-nav-organizations-link"
-								onClick={() => setMobileOpen(false)}
-								className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
-							>
-								{t("breadcrumb.organizations")}
-							</Link>
 							{isLoggedIn ? (
 								<div className="space-y-1">
 									<div className="flex items-center gap-3 px-3 py-2">

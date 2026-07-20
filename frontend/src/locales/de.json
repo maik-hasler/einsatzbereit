@@ -81,7 +81,10 @@
       "heroRightCard1": "In Minuten veröffentlichen",
       "heroRightCard2": "Freiwillige einfach verwalten",
       "heroRightCard3": "Kostenlos & Open Source",
-      "heroRightCardActive": "Jetzt Einsätze verfügbar"
+      "heroRightCardActive": "Jetzt Einsätze verfügbar",
+      "orgsTeaserTitle": "Kennst du schon eine Organisation?",
+      "orgsTeaserDesc": "Durchsuche das Verzeichnis, um eine Organisation zu finden, die du schon kennst, etwa das Rote Kreuz, und zu sehen, was sie gerade macht.",
+      "orgsTeaserCta": "Organisationen durchsuchen"
     },
     "opportunities": {
       "currentNeeds": "Aktuelle Einsätze",
