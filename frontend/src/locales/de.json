@@ -6,7 +6,7 @@
       "description": "Einsatzbereit bringt engagierte Helfer:innen mit regionalen Bedarfen zusammen. Spontan, schnell und wirksam."
     },
     "nav": {
-      "accountLabel": "Konto",
+      "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
       "myEngagements": "Meine Engagements",
       "myProfile": "Mein Profil",
@@ -823,7 +823,10 @@
       "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
       "clearSearch": "Suche zurücksetzen",
       "loadMore": "Mehr laden",
-      "verified": "Verifizierte Organisation"
+      "verified": "Verifizierte Organisation",
+      "openOpportunities": "{{count}} offene Einsätze",
+      "openOpportunities_one": "{{count}} offener Einsatz",
+      "openOpportunities_other": "{{count}} offene Einsätze"
     },
     "orgOverview": {
       "tabCalendar": "Kalender",
