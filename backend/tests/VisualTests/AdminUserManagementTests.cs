@@ -17,7 +17,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 	private const string Realm = "einsatzbereit";
 
 	[Test]
-	public async Task AdminUsersPage_BlockAndPromote_UpdatesRowState()
+	public async Task AdministrationPage_BlockAndPromote_UpdatesRowState()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
@@ -52,7 +52,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	[Test]
-	public async Task AdminUsersPage_OwnRow_HasNoBlockOrDemoteButtons()
+	public async Task AdministrationPage_OwnRow_HasNoBlockOrDemoteButtons()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
