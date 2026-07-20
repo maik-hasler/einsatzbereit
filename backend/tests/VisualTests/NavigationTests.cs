@@ -137,7 +137,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(menuBtn).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await menuBtn.ClickAsync();
 
-		await Expect(Page.Locator("a[href='/organizations']")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		// A plain href selector also matches the desktop nav's own Organizations
+		// link (still in the DOM, just CSS-hidden at this viewport) and the
+		// footer's "Browse organizations" link (visible, just off-screen) -
+		// three elements total. The testid is the only unambiguous match.
+		await Expect(Page.GetByTestId("mobile-nav-organizations-link"))
+			.ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 
 	[Test]

@@ -63,6 +63,7 @@ export default function MobileMenu({
 				</div>
 				<Link
 					to="/organizations"
+					data-testid="mobile-nav-organizations-link"
 					onClick={onClose}
 					className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
 				>

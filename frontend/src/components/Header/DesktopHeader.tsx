@@ -41,6 +41,7 @@ export default function DesktopHeader({
 		>
 			<Link
 				to="/organizations"
+				data-testid="desktop-nav-organizations-link"
 				className={`text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-brand-600"}`}
 			>
 				{t("breadcrumb.organizations")}
