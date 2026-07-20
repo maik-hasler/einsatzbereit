@@ -117,6 +117,10 @@ export default function Header({
 		user?.preferred_username ??
 		"User") as string;
 	const initials = isLoggedIn ? getInitials(displayName) : "";
+	const roles = (
+		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
+	) as string[];
+	const isAdmin = roles.includes("admin");
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
@@ -189,6 +193,7 @@ export default function Header({
 									menu={menu}
 									displayName={displayName}
 									initials={initials}
+									isAdmin={isAdmin}
 									onSignOut={() => auth.signoutRedirect()}
 									onNotificationNavigate={handleNotificationNavigate}
 								/>
@@ -408,6 +413,15 @@ export default function Header({
 									>
 										{t("nav.myProfile")}
 									</Link>
+									{isAdmin && (
+										<Link
+											to="/administration"
+											onClick={() => setMobileOpen(false)}
+											className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
+										>
+											{t("nav.administration")}
+										</Link>
+									)}
 									<button
 										type="button"
 										onClick={() => auth.signoutRedirect()}
