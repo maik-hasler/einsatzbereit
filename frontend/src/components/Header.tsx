@@ -6,9 +6,12 @@ import LanguageSelector from "./LanguageSelector";
 import AccountControls from "./AccountControls";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../hooks/useAccountMenu";
+import { useApiClient } from "../hooks/useApiClient";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../lib/authLocale";
+import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
 import type { BreadcrumbItem } from "../contexts/ToolbarContext";
+import type { OrganizationSummaryDto } from "../client/api-client";
 
 function getInitials(name: string): string {
 	const parts = name.trim().split(/\s+/);
@@ -111,6 +114,7 @@ export default function Header({
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const api = useApiClient();
 	const isLoggedIn = auth.isAuthenticated;
 	const user = auth.user?.profile;
 	const displayName = (user?.name ??
@@ -121,6 +125,8 @@ export default function Header({
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isAdmin = roles.includes("admin");
+	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
+	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
@@ -140,6 +146,26 @@ export default function Header({
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
+
+	useEffect(() => {
+		if (!isLoggedIn) {
+			setOrgs([]);
+			return;
+		}
+		let cancelled = false;
+		api
+			.getOrganizations()
+			.then((data) => {
+				if (!cancelled) setOrgs(data);
+			})
+			.catch(() => {
+				if (!cancelled) setOrgs([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLoggedIn]);
 
 	const isTransparent = location.pathname === "/" && !scrolled;
 
@@ -420,6 +446,15 @@ export default function Header({
 											className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 										>
 											{t("nav.administration")}
+										</Link>
+									)}
+									{orgAppPath && (
+										<Link
+											to={orgAppPath}
+											onClick={() => setMobileOpen(false)}
+											className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
+										>
+											{t("nav.organizationDashboard")}
 										</Link>
 									)}
 									<button
