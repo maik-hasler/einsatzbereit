@@ -12,8 +12,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 	/// Regression for #645: useAchievementNotifier only seeded the "seen"
 	/// localStorage set when the account had zero achievements, so a fresh
 	/// browser/device/profile for an account that already has achievements
-	/// (e.g. olaf, who already has confirmed-engagement achievements from seed
-	/// data) re-announced every existing achievement as newly unlocked.
+	/// re-announced every existing achievement as newly unlocked.
 	/// </summary>
 	[Test]
 	public async Task ExistingAchievements_DoNotReToastAsNew_OnFreshBrowserContext()
@@ -75,6 +74,68 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 				.EnsureSuccessStatusCode();
 		}
 
+		// Deterministically guarantee olaf has at least one achievement before
+		// he ever logs in below, instead of relying on some other VisualTests
+		// class having already confirmed an engagement for him. AspireFixture
+		// is shared (Shared = SharedType.PerTestSession) across every test
+		// class with no ordering guarantee between them, so that assumption
+		// was a race: if this test happened to run before whichever class
+		// first grants olaf his "first-step" badge, GET /v1/me/achievements
+		// legitimately came back empty. Achievement rows are never deleted
+		// once granted, so seeding one here (following the same
+		// create-org/create-opportunity/publish/apply/confirm flow as
+		// EngagementCalendarTests) is safe regardless of what other tests do
+		// concurrently.
+		var setupSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using (var setupHttp = new HttpClient { BaseAddress = backend })
+		{
+			setupHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {setupSession.AccessToken}");
+
+			var suffix = Guid.NewGuid().ToString("N");
+			var orgResponse = await setupHttp.PostAsJsonAsync(
+				"/v1/organizations", new { name = $"AchievementSeed Org {suffix}" });
+			orgResponse.EnsureSuccessStatusCode();
+			var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+			var oppResponse = await setupHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+			{
+				title = $"AchievementSeed Opportunity {suffix}",
+				description = "Created by AchievementsTests to guarantee a confirmed engagement",
+				organizationId,
+				isRemote = true,
+				occurrence = "OneTime",
+				participationType = "Waitlist",
+				checkInMethod = "None",
+				isDraft = true,
+			});
+			oppResponse.EnsureSuccessStatusCode();
+			var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var opportunityId = opportunity.GetProperty("id").GetString();
+
+			var start = DateTimeOffset.UtcNow.AddDays(3);
+			var end = start.AddHours(2);
+			var slotResponse = await setupHttp.PostAsJsonAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+				new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 });
+			slotResponse.EnsureSuccessStatusCode();
+			var slots = await slotResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var timeSlotId = slots[0].GetProperty("id").GetString();
+
+			(await setupHttp.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+				.EnsureSuccessStatusCode();
+
+			var engagementResponse = await setupHttp.PostAsJsonAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+				new { type = "Waitlist", timeSlotId, message = (string?)null });
+			engagementResponse.EnsureSuccessStatusCode();
+			var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var engagementId = engagement.GetProperty("id").GetString();
+
+			(await setupHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
+				.EnsureSuccessStatusCode();
+		}
+
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -96,7 +157,8 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		achievementsResponse.EnsureSuccessStatusCode();
 		var achievements = await achievementsResponse.Content.ReadFromJsonAsync<JsonElement>();
 		achievements.GetArrayLength().Should().BeGreaterThan(0,
-			"olaf must already have at least one achievement for this regression test to be meaningful");
+			"the confirmed engagement set up above must have granted olaf at least one achievement " +
+			"for this regression test to be meaningful");
 
 		// Each VisualTests test gets a fresh, isolated browser context (see
 		// VisualTestBase) - no einsatzbereit:seen-achievements localStorage entry
