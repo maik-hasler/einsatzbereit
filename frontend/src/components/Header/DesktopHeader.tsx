@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
@@ -39,13 +38,6 @@ export default function DesktopHeader({
 			aria-label={t("nav.primaryLabel")}
 			className="hidden md:flex items-center gap-3"
 		>
-			<Link
-				to="/organizations"
-				data-testid="desktop-nav-organizations-link"
-				className={`text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-brand-600"}`}
-			>
-				{t("breadcrumb.organizations")}
-			</Link>
 			{isLoggedIn ? (
 				<AccountControls
 					transparent={isTransparent}

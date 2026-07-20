@@ -61,14 +61,6 @@ export default function MobileMenu({
 				<div className="pb-2">
 					<LanguageSelector transparent={isTransparent} />
 				</div>
-				<Link
-					to="/organizations"
-					data-testid="mobile-nav-organizations-link"
-					onClick={onClose}
-					className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
-				>
-					{t("breadcrumb.organizations")}
-				</Link>
 				{isLoggedIn ? (
 					<div className="space-y-1">
 						<div className="flex items-center gap-3 px-3 py-2">
