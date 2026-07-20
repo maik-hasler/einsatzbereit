@@ -6,7 +6,7 @@
       "description": "Einsatzbereit connects committed volunteers with regional needs. Spontaneous, fast, and effective."
     },
     "nav": {
-      "accountLabel": "Account",
+      "primaryLabel": "Main navigation",
       "userMenu": "User menu",
       "myEngagements": "My Engagements",
       "myProfile": "My Profile",
@@ -782,7 +782,10 @@
       "noResultsWithSearch": "No organizations match \"{{search}}\".",
       "clearSearch": "Clear search",
       "loadMore": "Load more",
-      "verified": "Verified organization"
+      "verified": "Verified organization",
+      "openOpportunities": "{{count}} open opportunities",
+      "openOpportunities_one": "{{count}} open opportunity",
+      "openOpportunities_other": "{{count}} open opportunities"
     },
     "adminOrgs": {
       "title": "Admin - Organizations",
