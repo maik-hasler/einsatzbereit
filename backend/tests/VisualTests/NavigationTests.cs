@@ -63,10 +63,13 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task OrganizationProfilePage_BreadcrumbShowsHomeAndOrgName()
+	public async Task OrganizationProfilePage_BreadcrumbShowsHomeOrganizationsAndOrgName()
 	{
 		// #574: OrganizationProfilePage had no way back at all - revived
 		// breadcrumb must show "Home > {organization name}".
+		// #772 review follow-up (issue #763): the trail must also link back
+		// to the organization directory - "Home > Organizations > {org name}",
+		// not jump straight from Home to the org.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -90,8 +93,51 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var homeCrumb = breadcrumb.Locator("a[href='/']");
 		await Expect(homeCrumb).ToBeVisibleAsync();
 
+		var organizationsCrumb = breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Organizations" });
+		await Expect(organizationsCrumb).ToBeVisibleAsync();
+		await Expect(organizationsCrumb).ToHaveAttributeAsync("href", "/organizations");
+
 		var orgName = await Page.Locator("h1").First.InnerTextAsync();
 		await Expect(breadcrumb.GetByText(orgName, new() { Exact = true })).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task HeaderDesktopNav_ShowsOrganizationsLink_LoggedOutAndLoggedIn()
+	{
+		// #772 review follow-up (issue #763): the organization directory had
+		// no entry point besides a footer link - a persistent "Organizations"
+		// link must be visible in the Header nav regardless of auth state.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var loggedOutLink = Page.Locator("nav a[href='/organizations']");
+		await Expect(loggedOutLink).ToBeVisibleAsync();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var loggedInLink = Page.Locator("nav a[href='/organizations']");
+		await Expect(loggedInLink).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task MobileMenu_ShowsOrganizationsLink()
+	{
+		// #772 review follow-up (issue #763): the entry point must also be
+		// reachable from the mobile menu, not just the desktop nav.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.SetViewportSizeAsync(390, 844);
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var menuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" });
+		await Expect(menuBtn).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await menuBtn.ClickAsync();
+
+		await Expect(Page.Locator("a[href='/organizations']")).ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 
 	[Test]

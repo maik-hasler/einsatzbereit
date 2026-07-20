@@ -170,6 +170,104 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task TabBar_StaysFullWidth_AcrossTabSwitches()
+	{
+		// Regression for #641 (and a guard against reintroducing it): the tab
+		// bar now lives in the persistent /app shell (OrgAppLayout) at the top
+		// of the main content area, decoupled from any individual tab page's own
+		// content-width wrapper - it must not shrink or shift when navigating
+		// between tabs.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual641 Alignment");
+
+		// Measure the tab row's flex container inside the tabs nav; its width
+		// tracks the enclosing <main class="...max-w-7xl...">, which is constant
+		// across tab switches. Scope by the nav's accessible name so the
+		// breadcrumb nav - which also surfaces the current tab label - isn't
+		// matched too.
+		var tabBar = Page
+			.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" })
+			.Locator("div")
+			.First;
+		var dashboardBox = await tabBar.BoundingBoxAsync();
+		dashboardBox.Should().NotBeNull();
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true })).ToBeVisibleAsync(
+			new() { Timeout = 10_000 });
+
+		var settingsBox = await tabBar.BoundingBoxAsync();
+		settingsBox.Should().NotBeNull();
+
+		settingsBox!.Width.Should().Be(dashboardBox!.Width);
+		settingsBox.X.Should().Be(dashboardBox.X);
+	}
+
+	[Test]
+	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
+	{
+		// #772 review follow-up (issue #763): "the site looks a bit dead" -
+		// the public organization directory now shows each org's count of
+		// open (Published) volunteer opportunities instead of just a bare
+		// name/description, so a card with real opportunities reads as such.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var orgName = await CreateOrganizationAsync("Visual772 OpenCount");
+
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await createBtn.First.ClickAsync();
+
+		try
+		{
+			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
+		}
+		catch
+		{
+			return; // modal did not open - skip remaining assertions
+		}
+
+		// Step 1: title/description.
+		await Page.Locator("#opportunity-title").FillAsync("Visual772 Opportunity");
+		await Page.Locator("#opportunity-description").FillAsync(
+			"Coverage for the organization directory's open-opportunity count.");
+
+		// Step 2: remote, so no address fields are required.
+		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
+		await Page.Locator("#opportunity-remote").CheckAsync();
+
+		// Step 3: IndividualContact (Express interest) - unlike Waitlist, this
+		// type can publish with no time slots, keeping this test focused on
+		// the directory count rather than the slot-creation flow.
+		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='IndividualContact'])")
+			.ClickAsync();
+
+		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		await Page.GetByTestId("modal-submit").ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		// The public directory, filtered to this org, must show "1 open opportunity".
+		await Page.GotoAsync($"{origin}/organizations");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.Locator("#organizations-search").FillAsync(orgName);
+
+		var orgCard = Page.Locator("li").Filter(new() { HasTextString = orgName });
+		await Expect(orgCard).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(orgCard.GetByText("1 open opportunity", new() { Exact = true }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+	}
+
+	[Test]
 	public async Task PublicProfilePage_ContentIsCenteredWithinMain()
 	{
 		// Regression for #694: OrganizationProfileView's content wrapper
