@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Application.Common.Keycloak;
+using Application.Common.Pagination;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Keycloak;
@@ -105,18 +106,22 @@ internal sealed class KeycloakUserService(
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
-	public async Task<IReadOnlyList<AdminUserListItem>> ListUsersAsync(
+	public async Task<PagedList<AdminUserListItem>> ListUsersAsync(
 		string? search,
-		int max = 100,
+		int pageNumber,
+		int pageSize,
 		CancellationToken cancellationToken = default)
 	{
-		var query = string.IsNullOrWhiteSpace(search)
-			? $"max={max}"
-			: $"search={Uri.EscapeDataString(search)}&max={max}";
+		var searchParam = string.IsNullOrWhiteSpace(search) ? null : Uri.EscapeDataString(search);
+		var first = (pageNumber - 1) * pageSize;
+
+		var listQuery = searchParam is null
+			? $"first={first}&max={pageSize}"
+			: $"search={searchParam}&first={first}&max={pageSize}";
 
 		var response = await SendAuthorizedAsync(
 			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/users?{query}",
+				$"/admin/realms/{_options.Realm}/users?{listQuery}",
 				cancellationToken),
 			cancellationToken);
 
@@ -149,9 +154,24 @@ internal sealed class KeycloakUserService(
 				roles));
 		}
 
-		return items
-			.OrderBy(u => u.Username, StringComparer.OrdinalIgnoreCase)
-			.ToList();
+		items.Sort((a, b) => string.Compare(a.Username, b.Username, StringComparison.OrdinalIgnoreCase));
+
+		// The count includes the filtered-out service-account entries (e.g.
+		// service-account-backend), so this can be off by a small, fixed amount
+		// from the actual number of human users - not worth a second full scan
+		// to correct for a cosmetic pageCount imprecision on an admin-only page.
+		var countQuery = searchParam is null ? "" : $"?search={searchParam}";
+		var countResponse = await SendAuthorizedAsync(
+			() => httpClient.GetAsync(
+				$"/admin/realms/{_options.Realm}/users/count{countQuery}",
+				cancellationToken),
+			cancellationToken);
+
+		await EnsureSuccessAsync(countResponse, cancellationToken);
+
+		var totalCount = await countResponse.Content.ReadFromJsonAsync<int>(cancellationToken: cancellationToken);
+
+		return new PagedList<AdminUserListItem>(items, totalCount, pageNumber, pageSize);
 	}
 
 	public async Task SetUserEnabledAsync(

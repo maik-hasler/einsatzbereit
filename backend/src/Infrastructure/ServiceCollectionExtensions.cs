@@ -68,6 +68,8 @@ public static class ServiceCollectionExtensions
 
 		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
 
+		services.AddScoped<IAdminOrganizationReadRepository, AdminOrganizationReadRepository>();
+
 		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
 
 		services.ConfigureOptions<BadgeCatalogOptionsSetup>();

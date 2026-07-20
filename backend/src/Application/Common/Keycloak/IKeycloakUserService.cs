@@ -1,3 +1,5 @@
+using Application.Common.Pagination;
+
 namespace Application.Common.Keycloak;
 
 public record KeycloakUserProfile(
@@ -36,9 +38,10 @@ public interface IKeycloakUserService
 		Guid userId,
 		CancellationToken cancellationToken = default);
 
-	Task<IReadOnlyList<AdminUserListItem>> ListUsersAsync(
+	Task<PagedList<AdminUserListItem>> ListUsersAsync(
 		string? search,
-		int max = 100,
+		int pageNumber,
+		int pageSize,
 		CancellationToken cancellationToken = default);
 
 	Task SetUserEnabledAsync(

@@ -356,25 +356,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task AdminOrganizationsPage_HasNoSeriousA11yViolations()
+	public async Task AdministrationPage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/admin/organizations");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
-	public async Task AdminUsersPage_HasNoSeriousA11yViolations()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/admin/users");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

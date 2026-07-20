@@ -1,14 +1,22 @@
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
+using Application.Common.Pagination;
 
 namespace Application.Users.ListUsers.v1;
 
 internal sealed class ListUsersQueryHandler(
 	IKeycloakUserService keycloakUserService)
-	: IQueryHandler<ListUsersQuery, IReadOnlyList<AdminUserListItem>>
+	: IQueryHandler<ListUsersQuery, PagedList<AdminUserListItem>>
 {
-	public async ValueTask<IReadOnlyList<AdminUserListItem>> Handle(
+	private const int MaxPageSize = 100;
+
+	public async ValueTask<PagedList<AdminUserListItem>> Handle(
 		ListUsersQuery request,
-		CancellationToken cancellationToken = default) =>
-		await keycloakUserService.ListUsersAsync(request.Search, cancellationToken: cancellationToken);
+		CancellationToken cancellationToken = default)
+	{
+		var pageNumber = Math.Max(1, request.PageNumber);
+		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
+
+		return await keycloakUserService.ListUsersAsync(request.Search, pageNumber, pageSize, cancellationToken);
+	}
 }

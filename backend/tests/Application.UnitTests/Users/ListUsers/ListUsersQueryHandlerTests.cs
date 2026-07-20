@@ -1,4 +1,5 @@
 using Application.Common.Keycloak;
+using Application.Common.Pagination;
 using Application.Users.ListUsers.v1;
 using AwesomeAssertions;
 using NSubstitute;
@@ -12,6 +13,9 @@ public class ListUsersQueryHandlerTests
 
 	public ListUsersQueryHandlerTests()
 	{
+		_keycloakService
+			.ListUsersAsync(Arg.Any<string?>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns(new PagedList<AdminUserListItem>([], 0, 1, 10));
 		_sut = new ListUsersQueryHandler(_keycloakService);
 	}
 
@@ -24,29 +28,60 @@ public class ListUsersQueryHandlerTests
 			Guid.NewGuid(), "vera", "Vera", "Volunteer", "vera@example.com", true, ["user"]);
 
 		_keycloakService
-			.ListUsersAsync(null, Arg.Any<int>(), cancellationToken)
-			.Returns((IReadOnlyList<AdminUserListItem>)[item]);
+			.ListUsersAsync(null, 1, 10, cancellationToken)
+			.Returns(new PagedList<AdminUserListItem>([item], 1, 1, 10));
 
 		// Act
-		var result = await _sut.Handle(new ListUsersQuery(null), cancellationToken);
+		var result = await _sut.Handle(new ListUsersQuery(null, 1, 10), cancellationToken);
 
 		// Assert
-		result.Should().ContainSingle().Which.Should().Be(item);
+		result.Items.Should().ContainSingle().Which.Should().Be(item);
 	}
 
 	[Test]
 	public async Task Handle_ShouldPassSearchTerm_ToKeycloakService(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
-		_keycloakService
-			.ListUsersAsync("vera", Arg.Any<int>(), cancellationToken)
-			.Returns((IReadOnlyList<AdminUserListItem>)[]);
-
 		// Act
-		await _sut.Handle(new ListUsersQuery("vera"), cancellationToken);
+		await _sut.Handle(new ListUsersQuery("vera", 1, 10), cancellationToken);
 
 		// Assert
-		await _keycloakService.Received(1).ListUsersAsync("vera", Arg.Any<int>(), cancellationToken);
+		await _keycloakService.Received(1).ListUsersAsync("vera", 1, 10, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldClampZeroPageNumber_ToOne(
+		CancellationToken cancellationToken)
+	{
+		await _sut.Handle(new ListUsersQuery(null, 0, 10), cancellationToken);
+
+		await _keycloakService.Received(1).ListUsersAsync(null, 1, 10, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldClampNegativePageNumber_ToOne(
+		CancellationToken cancellationToken)
+	{
+		await _sut.Handle(new ListUsersQuery(null, -5, 10), cancellationToken);
+
+		await _keycloakService.Received(1).ListUsersAsync(null, 1, 10, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldClampZeroPageSize_ToOne(
+		CancellationToken cancellationToken)
+	{
+		await _sut.Handle(new ListUsersQuery(null, 1, 0), cancellationToken);
+
+		await _keycloakService.Received(1).ListUsersAsync(null, 1, 1, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldCapExcessivePageSize_ToHundred(
+		CancellationToken cancellationToken)
+	{
+		await _sut.Handle(new ListUsersQuery(null, 1, 5000), cancellationToken);
+
+		await _keycloakService.Received(1).ListUsersAsync(null, 1, 100, cancellationToken);
 	}
 }
