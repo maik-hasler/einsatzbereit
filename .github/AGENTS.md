@@ -104,6 +104,7 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 - Runs in the `staging` GitHub Environment, reusing the same SSH secrets as `deploy-staging`
 - Removes only the `postgres_data` and `minio_data` volumes - `postgres_backups` is left alone on purpose, as the recovery path if a reset needs to be walked back
 - Because Keycloak's realm import runs with `OVERWRITE_EXISTING` (see `deploy-staging` in `publish.yml`) and the backend has `Database__MigrateOnStartup: true`, the stack re-migrates and re-imports `keycloak/realms/einsatzbereit-realm.json` on restart - the standard `vera`/`olaf`/`admin` test accounts come back automatically since they are defined in that checked-in realm config, not created ad hoc
+- The backend also has `Database__SeedOnStartup: true` (staging only, see `docker-compose.yml`), so `ApplicationDbContextInitializer.SeedAsync()` runs on restart alongside the migrate/backfill calls - staging comes back with the standard seeded organizations and published opportunities instead of an empty database. `SeedAsync()` is idempotent (no-ops if any `Organization` row already exists), so this is safe on every reset and on ordinary redeploys
 - Ends with the same post-deploy health gate (`/health` polling) used by `deploy-staging`
 
 ## Issue Templates

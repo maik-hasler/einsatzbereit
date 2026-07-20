@@ -82,6 +82,39 @@ internal sealed class ApplicationDbContextInitializer(
 				CheckInMethod.None,
 				pinGenerator).GetValueOrThrow();
 
+			var opp2b = VolunteerOpportunity.Create(
+				org1Id,
+				"Sanitatsdienst bei Stadtfest",
+				"Begleiten Sie unser Sanitatsteam beim jahrlichen Stadtfest und leisten Sie Erste Hilfe vor Ort.",
+				isRemote: false,
+				Address.Create("Marktplatz", "2", "12345", "Musterstadt").GetValueOrThrow(),
+				Occurrence.OneTime,
+				ParticipationType.IndividualContact,
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
+
+			var opp2c = VolunteerOpportunity.Create(
+				org1Id,
+				"Kleidersammlung fur Bedurftige",
+				"Helfen Sie beim Sortieren und Verteilen gespendeter Kleidung an Bedurftige in der Region.",
+				isRemote: false,
+				Address.Create("Lagerstrasse", "10", "12345", "Musterstadt").GetValueOrThrow(),
+				Occurrence.Recurring,
+				ParticipationType.IndividualContact,
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
+
+			var opp2d = VolunteerOpportunity.Create(
+				org1Id,
+				"Erste-Hilfe-Schulung fur Vereine",
+				"Vermitteln Sie Vereinen und Ehrenamtlichen die Grundlagen der Ersten Hilfe in Online-Schulungen.",
+				isRemote: true,
+				address: null,
+				Occurrence.Recurring,
+				ParticipationType.IndividualContact,
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
+
 			var opp3 = VolunteerOpportunity.Create(
 				org2Id,
 				"Tierheim Helfer gesucht",
@@ -108,7 +141,41 @@ internal sealed class ApplicationDbContextInitializer(
 				CheckInMethod.None,
 				pinGenerator).GetValueOrThrow();
 
-			dbContext.Set<VolunteerOpportunity>().AddRange(opp1, opp2, opp3, opp4);
+			var opp4b = VolunteerOpportunity.Create(
+				org2Id,
+				"Gassi-Service fur Tierheim-Hunde",
+				"Drehen Sie regelmasig Ihre Runden mit unseren Tierheim-Hunden und schenken Sie ihnen Auslauf.",
+				isRemote: false,
+				Address.Create("Tiergartenweg", "5", "12345", "Musterstadt").GetValueOrThrow(),
+				Occurrence.Recurring,
+				ParticipationType.IndividualContact,
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
+
+			var opp4c = VolunteerOpportunity.Create(
+				org2Id,
+				"Spendenaktion Tierfutter",
+				"Sammeln Sie Futter- und Sachspenden fur unsere Schutzlinge bei einer lokalen Aktion.",
+				isRemote: false,
+				Address.Create("Feldweg", "3", "12345", "Musterstadt").GetValueOrThrow(),
+				Occurrence.OneTime,
+				ParticipationType.IndividualContact,
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
+
+			var opp4d = VolunteerOpportunity.Create(
+				org2Id,
+				"Patenschaften fur Pflegetiere",
+				"Ubernehmen Sie eine Tierpatenschaft und begleiten Sie ein Pflegetier bei seiner Vermittlung.",
+				isRemote: true,
+				address: null,
+				Occurrence.Recurring,
+				ParticipationType.IndividualContact,
+				CheckInMethod.None,
+				pinGenerator).GetValueOrThrow();
+
+			dbContext.Set<VolunteerOpportunity>().AddRange(
+				opp1, opp2, opp2b, opp2c, opp2d, opp3, opp4, opp4b, opp4c, opp4d);
 
 			var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
