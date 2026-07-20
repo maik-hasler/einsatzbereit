@@ -1,9 +1,11 @@
 namespace Application.Organizations.GetDashboardLayout.v1;
 
-// WidgetKey/Size travel as strings (not the Domain enums) to keep the wire
+// WidgetKey travels as a string (not the Domain enum) to keep the wire
 // contract stable regardless of enum member renumbering - same convention as
-// AchievementSummary.Type.
-public sealed record DashboardWidgetPlacementResponse(string WidgetKey, string Size);
+// AchievementSummary.Type. No Size field - widgets auto-fit into whatever
+// space the frontend's packing algorithm gives them (#771 follow-up review
+// feedback - "forget about the sizes slider").
+public sealed record DashboardWidgetPlacementResponse(string WidgetKey);
 
 // Widgets is empty both when the organizer has never customized their
 // dashboard (no OrganizationDashboardLayout row) AND when they deliberately

@@ -160,44 +160,35 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task ResizingAWidgetViaSlider_AndSaving_PersistsAcrossReload()
+	public async Task AutoFitGrid_HasNoManualSizeControls_AndShowsGreenBackdropOnlyWhileEditing()
 	{
-		// #771 follow-up review feedback replaced the "Small"/"Medium"/"Large"
-		// size-cycle button with a native range slider (one step per allowed
-		// size) - covers that the slider actually changes and persists the
-		// saved size, not just the old button-cycle mechanic.
+		// #771 follow-up review feedback replaced manual sizing (first a
+		// "Small"/"Medium"/"Large" cycle button, then a resize slider) with
+		// fully automatic column/row placement - covers that no manual size
+		// control exists anymore, and that the green cell backdrop (showing
+		// the underlying 8-column grid) only renders while editing.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual DashResize");
+		await CreateOrganizationAsync("Visual DashAutoFit");
+
+		(await Page.Locator("input[type='range']").CountAsync()).Should().Be(0);
+		(await Page.GetByTestId("dashboard-grid-guide-cell").CountAsync())
+			.Should().Be(0, "the backdrop should not render outside edit mode");
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		// ToDo defaults to Medium and allows [Medium, Large] - index 0 is
-		// Medium, index 1 (one ArrowRight step) is Large.
-		var slider = Page.GetByTestId("widget-tile-ToDo")
-			.GetByRole(AriaRole.Slider, new() { Name = "Change Needs Your Attention size: Medium" });
-		await Expect(slider).ToBeVisibleAsync();
+		(await Page.Locator("input[type='range']").CountAsync())
+			.Should().Be(0, "no manual size slider or other range input should exist");
+		(await Page.GetByTestId("dashboard-grid-guide-cell").CountAsync())
+			.Should().BeGreaterThan(0, "the green cell backdrop should render while editing");
 
-		await slider.FocusAsync();
-		await slider.PressAsync("ArrowRight");
+		await Page.GetByTestId("quick-action-cancel").ClickAsync();
 
-		await Expect(Page.GetByTestId("widget-tile-ToDo")
-				.GetByRole(AriaRole.Slider, new() { Name = "Change Needs Your Attention size: Large" }))
-			.ToBeVisibleAsync();
-
-		await Page.GetByTestId("quick-action-save").ClickAsync();
-		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		await Page.ReloadAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByTestId("widget-tile-ToDo")
-				.GetByRole(AriaRole.Slider, new() { Name = "Change Needs Your Attention size: Large" }))
-			.ToBeVisibleAsync();
+		(await Page.GetByTestId("dashboard-grid-guide-cell").CountAsync())
+			.Should().Be(0, "the backdrop should disappear again once editing ends");
 	}
 
 	[Test]

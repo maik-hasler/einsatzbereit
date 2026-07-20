@@ -5,6 +5,7 @@ import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import type { WidgetSizeClass } from "./widgetCatalog";
 
 const MAX_ITEMS = 5;
 
@@ -19,11 +20,13 @@ interface UpcomingItem {
 interface Props {
 	organizationId: string;
 	refreshKey: number;
+	size: WidgetSizeClass;
 }
 
 export default function UpcomingOpportunitiesWidget({
 	organizationId,
 	refreshKey,
+	size,
 }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
@@ -96,6 +99,14 @@ export default function UpcomingOpportunitiesWidget({
 			)}
 			{items !== null && !error && items.length > 0 && (
 				<ul className="space-y-3">
+					{/* Every fetched item always renders - only the metadata line
+					is dropped at compact size, never the items themselves. An
+					earlier version instead truncated the list to fewer items at
+					compact, but size can change from a plain window resize
+					(outside edit mode, so the inert-content guard doesn't apply)
+					and unmounting an item a keyboard user had focus on would
+					silently drop focus to the document body - #771 follow-up
+					review feedback (adaptive layouts per size), a11y follow-up. */}
 					{items.map((item) => (
 						<li
 							key={item.id}
@@ -109,23 +120,24 @@ export default function UpcomingOpportunitiesWidget({
 							<p className="truncate text-sm font-medium text-gray-900">
 								{item.title}
 							</p>
-							{(item.nextStart || item.maxParticipants > 0) && (
-								<p className="mt-0.5 text-xs text-gray-500">
-									{item.nextStart &&
-										item.nextStart.toLocaleString(locale, {
-											dateStyle: "medium",
-											timeStyle: "short",
-										})}
-									{item.nextStart && item.maxParticipants > 0 && (
-										<span className="mx-1.5">&middot;</span>
-									)}
-									{item.maxParticipants > 0 &&
-										t("orgOpportunities.participants", {
-											booked: item.bookedCount,
-											max: item.maxParticipants,
-										})}
-								</p>
-							)}
+							{size !== "compact" &&
+								(item.nextStart || item.maxParticipants > 0) && (
+									<p className="mt-0.5 text-xs text-gray-500">
+										{item.nextStart &&
+											item.nextStart.toLocaleString(locale, {
+												dateStyle: "medium",
+												timeStyle: "short",
+											})}
+										{item.nextStart && item.maxParticipants > 0 && (
+											<span className="mx-1.5">&middot;</span>
+										)}
+										{item.maxParticipants > 0 &&
+											t("orgOpportunities.participants", {
+												booked: item.bookedCount,
+												max: item.maxParticipants,
+											})}
+									</p>
+								)}
 						</li>
 					))}
 				</ul>

@@ -5010,30 +5010,22 @@
       },
       "DashboardWidgetPlacementRequest": {
         "required": [
-          "widgetKey",
-          "size"
+          "widgetKey"
         ],
         "type": "object",
         "properties": {
           "widgetKey": {
-            "type": "string"
-          },
-          "size": {
             "type": "string"
           }
         }
       },
       "DashboardWidgetPlacementResponse": {
         "required": [
-          "widgetKey",
-          "size"
+          "widgetKey"
         ],
         "type": "object",
         "properties": {
           "widgetKey": {
-            "type": "string"
-          },
-          "size": {
             "type": "string"
           }
         }

@@ -1,8 +1,13 @@
 /**
  * Smoke test for the #771 follow-up review-feedback rounds on the org
  * dashboard widget grid:
- *  - the boxed grip+size+X toolbar is gone (drag-anywhere + trash icon +
- *    a resize slider instead)
+ *  - the boxed grip+size+X toolbar is gone (drag-anywhere + trash icon,
+ *    no manual size control of any kind - not even the slider that
+ *    replaced the original "Medium"/"Large" cycle button, since sizing is
+ *    now fully automatic)
+ *  - a light green cell backdrop renders behind the grid while editing,
+ *    showing the underlying 8-column structure, and disappears again once
+ *    editing ends
  *  - dragging reorders other widgets live, not only after the drop
  *  - removing every widget and saving shows a real empty state and stays
  *    empty across a reload (instead of resetting to the default layout)
@@ -202,20 +207,44 @@ async function main() {
 			"OK  Dragging reorders widgets live, before the drop (order changed mid-drag)",
 		);
 
-		// --- A native range slider replaces the old size-cycle button ---
-		const todoTile = page.getByTestId("widget-tile-ToDo");
-		const sliderMedium = todoTile.getByRole("slider", {
-			name: /Medium|Mittel/i,
-		});
-		await sliderMedium.waitFor({ state: "visible", timeout: 5000 });
-		console.log("OK  Resize slider present for the ToDo widget (Medium)");
+		// --- No manual size control of any kind - sizing is fully automatic ---
+		if ((await page.locator("input[type='range']").count()) > 0) {
+			throw new Error(
+				"A range input still exists - manual sizing wasn't fully removed",
+			);
+		}
+		console.log("OK  No manual size control (slider or otherwise) exists");
 
-		await sliderMedium.focus();
-		await sliderMedium.press("ArrowRight");
-		await todoTile
-			.getByRole("slider", { name: /Large|Groß/i })
-			.waitFor({ timeout: 5000 });
-		console.log("OK  Slider resizes the ToDo widget to Large");
+		// --- Green cell backdrop renders behind the grid while editing ---
+		const backdropCellCount = await page
+			.getByTestId("dashboard-grid-guide-cell")
+			.count();
+		if (backdropCellCount === 0) {
+			throw new Error("Green cell backdrop did not render while editing");
+		}
+		console.log(
+			`OK  Green cell backdrop rendered (${backdropCellCount} cells) while editing`,
+		);
+
+		// --- Auto-fit: the drag above actually changed a widget's computed
+		// column span, not just its position in the DOM ---
+		const todoColumn = await page
+			.getByTestId("widget-tile-ToDo")
+			.evaluate((el) => getComputedStyle(el).gridColumn);
+		if (!todoColumn || todoColumn === "auto" || todoColumn === "auto / auto") {
+			throw new Error(
+				"ToDo tile has no computed grid-column span - auto-fit packing regression",
+			);
+		}
+		console.log(`OK  Auto-fit packing assigned ToDo a real grid-column (${todoColumn})`);
+
+		await page.getByTestId("quick-action-cancel").click();
+		if ((await page.getByTestId("dashboard-grid-guide-cell").count()) !== 0) {
+			throw new Error("Green cell backdrop is still present outside edit mode");
+		}
+		console.log("OK  Green cell backdrop disappears again once editing ends");
+
+		await page.getByTestId("quick-action-edit").click();
 
 		// --- Remove every widget and save: must show empty state, not reset ---
 		let remaining = page.getByRole("button", {

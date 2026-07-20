@@ -45,7 +45,7 @@ internal sealed class SaveDashboardLayoutEndpoint
 			organizationId,
 			userId,
 			request.Widgets
-				.Select(w => new DashboardWidgetPlacementInput(w.WidgetKey, w.Size))
+				.Select(w => new DashboardWidgetPlacementInput(w.WidgetKey))
 				.ToList());
 
 		await sender.Send(command, cancellationToken);

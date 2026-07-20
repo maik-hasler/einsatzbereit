@@ -10,6 +10,17 @@ import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import type { WidgetSizeClass } from "./widgetCatalog";
+
+// The *default* view a fresh mount opens on - a narrow tile can't usefully
+// show a month grid, so it starts on the agenda list instead; all three
+// stay switchable via the view buttons regardless of size (#771 follow-up
+// review feedback - adaptive layouts per size).
+function defaultViewForSize(size: WidgetSizeClass): View {
+	if (size === "compact") return "agenda";
+	if (size === "medium") return "week";
+	return "month";
+}
 
 const rbcLocales = {
 	"en-US": enUS,
@@ -53,16 +64,24 @@ function CalEventChip({ event }: { event: object }) {
 interface Props {
 	organizationId: string;
 	refreshKey: number;
+	size: WidgetSizeClass;
 }
 
-export default function CalendarWidget({ organizationId, refreshKey }: Props) {
+export default function CalendarWidget({
+	organizationId,
+	refreshKey,
+	size,
+}: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
 	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
 	const [calLoading, setCalLoading] = useState(true);
 	const [calError, setCalError] = useState<string | null>(null);
-	const [calView, setCalView] = useState<View>("month");
+	// Lazy initializer - only the INITIAL view depends on size; once mounted,
+	// the organizer's own view-button clicks take over and this doesn't
+	// re-run just because a drag elsewhere changed this widget's span.
+	const [calView, setCalView] = useState<View>(() => defaultViewForSize(size));
 	const [calDate, setCalDate] = useState(new Date());
 	const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
 	const [pickerColor, setPickerColor] = useState(DEFAULT_EVENT_COLOR);
@@ -161,7 +180,7 @@ export default function CalendarWidget({ organizationId, refreshKey }: Props) {
 						onView={(v: View) => setCalView(v)}
 						date={calDate}
 						onNavigate={(d: Date) => setCalDate(d)}
-						views={["month", "week", "work_week", "day"]}
+						views={["month", "week", "work_week", "day", "agenda"]}
 						style={{ height: 600 }}
 						components={{ event: CalEventChip }}
 						eventPropGetter={(event: object) => {
@@ -186,6 +205,7 @@ export default function CalendarWidget({ organizationId, refreshKey }: Props) {
 							week: t("orgOverview.calendarWeek"),
 							work_week: t("orgOverview.calendarWorkWeek"),
 							day: t("orgOverview.calendarDay"),
+							agenda: t("orgOverview.calendarAgenda"),
 							noEventsInRange: t("orgOverview.calendarNoEvents"),
 						}}
 					/>

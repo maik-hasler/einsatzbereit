@@ -80,8 +80,8 @@ public class GetDashboardLayoutQueryHandlerTests
 			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
 			DefaultRequestingUserId,
 			[
-				new DashboardWidgetPlacement(DashboardWidgetKey.ToDo, DashboardWidgetSize.Medium),
-				new DashboardWidgetPlacement(DashboardWidgetKey.Calendar, DashboardWidgetSize.Large),
+				new DashboardWidgetPlacement(DashboardWidgetKey.ToDo),
+				new DashboardWidgetPlacement(DashboardWidgetKey.Calendar),
 			]);
 		_dbContext
 			.GetDashboardLayoutAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
@@ -93,8 +93,8 @@ public class GetDashboardLayoutQueryHandlerTests
 		result.HasCustomLayout.Should().BeTrue();
 		result.Widgets.Should().BeEquivalentTo(
 		[
-			new DashboardWidgetPlacementResponse("ToDo", "Medium"),
-			new DashboardWidgetPlacementResponse("Calendar", "Large"),
+			new DashboardWidgetPlacementResponse("ToDo"),
+			new DashboardWidgetPlacementResponse("Calendar"),
 		], options => options.WithStrictOrdering());
 	}
 

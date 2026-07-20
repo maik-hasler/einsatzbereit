@@ -56,15 +56,11 @@ internal sealed class SaveDashboardLayoutCommandHandler(
 				throw new ResultFailureException(Error.Validation(
 					"DashboardLayout.InvalidWidgetKey", $"Unknown widget key '{input.WidgetKey}'."));
 
-			if (!Enum.TryParse<DashboardWidgetSize>(input.Size, out var size) || !Enum.IsDefined(size))
-				throw new ResultFailureException(Error.Validation(
-					"DashboardLayout.InvalidWidgetSize", $"Unknown widget size '{input.Size}'."));
-
 			if (!seenKeys.Add(key))
 				throw new ResultFailureException(Error.Validation(
 					"DashboardLayout.DuplicateWidget", $"Widget '{key}' is placed more than once."));
 
-			widgets.Add(new DashboardWidgetPlacement(key, size));
+			widgets.Add(new DashboardWidgetPlacement(key));
 		}
 
 		return widgets;

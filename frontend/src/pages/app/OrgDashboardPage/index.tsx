@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+	useEffect,
+	useMemo,
+	useState,
+	type CSSProperties,
+	type ReactNode,
+} from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,12 +45,30 @@ import {
 	DEFAULT_LAYOUT,
 	WIDGET_CATALOG,
 	WIDGET_KEYS,
-	sanitizePlacement,
-	widgetColSpanClass,
+	classifyWidth,
+	packWidgets,
+	sanitizeWidgetKey,
 	type WidgetKey,
-	type WidgetPlacement,
-	type WidgetSize,
+	type WidgetSizeClass,
 } from "./widgetCatalog";
+
+// Matches Tailwind's default `lg` breakpoint, which is also where the
+// widget grid switches from a single stacked column to the real 8-column
+// grid (see the grid container's className below) - auto-fit column/row
+// placement and the green cell backdrop only make sense once that grid
+// exists, so both are gated on this.
+function useIsLargeViewport() {
+	const [isLarge, setIsLarge] = useState(
+		() => window.matchMedia("(min-width: 1024px)").matches,
+	);
+	useEffect(() => {
+		const mql = window.matchMedia("(min-width: 1024px)");
+		const handler = () => setIsLarge(mql.matches);
+		mql.addEventListener("change", handler);
+		return () => mql.removeEventListener("change", handler);
+	}, []);
+	return isLarge;
+}
 
 function GripIcon() {
 	return (
@@ -65,73 +89,72 @@ function GripIcon() {
 }
 
 function EditableWidgetTile({
-	placement,
+	widgetKey,
+	gridStyle,
 	editing,
 	onRemove,
-	onResize,
 	children,
 }: {
-	placement: WidgetPlacement;
+	widgetKey: WidgetKey;
+	gridStyle?: CSSProperties;
 	editing: boolean;
 	onRemove: () => void;
-	onResize: (size: WidgetSize) => void;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
 	const { attributes, listeners, setNodeRef, isDragging } = useSortable({
-		id: placement.widgetKey,
+		id: widgetKey,
 	});
-	const catalogEntry = WIDGET_CATALOG[placement.widgetKey];
-	const sizeIndex = catalogEntry.allowedSizes.indexOf(placement.size);
+	const catalogEntry = WIDGET_CATALOG[widgetKey];
 
 	// No transform/transition from useSortable is applied here on purpose -
 	// dnd-kit's built-in sortable animation projects a translate offset
 	// assuming every item is the same size, which falls apart on this grid
-	// (mixed col-spans + grid-flow-dense) and produced the "other widgets...
-	// look so weirdly" glitch from #771 follow-up review feedback. The
-	// dragged tile is hidden in place (opacity-20 below) while
-	// OrgDashboardPage's <DragOverlay> shows a floating clone that actually
-	// follows the pointer/keyboard; every other tile just stays put until the
-	// drop reorders the array, then snaps straight to its new dense-packed
-	// slot - no mid-drag animation left to get wrong.
+	// (auto-fit spans + a dense shelf packer) and produced the "other
+	// widgets... look so weirdly" glitch from #771 follow-up review
+	// feedback. The dragged tile is hidden in place (opacity-20 below)
+	// while OrgDashboardPage's <DragOverlay> shows a floating clone that
+	// actually follows the pointer/keyboard; every other tile just stays
+	// put until the drop reorders the array, then snaps straight to its
+	// new packed slot - no mid-drag animation left to get wrong.
 	return (
 		// onMouseDown/onTouchStart below let mouse/touch users grab the card
 		// ANYWHERE to move it - a plain cursor-grab affordance instead of a
-		// dedicated grip icon (#771 follow-up review feedback - "why not
-		// making it clear... that things are moveable by just dragging the
-		// widget itself"). A separate, visually-hidden-until-focused button
-		// further down keeps this fully keyboard-operable (dnd-kit's
+		// dedicated grip icon. A separate, visually-hidden-until-focused
+		// button further down keeps this fully keyboard-operable (dnd-kit's
 		// KeyboardSensor needs a real focusable element carrying
-		// {...attributes} {...listeners}) without adding a permanently visible
-		// icon back - which is also why suppressing the static-element-
-		// interactions rule here is safe: this div never needs its own
-		// role/keyboard handling, that hidden button is the real interactive
-		// element for keyboard users. The sensors' activationConstraint (see
-		// OrgDashboardPage) keeps this from swallowing plain clicks on the
-		// resize/remove controls, which live inside the same element. Touch
-		// specifically uses TouchSensor's delay (not MouseSensor's distance),
-		// which - unlike distance-based activation - doesn't require disabling
-		// touch-action, so a quick swipe still scrolls the page normally and
-		// only a deliberate hold claims the gesture for dragging.
+		// {...attributes} {...listeners}) without adding a permanently
+		// visible icon back - which is also why suppressing the
+		// static-element-interactions rule here is safe: this div never
+		// needs its own role/keyboard handling, that hidden button is the
+		// real interactive element for keyboard users. The sensors'
+		// activationConstraint (see OrgDashboardPage) keeps this from
+		// swallowing plain clicks on the remove button, which lives inside
+		// the same element. Touch specifically uses TouchSensor's delay (not
+		// MouseSensor's distance), which - unlike distance-based activation -
+		// doesn't require disabling touch-action, so a quick swipe still
+		// scrolls the page normally and only a deliberate hold claims the
+		// gesture for dragging.
 		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div
 			ref={setNodeRef}
-			data-testid={`widget-tile-${placement.widgetKey}`}
+			data-testid={`widget-tile-${widgetKey}`}
 			onMouseDown={(event) => {
 				if (editing) listeners?.onMouseDown?.(event);
 			}}
 			onTouchStart={(event) => {
 				if (editing) listeners?.onTouchStart?.(event);
 			}}
+			style={gridStyle}
 			// A low but nonzero opacity (not opacity-0) while dragging - a
 			// keyboard-initiated drag (KeyboardSensor) leaves real DOM focus on
 			// the hidden grip button inside this tile, and a fully invisible
 			// ancestor would take its focus ring with it (WCAG 2.4.7 Focus
 			// Visible), since <DragOverlay>'s floating clone has no focus of its
 			// own to show one instead.
-			className={`relative h-full ${widgetColSpanClass(placement.size)} ${editing ? "cursor-grab active:cursor-grabbing" : ""} ${editing && isDragging ? "opacity-20" : ""}`}
+			className={`relative z-10 h-full ${editing ? "cursor-grab active:cursor-grabbing" : ""} ${editing && isDragging ? "opacity-20" : ""}`}
 		>
-			<div inert={editing} className={`h-full ${editing ? "opacity-75" : ""}`}>
+			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
 				{children}
 			</div>
 			{editing && (
@@ -146,63 +169,13 @@ function EditableWidgetTile({
 						type="button"
 						{...attributes}
 						{...listeners}
-						// top-12 (not top-2, alongside the resize/remove controls) so
-						// this doesn't visually collide with the resize slider on a
-						// Small tile once it becomes visible on focus.
-						className="pointer-events-none absolute left-1/2 top-12 z-30 -translate-x-1/2 cursor-grab rounded-lg bg-white p-1.5 text-gray-600 opacity-0 shadow-md ring-1 ring-gray-200 transition-opacity focus:pointer-events-auto focus:opacity-100 active:cursor-grabbing"
+						className="pointer-events-none absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-grab rounded-lg bg-white p-1.5 text-gray-600 opacity-0 shadow-md ring-1 ring-gray-200 transition-opacity focus:pointer-events-auto focus:opacity-100 active:cursor-grabbing"
 						aria-label={t("orgDashboard.dragToReorder", {
 							widget: t(catalogEntry.titleKey),
 						})}
 					>
 						<GripIcon />
 					</button>
-					{catalogEntry.allowedSizes.length > 1 && (
-						// stopPropagation on press: dragging the slider thumb moves
-						// the pointer just as much as dragging the tile itself would,
-						// which would otherwise also satisfy the tile's own
-						// reorder-drag activation constraint at the same time. This
-						// div itself has no interactive behavior of its own (it never
-						// needs a role/keyboard handler) - the real, fully accessible
-						// interactive element is the native <input type="range">
-						// inside it, which is why suppressing the static-element-
-						// interactions rule here is safe.
-						// eslint-disable-next-line jsx-a11y/no-static-element-interactions
-						<div
-							onMouseDown={(event) => event.stopPropagation()}
-							onTouchStart={(event) => event.stopPropagation()}
-							className="absolute left-2 top-2 z-20 flex items-center gap-1.5 rounded-lg bg-white/95 px-2 py-1 shadow-sm ring-1 ring-gray-200"
-						>
-							<span
-								aria-hidden="true"
-								className="text-[10px] font-medium text-gray-500"
-							>
-								{t(`orgDashboard.widgetSize${placement.size}`)}
-							</span>
-							<input
-								type="range"
-								min={0}
-								max={catalogEntry.allowedSizes.length - 1}
-								step={1}
-								value={sizeIndex}
-								onChange={(event) =>
-									onResize(
-										catalogEntry.allowedSizes[Number(event.target.value)],
-									)
-								}
-								className="h-1 w-16 cursor-pointer accent-brand-700"
-								aria-label={t("orgDashboard.changeWidgetSize", {
-									widget: t(catalogEntry.titleKey),
-									size: t(`orgDashboard.widgetSize${placement.size}`),
-								})}
-								// The name (aria-label) updates on every change too, but
-								// screen readers reliably announce the current VALUE of a
-								// range on each keypress only via aria-valuetext - without
-								// it, arrow keys would announce raw index positions (e.g.
-								// "1 of 2") instead of "Medium"/"Large".
-								aria-valuetext={t(`orgDashboard.widgetSize${placement.size}`)}
-							/>
-						</div>
-					)}
 					<button
 						type="button"
 						onClick={onRemove}
@@ -226,16 +199,20 @@ function EditableWidgetTile({
 // drag lasts.
 function WidgetDragPreview({
 	widgetKey,
-	size,
+	dimensions,
 }: {
 	widgetKey: WidgetKey;
-	size: { width: number; height: number } | null;
+	dimensions: { width: number; height: number } | null;
 }) {
 	const { t } = useTranslation();
 	const catalogEntry = WIDGET_CATALOG[widgetKey];
 	return (
 		<div
-			style={size ? { width: size.width, height: size.height } : undefined}
+			style={
+				dimensions
+					? { width: dimensions.width, height: dimensions.height }
+					: undefined
+			}
 			className="cursor-grabbing rounded-2xl border border-gray-100 bg-white p-5 shadow-lg ring-2 ring-brand-300"
 		>
 			<div className="mb-4 flex items-center justify-between gap-3">
@@ -254,6 +231,7 @@ export default function OrgDashboardPage() {
 	const navigate = useNavigate();
 	const api = useApiClient();
 	const organizationId = org.id;
+	const isLargeViewport = useIsLargeViewport();
 
 	// Bumped after a published opportunity is created so the Calendar and
 	// Upcoming Opportunities widgets (which each own their own data) refetch.
@@ -264,19 +242,16 @@ export default function OrgDashboardPage() {
 	// exactly this layout back anyway (no customization saved yet), and a
 	// returning organizer's customized layout swaps in a moment later instead
 	// of blocking first paint on it.
-	const [savedLayout, setSavedLayout] =
-		useState<WidgetPlacement[]>(DEFAULT_LAYOUT);
+	const [savedLayout, setSavedLayout] = useState<WidgetKey[]>(DEFAULT_LAYOUT);
 	const [editing, setEditing] = useState(false);
-	const [draftLayout, setDraftLayout] = useState<WidgetPlacement[] | null>(
-		null,
-	);
+	const [draftLayout, setDraftLayout] = useState<WidgetKey[] | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
 	// Tracks which widget (if any) is mid-drag so <DragOverlay> can render a
 	// floating clone of it - see EditableWidgetTile's comment on why the
 	// dragged tile itself no longer carries a dnd-kit transform.
 	const [activeDragKey, setActiveDragKey] = useState<WidgetKey | null>(null);
-	const [activeDragSize, setActiveDragSize] = useState<{
+	const [activeDragDimensions, setActiveDragDimensions] = useState<{
 		width: number;
 		height: number;
 	} | null>(null);
@@ -286,8 +261,8 @@ export default function OrgDashboardPage() {
 			.getDashboardLayout(organizationId)
 			.then((response) => {
 				const sanitized = response.widgets
-					.map(sanitizePlacement)
-					.filter((w): w is WidgetPlacement => w !== null);
+					.map((w) => sanitizeWidgetKey(w.widgetKey))
+					.filter((k): k is WidgetKey => k !== null);
 				// Only a brand-new organizer (no saved layout row at all,
 				// hasCustomLayout=false) gets the default layout applied. An
 				// organizer who deliberately removed every widget and saved that
@@ -302,9 +277,7 @@ export default function OrgDashboardPage() {
 	}, [organizationId]);
 
 	const layout = editing ? (draftLayout ?? []) : savedLayout;
-	const availableToAdd = WIDGET_KEYS.filter(
-		(key) => !layout.some((w) => w.widgetKey === key),
-	);
+	const availableToAdd = WIDGET_KEYS.filter((key) => !layout.includes(key));
 
 	function handleOpportunityCreated(createdDraftId?: string) {
 		// Drafts live on the Opportunities tab now. When one is saved from here,
@@ -324,10 +297,7 @@ export default function OrgDashboardPage() {
 		setSaving(true);
 		try {
 			await api.saveDashboardLayout(organizationId, {
-				widgets: draftLayout.map((w) => ({
-					widgetKey: w.widgetKey,
-					size: w.size,
-				})),
+				widgets: draftLayout.map((widgetKey) => ({ widgetKey })),
 			});
 			setSavedLayout(draftLayout);
 			setEditing(false);
@@ -386,28 +356,19 @@ export default function OrgDashboardPage() {
 	});
 
 	function handleRemoveWidget(key: WidgetKey) {
-		setDraftLayout((prev) => (prev ?? []).filter((w) => w.widgetKey !== key));
+		setDraftLayout((prev) => (prev ?? []).filter((k) => k !== key));
 	}
 
 	function handleAddWidget(key: WidgetKey) {
-		setDraftLayout((prev) => [
-			...(prev ?? []),
-			{ widgetKey: key, size: WIDGET_CATALOG[key].defaultSize },
-		]);
-	}
-
-	function handleResizeWidget(key: WidgetKey, size: WidgetSize) {
-		setDraftLayout((prev) =>
-			(prev ?? []).map((w) => (w.widgetKey === key ? { ...w, size } : w)),
-		);
+		setDraftLayout((prev) => [...(prev ?? []), key]);
 	}
 
 	const sensors = useSensors(
 		// A movement threshold before a drag activates, now that the whole
 		// tile (not just the grip button) carries a mousedown listener -
-		// without it, a plain click on the resize/remove buttons (which live
-		// inside that same tile) would be swallowed as a zero-distance drag
-		// instead of firing their own onClick.
+		// without it, a plain click on the remove button (which lives inside
+		// that same tile) would be swallowed as a zero-distance drag instead
+		// of firing its own onClick.
 		useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
 		// Touch gets a short hold instead of a distance threshold. Unlike
 		// MouseSensor/PointerSensor's distance-based activation, dnd-kit's
@@ -426,23 +387,24 @@ export default function OrgDashboardPage() {
 	function handleDragStart(event: DragStartEvent) {
 		setActiveDragKey(event.active.id as WidgetKey);
 		const rect = event.active.rect.current.initial;
-		setActiveDragSize(rect ? { width: rect.width, height: rect.height } : null);
+		setActiveDragDimensions(
+			rect ? { width: rect.width, height: rect.height } : null,
+		);
 	}
 
 	// Reorders live as the dragged tile crosses another one, instead of only
 	// on drop - #771 follow-up review feedback ("the widgets should update
 	// when I drag already"). Every other tile carries no dnd-kit transform
 	// (see EditableWidgetTile), so this reorder just snaps the grid straight
-	// to its new dense-packed layout on each crossing rather than animating a
-	// projected offset - which is what avoids reintroducing the earlier
-	// "other widgets move weirdly" glitch while still updating live.
+	// to its new packed layout on each crossing rather than animating a
+	// projected offset.
 	function handleDragOver(event: DragOverEvent) {
 		const { active, over } = event;
 		if (!over || active.id === over.id) return;
 		setDraftLayout((prev) => {
 			const current = prev ?? [];
-			const oldIndex = current.findIndex((w) => w.widgetKey === active.id);
-			const newIndex = current.findIndex((w) => w.widgetKey === over.id);
+			const oldIndex = current.indexOf(active.id as WidgetKey);
+			const newIndex = current.indexOf(over.id as WidgetKey);
 			if (oldIndex === -1 || newIndex === -1) return current;
 			return arrayMove(current, oldIndex, newIndex);
 		});
@@ -452,7 +414,7 @@ export default function OrgDashboardPage() {
 	// updated) - this just clears the drag-overlay UI state.
 	function handleDragEnd() {
 		setActiveDragKey(null);
-		setActiveDragSize(null);
+		setActiveDragDimensions(null);
 	}
 
 	// dnd-kit fires this on Escape (and a few other abandon paths) instead of
@@ -461,18 +423,19 @@ export default function OrgDashboardPage() {
 	// show for it.
 	function handleDragCancel() {
 		setActiveDragKey(null);
-		setActiveDragSize(null);
+		setActiveDragDimensions(null);
 	}
 
-	function renderWidget(key: WidgetKey) {
+	function renderWidget(key: WidgetKey, size: WidgetSizeClass) {
 		switch (key) {
 			case "ToDo":
-				return <ToDoWidget organizationId={organizationId} />;
+				return <ToDoWidget organizationId={organizationId} size={size} />;
 			case "UpcomingOpportunities":
 				return (
 					<UpcomingOpportunitiesWidget
 						organizationId={organizationId}
 						refreshKey={refreshKey}
+						size={size}
 					/>
 				);
 			case "Calendar":
@@ -480,19 +443,23 @@ export default function OrgDashboardPage() {
 					<CalendarWidget
 						organizationId={organizationId}
 						refreshKey={refreshKey}
+						size={size}
 					/>
 				);
 			case "Settings":
-				return <SettingsWidget org={org} />;
+				return <SettingsWidget org={org} size={size} />;
 			case "CreateOpportunity":
 				return (
 					<CreateOpportunityWidget
 						organizationId={organizationId}
 						onCreated={handleOpportunityCreated}
+						size={size}
 					/>
 				);
 			case "QuickCheckIn":
-				return <QuickCheckInWidget organizationId={organizationId} />;
+				return (
+					<QuickCheckInWidget organizationId={organizationId} size={size} />
+				);
 			case "SettingsIcon":
 				return <SettingsIconWidget organizationId={organizationId} />;
 		}
@@ -505,10 +472,15 @@ export default function OrgDashboardPage() {
 	// empty state rather than silently falling back to the default set.
 	const isEmpty = layout.length === 0;
 
-	// grid-flow-row-dense backfills gaps left by mixed widget sizes (e.g. a
-	// Small next to two Mediums doesn't evenly divide the 4 columns) with a
-	// later widget that DOES fit, instead of leaving ragged empty cells -
-	// #771 review feedback ("sizes... dont fully align with the layout").
+	// Shelf-packs the (drag-ordered) layout onto the 8-column grid every
+	// render - cheap for the handful of widgets a dashboard has, and this is
+	// what replaces manual sizing entirely: each widget's column/row span is
+	// a pure function of how much room is left when its turn comes, not a
+	// choice the organizer makes (#771 follow-up review feedback - "forget
+	// about the sizes slider... widgets should take as much place as left").
+	const { placed, totalRows } = packWidgets(layout);
+	const packedByKey = new Map(placed.map((p) => [p.widgetKey, p]));
+
 	const grid = isEmpty ? (
 		<div data-testid="dashboard-empty-state">
 			<EmptyState
@@ -521,41 +493,63 @@ export default function OrgDashboardPage() {
 			/>
 		</div>
 	) : (
-		<div className="relative">
-			{editing && (
-				// Light column-lane guide behind the widgets, so an organizer can
-				// see the underlying 4-column structure (and where a widget could
-				// still fit) instead of the grid being invisible until something
-				// occupies it - #771 follow-up review feedback ("no visual grid
-				// rendering... maybe I can render very light green grids"). Only
-				// the 3 internal boundaries are drawn (not the outer edges) since
-				// those already read as the grid's edges. Hidden below `lg`
-				// because the grid itself collapses to a single column there.
-				<div
-					aria-hidden="true"
-					className="pointer-events-none absolute inset-0 hidden lg:block"
-				>
-					<div className="absolute inset-y-0 left-1/4 w-px bg-green-300/70" />
-					<div className="absolute inset-y-0 left-1/2 w-px bg-green-300/70" />
-					<div className="absolute inset-y-0 left-3/4 w-px bg-green-300/70" />
-				</div>
-			)}
-			<div
-				data-testid="dashboard-widget-grid"
-				className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:grid-flow-row-dense"
-			>
-				{layout.map((placement) => (
+		<div
+			data-testid="dashboard-widget-grid"
+			className="grid grid-cols-1 gap-4 lg:grid-cols-8 lg:auto-rows-[minmax(64px,auto)]"
+		>
+			{/* Light green cell backdrop behind the whole grid while editing, so
+			an organizer can see the underlying 8-column structure (and exactly
+			how many rows the current layout needs, +1 spare) instead of it
+			being invisible until something occupies it - #771 follow-up review
+			feedback ("no visual grid rendering... maybe I can render very
+			light green grids"). These are real grid items placed in this same
+			grid (not a separately-positioned overlay), so their row tracks are
+			guaranteed to line up with the real widgets' even if a widget's
+			content grows taller than its nominal row estimate. `-m-1` lets each
+			cell bleed slightly past its own track into the gap, so it visibly
+			"expands a bit over" whatever widget sits on top of it. Gated on
+			isLargeViewport since the grid itself collapses to a single stacked
+			column below `lg`, where this wouldn't mean anything. */}
+			{editing &&
+				isLargeViewport &&
+				Array.from({ length: (totalRows + 1) * 8 }, (_, i) => {
+					const col = (i % 8) + 1;
+					const row = Math.floor(i / 8) + 1;
+					return (
+						<div
+							key={`grid-guide-${col}-${row}`}
+							data-testid="dashboard-grid-guide-cell"
+							aria-hidden="true"
+							className="pointer-events-none -m-1 rounded-md bg-green-300/40"
+							style={{ gridColumn: col, gridRow: row }}
+						/>
+					);
+				})}
+			{layout.map((widgetKey) => {
+				const packed = packedByKey.get(widgetKey);
+				if (!packed) return null;
+				const sizeClass = isLargeViewport
+					? classifyWidth(packed.colSpan)
+					: "compact";
+				return (
 					<EditableWidgetTile
-						key={placement.widgetKey}
-						placement={placement}
+						key={widgetKey}
+						widgetKey={widgetKey}
+						gridStyle={
+							isLargeViewport
+								? {
+										gridColumn: `span ${packed.colSpan}`,
+										gridRow: `span ${packed.rowSpan}`,
+									}
+								: undefined
+						}
 						editing={editing}
-						onRemove={() => handleRemoveWidget(placement.widgetKey)}
-						onResize={(size) => handleResizeWidget(placement.widgetKey, size)}
+						onRemove={() => handleRemoveWidget(widgetKey)}
 					>
-						{renderWidget(placement.widgetKey)}
+						{renderWidget(widgetKey, sizeClass)}
 					</EditableWidgetTile>
-				))}
-			</div>
+				);
+			})}
 		</div>
 	);
 
@@ -575,17 +569,14 @@ export default function OrgDashboardPage() {
 				onDragEnd={handleDragEnd}
 				onDragCancel={handleDragCancel}
 			>
-				<SortableContext
-					items={layout.map((w) => w.widgetKey)}
-					strategy={rectSortingStrategy}
-				>
+				<SortableContext items={layout} strategy={rectSortingStrategy}>
 					{grid}
 				</SortableContext>
 				<DragOverlay>
 					{activeDragKey && (
 						<WidgetDragPreview
 							widgetKey={activeDragKey}
-							size={activeDragSize}
+							dimensions={activeDragDimensions}
 						/>
 					)}
 				</DragOverlay>

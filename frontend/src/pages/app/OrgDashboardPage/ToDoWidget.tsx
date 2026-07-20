@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import type { WidgetSizeClass } from "./widgetCatalog";
 
 interface Kpis {
 	pendingEngagements: number;
@@ -12,9 +13,10 @@ interface Kpis {
 
 interface Props {
 	organizationId: string;
+	size: WidgetSizeClass;
 }
 
-export default function ToDoWidget({ organizationId }: Props) {
+export default function ToDoWidget({ organizationId, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -46,7 +48,14 @@ export default function ToDoWidget({ organizationId }: Props) {
 			{loading && <Spinner label={t("orgDashboard.loading")} />}
 			{!loading && error && <p className="text-sm text-red-600">{error}</p>}
 			{!loading && !error && kpis && (
-				<div className="grid grid-cols-2 gap-4">
+				// Side by side once there's room for two columns to breathe;
+				// stacked when the widget only got a narrow slice of the grid
+				// (#771 follow-up review feedback - adaptive layouts per size).
+				<div
+					className={
+						size === "compact" ? "space-y-4" : "grid grid-cols-2 gap-4"
+					}
+				>
 					<div>
 						<p className="text-3xl font-bold text-gray-900">
 							{kpis.pendingEngagements}

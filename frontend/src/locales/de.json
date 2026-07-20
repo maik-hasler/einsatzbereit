@@ -388,10 +388,6 @@
       "settingsIconWidgetTitle": "Einstellungen",
       "settingsIconWidgetDesc": "Eine minimale Verknüpfung zur Einstellungsseite.",
       "dragToReorder": "\"{{widget}}\" zum Umsortieren ziehen",
-      "changeWidgetSize": "Größe von \"{{widget}}\" ändern: {{size}}",
-      "widgetSizeSmall": "Klein",
-      "widgetSizeMedium": "Mittel",
-      "widgetSizeLarge": "Groß",
       "removeWidget": "Widget \"{{widget}}\" entfernen",
       "addWidgetHeading": "Widget hinzufügen",
       "addWidgetModalDesc": "Wähle ein Widget aus, das du deinem Dashboard hinzufügen möchtest.",
@@ -869,6 +865,7 @@
       "calendarWeek": "Woche",
       "calendarWorkWeek": "Arbeitswoche",
       "calendarDay": "Tag",
+      "calendarAgenda": "Agenda",
       "eventFillState": "{{booked}} / {{max}} gebucht",
       "eventManageApplications": "Bewerbungen verwalten",
       "createOpportunity": "Einsatz erstellen"

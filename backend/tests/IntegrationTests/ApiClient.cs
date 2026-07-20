@@ -8178,10 +8178,6 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string WidgetKey { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("size")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Size { get; set; } = default!;
-
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -8200,10 +8196,6 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("widgetKey")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string WidgetKey { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("size")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Size { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

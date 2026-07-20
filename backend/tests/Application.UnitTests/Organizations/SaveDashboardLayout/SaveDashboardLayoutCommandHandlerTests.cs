@@ -22,8 +22,8 @@ public class SaveDashboardLayoutCommandHandlerTests
 
 	private static readonly IReadOnlyList<DashboardWidgetPlacementInput> ValidWidgets =
 	[
-		new DashboardWidgetPlacementInput("ToDo", "Medium"),
-		new DashboardWidgetPlacementInput("Calendar", "Large"),
+		new DashboardWidgetPlacementInput("ToDo"),
+		new DashboardWidgetPlacementInput("Calendar"),
 	];
 
 	public SaveDashboardLayoutCommandHandlerTests()
@@ -73,23 +73,11 @@ public class SaveDashboardLayoutCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		var command = new SaveDashboardLayoutCommand(
-			DefaultOrgId, DefaultRequestingUserId, [new DashboardWidgetPlacementInput("NotAWidget", "Medium")]);
+			DefaultOrgId, DefaultRequestingUserId, [new DashboardWidgetPlacementInput("NotAWidget")]);
 
 		var act = async () => await _sut.Handle(command, cancellationToken);
 
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*widget key*");
-	}
-
-	[Test]
-	public async Task Handle_ShouldThrow_WhenSizeIsInvalid(
-		CancellationToken cancellationToken)
-	{
-		var command = new SaveDashboardLayoutCommand(
-			DefaultOrgId, DefaultRequestingUserId, [new DashboardWidgetPlacementInput("ToDo", "Huge")]);
-
-		var act = async () => await _sut.Handle(command, cancellationToken);
-
-		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*widget size*");
 	}
 
 	[Test]
@@ -100,8 +88,8 @@ public class SaveDashboardLayoutCommandHandlerTests
 			DefaultOrgId,
 			DefaultRequestingUserId,
 			[
-				new DashboardWidgetPlacementInput("ToDo", "Medium"),
-				new DashboardWidgetPlacementInput("ToDo", "Large"),
+				new DashboardWidgetPlacementInput("ToDo"),
+				new DashboardWidgetPlacementInput("ToDo"),
 			]);
 
 		var act = async () => await _sut.Handle(command, cancellationToken);
@@ -133,7 +121,7 @@ public class SaveDashboardLayoutCommandHandlerTests
 		var existing = OrganizationDashboardLayout.Create(
 			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
 			DefaultRequestingUserId,
-			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings, DashboardWidgetSize.Large)]);
+			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings)]);
 		_dbContext
 			.GetDashboardLayoutAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
 			.Returns(existing);
@@ -144,8 +132,8 @@ public class SaveDashboardLayoutCommandHandlerTests
 		result.Should().BeTrue();
 		existing.Widgets.Should().BeEquivalentTo(
 		[
-			new DashboardWidgetPlacement(DashboardWidgetKey.ToDo, DashboardWidgetSize.Medium),
-			new DashboardWidgetPlacement(DashboardWidgetKey.Calendar, DashboardWidgetSize.Large),
+			new DashboardWidgetPlacement(DashboardWidgetKey.ToDo),
+			new DashboardWidgetPlacement(DashboardWidgetKey.Calendar),
 		], options => options.WithStrictOrdering());
 		await _layoutRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationDashboardLayout>(), Arg.Any<CancellationToken>());
 	}

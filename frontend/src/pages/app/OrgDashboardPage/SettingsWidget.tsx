@@ -2,14 +2,29 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../../../client/api-client";
 import WidgetCard from "./WidgetCard";
+import type { WidgetSizeClass } from "./widgetCatalog";
 
 interface Props {
 	org: OrganizationDetailsResponse;
+	size: WidgetSizeClass;
 }
 
-export default function SettingsWidget({ org }: Props) {
+export default function SettingsWidget({ org, size }: Props) {
 	const { t, i18n } = useTranslation();
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const compact = size === "compact";
+
+	const logo = org.logoUrl ? (
+		<img
+			src={org.logoUrl}
+			alt=""
+			className="h-12 w-12 shrink-0 rounded-lg object-contain ring-1 ring-gray-200"
+		/>
+	) : (
+		<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-lg font-semibold text-brand-700">
+			{org.name.charAt(0).toUpperCase()}
+		</span>
+	);
 
 	return (
 		<WidgetCard
@@ -24,18 +39,18 @@ export default function SettingsWidget({ org }: Props) {
 				</Link>
 			}
 		>
-			<div className="flex min-w-0 items-center gap-3">
-				{org.logoUrl ? (
-					<img
-						src={org.logoUrl}
-						alt=""
-						className="h-12 w-12 shrink-0 rounded-lg object-contain ring-1 ring-gray-200"
-					/>
-				) : (
-					<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-lg font-semibold text-brand-700">
-						{org.name.charAt(0).toUpperCase()}
-					</span>
-				)}
+			{/* Stacked (logo above text, no creation date) when the widget only
+			got a narrow slice of the grid, instead of cramming a row layout
+			into it - #771 follow-up review feedback (adaptive layouts per
+			size). */}
+			<div
+				className={
+					compact
+						? "flex flex-col items-center gap-3 text-center"
+						: "flex min-w-0 items-center gap-3"
+				}
+			>
+				{logo}
 				<div className="min-w-0">
 					<div className="flex items-center gap-2">
 						<p className="truncate text-sm font-semibold text-gray-900">
@@ -56,14 +71,18 @@ export default function SettingsWidget({ org }: Props) {
 								count: org.members.length,
 							})}
 						</Link>
-						<span className="mx-1.5">&middot;</span>
-						{t("orgSettings.createdOn", {
-							date: new Date(org.createdOn).toLocaleDateString(locale, {
-								day: "2-digit",
-								month: "long",
-								year: "numeric",
-							}),
-						})}
+						{!compact && (
+							<>
+								<span className="mx-1.5">&middot;</span>
+								{t("orgSettings.createdOn", {
+									date: new Date(org.createdOn).toLocaleDateString(locale, {
+										day: "2-digit",
+										month: "long",
+										year: "numeric",
+									}),
+								})}
+							</>
+						)}
 					</p>
 				</div>
 			</div>

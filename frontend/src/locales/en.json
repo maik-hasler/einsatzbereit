@@ -388,10 +388,6 @@
       "settingsIconWidgetTitle": "Settings",
       "settingsIconWidgetDesc": "A minimal shortcut tile that links to the settings page.",
       "dragToReorder": "Drag {{widget}} to reorder",
-      "changeWidgetSize": "Change {{widget}} size: {{size}}",
-      "widgetSizeSmall": "Small",
-      "widgetSizeMedium": "Medium",
-      "widgetSizeLarge": "Large",
       "removeWidget": "Remove {{widget}} widget",
       "addWidgetHeading": "Add a widget",
       "addWidgetModalDesc": "Choose a widget to add to your dashboard.",
@@ -869,6 +865,7 @@
       "calendarWeek": "Week",
       "calendarWorkWeek": "Work week",
       "calendarDay": "Day",
+      "calendarAgenda": "Agenda",
       "eventFillState": "{{booked}} / {{max}} booked",
       "eventManageApplications": "Manage applications",
       "createOpportunity": "Create opportunity"

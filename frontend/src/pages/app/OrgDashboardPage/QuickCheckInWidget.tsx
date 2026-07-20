@@ -10,15 +10,17 @@ import { getApiErrorMessage } from "../../../lib/apiError";
 import QRScannerModal from "../../../components/QRScannerModal";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import type { WidgetSizeClass } from "./widgetCatalog";
 
 interface Props {
 	organizationId: string;
+	size: WidgetSizeClass;
 }
 
 // Lets an organizer jump straight to the QR scanner for any of their
 // published opportunities, instead of navigating to that opportunity's
 // engagement management page first.
-export default function QuickCheckInWidget({ organizationId }: Props) {
+export default function QuickCheckInWidget({ organizationId, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -74,8 +76,17 @@ export default function QuickCheckInWidget({ organizationId }: Props) {
 				</p>
 			)}
 			{opportunities !== null && !error && opportunities.length > 0 && (
-				<div className="space-y-3">
-					<div>
+				// Side by side once there's enough width for both to stay
+				// readable (this widget's own max column footprint keeps it
+				// from ever getting classified "full", only "compact" or
+				// "medium"); stacked at compact - #771 follow-up review
+				// feedback (adaptive layouts per size).
+				<div
+					className={
+						size !== "compact" ? "flex items-center gap-3" : "space-y-3"
+					}
+				>
+					<div className={size !== "compact" ? "min-w-0 flex-1" : undefined}>
 						<label htmlFor="quick-checkin-opportunity" className="sr-only">
 							{t("orgDashboard.quickCheckInSelectOpportunity")}
 						</label>
@@ -97,7 +108,7 @@ export default function QuickCheckInWidget({ organizationId }: Props) {
 						onClick={() => void startScanning()}
 						disabled={loadingEngagements}
 						data-testid="quick-checkin-scan-btn"
-						className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none disabled:opacity-50"
+						className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none disabled:opacity-50 ${size !== "compact" ? "shrink-0" : "w-full"}`}
 					>
 						{loadingEngagements
 							? t("orgDashboard.loading")
