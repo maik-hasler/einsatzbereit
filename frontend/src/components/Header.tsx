@@ -126,6 +126,7 @@ export default function Header({
 	) as string[];
 	const isAdmin = roles.includes("admin");
 	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
+	const [orgsLoading, setOrgsLoading] = useState(true);
 	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
@@ -150,9 +151,11 @@ export default function Header({
 	useEffect(() => {
 		if (!isLoggedIn) {
 			setOrgs([]);
+			setOrgsLoading(false);
 			return;
 		}
 		let cancelled = false;
+		setOrgsLoading(true);
 		api
 			.getOrganizations()
 			.then((data) => {
@@ -160,6 +163,9 @@ export default function Header({
 			})
 			.catch(() => {
 				if (!cancelled) setOrgs([]);
+			})
+			.finally(() => {
+				if (!cancelled) setOrgsLoading(false);
 			});
 		return () => {
 			cancelled = true;
@@ -204,6 +210,8 @@ export default function Header({
 								<OrganizationSwitcher
 									currentOrgId={orgSwitcher.currentOrgId}
 									currentTab={orgSwitcher.currentTab}
+									orgs={orgs}
+									loading={orgsLoading}
 								/>
 							</div>
 						)}
