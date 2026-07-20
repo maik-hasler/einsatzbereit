@@ -50,7 +50,7 @@ export default function SettingsWidget({ org }: Props) {
 					<p className="text-xs text-gray-500">
 						<Link
 							to={`/app/${org.id}/members`}
-							className="text-brand-700 hover:underline"
+							className="text-brand-700 underline"
 						>
 							{t("orgDashboard.settingsMemberCount", {
 								count: org.members.length,
