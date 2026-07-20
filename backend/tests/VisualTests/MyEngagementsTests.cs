@@ -36,8 +36,8 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// among them - only that seeding failing silently in CI produces the
 		// same symptom (no card links to either seed org) as it would if
 		// vera genuinely had zero engagements. Skip in both cases.
-		var seedOrgCard = Page.GetByText("Rotes Kreuz Musterstadt")
-			.Or(Page.GetByText("Tierschutzverein Musterstadt"));
+		var seedOrgCard = Page.GetByText("Fairview Red Cross")
+			.Or(Page.GetByText("Fairview Animal Welfare Association"));
 		if (await seedOrgCard.CountAsync() == 0)
 		{
 			return;
@@ -50,7 +50,7 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Both seed org names must appear somewhere on the page. .First avoids a
 		// Playwright strict-mode violation once Vera has more than one engagement
 		// with the same org (seed data grows release over release).
-		await Expect(Page.GetByText("Rotes Kreuz Musterstadt").First).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Tierschutzverein Musterstadt").First).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Fairview Red Cross").First).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Fairview Animal Welfare Association").First).ToBeVisibleAsync();
 	}
 }
