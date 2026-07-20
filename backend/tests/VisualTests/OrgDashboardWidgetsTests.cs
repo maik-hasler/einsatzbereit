@@ -6,9 +6,12 @@ namespace VisualTests;
 
 /// <summary>
 /// Visual tests for #762: the org dashboard tab was rebuilt from a bare
-/// calendar into a fixed widget grid (Calendar, Upcoming Opportunities,
-/// Settings, To-Do) so an organizer sees pending-application and
-/// signed-up-volunteer counts without navigating to another tab.
+/// calendar into a widget grid (Calendar, Upcoming Opportunities, Settings,
+/// To-Do) so an organizer sees pending-application and signed-up-volunteer
+/// counts without navigating to another tab. #771 review feedback made the
+/// grid customizable (add/remove/resize/reorder via the "Edit" quick action)
+/// and added a "Create Opportunity" widget to the default layout - see
+/// OrgDashboardCustomizeTests for coverage of the customization itself.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -70,8 +73,16 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// Regression guard: many existing Playwright flows across this suite
 		// (see AuthHelper.GoToOrgAppDashboardAsync callers) expect this button
-		// directly on the dashboard, not buried inside a widget.
-		await Expect(Page.GetByTestId("create-opportunity-btn")).ToBeVisibleAsync();
+		// on the dashboard - #771 review feedback moved it from a bare button
+		// above the grid into its own "Create Opportunity" widget tile (part
+		// of the default layout), but the testid/click target is unchanged.
+		var createOpportunityWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Create Opportunity" }),
+		});
+		await Expect(createOpportunityWidget).ToBeVisibleAsync();
+		await Expect(createOpportunityWidget.GetByTestId("create-opportunity-btn"))
+			.ToBeVisibleAsync();
 	}
 
 	[Test]

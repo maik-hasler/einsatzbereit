@@ -252,6 +252,44 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrganizationSettingsPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// The Edit/Save/Cancel buttons moved from inline page content into the
+		// header's quick actions (#771 follow-up) - the read-only scan above
+		// never opens the edit form itself, so scan it separately here.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// The customizable widget grid's edit-mode chrome (inert widget
+		// content, drag-handle/size-cycle/remove toolbar, "Add a widget"
+		// panel) only exists in the DOM while editing - the read-only scan
+		// above can't reach it.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Engagement management is nested in the org app (#751) - reachable

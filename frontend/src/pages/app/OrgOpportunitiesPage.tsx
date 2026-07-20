@@ -12,6 +12,8 @@ import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpp
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Spinner from "../../components/Spinner";
+import { PlusIcon } from "../../components/QuickActionIcons";
+import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 export default function OrgOpportunitiesPage() {
@@ -39,6 +41,16 @@ export default function OrgOpportunitiesPage() {
 	// can see where a draft landed (issue #708).
 	const [highlightedId, setHighlightedId] = useState<string | null>(null);
 	const highlightRef = useRef<HTMLLIElement | null>(null);
+
+	useQuickActions([
+		{
+			key: "create-opportunity",
+			label: t("orgOverview.createOpportunity"),
+			icon: <PlusIcon />,
+			onClick: () => setShowCreate(true),
+			variant: "primary",
+		},
+	]);
 
 	function load() {
 		setError(null);
@@ -253,17 +265,6 @@ export default function OrgOpportunitiesPage() {
 
 	return (
 		<div>
-			<div className="mb-6 flex justify-end">
-				<button
-					type="button"
-					onClick={() => setShowCreate(true)}
-					data-testid="create-opportunity-btn"
-					className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none sm:w-auto"
-				>
-					{t("orgOverview.createOpportunity")}
-				</button>
-			</div>
-
 			{items === null && !error && (
 				<div className="flex items-center justify-center py-16">
 					<Spinner label={t("orgOpportunities.loading")} />

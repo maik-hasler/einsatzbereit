@@ -5,6 +5,12 @@
       "tagline": "Volunteer spontaneously. Find your local cause.",
       "description": "Einsatzbereit connects committed volunteers with regional needs. Spontaneous, fast, and effective."
     },
+    "common": {
+      "edit": "Edit",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
     "nav": {
       "accountLabel": "Account",
       "userMenu": "User menu",
@@ -368,7 +374,21 @@
       "upcomingViewAll": "View all opportunities →",
       "settingsWidgetTitle": "Organization",
       "settingsMemberCount": "{{count}} members",
-      "settingsEditLink": "Edit settings →"
+      "settingsEditLink": "Edit settings →",
+      "createOpportunityWidgetTitle": "Create Opportunity",
+      "createOpportunityWidgetDesc": "Publish a new volunteer opportunity for your organization.",
+      "quickCheckInWidgetTitle": "Quick Check-in",
+      "quickCheckInNoOpportunities": "No published opportunities to check volunteers in for yet.",
+      "quickCheckInSelectOpportunity": "Opportunity to check volunteers in for",
+      "quickCheckInOpenScanner": "Scan QR code",
+      "settingsIconWidgetTitle": "Settings",
+      "dragToReorder": "Drag {{widget}} to reorder",
+      "changeWidgetSize": "Change {{widget}} size: {{size}}",
+      "widgetSizeSmall": "Small",
+      "widgetSizeMedium": "Medium",
+      "widgetSizeLarge": "Large",
+      "removeWidget": "Remove {{widget}} widget",
+      "addWidgetHeading": "Add a widget"
     },
     "orgSettings": {
       "title": "Edit Organisation",
@@ -391,8 +411,6 @@
       "fieldHouseNumber": "House number",
       "fieldZip": "ZIP",
       "fieldCity": "City",
-      "saving": "Saving…",
-      "save": "Save",
       "savedSuccess": "Changes saved.",
       "saveError": "Failed to save.",
       "loadError": "Could not load organization.",
@@ -407,8 +425,6 @@
       "leaveOrganizationLastMemberHint": "You're the only member - delete the organization instead if you want to close it.",
       "searching": "Searching…",
       "noSearchResults": "No users found.",
-      "edit": "Edit",
-      "cancel": "Cancel",
       "loading": "Loading…",
       "inviteLabel": "Invite member",
       "invitePlaceholder": "Search by username or email…",

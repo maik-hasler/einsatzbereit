@@ -2203,6 +2203,159 @@
         }
       }
     },
+    "/v1/organizations/{organizationId}/dashboard/layout": {
+      "put": {
+        "tags": [
+          "Organizations"
+        ],
+        "operationId": "SaveDashboardLayout",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveDashboardLayoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Organizations"
+        ],
+        "operationId": "GetDashboardLayout",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLayoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/organizations/{organizationId}/members/{userId}": {
       "delete": {
         "tags": [
@@ -4837,6 +4990,50 @@
           }
         }
       },
+      "DashboardLayoutResponse": {
+        "required": [
+          "widgets"
+        ],
+        "type": "object",
+        "properties": {
+          "widgets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardWidgetPlacementResponse"
+            }
+          }
+        }
+      },
+      "DashboardWidgetPlacementRequest": {
+        "required": [
+          "widgetKey",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "widgetKey": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardWidgetPlacementResponse": {
+        "required": [
+          "widgetKey",
+          "size"
+        ],
+        "type": "object",
+        "properties": {
+          "widgetKey": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          }
+        }
+      },
       "DomainEvent": {
         "type": "object"
       },
@@ -5968,6 +6165,20 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "SaveDashboardLayoutRequest": {
+        "required": [
+          "widgets"
+        ],
+        "type": "object",
+        "properties": {
+          "widgets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardWidgetPlacementRequest"
+            }
           }
         }
       },

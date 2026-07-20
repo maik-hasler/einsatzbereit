@@ -5,6 +5,12 @@
       "tagline": "Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.",
       "description": "Einsatzbereit bringt engagierte Helfer:innen mit regionalen Bedarfen zusammen. Spontan, schnell und wirksam."
     },
+    "common": {
+      "edit": "Bearbeiten",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "cancel": "Abbrechen"
+    },
     "nav": {
       "accountLabel": "Konto",
       "userMenu": "Benutzermenü",
@@ -368,7 +374,21 @@
       "upcomingViewAll": "Alle Einsätze anzeigen →",
       "settingsWidgetTitle": "Organisation",
       "settingsMemberCount": "{{count}} Mitglieder",
-      "settingsEditLink": "Einstellungen bearbeiten →"
+      "settingsEditLink": "Einstellungen bearbeiten →",
+      "createOpportunityWidgetTitle": "Einsatz erstellen",
+      "createOpportunityWidgetDesc": "Veröffentliche einen neuen Einsatz für deine Organisation.",
+      "quickCheckInWidgetTitle": "Schnell-Check-in",
+      "quickCheckInNoOpportunities": "Noch keine veröffentlichten Einsätze zum Einchecken von Freiwilligen.",
+      "quickCheckInSelectOpportunity": "Einsatz, für den Freiwillige eingecheckt werden sollen",
+      "quickCheckInOpenScanner": "QR-Code scannen",
+      "settingsIconWidgetTitle": "Einstellungen",
+      "dragToReorder": "\"{{widget}}\" zum Umsortieren ziehen",
+      "changeWidgetSize": "Größe von \"{{widget}}\" ändern: {{size}}",
+      "widgetSizeSmall": "Klein",
+      "widgetSizeMedium": "Mittel",
+      "widgetSizeLarge": "Groß",
+      "removeWidget": "Widget \"{{widget}}\" entfernen",
+      "addWidgetHeading": "Widget hinzufügen"
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",
@@ -391,8 +411,6 @@
       "fieldHouseNumber": "Hausnummer",
       "fieldZip": "PLZ",
       "fieldCity": "Stadt",
-      "saving": "Wird gespeichert…",
-      "save": "Speichern",
       "savedSuccess": "Änderungen gespeichert.",
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Organisation konnte nicht geladen werden.",
@@ -407,8 +425,6 @@
       "leaveOrganizationLastMemberHint": "Du bist das einzige Mitglied - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
       "searching": "Suche läuft…",
       "noSearchResults": "Keine Benutzer gefunden.",
-      "edit": "Bearbeiten",
-      "cancel": "Abbrechen",
       "loading": "Wird geladen…",
       "inviteLabel": "Mitglied einladen",
       "invitePlaceholder": "Nach Benutzername oder E-Mail suchen…",
