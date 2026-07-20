@@ -53,8 +53,19 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// organizations list used to call GET /v1/organizations, which is
 		// scoped to "organizations the caller organizes" - always empty for
 		// admin, who organizes nothing. It now calls a real admin-wide listing
-		// endpoint, so a pre-existing organization (created here by olaf, who
-		// has nothing to do with the admin account) must show up in it.
+		// endpoint (created here by olaf, who has nothing to do with the admin
+		// account, to prove the data isn't scoped to the caller).
+		//
+		// This used to also assert the created organization was visible in the
+		// browser by paging through "Load more" until it turned up - flaky by
+		// design: organizations are listed alphabetically and dozens of other
+		// VisualTests classes constantly create their own in this same shared
+		// session, so the target's page position is a moving target with no
+		// fixed bound (a fresh CheckIn/Engagement/Milestone-prefixed org can
+		// always sort earlier and push it further out). Asserting against the
+		// raw admin-wide endpoint directly - which is what actually regressed -
+		// is what this needs, not a UI scavenger hunt through a live, growing,
+		// alphabetically-shifting dataset.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var backendOrigin = Fixture.GetEndpoint("backend");
@@ -81,21 +92,41 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// Frontend-wiring sanity check: the page actually rendered organization
+		// rows rather than the error or empty state (which is what the historical
+		// bug looked like - the request "succeeded" with an always-empty result).
 		await Expect(Page.GetByText("Failed to load organizations.")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByText("No organizations found.")).Not.ToBeVisibleAsync();
+		await Expect(Page.Locator("table").First).ToBeVisibleAsync();
 
-		// Organizations are listed alphabetically and other tests in this shared
-		// session constantly create their own - this one could land on any page,
-		// not just the first. Page through via "Load more" until it turns up.
-		var orgLocator = Page.GetByText(orgName);
-		var loadMoreButton = Page.GetByRole(AriaRole.Button, new() { Name = "Load more" });
-		for (var i = 0; i < 20 && await orgLocator.CountAsync() == 0; i++)
+		// The actual regression check: call the admin-wide endpoint directly as
+		// admin and confirm it returns the organization olaf just created (which
+		// admin does not organize) - deterministic regardless of how many other
+		// organizations exist or what order this test runs in.
+		using var adminHttp = new HttpClient { BaseAddress = backendOrigin };
+		adminHttp.DefaultRequestHeaders.Add(
+			"Authorization", $"Bearer {await GetTokenAsync(keycloak, "admin", "admin123")}");
+
+		var found = false;
+		for (var page = 1; !found; page++)
 		{
-			if (await loadMoreButton.CountAsync() == 0)
+			var listResponse = await adminHttp.GetAsync($"/v1/admin/organizations?pageNumber={page}&pageSize=100");
+			listResponse.EnsureSuccessStatusCode();
+			var listBody = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+			var names = listBody.GetProperty("items")
+				.EnumerateArray()
+				.Select(o => o.GetProperty("name").GetString());
+			if (names.Contains(orgName))
+				found = true;
+			else if (page >= listBody.GetProperty("pageCount").GetInt32())
 				break;
-			await loadMoreButton.ClickAsync();
-			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		}
-		await Expect(orgLocator).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		if (!found)
+			throw new Exception(
+				$"'{orgName}' (created via olaf's token) was not returned by GET /v1/admin/organizations "
+				+ "for the admin account across all pages - the endpoint is still scoped to the caller.");
 
 		if (authErrors.Count > 0)
 			throw new Exception(
