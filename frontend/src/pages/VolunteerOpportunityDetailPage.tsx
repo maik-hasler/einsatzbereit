@@ -242,7 +242,7 @@ export default function VolunteerOpportunityDetailPage() {
 			<h1 className="mb-1 text-2xl font-bold text-gray-900 sm:text-3xl">
 				{opportunity.title}
 			</h1>
-			<p className="mb-3 text-xs text-gray-400">
+			<p className="mb-3 text-xs text-gray-600">
 				{formatPostedAgo(opportunity.createdOn as unknown as string, t)}
 			</p>
 
@@ -387,7 +387,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{opportunity.participationType === "Waitlist" &&
 				opportunity.timeSlots.length > 0 && (
 					<div className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
 							{t("opportunities.availableTimeSlots")}
 						</h2>
 						<ul className="space-y-2">
@@ -407,7 +407,7 @@ export default function VolunteerOpportunityDetailPage() {
 											i18n.language,
 										)}
 									</span>
-									<span className="ml-3 shrink-0 text-xs text-gray-400">
+									<span className="ml-3 shrink-0 text-xs text-gray-600">
 										{t("opportunities.maxParticipants", {
 											count: ts.maxParticipants,
 										})}
@@ -504,7 +504,7 @@ export default function VolunteerOpportunityDetailPage() {
 					orgProfile.website ||
 					orgProfile.address) && (
 					<div className="mb-6" data-testid="about-organization">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
 							{t("opportunities.aboutOrganization")}
 						</h2>
 						{orgProfile.description && (
@@ -627,7 +627,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{/* More from this organization */}
 			{otherOrgOpportunities.length > 0 && (
 				<div className="mb-6" data-testid="more-from-organization">
-					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
 						{t("opportunities.moreFromOrganization")}
 					</h2>
 					<ul className="space-y-3">
