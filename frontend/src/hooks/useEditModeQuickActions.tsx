@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuickActions } from "../contexts/QuickActionsContext";
+import {
+	useQuickActions,
+	type QuickAction,
+} from "../contexts/QuickActionsContext";
 import { CancelIcon, EditIcon, SaveIcon } from "../components/QuickActionIcons";
 
 interface Options {
@@ -9,6 +12,10 @@ interface Options {
 	onEdit: () => void;
 	onSave: () => void;
 	onCancel: () => void;
+	// Extra actions shown only while editing, before Cancel/Save (e.g.
+	// OrgDashboardPage's "Add Widget") - must itself be referentially stable
+	// (useMemo) for the same reason `actions` below is, see useQuickActions.
+	extraEditingActions?: QuickAction[];
 }
 
 // Shared Edit/Save/Cancel quick-action trio for pages with a page-level edit
@@ -20,6 +27,7 @@ export function useEditModeQuickActions({
 	onEdit,
 	onSave,
 	onCancel,
+	extraEditingActions,
 }: Options) {
 	const { t } = useTranslation();
 
@@ -65,6 +73,7 @@ export function useEditModeQuickActions({
 		() =>
 			editing
 				? [
+						...(extraEditingActions ?? []),
 						{
 							key: "cancel",
 							label: t("common.cancel"),
@@ -89,7 +98,7 @@ export function useEditModeQuickActions({
 							onClick: () => onEditRef.current(),
 						},
 					],
-		[editing, saving, t],
+		[editing, saving, t, extraEditingActions],
 	);
 
 	useQuickActions(actions);

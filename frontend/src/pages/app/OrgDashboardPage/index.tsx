@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -24,6 +24,7 @@ import { useEditModeQuickActions } from "../../../hooks/useEditModeQuickActions"
 import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import { PlusIcon, CancelIcon } from "../../../components/QuickActionIcons";
+import AddWidgetModal from "./AddWidgetModal";
 import CalendarWidget from "./CalendarWidget";
 import UpcomingOpportunitiesWidget from "./UpcomingOpportunitiesWidget";
 import ToDoWidget from "./ToDoWidget";
@@ -98,9 +99,22 @@ function EditableWidgetTile({
 			ref={setNodeRef}
 			style={style}
 			data-testid={`widget-tile-${placement.widgetKey}`}
-			className={`relative ${widgetColSpanClass(placement.size)} ${editing && isDragging ? "z-10 opacity-50" : ""}`}
+			// The grip button below keeps its own {...attributes} {...listeners}
+			// as the accessible, keyboard-operable drag handle (dnd-kit's
+			// KeyboardSensor needs a focusable element with those attributes,
+			// and a whole free-shaped card exposed as one giant nested-interactive
+			// control would trip the "no interactive control inside another"
+			// a11y rule against the toolbar's own buttons). This onPointerDown
+			// additionally lets mouse/touch users grab the card ANYWHERE, not
+			// just the small grip icon (#771 review feedback) - PointerSensor's
+			// activationConstraint below keeps this from swallowing plain clicks
+			// on the resize/remove buttons, which live inside the same element.
+			onPointerDown={(event) => {
+				if (editing) listeners?.onPointerDown?.(event);
+			}}
+			className={`relative h-full ${widgetColSpanClass(placement.size)} ${editing && isDragging ? "z-10 cursor-grabbing opacity-50" : ""}`}
 		>
-			<div inert={editing} className={editing ? "opacity-75" : undefined}>
+			<div inert={editing} className={`h-full ${editing ? "opacity-75" : ""}`}>
 				{children}
 			</div>
 			{editing && (
@@ -168,6 +182,7 @@ export default function OrgDashboardPage() {
 		null,
 	);
 	const [saving, setSaving] = useState(false);
+	const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
 
 	useEffect(() => {
 		api
@@ -183,6 +198,9 @@ export default function OrgDashboardPage() {
 	}, [organizationId]);
 
 	const layout = editing ? (draftLayout ?? []) : savedLayout;
+	const availableToAdd = WIDGET_KEYS.filter(
+		(key) => !layout.some((w) => w.widgetKey === key),
+	);
 
 	function handleOpportunityCreated(createdDraftId?: string) {
 		// Drafts live on the Opportunities tab now. When one is saved from here,
@@ -222,6 +240,25 @@ export default function OrgDashboardPage() {
 		setDraftLayout(null);
 	}
 
+	// Memoized on just the primitive/visual deps (see useQuickActions) - the
+	// "Add Widget" action only needs to change when there's actually nothing
+	// left to add, not on every render.
+	const hasWidgetsToAdd = availableToAdd.length > 0;
+	const extraEditingActions = useMemo(
+		() =>
+			hasWidgetsToAdd
+				? [
+						{
+							key: "add-widget",
+							label: t("orgDashboard.addWidgetHeading"),
+							icon: <PlusIcon />,
+							onClick: () => setShowAddWidgetModal(true),
+						},
+					]
+				: [],
+		[hasWidgetsToAdd, t],
+	);
+
 	useEditModeQuickActions({
 		editing,
 		saving,
@@ -231,6 +268,7 @@ export default function OrgDashboardPage() {
 		},
 		onSave: () => void handleSave(),
 		onCancel: handleCancel,
+		extraEditingActions,
 	});
 
 	function handleRemoveWidget(key: WidgetKey) {
@@ -256,7 +294,12 @@ export default function OrgDashboardPage() {
 	}
 
 	const sensors = useSensors(
-		useSensor(PointerSensor),
+		// A movement threshold before a drag activates, now that the whole
+		// tile (not just the grip button) carries a pointerdown listener -
+		// without it, a plain click on the resize/remove buttons (which live
+		// inside that same tile) would be swallowed as a zero-distance drag
+		// instead of firing their own onClick.
+		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
 		useSensor(KeyboardSensor, {
 			coordinateGetter: sortableKeyboardCoordinates,
 		}),
@@ -308,12 +351,12 @@ export default function OrgDashboardPage() {
 		}
 	}
 
-	const availableToAdd = WIDGET_KEYS.filter(
-		(key) => !layout.some((w) => w.widgetKey === key),
-	);
-
+	// grid-flow-row-dense backfills gaps left by mixed widget sizes (e.g. a
+	// Small next to two Mediums doesn't evenly divide the 4 columns) with a
+	// later widget that DOES fit, instead of leaving ragged empty cells -
+	// #771 review feedback ("sizes... dont fully align with the layout").
 	const grid = (
-		<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+		<div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:grid-flow-row-dense">
 			{layout.map((placement) => (
 				<EditableWidgetTile
 					key={placement.widgetKey}
@@ -325,46 +368,37 @@ export default function OrgDashboardPage() {
 					{renderWidget(placement.widgetKey)}
 				</EditableWidgetTile>
 			))}
-			{editing && availableToAdd.length > 0 && (
-				<div className="rounded-2xl border-2 border-dashed border-gray-300 p-5 lg:col-span-4">
-					<p className="mb-3 text-sm font-medium text-gray-700">
-						{t("orgDashboard.addWidgetHeading")}
-					</p>
-					<div className="flex flex-wrap gap-2">
-						{availableToAdd.map((key) => (
-							<button
-								key={key}
-								type="button"
-								onClick={() => handleAddWidget(key)}
-								className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-							>
-								<PlusIcon />
-								{t(WIDGET_CATALOG[key].titleKey)}
-							</button>
-						))}
-					</div>
-				</div>
-			)}
 		</div>
 	);
 
-	// Always render inside DndContext/SortableContext, even when not editing -
-	// EditableWidgetTile's read-only path never attaches drag listeners, so
-	// this is inert overhead outside edit mode, not a behavior change. Kept
-	// unconditional so useSortable (called unconditionally by every tile,
-	// per rules-of-hooks) always has the ancestor context it expects.
 	return (
-		<DndContext
-			sensors={sensors}
-			collisionDetection={closestCenter}
-			onDragEnd={handleDragEnd}
-		>
-			<SortableContext
-				items={layout.map((w) => w.widgetKey)}
-				strategy={rectSortingStrategy}
+		<>
+			{/* Always render inside DndContext/SortableContext, even when not
+			editing - EditableWidgetTile's read-only path never attaches drag
+			listeners, so this is inert overhead outside edit mode, not a
+			behavior change. Kept unconditional so useSortable (called
+			unconditionally by every tile, per rules-of-hooks) always has the
+			ancestor context it expects. */}
+			<DndContext
+				sensors={sensors}
+				collisionDetection={closestCenter}
+				onDragEnd={handleDragEnd}
 			>
-				{grid}
-			</SortableContext>
-		</DndContext>
+				<SortableContext
+					items={layout.map((w) => w.widgetKey)}
+					strategy={rectSortingStrategy}
+				>
+					{grid}
+				</SortableContext>
+			</DndContext>
+
+			{showAddWidgetModal && (
+				<AddWidgetModal
+					availableKeys={availableToAdd}
+					onAdd={handleAddWidget}
+					onClose={() => setShowAddWidgetModal(false)}
+				/>
+			)}
+		</>
 	);
 }

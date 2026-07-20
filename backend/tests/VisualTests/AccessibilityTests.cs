@@ -275,15 +275,34 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrgDashboardPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// The customizable widget grid's edit-mode chrome (inert widget
-		// content, drag-handle/size-cycle/remove toolbar, "Add a widget"
-		// panel) only exists in the DOM while editing - the read-only scan
-		// above can't reach it.
+		// content, drag-handle/size-cycle/remove toolbar) only exists in the
+		// DOM while editing - the read-only scan above can't reach it. The
+		// "Add Widget" modal is its own DOM-only-while-open surface, scanned
+		// separately below.
 		var frontend = Fixture.GetEndpoint("frontend");
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_AddWidgetModal_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// The "Add Widget" picker (#771 follow-up review feedback) only
+		// exists in the DOM while open - the edit-mode scan above never
+		// opens it.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

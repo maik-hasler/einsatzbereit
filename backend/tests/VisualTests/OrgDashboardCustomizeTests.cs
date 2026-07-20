@@ -78,10 +78,55 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 			.Should().Be(0, "the removed widget should stay removed after a reload - "
 				+ "the layout was persisted via PUT .../dashboard/layout, not just held in local state");
 
-		// The removed widget is offered back in the "Add a widget" panel.
+		// The removed widget is offered back via the "Add Widget" quick action's
+		// modal (#771 follow-up review feedback moved this from an always-visible
+		// inline panel into a picker with a preview per widget).
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create Opportunity" }))
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("add-widget-option-CreateOpportunity"))
 			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task AddWidgetModal_AddingAWidget_AppearsInGridAndPersistsAcrossReload()
+	{
+		// #771 follow-up review feedback: "Add a widget" moved from an
+		// always-visible inline panel to a quick action that opens a modal
+		// picker (with a small preview per widget) - this covers the actual
+		// add flow through that modal end to end.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashAdd");
+
+		// QuickCheckIn isn't part of the default layout (see DEFAULT_LAYOUT in
+		// widgetCatalog.ts), so a fresh org never has it yet.
+		(await Page.GetByTestId("widget-tile-QuickCheckIn").CountAsync()).Should().Be(0);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByTestId("add-widget-option-QuickCheckIn").ClickAsync();
+
+		// Picking a widget doesn't close the picker - an organizer can add
+		// several in one session - so close it explicitly.
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToBeVisibleAsync();
 	}
 
 	[Test]
