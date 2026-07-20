@@ -236,6 +236,68 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task KeyboardDragReorder_SwapsWidgetWithLeftNeighbor_AndPersistsAcrossReload()
+	{
+		// Covers the keyboard-accessible reorder path end to end: the hidden
+		// grip button (see EditableWidgetTile) is a real focusable element
+		// carrying dnd-kit's KeyboardSensor listeners, but nothing previously
+		// drove an actual reorder through it - so a handleDragOver/arrayMove
+		// regression could ship undetected.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashKeyboardReorder");
+
+		// The default layout's packer places CreateOpportunity and ToDo side
+		// by side in the first row (see packWidgets in widgetCatalog.ts) - a
+		// keyboard drag of ToDo one step left should swap the two.
+		(await GetWidgetOrderAsync()).Should().Equal(
+		[
+			"widget-tile-CreateOpportunity",
+			"widget-tile-ToDo",
+			"widget-tile-UpcomingOpportunities",
+			"widget-tile-Calendar",
+			"widget-tile-Settings",
+		]);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		var todoGrip = Page.GetByRole(AriaRole.Button, new() { Name = "Drag Needs Your Attention to reorder" });
+		await todoGrip.FocusAsync();
+		await Page.Keyboard.PressAsync("Space");
+		await Page.Keyboard.PressAsync("ArrowLeft");
+
+		// handleDragOver reorders live as the dragged tile crosses another one
+		// - wait for that to land before dropping, rather than assuming a
+		// fixed delay.
+		await Expect(Page.Locator("[data-testid^='widget-tile-']").First)
+			.ToHaveAttributeAsync("data-testid", "widget-tile-ToDo", new() { Timeout = 10_000 });
+
+		await Page.Keyboard.PressAsync("Space");
+
+		var afterDrag = await GetWidgetOrderAsync();
+		afterDrag.Should().Equal(
+		[
+			"widget-tile-ToDo",
+			"widget-tile-CreateOpportunity",
+			"widget-tile-UpcomingOpportunities",
+			"widget-tile-Calendar",
+			"widget-tile-Settings",
+		]);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		(await GetWidgetOrderAsync()).Should().Equal(afterDrag,
+			"the keyboard-reordered layout must persist across reload, not just live in local drag state");
+	}
+
+	[Test]
 	public async Task RemovingAllWidgets_AndSaving_ShowsEmptyState_NotDefaultLayoutAfterReload()
 	{
 		// Regression guard for the #771 follow-up review feedback bug: an
@@ -288,6 +350,15 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 			.GetByRole(AriaRole.Button, new() { Name = "Add a widget" })
 			.ClickAsync();
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+	}
+
+	private async Task<List<string>> GetWidgetOrderAsync()
+	{
+		var tiles = await Page.Locator("[data-testid^='widget-tile-']").AllAsync();
+		var testIds = new List<string>();
+		foreach (var tile in tiles)
+			testIds.Add(await tile.GetAttributeAsync("data-testid") ?? "");
+		return testIds;
 	}
 
 	private async Task CreateOrganizationAsync(string namePrefix)

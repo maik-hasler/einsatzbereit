@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../../hooks/useApiClient";
@@ -16,7 +16,7 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-export default function ToDoWidget({ organizationId, size }: Props) {
+function ToDoWidget({ organizationId, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -83,3 +83,5 @@ export default function ToDoWidget({ organizationId, size }: Props) {
 		</WidgetCard>
 	);
 }
+
+export default memo(ToDoWidget);

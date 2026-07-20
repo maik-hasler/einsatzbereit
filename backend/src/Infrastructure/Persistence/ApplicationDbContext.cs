@@ -114,6 +114,13 @@ internal sealed class ApplicationDbContext(
 			.Where(m => m.OrganizationId == organizationId)
 			.ExecuteDeleteAsync(cancellationToken);
 
+	public async Task RemoveDashboardLayoutsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationDashboardLayout>()
+			.Where(l => l.OrganizationId == organizationId)
+			.ExecuteDeleteAsync(cancellationToken);
+
 	public async Task<List<Organization>> GetOrganizerOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default) =>

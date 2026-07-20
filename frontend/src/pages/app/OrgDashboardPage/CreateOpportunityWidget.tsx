@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
@@ -14,11 +14,7 @@ interface Props {
 // Replaces the dashboard's former standalone "+ Create Opportunity" button
 // (see PR #771 review feedback) - the same action, now a widget an organizer
 // can place/remove like any other, auto-sized to whatever room it gets.
-export default function CreateOpportunityWidget({
-	organizationId,
-	onCreated,
-	size,
-}: Props) {
+function CreateOpportunityWidget({ organizationId, onCreated, size }: Props) {
 	const { t } = useTranslation();
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const compact = size === "compact";
@@ -56,3 +52,5 @@ export default function CreateOpportunityWidget({
 		</WidgetCard>
 	);
 }
+
+export default memo(CreateOpportunityWidget);

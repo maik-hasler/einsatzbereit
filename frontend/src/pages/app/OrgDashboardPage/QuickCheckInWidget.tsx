@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -10,24 +10,33 @@ import { getApiErrorMessage } from "../../../lib/apiError";
 import QRScannerModal from "../../../components/QRScannerModal";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 interface Props {
 	organizationId: string;
+	refreshKey: number;
 	size: WidgetSizeClass;
 }
 
 // Lets an organizer jump straight to the QR scanner for any of their
 // published opportunities, instead of navigating to that opportunity's
 // engagement management page first.
-export default function QuickCheckInWidget({ organizationId, size }: Props) {
+function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
-	const [opportunities, setOpportunities] = useState<
-		VolunteerOpportunitySummary[] | null
-	>(null);
-	const [error, setError] = useState<string | null>(null);
+	// Shared with UpcomingOpportunitiesWidget, which fetches the same
+	// organization-wide opportunities - see useSharedOrgFetch.
+	const [allOpportunities, , error] = useSharedOrgFetch<
+		VolunteerOpportunitySummary[]
+	>(`opportunities:${organizationId}:${refreshKey}`, () =>
+		api.getOrganizationOpportunities(organizationId),
+	);
+	const opportunities = useMemo(
+		() => allOpportunities?.filter((o) => o.status === "Published") ?? null,
+		[allOpportunities],
+	);
 	const [selectedId, setSelectedId] = useState("");
 	const [engagements, setEngagements] = useState<EngagementSummary[] | null>(
 		null,
@@ -35,18 +44,9 @@ export default function QuickCheckInWidget({ organizationId, size }: Props) {
 	const [loadingEngagements, setLoadingEngagements] = useState(false);
 
 	useEffect(() => {
-		api
-			.getOrganizationOpportunities(organizationId)
-			.then((items) => {
-				const published = items.filter((o) => o.status === "Published");
-				setOpportunities(published);
-				setSelectedId((current) => current || (published[0]?.id ?? ""));
-			})
-			.catch((e: unknown) =>
-				setError(e instanceof Error ? e.message : String(e)),
-			);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
+		if (opportunities === null) return;
+		setSelectedId((current) => current || (opportunities[0]?.id ?? ""));
+	}, [opportunities]);
 
 	async function startScanning() {
 		if (!selectedId) return;
@@ -129,3 +129,5 @@ export default function QuickCheckInWidget({ organizationId, size }: Props) {
 		</WidgetCard>
 	);
 }
+
+export default memo(QuickCheckInWidget);

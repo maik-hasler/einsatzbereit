@@ -44,7 +44,7 @@ internal sealed class SaveDashboardLayoutEndpoint
 		var command = new SaveDashboardLayoutCommand(
 			organizationId,
 			userId,
-			request.Widgets
+			(request.Widgets ?? [])
 				.Select(w => new DashboardWidgetPlacementInput(w.WidgetKey))
 				.ToList());
 

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../../../client/api-client";
@@ -9,7 +10,7 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-export default function SettingsWidget({ org, size }: Props) {
+function SettingsWidget({ org, size }: Props) {
 	const { t, i18n } = useTranslation();
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 	const compact = size === "compact";
@@ -89,3 +90,5 @@ export default function SettingsWidget({ org, size }: Props) {
 		</WidgetCard>
 	);
 }
+
+export default memo(SettingsWidget);

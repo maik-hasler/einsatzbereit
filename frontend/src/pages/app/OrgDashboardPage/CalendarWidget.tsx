@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -8,8 +8,10 @@ import { enUS, de } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
+import Modal from "../../../components/Modal";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -67,17 +69,18 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-export default function CalendarWidget({
-	organizationId,
-	refreshKey,
-	size,
-}: Props) {
+function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
-	const [calData, setCalData] = useState<OrganizationCalendarEventDto[]>([]);
-	const [calLoading, setCalLoading] = useState(true);
-	const [calError, setCalError] = useState<string | null>(null);
+	// Shared with UpcomingOpportunitiesWidget, which fetches the same
+	// organization-wide calendar events - see useSharedOrgFetch.
+	const [calData, setCalData, calError] = useSharedOrgFetch<
+		OrganizationCalendarEventDto[]
+	>(`calendarEvents:${organizationId}:${refreshKey}`, () =>
+		api.getOrganizationCalendarEvents(organizationId),
+	);
+	const calLoading = calData === null && !calError;
 	// Lazy initializer - only the INITIAL view depends on size; once mounted,
 	// the organizer's own view-button clicks take over and this doesn't
 	// re-run just because a drag elsewhere changed this widget's span.
@@ -88,33 +91,7 @@ export default function CalendarWidget({
 	const [savingColor, setSavingColor] = useState(false);
 	const [colorSaveError, setColorSaveError] = useState<string | null>(null);
 
-	useEffect(() => {
-		if (!selectedEvent) return;
-		const handleKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") setSelectedEvent(null);
-		};
-		document.addEventListener("keydown", handleKey);
-		return () => document.removeEventListener("keydown", handleKey);
-	}, [selectedEvent]);
-
-	function loadCalendarEvents() {
-		setCalLoading(true);
-		setCalError(null);
-		api
-			.getOrganizationCalendarEvents(organizationId)
-			.then(setCalData)
-			.catch((e: unknown) =>
-				setCalError(e instanceof Error ? e.message : String(e)),
-			)
-			.finally(() => setCalLoading(false));
-	}
-
-	useEffect(() => {
-		loadCalendarEvents();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId, refreshKey]);
-
-	const calEvents: CalEvent[] = calData.flatMap((opp) =>
+	const calEvents: CalEvent[] = (calData ?? []).flatMap((opp) =>
 		opp.timeSlots.map((slot) => ({
 			id: slot.timeSlotId,
 			title: opp.title,
@@ -142,7 +119,7 @@ export default function CalendarWidget({
 				color: pickerColor || undefined,
 			});
 			setCalData((prev) =>
-				prev.map((opp) =>
+				(prev ?? []).map((opp) =>
 					opp.opportunityId === selectedEvent.opportunityId
 						? { ...opp, color: pickerColor || undefined }
 						: opp,
@@ -213,97 +190,90 @@ export default function CalendarWidget({
 			)}
 
 			{selectedEvent && (
-				<div className="fixed inset-0 z-[2000] flex items-center justify-center">
-					<button
-						type="button"
-						aria-hidden="true"
-						tabIndex={-1}
-						className="absolute inset-0 bg-black/50"
-						onClick={() => setSelectedEvent(null)}
-					/>
-					<div
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="color-dialog-title"
-						className="relative z-10 w-80 rounded-xl bg-white p-6 shadow-xl"
+				<Modal
+					onClose={() => setSelectedEvent(null)}
+					labelledBy="color-dialog-title"
+					maxWidth="max-w-xs"
+					className="rounded-xl bg-white p-6 shadow-xl"
+				>
+					<h3
+						id="color-dialog-title"
+						className="mb-4 text-lg font-semibold text-gray-900"
 					>
-						<h3
-							id="color-dialog-title"
-							className="mb-4 text-lg font-semibold text-gray-900"
-						>
-							{selectedEvent.title}
-						</h3>
-						<div className="space-y-4">
-							{selectedEvent.maxParticipants > 0 && (
-								<p className="text-sm text-gray-600">
-									{t("orgOverview.eventFillState", {
-										booked: selectedEvent.bookedCount,
-										max: selectedEvent.maxParticipants,
-									})}
-								</p>
-							)}
-							<div>
-								<label
-									htmlFor="event-color-picker"
-									className="block text-sm font-medium text-gray-700"
-								>
-									{t("orgOverview.eventColorLabel")}
-								</label>
-								<div className="mt-1 flex items-center gap-3">
-									<input
-										id="event-color-picker"
-										type="color"
-										value={pickerColor}
-										onChange={(e) => setPickerColor(e.target.value)}
-										className="h-9 w-16 cursor-pointer rounded border border-gray-300"
-									/>
-									<span className="text-sm text-gray-500">{pickerColor}</span>
-								</div>
+						{selectedEvent.title}
+					</h3>
+					<div className="space-y-4">
+						{selectedEvent.maxParticipants > 0 && (
+							<p className="text-sm text-gray-600">
+								{t("orgOverview.eventFillState", {
+									booked: selectedEvent.bookedCount,
+									max: selectedEvent.maxParticipants,
+								})}
+							</p>
+						)}
+						<div>
+							<label
+								htmlFor="event-color-picker"
+								className="block text-sm font-medium text-gray-700"
+							>
+								{t("orgOverview.eventColorLabel")}
+							</label>
+							<div className="mt-1 flex items-center gap-3">
+								<input
+									id="event-color-picker"
+									type="color"
+									value={pickerColor}
+									onChange={(e) => setPickerColor(e.target.value)}
+									className="h-9 w-16 cursor-pointer rounded border border-gray-300"
+								/>
+								<span className="text-sm text-gray-500">{pickerColor}</span>
 							</div>
-							{colorSaveError && (
-								<p className="text-sm text-red-600">{colorSaveError}</p>
-							)}
-							<div className="flex flex-col gap-2">
-								<div className="flex gap-4">
-									<Link
-										to={`/volunteer-opportunities/${selectedEvent.opportunityId}`}
-										className="text-sm text-brand-700 hover:underline"
-										onClick={() => setSelectedEvent(null)}
-									>
-										{t("orgOverview.eventNavigate")}
-									</Link>
-									<Link
-										to={`/app/${organizationId}/opportunities/${selectedEvent.opportunityId}/engagements`}
-										className="text-sm text-brand-700 hover:underline"
-										onClick={() => setSelectedEvent(null)}
-									>
-										{t("orgOverview.eventManageApplications")}
-									</Link>
-								</div>
-								<div className="flex justify-end gap-2">
-									<button
-										type="button"
-										onClick={() => setSelectedEvent(null)}
-										className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-									>
-										{t("createOpportunity.cancel")}
-									</button>
-									<button
-										type="button"
-										disabled={savingColor}
-										onClick={handleColorSave}
-										className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
-									>
-										{savingColor
-											? t("orgOverview.eventColorSaving")
-											: t("orgOverview.eventColorSave")}
-									</button>
-								</div>
+						</div>
+						{colorSaveError && (
+							<p className="text-sm text-red-600">{colorSaveError}</p>
+						)}
+						<div className="flex flex-col gap-2">
+							<div className="flex gap-4">
+								<Link
+									to={`/volunteer-opportunities/${selectedEvent.opportunityId}`}
+									className="text-sm text-brand-700 hover:underline"
+									onClick={() => setSelectedEvent(null)}
+								>
+									{t("orgOverview.eventNavigate")}
+								</Link>
+								<Link
+									to={`/app/${organizationId}/opportunities/${selectedEvent.opportunityId}/engagements`}
+									className="text-sm text-brand-700 hover:underline"
+									onClick={() => setSelectedEvent(null)}
+								>
+									{t("orgOverview.eventManageApplications")}
+								</Link>
+							</div>
+							<div className="flex justify-end gap-2">
+								<button
+									type="button"
+									onClick={() => setSelectedEvent(null)}
+									className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+								>
+									{t("createOpportunity.cancel")}
+								</button>
+								<button
+									type="button"
+									disabled={savingColor}
+									onClick={handleColorSave}
+									className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+								>
+									{savingColor
+										? t("orgOverview.eventColorSaving")
+										: t("orgOverview.eventColorSave")}
+								</button>
 							</div>
 						</div>
 					</div>
-				</div>
+				</Modal>
 			)}
 		</WidgetCard>
 	);
 }
+
+export default memo(CalendarWidget);

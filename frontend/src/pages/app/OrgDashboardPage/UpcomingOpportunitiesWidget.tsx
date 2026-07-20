@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { memo, useMemo } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { OrganizationCalendarEventDto } from "../../../client/api-client";
+import type {
+	OrganizationCalendarEventDto,
+	VolunteerOpportunitySummary,
+} from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import WidgetCard from "./WidgetCard";
+import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 const MAX_ITEMS = 5;
@@ -23,7 +27,7 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
-export default function UpcomingOpportunitiesWidget({
+function UpcomingOpportunitiesWidget({
 	organizationId,
 	refreshKey,
 	size,
@@ -32,52 +36,52 @@ export default function UpcomingOpportunitiesWidget({
 	const api = useApiClient();
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
-	const [items, setItems] = useState<UpcomingItem[] | null>(null);
-	const [error, setError] = useState<string | null>(null);
+	// Both fetches are shared with sibling widgets that need the same
+	// organization-wide data on the same mount - opportunities with
+	// QuickCheckInWidget, calendar events with CalendarWidget - see
+	// useSharedOrgFetch.
+	const [opportunities, , opportunitiesError] = useSharedOrgFetch<
+		VolunteerOpportunitySummary[]
+	>(`opportunities:${organizationId}:${refreshKey}`, () =>
+		api.getOrganizationOpportunities(organizationId),
+	);
+	const [calendarEvents, , calendarEventsError] = useSharedOrgFetch<
+		OrganizationCalendarEventDto[]
+	>(`calendarEvents:${organizationId}:${refreshKey}`, () =>
+		api.getOrganizationCalendarEvents(organizationId),
+	);
+	const error = opportunitiesError ?? calendarEventsError;
 
-	useEffect(() => {
-		setItems(null);
-		setError(null);
-		Promise.all([
-			api.getOrganizationOpportunities(organizationId),
-			api.getOrganizationCalendarEvents(organizationId),
-		])
-			.then(([opportunities, calendarEvents]) => {
-				const now = new Date();
-				const eventsByOpportunity = new Map<
-					string,
-					OrganizationCalendarEventDto
-				>(calendarEvents.map((e) => [e.opportunityId, e]));
-				const upcoming = opportunities
-					.filter((o) => o.status === "Published")
-					.map((o): UpcomingItem => {
-						const futureSlots = (eventsByOpportunity.get(o.id)?.timeSlots ?? [])
-							.map((s) => new Date(s.startDateTime))
-							.filter((d) => d >= now)
-							.sort((a, b) => a.getTime() - b.getTime());
-						return {
-							id: o.id,
-							title: o.title || t("orgDashboard.unnamedDraft"),
-							nextStart: futureSlots[0] ?? null,
-							bookedCount: o.currentParticipantCount,
-							maxParticipants: o.totalMaxParticipants,
-						};
-					})
-					.sort((a, b) => {
-						if (a.nextStart && b.nextStart)
-							return a.nextStart.getTime() - b.nextStart.getTime();
-						if (a.nextStart) return -1;
-						if (b.nextStart) return 1;
-						return 0;
-					})
-					.slice(0, MAX_ITEMS);
-				setItems(upcoming);
+	const items = useMemo<UpcomingItem[] | null>(() => {
+		if (!opportunities || !calendarEvents) return null;
+		const now = new Date();
+		const eventsByOpportunity = new Map<string, OrganizationCalendarEventDto>(
+			calendarEvents.map((e) => [e.opportunityId, e]),
+		);
+		return opportunities
+			.filter((o) => o.status === "Published")
+			.map((o): UpcomingItem => {
+				const futureSlots = (eventsByOpportunity.get(o.id)?.timeSlots ?? [])
+					.map((s) => new Date(s.startDateTime))
+					.filter((d) => d >= now)
+					.sort((a, b) => a.getTime() - b.getTime());
+				return {
+					id: o.id,
+					title: o.title || t("orgDashboard.unnamedDraft"),
+					nextStart: futureSlots[0] ?? null,
+					bookedCount: o.currentParticipantCount,
+					maxParticipants: o.totalMaxParticipants,
+				};
 			})
-			.catch((e: unknown) =>
-				setError(e instanceof Error ? e.message : String(e)),
-			);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId, refreshKey]);
+			.sort((a, b) => {
+				if (a.nextStart && b.nextStart)
+					return a.nextStart.getTime() - b.nextStart.getTime();
+				if (a.nextStart) return -1;
+				if (b.nextStart) return 1;
+				return 0;
+			})
+			.slice(0, MAX_ITEMS);
+	}, [opportunities, calendarEvents, t]);
 
 	return (
 		<WidgetCard
@@ -151,3 +155,5 @@ export default function UpcomingOpportunitiesWidget({
 		</WidgetCard>
 	);
 }
+
+export default memo(UpcomingOpportunitiesWidget);

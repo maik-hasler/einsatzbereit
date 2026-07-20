@@ -1,4 +1,5 @@
 import {
+	useCallback,
 	useEffect,
 	useMemo,
 	useState,
@@ -291,18 +292,25 @@ export default function OrgDashboardPage() {
 	const layout = editing ? (draftLayout ?? []) : savedLayout;
 	const availableToAdd = WIDGET_KEYS.filter((key) => !layout.includes(key));
 
-	function handleOpportunityCreated(createdDraftId?: string) {
-		// Drafts live on the Opportunities tab now. When one is saved from here,
-		// take the organizer there with the new draft highlighted so it is never
-		// lost (issue #708). A published opportunity just refreshes the widgets.
-		if (createdDraftId) {
-			navigate(
-				`/app/${organizationId}/opportunities?highlight=${createdDraftId}`,
-			);
-			return;
-		}
-		setRefreshKey((k) => k + 1);
-	}
+	// Memoized so CreateOpportunityWidget's React.memo (see that component)
+	// actually skips re-rendering across drag/reorder - a fresh function
+	// reference on every OrgDashboardPage render would defeat it otherwise.
+	const handleOpportunityCreated = useCallback(
+		(createdDraftId?: string) => {
+			// Drafts live on the Opportunities tab now. When one is saved from
+			// here, take the organizer there with the new draft highlighted so
+			// it is never lost (issue #708). A published opportunity just
+			// refreshes the widgets.
+			if (createdDraftId) {
+				navigate(
+					`/app/${organizationId}/opportunities?highlight=${createdDraftId}`,
+				);
+				return;
+			}
+			setRefreshKey((k) => k + 1);
+		},
+		[navigate, organizationId],
+	);
 
 	async function handleSave() {
 		if (!draftLayout) return;
@@ -470,7 +478,11 @@ export default function OrgDashboardPage() {
 				);
 			case "QuickCheckIn":
 				return (
-					<QuickCheckInWidget organizationId={organizationId} size={size} />
+					<QuickCheckInWidget
+						organizationId={organizationId}
+						refreshKey={refreshKey}
+						size={size}
+					/>
 				);
 			case "SettingsIcon":
 				return <SettingsIconWidget organizationId={organizationId} />;

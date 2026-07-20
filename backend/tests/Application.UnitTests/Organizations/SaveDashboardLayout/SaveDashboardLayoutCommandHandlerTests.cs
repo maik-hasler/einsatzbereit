@@ -115,6 +115,48 @@ public class SaveDashboardLayoutCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldCreateEmptyLayout_WhenWidgetsListIsEmpty(
+		CancellationToken cancellationToken)
+	{
+		// Regression guard for #771 review feedback (see the mirrored test on
+		// the Get side, GetDashboardLayoutQueryHandlerTests): saving a
+		// deliberately emptied layout must persist a real (empty) layout row,
+		// not be silently skipped - that's what lets HasCustomLayout later
+		// distinguish "never customized" from "customized to empty".
+		var command = new SaveDashboardLayoutCommand(DefaultOrgId, DefaultRequestingUserId, []);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().BeTrue();
+		await _layoutRepo.Received(1).AddAsync(
+			Arg.Is<OrganizationDashboardLayout>(l =>
+				l!.OrganizationId == OrganizationId.Create(DefaultOrgId).GetValueOrThrow() &&
+				l.UserId == DefaultRequestingUserId &&
+				l.Widgets.Count == 0),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldReplaceWidgetsWithEmptyList_WhenLayoutAlreadyExists(
+		CancellationToken cancellationToken)
+	{
+		var existing = OrganizationDashboardLayout.Create(
+			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
+			DefaultRequestingUserId,
+			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings)]);
+		_dbContext
+			.GetDashboardLayoutAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
+			.Returns(existing);
+		var command = new SaveDashboardLayoutCommand(DefaultOrgId, DefaultRequestingUserId, []);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().BeTrue();
+		existing.Widgets.Should().BeEmpty();
+		await _layoutRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationDashboardLayout>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldReplaceWidgets_WhenLayoutAlreadyExists(
 		CancellationToken cancellationToken)
 	{

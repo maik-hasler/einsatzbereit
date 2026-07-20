@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import WidgetCard from "./WidgetCard";
@@ -9,7 +10,7 @@ interface Props {
 // A minimal icon-only shortcut tile to the settings page - distinct from
 // SettingsWidget's full organization summary card, for organizers who just
 // want a quick link rather than a preview.
-export default function SettingsIconWidget({ organizationId }: Props) {
+function SettingsIconWidget({ organizationId }: Props) {
 	const { t } = useTranslation();
 	const title = t("orgDashboard.settingsIconWidgetTitle");
 
@@ -50,3 +51,5 @@ export default function SettingsIconWidget({ organizationId }: Props) {
 		</WidgetCard>
 	);
 }
+
+export default memo(SettingsIconWidget);

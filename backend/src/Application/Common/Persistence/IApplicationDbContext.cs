@@ -47,6 +47,10 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
+	Task RemoveDashboardLayoutsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
 	Task<List<Organization>> GetOrganizerOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
