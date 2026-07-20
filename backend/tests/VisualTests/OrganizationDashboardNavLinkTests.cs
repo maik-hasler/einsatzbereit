@@ -43,7 +43,14 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Collapsed by default: the org tab links aren't reachable yet.
-		var opportunitiesLink = Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities" });
+		// Exact match - the homepage's hero/footer "Find opportunities" and
+		// "Browse opportunities" links are still in the DOM behind the mobile
+		// menu overlay and would otherwise ambiguously match too (Playwright's
+		// default name matching is a case-insensitive substring match).
+		var opportunitiesLink = Page.GetByRole(
+			AriaRole.Link,
+			new() { Name = "Opportunities", Exact = true }
+		);
 		await Expect(opportunitiesLink).Not.ToBeVisibleAsync();
 
 		await toggle.ClickAsync();
@@ -58,7 +65,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members" })
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
 
@@ -67,7 +74,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings" })
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/settings"), new() { Timeout = 15_000 });
 
@@ -76,7 +83,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Calendar" })
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Calendar", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
