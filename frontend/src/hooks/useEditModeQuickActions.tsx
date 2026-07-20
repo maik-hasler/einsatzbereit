@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuickActions } from "../contexts/QuickActionsContext";
 import { CancelIcon, EditIcon, SaveIcon } from "../components/QuickActionIcons";
@@ -23,6 +23,19 @@ export function useEditModeQuickActions({
 }: Options) {
 	const { t } = useTranslation();
 
+	// Route through refs (always up to date) rather than depending on
+	// onEdit/onSave/onCancel directly in the useMemo below - those are fresh
+	// closures every render of the calling page (e.g. OrgDashboardPage's
+	// onSave closes over the current draftLayout), so memoizing on them
+	// would defeat the memoization entirely and reintroduce the infinite
+	// render loop this hook exists to avoid (see useQuickActions).
+	const onEditRef = useRef(onEdit);
+	onEditRef.current = onEdit;
+	const onSaveRef = useRef(onSave);
+	onSaveRef.current = onSave;
+	const onCancelRef = useRef(onCancel);
+	onCancelRef.current = onCancel;
+
 	// Swapping the action-bar button group unmounts whichever button was
 	// focused, dropping focus to <body> for keyboard/screen-reader users.
 	// Re-focus the first button of the newly-shown group - but only on an
@@ -45,32 +58,39 @@ export function useEditModeQuickActions({
 		return () => cancelAnimationFrame(frame);
 	}, [editing]);
 
-	useQuickActions(
-		editing
-			? [
-					{
-						key: "cancel",
-						label: t("common.cancel"),
-						icon: <CancelIcon />,
-						onClick: onCancel,
-						disabled: saving,
-					},
-					{
-						key: "save",
-						label: saving ? t("common.saving") : t("common.save"),
-						icon: <SaveIcon />,
-						onClick: onSave,
-						variant: "primary",
-						disabled: saving,
-					},
-				]
-			: [
-					{
-						key: "edit",
-						label: t("common.edit"),
-						icon: <EditIcon />,
-						onClick: onEdit,
-					},
-				],
+	// Memoized on just the visual/primitive deps so the array reference (and
+	// thus useQuickActions's effect below) stays stable across renders that
+	// don't actually change what the buttons show - see useQuickActions.
+	const actions = useMemo(
+		() =>
+			editing
+				? [
+						{
+							key: "cancel",
+							label: t("common.cancel"),
+							icon: <CancelIcon />,
+							onClick: () => onCancelRef.current(),
+							disabled: saving,
+						},
+						{
+							key: "save",
+							label: saving ? t("common.saving") : t("common.save"),
+							icon: <SaveIcon />,
+							onClick: () => onSaveRef.current(),
+							variant: "primary" as const,
+							disabled: saving,
+						},
+					]
+				: [
+						{
+							key: "edit",
+							label: t("common.edit"),
+							icon: <EditIcon />,
+							onClick: () => onEditRef.current(),
+						},
+					],
+		[editing, saving, t],
 	);
+
+	useQuickActions(actions);
 }

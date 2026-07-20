@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
@@ -42,15 +42,24 @@ export default function OrgOpportunitiesPage() {
 	const [highlightedId, setHighlightedId] = useState<string | null>(null);
 	const highlightRef = useRef<HTMLLIElement | null>(null);
 
-	useQuickActions([
-		{
-			key: "create-opportunity",
-			label: t("orgOverview.createOpportunity"),
-			icon: <PlusIcon />,
-			onClick: () => setShowCreate(true),
-			variant: "primary",
-		},
-	]);
+	// Memoized so the array reference stays stable across renders that don't
+	// change the translated label - see useQuickActions for why an
+	// unmemoized array here causes an infinite render loop. setShowCreate is
+	// React's useState setter (referentially stable), so no staleness risk
+	// from not routing it through a ref.
+	const quickActions = useMemo(
+		() => [
+			{
+				key: "create-opportunity",
+				label: t("orgOverview.createOpportunity"),
+				icon: <PlusIcon />,
+				onClick: () => setShowCreate(true),
+				variant: "primary" as const,
+			},
+		],
+		[t],
+	);
+	useQuickActions(quickActions);
 
 	function load() {
 		setError(null);
