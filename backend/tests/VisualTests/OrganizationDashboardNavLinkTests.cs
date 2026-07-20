@@ -6,10 +6,15 @@ namespace VisualTests;
 /// <summary>
 /// Issue #775: users with >=1 organization had no way to reach the org
 /// dashboard from the mobile burger menu - only the desktop org switcher and
-/// the homepage hero CTA linked to it. Adds an "Organization Dashboard" entry
-/// to the mobile menu, gated the same way as the admin-only "Administration"
-/// entry (see AdministrationNavLinkTests), resolved via the same
-/// active-org-cookie-then-alphabetical logic HomePage already uses.
+/// the homepage hero CTA linked to it. Adds an "Organization Dashboard"
+/// entry to the mobile menu, gated the same way as the admin-only
+/// "Administration" entry (see AdministrationNavLinkTests), resolved via the
+/// same active-org-cookie-then-alphabetical logic HomePage already uses.
+///
+/// Follow-up from PR #777 review: a single link only reached the dashboard
+/// tab, forcing an extra tap to get to opportunities/members/settings. The
+/// entry is now a collapsible submenu (ORG_TABS, shared with OrgAppLayout's
+/// own tab bar) so every org tab is reachable directly from the burger menu.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -18,7 +23,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 	private const int MobileHeight = 812;
 
 	[Test]
-	public async Task MobileMenu_UserWithOrg_ShowsOrganizationDashboardLink_AndNavigatesToItsDashboard()
+	public async Task MobileMenu_UserWithOrg_ShowsOrganizationSubmenu_AndNavigatesToEachTab()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -34,15 +39,50 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		var link = Page.GetByRole(AriaRole.Link, new() { Name = "Organization Dashboard" });
-		await Expect(link).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var toggle = Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" });
+		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		await link.ClickAsync();
+		// Collapsed by default: the org tab links aren't reachable yet.
+		var opportunitiesLink = Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities" });
+		await Expect(opportunitiesLink).Not.ToBeVisibleAsync();
+
+		await toggle.ClickAsync();
+		await Expect(opportunitiesLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await opportunitiesLink.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities"), new() { Timeout = 15_000 });
+
+		// Re-open and confirm the remaining tabs are all reachable too.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
+			.ClickAsync(new() { Timeout = 10_000 });
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members" })
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
+			.ClickAsync(new() { Timeout = 10_000 });
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings" })
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/settings"), new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
+			.ClickAsync(new() { Timeout = 10_000 });
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
+			.ClickAsync(new() { Timeout = 10_000 });
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Calendar" })
+			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
 
 	[Test]
-	public async Task MobileMenu_UserWithoutOrgs_HasNoOrganizationDashboardLink()
+	public async Task MobileMenu_UserWithoutOrgs_HasNoOrganizationSubmenu()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -57,7 +97,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Administration" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Organization Dashboard" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" }))
 			.Not.ToBeVisibleAsync();
 	}
 }

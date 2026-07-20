@@ -9,7 +9,8 @@ import { useAccountMenu } from "../hooks/useAccountMenu";
 import { useApiClient } from "../hooks/useApiClient";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../lib/authLocale";
-import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
+import { getActiveOrgId, resolveActiveOrg } from "../lib/activeOrg";
+import { ORG_TABS } from "../lib/orgTabs";
 import type { BreadcrumbItem } from "../contexts/ToolbarContext";
 import type { OrganizationSummaryDto } from "../client/api-client";
 
@@ -127,8 +128,9 @@ export default function Header({
 	const isAdmin = roles.includes("admin");
 	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
 	const [orgsLoading, setOrgsLoading] = useState(true);
-	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
+	const activeOrg = resolveActiveOrg(orgs, getActiveOrgId());
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
 	const menu = useAccountMenu([mobileNotifRef]);
@@ -147,6 +149,10 @@ export default function Header({
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
+
+	useEffect(() => {
+		if (!mobileOpen) setOrgMenuOpen(false);
+	}, [mobileOpen]);
 
 	useEffect(() => {
 		if (!isLoggedIn) {
@@ -456,14 +462,47 @@ export default function Header({
 											{t("nav.administration")}
 										</Link>
 									)}
-									{orgAppPath && (
-										<Link
-											to={orgAppPath}
-											onClick={() => setMobileOpen(false)}
-											className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
-										>
-											{t("nav.organizationDashboard")}
-										</Link>
+									{activeOrg && (
+										<div>
+											<button
+												type="button"
+												onClick={() => setOrgMenuOpen((o) => !o)}
+												aria-expanded={orgMenuOpen}
+												className={`flex w-full items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
+											>
+												{t("nav.organizationDashboard")}
+												<svg
+													className={`h-4 w-4 shrink-0 transition-transform ${orgMenuOpen ? "rotate-180" : ""}`}
+													fill="none"
+													viewBox="0 0 24 24"
+													strokeWidth="2"
+													stroke="currentColor"
+													aria-hidden="true"
+												>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														d="m19.5 8.25-7.5 7.5-7.5-7.5"
+													/>
+												</svg>
+											</button>
+											{orgMenuOpen && (
+												<div
+													className={`ml-3 space-y-1 border-l pl-3 ${isTransparent ? "border-white/20" : "border-gray-200"}`}
+												>
+													{ORG_TABS.map((tab) => (
+														<Link
+															key={tab.key}
+															to={`/app/${activeOrg.id}/${tab.key}`}
+															onClick={() => setMobileOpen(false)}
+															className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-600"}`}
+														>
+															{t(tab.labelKey)}
+														</Link>
+													))}
+												</div>
+											)}
+										</div>
 									)}
 									<button
 										type="button"
