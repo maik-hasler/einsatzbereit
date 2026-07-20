@@ -185,6 +185,7 @@ export default function Header({
 						>
 							<Link
 								to="/organizations"
+								data-testid="desktop-nav-organizations-link"
 								className={`text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:text-white" : "text-gray-700 hover:text-brand-600"}`}
 							>
 								{t("breadcrumb.organizations")}
@@ -389,6 +390,7 @@ export default function Header({
 							</div>
 							<Link
 								to="/organizations"
+								data-testid="mobile-nav-organizations-link"
 								onClick={() => setMobileOpen(false)}
 								className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-700 hover:bg-brand-50 hover:text-brand-600"}`}
 							>
