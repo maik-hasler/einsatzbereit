@@ -74,6 +74,51 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(Page.GetByTestId("create-opportunity-btn")).ToBeVisibleAsync();
 	}
 
+	[Test]
+	public async Task Dashboard_HasNoTabBarOrOrgNameHeading_AndLinksReachEverySubpage()
+	{
+		// #771: the repo owner asked to remove the tab bar and the per-page
+		// org-name h1 entirely - the org switcher in the header already shows
+		// the org name, and the dashboard's own widgets should be good enough
+		// to reach every subsite without a separate tab bar. Proves both the
+		// removal and the reachability requirement together.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual771 Reachability");
+
+		(await Page.Locator("nav[aria-label='Organization sections']").CountAsync())
+			.Should().Be(0, "the tab bar was removed - widgets are the only navigation");
+		(await Page.Locator("h1").CountAsync())
+			.Should().Be(0, "the dashboard no longer duplicates the org name as a heading");
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = match.Groups[1].Value;
+
+		// Opportunities: reachable via a dashboard widget's "opportunities" link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.WaitForURLAsync(
+			$"{origin}/app/{organizationId}/opportunities", new() { Timeout = 10_000 });
+
+		await Page.GoBackAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 10_000 });
+
+		// Members: reachable via the Settings widget's member-count link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/members", new() { Timeout = 10_000 });
+
+		await Page.GoBackAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 10_000 });
+
+		// Settings: reachable via the Settings widget's "Edit settings" link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/settings", new() { Timeout = 10_000 });
+	}
+
 	private async Task CreateOrganizationAsync(string namePrefix)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry

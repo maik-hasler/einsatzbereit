@@ -48,9 +48,14 @@ export default function SettingsWidget({ org }: Props) {
 						)}
 					</div>
 					<p className="text-xs text-gray-500">
-						{t("orgDashboard.settingsMemberCount", {
-							count: org.members.length,
-						})}
+						<Link
+							to={`/app/${org.id}/members`}
+							className="text-brand-700 hover:underline"
+						>
+							{t("orgDashboard.settingsMemberCount", {
+								count: org.members.length,
+							})}
+						</Link>
 						<span className="mx-1.5">&middot;</span>
 						{t("orgSettings.createdOn", {
 							date: new Date(org.createdOn).toLocaleDateString(locale, {

@@ -140,14 +140,15 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		//
 		// #751 review follow-up: the breadcrumb must show the specific
 		// opportunity being managed - Home > Opportunities > {title}, with
-		// "Opportunities" demoted to a link back to the tab - instead of a
+		// "Opportunities" demoted to a link back to the hub - instead of a
 		// fixed "Opportunities" label plus a separate context line in the page.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// "Manage applications" only appears for published opportunities on the
@@ -171,19 +172,20 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_WithOpportunitiesTabActive()
+	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
 		// #751: engagement management moved into the org app as a nested route
 		// under /app/:organizationId/opportunities/:opportunityId/engagements -
-		// the org switcher and tab nav must stay visible (with "Opportunities"
-		// active) instead of swapping to the public site header/footer, and
-		// leaving via the tab nav must return to the opportunities list.
+		// the org switcher must stay visible instead of swapping to the public
+		// site header/footer. #771 removed the tab bar entirely (aria-current
+		// on a tab link no longer applies), so leaving back to the opportunities
+		// list now happens via the breadcrumb's "Opportunities" link instead.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
@@ -196,10 +198,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		var opportunitiesTab = Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true });
-		await Expect(opportunitiesTab).ToHaveAttributeAsync("aria-current", "page");
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+		var breadcrumbOpportunitiesLink = breadcrumb.GetByRole(
+			AriaRole.Link, new() { Name = "Opportunities", Exact = true });
+		await Expect(breadcrumbOpportunitiesLink).ToBeVisibleAsync();
 
-		await opportunitiesTab.ClickAsync();
+		await breadcrumbOpportunitiesLink.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities$"), new() { Timeout = 15_000 });
 	}
 
@@ -214,7 +218,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach Members via the dashboard widget link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
