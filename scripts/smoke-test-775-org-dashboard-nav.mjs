@@ -18,13 +18,20 @@ import { launchLiveBrowser, loginKeycloak } from "./lib/live-browser.mjs";
 const BASE = "https://einsatzbereit.maik-hasler.de";
 const API = "https://api.maik-hasler.de";
 
+// FastSignInAsync's C# counterpart confirms auth via the desktop "User menu"
+// button, which is CSS-hidden below the md breakpoint - the real Keycloak
+// flow here has the same problem with its "Sign in" button. Sign in at a
+// normal desktop viewport, then shrink to mobile once authenticated, not
+// before - resizing first leaves no visible "Sign in" button to click.
 async function signIn(page, username, password) {
+	await page.setViewportSize({ width: 1280, height: 800 });
 	await page.goto(BASE, { waitUntil: "networkidle" });
 	const signInBtn = page.getByRole("button", { name: /sign in|anmelden/i });
 	await signInBtn.first().click();
 	await page.waitForURL(/login\.maik-hasler\.de/, { timeout: 15000 });
 	await loginKeycloak(page, username, password);
 	await page.waitForURL(`${BASE}/`, { timeout: 15000 });
+	await page.setViewportSize({ width: 375, height: 812 });
 }
 
 async function openMobileMenu(page) {
@@ -40,7 +47,6 @@ async function main() {
 	console.log("OK  API health check passed");
 
 	const { browser, page } = await launchLiveBrowser();
-	await page.setViewportSize({ width: 375, height: 812 });
 	try {
 		// --- olaf: organizes an org, sees the entry and it navigates correctly ---
 		await signIn(page, "olaf", "olaf123");
@@ -55,13 +61,8 @@ async function main() {
 		await page.waitForURL(/\/app\/[^/]+\/dashboard/, { timeout: 15000 });
 		console.log("OK  Organization Dashboard entry navigates to /app/:id/dashboard");
 
-		await page
-			.getByRole("button", { name: /sign out|abmelden/i })
-			.click()
-			.catch(async () => {
-				await openMobileMenu(page);
-				await page.getByRole("button", { name: /sign out|abmelden/i }).click();
-			});
+		await openMobileMenu(page);
+		await page.getByRole("button", { name: /sign out|abmelden/i }).click();
 		await page.waitForURL(`${BASE}/`, { timeout: 15000 });
 		console.log("OK  Signed out olaf");
 

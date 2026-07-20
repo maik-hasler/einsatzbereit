@@ -20,13 +20,16 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 	[Test]
 	public async Task MobileMenu_UserWithOrg_ShowsOrganizationDashboardLink_AndNavigatesToItsDashboard()
 	{
-		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		// Olaf organizes an org in seed data (see HomePageOrgCtaTests).
+		// FastSignInAsync verifies auth by waiting for the desktop "User menu"
+		// button, which is CSS-hidden below the md breakpoint - so sign in
+		// before shrinking to a mobile viewport, not after.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
@@ -41,13 +44,13 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 	[Test]
 	public async Task MobileMenu_UserWithoutOrgs_HasNoOrganizationDashboardLink()
 	{
-		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
-
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		// admin has no organization memberships in seed data.
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
