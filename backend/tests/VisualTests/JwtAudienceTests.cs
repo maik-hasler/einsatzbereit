@@ -32,8 +32,12 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
 
-		await Expect(Page.GetByText("401")).Not.ToBeVisibleAsync();
-		await Expect(Page.GetByText("Unauthorized")).Not.ToBeVisibleAsync();
+		// Deliberately not also asserting on page text like GetByText("401") here:
+		// the Page.Response listener above is a deterministic, false-positive-free
+		// detector of the actual regression (a real backend-issued 401/403), whereas
+		// a bare page-wide text search is vulnerable to strict-mode collisions with
+		// unrelated test data sharing this session (e.g. another test's randomly
+		// suffixed org/opportunity name that happens to contain "401").
 
 		if (authErrors.Count > 0)
 			throw new Exception(
