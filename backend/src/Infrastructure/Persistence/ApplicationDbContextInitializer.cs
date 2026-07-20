@@ -59,10 +59,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp1 = VolunteerOpportunity.Create(
 				org1Id,
-				"Erste Hilfe Kurs",
-				"Lernen Sie lebensrettende Erste-Hilfe-Massnahmen in unserem praxisnahen Tageskurs.",
+				"First Aid Course",
+				"Learn life-saving first aid techniques in our hands-on one-day course.",
 				isRemote: false,
-				Address.Create("Hauptstrasse", "1", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.OneTime,
 				ParticipationType.Waitlist,
 				CheckInMethod.Manual,
@@ -73,10 +73,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp2 = VolunteerOpportunity.Create(
 				org1Id,
-				"Blutspende-Aktion",
-				"Unterstutzen Sie unsere regelmasige Blutspende-Aktion und helfen Sie, Leben zu retten.",
+				"Blood Donation Drive",
+				"Support our regular blood donation drive and help save lives.",
 				isRemote: false,
-				Address.Create("Rathausplatz", "1", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Town Hall Square", "1", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
@@ -84,10 +84,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp2b = VolunteerOpportunity.Create(
 				org1Id,
-				"Sanitatsdienst bei Stadtfest",
-				"Begleiten Sie unser Sanitatsteam beim jahrlichen Stadtfest und leisten Sie Erste Hilfe vor Ort.",
+				"Paramedic Service at the Town Festival",
+				"Join our paramedic team at the annual town festival and provide first aid on site.",
 				isRemote: false,
-				Address.Create("Marktplatz", "2", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Market Square", "2", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.OneTime,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
@@ -95,10 +95,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp2c = VolunteerOpportunity.Create(
 				org1Id,
-				"Kleidersammlung fur Bedurftige",
-				"Helfen Sie beim Sortieren und Verteilen gespendeter Kleidung an Bedurftige in der Region.",
+				"Clothing Collection for People in Need",
+				"Help sort and distribute donated clothing to people in need in the region.",
 				isRemote: false,
-				Address.Create("Lagerstrasse", "10", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Warehouse Street", "10", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
@@ -106,8 +106,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp2d = VolunteerOpportunity.Create(
 				org1Id,
-				"Erste-Hilfe-Schulung fur Vereine",
-				"Vermitteln Sie Vereinen und Ehrenamtlichen die Grundlagen der Ersten Hilfe in Online-Schulungen.",
+				"First Aid Training for Clubs and Associations",
+				"Teach clubs and volunteer groups the basics of first aid in online training sessions.",
 				isRemote: true,
 				address: null,
 				Occurrence.Recurring,
@@ -117,10 +117,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp3 = VolunteerOpportunity.Create(
 				org2Id,
-				"Tierheim Helfer gesucht",
-				"Helfen Sie uns bei der Betreuung und Pflege der Tiere in unserem Tierheim.",
+				"Animal Shelter Helpers Wanted",
+				"Help us care for and look after the animals in our shelter.",
 				isRemote: false,
-				Address.Create("Tiergartenweg", "5", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.Recurring,
 				ParticipationType.Waitlist,
 				CheckInMethod.QRCode,
@@ -132,8 +132,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp4 = VolunteerOpportunity.Create(
 				org2Id,
-				"Online-Fundraising Unterstutzung",
-				"Unterstutzen Sie unser Online-Fundraising-Team bequem von zu Hause aus.",
+				"Online Fundraising Support",
+				"Support our online fundraising team from the comfort of your own home.",
 				isRemote: true,
 				address: null,
 				Occurrence.OneTime,
@@ -143,10 +143,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp4b = VolunteerOpportunity.Create(
 				org2Id,
-				"Gassi-Service fur Tierheim-Hunde",
-				"Drehen Sie regelmasig Ihre Runden mit unseren Tierheim-Hunden und schenken Sie ihnen Auslauf.",
+				"Dog Walking Service for Shelter Dogs",
+				"Take our shelter dogs for regular walks and give them the exercise they need.",
 				isRemote: false,
-				Address.Create("Tiergartenweg", "5", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
@@ -154,10 +154,10 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp4c = VolunteerOpportunity.Create(
 				org2Id,
-				"Spendenaktion Tierfutter",
-				"Sammeln Sie Futter- und Sachspenden fur unsere Schutzlinge bei einer lokalen Aktion.",
+				"Pet Food Donation Drive",
+				"Collect food and supply donations for our animals at a local drive.",
 				isRemote: false,
-				Address.Create("Feldweg", "3", "12345", "Musterstadt").GetValueOrThrow(),
+				Address.Create("Field Lane", "3", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.OneTime,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
@@ -165,8 +165,8 @@ internal sealed class ApplicationDbContextInitializer(
 
 			var opp4d = VolunteerOpportunity.Create(
 				org2Id,
-				"Patenschaften fur Pflegetiere",
-				"Ubernehmen Sie eine Tierpatenschaft und begleiten Sie ein Pflegetier bei seiner Vermittlung.",
+				"Foster Animal Sponsorships",
+				"Take on a sponsorship for a foster animal and support them through their placement.",
 				isRemote: true,
 				address: null,
 				Occurrence.Recurring,
@@ -184,7 +184,7 @@ internal sealed class ApplicationDbContextInitializer(
 				Engagement.CreateIndividualContact(
 					opp2.Id,
 					veraUserId,
-					"Ich wuerde gerne bei der nachsten Blutspende-Aktion als Helfer dabei sein.").GetValueOrThrow(),
+					"I would love to help out as a volunteer at the next blood donation drive.").GetValueOrThrow(),
 				Engagement.CreateWaitlistSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
 
 			await dbContext.SaveChangesAsync(cancellationToken);
@@ -240,18 +240,18 @@ internal sealed class ApplicationDbContextInitializer(
 	private async Task<OrganizationId> SeedOrg1Async(CancellationToken cancellationToken)
 	{
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
-			"Rotes Kreuz Musterstadt",
+			"Fairview Red Cross",
 			cancellationToken);
 
 		await keycloakOrganizationService.AddMemberAsync(keycloakId, OlafId, cancellationToken);
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(OlafId, cancellationToken);
 		await keycloakOrganizationService.AddMemberAsync(keycloakId, VeraId, cancellationToken);
 
-		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Rotes Kreuz Musterstadt")
+		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Fairview Red Cross")
 			.GetValueOrThrow();
-		org.ChangeDescription("Ihr lokaler Verband des Deutschen Roten Kreuzes - wir helfen Menschen in Not.");
-		org.ChangeContactInfo("info@rk-musterstadt.de", "+49 1234 567890", "https://www.drk.de");
-		org.Relocate(Address.Create("Hauptstrasse", "1", "12345", "Musterstadt").GetValueOrThrow());
+		org.ChangeDescription("Your local Red Cross chapter - we help people in need.");
+		org.ChangeContactInfo("info@fairview-redcross.org", "+1 555 0100", "https://www.fairview-redcross.example");
+		org.Relocate(Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow());
 
 		dbContext.Set<Organization>().Add(org);
 
@@ -264,17 +264,17 @@ internal sealed class ApplicationDbContextInitializer(
 	private async Task<OrganizationId> SeedOrg2Async(CancellationToken cancellationToken)
 	{
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
-			"Tierschutzverein Musterstadt",
+			"Fairview Animal Welfare Association",
 			cancellationToken);
 
 		await keycloakOrganizationService.AddMemberAsync(keycloakId, OlafId, cancellationToken);
 		await keycloakOrganizationService.AssignOrganizerRoleAsync(OlafId, cancellationToken);
 
-		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Tierschutzverein Musterstadt")
+		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Fairview Animal Welfare Association")
 			.GetValueOrThrow();
-		org.ChangeDescription("Wir setzen uns fur das Wohl von Tieren in Musterstadt und Umgebung ein.");
-		org.ChangeContactInfo("info@tsv-musterstadt.de", "+49 1234 567891", null);
-		org.Relocate(Address.Create("Tiergartenweg", "5", "12345", "Musterstadt").GetValueOrThrow());
+		org.ChangeDescription("We are committed to the wellbeing of animals in Fairview and the surrounding area.");
+		org.ChangeContactInfo("info@fairview-animalwelfare.org", "+1 555 0101", null);
+		org.Relocate(Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow());
 
 		dbContext.Set<Organization>().Add(org);
 
