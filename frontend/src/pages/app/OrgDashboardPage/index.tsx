@@ -24,7 +24,6 @@ import { useEditModeQuickActions } from "../../../hooks/useEditModeQuickActions"
 import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import { PlusIcon, CancelIcon } from "../../../components/QuickActionIcons";
-import Spinner from "../../../components/Spinner";
 import CalendarWidget from "./CalendarWidget";
 import UpcomingOpportunitiesWidget from "./UpcomingOpportunitiesWidget";
 import ToDoWidget from "./ToDoWidget";
@@ -157,10 +156,13 @@ export default function OrgDashboardPage() {
 	// Upcoming Opportunities widgets (which each own their own data) refetch.
 	const [refreshKey, setRefreshKey] = useState(0);
 
-	const [savedLayout, setSavedLayout] = useState<WidgetPlacement[] | null>(
-		null,
-	);
-	const [layoutLoading, setLayoutLoading] = useState(true);
+	// Renders the default layout immediately rather than gating the whole
+	// grid behind the GET .../dashboard/layout round trip - most visits get
+	// exactly this layout back anyway (no customization saved yet), and a
+	// returning organizer's customized layout swaps in a moment later instead
+	// of blocking first paint on it.
+	const [savedLayout, setSavedLayout] =
+		useState<WidgetPlacement[]>(DEFAULT_LAYOUT);
 	const [editing, setEditing] = useState(false);
 	const [draftLayout, setDraftLayout] = useState<WidgetPlacement[] | null>(
 		null,
@@ -168,7 +170,6 @@ export default function OrgDashboardPage() {
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		setLayoutLoading(true);
 		api
 			.getDashboardLayout(organizationId)
 			.then((response) => {
@@ -177,12 +178,11 @@ export default function OrgDashboardPage() {
 					.filter((w): w is WidgetPlacement => w !== null);
 				setSavedLayout(sanitized.length === 0 ? DEFAULT_LAYOUT : sanitized);
 			})
-			.catch(() => setSavedLayout(DEFAULT_LAYOUT))
-			.finally(() => setLayoutLoading(false));
+			.catch(() => setSavedLayout(DEFAULT_LAYOUT));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
-	const layout = editing ? (draftLayout ?? []) : (savedLayout ?? []);
+	const layout = editing ? (draftLayout ?? []) : savedLayout;
 
 	function handleOpportunityCreated(createdDraftId?: string) {
 		// Drafts live on the Opportunities tab now. When one is saved from here,
@@ -311,14 +311,6 @@ export default function OrgDashboardPage() {
 	const availableToAdd = WIDGET_KEYS.filter(
 		(key) => !layout.some((w) => w.widgetKey === key),
 	);
-
-	if (layoutLoading) {
-		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("orgDashboard.loading")} />
-			</div>
-		);
-	}
 
 	const grid = (
 		<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
