@@ -10,7 +10,7 @@ import {
 	TouchSensor,
 	useSensor,
 	useSensors,
-	type DragEndEvent,
+	type DragOverEvent,
 	type DragStartEvent,
 } from "@dnd-kit/core";
 import {
@@ -25,7 +25,7 @@ import { useApiClient } from "../../../hooks/useApiClient";
 import { useEditModeQuickActions } from "../../../hooks/useEditModeQuickActions";
 import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
-import { PlusIcon, CancelIcon } from "../../../components/QuickActionIcons";
+import { PlusIcon, TrashIcon } from "../../../components/QuickActionIcons";
 import EmptyState from "../../../components/EmptyState";
 import AddWidgetModal, { WidgetPreview } from "./AddWidgetModal";
 import CalendarWidget from "./CalendarWidget";
@@ -43,6 +43,7 @@ import {
 	widgetColSpanClass,
 	type WidgetKey,
 	type WidgetPlacement,
+	type WidgetSize,
 } from "./widgetCatalog";
 
 function GripIcon() {
@@ -67,13 +68,13 @@ function EditableWidgetTile({
 	placement,
 	editing,
 	onRemove,
-	onCycleSize,
+	onResize,
 	children,
 }: {
 	placement: WidgetPlacement;
 	editing: boolean;
 	onRemove: () => void;
-	onCycleSize: () => void;
+	onResize: (size: WidgetSize) => void;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
@@ -81,39 +82,37 @@ function EditableWidgetTile({
 		id: placement.widgetKey,
 	});
 	const catalogEntry = WIDGET_CATALOG[placement.widgetKey];
+	const sizeIndex = catalogEntry.allowedSizes.indexOf(placement.size);
 
 	// No transform/transition from useSortable is applied here on purpose -
 	// dnd-kit's built-in sortable animation projects a translate offset
 	// assuming every item is the same size, which falls apart on this grid
 	// (mixed col-spans + grid-flow-dense) and produced the "other widgets...
 	// look so weirdly" glitch from #771 follow-up review feedback. The
-	// dragged tile is hidden in place (opacity-0 below) while
+	// dragged tile is hidden in place (opacity-20 below) while
 	// OrgDashboardPage's <DragOverlay> shows a floating clone that actually
 	// follows the pointer/keyboard; every other tile just stays put until the
 	// drop reorders the array, then snaps straight to its new dense-packed
 	// slot - no mid-drag animation left to get wrong.
 	return (
-		// The grip button below keeps its own {...attributes} {...listeners}
-		// as the accessible, keyboard-operable drag handle (dnd-kit's
-		// KeyboardSensor needs a focusable element with those attributes, and
-		// a whole free-shaped card exposed as one giant nested-interactive
-		// control would trip the "no interactive control inside another" a11y
-		// rule against the toolbar's own buttons). onMouseDown/onTouchStart
-		// below additionally let mouse/touch users grab the card ANYWHERE, not
-		// just the grip icon - purely as a supplementary trigger for the same
-		// drag dnd-kit's KeyboardSensor already makes fully keyboard-operable
-		// via that button, which is why suppressing the static-element-
+		// onMouseDown/onTouchStart below let mouse/touch users grab the card
+		// ANYWHERE to move it - a plain cursor-grab affordance instead of a
+		// dedicated grip icon (#771 follow-up review feedback - "why not
+		// making it clear... that things are moveable by just dragging the
+		// widget itself"). A separate, visually-hidden-until-focused button
+		// further down keeps this fully keyboard-operable (dnd-kit's
+		// KeyboardSensor needs a real focusable element carrying
+		// {...attributes} {...listeners}) without adding a permanently visible
+		// icon back - which is also why suppressing the static-element-
 		// interactions rule here is safe: this div never needs its own
-		// role/keyboard handling, the real interactive element is the grip
-		// button beside it. The sensors' activationConstraint (see
+		// role/keyboard handling, that hidden button is the real interactive
+		// element for keyboard users. The sensors' activationConstraint (see
 		// OrgDashboardPage) keeps this from swallowing plain clicks on the
-		// resize/remove buttons, which live inside the same element. Touch
+		// resize/remove controls, which live inside the same element. Touch
 		// specifically uses TouchSensor's delay (not MouseSensor's distance),
 		// which - unlike distance-based activation - doesn't require disabling
 		// touch-action, so a quick swipe still scrolls the page normally and
-		// only a deliberate hold claims the gesture for dragging (#771
-		// follow-up review feedback - "moving doesnt work at all on mobile" -
-		// without also breaking scroll while editing).
+		// only a deliberate hold claims the gesture for dragging.
 		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div
 			ref={setNodeRef}
@@ -126,22 +125,31 @@ function EditableWidgetTile({
 			}}
 			// A low but nonzero opacity (not opacity-0) while dragging - a
 			// keyboard-initiated drag (KeyboardSensor) leaves real DOM focus on
-			// the grip button inside this tile, and a fully invisible ancestor
-			// would take its focus ring with it (WCAG 2.4.7 Focus Visible),
-			// since <DragOverlay>'s floating clone has no focus of its own to
-			// show one instead.
-			className={`relative h-full ${widgetColSpanClass(placement.size)} ${editing && isDragging ? "opacity-20" : ""}`}
+			// the hidden grip button inside this tile, and a fully invisible
+			// ancestor would take its focus ring with it (WCAG 2.4.7 Focus
+			// Visible), since <DragOverlay>'s floating clone has no focus of its
+			// own to show one instead.
+			className={`relative h-full ${widgetColSpanClass(placement.size)} ${editing ? "cursor-grab active:cursor-grabbing" : ""} ${editing && isDragging ? "opacity-20" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-75" : ""}`}>
 				{children}
 			</div>
 			{editing && (
-				<div className="absolute right-2 top-2 z-20 flex items-center gap-1 rounded-lg bg-white/95 p-1 shadow-sm ring-1 ring-gray-200">
+				<>
+					{/* Visually hidden until it receives keyboard focus (Tab) -
+					pointer-events-none keeps a mouse from ever clicking it while
+					hidden, so the only way to reach it is Tab, at which point
+					:focus makes it visible. Always present for screen readers
+					regardless of visual state (opacity, unlike display/clip-based
+					hiding, doesn't remove it from the accessibility tree). */}
 					<button
 						type="button"
 						{...attributes}
 						{...listeners}
-						className="cursor-grab rounded p-1.5 text-gray-500 hover:bg-gray-100 active:cursor-grabbing"
+						// top-12 (not top-2, alongside the resize/remove controls) so
+						// this doesn't visually collide with the resize slider on a
+						// Small tile once it becomes visible on focus.
+						className="pointer-events-none absolute left-1/2 top-12 z-30 -translate-x-1/2 cursor-grab rounded-lg bg-white p-1.5 text-gray-600 opacity-0 shadow-md ring-1 ring-gray-200 transition-opacity focus:pointer-events-auto focus:opacity-100 active:cursor-grabbing"
 						aria-label={t("orgDashboard.dragToReorder", {
 							widget: t(catalogEntry.titleKey),
 						})}
@@ -149,29 +157,63 @@ function EditableWidgetTile({
 						<GripIcon />
 					</button>
 					{catalogEntry.allowedSizes.length > 1 && (
-						<button
-							type="button"
-							onClick={onCycleSize}
-							className="rounded px-1.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
-							aria-label={t("orgDashboard.changeWidgetSize", {
-								widget: t(catalogEntry.titleKey),
-								size: t(`orgDashboard.widgetSize${placement.size}`),
-							})}
+						// stopPropagation on press: dragging the slider thumb moves
+						// the pointer just as much as dragging the tile itself would,
+						// which would otherwise also satisfy the tile's own
+						// reorder-drag activation constraint at the same time. This
+						// div itself has no interactive behavior of its own (it never
+						// needs a role/keyboard handler) - the real, fully accessible
+						// interactive element is the native <input type="range">
+						// inside it, which is why suppressing the static-element-
+						// interactions rule here is safe.
+						// eslint-disable-next-line jsx-a11y/no-static-element-interactions
+						<div
+							onMouseDown={(event) => event.stopPropagation()}
+							onTouchStart={(event) => event.stopPropagation()}
+							className="absolute left-2 top-2 z-20 flex items-center gap-1.5 rounded-lg bg-white/95 px-2 py-1 shadow-sm ring-1 ring-gray-200"
 						>
-							{t(`orgDashboard.widgetSize${placement.size}`)}
-						</button>
+							<span
+								aria-hidden="true"
+								className="text-[10px] font-medium text-gray-500"
+							>
+								{t(`orgDashboard.widgetSize${placement.size}`)}
+							</span>
+							<input
+								type="range"
+								min={0}
+								max={catalogEntry.allowedSizes.length - 1}
+								step={1}
+								value={sizeIndex}
+								onChange={(event) =>
+									onResize(
+										catalogEntry.allowedSizes[Number(event.target.value)],
+									)
+								}
+								className="h-1 w-16 cursor-pointer accent-brand-700"
+								aria-label={t("orgDashboard.changeWidgetSize", {
+									widget: t(catalogEntry.titleKey),
+									size: t(`orgDashboard.widgetSize${placement.size}`),
+								})}
+								// The name (aria-label) updates on every change too, but
+								// screen readers reliably announce the current VALUE of a
+								// range on each keypress only via aria-valuetext - without
+								// it, arrow keys would announce raw index positions (e.g.
+								// "1 of 2") instead of "Medium"/"Large".
+								aria-valuetext={t(`orgDashboard.widgetSize${placement.size}`)}
+							/>
+						</div>
 					)}
 					<button
 						type="button"
 						onClick={onRemove}
-						className="rounded p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600"
+						className="absolute right-2 top-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600"
 						aria-label={t("orgDashboard.removeWidget", {
 							widget: t(catalogEntry.titleKey),
 						})}
 					>
-						<CancelIcon />
+						<TrashIcon />
 					</button>
-				</div>
+				</>
 			)}
 		</div>
 	);
@@ -354,14 +396,9 @@ export default function OrgDashboardPage() {
 		]);
 	}
 
-	function handleCycleSize(key: WidgetKey) {
+	function handleResizeWidget(key: WidgetKey, size: WidgetSize) {
 		setDraftLayout((prev) =>
-			(prev ?? []).map((w) => {
-				if (w.widgetKey !== key) return w;
-				const sizes = WIDGET_CATALOG[key].allowedSizes;
-				const next = sizes[(sizes.indexOf(w.size) + 1) % sizes.length];
-				return { ...w, size: next };
-			}),
+			(prev ?? []).map((w) => (w.widgetKey === key ? { ...w, size } : w)),
 		);
 	}
 
@@ -392,9 +429,14 @@ export default function OrgDashboardPage() {
 		setActiveDragSize(rect ? { width: rect.width, height: rect.height } : null);
 	}
 
-	function handleDragEnd(event: DragEndEvent) {
-		setActiveDragKey(null);
-		setActiveDragSize(null);
+	// Reorders live as the dragged tile crosses another one, instead of only
+	// on drop - #771 follow-up review feedback ("the widgets should update
+	// when I drag already"). Every other tile carries no dnd-kit transform
+	// (see EditableWidgetTile), so this reorder just snaps the grid straight
+	// to its new dense-packed layout on each crossing rather than animating a
+	// projected offset - which is what avoids reintroducing the earlier
+	// "other widgets move weirdly" glitch while still updating live.
+	function handleDragOver(event: DragOverEvent) {
 		const { active, over } = event;
 		if (!over || active.id === over.id) return;
 		setDraftLayout((prev) => {
@@ -406,10 +448,17 @@ export default function OrgDashboardPage() {
 		});
 	}
 
+	// The layout is already correct by drop time (handleDragOver keeps it live
+	// updated) - this just clears the drag-overlay UI state.
+	function handleDragEnd() {
+		setActiveDragKey(null);
+		setActiveDragSize(null);
+	}
+
 	// dnd-kit fires this on Escape (and a few other abandon paths) instead of
 	// onDragEnd - without it, an escaped drag would leave the source tile
-	// permanently hidden (opacity-0, see EditableWidgetTile) with no overlay
-	// to show for it.
+	// permanently at opacity-20 (see EditableWidgetTile) with no overlay to
+	// show for it.
 	function handleDragCancel() {
 		setActiveDragKey(null);
 		setActiveDragSize(null);
@@ -472,21 +521,41 @@ export default function OrgDashboardPage() {
 			/>
 		</div>
 	) : (
-		<div
-			data-testid="dashboard-widget-grid"
-			className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:grid-flow-row-dense"
-		>
-			{layout.map((placement) => (
-				<EditableWidgetTile
-					key={placement.widgetKey}
-					placement={placement}
-					editing={editing}
-					onRemove={() => handleRemoveWidget(placement.widgetKey)}
-					onCycleSize={() => handleCycleSize(placement.widgetKey)}
+		<div className="relative">
+			{editing && (
+				// Light column-lane guide behind the widgets, so an organizer can
+				// see the underlying 4-column structure (and where a widget could
+				// still fit) instead of the grid being invisible until something
+				// occupies it - #771 follow-up review feedback ("no visual grid
+				// rendering... maybe I can render very light green grids"). Only
+				// the 3 internal boundaries are drawn (not the outer edges) since
+				// those already read as the grid's edges. Hidden below `lg`
+				// because the grid itself collapses to a single column there.
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute inset-0 hidden lg:block"
 				>
-					{renderWidget(placement.widgetKey)}
-				</EditableWidgetTile>
-			))}
+					<div className="absolute inset-y-0 left-1/4 w-px bg-green-300/70" />
+					<div className="absolute inset-y-0 left-1/2 w-px bg-green-300/70" />
+					<div className="absolute inset-y-0 left-3/4 w-px bg-green-300/70" />
+				</div>
+			)}
+			<div
+				data-testid="dashboard-widget-grid"
+				className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:grid-flow-row-dense"
+			>
+				{layout.map((placement) => (
+					<EditableWidgetTile
+						key={placement.widgetKey}
+						placement={placement}
+						editing={editing}
+						onRemove={() => handleRemoveWidget(placement.widgetKey)}
+						onResize={(size) => handleResizeWidget(placement.widgetKey, size)}
+					>
+						{renderWidget(placement.widgetKey)}
+					</EditableWidgetTile>
+				))}
+			</div>
 		</div>
 	);
 
@@ -502,6 +571,7 @@ export default function OrgDashboardPage() {
 				sensors={sensors}
 				collisionDetection={closestCenter}
 				onDragStart={handleDragStart}
+				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}
 				onDragCancel={handleDragCancel}
 			>

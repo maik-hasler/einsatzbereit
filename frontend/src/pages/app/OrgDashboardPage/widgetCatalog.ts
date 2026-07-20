@@ -38,7 +38,11 @@ export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
 	},
 	Calendar: {
 		titleKey: "orgDashboard.calendarWidgetTitle",
-		allowedSizes: ["Large"],
+		// Large by default (matches the pre-existing layout), but an organizer
+		// who doesn't want a full-width calendar can size it down to sit
+		// beside another widget instead (#771 follow-up review feedback -
+		// "I cant put a calendar beside another component").
+		allowedSizes: ["Medium", "Large"],
 		defaultSize: "Large",
 	},
 	Settings: {

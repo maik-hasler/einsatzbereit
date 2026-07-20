@@ -160,6 +160,47 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task ResizingAWidgetViaSlider_AndSaving_PersistsAcrossReload()
+	{
+		// #771 follow-up review feedback replaced the "Small"/"Medium"/"Large"
+		// size-cycle button with a native range slider (one step per allowed
+		// size) - covers that the slider actually changes and persists the
+		// saved size, not just the old button-cycle mechanic.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashResize");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		// ToDo defaults to Medium and allows [Medium, Large] - index 0 is
+		// Medium, index 1 (one ArrowRight step) is Large.
+		var slider = Page.GetByTestId("widget-tile-ToDo")
+			.GetByRole(AriaRole.Slider, new() { Name = "Change Needs Your Attention size: Medium" });
+		await Expect(slider).ToBeVisibleAsync();
+
+		await slider.FocusAsync();
+		await slider.PressAsync("ArrowRight");
+
+		await Expect(Page.GetByTestId("widget-tile-ToDo")
+				.GetByRole(AriaRole.Slider, new() { Name = "Change Needs Your Attention size: Large" }))
+			.ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("widget-tile-ToDo")
+				.GetByRole(AriaRole.Slider, new() { Name = "Change Needs Your Attention size: Large" }))
+			.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task RemovingAllWidgets_AndSaving_ShowsEmptyState_NotDefaultLayoutAfterReload()
 	{
 		// Regression guard for the #771 follow-up review feedback bug: an

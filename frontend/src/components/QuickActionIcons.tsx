@@ -60,3 +60,15 @@ export function PlusIcon() {
 		</svg>
 	);
 }
+
+export function TrashIcon() {
+	return (
+		<svg {...iconProps()}>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12.5A2 2 0 0 0 9 21h6a2 2 0 0 0 2-1.5L18 7M10 11v6M14 11v6"
+			/>
+		</svg>
+	);
+}
