@@ -20,6 +20,60 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+
+		// Deterministically guarantee olaf already has an achievement before
+		// this test's fresh browser context ever loads the page - relying on
+		// some OTHER VisualTests class having incidentally earned him one
+		// does not hold: every other test uses olaf only as the *organizer*
+		// confirming other users' engagements, and milestone achievements are
+		// awarded to the volunteer, never the organizer (see
+		// ConfirmEngagementCommandHandler) - so nothing else in this suite
+		// ever earns olaf a badge, seed data included (seed only makes him
+		// an organizer, never a confirmed volunteer). Olaf applies to his
+		// own opportunity and confirms it himself here - nothing in
+		// CreateEngagementCommandHandler/ConfirmEngagementCommandHandler
+		// blocks organizer == volunteer. Must happen BEFORE FastSignInAsync
+		// below: the whole point of this test is the notifier's very first,
+		// on-mount check of already-existing achievements, so the badge has
+		// to exist before that mount, not be granted while the page is open.
+		var suffix = Guid.NewGuid().ToString("N");
+		using (var seedHttp = new HttpClient { BaseAddress = backend })
+		{
+			seedHttp.DefaultRequestHeaders.Add(
+				"Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+			var orgResponse = await seedHttp.PostAsJsonAsync(
+				"/v1/organizations", new { name = $"AchievementsSelfSeed Org {suffix}" });
+			orgResponse.EnsureSuccessStatusCode();
+			var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+			var oppResponse = await seedHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+			{
+				title = $"AchievementsSelfSeed Opportunity {suffix}",
+				description = "Created by AchievementsTests to guarantee olaf has an achievement.",
+				organizationId,
+				isRemote = true,
+				occurrence = "OneTime",
+				participationType = "IndividualContact",
+				checkInMethod = "None",
+				isDraft = false,
+			});
+			oppResponse.EnsureSuccessStatusCode();
+			var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var opportunityId = opportunity.GetProperty("id").GetString();
+
+			var engagementResponse = await seedHttp.PostAsJsonAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+				new { message = "Applying via AchievementsTests to seed a real achievement." });
+			engagementResponse.EnsureSuccessStatusCode();
+			var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var engagementId = engagement.GetProperty("id").GetString();
+
+			(await seedHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", content: null))
+				.EnsureSuccessStatusCode();
+		}
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -137,5 +191,23 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.Mouse.ClickAsync(5, 5);
 
 		await Expect(Page.Locator("[role=\"dialog\"]")).ToBeHiddenAsync();
+	}
+
+	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)
+	{
+		using var http = new HttpClient { BaseAddress = keycloak };
+		var response = await http.PostAsync(
+			"/realms/einsatzbereit/protocol/openid-connect/token",
+			new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["grant_type"] = "password",
+				["client_id"] = "frontend-test",
+				["username"] = username,
+				["password"] = password,
+				["scope"] = "openid",
+			}));
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return body.GetProperty("access_token").GetString()!;
 	}
 }
