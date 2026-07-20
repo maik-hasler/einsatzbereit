@@ -173,7 +173,16 @@
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
       "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden.",
-      "yourApplication": "Deine Bewerbung"
+      "yourApplication": "Deine Bewerbung",
+      "aboutOrganization": "Über diese Organisation",
+      "moreFromOrganization": "Weitere Angebote dieser Organisation",
+      "postedToday": "Heute veröffentlicht",
+      "postedDaysAgo": "Vor {{count}} Tagen veröffentlicht",
+      "postedDaysAgo_one": "Vor {{count}} Tag veröffentlicht",
+      "postedDaysAgo_other": "Vor {{count}} Tagen veröffentlicht",
+      "participantsJoined": "{{count}} Personen haben sich bereits angemeldet",
+      "participantsJoined_one": "{{count}} Person hat sich bereits angemeldet",
+      "participantsJoined_other": "{{count}} Personen haben sich bereits angemeldet"
     },
     "createOpportunity": {
       "title": "Bedarf erstellen",

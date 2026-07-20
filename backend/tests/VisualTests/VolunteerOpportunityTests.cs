@@ -234,6 +234,108 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task DetailPage_ShowsAboutOrganizationCard_SocialProofStat_AndMoreFromOrgTeaser()
+	{
+		// Issue #759: the detail page adds four frontend-only enrichment
+		// sections so it stays substantial even when an organizer writes a
+		// short description - an "About this organization" card (reusing the
+		// org's already-public contact info), a participant-count social-proof
+		// stat, a "more from this organization" teaser capped at 3 and
+		// excluding the opportunity being viewed, and a "posted X days ago"
+		// freshness line.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgName = $"Detail Enrichment Org {suffix}";
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var contactEmail = $"contact-{suffix}@example.test";
+		var updateResponse = await http.PutAsJsonAsync($"/v1/organizations/{organizationId}", new
+		{
+			name = orgName,
+			description = "We coordinate volunteers across the region for issue 759 coverage.",
+			contactEmail,
+			contactPhone = "+49 555 0100",
+			website = "https://example.test",
+			address = new { street = "Teststrasse", houseNumber = "1", zipCode = "12345", city = "Musterstadt" },
+		});
+		updateResponse.EnsureSuccessStatusCode();
+
+		async Task<(string Id, string Title)> CreateOpportunityAsync(string label)
+		{
+			var title = $"{label} {suffix}";
+			var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+			{
+				title,
+				description = $"{label} opportunity for detail enrichment coverage.",
+				organizationId,
+				isRemote = true,
+				occurrence = "OneTime",
+				participationType = "IndividualContact",
+				checkInMethod = "None",
+				isDraft = false,
+			});
+			response.EnsureSuccessStatusCode();
+			var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+			return (body.GetProperty("id").GetString()!, title);
+		}
+
+		// Created sequentially: Primary first (oldest), then Other1..Other4
+		// (newest last). GetPublicOrganizationProfile orders by CreatedOn
+		// descending, so after excluding Primary and capping at 3, the teaser
+		// should show Other4/Other3/Other2 and drop Other1 (the oldest "other").
+		var (primaryId, primaryTitle) = await CreateOpportunityAsync("Primary");
+		var others = new List<(string Id, string Title)>();
+		for (var i = 1; i <= 4; i++)
+			others.Add(await CreateOpportunityAsync($"Other{i}"));
+
+		// Vera engages with the primary opportunity so currentParticipantCount > 0.
+		var veraToken = (await Fixture.SignInAsync("vera", "vera123")).AccessToken;
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraToken}");
+		var engagementResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{primaryId}/engagements",
+			new { message = "Signing up for issue 759 detail enrichment coverage." });
+		engagementResponse.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{primaryId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// Freshness line - "Posted today"/"Posted X days ago" both contain "Posted".
+		await Expect(Page.GetByText(new Regex("posted", RegexOptions.IgnoreCase)))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Social proof: Vera's engagement is reflected as a participant-count stat.
+		await Expect(Page.GetByText(new Regex(@"1\s+person", RegexOptions.IgnoreCase)))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// About this organization: description + all contact fields surfaced.
+		var aboutOrg = Page.GetByTestId("about-organization");
+		await Expect(aboutOrg).ToBeVisibleAsync();
+		await Expect(aboutOrg.GetByRole(AriaRole.Link, new() { Name = contactEmail }))
+			.ToBeVisibleAsync();
+		await Expect(aboutOrg.GetByText("Teststrasse 1, 12345 Musterstadt")).ToBeVisibleAsync();
+
+		// More from this organization: capped at 3, excludes the opportunity being viewed.
+		var teaser = Page.GetByTestId("more-from-organization");
+		await Expect(teaser).ToBeVisibleAsync();
+		await Expect(teaser.Locator("li")).ToHaveCountAsync(3);
+		await Expect(teaser.GetByText(primaryTitle)).Not.ToBeVisibleAsync();
+		await Expect(teaser.GetByText(others[0].Title)).Not.ToBeVisibleAsync(); // oldest "other", pushed out by the cap
+		foreach (var other in others.Skip(1))
+			await Expect(teaser.GetByText(other.Title)).ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task HomePage_LoadsWithoutError_WhenPublishedOpportunitiesExist()
 	{
 		// Regression: EF Core 10 query translation failure caused HTTP 500 on all
