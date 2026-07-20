@@ -152,7 +152,18 @@ function EditableWidgetTile({
 			// ancestor would take its focus ring with it (WCAG 2.4.7 Focus
 			// Visible), since <DragOverlay>'s floating clone has no focus of its
 			// own to show one instead.
-			className={`relative z-10 h-full ${editing ? "cursor-grab active:cursor-grabbing" : ""} ${editing && isDragging ? "opacity-20" : ""}`}
+			// No z-index here on purpose: this div is `position: relative`
+			// (for the absolutely-positioned grip/remove buttons) but must NOT
+			// also get a z-index, because that would give it its own stacking
+			// context - any modal a widget renders inside itself (e.g.
+			// CreateOpportunityWidget's wizard) would then be scoped to THIS
+			// tile's stacking order instead of the page's, so a later sibling
+			// tile (also positioned) could paint over the modal despite its own
+			// z-[2000] and swallow clicks meant for it. DOM order alone (the
+			// green backdrop cells render before the tiles below) already
+			// makes tiles paint above the backdrop without needing z-index at
+			// all - a real regression this caused, caught by CI.
+			className={`relative h-full ${editing ? "cursor-grab active:cursor-grabbing" : ""} ${editing && isDragging ? "opacity-20" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
 				{children}
