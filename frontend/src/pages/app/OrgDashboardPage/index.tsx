@@ -153,8 +153,19 @@ function EditableWidgetTile({
 			// CreateOpportunityWidget's wizard) would then be scoped to THIS
 			// tile's stacking order instead of the page's, so a later sibling
 			// tile (also positioned) could paint over the modal despite its own
-			// z-[2000] and swallow clicks meant for it.
-			className={`relative h-full ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
+			// z-[2000] and swallow clicks meant for it. That same
+			// position:relative is exactly why this tile paints ABOVE the
+			// green backdrop cells beneath it regardless of DOM order (a
+			// positioned element always paints above an in-flow, non-
+			// positioned sibling within the same stacking context) - which
+			// would otherwise block clicks meant for a backdrop cell that
+			// happens to fall under this widget's own current footprint
+			// (e.g. clicking its existing top-left corner to start a
+			// resize from there). pointer-events-none on this wrapper while
+			// editing lets those clicks pass through to the grid beneath;
+			// the two buttons below opt back in with pointer-events-auto,
+			// which CSS honors even under a pointer-events-none ancestor.
+			className={`relative h-full ${editing ? "pointer-events-none" : ""} ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
 				{children}
@@ -174,7 +185,7 @@ function EditableWidgetTile({
 							onClick={onAdvance}
 							onKeyDown={onArrowKeyDown}
 							disabled={placingDisabled}
-							className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
+							className={`pointer-events-auto absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
 							<GripIcon />
@@ -184,7 +195,7 @@ function EditableWidgetTile({
 						type="button"
 						onClick={onRemove}
 						disabled={placingDisabled}
-						className="absolute right-2 top-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+						className="pointer-events-auto absolute right-2 top-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
 						aria-label={t("orgDashboard.removeWidget", { widget: title })}
 					>
 						<TrashIcon />
