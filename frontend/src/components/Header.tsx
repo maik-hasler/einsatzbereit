@@ -13,6 +13,7 @@ import { getActiveOrgId, resolveActiveOrg } from "../lib/activeOrg";
 import { ORG_TABS } from "../lib/orgTabs";
 import type { BreadcrumbItem } from "../contexts/ToolbarContext";
 import type { OrganizationSummaryDto } from "../client/api-client";
+import type { QuickAction } from "../contexts/QuickActionsContext";
 
 function getInitials(name: string): string {
 	const parts = name.trim().split(/\s+/);
@@ -27,18 +28,23 @@ function getInitials(name: string): string {
 // This is the single implementation both the org app shell (via its
 // orgSwitcher-style breadcrumb prop) and the public site (via
 // usePageToolbar, see ToolbarContext.tsx) render through - see Header's
-// `breadcrumb` prop below.
+// `breadcrumb` prop below. `actions` (only ever set by org-app pages via
+// useQuickActions, see QuickActionsContext.tsx) render right-aligned next to
+// the breadcrumb - icon+label on desktop, icon-only (label becomes the
+// button's aria-label) below the `sm` breakpoint.
 function BreadcrumbBar({
 	homeHref,
 	items,
+	actions,
 }: {
 	homeHref: string;
 	items: BreadcrumbItem[];
+	actions?: QuickAction[];
 }) {
 	const { t } = useTranslation();
 	return (
 		<div className="border-b border-gray-200 bg-white">
-			<div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+			<div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
 				<nav
 					aria-label={t("breadcrumb.label")}
 					className="flex min-w-0 items-center gap-1.5 text-sm"
@@ -93,6 +99,28 @@ function BreadcrumbBar({
 						);
 					})}
 				</nav>
+				{actions && actions.length > 0 && (
+					<div className="flex shrink-0 items-center gap-2">
+						{actions.map((action) => (
+							<button
+								key={action.key}
+								type="button"
+								onClick={action.onClick}
+								disabled={action.disabled}
+								aria-label={action.label}
+								data-testid={`quick-action-${action.key}`}
+								className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+									action.variant === "primary"
+										? "bg-brand-700 font-semibold text-white shadow-sm hover:bg-brand-800"
+										: "border border-gray-200 text-gray-700 hover:bg-gray-50"
+								}`}
+							>
+								{action.icon}
+								<span className="hidden sm:inline">{action.label}</span>
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -109,7 +137,11 @@ export default function Header({
 	// Opt-in, per-page action bar (icon-led breadcrumb) rendered as a bar
 	// directly beneath <header>. Omit entirely to render no action bar (e.g.
 	// the homepage). See BreadcrumbBar above for the rendering rules.
-	breadcrumb?: { homeHref: string; items: BreadcrumbItem[] };
+	breadcrumb?: {
+		homeHref: string;
+		items: BreadcrumbItem[];
+		actions?: QuickAction[];
+	};
 } = {}) {
 	const auth = useAuth();
 	const { t } = useTranslation();
@@ -540,6 +572,7 @@ export default function Header({
 				<BreadcrumbBar
 					homeHref={breadcrumb.homeHref}
 					items={breadcrumb.items}
+					actions={breadcrumb.actions}
 				/>
 			)}
 		</>

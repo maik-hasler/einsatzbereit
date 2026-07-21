@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -52,6 +53,7 @@ export default function OrgSettingsPage() {
 	const [uploadingLogo, setUploadingLogo] = useState(false);
 	const [logoError, setLogoError] = useState<string | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
+	const formRef = useRef<HTMLFormElement>(null);
 
 	const [editing, setEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -63,6 +65,18 @@ export default function OrgSettingsPage() {
 
 	const hasAddress =
 		form.street || form.houseNumber || form.zipCode || form.city;
+
+	useEditModeQuickActions({
+		editing,
+		saving,
+		onEdit: () => setEditing(true),
+		// Goes through the form's native submit (not handleSave() directly) so
+		// the browser still runs constraint validation (e.g. the required name
+		// field) and focuses/announces the offending field, same as pressing
+		// Enter in the form used to.
+		onSave: () => formRef.current?.requestSubmit(),
+		onCancel: handleCancelEdit,
+	});
 
 	function handleCancelEdit() {
 		setForm({
@@ -152,8 +166,6 @@ export default function OrgSettingsPage() {
 
 	return (
 		<div>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">{org.name}</h1>
-
 			<div className="mx-auto max-w-2xl">
 				{!editing && (
 					<OrganizationProfileView
@@ -174,15 +186,6 @@ export default function OrgSettingsPage() {
 									}),
 								})}
 							</p>
-						}
-						actions={
-							<button
-								type="button"
-								onClick={() => setEditing(true)}
-								className="shrink-0 rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-							>
-								{t("orgSettings.edit")}
-							</button>
 						}
 						beforeContent={
 							<>
@@ -226,7 +229,7 @@ export default function OrgSettingsPage() {
 							</div>
 						)}
 
-						<form onSubmit={handleSave} className="space-y-5">
+						<form ref={formRef} onSubmit={handleSave} className="space-y-5">
 							<div>
 								<p className="mb-1 block text-sm font-medium text-gray-700">
 									{t("orgSettings.fieldLogo")}
@@ -398,23 +401,6 @@ export default function OrgSettingsPage() {
 									</div>
 								</div>
 							</fieldset>
-
-							<div className="flex justify-end gap-3">
-								<button
-									type="button"
-									onClick={handleCancelEdit}
-									className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-								>
-									{t("orgSettings.cancel")}
-								</button>
-								<button
-									type="submit"
-									disabled={saving}
-									className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
-								>
-									{saving ? t("orgSettings.saving") : t("orgSettings.save")}
-								</button>
-							</div>
 						</form>
 					</>
 				)}

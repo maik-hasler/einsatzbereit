@@ -10,6 +10,10 @@ import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
 } from "../contexts/OrgBreadcrumbContext";
+import {
+	QuickActionsProvider,
+	useQuickActionsList,
+} from "../contexts/QuickActionsContext";
 import Header from "../components/Header";
 import Spinner from "../components/Spinner";
 
@@ -39,6 +43,7 @@ function OrgAppShell({
 }) {
 	const { t } = useTranslation();
 	const extra = useOrgBreadcrumbExtra();
+	const quickActions = useQuickActionsList();
 
 	const breadcrumbItems = extra
 		? [
@@ -57,6 +62,7 @@ function OrgAppShell({
 				breadcrumb={{
 					homeHref: `/app/${organizationId}/dashboard`,
 					items: breadcrumbItems,
+					actions: quickActions,
 				}}
 			/>
 
@@ -169,13 +175,15 @@ export default function OrgAppLayout() {
 
 	return (
 		<OrgBreadcrumbProvider>
-			<OrgAppShell
-				organizationId={organizationId}
-				org={org}
-				activeTabKey={activeTabKey}
-				activeTabLabel={activeTabLabel}
-				load={load}
-			/>
+			<QuickActionsProvider>
+				<OrgAppShell
+					organizationId={organizationId}
+					org={org}
+					activeTabKey={activeTabKey}
+					activeTabLabel={activeTabLabel}
+					load={load}
+				/>
+			</QuickActionsProvider>
 		</OrgBreadcrumbProvider>
 	);
 }

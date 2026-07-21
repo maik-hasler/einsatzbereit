@@ -5,6 +5,12 @@
       "tagline": "Volunteer spontaneously. Find your local cause.",
       "description": "Einsatzbereit connects committed volunteers with regional needs. Spontaneous, fast, and effective."
     },
+    "common": {
+      "edit": "Edit",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
     "nav": {
       "accountLabel": "Account",
       "userMenu": "User menu",
@@ -325,8 +331,7 @@
     },
     "orgApp": {
       "backToSite": "Back to Einsatzbereit",
-      "notAuthorized": "You don't have access to this organization.",
-      "tabsLabel": "Organization sections"
+      "notAuthorized": "You don't have access to this organization."
     },
     "orgOpportunities": {
       "loading": "Loading…",
@@ -357,7 +362,40 @@
       "cancelledEngagementsDesc": "Total cancelled across all opportunities",
       "viewOpportunities": "View opportunities →",
       "viewEngagements": "View engagements →",
-      "unnamedDraft": "Unnamed Draft"
+      "unnamedDraft": "Unnamed Draft",
+      "signedUpVolunteers": "Signed-up Volunteers",
+      "todoWidgetTitle": "Needs Your Attention",
+      "todoWidgetDesc": "Pending applications and confirmed volunteers at a glance.",
+      "todoError": "Failed to load summary.",
+      "calendarWidgetTitle": "Calendar",
+      "calendarWidgetDesc": "A full calendar of all your opportunities' time slots.",
+      "upcomingWidgetTitle": "Upcoming Opportunities",
+      "upcomingWidgetDesc": "A quick list of your next published opportunities.",
+      "upcomingLoading": "Loading…",
+      "upcomingError": "Failed to load opportunities.",
+      "upcomingEmpty": "No upcoming opportunities.",
+      "upcomingViewAll": "View all opportunities →",
+      "settingsWidgetTitle": "Organization",
+      "settingsWidgetDesc": "Your organization's identity, member count and a link to settings.",
+      "settingsMemberCount": "{{count}} members",
+      "settingsEditLink": "Edit settings →",
+      "createOpportunityWidgetTitle": "Create Opportunity",
+      "createOpportunityWidgetDesc": "Publish a new volunteer opportunity for your organization.",
+      "quickCheckInWidgetTitle": "Quick Check-in",
+      "quickCheckInWidgetDesc": "Jump straight to the QR scanner for any published opportunity.",
+      "quickCheckInNoOpportunities": "No published opportunities to check volunteers in for yet.",
+      "quickCheckInSelectOpportunity": "Opportunity to check volunteers in for",
+      "quickCheckInOpenScanner": "Scan QR code",
+      "settingsIconWidgetTitle": "Settings",
+      "settingsIconWidgetDesc": "A minimal shortcut tile that links to the settings page.",
+      "dragToReorder": "Drag {{widget}} to reorder",
+      "removeWidget": "Remove {{widget}} widget",
+      "addWidgetHeading": "Add a widget",
+      "addWidgetModalDesc": "Choose a widget to add to your dashboard.",
+      "addWidgetAllAdded": "All widgets have been added.",
+      "addWidgetDone": "Done",
+      "emptyStateTitle": "Your dashboard is empty",
+      "emptyStateMessage": "Add a widget to get started."
     },
     "orgSettings": {
       "title": "Edit Organisation",
@@ -380,8 +418,6 @@
       "fieldHouseNumber": "House number",
       "fieldZip": "ZIP",
       "fieldCity": "City",
-      "saving": "Saving…",
-      "save": "Save",
       "savedSuccess": "Changes saved.",
       "saveError": "Failed to save.",
       "loadError": "Could not load organization.",
@@ -396,8 +432,6 @@
       "leaveOrganizationLastMemberHint": "You're the only member - delete the organization instead if you want to close it.",
       "searching": "Searching…",
       "noSearchResults": "No users found.",
-      "edit": "Edit",
-      "cancel": "Cancel",
       "loading": "Loading…",
       "inviteLabel": "Invite member",
       "invitePlaceholder": "Search by username or email…",
@@ -832,9 +866,10 @@
       "calendarWeek": "Week",
       "calendarWorkWeek": "Work week",
       "calendarDay": "Day",
+      "calendarAgenda": "Agenda",
       "eventFillState": "{{booked}} / {{max}} booked",
       "eventManageApplications": "Manage applications",
-      "createOpportunity": "+ Create opportunity"
+      "createOpportunity": "Create opportunity"
     }
   }
 }
