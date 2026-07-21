@@ -162,17 +162,19 @@ function EditableWidgetTile({
 			{editing && (
 				<>
 					{showPlacementControls && (
-						// Visually hidden until it receives keyboard focus (Tab) or is
-						// actively placing - a mouse/touch user places a widget by
-						// clicking straight on the grid guide cells (see
-						// handleCellClick), so this button's only job for them is to
-						// start/confirm a placement, not to carry the drag itself.
+						// Unlike the old drag-to-reorder grip (hidden until keyboard
+						// focus, since mouse users dragged the whole tile directly),
+						// this button IS the mouse/touch entry point into placement -
+						// clicking it is how they start placing, before drawing the
+						// box on the grid guide cells (see handleCellClick) - so it
+						// must stay visible and clickable the same way the Remove
+						// button below always does, not just on focus.
 						<button
 							type="button"
 							onClick={onAdvance}
 							onKeyDown={onArrowKeyDown}
 							disabled={placingDisabled}
-							className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 transition-opacity focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "opacity-100 ring-2 ring-brand-500" : "pointer-events-none opacity-0 focus:pointer-events-auto"}`}
+							className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
 							<GripIcon />

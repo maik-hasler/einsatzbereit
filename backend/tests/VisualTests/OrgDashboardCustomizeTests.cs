@@ -264,17 +264,16 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await ClickGridCellAsync(col: 5, row: 2);
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await Expect(tile).ToHaveAttributeAsync("style", new Regex("grid-column:\\s*2\\s*/\\s*span\\s*4"));
-		await Expect(tile).ToHaveAttributeAsync("style", new Regex("grid-row:\\s*1\\s*/\\s*span\\s*2"));
+		await AssertWidgetOccupiesCellsAsync("Settings", x: 2, y: 1, width: 4, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.ReloadAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await Expect(Page.GetByTestId("widget-tile-Settings"))
-			.ToHaveAttributeAsync("style", new Regex("grid-column:\\s*2\\s*/\\s*span\\s*4"), new() { Timeout = 10_000 });
+		await AssertWidgetOccupiesCellsAsync("Settings", x: 2, y: 1, width: 4, height: 2);
 	}
 
 	[Test]
@@ -296,27 +295,29 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// Enter/Space on the focused button advances the same state machine
 		// a mouse click on a grid cell does: first press starts placing
 		// (cursor defaults to the widget's current top-left corner, x=5/y=1),
-		// second press locks that as the first corner, then ArrowRight moves
-		// the cursor one column over before the third press commits the
-		// second corner - shrinking the tile from width 4 to width 2.
+		// second press locks that as the first corner, then ArrowRight and
+		// ArrowDown move the cursor to (col=6, row=2) before the third press
+		// commits the second corner there - shrinking the tile from
+		// (width=4, height=2) to (width=2, height=2) while keeping the same
+		// top-left corner.
 		await Page.Keyboard.PressAsync("Enter");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
 		await Page.Keyboard.PressAsync("Enter");
 		await Page.Keyboard.PressAsync("ArrowRight");
+		await Page.Keyboard.PressAsync("ArrowDown");
 		await Page.Keyboard.PressAsync("Enter");
 
-		var tile = Page.GetByTestId("widget-tile-ToDo");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await Expect(tile).ToHaveAttributeAsync("style", new Regex("grid-column:\\s*5\\s*/\\s*span\\s*2"));
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 2, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.ReloadAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await Expect(Page.GetByTestId("widget-tile-ToDo"))
-			.ToHaveAttributeAsync("style", new Regex("grid-column:\\s*5\\s*/\\s*span\\s*2"), new() { Timeout = 10_000 });
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 2, height: 2);
 	}
 
 	[Test]
@@ -436,9 +437,50 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	/// </summary>
 	private async Task ClickGridCellAsync(int col, int row)
 	{
+		await Page.GetByTestId("dashboard-grid-guide-cell").Nth(GridCellIndex(col, row)).ClickAsync();
+	}
+
+	/// <summary>
+	/// Asserts a widget tile's rendered bounds line up with the backdrop
+	/// cells at its expected 1-based (x, y, width, height) grid placement.
+	/// Deliberately does NOT inspect the tile's "style" attribute - browsers
+	/// are free to serialize the separately-set gridColumn/gridRow inline
+	/// styles into a combined "grid-area" shorthand (observed on CI's
+	/// Chromium build), so asserting on the raw attribute string would be
+	/// coupled to that serialization choice rather than the actual layout.
+	/// Comparing rendered pixel bounds against the same backdrop cells the
+	/// organizer clicked to make the placement is what
+	/// DefaultLayout_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt
+	/// above already does for the same reason.
+	/// </summary>
+	private async Task AssertWidgetOccupiesCellsAsync(string widgetTestId, int x, int y, int width, int height)
+	{
+		var tile = Page.GetByTestId($"widget-tile-{widgetTestId}");
+		var topLeftCell = Page.GetByTestId("dashboard-grid-guide-cell").Nth(GridCellIndex(x, y));
+		var bottomRightCell = Page.GetByTestId("dashboard-grid-guide-cell")
+			.Nth(GridCellIndex(x + width - 1, y + height - 1));
+
+		var tileBox = await tile.BoundingBoxAsync();
+		var topLeftBox = await topLeftCell.BoundingBoxAsync();
+		var bottomRightBox = await bottomRightCell.BoundingBoxAsync();
+		tileBox.Should().NotBeNull();
+		topLeftBox.Should().NotBeNull();
+		bottomRightBox.Should().NotBeNull();
+
+		Math.Abs(tileBox!.X - topLeftBox!.X).Should().BeLessThan(20,
+			$"{widgetTestId}'s left edge should align with column {x}");
+		Math.Abs(tileBox.Y - topLeftBox.Y).Should().BeLessThan(20,
+			$"{widgetTestId}'s top edge should align with row {y}");
+		Math.Abs(tileBox.X + tileBox.Width - (bottomRightBox!.X + bottomRightBox.Width)).Should().BeLessThan(20,
+			$"{widgetTestId}'s right edge should align with the end of column {x + width - 1}");
+		Math.Abs(tileBox.Y + tileBox.Height - (bottomRightBox.Y + bottomRightBox.Height)).Should().BeLessThan(20,
+			$"{widgetTestId}'s bottom edge should align with the end of row {y + height - 1}");
+	}
+
+	private static int GridCellIndex(int col, int row)
+	{
 		const int gridColumns = 8;
-		var index = (row - 1) * gridColumns + (col - 1);
-		await Page.GetByTestId("dashboard-grid-guide-cell").Nth(index).ClickAsync();
+		return (row - 1) * gridColumns + (col - 1);
 	}
 
 	private async Task RemoveAllWidgetsAsync()
