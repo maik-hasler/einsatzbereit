@@ -5,11 +5,13 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Visual tests for the #771 review-feedback follow-up: quick actions in the
-/// org-app action bar (Header.tsx's `breadcrumb.actions`, see
-/// QuickActionsContext.tsx) and the customizable dashboard widget grid they
-/// drive on OrgDashboardPage (add/remove/resize/reorder behind an "Edit"
-/// quick action, persisted via GET/PUT .../dashboard/layout).
+/// Visual tests for the customizable dashboard widget grid (add/remove/place
+/// behind an "Edit" quick action, persisted via GET/PUT .../dashboard/layout).
+/// #782 replaced the automatic skyline packer with organizer-drawn
+/// corner-to-corner placement: each widget carries an explicit X/Y/Width/
+/// Height, set by clicking (or tapping) two grid cells, or via the keyboard
+/// (a per-widget "Move or resize" button, arrow keys to move a cursor,
+/// Enter/Space to lock each corner, Escape to cancel).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -35,7 +37,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		(await Page.GetByTestId("quick-action-edit").CountAsync()).Should().Be(0);
 
 		// Edit mode disables the widgets' own content (see EditableWidgetTile's
-		// `inert` wrapper) - the size-cycle/remove toolbar is still usable.
+		// `inert` wrapper) - the move/remove toolbar is still usable.
 		await Expect(Page.GetByTestId("widget-tile-CreateOpportunity")
 				.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" }))
 			.ToBeVisibleAsync();
@@ -160,19 +162,19 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task AutoFitGrid_HasNoManualSizeControls_AndShowsGreenBackdropOnlyWhileEditing()
+	public async Task GridBackdrop_OnlyRendersWhileEditing_AndHasNoLegacySizeControls()
 	{
-		// #771 follow-up review feedback replaced manual sizing (first a
-		// "Small"/"Medium"/"Large" cycle button, then a resize slider) with
-		// fully automatic column/row placement - covers that no manual size
-		// control exists anymore, and that the green cell backdrop (showing
-		// the underlying 8-column grid) only renders while editing.
+		// #782 removed the automatic packing algorithm entirely, along with
+		// the manual size slider it had itself replaced (#771) - covers that
+		// no manual size control exists, and that the green cell backdrop
+		// (the corner-to-corner placement surface, see widgetCatalog.ts's
+		// GRID_COLUMNS) only renders while editing.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual DashAutoFit");
+		await CreateOrganizationAsync("Visual DashBackdrop");
 
 		(await Page.Locator("input[type='range']").CountAsync()).Should().Be(0);
 		(await Page.GetByTestId("dashboard-grid-guide-cell").CountAsync())
@@ -192,18 +194,17 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task AutoFitGrid_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt()
+	public async Task DefaultLayout_WidgetTiles_RenderInsideBackdropBounds_NotStackedBelowIt()
 	{
-		// Regression guard for the #762 follow-up feedback bug: real widget
-		// tiles fell out of the CSS grid's auto-placement entirely (rendered
-		// as a separate stack of cards below the whole green backdrop)
-		// because they only carried a `span N` gridColumn/gridRow with no
-		// explicit start line, while the green backdrop cells claim every
-		// single cell of the grid explicitly - leaving no auto-placement
-		// room left for the widgets to land in. Confirms the fix (explicit
-		// `col / span N` placement using the same coordinates the packer
-		// already gave the backdrop) by checking a widget tile's top edge
-		// lands within the backdrop's own vertical bounds, not far below it.
+		// Regression guard for the same CSS technique the old auto-fit packer
+		// relied on: a widget tile needs an explicit gridColumn/gridRow start
+		// line (not just a `span N`), because the green backdrop cells claim
+		// every single cell of the grid explicitly and would otherwise
+		// saturate CSS Grid's auto-placement algorithm, pushing the tile into
+		// a separate stack of cards below the whole backdrop. #782 still
+		// relies on this (see index.tsx's explicit `col / span N` styling),
+		// now sourced from the organizer's own stored placement instead of a
+		// packer's output.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
@@ -216,76 +217,55 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		var backdropCells = Page.GetByTestId("dashboard-grid-guide-cell");
 		await backdropCells.First.WaitForAsync();
 		var firstCellBox = await backdropCells.First.BoundingBoxAsync();
-		var lastCellBox = await backdropCells.Last.BoundingBoxAsync();
 		firstCellBox.Should().NotBeNull();
-		lastCellBox.Should().NotBeNull();
 
-		// CreateOpportunity is the first widget in the default layout, so the
-		// packer places it at row 1 - its tile's top edge should sit right at
-		// (accounting for the backdrop's `-m-1` bleed) the very first
-		// backdrop cell's top edge. Under the bug, the tile was pushed
-		// hundreds of pixels below the backdrop's very last cell instead.
+		// CreateOpportunity is placed at (x=1, y=1) in DEFAULT_LAYOUT - its
+		// tile's top edge should sit right at (accounting for the backdrop's
+		// `-m-1` bleed) the very first backdrop cell's top edge.
 		var widgetBox = await Page.GetByTestId("widget-tile-CreateOpportunity").BoundingBoxAsync();
 		widgetBox.Should().NotBeNull();
 
 		Math.Abs(widgetBox!.Y - firstCellBox!.Y).Should().BeLessThan(20,
 			"the first widget should render at the top of the grid, aligned with the first backdrop "
 				+ "cell - not pushed below the entire backdrop into a separate stack of cards");
-		widgetBox.Y.Should().BeLessThan(lastCellBox!.Y + lastCellBox.Height,
-			"the widget tile must render within the backdrop's own bounds, not below all of it");
 	}
 
 	[Test]
-	public async Task KeyboardDragReorder_SwapsWidgetWithLeftNeighbor_AndPersistsAcrossReload()
+	public async Task MouseCornerPlacement_MovingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
 	{
-		// Covers the keyboard-accessible reorder path end to end: the hidden
-		// grip button (see EditableWidgetTile) is a real focusable element
-		// carrying dnd-kit's KeyboardSensor listeners, but nothing previously
-		// drove an actual reorder through it - so a handleDragOver/arrayMove
-		// regression could ship undetected.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual DashKeyboardReorder");
-
-		// The default layout's packer places CreateOpportunity and ToDo side
-		// by side in the first row (see packWidgets in widgetCatalog.ts) - a
-		// keyboard drag of ToDo one step left should swap the two.
-		(await GetWidgetOrderAsync()).Should().Equal(
-		[
-			"widget-tile-CreateOpportunity",
-			"widget-tile-ToDo",
-			"widget-tile-UpcomingOpportunities",
-			"widget-tile-Calendar",
-			"widget-tile-Settings",
-		]);
+		await CreateOrganizationAsync("Visual DashMousePlace");
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
 
-		var todoGrip = Page.GetByRole(AriaRole.Button, new() { Name = "Drag Needs Your Attention to reorder" });
-		await todoGrip.FocusAsync();
-		await Page.Keyboard.PressAsync("Space");
-		await Page.Keyboard.PressAsync("ArrowLeft");
+		// Add exactly one widget so its placement lands at a known (x=1, y=1)
+		// - see placeNewWidget in widgetCatalog.ts - making the grid-cell
+		// index math below trivial (an 8-column-wide, 2-row-tall grid).
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-Settings").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
 
-		// handleDragOver reorders live as the dragged tile crosses another one
-		// - wait for that to land before dropping, rather than assuming a
-		// fixed delay.
-		await Expect(Page.Locator("[data-testid^='widget-tile-']").First)
-			.ToHaveAttributeAsync("data-testid", "widget-tile-ToDo", new() { Timeout = 10_000 });
+		var tile = Page.GetByTestId("widget-tile-Settings");
+		await Expect(tile).ToBeVisibleAsync();
 
-		await Page.Keyboard.PressAsync("Space");
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
 
-		var afterDrag = await GetWidgetOrderAsync();
-		afterDrag.Should().Equal(
-		[
-			"widget-tile-ToDo",
-			"widget-tile-CreateOpportunity",
-			"widget-tile-UpcomingOpportunities",
-			"widget-tile-Calendar",
-			"widget-tile-Settings",
-		]);
+		// Settings starts at (x=1, y=1, width=8, height=2) - click column 2,
+		// row 1 as the first corner, then column 5, row 2 as the second, to
+		// move+shrink it to (x=2, y=1, width=4, height=2).
+		await ClickGridCellAsync(col: 2, row: 1);
+		await ClickGridCellAsync(col: 5, row: 2);
+
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		await Expect(tile).ToHaveAttributeAsync("style", new Regex("grid-column:\\s*2\\s*/\\s*span\\s*4"));
+		await Expect(tile).ToHaveAttributeAsync("style", new Regex("grid-row:\\s*1\\s*/\\s*span\\s*2"));
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -293,8 +273,116 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.ReloadAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		(await GetWidgetOrderAsync()).Should().Equal(afterDrag,
-			"the keyboard-reordered layout must persist across reload, not just live in local drag state");
+		await Expect(Page.GetByTestId("widget-tile-Settings"))
+			.ToHaveAttributeAsync("style", new Regex("grid-column:\\s*2\\s*/\\s*span\\s*4"), new() { Timeout = 10_000 });
+	}
+
+	[Test]
+	public async Task KeyboardCornerPlacement_ResizingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashKeyboardPlace");
+
+		// ToDo starts at (x=5, y=1, width=4, height=2) in DEFAULT_LAYOUT.
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
+		await moveButton.FocusAsync();
+
+		// Enter/Space on the focused button advances the same state machine
+		// a mouse click on a grid cell does: first press starts placing
+		// (cursor defaults to the widget's current top-left corner, x=5/y=1),
+		// second press locks that as the first corner, then ArrowRight moves
+		// the cursor one column over before the third press commits the
+		// second corner - shrinking the tile from width 4 to width 2.
+		await Page.Keyboard.PressAsync("Enter");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
+		await Page.Keyboard.PressAsync("Enter");
+		await Page.Keyboard.PressAsync("ArrowRight");
+		await Page.Keyboard.PressAsync("Enter");
+
+		var tile = Page.GetByTestId("widget-tile-ToDo");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		await Expect(tile).ToHaveAttributeAsync("style", new Regex("grid-column:\\s*5\\s*/\\s*span\\s*2"));
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("widget-tile-ToDo"))
+			.ToHaveAttributeAsync("style", new Regex("grid-column:\\s*5\\s*/\\s*span\\s*2"), new() { Timeout = 10_000 });
+	}
+
+	[Test]
+	public async Task KeyboardCornerPlacement_EscapeCancelsWithoutChangingPosition()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashEscapeCancel");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		var tile = Page.GetByTestId("widget-tile-ToDo");
+		var styleBefore = await tile.GetAttributeAsync("style");
+
+		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
+		await moveButton.FocusAsync();
+		await Page.Keyboard.PressAsync("Enter");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
+		await Page.Keyboard.PressAsync("ArrowDown");
+		await Page.Keyboard.PressAsync("Escape");
+
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		(await tile.GetAttributeAsync("style")).Should().Be(styleBefore,
+			"Escape must cancel the in-progress placement without changing the widget's stored position");
+	}
+
+	[Test]
+	public async Task OverlappingPlacement_IsRejected_WithErrorToast_AndKeepsPreviousPosition()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashOverlapReject");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
+
+		// Settings lands at (x=1, y=1, width=8, height=2); ToDo is added next
+		// and lands right below it at (x=1, y=3, width=4, height=2) - see
+		// placeNewWidget in widgetCatalog.ts.
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-Settings").ClickAsync();
+		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		var settingsTile = Page.GetByTestId("widget-tile-Settings");
+		var styleBefore = await settingsTile.GetAttributeAsync("style");
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
+
+		// Grow Settings down into ToDo's row (x=1..4, y=1..4) - overlaps
+		// ToDo's (x=1..4, y=3..4).
+		await ClickGridCellAsync(col: 1, row: 1);
+		await ClickGridCellAsync(col: 4, row: 4);
+
+		await Expect(Page.GetByRole(AriaRole.Alert))
+			.ToContainTextAsync("overlaps another widget");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		(await settingsTile.GetAttributeAsync("style")).Should().Be(styleBefore,
+			"a rejected placement must leave the widget at its previous position");
 	}
 
 	[Test]
@@ -314,20 +402,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await CreateOrganizationAsync("Visual DashEmpty");
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
-
-		foreach (var (testId, widgetTitle) in new[]
-		{
-			("CreateOpportunity", "Create Opportunity"),
-			("ToDo", "Needs Your Attention"),
-			("UpcomingOpportunities", "Upcoming Opportunities"),
-			("Calendar", "Calendar"),
-			("Settings", "Organization"),
-		})
-		{
-			await Page.GetByTestId($"widget-tile-{testId}")
-				.GetByRole(AriaRole.Button, new() { Name = $"Remove {widgetTitle} widget" })
-				.ClickAsync();
-		}
+		await RemoveAllWidgetsAsync();
 
 		(await Page.GetByTestId("dashboard-widget-grid").CountAsync()).Should().Be(0);
 		await Expect(Page.GetByTestId("dashboard-empty-state")).ToBeVisibleAsync();
@@ -352,13 +427,37 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
 	}
 
-	private async Task<List<string>> GetWidgetOrderAsync()
+	/// <summary>
+	/// Clicks the grid guide cell at 1-based (col, row) - the same cells an
+	/// organizer clicks to mark a placement's corners. Cells all share the
+	/// "dashboard-grid-guide-cell" testid (there's no separate id per cell),
+	/// so this replicates index.tsx's row-major generation order
+	/// (col = i % 8 + 1, row = i / 8 + 1) to find the right one.
+	/// </summary>
+	private async Task ClickGridCellAsync(int col, int row)
 	{
-		var tiles = await Page.Locator("[data-testid^='widget-tile-']").AllAsync();
-		var testIds = new List<string>();
-		foreach (var tile in tiles)
-			testIds.Add(await tile.GetAttributeAsync("data-testid") ?? "");
-		return testIds;
+		const int gridColumns = 8;
+		var index = (row - 1) * gridColumns + (col - 1);
+		await Page.GetByTestId("dashboard-grid-guide-cell").Nth(index).ClickAsync();
+	}
+
+	private async Task RemoveAllWidgetsAsync()
+	{
+		foreach (var (testId, widgetTitle) in new[]
+		{
+			("CreateOpportunity", "Create Opportunity"),
+			("ToDo", "Needs Your Attention"),
+			("UpcomingOpportunities", "Upcoming Opportunities"),
+			("Calendar", "Calendar"),
+			("Settings", "Organization"),
+		})
+		{
+			var tile = Page.GetByTestId($"widget-tile-{testId}");
+			if (await tile.CountAsync() == 0) continue;
+			await tile
+				.GetByRole(AriaRole.Button, new() { Name = $"Remove {widgetTitle} widget" })
+				.ClickAsync();
+		}
 	}
 
 	private async Task CreateOrganizationAsync(string namePrefix)

@@ -30,7 +30,7 @@ internal sealed class GetDashboardLayoutQueryHandler(
 			organizationId, request.RequestingUserId, cancellationToken);
 
 		var widgets = layout?.Widgets
-			.Select(w => new DashboardWidgetPlacementResponse(w.WidgetKey.ToString()))
+			.Select(w => new DashboardWidgetPlacementResponse(w.WidgetKey.ToString(), w.X, w.Y, w.Width, w.Height))
 			.ToList() ?? [];
 
 		return new DashboardLayoutResponse(layout is not null, widgets);

@@ -22,8 +22,8 @@ public class SaveDashboardLayoutCommandHandlerTests
 
 	private static readonly IReadOnlyList<DashboardWidgetPlacementInput> ValidWidgets =
 	[
-		new DashboardWidgetPlacementInput("ToDo"),
-		new DashboardWidgetPlacementInput("Calendar"),
+		new DashboardWidgetPlacementInput("ToDo", 1, 1, 4, 2),
+		new DashboardWidgetPlacementInput("Calendar", 1, 3, 8, 6),
 	];
 
 	public SaveDashboardLayoutCommandHandlerTests()
@@ -73,7 +73,7 @@ public class SaveDashboardLayoutCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		var command = new SaveDashboardLayoutCommand(
-			DefaultOrgId, DefaultRequestingUserId, [new DashboardWidgetPlacementInput("NotAWidget")]);
+			DefaultOrgId, DefaultRequestingUserId, [new DashboardWidgetPlacementInput("NotAWidget", 1, 1, 1, 1)]);
 
 		var act = async () => await _sut.Handle(command, cancellationToken);
 
@@ -88,13 +88,69 @@ public class SaveDashboardLayoutCommandHandlerTests
 			DefaultOrgId,
 			DefaultRequestingUserId,
 			[
-				new DashboardWidgetPlacementInput("ToDo"),
-				new DashboardWidgetPlacementInput("ToDo"),
+				new DashboardWidgetPlacementInput("ToDo", 1, 1, 4, 2),
+				new DashboardWidgetPlacementInput("ToDo", 5, 1, 4, 2),
 			]);
 
 		var act = async () => await _sut.Handle(command, cancellationToken);
 
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*more than once*");
+	}
+
+	[Test]
+	[Arguments(0, 1, 4, 2)] // X below 1
+	[Arguments(1, 0, 4, 2)] // Y below 1
+	[Arguments(1, 1, 0, 2)] // Width below 1
+	[Arguments(1, 1, 4, 0)] // Height below 1
+	[Arguments(6, 1, 4, 2)] // X + Width - 1 exceeds the 8-column grid
+	public async Task Handle_ShouldThrow_WhenPlacementIsOutOfBounds(
+		int x, int y, int width, int height, CancellationToken cancellationToken)
+	{
+		var command = new SaveDashboardLayoutCommand(
+			DefaultOrgId,
+			DefaultRequestingUserId,
+			[new DashboardWidgetPlacementInput("ToDo", x, y, width, height)]);
+
+		var act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*invalid grid placement*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenWidgetsOverlap(
+		CancellationToken cancellationToken)
+	{
+		var command = new SaveDashboardLayoutCommand(
+			DefaultOrgId,
+			DefaultRequestingUserId,
+			[
+				new DashboardWidgetPlacementInput("ToDo", 1, 1, 4, 2),
+				new DashboardWidgetPlacementInput("Calendar", 3, 1, 4, 2),
+			]);
+
+		var act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*overlap*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldSucceed_WhenWidgetsShareAnEdgeButDoNotOverlap(
+		CancellationToken cancellationToken)
+	{
+		// Regression guard for an off-by-one in the overlap check: two widgets
+		// placed edge-to-edge (one starting exactly where the other ends) must
+		// be accepted, not rejected as overlapping.
+		var command = new SaveDashboardLayoutCommand(
+			DefaultOrgId,
+			DefaultRequestingUserId,
+			[
+				new DashboardWidgetPlacementInput("ToDo", 1, 1, 4, 2),
+				new DashboardWidgetPlacementInput("Calendar", 5, 1, 4, 2),
+			]);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().BeTrue();
 	}
 
 	[Test]
@@ -143,7 +199,7 @@ public class SaveDashboardLayoutCommandHandlerTests
 		var existing = OrganizationDashboardLayout.Create(
 			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
 			DefaultRequestingUserId,
-			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings)]);
+			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings, 1, 1, 8, 2)]);
 		_dbContext
 			.GetDashboardLayoutAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
 			.Returns(existing);
@@ -163,7 +219,7 @@ public class SaveDashboardLayoutCommandHandlerTests
 		var existing = OrganizationDashboardLayout.Create(
 			OrganizationId.Create(DefaultOrgId).GetValueOrThrow(),
 			DefaultRequestingUserId,
-			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings)]);
+			[new DashboardWidgetPlacement(DashboardWidgetKey.Settings, 1, 1, 8, 2)]);
 		_dbContext
 			.GetDashboardLayoutAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
 			.Returns(existing);
@@ -174,8 +230,8 @@ public class SaveDashboardLayoutCommandHandlerTests
 		result.Should().BeTrue();
 		existing.Widgets.Should().BeEquivalentTo(
 		[
-			new DashboardWidgetPlacement(DashboardWidgetKey.ToDo),
-			new DashboardWidgetPlacement(DashboardWidgetKey.Calendar),
+			new DashboardWidgetPlacement(DashboardWidgetKey.ToDo, 1, 1, 4, 2),
+			new DashboardWidgetPlacement(DashboardWidgetKey.Calendar, 1, 3, 8, 6),
 		], options => options.WithStrictOrdering());
 		await _layoutRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationDashboardLayout>(), Arg.Any<CancellationToken>());
 	}
