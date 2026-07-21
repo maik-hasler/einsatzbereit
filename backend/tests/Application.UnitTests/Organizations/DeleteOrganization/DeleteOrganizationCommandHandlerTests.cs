@@ -73,6 +73,8 @@ public class DeleteOrganizationCommandHandlerTests
 		result.Should().BeTrue();
 		_organizationRepo.Received(1).Delete(organization);
 		await _keycloakService.Received(1).DeleteOrganizationAsync(orgId, cancellationToken);
+		await _dbContext.Received(1).RemoveDashboardLayoutsForOrganizationAsync(
+			OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken);
 	}
 
 	[Test]

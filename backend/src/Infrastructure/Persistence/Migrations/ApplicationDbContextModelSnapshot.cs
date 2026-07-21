@@ -263,6 +263,43 @@ namespace Infrastructure.Persistence.Migrations
 					b.ToTable("organization", (string)null);
 				});
 
+			modelBuilder.Entity("Domain.Organizations.OrganizationDashboardLayout", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<Guid>("OrganizationId")
+						.HasColumnType("uuid")
+						.HasColumnName("organization_id");
+
+					b.Property<Guid>("UserId")
+						.HasColumnType("uuid")
+						.HasColumnName("user_id");
+
+					b.Property<string>("Widgets")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("widgets");
+
+					b.HasKey("Id")
+						.HasName("pk_organization_dashboard_layout");
+
+					b.HasIndex("OrganizationId", "UserId")
+						.IsUnique()
+						.HasDatabaseName("ix_organization_dashboard_layout_organization_id_user_id");
+
+					b.ToTable("organization_dashboard_layout", (string)null);
+				});
+
 			modelBuilder.Entity("Domain.Organizations.OrganizationInvitation", b =>
 				{
 					b.Property<Guid>("Id")

@@ -26,7 +26,14 @@ public interface IApplicationDbContext
 
 	IAggregateRepository<OrganizationMembership, OrganizationMembershipId> OrganizationMemberships { get; }
 
+	IAggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId> OrganizationDashboardLayouts { get; }
+
 	Task<bool> IsOrganizerAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,
 		CancellationToken cancellationToken = default);
@@ -37,6 +44,10 @@ public interface IApplicationDbContext
 		CancellationToken cancellationToken = default);
 
 	Task RemoveMembershipsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task RemoveDashboardLayoutsForOrganizationAsync(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 

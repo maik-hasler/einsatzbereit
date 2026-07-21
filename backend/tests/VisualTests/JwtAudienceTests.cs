@@ -32,13 +32,14 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
 
-		// Deliberately not also asserting on page text like GetByText("401") here:
-		// the Page.Response listener above is a deterministic, false-positive-free
-		// detector of the actual regression (a real backend-issued 401/403), whereas
-		// a bare page-wide text search is vulnerable to strict-mode collisions with
-		// unrelated test data sharing this session (e.g. another test's randomly
-		// suffixed org/opportunity name that happens to contain "401").
-
+		// The Page.Response listener above is the authoritative check for this
+		// regression (a real 401/403 from the backend) - a page-wide GetByText
+		// scan for "401" is a fragile proxy on top of it: this suite's shared,
+		// PerTestSession fixture accumulates test data across the whole run, and
+		// other tests (e.g. EngagementCheckInStatusCodeTests) name orgs/
+		// opportunities with a random GUID suffix that can coincidentally
+		// contain "401", tripping this exact assertion with no real auth error
+		// present.
 		if (authErrors.Count > 0)
 			throw new Exception(
 				$"JWT audience validation rejected {authErrors.Count} request(s): "

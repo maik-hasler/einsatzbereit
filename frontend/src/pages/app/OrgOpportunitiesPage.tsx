@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
@@ -12,6 +12,8 @@ import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpp
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Spinner from "../../components/Spinner";
+import { PlusIcon } from "../../components/QuickActionIcons";
+import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 export default function OrgOpportunitiesPage() {
@@ -39,6 +41,25 @@ export default function OrgOpportunitiesPage() {
 	// can see where a draft landed (issue #708).
 	const [highlightedId, setHighlightedId] = useState<string | null>(null);
 	const highlightRef = useRef<HTMLLIElement | null>(null);
+
+	// Memoized so the array reference stays stable across renders that don't
+	// change the translated label - see useQuickActions for why an
+	// unmemoized array here causes an infinite render loop. setShowCreate is
+	// React's useState setter (referentially stable), so no staleness risk
+	// from not routing it through a ref.
+	const quickActions = useMemo(
+		() => [
+			{
+				key: "create-opportunity",
+				label: t("orgOverview.createOpportunity"),
+				icon: <PlusIcon />,
+				onClick: () => setShowCreate(true),
+				variant: "primary" as const,
+			},
+		],
+		[t],
+	);
+	useQuickActions(quickActions);
 
 	function load() {
 		setError(null);
@@ -253,20 +274,6 @@ export default function OrgOpportunitiesPage() {
 
 	return (
 		<div>
-			<div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h1 className="w-full min-w-0 break-words text-2xl font-bold text-gray-900 sm:w-auto">
-					{org.name}
-				</h1>
-				<button
-					type="button"
-					onClick={() => setShowCreate(true)}
-					data-testid="create-opportunity-btn"
-					className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none sm:w-auto"
-				>
-					{t("orgOverview.createOpportunity")}
-				</button>
-			</div>
-
 			{items === null && !error && (
 				<div className="flex items-center justify-center py-16">
 					<Spinner label={t("orgOpportunities.loading")} />

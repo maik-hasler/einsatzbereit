@@ -191,13 +191,44 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_CalendarWidgetColorDialog_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #762 rebuilt the dashboard as a widget grid; the Calendar widget's
+		// color-picker dialog only exists in the DOM while open, so the plain
+		// page-load scan above can't reach it.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var calendarEvent = Page.Locator(".rbc-event").First;
+		try
+		{
+			await calendarEvent.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			return; // olaf's org has no calendar events seeded for the current month, skip
+		}
+
+		await calendarEvent.ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']");
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrgOpportunitiesPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach the page via the dashboard's own
+		// widget links instead.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -211,7 +242,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach the page via the Settings widget's
+		// member-count link instead.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -225,8 +258,97 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach the page via the Settings widget's
+		// "Edit settings" link instead.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrganizationSettingsPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// The Edit/Save/Cancel buttons moved from inline page content into the
+		// header's quick actions (#771 follow-up) - the read-only scan above
+		// never opens the edit form itself, so scan it separately here.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// The customizable widget grid's edit-mode chrome (inert widget
+		// content, drag-handle/size-cycle/remove toolbar) only exists in the
+		// DOM while editing - the read-only scan above can't reach it. The
+		// "Add Widget" modal is its own DOM-only-while-open surface, scanned
+		// separately below.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_AddWidgetModal_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// The "Add Widget" picker (#771 follow-up review feedback) only
+		// exists in the DOM while open - the edit-mode scan above never
+		// opens it.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_QuickCheckInAndSettingsIconWidgets_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// QuickCheckIn and SettingsIcon aren't in DEFAULT_LAYOUT (see
+		// widgetCatalog.ts), so a fresh org's dashboard scan above never
+		// renders them for real - only AddWidgetModal's static mockup preview
+		// gets scanned incidentally as part of that dialog. Add both here so
+		// their actual rendered content (the opportunity <select> + scan
+		// button, and the settings shortcut tile) gets its own axe pass.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByTestId("add-widget-option-QuickCheckIn").ClickAsync();
+		await dialog.GetByTestId("add-widget-option-SettingsIcon").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+
+		await Expect(Page.GetByTestId("widget-tile-QuickCheckIn")).ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("widget-tile-SettingsIcon")).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -236,13 +358,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Engagement management is nested in the org app (#751) - reachable
-		// from the Opportunities tab's "Manage applications" link, not from
+		// from the Opportunities page's "Manage applications" link, not from
 		// the public opportunity detail page anymore.
 		var frontend = Fixture.GetEndpoint("frontend");
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Opportunities", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });

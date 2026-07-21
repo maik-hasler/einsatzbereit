@@ -7,16 +7,18 @@ namespace VisualTests;
 /// <summary>
 /// Visual tests for the redesigned org app shell requested in #742 (and refined
 /// in the #744 review): the plain "Back to Einsatzbereit" text link became the
-/// Einsatzbereit logo (linking to the main site); the section tabs were removed
-/// from the header entirely and relocated into the org page's main content area;
-/// and an icon-led breadcrumb (home icon + current subpage label) now occupies
-/// the action bar directly beneath the header, where the tab bar used to sit.
+/// Einsatzbereit logo (linking to the main site), and an icon-led breadcrumb
+/// (home icon + current subpage label) occupies the action bar directly
+/// beneath the header. #771 went further and removed the section tabs
+/// entirely (they had briefly lived in the main content area per #744) -
+/// dashboard widgets are now the only navigation into a subpage, so this
+/// class no longer asserts anything about a tab bar's existence or location.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task OrgAppShell_LogoInHeader_BreadcrumbInActionBar_TabsInMainContent()
+	public async Task OrgAppShell_LogoInHeader_BreadcrumbInActionBar()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
@@ -51,18 +53,9 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync();
 
-		// The section tabs are gone from the header/action bar and now render inside
-		// the org page's main content area.
-		var tabBar = Page.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" });
-		await Expect(tabBar).ToBeVisibleAsync();
-		(await Page.Locator("header nav[aria-label='Organization sections']").CountAsync())
-			.Should().Be(0, "the tabs must not remain in the header");
-		(await Page.Locator("main nav[aria-label='Organization sections']").CountAsync())
-			.Should().Be(1, "the tabs moved into the org page's main content area");
-
-		// Active-tab logic is preserved: the Settings tab is marked current.
-		await Expect(tabBar.GetByRole(AriaRole.Link, new() { Name = "Settings" }))
-			.ToHaveAttributeAsync("aria-current", "page");
+		// #771: no section-tabs nav exists anywhere in the shell anymore.
+		(await Page.Locator("nav[aria-label='Organization sections']").CountAsync())
+			.Should().Be(0, "the tab bar was removed entirely - dashboard widgets replace it");
 
 		// Clicking the logo navigates to the main site.
 		await logoLink.ClickAsync();

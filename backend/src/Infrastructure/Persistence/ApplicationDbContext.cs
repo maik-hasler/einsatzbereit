@@ -77,6 +77,12 @@ internal sealed class ApplicationDbContext(
 			Set<OrganizationMembership>(),
 			m => m.Id);
 
+	public IAggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId> OrganizationDashboardLayouts
+		=> new AggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId>(
+			Set<OrganizationDashboardLayout>(),
+			Set<OrganizationDashboardLayout>(),
+			l => l.Id);
+
 	public async Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,
 		UserId userId,
@@ -85,6 +91,13 @@ internal sealed class ApplicationDbContext(
 			.AnyAsync(m => m.OrganizationId == organizationId
 				&& m.UserId == userId
 				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
+
+	public async Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationDashboardLayout>()
+			.FirstOrDefaultAsync(l => l.OrganizationId == organizationId && l.UserId == userId, cancellationToken);
 
 	public async Task RemoveMembershipAsync(
 		OrganizationId organizationId,
@@ -99,6 +112,13 @@ internal sealed class ApplicationDbContext(
 		CancellationToken cancellationToken = default) =>
 		await Set<OrganizationMembership>()
 			.Where(m => m.OrganizationId == organizationId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task RemoveDashboardLayoutsForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationDashboardLayout>()
+			.Where(l => l.OrganizationId == organizationId)
 			.ExecuteDeleteAsync(cancellationToken);
 
 	public async Task<List<Organization>> GetOrganizerOrganizationsAsync(
