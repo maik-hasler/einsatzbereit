@@ -266,6 +266,7 @@ export default function Header({
 									displayName={displayName}
 									initials={initials}
 									isAdmin={isAdmin}
+									activeOrg={activeOrg}
 									onSignOut={() => auth.signoutRedirect()}
 									onNotificationNavigate={handleNotificationNavigate}
 								/>
