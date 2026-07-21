@@ -9,8 +9,8 @@ namespace VisualTests;
 /// calendar into a widget grid (Calendar, Upcoming Opportunities, Settings,
 /// To-Do) so an organizer sees pending-application and signed-up-volunteer
 /// counts without navigating to another tab. #771 review feedback made the
-/// grid customizable (add/remove/resize/reorder via the "Edit" quick action)
-/// and added a "Create Opportunity" widget to the default layout - see
+/// grid customizable (add/remove/place via the "Edit" quick action) and
+/// added a "Create Opportunity" widget to the default layout - see
 /// OrgDashboardCustomizeTests for coverage of the customization itself.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]

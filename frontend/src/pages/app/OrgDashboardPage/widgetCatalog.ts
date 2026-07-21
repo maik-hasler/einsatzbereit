@@ -10,165 +10,95 @@ export type WidgetKey =
 	| "QuickCheckIn"
 	| "SettingsIcon";
 
-// A widget's own layout variant, driven entirely by how many of the 8 grid
-// columns the auto-fit packer below actually gave it - not a size the
-// organizer picks (#771 follow-up review feedback removed the manual
-// resize slider in favor of this).
+// A widget's own layout variant, driven by how many of the 8 grid columns
+// the organizer's own placement gives it (see classifyWidth below).
 export type WidgetSizeClass = "compact" | "medium" | "full";
 
 interface WidgetCatalogEntry {
 	titleKey: string;
-	// Column footprint on the 8-column grid - a widget always takes up to
-	// maxCols of whatever room is left in the current row, down to minCols
-	// if that's all that's left (see packWidgets below).
-	minCols: number;
-	maxCols: number;
-	// Nominal row-unit height, used for packing (how tall a "shelf" is) and
-	// the green cell backdrop's row count. The actual CSS row uses
-	// minmax(unit, auto), so real content taller than this estimate still
-	// fits without clipping - this is a placement estimate, not a hard cap.
-	rows: number;
+	// Starting column/row span offered when a widget is first added to the
+	// dashboard (see placeNewWidget in index.tsx) - just a sane starting
+	// point, not a constraint. The organizer immediately owns the exact
+	// bounding box via corner-to-corner placement (#782) and can resize it
+	// to anything that fits on the grid and doesn't overlap another widget.
+	defaultWidth: number;
+	defaultHeight: number;
 }
 
 export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
 	CreateOpportunity: {
 		titleKey: "orgDashboard.createOpportunityWidgetTitle",
-		minCols: 2,
-		maxCols: 4,
-		rows: 2,
+		defaultWidth: 4,
+		defaultHeight: 2,
 	},
 	ToDo: {
 		titleKey: "orgDashboard.todoWidgetTitle",
-		minCols: 3,
-		maxCols: 8,
-		rows: 2,
+		defaultWidth: 4,
+		defaultHeight: 2,
 	},
 	UpcomingOpportunities: {
 		titleKey: "orgDashboard.upcomingWidgetTitle",
-		minCols: 3,
-		maxCols: 8,
-		rows: 3,
+		defaultWidth: 4,
+		defaultHeight: 3,
 	},
 	Calendar: {
 		titleKey: "orgDashboard.calendarWidgetTitle",
-		minCols: 3,
-		maxCols: 8,
-		rows: 6,
+		defaultWidth: 8,
+		defaultHeight: 6,
 	},
 	Settings: {
 		titleKey: "orgDashboard.settingsWidgetTitle",
-		minCols: 3,
-		maxCols: 8,
-		rows: 2,
+		defaultWidth: 8,
+		defaultHeight: 2,
 	},
 	QuickCheckIn: {
 		titleKey: "orgDashboard.quickCheckInWidgetTitle",
-		minCols: 2,
-		maxCols: 4,
-		rows: 2,
+		defaultWidth: 4,
+		defaultHeight: 2,
 	},
 	SettingsIcon: {
 		titleKey: "orgDashboard.settingsIconWidgetTitle",
-		// Fixed - min equals max, so it's never anything but compact.
-		minCols: 2,
-		maxCols: 2,
-		rows: 1,
+		defaultWidth: 2,
+		defaultHeight: 1,
 	},
 };
 
 export const WIDGET_KEYS = Object.keys(WIDGET_CATALOG) as WidgetKey[];
 
+// Fixed column count for the dashboard grid - mirrors the backend's
+// DashboardGrid.Columns (Domain/Organizations/DashboardGrid.cs). Rows are
+// unbounded; the grid simply grows downward as widgets are placed further
+// down.
+export const GRID_COLUMNS = 8;
+
+// A widget's explicit, organizer-drawn bounding box on the grid - 1-based
+// grid-cell coordinates and cell spans, exactly as stored by the backend
+// (#782). Replaces the automatic skyline packer that used to derive
+// col/colSpan/row/rowSpan purely from display order.
+export interface PlacedWidget {
+	widgetKey: WidgetKey;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+
 // Layout applied when an organizer hasn't customized their dashboard yet -
-// matches the previous hardcoded dashboard (ToDo+Upcoming side by side,
-// Calendar and Settings full-width below), plus the former standalone
-// "+ Create Opportunity" button folded into its own widget tile. Order
-// only - sizing is always auto-fit, never stored.
-export const DEFAULT_LAYOUT: WidgetKey[] = [
-	"CreateOpportunity",
-	"ToDo",
-	"UpcomingOpportunities",
-	"Calendar",
-	"Settings",
+// matches the arrangement the former auto-fit packer used to produce for
+// this same widget order (ToDo+CreateOpportunity side by side, then Upcoming
+// Opportunities, Calendar and Settings each full-width below), now stored as
+// explicit coordinates instead of being recomputed at render time.
+export const DEFAULT_LAYOUT: PlacedWidget[] = [
+	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 4, height: 2 },
+	{ widgetKey: "ToDo", x: 5, y: 1, width: 4, height: 2 },
+	{ widgetKey: "UpcomingOpportunities", x: 1, y: 3, width: 8, height: 3 },
+	{ widgetKey: "Calendar", x: 1, y: 6, width: 8, height: 6 },
+	{ widgetKey: "Settings", x: 1, y: 12, width: 8, height: 2 },
 ];
 
-const GRID_COLUMNS = 8;
-
-export interface PackedWidget {
-	widgetKey: WidgetKey;
-	col: number; // 1-based grid-column-start
-	colSpan: number;
-	row: number; // 1-based grid-row-start
-	rowSpan: number;
-}
-
-// True skyline/masonry packer (not a row-shelf packer): tracks the next
-// free row per column independently, so one column can run taller than its
-// neighbor - e.g. a wide widget spanning two rows next to two narrower
-// widgets stacked in the remaining columns. A shelf packer can never
-// produce that (it always advances every column to the same row together),
-// which is exactly the arrangement organizers asked for (#762 follow-up
-// feedback - "widget 3 spans two rows while widgets 1 and 2 stack next to
-// it"). For each widget, every (start column, span width) combination
-// between its minCols and maxCols is scored by the row it would land on
-// (the tallest already-occupied column under that span) - the lowest row
-// wins, so a widget only wraps to a new row when nothing shallower is
-// available. Spans are tried widest-first, so a narrower span only
-// displaces the current best by finding a strictly lower row than any
-// wider span could - on an equal row, whichever span got there first (the
-// widest one) keeps it, still giving "take as much room as is left"; ties
-// at that same span are broken by the leftmost column. Every catalog
-// minCols is <= GRID_COLUMNS, so a placement always exists - there's no
-// "doesn't fit" failure mode this needs to report back.
-export function packWidgets(order: WidgetKey[]): {
-	placed: PackedWidget[];
-	totalRows: number;
-} {
-	// heights[c] = next free row (1-based) in column c.
-	const heights = new Array<number>(GRID_COLUMNS).fill(1);
-	const placed: PackedWidget[] = [];
-
-	for (const widgetKey of order) {
-		const entry = WIDGET_CATALOG[widgetKey];
-		let bestCol = 0;
-		let bestSpan = entry.minCols;
-		let bestRow = Infinity;
-
-		for (let span = entry.maxCols; span >= entry.minCols; span--) {
-			for (let col = 0; col + span <= GRID_COLUMNS; col++) {
-				let row = 1;
-				for (let c = col; c < col + span; c++) {
-					row = Math.max(row, heights[c]);
-				}
-				const better =
-					row < bestRow ||
-					(row === bestRow && span === bestSpan && col < bestCol);
-				if (better) {
-					bestRow = row;
-					bestSpan = span;
-					bestCol = col;
-				}
-			}
-		}
-
-		placed.push({
-			widgetKey,
-			col: bestCol + 1,
-			colSpan: bestSpan,
-			row: bestRow,
-			rowSpan: entry.rows,
-		});
-		for (let c = bestCol; c < bestCol + bestSpan; c++) {
-			heights[c] = bestRow + entry.rows;
-		}
-	}
-
-	const totalRows = Math.max(...heights) - 1;
-	return { placed, totalRows };
-}
-
-export function classifyWidth(colSpan: number): WidgetSizeClass {
-	if (colSpan <= 3) return "compact";
-	if (colSpan <= 5) return "medium";
+export function classifyWidth(width: number): WidgetSizeClass {
+	if (width <= 3) return "compact";
+	if (width <= 5) return "medium";
 	return "full";
 }
 
@@ -177,4 +107,50 @@ export function classifyWidth(colSpan: number): WidgetSizeClass {
 // unrecognized keys entirely rather than trusting the API response as-is.
 export function sanitizeWidgetKey(key: string): WidgetKey | null {
 	return key in WIDGET_CATALOG ? (key as WidgetKey) : null;
+}
+
+export function rectsOverlap(a: PlacedWidget, b: PlacedWidget): boolean {
+	return (
+		a.x < b.x + b.width &&
+		b.x < a.x + a.width &&
+		a.y < b.y + b.height &&
+		b.y < a.y + a.height
+	);
+}
+
+// True if `rect` fits on the grid horizontally (X + width doesn't run past
+// the last column) and doesn't overlap any other widget's placement. `y`
+// has no upper bound - the grid can always grow downward.
+export function isValidPlacement(
+	rect: PlacedWidget,
+	others: PlacedWidget[],
+): boolean {
+	if (rect.x < 1 || rect.y < 1 || rect.width < 1 || rect.height < 1) {
+		return false;
+	}
+	if (rect.x + rect.width - 1 > GRID_COLUMNS) {
+		return false;
+	}
+	return !others.some(
+		(other) => other.widgetKey !== rect.widgetKey && rectsOverlap(rect, other),
+	);
+}
+
+// Appends a newly added widget directly below every widget currently on the
+// grid, at its catalog default size - always non-overlapping since nothing
+// occupies the grid below the current bottom edge. The organizer then drags
+// it into its intended spot via corner-to-corner placement.
+export function placeNewWidget(
+	widgetKey: WidgetKey,
+	existing: PlacedWidget[],
+): PlacedWidget {
+	const entry = WIDGET_CATALOG[widgetKey];
+	const bottom = existing.reduce((max, w) => Math.max(max, w.y + w.height), 1);
+	return {
+		widgetKey,
+		x: 1,
+		y: bottom,
+		width: entry.defaultWidth,
+		height: entry.defaultHeight,
+	};
 }

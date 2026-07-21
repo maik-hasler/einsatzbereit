@@ -4107,12 +4107,20 @@ export interface DashboardLayoutResponse {
 
 export interface DashboardWidgetPlacementRequest {
     widgetKey: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 
     [key: string]: any;
 }
 
 export interface DashboardWidgetPlacementResponse {
     widgetKey: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 
     [key: string]: any;
 }

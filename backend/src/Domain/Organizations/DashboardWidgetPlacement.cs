@@ -1,8 +1,14 @@
 namespace Domain.Organizations;
 
-// One widget's slot in a customized dashboard: its catalog key. Position in
-// the containing list is the display order - no separate Order field
-// needed. Size is no longer stored here - widgets auto-fit into whatever
-// space the frontend's packing algorithm gives them (#771 follow-up review
-// feedback - "forget about the sizes slider").
-public sealed record DashboardWidgetPlacement(DashboardWidgetKey WidgetKey);
+// One widget's slot in a customized dashboard: its catalog key plus its
+// organizer-drawn bounding box on the dashboard's grid. X/Y are 1-based
+// grid-cell coordinates and Width/Height are cell spans - the organizer sets
+// all four explicitly by marking two corners on the grid (#782), replacing
+// the automatic packing algorithm that used to derive column/row spans from
+// display order alone.
+public sealed record DashboardWidgetPlacement(
+	DashboardWidgetKey WidgetKey,
+	int X,
+	int Y,
+	int Width,
+	int Height);
