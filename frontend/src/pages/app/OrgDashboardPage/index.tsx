@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import {
 	DndContext,
 	DragOverlay,
+	MeasuringStrategy,
 	closestCenter,
 	KeyboardSensor,
 	MouseSensor,
@@ -19,6 +20,7 @@ import {
 	useSensors,
 	type DragOverEvent,
 	type DragStartEvent,
+	type MeasuringConfiguration,
 } from "@dnd-kit/core";
 import {
 	SortableContext,
@@ -52,6 +54,39 @@ import {
 	type WidgetKey,
 	type WidgetSizeClass,
 } from "./widgetCatalog";
+
+// Hoisted to module scope so these are the same object on every render -
+// dnd-kit's useSensor/useSensors memoize on this options object's identity
+// (see @dnd-kit/core's useSensor), so an inline literal here defeats that
+// memoization every render, which cascades into a brand-new `sensors` array
+// every render and, with enough widgets on the grid, an infinite
+// dragOver-triggered render loop ("Maximum update depth exceeded").
+const MOUSE_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+const TOUCH_SENSOR_OPTIONS = {
+	activationConstraint: { delay: 200, tolerance: 8 },
+};
+const KEYBOARD_SENSOR_OPTIONS = {
+	coordinateGetter: sortableKeyboardCoordinates,
+};
+
+// dnd-kit's default re-measures every droppable's rect on every DOM mutation
+// while a drag is active (MeasuringStrategy.WhileDragging). Reordering live
+// as the dragged tile crosses another one (see handleDragOver) re-packs the
+// whole masonry grid on every crossing, which changes every tile's inline
+// gridColumn/gridRow style - a DOM mutation that then re-triggers dnd-kit's
+// measuring, which can discover a new "closest" collision target under the
+// still-stationary pointer purely because the grid just reflowed under it,
+// firing another crossing, another re-pack, another remeasure... an infinite
+// feedback loop between layout and collision detection that manifests as
+// React error #185 ("Maximum update depth exceeded") once enough widgets are
+// on the board for a single drag to cross several tiles. Measuring once at
+// drag start (and not again until it ends) breaks that loop: collision
+// detection for the rest of the drag uses each tile's position from the
+// moment the drag began, which is exactly what "which tile is the pointer
+// nearest to" needs regardless of how the grid has since repacked.
+const DND_MEASURING_CONFIG: MeasuringConfiguration = {
+	droppable: { strategy: MeasuringStrategy.BeforeDragging },
+};
 
 // Matches Tailwind's default `lg` breakpoint, which is also where the
 // widget grid switches from a single stacked column to the real 8-column
@@ -105,6 +140,7 @@ function EditableWidgetTile({
 	const { t } = useTranslation();
 	const { attributes, listeners, setNodeRef, isDragging } = useSortable({
 		id: widgetKey,
+		animateLayoutChanges: () => false,
 	});
 	const catalogEntry = WIDGET_CATALOG[widgetKey];
 
@@ -389,19 +425,15 @@ export default function OrgDashboardPage() {
 		// without it, a plain click on the remove button (which lives inside
 		// that same tile) would be swallowed as a zero-distance drag instead
 		// of firing its own onClick.
-		useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+		useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
 		// Touch gets a short hold instead of a distance threshold. Unlike
 		// MouseSensor/PointerSensor's distance-based activation, dnd-kit's
 		// delay-based TouchSensor doesn't need `touch-action: none` to work
 		// (see EditableWidgetTile's comment) - a quick swipe still scrolls the
 		// page as normal, and only a deliberate ~200ms hold on a tile claims
 		// the gesture for dragging.
-		useSensor(TouchSensor, {
-			activationConstraint: { delay: 200, tolerance: 8 },
-		}),
-		useSensor(KeyboardSensor, {
-			coordinateGetter: sortableKeyboardCoordinates,
-		}),
+		useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
+		useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS),
 	);
 
 	function handleDragStart(event: DragStartEvent) {
@@ -425,7 +457,14 @@ export default function OrgDashboardPage() {
 			const current = prev ?? [];
 			const oldIndex = current.indexOf(active.id as WidgetKey);
 			const newIndex = current.indexOf(over.id as WidgetKey);
-			if (oldIndex === -1 || newIndex === -1) return current;
+			// dnd-kit's MouseSensor re-fires onDragOver on every pointer move,
+			// not just when the crossing target actually changes - without this
+			// bail-out, arrayMove (which always returns a fresh array, even for
+			// a from===to no-op) would trigger a fresh setState/repack on every
+			// one of those redundant events instead of just the real crossings.
+			if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+				return current;
+			}
 			return arrayMove(current, oldIndex, newIndex);
 		});
 	}
@@ -601,6 +640,7 @@ export default function OrgDashboardPage() {
 			<DndContext
 				sensors={sensors}
 				collisionDetection={closestCenter}
+				measuring={DND_MEASURING_CONFIG}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}
