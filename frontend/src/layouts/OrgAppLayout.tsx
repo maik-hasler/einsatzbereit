@@ -5,6 +5,7 @@ import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { setActiveOrgId } from "../lib/activeOrg";
+import { ORG_TABS } from "../lib/orgTabs";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -20,13 +21,6 @@ export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
 	reloadOrg: () => void;
 }
-
-const TABS = [
-	{ key: "dashboard", labelKey: "orgOverview.tabDashboard" },
-	{ key: "opportunities", labelKey: "orgOverview.tabOpportunities" },
-	{ key: "members", labelKey: "orgOverview.tabMembers" },
-	{ key: "settings", labelKey: "orgOverview.tabSettings" },
-] as const;
 
 // Renders the org app shell body inside OrgBreadcrumbProvider so it can read
 // the nested-page breadcrumb extra (see useSetOrgBreadcrumbExtra) and pass
@@ -73,6 +67,25 @@ function OrgAppShell({
 			/>
 
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+				<nav aria-label={t("orgApp.tabsLabel")} className="mb-6 sm:mb-8">
+					<div className="flex gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						{ORG_TABS.map((tab) => (
+							<Link
+								key={tab.key}
+								to={`/app/${organizationId}/${tab.key}`}
+								aria-current={activeTabKey === tab.key ? "page" : undefined}
+								className={`shrink-0 whitespace-nowrap border-b-2 pb-3 pt-3 text-sm font-medium transition-colors ${
+									activeTabKey === tab.key
+										? "border-brand-700 text-brand-700"
+										: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+								}`}
+							>
+								{t(tab.labelKey)}
+							</Link>
+						))}
+					</div>
+				</nav>
+
 				<Outlet
 					context={{ org, reloadOrg: load } satisfies OrgAppContext}
 					// Outlet re-mounts children on org identity change so per-tab state resets cleanly
@@ -131,8 +144,9 @@ export default function OrgAppLayout() {
 		.slice(`/app/${organizationId}/`.length)
 		.split("/")[0];
 	const activeTabKey =
-		TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
-	const activeTab = TABS.find((tab) => tab.key === activeTabKey) ?? TABS[0];
+		ORG_TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
+	const activeTab =
+		ORG_TABS.find((tab) => tab.key === activeTabKey) ?? ORG_TABS[0];
 	const activeTabLabel = t(activeTab.labelKey);
 
 	if (loading) {

@@ -9,10 +9,9 @@ namespace VisualTests;
 /// in the #744 review): the plain "Back to Einsatzbereit" text link became the
 /// Einsatzbereit logo (linking to the main site), and an icon-led breadcrumb
 /// (home icon + current subpage label) occupies the action bar directly
-/// beneath the header. #771 went further and removed the section tabs
-/// entirely (they had briefly lived in the main content area per #744) -
-/// dashboard widgets are now the only navigation into a subpage, so this
-/// class no longer asserts anything about a tab bar's existence or location.
+/// beneath the header, separate from the section-tabs nav (see
+/// OrgAppMobileResponsiveTests for that nav's own coverage - #771 briefly
+/// removed it, #775/#777 brought it back for the mobile burger submenu).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -52,10 +51,6 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		// The org switcher remains present in the header as its own separate control.
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToBeVisibleAsync();
-
-		// #771: no section-tabs nav exists anywhere in the shell anymore.
-		(await Page.Locator("nav[aria-label='Organization sections']").CountAsync())
-			.Should().Be(0, "the tab bar was removed entirely - dashboard widgets replace it");
 
 		// Clicking the logo navigates to the main site.
 		await logoLink.ClickAsync();

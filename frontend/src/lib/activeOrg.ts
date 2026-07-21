@@ -14,20 +14,27 @@ export function setActiveOrgId(organizationId: string): void {
 	document.cookie = `${COOKIE_NAME}=${encodeURIComponent(organizationId)}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
 }
 
-// Resolves where the org app shell should open without ever showing an
-// intermediate picker: the last-opened org (active-org cookie) if the user
-// still belongs to it, otherwise the first org alphabetically by name.
-export function resolveOrgAppPath(
+// Resolves which organization the org app shell (and any org-scoped nav
+// link) should open without ever showing an intermediate picker: the
+// last-opened org (active-org cookie) if the user still belongs to it,
+// otherwise the first org alphabetically by name.
+export function resolveActiveOrg(
 	orgs: OrganizationSummaryDto[],
 	activeOrgId: string | null,
-): string | null {
+): OrganizationSummaryDto | null {
 	if (orgs.length === 0) return null;
-	if (orgs.length === 1) return `/app/${orgs[0].id}/dashboard`;
+	if (orgs.length === 1) return orgs[0];
 
 	const active = activeOrgId
 		? orgs.find((org) => org.id === activeOrgId)
 		: undefined;
-	const target =
-		active ?? [...orgs].sort((a, b) => a.name.localeCompare(b.name))[0];
-	return `/app/${target.id}/dashboard`;
+	return active ?? [...orgs].sort((a, b) => a.name.localeCompare(b.name))[0];
+}
+
+export function resolveOrgAppPath(
+	orgs: OrganizationSummaryDto[],
+	activeOrgId: string | null,
+): string | null {
+	const org = resolveActiveOrg(orgs, activeOrgId);
+	return org ? `/app/${org.id}/dashboard` : null;
 }

@@ -86,13 +86,16 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	[Test]
-	public async Task Dashboard_HasNoTabBarOrOrgNameHeading_AndLinksReachEverySubpage()
+	public async Task Dashboard_HasNoOrgNameHeading_AndWidgetLinksReachEverySubpage()
 	{
-		// #771: the repo owner asked to remove the tab bar and the per-page
-		// org-name h1 entirely - the org switcher in the header already shows
-		// the org name, and the dashboard's own widgets should be good enough
-		// to reach every subsite without a separate tab bar. Proves both the
-		// removal and the reachability requirement together.
+		// #771: the repo owner asked to remove the per-page org-name h1
+		// entirely - the org switcher in the header already shows the org
+		// name. #775/#777 brought the tab bar back (mobile burger submenu
+		// needed it too), so that part of #771's removal no longer holds -
+		// see OrgAppMobileResponsiveTests for tab-bar coverage. This test
+		// keeps proving the h1 removal and that the dashboard's own widgets
+		// are a second, independent way to reach every subsite (not just the
+		// tab bar).
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -101,14 +104,17 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		await CreateOrganizationAsync("Visual771 Reachability");
 
-		(await Page.Locator("nav[aria-label='Organization sections']").CountAsync())
-			.Should().Be(0, "the tab bar was removed - widgets are the only navigation");
 		(await Page.Locator("h1").CountAsync())
 			.Should().Be(0, "the dashboard no longer duplicates the org name as a heading");
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
 		var organizationId = match.Groups[1].Value;
+
+		var settingsWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Organization", Exact = true }),
+		});
 
 		// Opportunities: reachable via a dashboard widget's "opportunities" link.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
@@ -118,8 +124,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.GoBackAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 10_000 });
 
-		// Members: reachable via the Settings widget's member-count link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		// Members: reachable via the Settings widget's member-count link -
+		// scoped to that widget since the tab bar has its own, separate
+		// "Members" link now too.
+		await settingsWidget.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/members", new() { Timeout = 10_000 });
 
 		await Page.GoBackAsync();

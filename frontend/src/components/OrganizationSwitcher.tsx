@@ -5,21 +5,24 @@ import type {
 	Organization,
 	OrganizationSummaryDto,
 } from "../client/api-client";
-import { useApiClient } from "../hooks/useApiClient";
 import CreateOrganizationModal from "./CreateOrganizationModal";
 
 export default function OrganizationSwitcher({
 	currentOrgId,
 	currentTab,
+	orgs,
+	loading,
 }: {
 	currentOrgId: string;
 	currentTab: string;
+	// Fetched by the parent Header (which needs the same list for its own
+	// nav-gating logic) so this component isn't firing a second, identical
+	// getOrganizations() request on every org-app-shell page load.
+	orgs: OrganizationSummaryDto[];
+	loading: boolean;
 }) {
-	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
-	const [loading, setLoading] = useState(true);
 	const [open, setOpen] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -29,20 +32,6 @@ export default function OrganizationSwitcher({
 	function orgPath(org: OrganizationSummaryDto) {
 		return `/app/${org.id}/${currentTab}`;
 	}
-
-	function fetchOrgs() {
-		setLoading(true);
-		api
-			.getOrganizations()
-			.then((data: OrganizationSummaryDto[]) => setOrgs(data))
-			.catch(() => setOrgs([]))
-			.finally(() => setLoading(false));
-	}
-
-	useEffect(() => {
-		fetchOrgs();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
 	useEffect(() => {
 		const handleClick = (e: MouseEvent) => {

@@ -2,7 +2,7 @@
 // anywhere in the app to see it again after creation - PR #561 deleted the
 // only page that rendered an org's drafts as "dead code" without noticing it
 // was load-bearing. Verifies the restored drafts section on the org
-// dashboard's default "Calendar" tab shows a draft opportunity with the
+// dashboard's default "Dashboard" tab shows a draft opportunity with the
 // "Draft" badge. Creates a throwaway organization + draft opportunity and
 // deletes both afterwards so this script doesn't leave junk data on the
 // live site (see #630).
