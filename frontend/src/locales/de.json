@@ -813,7 +813,7 @@
       }
     },
     "orgOverview": {
-      "tabCalendar": "Kalender",
+      "tabDashboard": "Dashboard",
       "tabOpportunities": "Einsätze",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",

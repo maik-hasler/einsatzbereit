@@ -813,7 +813,7 @@
       }
     },
     "orgOverview": {
-      "tabCalendar": "Calendar",
+      "tabDashboard": "Dashboard",
       "tabOpportunities": "Opportunities",
       "tabMembers": "Members",
       "tabSettings": "Settings",

@@ -91,7 +91,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		await banner.GetByRole(AriaRole.Link, new() { Name = "Calendar", Exact = true })
+		await banner.GetByRole(AriaRole.Link, new() { Name = "Dashboard", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
