@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { ReactNode, RefObject } from "react";
 
 const FOCUSABLE_SELECTOR =
@@ -63,7 +64,14 @@ export default function Modal({
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [onClose, suspended]);
 
-	return (
+	// Portaled to document.body rather than rendered in place - a modal opened
+	// from inside a dashboard widget would otherwise live inside
+	// EditableWidgetTile's `inert={editing}` wrapper (see OrgDashboardPage),
+	// which makes the whole subtree unfocusable/click-dead the moment edit
+	// mode is entered while the modal is open. `inert` only reaches real DOM
+	// descendants, so portaling out from under it keeps the modal interactive
+	// regardless of the widget's own edit-mode state.
+	return createPortal(
 		<div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden p-3 sm:p-4">
 			<button
 				type="button"
@@ -81,6 +89,7 @@ export default function Modal({
 			>
 				{children}
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

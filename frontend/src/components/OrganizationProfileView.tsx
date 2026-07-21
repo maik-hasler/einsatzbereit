@@ -22,8 +22,9 @@ interface OrganizationProfileViewProps {
 	children?: ReactNode;
 	/**
 	 * "h1" for a standalone page whose primary heading this name is (the
-	 * public profile page); "p" (default) when the caller already renders its
-	 * own page-level <h1> elsewhere, e.g. the org dashboard's Settings tab.
+	 * public profile page); "p" (default) for the org app's own Settings tab,
+	 * which deliberately has no page-level heading - the org switcher in the
+	 * header already shows the org name.
 	 */
 	nameAs?: "h1" | "p";
 }

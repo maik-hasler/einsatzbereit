@@ -44,7 +44,8 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
+		// #771: the tab bar is gone - reach Settings via the dashboard's own link.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Org general-info fields also render read-only until "Edit" is clicked.

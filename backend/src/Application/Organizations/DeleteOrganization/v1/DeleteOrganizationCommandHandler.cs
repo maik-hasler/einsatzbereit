@@ -51,6 +51,7 @@ internal sealed class DeleteOrganizationCommandHandler(
 			request.OrganizationId, cancellationToken);
 
 		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
+		await dbContext.RemoveDashboardLayoutsForOrganizationAsync(organizationId, cancellationToken);
 
 		dbContext.Organizations.Delete(organization);
 

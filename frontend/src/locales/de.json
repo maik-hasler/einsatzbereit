@@ -5,6 +5,12 @@
       "tagline": "Engagiere dich spontan. Finde dein Ehrenamt in der Nähe.",
       "description": "Einsatzbereit bringt engagierte Helfer:innen mit regionalen Bedarfen zusammen. Spontan, schnell und wirksam."
     },
+    "common": {
+      "edit": "Bearbeiten",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "cancel": "Abbrechen"
+    },
     "nav": {
       "accountLabel": "Konto",
       "userMenu": "Benutzermenü",
@@ -324,8 +330,7 @@
     },
     "orgApp": {
       "backToSite": "Zurueck zu Einsatzbereit",
-      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
-      "tabsLabel": "Organisationsbereiche"
+      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
     },
     "orgOpportunities": {
       "loading": "Wird geladen…",
@@ -356,7 +361,40 @@
       "cancelledEngagementsDesc": "Insgesamt abgesagt über alle Einsätze",
       "viewOpportunities": "Einsätze anzeigen →",
       "viewEngagements": "Engagements anzeigen →",
-      "unnamedDraft": "Unbenannter Entwurf"
+      "unnamedDraft": "Unbenannter Entwurf",
+      "signedUpVolunteers": "Angemeldete Freiwillige",
+      "todoWidgetTitle": "Erfordert deine Aufmerksamkeit",
+      "todoWidgetDesc": "Ausstehende Bewerbungen und bestätigte Freiwillige auf einen Blick.",
+      "todoError": "Zusammenfassung konnte nicht geladen werden.",
+      "calendarWidgetTitle": "Kalender",
+      "calendarWidgetDesc": "Ein vollständiger Kalender aller Zeitslots deiner Einsätze.",
+      "upcomingWidgetTitle": "Bevorstehende Einsätze",
+      "upcomingWidgetDesc": "Eine kurze Liste deiner nächsten veröffentlichten Einsätze.",
+      "upcomingLoading": "Wird geladen…",
+      "upcomingError": "Einsätze konnten nicht geladen werden.",
+      "upcomingEmpty": "Keine bevorstehenden Einsätze.",
+      "upcomingViewAll": "Alle Einsätze anzeigen →",
+      "settingsWidgetTitle": "Organisation",
+      "settingsWidgetDesc": "Identität deiner Organisation, Mitgliederzahl und ein Link zu den Einstellungen.",
+      "settingsMemberCount": "{{count}} Mitglieder",
+      "settingsEditLink": "Einstellungen bearbeiten →",
+      "createOpportunityWidgetTitle": "Einsatz erstellen",
+      "createOpportunityWidgetDesc": "Veröffentliche einen neuen Einsatz für deine Organisation.",
+      "quickCheckInWidgetTitle": "Schnell-Check-in",
+      "quickCheckInWidgetDesc": "Direkt zum QR-Scanner für jeden veröffentlichten Einsatz springen.",
+      "quickCheckInNoOpportunities": "Noch keine veröffentlichten Einsätze zum Einchecken von Freiwilligen.",
+      "quickCheckInSelectOpportunity": "Einsatz, für den Freiwillige eingecheckt werden sollen",
+      "quickCheckInOpenScanner": "QR-Code scannen",
+      "settingsIconWidgetTitle": "Einstellungen",
+      "settingsIconWidgetDesc": "Eine minimale Verknüpfung zur Einstellungsseite.",
+      "dragToReorder": "\"{{widget}}\" zum Umsortieren ziehen",
+      "removeWidget": "Widget \"{{widget}}\" entfernen",
+      "addWidgetHeading": "Widget hinzufügen",
+      "addWidgetModalDesc": "Wähle ein Widget aus, das du deinem Dashboard hinzufügen möchtest.",
+      "addWidgetAllAdded": "Alle Widgets wurden hinzugefügt.",
+      "addWidgetDone": "Fertig",
+      "emptyStateTitle": "Dein Dashboard ist leer",
+      "emptyStateMessage": "Füge ein Widget hinzu, um loszulegen."
     },
     "orgSettings": {
       "title": "Organisation bearbeiten",
@@ -379,8 +417,6 @@
       "fieldHouseNumber": "Hausnummer",
       "fieldZip": "PLZ",
       "fieldCity": "Stadt",
-      "saving": "Wird gespeichert…",
-      "save": "Speichern",
       "savedSuccess": "Änderungen gespeichert.",
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Organisation konnte nicht geladen werden.",
@@ -395,8 +431,6 @@
       "leaveOrganizationLastMemberHint": "Du bist das einzige Mitglied - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
       "searching": "Suche läuft…",
       "noSearchResults": "Keine Benutzer gefunden.",
-      "edit": "Bearbeiten",
-      "cancel": "Abbrechen",
       "loading": "Wird geladen…",
       "inviteLabel": "Mitglied einladen",
       "invitePlaceholder": "Nach Benutzername oder E-Mail suchen…",
@@ -812,7 +846,7 @@
       }
     },
     "orgOverview": {
-      "tabCalendar": "Kalender",
+      "tabDashboard": "Dashboard",
       "tabOpportunities": "Einsätze",
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",
@@ -831,9 +865,10 @@
       "calendarWeek": "Woche",
       "calendarWorkWeek": "Arbeitswoche",
       "calendarDay": "Tag",
+      "calendarAgenda": "Agenda",
       "eventFillState": "{{booked}} / {{max}} gebucht",
       "eventManageApplications": "Bewerbungen verwalten",
-      "createOpportunity": "+ Einsatz erstellen"
+      "createOpportunity": "Einsatz erstellen"
     }
   }
 }

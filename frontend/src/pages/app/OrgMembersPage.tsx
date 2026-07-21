@@ -130,8 +130,6 @@ export default function OrgMembersPage() {
 
 	return (
 		<div>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">{org.name}</h1>
-
 			<div className="mx-auto max-w-2xl">
 				{successMessage && (
 					<div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">

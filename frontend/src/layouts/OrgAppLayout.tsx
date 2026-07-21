@@ -9,6 +9,10 @@ import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
 } from "../contexts/OrgBreadcrumbContext";
+import {
+	QuickActionsProvider,
+	useQuickActionsList,
+} from "../contexts/QuickActionsContext";
 import Header from "../components/Header";
 import Spinner from "../components/Spinner";
 
@@ -18,7 +22,7 @@ export interface OrgAppContext {
 }
 
 const TABS = [
-	{ key: "dashboard", labelKey: "orgOverview.tabCalendar" },
+	{ key: "dashboard", labelKey: "orgOverview.tabDashboard" },
 	{ key: "opportunities", labelKey: "orgOverview.tabOpportunities" },
 	{ key: "members", labelKey: "orgOverview.tabMembers" },
 	{ key: "settings", labelKey: "orgOverview.tabSettings" },
@@ -45,6 +49,7 @@ function OrgAppShell({
 }) {
 	const { t } = useTranslation();
 	const extra = useOrgBreadcrumbExtra();
+	const quickActions = useQuickActionsList();
 
 	const breadcrumbItems = extra
 		? [
@@ -63,29 +68,11 @@ function OrgAppShell({
 				breadcrumb={{
 					homeHref: `/app/${organizationId}/dashboard`,
 					items: breadcrumbItems,
+					actions: quickActions,
 				}}
 			/>
 
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-				<nav aria-label={t("orgApp.tabsLabel")} className="mb-6 sm:mb-8">
-					<div className="flex gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-						{TABS.map((tab) => (
-							<Link
-								key={tab.key}
-								to={`/app/${organizationId}/${tab.key}`}
-								aria-current={activeTabKey === tab.key ? "page" : undefined}
-								className={`shrink-0 whitespace-nowrap border-b-2 pb-3 pt-3 text-sm font-medium transition-colors ${
-									activeTabKey === tab.key
-										? "border-brand-700 text-brand-700"
-										: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-								}`}
-							>
-								{t(tab.labelKey)}
-							</Link>
-						))}
-					</div>
-				</nav>
-
 				<Outlet
 					context={{ org, reloadOrg: load } satisfies OrgAppContext}
 					// Outlet re-mounts children on org identity change so per-tab state resets cleanly
@@ -174,13 +161,15 @@ export default function OrgAppLayout() {
 
 	return (
 		<OrgBreadcrumbProvider>
-			<OrgAppShell
-				organizationId={organizationId}
-				org={org}
-				activeTabKey={activeTabKey}
-				activeTabLabel={activeTabLabel}
-				load={load}
-			/>
+			<QuickActionsProvider>
+				<OrgAppShell
+					organizationId={organizationId}
+					org={org}
+					activeTabKey={activeTabKey}
+					activeTabLabel={activeTabLabel}
+					load={load}
+				/>
+			</QuickActionsProvider>
 		</OrgBreadcrumbProvider>
 	);
 }
