@@ -91,16 +91,16 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		{
 			setupHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {setupSession.AccessToken}");
 
-			var suffix = Guid.NewGuid().ToString("N");
+			var setupSuffix = Guid.NewGuid().ToString("N");
 			var orgResponse = await setupHttp.PostAsJsonAsync(
-				"/v1/organizations", new { name = $"AchievementSeed Org {suffix}" });
+				"/v1/organizations", new { name = $"AchievementSeed Org {setupSuffix}" });
 			orgResponse.EnsureSuccessStatusCode();
 			var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
 			var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
 			var oppResponse = await setupHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 			{
-				title = $"AchievementSeed Opportunity {suffix}",
+				title = $"AchievementSeed Opportunity {setupSuffix}",
 				description = "Created by AchievementsTests to guarantee a confirmed engagement",
 				organizationId,
 				isRemote = true,
