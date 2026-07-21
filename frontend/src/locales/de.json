@@ -331,7 +331,8 @@
     },
     "orgApp": {
       "backToSite": "Zurueck zu Einsatzbereit",
-      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
+      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
+      "tabsLabel": "Organisationsbereiche"
     },
     "orgOpportunities": {
       "loading": "Wird geladen…",

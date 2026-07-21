@@ -32,9 +32,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		// #771: the tab bar is gone - the dashboard's Settings widget links
-		// straight to the members count, which is now the way to reach this page.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 
@@ -73,8 +71,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual580 Leave");
 
-		// #771: reach Members via the dashboard's Settings widget link, not a tab.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
 		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
