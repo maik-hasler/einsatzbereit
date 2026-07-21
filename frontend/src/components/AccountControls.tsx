@@ -240,11 +240,12 @@ export default function AccountControls({
 								</Link>
 							)}
 							{activeOrg && (
-								<div>
+								<div className="relative">
 									<button
 										type="button"
 										onClick={() => setOrgMenuOpen((o) => !o)}
 										aria-expanded={orgMenuOpen}
+										aria-haspopup="true"
 										className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-brand-50 hover:text-brand-700"
 									>
 										<span className="flex items-center gap-3">
@@ -262,10 +263,10 @@ export default function AccountControls({
 													d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
 												/>
 											</svg>
-											{t("nav.organizationDashboard")}
+											{t("nav.organization")}
 										</span>
 										<svg
-											className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${orgMenuOpen ? "rotate-180" : ""}`}
+											className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${orgMenuOpen ? "-rotate-180" : ""}`}
 											fill="none"
 											viewBox="0 0 24 24"
 											strokeWidth="2"
@@ -275,18 +276,18 @@ export default function AccountControls({
 											<path
 												strokeLinecap="round"
 												strokeLinejoin="round"
-												d="m19.5 8.25-7.5 7.5-7.5-7.5"
+												d="m8.25 4.5 7.5 7.5-7.5 7.5"
 											/>
 										</svg>
 									</button>
 									{orgMenuOpen && (
-										<div className="border-t border-gray-100 bg-gray-50 py-1">
+										<div className="absolute right-full top-0 mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
 											{ORG_TABS.map((tab) => (
 												<Link
 													key={tab.key}
 													to={`/app/${activeOrg.id}/${tab.key}`}
 													onClick={() => setDropdownOpen(false)}
-													className="block px-4 py-2 pl-11 text-sm text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
+													className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 												>
 													{t(tab.labelKey)}
 												</Link>
