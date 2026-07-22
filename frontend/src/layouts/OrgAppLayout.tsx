@@ -14,7 +14,7 @@ import {
 	QuickActionsProvider,
 	useQuickActionsList,
 } from "../contexts/QuickActionsContext";
-import Header from "../components/Header";
+import Header from "../components/Header/Header";
 import Spinner from "../components/Spinner";
 
 export interface OrgAppContext {
