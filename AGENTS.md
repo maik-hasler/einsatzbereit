@@ -84,7 +84,7 @@ edit on your own initiative):
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
   `.claude/skills/frontend-design/` (vendored from `anthropics/skills`,
-  Apache-2.0, `LICENSE.txt` alongside it) pushes frontend redesign work
+  Apache-2.0, `LICENSE` alongside it) pushes frontend redesign work
   toward a deliberate, non-generic visual direction - typography, color
   theming, motion, spatial composition - instead of generic AI-layout
   defaults; load it before visual/layout changes to frontend components
