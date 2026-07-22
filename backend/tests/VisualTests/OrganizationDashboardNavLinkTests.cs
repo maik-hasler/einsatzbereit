@@ -52,7 +52,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		var toggle = banner.GetByRole(AriaRole.Button, new() { Name = "Organization" });
+		var toggle = banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true });
 		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Collapsed by default: the org tab links aren't reachable yet.
@@ -75,7 +75,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		// Re-open and confirm the remaining tabs are all reachable too.
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization" })
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
@@ -84,7 +84,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization" })
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
@@ -93,7 +93,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization" })
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Dashboard", Exact = true })
@@ -117,7 +117,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Administration" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Organization" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Organization", Exact = true }))
 			.Not.ToBeVisibleAsync();
 	}
 }
