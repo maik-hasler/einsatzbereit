@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation, Trans } from "react-i18next";
-import type { VolunteerOpportunityDetails } from "../client/api-client";
+import type {
+	PublicOrganizationProfileResponse,
+	VolunteerOpportunityDetails,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
 	formatDateTime,
 	formatOccurrence,
 	formatParticipationType,
+	formatPostedAgo,
 } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -61,10 +65,27 @@ export default function VolunteerOpportunityDetailPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOrganisator]);
 
+	const [orgProfile, setOrgProfile] =
+		useState<PublicOrganizationProfileResponse | null>(null);
+
+	useEffect(() => {
+		if (!opportunity?.organizationId) return;
+		api
+			.getPublicOrganizationProfile(opportunity.organizationId)
+			.then(setOrgProfile)
+			.catch(() => {});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [opportunity?.organizationId]);
+
 	const latestRequestRef = useRef(0);
 
 	useEffect(() => {
 		if (!opportunityId) return;
+		// Avoids briefly showing the previous opportunity's organization card
+		// (email/phone/address) while the new one loads, since this state isn't
+		// otherwise tied to opportunityId and would only refresh once the
+		// organizationId effect below notices it changed.
+		setOrgProfile(null);
 		load();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId, api]);
@@ -167,6 +188,11 @@ export default function VolunteerOpportunityDetailPage() {
 		opportunity.timeSlots.length > 0 &&
 		opportunity.timeSlots.every((ts) => ts.bookedCount >= ts.maxParticipants);
 
+	const otherOrgOpportunities =
+		orgProfile?.openOpportunities
+			.filter((opp) => opp.id !== opportunity.id)
+			.slice(0, 3) ?? [];
+
 	return (
 		<div className="mx-auto max-w-2xl">
 			{/* Banner image */}
@@ -213,9 +239,12 @@ export default function VolunteerOpportunityDetailPage() {
 			</div>
 
 			{/* Title */}
-			<h1 className="mb-3 text-2xl font-bold text-gray-900 sm:text-3xl">
+			<h1 className="mb-1 text-2xl font-bold text-gray-900 sm:text-3xl">
 				{opportunity.title}
 			</h1>
+			<p className="mb-3 text-xs text-gray-600">
+				{formatPostedAgo(opportunity.createdOn as unknown as string, t)}
+			</p>
 
 			{/* Description */}
 			{opportunity.description && (
@@ -311,6 +340,15 @@ export default function VolunteerOpportunityDetailPage() {
 				)}
 			</div>
 
+			{/* Social proof */}
+			{opportunity.currentParticipantCount > 0 && (
+				<p className="mb-6 text-sm font-medium text-gray-600">
+					{t("opportunities.participantsJoined", {
+						count: opportunity.currentParticipantCount,
+					})}
+				</p>
+			)}
+
 			{/* Category and tags */}
 			{(opportunity.category ||
 				(opportunity.tags && opportunity.tags.length > 0)) && (
@@ -349,7 +387,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{opportunity.participationType === "Waitlist" &&
 				opportunity.timeSlots.length > 0 && (
 					<div className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
 							{t("opportunities.availableTimeSlots")}
 						</h2>
 						<ul className="space-y-2">
@@ -369,7 +407,7 @@ export default function VolunteerOpportunityDetailPage() {
 											i18n.language,
 										)}
 									</span>
-									<span className="ml-3 shrink-0 text-xs text-gray-400">
+									<span className="ml-3 shrink-0 text-xs text-gray-600">
 										{t("opportunities.maxParticipants", {
 											count: ts.maxParticipants,
 										})}
@@ -456,6 +494,182 @@ export default function VolunteerOpportunityDetailPage() {
 						}}
 					/>
 				</p>
+			)}
+
+			{/* About this organization */}
+			{orgProfile &&
+				(orgProfile.description ||
+					orgProfile.contactEmail ||
+					orgProfile.contactPhone ||
+					orgProfile.website ||
+					orgProfile.address) && (
+					<div className="mb-6" data-testid="about-organization">
+						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+							{t("opportunities.aboutOrganization")}
+						</h2>
+						{orgProfile.description && (
+							<p className="mb-3 leading-relaxed text-gray-600">
+								{orgProfile.description}
+							</p>
+						)}
+						{(orgProfile.contactEmail ||
+							orgProfile.contactPhone ||
+							orgProfile.website ||
+							orgProfile.address) && (
+							<div className="space-y-2.5 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+								{orgProfile.contactEmail && (
+									<div className="flex items-center gap-3">
+										<svg
+											className="h-4 w-4 shrink-0 text-gray-400"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="1.5"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+											/>
+										</svg>
+										<a
+											href={`mailto:${orgProfile.contactEmail}`}
+											className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+										>
+											{orgProfile.contactEmail}
+										</a>
+									</div>
+								)}
+								{orgProfile.contactPhone && (
+									<div className="flex items-center gap-3">
+										<svg
+											className="h-4 w-4 shrink-0 text-gray-400"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="1.5"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+											/>
+										</svg>
+										<a
+											href={`tel:${orgProfile.contactPhone}`}
+											className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+										>
+											{orgProfile.contactPhone}
+										</a>
+									</div>
+								)}
+								{orgProfile.website && (
+									<div className="flex items-center gap-3">
+										<svg
+											className="h-4 w-4 shrink-0 text-gray-400"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="1.5"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+											/>
+										</svg>
+										<a
+											href={orgProfile.website}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+										>
+											{orgProfile.website}
+										</a>
+									</div>
+								)}
+								{orgProfile.address && (
+									<div className="flex items-center gap-3">
+										<svg
+											className="h-4 w-4 shrink-0 text-gray-400"
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="1.5"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+											/>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+											/>
+										</svg>
+										<span>
+											{orgProfile.address.street}{" "}
+											{orgProfile.address.houseNumber},{" "}
+											{orgProfile.address.zipCode} {orgProfile.address.city}
+										</span>
+									</div>
+								)}
+							</div>
+						)}
+					</div>
+				)}
+
+			{/* More from this organization */}
+			{otherOrgOpportunities.length > 0 && (
+				<div className="mb-6" data-testid="more-from-organization">
+					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+						{t("opportunities.moreFromOrganization")}
+					</h2>
+					<ul className="space-y-3">
+						{otherOrgOpportunities.map((opp) => (
+							<li
+								key={opp.id}
+								className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+							>
+								<Link
+									to={`/volunteer-opportunities/${opp.id}`}
+									className="absolute inset-0 rounded-xl"
+									aria-label={opp.title}
+								/>
+								<strong className="block text-sm font-semibold text-gray-900">
+									{opp.title}
+								</strong>
+								{opp.description && (
+									<p className="mt-1 line-clamp-2 text-sm text-gray-500">
+										{opp.description}
+									</p>
+								)}
+								<div className="mt-2 flex flex-wrap gap-2">
+									<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+										{formatOccurrence(opp.occurrence, t)}
+									</span>
+									<span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+										{formatParticipationType(opp.participationType, t)}
+									</span>
+									{opp.isRemote ? (
+										<span className="rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
+											{t("opportunities.remote")}
+										</span>
+									) : opp.street ? (
+										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+											{opp.street} {opp.houseNumber}, {opp.zipCode} {opp.city}
+										</span>
+									) : null}
+								</div>
+							</li>
+						))}
+					</ul>
+				</div>
 			)}
 
 			{showSignUp && (
