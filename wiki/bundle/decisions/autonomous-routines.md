@@ -9,17 +9,9 @@ tags:
   - wiki
   - deploy-verify
 timestamp: 2026-07-18
-superseded_by: "decisions/field-review-routine.md"
 ---
 
-# The autonomous routines and their guardrails (superseded)
-
-**Superseded 2026-07-22** - `issue-triage`, `persona-simulation`, and
-`deep-lens-review` were merged into a single skill, `field-review`. See
-[field-review-routine](/decisions/field-review-routine.md) for the current
-design; this page is kept for history - the three routines it describes no
-longer exist as separate skills, but the guardrails and the three settled
-owner calls it documents are unchanged and still enforced.
+# The autonomous routines and their guardrails
 
 This repo runs unsupervised from Claude Code on the web. Three routines do the work, and each one earns that autonomy by having a hard line it never crosses. Learn the lines first; they are what keep an owner-less run from doing damage.
 
@@ -47,7 +39,7 @@ Runs only when Survey finds nothing actionable. It never competes with real tria
 
 - **Issues only, no code.** Never touch source, never open a branch or PR. That single constraint is what makes an otherwise-unsupervised run safe.
 - **The 1.0 feature set is frozen:** calendar, opportunities, applications/engagements, achievements, profiles, organizations. Hunt for gaps inside those, not adjacent domains (no payments, no chat), even when a missing piece seems to obviously call for one.
-- Drives live staging as **Organizer Olaf** (`olaf/olaf123`), **Volunteer Vera** (`vera/vera123`), and **Platform Admin** (`admin/admin123`, added to this skill 2026-07-22, after `AdministrationPage` shipped in #768 on 2026-07-20 - the admin persona was missing from this skill for a while despite being a role card in the human pre-launch testing event) with Playwright, at least one full pass per persona.
+- Drives live staging as **Organizer Olaf** (`olaf/olaf123`) and **Volunteer Vera** (`vera/vera123`) with Playwright, at least one full pass per persona.
 - **Clean up test data.** Anything created against the live database (a draft opportunity, an application) is deleted or withdrawn before the run ends - it runs about every five hours, indefinitely, and must leave nothing behind.
 - Cap at roughly 3-5 findings by real impact on the persona's task. An empty-handed run is a common, fine result. Dedup against existing `label:persona-sim` issues before filing.
 
@@ -73,7 +65,6 @@ Three settled calls. Do not re-propose them.
 
 # Related
 
-- [field-review-routine](/decisions/field-review-routine.md) - the current design that supersedes this page
 - [claude-check-setup](/decisions/claude-check-setup.md) - the loops depend on the check agents and self-review skill
 - [wiki-maintenance](/process/wiki-maintenance.md) - the ingest/query/lint skills are part of the same autonomous tooling
 - [pre-launch-testing-event](/project/pre-launch-testing-event.md) - persona-simulation automates, against the same personas, what the live event does with human guests

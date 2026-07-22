@@ -74,23 +74,13 @@ edit on your own initiative):
 - **Skills** - `.claude/skills/self-review/` (`/self-review`) runs a
   prioritised diff review and fans out to the agents above for the areas the
   diff touches, required before opening a PR (see below).
-  `.claude/skills/field-review/` is this repo's autonomous routine and its
-  on-demand review tool at once - one lens per run, chosen by triage or
-  named by the user, reviewed in full depth: the static whole-repo lenses
-  a prior `deep-lens-review` skill covered (bugs, dead code, dead features,
-  repo hygiene, docs drift, test gaps, CI health, security, contributor
-  accessibility) plus three that drive live staging as Volunteer Vera,
-  Organizer Olaf, and Platform Admin (personas, accessibility, design &
-  content quality) and one that reads code and comments for unexplained
-  complexity. Report-only - it files evidenced GitHub issues (capped at 5
-  per run, labelled `field-review` plus `bug`/`user-story`, and
-  `needs-decision` on top for anything needing the repo owner's own product
-  call) but never writes code, opens a branch, or touches a PR. It replaced
-  three earlier skills (`issue-triage`, `persona-simulation`,
-  `deep-lens-review`) that used to split this work and never shared what
-  they each found; there is currently no automated implement-from-backlog
-  loop - a filed issue waits for a human, or a separately-invoked session,
-  to decide to pick it up.
+  `.claude/skills/lens/` is this repo's autonomous routine and on-demand
+  review tool: one lens per run - static repo audits (bugs, dead code, dead
+  features, repo hygiene, docs drift, test gaps, CI, security, contributor
+  accessibility) or live passes against staging as Vera/Olaf/Admin
+  (personas, accessibility, design & content), or code/comment complexity -
+  chosen by triage or named by the user. Report-only: files GitHub issues
+  (label `lens`, capped at 5/run), never code or a PR.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
@@ -104,32 +94,23 @@ edit on your own initiative):
   web/cloud sessions if `dotnet` is not already on `PATH` (see this file's
   Development Setup for the SDK requirement itself).
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
-  `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus the official
-  `csharp-lsp`, `typescript-lsp`, and `playwright` (Microsoft's Playwright
-  MCP - live browser control for ad-hoc exploration/debugging during live
-  verification) plugins are enabled in `.claude/settings.json`. The
-  `playwright` plugin is for interactive poking around, not a replacement
-  for the persisted smoke-test script required below - that stays as the
-  reviewable, committed record of what was verified. **MCP tool grants do
-  not propagate to a subagent spawned via the `Agent` tool** - confirmed by
-  a subagent explicitly failing on this (its report: "MCP tool grants
-  apparently don't propagate down to subagents here"). A subagent asked to
-  drive a live browser session (`field-review`'s live lenses, a design
-  review) will have no `browser_*`/`playwright` tools at all, silently,
-  even though the parent session does. Do that work in the current session
-  directly, not a delegated one. The plugin's tool availability can also be
-  inconsistent turn-to-turn even in the main session - `ToolSearch` for
-  `browser_navigate` before relying on it; if nothing resolves, fall back to
-  a plain script against `scripts/lib/live-browser.mjs` (`npm install` once
-  per session pulls in the root `package.json`'s pinned `playwright`; no
-  `npx playwright install` needed, Chromium ships pre-installed at
-  `/opt/pw-browsers`).
+  `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus `csharp-lsp`,
+  `typescript-lsp`, and `playwright` (live browser control) are enabled in
+  `.claude/settings.json`. `playwright` is for interactive poking around,
+  not a replacement for the persisted smoke-test script required below.
+  **MCP tool grants don't propagate to an `Agent`-tool subagent** - drive
+  live browser sessions (a `lens` live pass, a design review) in the
+  current session directly, never delegate them. Availability can also
+  vary turn-to-turn even in the main session - `ToolSearch` for
+  `browser_navigate` first; if nothing resolves, fall back to a script
+  against `scripts/lib/live-browser.mjs` (`npm install` pulls in the
+  pinned `playwright`; Chromium is pre-installed at `/opt/pw-browsers`).
 
 ## Sandbox Limitations (Claude Code on the web)
 
 - **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Testcontainers), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
 - **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
-- **This repo ships fast under the autonomous routine** - `git fetch origin main` and skim `git log origin/main --oneline -20` before any review, audit, or analysis task, not just before implementation work. A review session that assumes last week's state is current will spend most of its effort re-finding things that already shipped; a design/UX review of this repo has hit exactly that before.
+- **This repo ships fast** - `git fetch origin main` and skim recent commits before any review/analysis task, not just implementation work; assuming last week's state is current wastes most of a review's effort re-finding what already shipped.
 
 ## Releases (autonomous from Claude Code on the web)
 
@@ -170,4 +151,4 @@ After every bug fix or feature implementation, **always** cut a release candidat
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.
 
-Live staging accumulates smoke-test debris over time - the shared `vera`/`olaf`/`admin` accounts get reused by every verification script, and a script that creates or edits state (an opportunity, a profile field) rather than only reading is a real, observed source of visible junk (a live design review of the site found staging's own opportunity list and Vera's profile dominated by leftover `Smoke...`-prefixed test data). Prefer scripts that clean up after themselves. `.github/workflows/reset-staging.yml` wipes staging and reseeds it from the checked-in Keycloak realm + seed data (see `.github/AGENTS.md`) when it gets bad enough to need a hard reset - it's manual (`workflow_dispatch`) with a destructive confirmation gate, so don't trigger it without the repo owner's go-ahead, but know it exists rather than working around dirty data by hand.
+Live staging accumulates smoke-test debris over time from the shared `vera`/`olaf`/`admin` accounts - prefer scripts that clean up after themselves. `.github/workflows/reset-staging.yml` (manual, destructive confirmation gate) wipes and reseeds staging when it gets bad enough - know it exists rather than working around dirty data by hand, but don't trigger it without the repo owner's go-ahead.

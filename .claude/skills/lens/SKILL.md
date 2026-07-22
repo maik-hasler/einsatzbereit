@@ -1,5 +1,5 @@
 ---
-name: field-review
+name: lens
 description: >
   Deep, single-lens review of the einsatzbereit repository and its live
   staging site (https://github.com/maik-hasler/einsatzbereit,
@@ -16,7 +16,7 @@ description: >
   without the word "review".
 ---
 
-# Field review
+# Lens
 
 One repository (code and live site both), one lens, full depth, filed as
 issues. This skill exists because shallow "review everything" passes
@@ -131,7 +131,7 @@ lens; it is not the review. Do not start investigating findings here.
 | Test-to-src churn | ratio of changed test files to changed src files (from churn probe) | test-gaps |
 | a11y coverage gap | grep `AccessibilityTests.cs` for `HasNoSeriousA11yViolations`, diff against `App.tsx` routes | accessibility |
 | Comment hedge scan | grep `careful\|hack\|workaround\|don't\|must\|NOTE\|WARNING` density across `backend/src`, `frontend/src` | complexity |
-| Days since last live pass | check recent closed/open issues labeled `field-review` for a persona/design-content finding's timestamp | personas, design-content |
+| Days since last live pass | check recent closed/open issues labeled `lens` for a persona/design-content finding's timestamp | personas, design-content |
 
 Score every lens 1-5 for **signal** (evidence something is off) and
 **impact** (cost if it stays unaddressed). Pick the highest product. On a
@@ -194,7 +194,7 @@ Severity rubric:
 
 ### Step 4 - Dedup, then file
 
-Before filing anything, `search_issues` for `label:field-review` plus
+Before filing anything, `search_issues` for `label:lens` plus
 keywords from the candidate finding - don't re-report the same thing
 every run just because it's still true. If an open PR already addresses
 it, note the relationship in a comment on the existing issue instead of
@@ -207,7 +207,7 @@ Actual/Expected, Steps to Reproduce or repro evidence, Environment,
 Additional Information) or `user_story.yml` (Persona, Priority, User
 Story, Description, Acceptance Criteria, Implementation Proposal,
 Additional Information) template - whichever fits. Label every filed
-issue `field-review` plus `bug` or `user-story` as appropriate (both
+issue `lens` plus `bug` or `user-story` as appropriate (both
 labels are created automatically on first use, same as any other label in
 this repo).
 
