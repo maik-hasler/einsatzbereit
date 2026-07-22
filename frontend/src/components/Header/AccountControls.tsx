@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { OrganizationSummaryDto } from "../../client/api-client";
-import { ORG_TABS } from "../../lib/orgTabs";
+import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import NotificationDropdown from "./NotificationDropdown";
 
 export default function AccountControls({
@@ -181,7 +181,7 @@ export default function AccountControls({
 											{ORG_TABS.map((tab) => (
 												<Link
 													key={tab.key}
-													to={`/app/${activeOrg.id}/${tab.key}`}
+													to={orgTabPath(activeOrg.id, tab.key)}
 													onClick={() => setDropdownOpen(false)}
 													className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 												>

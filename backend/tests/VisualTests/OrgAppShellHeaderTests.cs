@@ -30,7 +30,7 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		var organizationId = match.Groups[1].Value;
 
 		// Land on a known subpage so the breadcrumb has a stable current-page label.
-		await Page.GotoAsync($"{origin}/app/{organizationId}/settings");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/settings");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Logo replaces the old text link and sits top-left in the header.

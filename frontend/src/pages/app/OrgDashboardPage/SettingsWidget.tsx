@@ -33,7 +33,7 @@ function SettingsWidget({ org, size }: Props) {
 			title={t("orgDashboard.settingsWidgetTitle")}
 			action={
 				<Link
-					to={`/app/${org.id}/settings`}
+					to={`/app/${org.id}/dashboard/settings`}
 					className="shrink-0 text-sm font-medium text-brand-700 hover:underline"
 				>
 					{t("orgDashboard.settingsEditLink")}
@@ -65,7 +65,7 @@ function SettingsWidget({ org, size }: Props) {
 					</div>
 					<p className="text-xs text-gray-500">
 						<Link
-							to={`/app/${org.id}/members`}
+							to={`/app/${org.id}/dashboard/members`}
 							className="text-brand-700 underline"
 						>
 							{t("orgDashboard.settingsMemberCount", {

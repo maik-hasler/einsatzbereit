@@ -117,7 +117,7 @@ function UpcomingOpportunitiesWidget({
 							className="relative rounded-xl border border-gray-100 p-3 transition hover:bg-gray-50"
 						>
 							<Link
-								to={`/app/${organizationId}/opportunities/${item.id}/engagements`}
+								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
 								className="absolute inset-0"
 								aria-label={item.title}
 							/>
@@ -147,7 +147,7 @@ function UpcomingOpportunitiesWidget({
 				</ul>
 			)}
 			<Link
-				to={`/app/${organizationId}/opportunities`}
+				to={`/app/${organizationId}/dashboard/opportunities`}
 				className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline"
 			>
 				{t("orgDashboard.upcomingViewAll")}

@@ -75,7 +75,7 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 		// The org "Engagements" tab became the unified "Opportunities" hub. A
 		// published opportunity is listed under the Published section with a
 		// single-arrow "Manage applications" link.
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var row = Page.GetByTestId("published-section").Locator("li", new() { HasText = oppTitle });

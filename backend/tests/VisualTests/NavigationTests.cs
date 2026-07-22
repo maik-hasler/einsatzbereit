@@ -175,7 +175,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
 		// #751: engagement management moved into the org app as a nested route
-		// under /app/:organizationId/opportunities/:opportunityId/engagements -
+		// under /app/:organizationId/dashboard/opportunities/:opportunityId/engagements -
 		// the org switcher must stay visible instead of swapping to the public
 		// site header/footer. #771 removed the tab bar entirely (aria-current
 		// on a tab link no longer applies), so leaving back to the opportunities
@@ -204,7 +204,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(breadcrumbOpportunitiesLink).ToBeVisibleAsync();
 
 		await breadcrumbOpportunitiesLink.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities$"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities$"), new() { Timeout = 15_000 });
 	}
 
 	[Test]
@@ -219,7 +219,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
@@ -233,7 +233,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var otherOrgName = (await otherRow.TextContentAsync() ?? "").Trim();
 		await otherRow.ClickAsync();
 
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 		await Expect(switcherBtn).ToContainTextAsync(otherOrgName);
 	}
 

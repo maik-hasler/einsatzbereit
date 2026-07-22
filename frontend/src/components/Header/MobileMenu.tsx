@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
-import { ORG_TABS } from "../../lib/orgTabs";
+import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
 // toggled open by MobileHeader's burger button.
@@ -128,7 +128,7 @@ export default function MobileMenu({
 										{ORG_TABS.map((tab) => (
 											<Link
 												key={tab.key}
-												to={`/app/${activeOrg.id}/${tab.key}`}
+												to={orgTabPath(activeOrg.id, tab.key)}
 												onClick={onClose}
 												className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-600"}`}
 											>

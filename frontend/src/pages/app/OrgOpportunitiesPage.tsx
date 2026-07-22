@@ -243,7 +243,7 @@ export default function OrgOpportunitiesPage() {
 							</button>
 						) : (
 							<Link
-								to={`/app/${organizationId}/opportunities/${item.id}/engagements`}
+								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
 								className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
 							>
 								{t("orgOpportunities.manageApplications")}

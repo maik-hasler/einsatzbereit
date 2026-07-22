@@ -138,7 +138,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Open the edit wizard from the org app's Opportunities tab - editing

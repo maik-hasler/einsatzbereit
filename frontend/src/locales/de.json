@@ -403,7 +403,7 @@
       "placementPickEndCorner": "Gegenüberliegende Ecke für \"{{widget}}\" festlegen",
       "placingBannerPickStart": "Spalte {{column}}, Zeile {{row}}. Klicke auf eine Rasterzelle (oder nutze die Pfeiltasten), um hier die erste Ecke von \"{{widget}}\" festzulegen. Escape zum Abbrechen.",
       "placingBannerPickEnd": "Spalte {{column}}, Zeile {{row}}. Klicke auf eine weitere Zelle (oder nutze die Pfeiltasten und Enter), um hier die gegenüberliegende Ecke von \"{{widget}}\" festzulegen. Escape zum Abbrechen.",
-      "placementOverlaps": "Diese Platzierung überlappt ein anderes Widget. Bitte erneut versuchen.",
+      "placementInvalid": "Diese Platzierung passt nicht - sie liegt außerhalb des Rasters oder unterschreitet die Mindestgröße dieses Widgets. Bitte erneut versuchen.",
       "removeWidget": "Widget \"{{widget}}\" entfernen",
       "addWidgetHeading": "Widget hinzufügen",
       "addWidgetModalDesc": "Wähle ein Widget aus, das du deinem Dashboard hinzufügen möchtest.",

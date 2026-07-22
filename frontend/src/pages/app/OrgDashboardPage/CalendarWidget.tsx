@@ -67,9 +67,29 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	// The widget's own grid row span (its organizer-drawn height, #782), so
+	// the calendar's pixel height can track what was actually placed instead
+	// of a constant - see CALENDAR_ROW_PX/CALENDAR_GAP_PX below.
+	heightRows: number;
 }
 
-function CalendarWidget({ organizationId, refreshKey, size }: Props) {
+// Mirrors the dashboard grid's own row sizing (OrgDashboardPage's
+// `lg:auto-rows-[minmax(64px,auto)]` and `gap-4`) so a calendar spanning N
+// rows renders at roughly the pixel height those N rows actually occupy,
+// instead of a flat constant that's disconnected from the widget's real
+// footprint - which used to force the shared row band (every OTHER widget
+// in those same row indices, regardless of column) to grow to match
+// whatever the constant demanded, distorting them too (#15).
+const CALENDAR_ROW_PX = 64;
+const CALENDAR_GAP_PX = 16;
+const CALENDAR_MIN_HEIGHT_PX = 400;
+
+function CalendarWidget({
+	organizationId,
+	refreshKey,
+	size,
+	heightRows,
+}: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -158,7 +178,13 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 						date={calDate}
 						onNavigate={(d: Date) => setCalDate(d)}
 						views={["month", "week", "work_week", "day", "agenda"]}
-						style={{ height: 600 }}
+						style={{
+							height: Math.max(
+								CALENDAR_MIN_HEIGHT_PX,
+								heightRows * CALENDAR_ROW_PX +
+									(heightRows - 1) * CALENDAR_GAP_PX,
+							),
+						}}
 						components={{ event: CalEventChip }}
 						eventPropGetter={(event: object) => {
 							const e = event as CalEvent;
@@ -242,7 +268,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 									{t("orgOverview.eventNavigate")}
 								</Link>
 								<Link
-									to={`/app/${organizationId}/opportunities/${selectedEvent.opportunityId}/engagements`}
+									to={`/app/${organizationId}/dashboard/opportunities/${selectedEvent.opportunityId}/engagements`}
 									className="text-sm text-brand-700 hover:underline"
 									onClick={() => setSelectedEvent(null)}
 								>

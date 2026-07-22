@@ -403,7 +403,7 @@
       "placementPickEndCorner": "Set the opposite corner for {{widget}}",
       "placingBannerPickStart": "Column {{column}}, row {{row}}. Click a grid cell (or use the arrow keys) to set {{widget}}'s first corner here. Press Escape to cancel.",
       "placingBannerPickEnd": "Column {{column}}, row {{row}}. Click another cell (or use the arrow keys and Enter) to set {{widget}}'s opposite corner here. Press Escape to cancel.",
-      "placementOverlaps": "That placement overlaps another widget. Try again.",
+      "placementInvalid": "That placement doesn't fit - it's off the grid or below this widget's minimum size. Try again.",
       "removeWidget": "Remove {{widget}} widget",
       "addWidgetHeading": "Add a widget",
       "addWidgetModalDesc": "Choose a widget to add to your dashboard.",
