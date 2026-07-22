@@ -7,11 +7,10 @@ namespace VisualTests;
 public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task ProfilePage_ShowsTwoTabButtons_WhenAuthenticated()
+	public async Task ProfilePage_ShowsSingleColumnStructure_WhenAuthenticated()
 	{
-		// Regression: /profile should render a tab bar instead of a flat page.
-		// Introduced by PR #508 (RC.150 - unified profile overview), consolidated
-		// from four tabs to two (Profile+Achievements, Activity) by #695.
+		// #794: /profile was consolidated from a Profile/Activity tab switcher
+		// into a single cohesive page - no tab bar, all content on one page.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -20,15 +19,19 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GotoAsync($"{origin}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Profile" }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Profile Details" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" }))
+			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Engagements" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Activity" }))
-			.ToBeVisibleAsync(new() { Timeout = 5_000 });
-
-		// Achievements now live on the Profile tab itself, not a separate tab.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Profile", Exact = true }))
+			.Not.ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Activity", Exact = true }))
+			.Not.ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Share achievements" }))
-			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+			.Not.ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -82,9 +85,15 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// Should land on /profile?tab=achievements
 		await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex(@"/profile\?tab=achievements"));
 
-		// Share achievements button should be visible on the achievements tab
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Share achievements" }))
-			.ToBeVisibleAsync(new() { Timeout = 20_000 });
+		// #794: there's no more Achievements tab to switch to - the legacy
+		// ?tab=achievements deep link now scrolls the single-page profile to
+		// the Badges section instead.
+		var badgesHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" });
+		await Expect(badgesHeading).ToBeVisibleAsync(new() { Timeout = 20_000 });
+
+		var badgesBox = await badgesHeading.BoundingBoxAsync();
+		badgesBox.Should().NotBeNull();
+		badgesBox!.Y.Should().BeLessThan(300, "the page should have scrolled the Badges section near the top of the viewport");
 	}
 
 	[Test]

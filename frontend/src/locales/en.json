@@ -480,7 +480,7 @@
       "loadError": "Could not load profile.",
       "loading": "Loading…",
       "dangerZoneTitle": "Danger zone",
-      "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your engagements will be anonymised and your Keycloak account will be deleted.",
+      "dangerZoneDescription": "Permanently delete your account and all personal data. This action is irreversible. Your engagements will be anonymised and your account will be deleted.",
       "deleteAccountButton": "Delete my account",
       "deleteConfirmTitle": "Delete account?",
       "deleteConfirmMessage": "Are you sure you want to permanently delete your account? All your personal data will be erased and your engagements will be anonymised. This cannot be undone.",
@@ -690,8 +690,6 @@
       "verified": "Verified Organization"
     },
     "profileOverview": {
-      "tabProfile": "Profile",
-      "tabActivity": "Activity",
       "invitationsHeading": "Open Invitations"
     },
     "invitations": {
@@ -722,10 +720,6 @@
       "preferredContactEmail": "Email",
       "preferredContactPhone": "Phone",
       "preferredContactNone": "No preference",
-      "edit": "Edit",
-      "cancel": "Cancel",
-      "saving": "Saving…",
-      "save": "Save",
       "savedSuccess": "Profile saved.",
       "saveError": "Failed to save profile.",
       "loadError": "Could not load profile.",
@@ -745,11 +739,6 @@
       "streakTitle": "Your Streaks",
       "loginStreak": "Login streak",
       "activityStreak": "Activity streak",
-      "shareButton": "Share achievements",
-      "shareText": "Check out my achievements on Einsatzbereit!",
-      "shareCopied": "Link copied to clipboard!",
-      "shareClose": "Close",
-      "shareCopyLink": "Copy link",
       "newBadge": "🏆 New badge unlocked: {{name}}!",
       "types": {
         "Milestone": "Milestone",

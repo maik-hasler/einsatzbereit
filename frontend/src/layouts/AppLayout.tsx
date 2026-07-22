@@ -3,13 +3,22 @@ import Header from "../components/Header/Header";
 import Footer from "../components/Footer";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { ToolbarProvider, useToolbarConfig } from "../contexts/ToolbarContext";
+import {
+	QuickActionsProvider,
+	useQuickActionsList,
+} from "../contexts/QuickActionsContext";
 
 function AppLayoutInner() {
 	useAchievementNotifier();
 	const toolbarConfig = useToolbarConfig();
+	const quickActions = useQuickActionsList();
 	const breadcrumb =
 		toolbarConfig && toolbarConfig.breadcrumbs.length > 0
-			? { homeHref: "/", items: toolbarConfig.breadcrumbs }
+			? {
+					homeHref: "/",
+					items: toolbarConfig.breadcrumbs,
+					actions: quickActions,
+				}
 			: undefined;
 	return (
 		<div className="min-h-screen flex flex-col">
@@ -25,7 +34,9 @@ function AppLayoutInner() {
 export default function AppLayout() {
 	return (
 		<ToolbarProvider>
-			<AppLayoutInner />
+			<QuickActionsProvider>
+				<AppLayoutInner />
+			</QuickActionsProvider>
 		</ToolbarProvider>
 	);
 }

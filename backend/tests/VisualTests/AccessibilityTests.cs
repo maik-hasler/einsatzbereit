@@ -108,6 +108,47 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
+	{
+		// #794: /profile was consolidated from a Profile/Activity tab switcher
+		// into a single page - Profile Details, Badges, and My Engagements all
+		// render together here (distinct from AccountPage_HasNoSeriousA11yViolations
+		// above, which covers the legacy /account -> /profile redirect path).
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task ProfileOverviewPage_EditMode_HasNoSeriousA11yViolations()
+	{
+		// #794: Edit/Save/Cancel moved from inline buttons into the header's
+		// quick actions - the read-only scan above never opens the edit form,
+		// so scan it separately here. Also asserts the Badges/My Engagements
+		// sections stay mounted and visible alongside the open edit form,
+		// since they no longer live behind a separate tab.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Engagements" })).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
