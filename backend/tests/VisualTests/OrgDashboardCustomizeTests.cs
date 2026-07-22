@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -536,6 +538,89 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
 	}
 
+	[Test]
+	public async Task WidgetContentOverflow_DoesNotStretchTheSharedGridRow()
+	{
+		// Follow-up review feedback on #782/#787's redesign: the grid used to
+		// size its rows with auto-rows-[minmax(64px,auto)], which grows the
+		// WHOLE row band - every column, not just the cell whose content
+		// demanded the extra height - so one widget with more content than
+		// its allotted rows used to stretch the green backdrop guide cells
+		// (and every sibling sharing that row) too, making edit mode look
+		// randomly, inconsistently sized. The grid row height is now fixed
+		// (see index.tsx), so an overflowing widget's own WidgetCard content
+		// area scrolls internally instead - this publishes enough
+		// opportunities to overflow UpcomingOpportunitiesWidget (height=3,
+		// MAX_ITEMS=5) and confirms every backdrop row still shares the
+		// same rendered height as an unaffected row.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashRowHeight");
+		var organizationId = new Regex(@"/app/([^/]+)/dashboard")
+			.Match(Page.Url).Groups[1].Value;
+
+		var token = await GetAccessTokenAsync();
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		for (var i = 0; i < 5; i++)
+		{
+			var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+			{
+				title = $"Row Height Opportunity {i} {suffix}",
+				description = "Created by WidgetContentOverflow_DoesNotStretchTheSharedGridRow",
+				organizationId,
+				isRemote = true,
+				occurrence = "OneTime",
+				participationType = "Waitlist",
+				checkInMethod = "None",
+				isDraft = true,
+				tags = new[] { $"visual-row-height-{suffix}" },
+			});
+			oppResponse.EnsureSuccessStatusCode();
+			var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+			var opportunityId = opportunity.GetProperty("id").GetString();
+
+			var start = DateTimeOffset.UtcNow.AddDays(3 + i);
+			(await http.PostAsJsonAsync(
+				$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+				new { startDateTime = start, endDateTime = start.AddHours(2), maxParticipants = 5, recurrenceCount = 1 }))
+				.EnsureSuccessStatusCode();
+
+			(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+				.EnsureSuccessStatusCode();
+		}
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByTestId("widget-tile-UpcomingOpportunities")
+				.GetByText("Row Height Opportunity 4"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("dashboard-grid-guide-cell").First).ToBeVisibleAsync();
+
+		// UpcomingOpportunities sits at y=3..5 in DEFAULT_LAYOUT - row 1 (host
+		// to CreateOpportunity/ToDo, neither of which grew) is the unaffected
+		// baseline; row 4 falls inside the now-overflowing widget's own rows.
+		const int gridColumns = 8;
+		var row1CellHeight = await Page.GetByTestId("dashboard-grid-guide-cell")
+			.Nth((1 - 1) * gridColumns).EvaluateAsync<double>("el => el.getBoundingClientRect().height");
+		var row4CellHeight = await Page.GetByTestId("dashboard-grid-guide-cell")
+			.Nth((4 - 1) * gridColumns).EvaluateAsync<double>("el => el.getBoundingClientRect().height");
+
+		Math.Abs(row1CellHeight - row4CellHeight).Should().BeLessThan(2,
+			"every grid row must share the same fixed height, even when a widget's own content "
+				+ "(here, 5 published opportunities in a height=3 widget) overflows its allotted rows - "
+				+ "that overflow should scroll within the widget's own card, not stretch the shared row band");
+	}
+
 	/// <summary>
 	/// Clicks the grid guide cell at 1-based (col, row) - the same cells an
 	/// organizer clicks to mark a placement's corners. Cells all share the
@@ -631,5 +716,21 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
 			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+	}
+
+	private async Task<string> GetAccessTokenAsync()
+	{
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		return token!;
 	}
 }
