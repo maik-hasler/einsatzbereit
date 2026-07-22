@@ -2,7 +2,7 @@
 
 Informal knowledge about Einsatzbereit that doesn't fit elsewhere: gotchas
 learned while fixing bugs, why-X-over-Y detail too small for a full ADR,
-recurring CI failure causes, notes from `persona-simulation` runs. It follows
+recurring CI failure causes, notes from `field-review` personas-lens runs. It follows
 a self-building "LLM wiki" pattern - sources are distilled into short,
 cross-linked concept pages rather than piled up raw. On disk it's an OKF (Open
 Knowledge Format) v0.1 bundle, a lightweight in-house storage convention
@@ -60,9 +60,9 @@ bundle is the `wiki/bundle/` subfolder: every `.md` under it other than
 
 ## Status
 
-Prototype scaffold: no concept pages yet, no CI wiring, no hook into
-`issue-triage` or `persona-simulation`. Run `/ingest` against whatever lands
-in `notes/` to try it, then decide whether it's worth wiring up further.
+Prototype scaffold: no CI wiring, no hook into `field-review`. Run `/ingest`
+against whatever lands in `notes/` to try it, then decide whether it's worth
+wiring up further.
 
 ## Validating
 

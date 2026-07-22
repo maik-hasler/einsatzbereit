@@ -9,9 +9,17 @@ tags:
   - wiki
   - deploy-verify
 timestamp: 2026-07-18
+superseded_by: "decisions/field-review-routine.md"
 ---
 
-# The autonomous routines and their guardrails
+# The autonomous routines and their guardrails (superseded)
+
+**Superseded 2026-07-22** - `issue-triage`, `persona-simulation`, and
+`deep-lens-review` were merged into a single skill, `field-review`. See
+[field-review-routine](/decisions/field-review-routine.md) for the current
+design; this page is kept for history - the three routines it describes no
+longer exist as separate skills, but the guardrails and the three settled
+owner calls it documents are unchanged and still enforced.
 
 This repo runs unsupervised from Claude Code on the web. Three routines do the work, and each one earns that autonomy by having a hard line it never crosses. Learn the lines first; they are what keep an owner-less run from doing damage.
 
@@ -65,6 +73,7 @@ Three settled calls. Do not re-propose them.
 
 # Related
 
+- [field-review-routine](/decisions/field-review-routine.md) - the current design that supersedes this page
 - [claude-check-setup](/decisions/claude-check-setup.md) - the loops depend on the check agents and self-review skill
 - [wiki-maintenance](/process/wiki-maintenance.md) - the ingest/query/lint skills are part of the same autonomous tooling
 - [pre-launch-testing-event](/project/pre-launch-testing-event.md) - persona-simulation automates, against the same personas, what the live event does with human guests

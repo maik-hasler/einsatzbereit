@@ -39,7 +39,7 @@ is a Hypothesis.
 
 ## Traps
 
-Admin-only surfaces (`AdminOrganizationsPage.tsx` exists) can look
+Admin-only surfaces (`AdministrationPage.tsx` exists) can look
 orphaned from the normal nav - check role-gated navigation before
 flagging. External entry points: QR codes, emails (Notifications
 feature!), and Keycloak redirects reach routes without in-app links.

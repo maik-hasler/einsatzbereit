@@ -80,7 +80,7 @@ midpoint of the flow, not the end of it.
 - [sandbox-limitations](/gotchas/sandbox-limitations.md) - the reason local verification is impossible and live staging is the only option
 - [project-vision](/project/project-vision.md) - the ship-for-Oldenburg-first priority is what makes 'not done until observed live' non-negotiable
 - [claude-check-setup](/decisions/claude-check-setup.md) - step 1 is /self-review, which fans out to the check agents
-- [autonomous-routines](/decisions/autonomous-routines.md) - the Release/Validate stage of the issue-triage loop is exactly this flow
+- [field-review-routine](/decisions/field-review-routine.md) - `field-review` only ever files issues, never implements; whoever picks one up (human or a separately-invoked session) follows this same mandatory flow to close it out
 
 # Citations
 

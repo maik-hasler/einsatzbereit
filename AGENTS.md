@@ -73,23 +73,26 @@ edit on your own initiative):
   parity - nothing else in CI checks this).
 - **Skills** - `.claude/skills/self-review/` (`/self-review`) runs a
   prioritised diff review and fans out to the agents above for the areas the
-  diff touches, required before opening a PR (see below). `.claude/skills/issue-triage/`
-  is the recurring triage-and-implement loop for this repo's autonomous
-  routine - the durable process lives here, checked in and versioned,
-  rather than only in the routine's own (unowned, unversioned) prompt text.
-  `.claude/skills/persona-simulation/` is that routine's fallback for a
-  genuinely empty backlog - it drives the live app as Volunteer Vera,
-  Organizer Olaf, and Platform Admin to find real gaps in the existing
-  feature set, filing GitHub issues only (never code) and labelling anything
-  needing the repo owner's own product call as `needs-decision`, which
-  `issue-triage` then leaves alone.
+  diff touches, required before opening a PR (see below).
+  `.claude/skills/field-review/` is this repo's autonomous routine and its
+  on-demand review tool at once - one lens per run, chosen by triage or
+  named by the user, reviewed in full depth: the static whole-repo lenses
+  a prior `deep-lens-review` skill covered (bugs, dead code, dead features,
+  repo hygiene, docs drift, test gaps, CI health, security, contributor
+  accessibility) plus three that drive live staging as Volunteer Vera,
+  Organizer Olaf, and Platform Admin (personas, accessibility, design &
+  content quality) and one that reads code and comments for unexplained
+  complexity. Report-only - it files evidenced GitHub issues (capped at 5
+  per run, labelled `field-review` plus `bug`/`user-story`, and
+  `needs-decision` on top for anything needing the repo owner's own product
+  call) but never writes code, opens a branch, or touches a PR. It replaced
+  three earlier skills (`issue-triage`, `persona-simulation`,
+  `deep-lens-review`) that used to split this work and never shared what
+  they each found; there is currently no automated implement-from-backlog
+  loop - a filed issue waits for a human, or a separately-invoked session,
+  to decide to pick it up.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
-  `.claude/skills/deep-lens-review/` is a separate, on-demand routine: one
-  whole-repo lens (bugs, dead code, dead features, repo hygiene, docs drift,
-  test gaps, CI health, security, or contributor accessibility) reviewed in
-  full depth per run, report-only, never substituting for the diff-scoped
-  `self-review`.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
@@ -111,7 +114,7 @@ edit on your own initiative):
   not propagate to a subagent spawned via the `Agent` tool** - confirmed by
   a subagent explicitly failing on this (its report: "MCP tool grants
   apparently don't propagate down to subagents here"). A subagent asked to
-  drive a live browser session (persona-simulation-style work, a design
+  drive a live browser session (`field-review`'s live lenses, a design
   review) will have no `browser_*`/`playwright` tools at all, silently,
   even though the parent session does. Do that work in the current session
   directly, not a delegated one. The plugin's tool availability can also be
