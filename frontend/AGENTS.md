@@ -12,9 +12,8 @@ src/
 ├── hooks/
 │   └── useApiClient.ts     React hook: returns api-client instance with token from useAuth()
 ├── components/
-│   ├── Header.tsx          Header with auth state (login/logout buttons, org switcher) + optional per-page breadcrumb/action bar (see `breadcrumb` prop)
+│   ├── Header/             Header with auth state (login/logout buttons, org switcher, notifications) + optional per-page breadcrumb/action bar (see `breadcrumb` prop) - split across Header.tsx (orchestrator), DesktopHeader.tsx, MobileHeader.tsx, MobileMenu.tsx, AccountControls.tsx, NotificationDropdown.tsx, NotificationItem.tsx, OrganizationSwitcher.tsx, LanguageSelector.tsx, BreadcrumbBar.tsx - all exclusive to Header, nothing here is imported outside this folder
 │   ├── Footer.tsx          Footer with links and social icons
-│   ├── OrganizationSwitcher.tsx        Dropdown to switch active org
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
 │   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, gated create button
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
@@ -23,7 +22,8 @@ src/
 │   └── ProtectedRoute.tsx  Redirects to Keycloak if not authenticated
 ├── pages/
 │   ├── HomePage.tsx                    Main page with VolunteerOpportunitiesList
-│   ├── OrganizationOverviewPage.tsx    Org dashboard: calendar/engagements/members/settings tabs
+│   ├── app/OrgDashboardPage/           Customizable widget dashboard (calendar, to-do, quick check-in, etc. - see widgetCatalog.ts) - org app shell's landing tab
+│   ├── AdministrationPage.tsx          Platform-admin only: list/verify organizations, list users, toggle admin/enabled status
 │   ├── PrivacyPolicyPage.tsx           Privacy policy (static)
 │   └── ImprintPage.tsx                 Legal notice (static)
 ├── styles/global.css       Tailwind directives + custom brand theme
@@ -160,7 +160,7 @@ Key conventions:
 - **Form labels**: Every form control must have an associated `<label htmlFor="...">` or `aria-label`.
 - **`<a href="#">`**: Never use `href="#"`. Use a `<button>` if there is no navigation target.
 
-Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page: Home, MyEngagements, OpportunityDetail, Account, OrganizationProfile, OrganizationSettings, EngagementManagement, PrivacyPolicy, Imprint, and NotFound. Tests fail on any "serious" or "critical" axe violation.
+Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page and several stateful views (edit mode, modals, widget dialogs) - grep that file for `HasNoSeriousA11yViolations` for the current, authoritative list rather than trusting a copy of it here. Tests fail on any "serious" or "critical" axe violation. A new page/route needs a matching test in that file - `a11y-check` flags a missing one.
 
 ## Production
 

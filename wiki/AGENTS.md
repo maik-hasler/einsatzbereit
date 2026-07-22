@@ -93,8 +93,8 @@ answer.
      near-duplicate. Starter types: `gotcha` (a lesson from fixing a bug),
      `decision-note` (a why-X-over-Y too small for a full ADR in
      `docs/ADRs/`), `ci-failure` (a recurring CI failure and its cause),
-     `persona-note` (an observation from a `persona-simulation` run not
-     already filed as a GitHub issue).
+     `persona-note` (an observation from the `lens` skill's personas run
+     not already filed as a GitHub issue).
    - **Edit in place** for an attribute or update of something that already
      has a page. No near-duplicate fork.
    - **Supersede, don't overwrite**, when a source contradicts an existing

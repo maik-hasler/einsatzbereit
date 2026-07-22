@@ -73,22 +73,16 @@ edit on your own initiative):
   parity - nothing else in CI checks this).
 - **Skills** - `.claude/skills/self-review/` (`/self-review`) runs a
   prioritised diff review and fans out to the agents above for the areas the
-  diff touches, required before opening a PR (see below). `.claude/skills/issue-triage/`
-  is the recurring triage-and-implement loop for this repo's autonomous
-  routine - the durable process lives here, checked in and versioned,
-  rather than only in the routine's own (unowned, unversioned) prompt text.
-  `.claude/skills/persona-simulation/` is that routine's fallback for a
-  genuinely empty backlog - it drives the live app as Volunteer Vera/Organizer
-  Olaf to find real gaps in the existing feature set, filing GitHub issues
-  only (never code) and labelling anything needing the repo owner's own
-  product call as `needs-decision`, which `issue-triage` then leaves alone.
+  diff touches, required before opening a PR (see below).
+  `.claude/skills/lens/` is this repo's autonomous routine and on-demand
+  review tool: one lens per run - static repo audits (bugs, dead code, dead
+  features, repo hygiene, docs drift, test gaps, CI, security, contributor
+  accessibility) or live passes against staging as Vera/Olaf/Admin
+  (personas, accessibility), or code/comment complexity - chosen by triage
+  or named by the user. Report-only: files GitHub issues
+  (label `lens`, capped at 5/run), never code or a PR.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
-  `.claude/skills/deep-lens-review/` is a separate, on-demand routine: one
-  whole-repo lens (bugs, dead code, dead features, repo hygiene, docs drift,
-  test gaps, CI health, security, or contributor accessibility) reviewed in
-  full depth per run, report-only, never substituting for the diff-scoped
-  `self-review`.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
@@ -100,18 +94,23 @@ edit on your own initiative):
   web/cloud sessions if `dotnet` is not already on `PATH` (see this file's
   Development Setup for the SDK requirement itself).
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
-  `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus the official
-  `csharp-lsp`, `typescript-lsp`, and `playwright` (Microsoft's Playwright
-  MCP - live browser control for ad-hoc exploration/debugging during live
-  verification) plugins are enabled in `.claude/settings.json`. The
-  `playwright` plugin is for interactive poking around, not a replacement
-  for the persisted smoke-test script required below - that stays as the
-  reviewable, committed record of what was verified.
+  `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus `csharp-lsp`,
+  `typescript-lsp`, and `playwright` (live browser control) are enabled in
+  `.claude/settings.json`. `playwright` is for interactive poking around,
+  not a replacement for the persisted smoke-test script required below.
+  **MCP tool grants don't propagate to an `Agent`-tool subagent** - drive
+  live browser sessions (a `lens` live pass, a design review) in the
+  current session directly, never delegate them. Availability can also
+  vary turn-to-turn even in the main session - `ToolSearch` for
+  `browser_navigate` first; if nothing resolves, fall back to a script
+  against `scripts/lib/live-browser.mjs` (`npm install` pulls in the
+  pinned `playwright`; Chromium is pre-installed at `/opt/pw-browsers`).
 
 ## Sandbox Limitations (Claude Code on the web)
 
 - **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Testcontainers), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
 - **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
+- **This repo ships fast** - `git fetch origin main` and skim recent commits before any review/analysis task, not just implementation work; assuming last week's state is current wastes most of a review's effort re-finding what already shipped.
 
 ## Releases (autonomous from Claude Code on the web)
 
@@ -151,3 +150,5 @@ After every bug fix or feature implementation, **always** cut a release candidat
 7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this.
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.
+
+Live staging accumulates smoke-test debris over time from the shared `vera`/`olaf`/`admin` accounts - prefer scripts that clean up after themselves. `.github/workflows/reset-staging.yml` (manual, destructive confirmation gate) wipes and reseeds staging when it gets bad enough - know it exists rather than working around dirty data by hand, but don't trigger it without the repo owner's go-ahead.

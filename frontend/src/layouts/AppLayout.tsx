@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import Header from "../components/Header";
+import Header from "../components/Header/Header";
 import Footer from "../components/Footer";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { ToolbarProvider, useToolbarConfig } from "../contexts/ToolbarContext";

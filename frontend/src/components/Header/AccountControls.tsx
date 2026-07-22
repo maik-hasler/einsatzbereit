@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { AccountMenuState } from "../hooks/useAccountMenu";
-import type { OrganizationSummaryDto } from "../client/api-client";
-import { ORG_TABS } from "../lib/orgTabs";
+import type { AccountMenuState } from "../../hooks/useAccountMenu";
+import type { OrganizationSummaryDto } from "../../client/api-client";
+import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
+import NotificationDropdown from "./NotificationDropdown";
 
 export default function AccountControls({
 	transparent = false,
@@ -30,19 +31,8 @@ export default function AccountControls({
 }) {
 	const { t } = useTranslation();
 	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
-	const {
-		avatarUrl,
-		notifications,
-		unreadCount,
-		notifOpen,
-		setNotifOpen,
-		notifRef,
-		dropdownOpen,
-		setDropdownOpen,
-		dropdownRef,
-		markAllRead,
-		markOneRead,
-	} = menu;
+	const { avatarUrl, notifRef, dropdownOpen, setDropdownOpen, dropdownRef } =
+		menu;
 
 	useEffect(() => {
 		if (!dropdownOpen) setOrgMenuOpen(false);
@@ -50,106 +40,12 @@ export default function AccountControls({
 
 	return (
 		<>
-			<div className="relative" ref={notifRef}>
-				<button
-					type="button"
-					data-testid="notification-bell"
-					onClick={() => setNotifOpen((o) => !o)}
-					className={`relative p-2 rounded-lg transition-colors cursor-pointer ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
-					aria-label={t("notifications.bellLabel")}
-					aria-expanded={notifOpen}
-				>
-					<svg
-						className="w-5 h-5"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-						/>
-					</svg>
-					{unreadCount > 0 && (
-						<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-							{unreadCount > 9 ? "9+" : unreadCount}
-						</span>
-					)}
-				</button>
-
-				{notifOpen && (
-					<div
-						data-testid="notification-panel"
-						className="absolute right-0 top-full mt-2 w-80 rounded-lg border shadow-lg z-50 bg-white border-gray-200"
-					>
-						<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-							<p className="text-sm font-medium text-gray-900">
-								{t("notifications.bellLabel")}
-							</p>
-							{notifications.some((n) => !n.isRead) && (
-								<button
-									type="button"
-									className="text-xs hover:underline cursor-pointer text-brand-700"
-									onClick={() => void markAllRead()}
-								>
-									{t("notifications.markAllRead")}
-								</button>
-							)}
-						</div>
-						<ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
-							{notifications.length === 0 ? (
-								<li className="px-4 py-6 text-center text-sm text-gray-400">
-									{t("notifications.empty")}
-								</li>
-							) : (
-								notifications.map((n) => (
-									<li key={n.id}>
-										<button
-											type="button"
-											className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
-											onClick={async () => {
-												if (!n.isRead) {
-													await markOneRead(n.id);
-												}
-												setNotifOpen(false);
-												onNotificationNavigate(n.actionUrl);
-											}}
-										>
-											<span className="flex items-start gap-2">
-												{!n.isRead && (
-													<span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
-												)}
-												<span className={!n.isRead ? "" : "pl-4"}>
-													{t(
-														`notifications.kinds.${n.kind}` as Parameters<
-															typeof t
-														>[0],
-														{
-															title:
-																n.relatedTitle ??
-																t(
-																	"notifications.deletedOpportunityPlaceholder",
-																),
-															defaultValue: n.kind,
-														},
-													)}
-													<br />
-													<span className="text-xs text-gray-400">
-														{new Date(n.createdOn).toLocaleString()}
-													</span>
-												</span>
-											</span>
-										</button>
-									</li>
-								))
-							)}
-						</ul>
-					</div>
-				)}
-			</div>
+			<NotificationDropdown
+				menu={menu}
+				transparent={transparent}
+				containerRef={notifRef}
+				onNavigate={onNotificationNavigate}
+			/>
 
 			<div className="relative" ref={dropdownRef}>
 				<button
@@ -285,7 +181,7 @@ export default function AccountControls({
 											{ORG_TABS.map((tab) => (
 												<Link
 													key={tab.key}
-													to={`/app/${activeOrg.id}/${tab.key}`}
+													to={orgTabPath(activeOrg.id, tab.key)}
 													onClick={() => setDropdownOpen(false)}
 													className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 												>
