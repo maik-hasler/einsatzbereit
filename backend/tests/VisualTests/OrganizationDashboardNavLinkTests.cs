@@ -6,15 +6,20 @@ namespace VisualTests;
 /// <summary>
 /// Issue #775: users with >=1 organization had no way to reach the org
 /// dashboard from the mobile burger menu - only the desktop org switcher and
-/// the homepage hero CTA linked to it. Adds an "Organization Dashboard"
-/// entry to the mobile menu, gated the same way as the admin-only
-/// "Administration" entry (see AdministrationNavLinkTests), resolved via the
-/// same active-org-cookie-then-alphabetical logic HomePage already uses.
+/// the homepage hero CTA linked to it. Adds an "Organization" entry to the
+/// mobile menu, gated the same way as the admin-only "Administration" entry
+/// (see AdministrationNavLinkTests), resolved via the same
+/// active-org-cookie-then-alphabetical logic HomePage already uses.
 ///
 /// Follow-up from PR #777 review: a single link only reached the dashboard
 /// tab, forcing an extra tap to get to opportunities/members/settings. The
 /// entry is now a collapsible submenu (ORG_TABS, shared with OrgAppLayout's
 /// own tab bar) so every org tab is reachable directly from the burger menu.
+///
+/// The entry was originally labeled "Organization Dashboard"; later
+/// consolidated onto the shared nav.organization translation key so mobile
+/// matches the desktop avatar dropdown's own org-submenu toggle, which has
+/// always just read "Organization" (see AccountControls.tsx).
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -47,7 +52,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		var toggle = banner.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" });
+		var toggle = banner.GetByRole(AriaRole.Button, new() { Name = "Organization" });
 		await Expect(toggle).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Collapsed by default: the org tab links aren't reachable yet.
@@ -70,7 +75,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		// Re-open and confirm the remaining tabs are all reachable too.
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
@@ -79,7 +84,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
@@ -88,7 +93,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
-		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" })
+		await banner.GetByRole(AriaRole.Button, new() { Name = "Organization" })
 			.ClickAsync(new() { Timeout = 10_000 });
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Dashboard", Exact = true })
@@ -112,7 +117,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Administration" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Organization Dashboard" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Organization" }))
 			.Not.ToBeVisibleAsync();
 	}
 }
