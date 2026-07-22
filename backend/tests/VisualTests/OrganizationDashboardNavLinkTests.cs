@@ -37,11 +37,9 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		// Scope every mobile-menu lookup below to the <header> landmark
-		// (implicit ARIA "banner" role). Once we're inside the org app shell,
-		// OrgAppLayout's own tab bar (visible at every viewport width, not just
-		// desktop - see its "Organization sections" nav) renders links with the
-		// exact same names ("Members", "Settings", ...), so an unscoped
-		// GetByRole lookup is ambiguous between the two navs.
+		// (implicit ARIA "banner" role) - the dashboard's own widgets also
+		// link to some of these same destinations (e.g. Settings' member-count
+		// link), so an unscoped GetByRole lookup could match either.
 		var banner = Page.GetByRole(AriaRole.Banner);
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
@@ -65,7 +63,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Expect(opportunitiesLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await opportunitiesLink.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities"), new() { Timeout = 15_000 });
 
 		// Re-open and confirm the remaining tabs are all reachable too.
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
@@ -75,7 +73,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
@@ -84,7 +82,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/settings"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/settings"), new() { Timeout = 15_000 });
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });

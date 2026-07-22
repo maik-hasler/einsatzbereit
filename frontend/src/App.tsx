@@ -1,9 +1,16 @@
-import { Routes, Route, Navigate, Outlet, useParams } from "react-router";
+import {
+	Routes,
+	Route,
+	Navigate,
+	Outlet,
+	useOutletContext,
+	useParams,
+} from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
-import OrgAppLayout from "./layouts/OrgAppLayout";
+import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import ImprintPage from "./pages/ImprintPage";
@@ -23,6 +30,17 @@ import OrgSettingsPage from "./pages/app/OrgSettingsPage";
 function OrgAppRedirect({ tab }: { tab: string }) {
 	const { organizationId } = useParams<{ organizationId: string }>();
 	return <Navigate to={`/app/${organizationId}/${tab}`} replace />;
+}
+
+// A bare <Outlet /> element (no `context` prop) starts a brand new outlet
+// context of its own - it does NOT transparently forward whatever an
+// ancestor <Outlet context={...}> (OrgAppLayout's) already provided. Without
+// this relay, every route nested under the pathless "dashboard" parent below
+// would have useOutletContext<OrgAppContext>() resolve to undefined instead
+// of OrgAppLayout's {org, reloadOrg}, crashing on the very first destructure.
+function OrgAppOutletRelay() {
+	const context = useOutletContext<OrgAppContext>();
+	return <Outlet context={context} />;
 }
 
 // Pre-#9 bookmarks to a specific opportunity's engagement management page
@@ -75,10 +93,11 @@ export default function App() {
 				{/* Pathless parent (#9): opportunities/members/settings are now
 				nested under /dashboard/... in the URL - see OrgAppLayout's
 				orgTabPath - while staying siblings in the render tree (this
-				Route's own element is just an Outlet, no extra chrome), so
+				Route's own element renders no extra chrome, just relays
+				OrgAppLayout's outlet context - see OrgAppOutletRelay), so
 				OrgAppLayout's single Outlet keeps rendering whichever page
 				unchanged. */}
-				<Route path="dashboard" element={<Outlet />}>
+				<Route path="dashboard" element={<OrgAppOutletRelay />}>
 					<Route index element={<OrgDashboardPage />} />
 					<Route path="opportunities" element={<OrgOpportunitiesPage />} />
 					<Route
