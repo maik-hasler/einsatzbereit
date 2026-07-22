@@ -18,15 +18,20 @@ export default function WidgetCard({
 	return (
 		<section
 			aria-labelledby={titleId}
-			className={`h-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ${className ?? ""}`}
+			className={`flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ${className ?? ""}`}
 		>
-			<div className="mb-4 flex items-center justify-between gap-3">
+			<div className="mb-4 flex shrink-0 items-center justify-between gap-3">
 				<h2 id={titleId} className="text-base font-semibold text-gray-900">
 					{title}
 				</h2>
 				{action}
 			</div>
-			{children}
+			{/* The grid row height dashboard-wide is now fixed (see
+			OrgDashboardPage's grid className), so a widget whose content is
+			taller than its allotted rows scrolls within itself here instead of
+			growing the shared row band and throwing off every other tile's
+			height. */}
+			<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
 		</section>
 	);
 }

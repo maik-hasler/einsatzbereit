@@ -45,17 +45,31 @@ function OrgAppShell({
 	const extra = useOrgBreadcrumbExtra();
 	const quickActions = useQuickActionsList();
 
-	const breadcrumbItems = extra
-		? [
-				{
-					label: activeTabLabel,
-					href: organizationId
-						? orgTabPath(organizationId, activeTabKey)
-						: undefined,
-				},
-				{ label: extra },
-			]
-		: [{ label: activeTabLabel }];
+	// Now that the tab bar is gone (dashboard UX redesign), the breadcrumb is
+	// the only thing that shows an organizer where they are relative to the
+	// dashboard - so every non-dashboard tab gets an explicit leading
+	// "Dashboard" crumb (linking back to it) instead of starting directly at
+	// the tab's own name.
+	const dashboardTab = ORG_TABS.find((tab) => tab.key === "dashboard");
+	const isDashboardTab = activeTabKey === "dashboard";
+	const breadcrumbItems = [
+		...(isDashboardTab || !organizationId || !dashboardTab
+			? []
+			: [
+					{
+						label: t(dashboardTab.labelKey),
+						href: `/app/${organizationId}/dashboard`,
+					},
+				]),
+		{
+			label: activeTabLabel,
+			href:
+				extra && organizationId
+					? orgTabPath(organizationId, activeTabKey)
+					: undefined,
+		},
+		...(extra ? [{ label: extra }] : []),
+	];
 
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
