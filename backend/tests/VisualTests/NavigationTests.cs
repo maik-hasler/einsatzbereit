@@ -218,7 +218,10 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		// The tab bar is gone (dashboard UX redesign) - reach Members via the
+		// Settings widget's member-count link instead (its accessible name is
+		// "N members", so match the substring rather than an exact count).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
@@ -262,8 +265,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var organizationId = match.Groups[1].Value;
 
 		var errorBoundaryHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong" });
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
 
-		foreach (var (path, activeTabName) in new[]
+		foreach (var (path, activePageLabel) in new[]
 		{
 			("dashboard", "Dashboard"),
 			("dashboard/opportunities", "Opportunities"),
@@ -278,12 +282,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 				$"/{path} should render real content, not the ErrorBoundary fallback");
 
 			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
-			// above it, at the app root), taking the tab bar down with it - so
-			// the active tab link is present precisely when the page rendered
-			// for real, regardless of whether the org has any opportunities/
-			// members/etc. to show.
-			await Expect(Page.GetByRole(AriaRole.Link, new() { Name = activeTabName, Exact = true }))
-				.ToHaveAttributeAsync("aria-current", "page", new() { Timeout = 10_000 });
+			// above it, at the app root), taking the breadcrumb down with it -
+			// so its current-page label is present precisely when the page
+			// rendered for real, regardless of whether the org has any
+			// opportunities/members/etc. to show.
+			await Expect(breadcrumb.Locator("[aria-current='page']"))
+				.ToHaveTextAsync(activePageLabel, new() { Timeout = 10_000 });
 		}
 	}
 

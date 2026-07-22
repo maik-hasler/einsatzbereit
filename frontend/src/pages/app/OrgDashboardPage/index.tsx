@@ -182,8 +182,8 @@ function EditableWidgetTile({
 	onAdvance: () => void;
 	onArrowKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 	onRemove: () => void;
-	onGripPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-	onResizePointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+	onGripPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
+	onResizePointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
@@ -200,25 +200,40 @@ function EditableWidgetTile({
 			data-testid={`widget-tile-${widgetKey}`}
 			style={gridStyle}
 			// No z-index here on purpose: this div is `position: relative` (for
-			// the absolutely-positioned move/remove buttons) but must NOT also
-			// get a z-index, because that would give it its own stacking
-			// context - any modal a widget renders inside itself (e.g.
-			// CreateOpportunityWidget's wizard) would then be scoped to THIS
-			// tile's stacking order instead of the page's, so a later sibling
-			// tile (also positioned) could paint over the modal despite its own
-			// z-[2000] and swallow clicks meant for it. That same
-			// position:relative is exactly why this tile paints ABOVE the
-			// green backdrop cells beneath it regardless of DOM order (a
-			// positioned element always paints above an in-flow, non-
-			// positioned sibling within the same stacking context) - which
-			// would otherwise block clicks meant for a backdrop cell that
-			// happens to fall under this widget's own current footprint
-			// (e.g. clicking its existing top-left corner to start a
-			// resize from there). pointer-events-none on this wrapper while
-			// editing lets those clicks pass through to the grid beneath;
-			// the two buttons below opt back in with pointer-events-auto,
-			// which CSS honors even under a pointer-events-none ancestor.
-			className={`relative h-full ${editing ? "pointer-events-none" : ""} ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
+			// the absolutely-positioned remove button and the tile itself acting
+			// as the drag-to-move surface) but must NOT also get a z-index,
+			// because that would give it its own stacking context - any modal a
+			// widget renders inside itself (e.g. CreateOpportunityWidget's
+			// wizard) would then be scoped to THIS tile's stacking order instead
+			// of the page's, so a later sibling tile (also positioned) could
+			// paint over the modal despite its own z-[2000] and swallow clicks
+			// meant for it.
+			//
+			// The whole tile is the primary press-and-drag-to-move target while
+			// editing (not just a small grip icon) - dashboard-builder UIs that
+			// make organizers hunt for a tiny handle before they can reposition
+			// anything are exactly the friction this is meant to remove. That
+			// means the tile opts INTO pointer events here (rather than passing
+			// clicks through to the grid-guide backdrop beneath, as it used to) -
+			// the backdrop is still reachable over any empty cell, and dropping a
+			// tile onto an occupied one still displaces what's there (see
+			// settlePlacement), so the one thing actually lost is completing a
+			// click-click-click placement by clicking a backdrop cell hidden
+			// under a DIFFERENT tile; the keyboard flow (arrow keys + the grip
+			// button's Enter/Space) reaches every cell regardless and isn't
+			// affected.
+			onPointerDown={
+				editing && showPlacementControls && !placingDisabled
+					? onGripPointerDown
+					: undefined
+			}
+			className={`relative h-full ${
+				editing && showPlacementControls
+					? "cursor-grab touch-none active:cursor-grabbing"
+					: editing
+						? "pointer-events-none"
+						: ""
+			} ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
 				{children}
@@ -226,19 +241,21 @@ function EditableWidgetTile({
 			{editing && (
 				<>
 					{showPlacementControls && (
-						// This button is BOTH the mouse/touch entry point into the
-						// click-click-click corner-to-corner flow (onClick, still the
-						// accessible path via onKeyDown's arrow keys/Enter - #17) AND,
-						// via onPointerDown, the real drag-to-move gesture (#16): a
-						// press-and-drag beyond DRAG_THRESHOLD_PX commits a move
-						// directly instead of needing two separate clicks. A
-						// plain click/tap (no real movement) falls through to
-						// onClick unchanged.
+						// Still the entry point into the click-click-click
+						// corner-to-corner flow (onClick) and its accessible
+						// keyboard path (onKeyDown's arrow keys/Enter, #17) - the
+						// whole tile above now also starts a real pointer drag
+						// (#16) on its own, so this button's own onPointerDown
+						// would otherwise fire a second, redundant drag-start for
+						// the exact same press; stopPropagation keeps it to one.
 						<button
 							type="button"
 							onClick={onAdvance}
 							onKeyDown={onArrowKeyDown}
-							onPointerDown={onGripPointerDown}
+							onPointerDown={(e) => {
+								e.stopPropagation();
+								onGripPointerDown(e);
+							}}
 							disabled={placingDisabled}
 							className={`pointer-events-auto absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
@@ -252,12 +269,18 @@ function EditableWidgetTile({
 						// accessibly via the two-corner flow, so this one is taken out
 						// of the tab order and hidden from assistive tech (#17) rather
 						// than exposing a second, keyboard-inert control for the same
-						// capability.
+						// capability. stopPropagation is required here, not just an
+						// optimization - without it, the tile's own move-drag handler
+						// (above) would also see this same press and immediately
+						// overwrite the resize session with a move session.
 						<button
 							type="button"
 							tabIndex={-1}
 							aria-hidden="true"
-							onPointerDown={onResizePointerDown}
+							onPointerDown={(e) => {
+								e.stopPropagation();
+								onResizePointerDown(e);
+							}}
 							disabled={placingDisabled}
 							className="pointer-events-auto absolute bottom-2 right-2 z-20 cursor-nwse-resize touch-none rounded-lg bg-white/95 p-1 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
 						>
@@ -266,6 +289,7 @@ function EditableWidgetTile({
 					)}
 					<button
 						type="button"
+						onPointerDown={(e) => e.stopPropagation()}
 						onClick={onRemove}
 						disabled={placingDisabled}
 						className="pointer-events-auto absolute right-2 top-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
@@ -501,14 +525,17 @@ export default function OrgDashboardPage() {
 		}
 	}
 
-	// Starts a real pointer drag (#16) on a widget's grip (move) or resize
-	// handle. Measures cell size off the widget's OWN rendered tile rather
-	// than the grid container, so it stays correct regardless of viewport
-	// width. A plain click/tap (pointer released before moving past
-	// DRAG_THRESHOLD_PX) is left alone here - it falls through to the
-	// button's own onClick (handleAdvance) exactly as before.
+	// Starts a real pointer drag (#16) on a widget's tile (move, from
+	// anywhere on it) or resize handle. Measures cell size off the widget's
+	// OWN rendered tile rather than the grid container, so it stays correct
+	// regardless of viewport width. A plain click/tap (pointer released
+	// before moving past DRAG_THRESHOLD_PX) is left alone here - a press on
+	// the grip button specifically still falls through to its own onClick
+	// (handleAdvance) exactly as before; the tile itself has no click
+	// handler to fall through to, so a plain click anywhere else on it is
+	// simply a no-op, same as before the whole tile became draggable.
 	function startDrag(
-		event: ReactPointerEvent<HTMLButtonElement>,
+		event: ReactPointerEvent<HTMLElement>,
 		key: WidgetKey,
 		mode: "move" | "resize",
 	) {

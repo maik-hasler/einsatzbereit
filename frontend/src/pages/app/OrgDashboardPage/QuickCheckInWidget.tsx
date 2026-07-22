@@ -77,10 +77,11 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 			)}
 			{opportunities !== null && !error && opportunities.length > 0 && (
 				// Side by side once there's enough width for both to stay
-				// readable (this widget's own max column footprint keeps it
-				// from ever getting classified "full", only "compact" or
-				// "medium"); stacked at compact - #771 follow-up review
-				// feedback (adaptive layouts per size).
+				// readable - the select grows to fill whatever room it's
+				// given via flex-1, so this already scales continuously with
+				// the organizer's own placement instead of needing a
+				// separate "full" treatment; stacked at compact - #771
+				// follow-up review feedback (adaptive layouts per size).
 				<div
 					className={
 						size !== "compact" ? "flex items-center gap-3" : "space-y-3"

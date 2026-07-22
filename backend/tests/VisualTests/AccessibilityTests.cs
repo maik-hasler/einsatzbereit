@@ -226,7 +226,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		// The tab bar is gone (dashboard UX redesign) - reach Members via the
+		// Settings widget's member-count link instead (its accessible name is
+		// "N members", so match the substring rather than an exact count).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

@@ -37,11 +37,9 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		// Scope every mobile-menu lookup below to the <header> landmark
-		// (implicit ARIA "banner" role). Once we're inside the org app shell,
-		// OrgAppLayout's own tab bar (visible at every viewport width, not just
-		// desktop - see its "Organization sections" nav) renders links with the
-		// exact same names ("Members", "Settings", ...), so an unscoped
-		// GetByRole lookup is ambiguous between the two navs.
+		// (implicit ARIA "banner" role) - the dashboard's own widgets also
+		// link to some of these same destinations (e.g. Settings' member-count
+		// link), so an unscoped GetByRole lookup could match either.
 		var banner = Page.GetByRole(AriaRole.Banner);
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
