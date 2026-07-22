@@ -398,6 +398,52 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task GridCellShape_StaysConsistentAcrossViewportWidths()
+	{
+		// #783 review feedback (comment #5049781309): "When I move it to a
+		// different sized monitor, everything becomes a weird size." The grid
+		// used a flat auto-rows-[64px] while column width already scaled with
+		// the viewport (grid-cols-8's 1fr tracks) - a widget's on-screen shape
+		// (row height relative to column width) would warp between a wide
+		// monitor and a narrower one even though its stored cell width/height
+		// never changed. Row height now tracks the actual rendered column
+		// width via a container query (.dashboard-widget-grid in global.css),
+		// so a grid cell's aspect ratio should barely move between two very
+		// differently-sized viewports, even though its absolute pixel size
+		// does.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.SetViewportSizeAsync(1400, 900);
+		await CreateOrganizationAsync("Visual DashViewportShape");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		var cell = Page.GetByTestId("dashboard-grid-guide-cell").First;
+		await Expect(cell).ToBeVisibleAsync();
+
+		var wideBox = await cell.BoundingBoxAsync();
+		wideBox.Should().NotBeNull();
+
+		await Page.SetViewportSizeAsync(1024, 900);
+		// The grid reflows on viewport change - re-fetch rather than reuse
+		// the same Locator's now-stale box.
+		var narrowBox = await Page.GetByTestId("dashboard-grid-guide-cell").First.BoundingBoxAsync();
+		narrowBox.Should().NotBeNull();
+
+		(wideBox!.Width - narrowBox!.Width).Should().BeGreaterThan(5,
+			"column width should actually shrink at the narrower viewport - otherwise this test isn't exercising anything");
+
+		var wideAspect = wideBox.Height / wideBox.Width;
+		var narrowAspect = narrowBox.Height / narrowBox.Width;
+		Math.Abs(wideAspect - narrowAspect).Should().BeLessThan(0.15,
+			"a grid cell's shape (row height relative to column width) should stay roughly the same across viewport "
+				+ "widths - a fixed row height would keep cells short-and-wide on a wide viewport and "
+				+ "square-ish on a narrow one, changing every widget's on-screen proportions between screens");
+	}
+
+	[Test]
 	public async Task RemovingAWidget_AutomaticallyClosesTheHorizontalGapNextToIt()
 	{
 		// #830 follow-up on the widget-placement UX: compaction used to only
