@@ -64,7 +64,7 @@ interface Cell {
 // handleAdvance).
 interface DragSession {
 	key: WidgetKey;
-	mode: "move" | "resize";
+	mode: "move" | "resize" | "resize-width" | "resize-height";
 	startClientX: number;
 	startClientY: number;
 	colPx: number;
@@ -164,6 +164,8 @@ function EditableWidgetTile({
 	onRemove,
 	onGripPointerDown,
 	onResizePointerDown,
+	onResizeWidthPointerDown,
+	onResizeHeightPointerDown,
 	children,
 }: {
 	widgetKey: WidgetKey;
@@ -184,6 +186,12 @@ function EditableWidgetTile({
 	onRemove: () => void;
 	onGripPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
 	onResizePointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
+	// #830: dedicated edge handles alongside the corner one, so resizing just
+	// the width or just the height is a normal edge-drag (like a spreadsheet
+	// column or a window pane) instead of only being reachable by fighting a
+	// single small corner dot for both axes at once.
+	onResizeWidthPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
+	onResizeHeightPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
@@ -291,6 +299,43 @@ function EditableWidgetTile({
 						>
 							<ResizeHandleIcon />
 						</button>
+					)}
+					{showPlacementControls && (
+						// Right-edge handle (#830): width-only resize, dragged
+						// horizontally like a spreadsheet column border - grabbing
+						// just an edge to change one dimension is a far more
+						// familiar direct-manipulation pattern than only ever
+						// having a single corner dot that changes both dimensions
+						// at once. Same stopPropagation/tab-order/hidden reasoning
+						// as the corner handle above.
+						<button
+							type="button"
+							data-testid="widget-resize-handle-width"
+							tabIndex={-1}
+							aria-hidden="true"
+							onPointerDown={(e) => {
+								e.stopPropagation();
+								onResizeWidthPointerDown(e);
+							}}
+							disabled={placingDisabled}
+							className="pointer-events-auto absolute right-0 top-1/2 z-20 h-10 w-2.5 -translate-y-1/2 cursor-ew-resize touch-none rounded-full bg-gray-300/70 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-30"
+						/>
+					)}
+					{showPlacementControls && (
+						// Bottom-edge handle (#830): height-only resize, the same
+						// idea as the right-edge handle but for the vertical axis.
+						<button
+							type="button"
+							data-testid="widget-resize-handle-height"
+							tabIndex={-1}
+							aria-hidden="true"
+							onPointerDown={(e) => {
+								e.stopPropagation();
+								onResizeHeightPointerDown(e);
+							}}
+							disabled={placingDisabled}
+							className="pointer-events-auto absolute bottom-0 left-1/2 z-20 h-2.5 w-10 -translate-x-1/2 cursor-ns-resize touch-none rounded-full bg-gray-300/70 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-30"
+						/>
 					)}
 					<button
 						type="button"
@@ -542,7 +587,7 @@ export default function OrgDashboardPage() {
 	function startDrag(
 		event: ReactPointerEvent<HTMLElement>,
 		key: WidgetKey,
-		mode: "move" | "resize",
+		mode: "move" | "resize" | "resize-width" | "resize-height",
 	) {
 		if (event.pointerType === "mouse" && event.button !== 0) return;
 		const widget = (draftLayout ?? []).find((w) => w.widgetKey === key);
@@ -588,6 +633,11 @@ export default function OrgDashboardPage() {
 			}
 			const deltaCol = Math.round(deltaX / session.colPx);
 			const deltaRow = Math.round(deltaY / session.rowPx);
+			// "resize" (the corner handle) changes both axes together; the two
+			// edge handles (#830) change only the one axis they sit on, so a
+			// widget can be widened/narrowed or shortened/heightened
+			// independently, without also nudging the axis the organizer didn't
+			// touch.
 			const nextRect: PlacedWidget =
 				session.mode === "move"
 					? {
@@ -595,11 +645,21 @@ export default function OrgDashboardPage() {
 							x: Math.max(1, session.origRect.x + deltaCol),
 							y: Math.max(1, session.origRect.y + deltaRow),
 						}
-					: {
-							...session.origRect,
-							width: Math.max(1, session.origRect.width + deltaCol),
-							height: Math.max(1, session.origRect.height + deltaRow),
-						};
+					: session.mode === "resize-width"
+						? {
+								...session.origRect,
+								width: Math.max(1, session.origRect.width + deltaCol),
+							}
+						: session.mode === "resize-height"
+							? {
+									...session.origRect,
+									height: Math.max(1, session.origRect.height + deltaRow),
+								}
+							: {
+									...session.origRect,
+									width: Math.max(1, session.origRect.width + deltaCol),
+									height: Math.max(1, session.origRect.height + deltaRow),
+								};
 			session.currentRect = nextRect;
 			setDragPreview(nextRect);
 		}
@@ -922,6 +982,12 @@ export default function OrgDashboardPage() {
 						onGripPointerDown={(e) => startDrag(e, widget.widgetKey, "move")}
 						onResizePointerDown={(e) =>
 							startDrag(e, widget.widgetKey, "resize")
+						}
+						onResizeWidthPointerDown={(e) =>
+							startDrag(e, widget.widgetKey, "resize-width")
+						}
+						onResizeHeightPointerDown={(e) =>
+							startDrag(e, widget.widgetKey, "resize-height")
 						}
 					>
 						{renderWidget(widget.widgetKey, sizeClass, rect.height)}

@@ -337,6 +337,115 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task EdgeResizeHandles_ResizeOnlyTheirOwnAxis_AndPersistAcrossReload()
+	{
+		// #830 follow-up on the widget-placement UX: alongside the existing
+		// corner handle (which resizes both axes together), dedicated
+		// right-edge and bottom-edge handles let an organizer change just the
+		// width or just the height - a more familiar direct-manipulation
+		// pattern (like a spreadsheet column border) than only ever having a
+		// single corner dot for both dimensions at once.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashEdgeResize");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
+
+		// Add exactly one widget so its placement lands at a known (x=1, y=1,
+		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		var tile = Page.GetByTestId("widget-tile-ToDo");
+		var tileBox = await tile.BoundingBoxAsync();
+		tileBox.Should().NotBeNull();
+		var colPx = tileBox!.Width / 4;
+		var rowPx = tileBox.Height / 2;
+
+		// Drag the right-edge handle one column further right: width 4 -> 5,
+		// height must stay exactly 2.
+		var widthHandle = tile.GetByTestId("widget-resize-handle-width");
+		var widthHandleBox = await widthHandle.BoundingBoxAsync();
+		widthHandleBox.Should().NotBeNull();
+		var widthStartX = widthHandleBox!.X + widthHandleBox.Width / 2;
+		var widthStartY = widthHandleBox.Y + widthHandleBox.Height / 2;
+
+		await Page.Mouse.MoveAsync(widthStartX, widthStartY);
+		await Page.Mouse.DownAsync();
+		await Page.Mouse.MoveAsync(widthStartX + colPx, widthStartY, new() { Steps = 5 });
+		await Page.Mouse.UpAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
+
+		// Drag the bottom-edge handle one row further down: height 2 -> 3,
+		// width must stay exactly the 5 the previous step just set.
+		tileBox = await tile.BoundingBoxAsync();
+		tileBox.Should().NotBeNull();
+		var heightHandle = tile.GetByTestId("widget-resize-handle-height");
+		var heightHandleBox = await heightHandle.BoundingBoxAsync();
+		heightHandleBox.Should().NotBeNull();
+		var heightStartX = heightHandleBox!.X + heightHandleBox.Width / 2;
+		var heightStartY = heightHandleBox.Y + heightHandleBox.Height / 2;
+
+		await Page.Mouse.MoveAsync(heightStartX, heightStartY);
+		await Page.Mouse.DownAsync();
+		await Page.Mouse.MoveAsync(heightStartX, heightStartY + rowPx, new() { Steps = 5 });
+		await Page.Mouse.UpAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 3);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 3);
+	}
+
+	[Test]
+	public async Task RemovingAWidget_AutomaticallyClosesTheHorizontalGapNextToIt()
+	{
+		// #830 follow-up on the widget-placement UX: compaction used to only
+		// close gaps vertically (sliding widgets up), so removing or shrinking
+		// a widget could leave a horizontal hole next to it that nothing ever
+		// reflowed into - the grid only felt "automatic" on one axis. DEFAULT_
+		// LAYOUT places CreateOpportunity and ToDo side by side in the same
+		// row (x=1/x=5, both width=4) - removing CreateOpportunity should now
+		// slide ToDo all the way left into column 1, not leave it at column 5
+		// with an empty gap to its left.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashHorizontalCompact");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("widget-tile-CreateOpportunity")
+			.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" })
+			.ClickAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 2);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 2);
+	}
+
+	[Test]
 	public async Task KeyboardCornerPlacement_ResizingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
