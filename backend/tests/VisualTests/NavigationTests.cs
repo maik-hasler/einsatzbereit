@@ -238,6 +238,56 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task DirectNavigation_ToEachDashboardNestedRoute_RendersRealContent_NotErrorBoundary()
+	{
+		// Regression for #783/#787: opportunities/members/settings (and the
+		// dashboard index) are nested under a pathless "dashboard" parent
+		// route (see App.tsx) whose element used to be a bare <Outlet />
+		// with no `context` prop - that starts a brand new outlet context
+		// instead of forwarding OrgAppLayout's <Outlet context={{org,
+		// reloadOrg}}>, so every one of these pages got undefined from
+		// useOutletContext<OrgAppContext>() and crashed on the very first
+		// destructure, caught by the app-wide ErrorBoundary. A direct
+		// (full page load) navigation to each route below exercises that
+		// same render chain from scratch every time, unlike a client-side
+		// Link click that could in principle reuse already-mounted state.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = match.Groups[1].Value;
+
+		var errorBoundaryHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong" });
+
+		foreach (var (path, activeTabName) in new[]
+		{
+			("dashboard", "Dashboard"),
+			("dashboard/opportunities", "Opportunities"),
+			("dashboard/members", "Members"),
+			("dashboard/settings", "Settings"),
+		})
+		{
+			await Page.GotoAsync($"{origin}/app/{organizationId}/{path}");
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+			(await errorBoundaryHeading.CountAsync()).Should().Be(0,
+				$"/{path} should render real content, not the ErrorBoundary fallback");
+
+			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
+			// above it, at the app root), taking the tab bar down with it - so
+			// the active tab link is present precisely when the page rendered
+			// for real, regardless of whether the org has any opportunities/
+			// members/etc. to show.
+			await Expect(Page.GetByRole(AriaRole.Link, new() { Name = activeTabName, Exact = true }))
+				.ToHaveAttributeAsync("aria-current", "page", new() { Timeout = 10_000 });
+		}
+	}
+
+	[Test]
 	public async Task MobileMenu_LanguageSelector_HasDarkTransparentTheme_OnHero()
 	{
 		// Regression: LanguageSelector inside the mobile menu on the hero section
