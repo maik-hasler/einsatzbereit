@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useParams } from "react-router";
+import { Routes, Route, Navigate, Outlet, useParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import AppLayout from "./layouts/AppLayout";
@@ -23,6 +23,21 @@ import OrgSettingsPage from "./pages/app/OrgSettingsPage";
 function OrgAppRedirect({ tab }: { tab: string }) {
 	const { organizationId } = useParams<{ organizationId: string }>();
 	return <Navigate to={`/app/${organizationId}/${tab}`} replace />;
+}
+
+// Pre-#9 bookmarks to a specific opportunity's engagement management page
+// need their :opportunityId preserved, unlike OrgAppRedirect's fixed tab path.
+function OrgAppEngagementsRedirect() {
+	const { organizationId, opportunityId } = useParams<{
+		organizationId: string;
+		opportunityId: string;
+	}>();
+	return (
+		<Navigate
+			to={`/app/${organizationId}/dashboard/opportunities/${opportunityId}/engagements`}
+			replace
+		/>
+	);
 }
 
 function CallbackPage() {
@@ -57,19 +72,44 @@ export default function App() {
 				}
 			>
 				<Route index element={<Navigate to="dashboard" replace />} />
-				<Route path="dashboard" element={<OrgDashboardPage />} />
-				<Route path="opportunities" element={<OrgOpportunitiesPage />} />
-				<Route
-					path="opportunities/:opportunityId/engagements"
-					element={<EngagementManagementPage />}
-				/>
+				{/* Pathless parent (#9): opportunities/members/settings are now
+				nested under /dashboard/... in the URL - see OrgAppLayout's
+				orgTabPath - while staying siblings in the render tree (this
+				Route's own element is just an Outlet, no extra chrome), so
+				OrgAppLayout's single Outlet keeps rendering whichever page
+				unchanged. */}
+				<Route path="dashboard" element={<Outlet />}>
+					<Route index element={<OrgDashboardPage />} />
+					<Route path="opportunities" element={<OrgOpportunitiesPage />} />
+					<Route
+						path="opportunities/:opportunityId/engagements"
+						element={<EngagementManagementPage />}
+					/>
+					<Route path="members" element={<OrgMembersPage />} />
+					<Route path="settings" element={<OrgSettingsPage />} />
+				</Route>
 				{/* Old tab key: the "Engagements" tab is now the Opportunities hub - keep old bookmarks working. */}
 				<Route
 					path="engagements"
-					element={<OrgAppRedirect tab="opportunities" />}
+					element={<OrgAppRedirect tab="dashboard/opportunities" />}
 				/>
-				<Route path="members" element={<OrgMembersPage />} />
-				<Route path="settings" element={<OrgSettingsPage />} />
+				{/* Pre-#9 bookmarks: these three lived flat under /app/:organizationId/... before opportunities/members/settings were nested under /dashboard. */}
+				<Route
+					path="opportunities"
+					element={<OrgAppRedirect tab="dashboard/opportunities" />}
+				/>
+				<Route
+					path="opportunities/:opportunityId/engagements"
+					element={<OrgAppEngagementsRedirect />}
+				/>
+				<Route
+					path="members"
+					element={<OrgAppRedirect tab="dashboard/members" />}
+				/>
+				<Route
+					path="settings"
+					element={<OrgAppRedirect tab="dashboard/settings" />}
+				/>
 			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
@@ -103,11 +143,11 @@ export default function App() {
 				/>
 				<Route
 					path="/organizations/:organizationId/settings"
-					element={<OrgAppRedirect tab="settings" />}
+					element={<OrgAppRedirect tab="dashboard/settings" />}
 				/>
 				<Route
 					path="/organizations/:organizationId/engagements"
-					element={<OrgAppRedirect tab="opportunities" />}
+					element={<OrgAppRedirect tab="dashboard/opportunities" />}
 				/>
 				<Route
 					path="/achievements"

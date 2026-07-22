@@ -117,6 +117,40 @@ public class SaveDashboardLayoutCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenYExceedsMaxRows(
+		CancellationToken cancellationToken)
+	{
+		var command = new SaveDashboardLayoutCommand(
+			DefaultOrgId,
+			DefaultRequestingUserId,
+			// Y + Height - 1 = MaxRows + 1, one past the ceiling.
+			[new DashboardWidgetPlacementInput("ToDo", 1, DashboardGrid.MaxRows, 4, 2)]);
+
+		var act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*invalid grid placement*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenXAndWidthWouldOverflowInt32InTheBoundsCheck(
+		CancellationToken cancellationToken)
+	{
+		// Regression guard: X + Width - 1 computed in plain int arithmetic
+		// wraps around for a large enough X (int.MaxValue + a positive width
+		// overflows past int.MaxValue back into negative territory), which
+		// would wrongly pass a "> DashboardGrid.Columns" check done entirely
+		// in int - the handler must widen to long before adding.
+		var command = new SaveDashboardLayoutCommand(
+			DefaultOrgId,
+			DefaultRequestingUserId,
+			[new DashboardWidgetPlacementInput("ToDo", int.MaxValue - 1, 1, 10, 2)]);
+
+		var act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*invalid grid placement*");
+	}
+
+	[Test]
 	public async Task Handle_ShouldThrow_WhenWidgetsOverlap(
 		CancellationToken cancellationToken)
 	{

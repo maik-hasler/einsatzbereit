@@ -60,7 +60,7 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 		deleteResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))

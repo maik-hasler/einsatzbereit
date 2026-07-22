@@ -2,9 +2,11 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	type CSSProperties,
 	type KeyboardEvent,
+	type PointerEvent as ReactPointerEvent,
 	type ReactNode,
 } from "react";
 import { useNavigate, useOutletContext } from "react-router";
@@ -27,12 +29,15 @@ import SettingsIconWidget from "./SettingsIconWidget";
 import {
 	DEFAULT_LAYOUT,
 	GRID_COLUMNS,
+	GRID_MAX_ROWS,
 	WIDGET_CATALOG,
 	WIDGET_KEYS,
 	classifyWidth,
+	compactLayout,
 	isValidPlacement,
 	placeNewWidget,
 	sanitizeWidgetKey,
+	settlePlacement,
 	type PlacedWidget,
 	type WidgetKey,
 	type WidgetSizeClass,
@@ -47,11 +52,32 @@ interface Cell {
 	row: number;
 }
 
-// Arrow-key movement has no natural upper bound the way GRID_COLUMNS bounds
-// columns - the grid grows downward as far as an organizer wants. This is
-// just a sane ceiling so a held-down arrow key can't runaway-render an
-// unbounded number of backdrop cells.
-const MAX_GRID_ROWS = 100;
+// A real pointer drag (#16) in progress on one widget's grip (move) or
+// resize handle. `origRect` is that widget's position when the drag
+// started; `currentRect` is the live, cell-snapped position/size under the
+// pointer right now (authoritative - dragPreview state below just mirrors it
+// for rendering). colPx/rowPx convert pixel deltas to grid cells, measured
+// off the widget's own rendered tile at drag start rather than the grid
+// container, so it stays correct at any viewport width. `moved` gates
+// whether releasing the pointer counts as an actual drag (commit) or a
+// plain click (fall through to the existing click-click-click flow via
+// handleAdvance).
+interface DragSession {
+	key: WidgetKey;
+	mode: "move" | "resize";
+	startClientX: number;
+	startClientY: number;
+	colPx: number;
+	rowPx: number;
+	origRect: PlacedWidget;
+	currentRect: PlacedWidget;
+	moved: boolean;
+}
+
+// How far the pointer has to travel from its down-position before a
+// grip/resize-handle press counts as a drag rather than a click - keeps a
+// slightly-jittery tap/click from being misread as an accidental 1-cell move.
+const DRAG_THRESHOLD_PX = 4;
 
 function normalizeRect(a: Cell, b: Cell, widgetKey: WidgetKey): PlacedWidget {
 	return {
@@ -108,6 +134,22 @@ function GripIcon() {
 	);
 }
 
+function ResizeHandleIcon() {
+	return (
+		<svg
+			className="h-3.5 w-3.5"
+			viewBox="0 0 16 16"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.5"
+			strokeLinecap="round"
+			aria-hidden="true"
+		>
+			<path d="M13 3 3 13M13 8 8 13" />
+		</svg>
+	);
+}
+
 function EditableWidgetTile({
 	widgetKey,
 	gridStyle,
@@ -116,9 +158,12 @@ function EditableWidgetTile({
 	isPlacing,
 	hasAnchor,
 	placingDisabled,
+	isCornerFlowActive,
 	onAdvance,
 	onArrowKeyDown,
 	onRemove,
+	onGripPointerDown,
+	onResizePointerDown,
 	children,
 }: {
 	widgetKey: WidgetKey;
@@ -128,15 +173,23 @@ function EditableWidgetTile({
 	isPlacing: boolean;
 	hasAnchor: boolean;
 	placingDisabled: boolean;
+	// Whether the click-click-click/keyboard corner flow specifically (not a
+	// real pointer drag, #16) is what's active for this widget - `isPlacing`
+	// alone can't tell the two apart (a drag sets it too, for the ring
+	// highlight below), and `hasAnchor`/hasAnchor's "pick a corner" wording
+	// would be actively wrong read out mid-drag if used for that.
+	isCornerFlowActive: boolean;
 	onAdvance: () => void;
 	onArrowKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 	onRemove: () => void;
+	onGripPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+	onResizePointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
 	const catalogEntry = WIDGET_CATALOG[widgetKey];
 	const title = t(catalogEntry.titleKey);
-	const moveLabel = !isPlacing
+	const moveLabel = !isCornerFlowActive
 		? t("orgDashboard.moveOrResize", { widget: title })
 		: hasAnchor
 			? t("orgDashboard.placementPickEndCorner", { widget: title })
@@ -173,22 +226,42 @@ function EditableWidgetTile({
 			{editing && (
 				<>
 					{showPlacementControls && (
-						// Unlike the old drag-to-reorder grip (hidden until keyboard
-						// focus, since mouse users dragged the whole tile directly),
-						// this button IS the mouse/touch entry point into placement -
-						// clicking it is how they start placing, before drawing the
-						// box on the grid guide cells (see handleCellClick) - so it
-						// must stay visible and clickable the same way the Remove
-						// button below always does, not just on focus.
+						// This button is BOTH the mouse/touch entry point into the
+						// click-click-click corner-to-corner flow (onClick, still the
+						// accessible path via onKeyDown's arrow keys/Enter - #17) AND,
+						// via onPointerDown, the real drag-to-move gesture (#16): a
+						// press-and-drag beyond DRAG_THRESHOLD_PX commits a move
+						// directly instead of needing two separate clicks. A
+						// plain click/tap (no real movement) falls through to
+						// onClick unchanged.
 						<button
 							type="button"
 							onClick={onAdvance}
 							onKeyDown={onArrowKeyDown}
+							onPointerDown={onGripPointerDown}
 							disabled={placingDisabled}
-							className={`pointer-events-auto absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
+							className={`pointer-events-auto absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
 							<GripIcon />
+						</button>
+					)}
+					{showPlacementControls && (
+						// Pure mouse/touch drag-to-resize affordance (#16) - the
+						// existing grip button + arrow keys already cover resizing
+						// accessibly via the two-corner flow, so this one is taken out
+						// of the tab order and hidden from assistive tech (#17) rather
+						// than exposing a second, keyboard-inert control for the same
+						// capability.
+						<button
+							type="button"
+							tabIndex={-1}
+							aria-hidden="true"
+							onPointerDown={onResizePointerDown}
+							disabled={placingDisabled}
+							className="pointer-events-auto absolute bottom-2 right-2 z-20 cursor-nwse-resize touch-none rounded-lg bg-white/95 p-1 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+						>
+							<ResizeHandleIcon />
 						</button>
 					)}
 					<button
@@ -241,6 +314,24 @@ export default function OrgDashboardPage() {
 	const [anchor, setAnchor] = useState<Cell | null>(null);
 	const [cursor, setCursor] = useState<Cell | null>(null);
 
+	// Real pointer drag (#16) - a second, independent way to reposition a
+	// widget alongside the click-click-click/keyboard flow above. `dragActive`
+	// only exists to (de)register the document-level pointermove/pointerup
+	// listeners at the right time; the session's actual live data lives in
+	// dragSessionRef (a ref, not state, since pointermove fires far more often
+	// than a re-render is useful for) and dragPreview mirrors just enough of
+	// it to render the live preview + backdrop tint.
+	const [dragActive, setDragActive] = useState(false);
+	const [dragPreview, setDragPreview] = useState<PlacedWidget | null>(null);
+	const dragSessionRef = useRef<DragSession | null>(null);
+	// Set to the widget key a drag just committed via a real pointer move, so
+	// the `click` event a browser still fires right after pointerup on THAT
+	// widget's grip doesn't also run handleAdvance and start an unwanted
+	// click-click-click placement. Keyed rather than a plain flag so a stray
+	// click landing on a *different* widget's grip right after (pointerup can
+	// land anywhere) doesn't have its own click wrongly swallowed too.
+	const suppressNextAdvanceRef = useRef<WidgetKey | null>(null);
+
 	useEffect(() => {
 		api
 			.getDashboardLayout(organizationId)
@@ -289,7 +380,7 @@ export default function OrgDashboardPage() {
 			// refreshes the widgets.
 			if (createdDraftId) {
 				navigate(
-					`/app/${organizationId}/opportunities?highlight=${createdDraftId}`,
+					`/app/${organizationId}/dashboard/opportunities?highlight=${createdDraftId}`,
 				);
 				return;
 			}
@@ -312,15 +403,21 @@ export default function OrgDashboardPage() {
 		setCursor({ col: current.x, row: current.y });
 	}
 
+	// Bounds/min-size violations still hard-reject (there's nowhere to push a
+	// widget that doesn't fit on the grid at all). An overlap with another
+	// widget no longer does (#18) - it displaces whatever's in the way
+	// instead, then compacts the result so that displacement doesn't leave a
+	// gap of its own further up.
 	function commitPlacement(rect: PlacedWidget) {
-		if (!isValidPlacement(rect, draftLayout ?? [])) {
-			dispatchToast("error", t("orgDashboard.placementOverlaps"));
+		if (!isValidPlacement(rect)) {
+			dispatchToast("error", t("orgDashboard.placementInvalid"));
 			cancelPlacing();
 			return;
 		}
-		setDraftLayout((prev) =>
-			(prev ?? []).map((w) => (w.widgetKey === rect.widgetKey ? rect : w)),
-		);
+		setDraftLayout((prev) => {
+			const others = (prev ?? []).filter((w) => w.widgetKey !== rect.widgetKey);
+			return settlePlacement(rect, others);
+		});
 		cancelPlacing();
 	}
 
@@ -329,8 +426,14 @@ export default function OrgDashboardPage() {
 	// advance this same state machine: not placing yet -> start placing;
 	// placing with no corner locked -> lock the current cursor as the first
 	// corner; placing with a corner already locked -> commit using the
-	// cursor as the second corner.
+	// cursor as the second corner. Skipped once for the synthetic click that
+	// follows a real pointer drag (#16) - that drag already committed via
+	// startDrag's own pointerup handler.
 	function handleAdvance(key: WidgetKey) {
+		if (suppressNextAdvanceRef.current === key) {
+			suppressNextAdvanceRef.current = null;
+			return;
+		}
 		if (placingKey !== key) {
 			startPlacing(key);
 			return;
@@ -377,7 +480,7 @@ export default function OrgDashboardPage() {
 				event.preventDefault();
 				setCursor({
 					col: cursor.col,
-					row: Math.min(MAX_GRID_ROWS, cursor.row + 1),
+					row: Math.min(GRID_MAX_ROWS, cursor.row + 1),
 				});
 				break;
 			case "ArrowLeft":
@@ -398,6 +501,96 @@ export default function OrgDashboardPage() {
 		}
 	}
 
+	// Starts a real pointer drag (#16) on a widget's grip (move) or resize
+	// handle. Measures cell size off the widget's OWN rendered tile rather
+	// than the grid container, so it stays correct regardless of viewport
+	// width. A plain click/tap (pointer released before moving past
+	// DRAG_THRESHOLD_PX) is left alone here - it falls through to the
+	// button's own onClick (handleAdvance) exactly as before.
+	function startDrag(
+		event: ReactPointerEvent<HTMLButtonElement>,
+		key: WidgetKey,
+		mode: "move" | "resize",
+	) {
+		if (event.pointerType === "mouse" && event.button !== 0) return;
+		const widget = (draftLayout ?? []).find((w) => w.widgetKey === key);
+		const tile = event.currentTarget.closest<HTMLElement>(
+			`[data-testid="widget-tile-${key}"]`,
+		);
+		if (!widget || !tile) return;
+		const box = tile.getBoundingClientRect();
+		dragSessionRef.current = {
+			key,
+			mode,
+			startClientX: event.clientX,
+			startClientY: event.clientY,
+			colPx: box.width / widget.width,
+			rowPx: box.height / widget.height,
+			origRect: widget,
+			currentRect: widget,
+			moved: false,
+		};
+		setDragPreview(widget);
+		setDragActive(true);
+	}
+
+	useEffect(() => {
+		if (!dragActive) return;
+
+		function handlePointerMove(event: globalThis.PointerEvent) {
+			const session = dragSessionRef.current;
+			if (!session) return;
+			const deltaX = event.clientX - session.startClientX;
+			const deltaY = event.clientY - session.startClientY;
+			if (
+				Math.abs(deltaX) > DRAG_THRESHOLD_PX ||
+				Math.abs(deltaY) > DRAG_THRESHOLD_PX
+			) {
+				session.moved = true;
+			}
+			const deltaCol = Math.round(deltaX / session.colPx);
+			const deltaRow = Math.round(deltaY / session.rowPx);
+			const nextRect: PlacedWidget =
+				session.mode === "move"
+					? {
+							...session.origRect,
+							x: Math.max(1, session.origRect.x + deltaCol),
+							y: Math.max(1, session.origRect.y + deltaRow),
+						}
+					: {
+							...session.origRect,
+							width: Math.max(1, session.origRect.width + deltaCol),
+							height: Math.max(1, session.origRect.height + deltaRow),
+						};
+			session.currentRect = nextRect;
+			setDragPreview(nextRect);
+		}
+
+		function endDrag() {
+			const session = dragSessionRef.current;
+			dragSessionRef.current = null;
+			setDragActive(false);
+			setDragPreview(null);
+			if (session?.moved) {
+				suppressNextAdvanceRef.current = session.key;
+				commitPlacement(session.currentRect);
+			}
+		}
+
+		document.addEventListener("pointermove", handlePointerMove);
+		document.addEventListener("pointerup", endDrag);
+		document.addEventListener("pointercancel", endDrag);
+		return () => {
+			document.removeEventListener("pointermove", handlePointerMove);
+			document.removeEventListener("pointerup", endDrag);
+			document.removeEventListener("pointercancel", endDrag);
+		};
+		// commitPlacement/cancelPlacing close over draftLayout - re-running
+		// this setup on every draftLayout change would drop mid-drag listeners.
+		// dragActive is the only thing that should ever (re)register them.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dragActive]);
+
 	async function handleSave() {
 		if (!draftLayout) return;
 		setSaving(true);
@@ -414,6 +607,7 @@ export default function OrgDashboardPage() {
 			setSavedLayout(draftLayout);
 			setEditing(false);
 			setDraftLayout(null);
+			cancelPlacing();
 		} catch (e) {
 			dispatchToast("error", getApiErrorMessage(e, t("error.serverError")));
 		} finally {
@@ -470,7 +664,11 @@ export default function OrgDashboardPage() {
 
 	function handleRemoveWidget(key: WidgetKey) {
 		const wasPlacing = placingKey === key;
-		setDraftLayout((prev) => (prev ?? []).filter((w) => w.widgetKey !== key));
+		// #14: closes whatever gap removing this widget just left instead of
+		// leaving the rest of the layout sitting where it was.
+		setDraftLayout((prev) =>
+			compactLayout((prev ?? []).filter((w) => w.widgetKey !== key)),
+		);
 		if (wasPlacing) {
 			cancelPlacing();
 			// Removing the widget currently being placed unmounts the very
@@ -492,11 +690,18 @@ export default function OrgDashboardPage() {
 	function handleAddWidget(key: WidgetKey) {
 		setDraftLayout((prev) => {
 			const current = prev ?? [];
-			return [...current, placeNewWidget(key, current)];
+			// #14: placeNewWidget only knows the tallest existing widget's
+			// bottom edge, not gaps elsewhere on the grid - compacting after
+			// lets the new widget slide up into one of those if it fits.
+			return compactLayout([...current, placeNewWidget(key, current)]);
 		});
 	}
 
-	function renderWidget(key: WidgetKey, size: WidgetSizeClass) {
+	function renderWidget(
+		key: WidgetKey,
+		size: WidgetSizeClass,
+		heightRows: number,
+	) {
 		switch (key) {
 			case "ToDo":
 				return <ToDoWidget organizationId={organizationId} size={size} />;
@@ -514,6 +719,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						heightRows={heightRows}
 					/>
 				);
 			case "Settings":
@@ -535,7 +741,9 @@ export default function OrgDashboardPage() {
 					/>
 				);
 			case "SettingsIcon":
-				return <SettingsIconWidget organizationId={organizationId} />;
+				return (
+					<SettingsIconWidget organizationId={organizationId} size={size} />
+				);
 		}
 	}
 
@@ -546,18 +754,26 @@ export default function OrgDashboardPage() {
 	// empty state rather than silently falling back to the default set.
 	const isEmpty = layout.length === 0;
 
+	// The widget currently being interactively positioned, however it got
+	// there - the click-click-click/keyboard corner flow (placingKey) or a
+	// real pointer drag (dragPreview, #16). previewRect is that widget's
+	// live candidate rect either way; previewValid only reflects the hard
+	// bounds/min-size constraints (#18: overlap is no longer one of them).
+	const activeKey = dragPreview?.widgetKey ?? placingKey;
 	const previewRect = useMemo(() => {
+		if (dragPreview) return dragPreview;
 		if (!placingKey || !cursor) return null;
 		return normalizeRect(anchor ?? cursor, cursor, placingKey);
-	}, [placingKey, anchor, cursor]);
-	const previewValid = previewRect
-		? isValidPlacement(previewRect, draftLayout ?? [])
-		: false;
+	}, [dragPreview, placingKey, anchor, cursor]);
+	const previewValid = previewRect ? isValidPlacement(previewRect) : false;
 
 	const contentRows = layout.length
 		? Math.max(1, ...layout.map((w) => w.y + w.height - 1))
 		: 1;
-	const guideRows = Math.max(contentRows, cursor?.row ?? 0) + 4;
+	const previewBottom = previewRect
+		? previewRect.y + previewRect.height - 1
+		: 0;
+	const guideRows = Math.max(contentRows, cursor?.row ?? 0, previewBottom) + 4;
 
 	const grid = isEmpty ? (
 		<div data-testid="dashboard-empty-state">
@@ -611,7 +827,7 @@ export default function OrgDashboardPage() {
 					);
 				})}
 			{layout.map((widget) => {
-				const isPlacingThis = placingKey === widget.widgetKey;
+				const isPlacingThis = activeKey === widget.widgetKey;
 				const rect = isPlacingThis && previewRect ? previewRect : widget;
 				const sizeClass = isLargeViewport
 					? classifyWidth(rect.width)
@@ -640,12 +856,17 @@ export default function OrgDashboardPage() {
 						showPlacementControls={isLargeViewport}
 						isPlacing={isPlacingThis}
 						hasAnchor={isPlacingThis && anchor !== null}
-						placingDisabled={placingKey !== null && !isPlacingThis}
+						isCornerFlowActive={placingKey === widget.widgetKey}
+						placingDisabled={activeKey !== null && !isPlacingThis}
 						onAdvance={() => handleAdvance(widget.widgetKey)}
 						onArrowKeyDown={(e) => handleArrowKeyDown(e, widget.widgetKey)}
 						onRemove={() => handleRemoveWidget(widget.widgetKey)}
+						onGripPointerDown={(e) => startDrag(e, widget.widgetKey, "move")}
+						onResizePointerDown={(e) =>
+							startDrag(e, widget.widgetKey, "resize")
+						}
 					>
-						{renderWidget(widget.widgetKey, sizeClass)}
+						{renderWidget(widget.widgetKey, sizeClass, rect.height)}
 					</EditableWidgetTile>
 				);
 			})}

@@ -10,7 +10,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { getActiveOrgId, resolveActiveOrg } from "../lib/activeOrg";
-import { ORG_TABS } from "../lib/orgTabs";
+import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import type { BreadcrumbItem } from "../contexts/ToolbarContext";
 import type { OrganizationSummaryDto } from "../client/api-client";
 import type { QuickAction } from "../contexts/QuickActionsContext";
@@ -526,7 +526,7 @@ export default function Header({
 													{ORG_TABS.map((tab) => (
 														<Link
 															key={tab.key}
-															to={`/app/${activeOrg.id}/${tab.key}`}
+															to={orgTabPath(activeOrg.id, tab.key)}
 															onClick={() => setMobileOpen(false)}
 															className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-600"}`}
 														>

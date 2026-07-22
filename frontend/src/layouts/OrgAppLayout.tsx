@@ -5,7 +5,7 @@ import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { setActiveOrgId } from "../lib/activeOrg";
-import { ORG_TABS } from "../lib/orgTabs";
+import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -49,7 +49,9 @@ function OrgAppShell({
 		? [
 				{
 					label: activeTabLabel,
-					href: `/app/${organizationId}/${activeTabKey}`,
+					href: organizationId
+						? orgTabPath(organizationId, activeTabKey)
+						: undefined,
 				},
 				{ label: extra },
 			]
@@ -72,7 +74,7 @@ function OrgAppShell({
 						{ORG_TABS.map((tab) => (
 							<Link
 								key={tab.key}
-								to={`/app/${organizationId}/${tab.key}`}
+								to={orgTabPath(organizationId ?? "", tab.key)}
 								aria-current={activeTabKey === tab.key ? "page" : undefined}
 								className={`shrink-0 whitespace-nowrap border-b-2 pb-3 pt-3 text-sm font-medium transition-colors ${
 									activeTabKey === tab.key
@@ -137,12 +139,18 @@ export default function OrgAppLayout() {
 
 	usePageTitle(org?.name ?? t("orgDashboard.title"));
 
-	// Matches the tab segment directly rather than endsWith(), so nested
-	// routes under a tab (e.g. opportunities/:opportunityId/engagements) still
-	// keep that tab active.
-	const tabSegment = location.pathname
-		.slice(`/app/${organizationId}/`.length)
-		.split("/")[0];
+	// #9: every tab now lives under /dashboard/... (App.tsx's pathless
+	// "dashboard" parent route), so the segment right after "dashboard" -
+	// not the first segment, which is always "dashboard" itself - is what
+	// identifies the active tab. Matches that segment directly rather than
+	// endsWith(), so nested routes under a tab (e.g.
+	// opportunities/:opportunityId/engagements) still keep that tab active.
+	// Missing entirely (bare /dashboard) means the dashboard tab itself.
+	const tabSegment =
+		location.pathname
+			.slice(`/app/${organizationId}/dashboard`.length)
+			.split("/")
+			.filter(Boolean)[0] ?? "dashboard";
 	const activeTabKey =
 		ORG_TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
 	const activeTab =

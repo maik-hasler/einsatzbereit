@@ -277,6 +277,64 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task PointerDrag_MovingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
+	{
+		// #16: a real press-and-drag on the grip button, distinct from the
+		// click-click-click flow covered above - moves the widget live under
+		// the pointer and commits on release, with no corner-picking banner
+		// involved at all.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashPointerDrag");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
+
+		// Add exactly one widget so its placement lands at a known (x=1, y=1,
+		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		var tile = Page.GetByTestId("widget-tile-ToDo");
+		var tileBox = await tile.BoundingBoxAsync();
+		tileBox.Should().NotBeNull();
+		var colPx = tileBox!.Width / 4;
+
+		var grip = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
+		var gripBox = await grip.BoundingBoxAsync();
+		gripBox.Should().NotBeNull();
+		var startX = gripBox!.X + gripBox.Width / 2;
+		var startY = gripBox.Y + gripBox.Height / 2;
+
+		// Drag two grid columns to the right (x=1 -> x=3) - well clear of the
+		// DRAG_THRESHOLD_PX below which a press+release is read as a plain
+		// click instead. Several intermediate moves rather than one jump, so
+		// the live preview actually gets a chance to update along the way.
+		await Page.Mouse.MoveAsync(startX, startY);
+		await Page.Mouse.DownAsync();
+		await Page.Mouse.MoveAsync(startX + colPx, startY, new() { Steps = 5 });
+		await Page.Mouse.MoveAsync(startX + colPx * 2, startY, new() { Steps = 5 });
+		await Page.Mouse.UpAsync();
+
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 2);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 2);
+	}
+
+	[Test]
 	public async Task KeyboardCornerPlacement_ResizingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -348,14 +406,18 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task OverlappingPlacement_IsRejected_WithErrorToast_AndKeepsPreviousPosition()
+	public async Task OverlappingPlacement_DisplacesTheOtherWidgetDownward_InsteadOfBeingRejected()
 	{
+		// #18: an overlapping placement used to be rejected outright - it now
+		// pushes whatever's in the way straight down instead (then closes any
+		// gap that leaves further up, see #14's compaction), and persists
+		// that displacement across a reload just like any other placement.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual DashOverlapReject");
+		await CreateOrganizationAsync("Visual DashOverlapPush");
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
@@ -369,20 +431,66 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
 		await dialog.GetByTestId("add-widget-done").ClickAsync();
 
-		var settingsTile = Page.GetByTestId("widget-tile-Settings");
-		var styleBefore = await settingsTile.GetAttributeAsync("style");
-
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
 
 		// Grow Settings down into ToDo's row (x=1..4, y=1..4) - overlaps
-		// ToDo's (x=1..4, y=3..4).
+		// ToDo's (x=1..4, y=3..4). ToDo has nowhere else to go but straight
+		// down below the grown Settings tile, landing at (x=1..4, y=5..6).
 		await ClickGridCellAsync(col: 1, row: 1);
 		await ClickGridCellAsync(col: 4, row: 4);
 
-		await Expect(Page.GetByRole(AriaRole.Alert))
-			.ToContainTextAsync("overlaps another widget");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		(await settingsTile.GetAttributeAsync("style")).Should().Be(styleBefore,
+		(await Page.GetByRole(AriaRole.Alert).CountAsync()).Should().Be(0,
+			"an overlapping placement is displaced, not rejected - no error toast should appear");
+		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 2);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 2);
+	}
+
+	[Test]
+	public async Task ResizingBelowAWidgetsMinimumSize_IsRejected_WithErrorToast_AndKeepsPreviousPosition()
+	{
+		// #15/#18: overlap alone no longer rejects a placement, but a widget's
+		// restored per-type minimum size still does - there's nowhere to
+		// "push" a widget that's shrunk smaller than it can usefully render.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashMinSizeReject");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
+
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-Calendar").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		var calendarTile = Page.GetByTestId("widget-tile-Calendar");
+		var styleBefore = await calendarTile.GetAttributeAsync("style");
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Calendar" }).ClickAsync();
+
+		// Calendar's minimum is 4x4 (see WIDGET_CATALOG in widgetCatalog.ts) -
+		// shrink it to 3x3 (x=1..3, y=1..3), below that floor on both axes.
+		await ClickGridCellAsync(col: 1, row: 1);
+		await ClickGridCellAsync(col: 3, row: 3);
+
+		await Expect(Page.GetByRole(AriaRole.Alert))
+			.ToContainTextAsync("doesn't fit");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		(await calendarTile.GetAttributeAsync("style")).Should().Be(styleBefore,
 			"a rejected placement must leave the widget at its previous position");
 	}
 

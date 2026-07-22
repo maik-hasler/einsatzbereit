@@ -5,6 +5,7 @@ import type {
 	Organization,
 	OrganizationSummaryDto,
 } from "../client/api-client";
+import { orgTabPath } from "../lib/orgTabs";
 import CreateOrganizationModal from "./CreateOrganizationModal";
 
 export default function OrganizationSwitcher({
@@ -30,7 +31,7 @@ export default function OrganizationSwitcher({
 	const currentOrg = orgs.find((o) => o.id === currentOrgId) ?? null;
 
 	function orgPath(org: OrganizationSummaryDto) {
-		return `/app/${org.id}/${currentTab}`;
+		return orgTabPath(org.id, currentTab);
 	}
 
 	useEffect(() => {
