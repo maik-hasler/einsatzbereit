@@ -215,20 +215,23 @@ function EditableWidgetTile({
 			// anything are exactly the friction this is meant to remove. That
 			// means the tile opts INTO pointer events here (rather than passing
 			// clicks through to the grid-guide backdrop beneath, as it used to) -
-			// the backdrop is still reachable over any empty cell, and dropping a
-			// tile onto an occupied one still displaces what's there (see
-			// settlePlacement), so the one thing actually lost is completing a
-			// click-click-click placement by clicking a backdrop cell hidden
-			// under a DIFFERENT tile; the keyboard flow (arrow keys + the grip
-			// button's Enter/Space) reaches every cell regardless and isn't
-			// affected.
+			// but only while it's NOT the widget actively being placed
+			// (!isPlacing): once a placement starts (real drag or the
+			// click-click-click flow), completing it very often means clicking a
+			// backdrop cell that falls inside THIS SAME widget's own current
+			// footprint (e.g. shrinking/growing it from within its own bounds) -
+			// if the tile itself still captured pointer events, it would
+			// intercept exactly those clicks meant for its own backdrop. A real
+			// drag already committed to via document-level pointermove/pointerup
+			// listeners isn't affected by this tile losing pointer-events
+			// mid-drag - only where a NEW press lands is.
 			onPointerDown={
-				editing && showPlacementControls && !placingDisabled
+				editing && showPlacementControls && !placingDisabled && !isPlacing
 					? onGripPointerDown
 					: undefined
 			}
 			className={`relative h-full ${
-				editing && showPlacementControls
+				editing && showPlacementControls && !isPlacing
 					? "cursor-grab touch-none active:cursor-grabbing"
 					: editing
 						? "pointer-events-none"
