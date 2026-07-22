@@ -67,29 +67,21 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
-	// The widget's own grid row span (its organizer-drawn height, #782), so
-	// the calendar's pixel height can track what was actually placed instead
-	// of a constant - see CALENDAR_ROW_PX/CALENDAR_GAP_PX below.
-	heightRows: number;
 }
 
-// Mirrors the dashboard grid's own row sizing (OrgDashboardPage's
-// `lg:auto-rows-[minmax(64px,auto)]` and `gap-4`) so a calendar spanning N
-// rows renders at roughly the pixel height those N rows actually occupy,
-// instead of a flat constant that's disconnected from the widget's real
-// footprint - which used to force the shared row band (every OTHER widget
-// in those same row indices, regardless of column) to grow to match
-// whatever the constant demanded, distorting them too (#15).
-const CALENDAR_ROW_PX = 64;
-const CALENDAR_GAP_PX = 16;
+// The dashboard grid's row height isn't a flat pixel constant (it tracks
+// the rendered column width, see .dashboard-widget-grid in global.css, so a
+// widget's on-screen shape stays consistent across screen sizes) - mirroring
+// that in a second, JS-side constant here would just be a new way for the
+// two to drift apart again. Filling 100% of the widget's own card area (see
+// WidgetCard) instead means the calendar always matches whatever height the
+// organizer's placement actually rendered at, on any screen, with no
+// separate row-to-pixel formula to keep in sync. MIN_HEIGHT is just a floor
+// so a very short placement doesn't squash the calendar unusably small -
+// WidgetCard's own overflow-y-auto handles the rest.
 const CALENDAR_MIN_HEIGHT_PX = 400;
 
-function CalendarWidget({
-	organizationId,
-	refreshKey,
-	size,
-	heightRows,
-}: Props) {
+function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -169,7 +161,7 @@ function CalendarWidget({
 				</p>
 			)}
 			{!calLoading && !calError && (
-				<div className="rbc-container">
+				<div className="rbc-container h-full">
 					<Calendar
 						localizer={localizer}
 						events={calEvents}
@@ -178,13 +170,7 @@ function CalendarWidget({
 						date={calDate}
 						onNavigate={(d: Date) => setCalDate(d)}
 						views={["month", "week", "work_week", "day", "agenda"]}
-						style={{
-							height: Math.max(
-								CALENDAR_MIN_HEIGHT_PX,
-								heightRows * CALENDAR_ROW_PX +
-									(heightRows - 1) * CALENDAR_GAP_PX,
-							),
-						}}
+						style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
 						components={{ event: CalEventChip }}
 						eventPropGetter={(event: object) => {
 							const e = event as CalEvent;

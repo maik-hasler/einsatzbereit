@@ -64,7 +64,7 @@ interface Cell {
 // handleAdvance).
 interface DragSession {
 	key: WidgetKey;
-	mode: "move" | "resize" | "resize-width" | "resize-height";
+	mode: "move" | "resize";
 	startClientX: number;
 	startClientY: number;
 	colPx: number;
@@ -164,8 +164,6 @@ function EditableWidgetTile({
 	onRemove,
 	onGripPointerDown,
 	onResizePointerDown,
-	onResizeWidthPointerDown,
-	onResizeHeightPointerDown,
 	children,
 }: {
 	widgetKey: WidgetKey;
@@ -186,12 +184,6 @@ function EditableWidgetTile({
 	onRemove: () => void;
 	onGripPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
 	onResizePointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
-	// #830: dedicated edge handles alongside the corner one, so resizing just
-	// the width or just the height is a normal edge-drag (like a spreadsheet
-	// column or a window pane) instead of only being reachable by fighting a
-	// single small corner dot for both axes at once.
-	onResizeWidthPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
-	onResizeHeightPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
 	children: ReactNode;
 }) {
 	const { t } = useTranslation();
@@ -315,12 +307,23 @@ function EditableWidgetTile({
 						// 1x1 preview box at its own current top-left cell (see
 						// previewRect/normalizeRect(cursor, cursor, ...) below) until
 						// a first corner is picked - with the tile that small, this
-						// handle (and the two edge handles below) would otherwise sit
-						// almost exactly on top of the very backdrop cell the
-						// corner-to-corner flow needs the next click to land on.
-						// Resizing mid-placement isn't a meaningful action anyway.
+						// handle would otherwise sit almost exactly on top of the
+						// very backdrop cell the corner-to-corner flow needs the
+						// next click to land on. Resizing mid-placement isn't a
+						// meaningful action anyway.
+						//
+						// A dedicated right-edge (width-only) and bottom-edge
+						// (height-only) handle pair briefly existed alongside this
+						// one (#830) but got reverted (#783 review) - on top of the
+						// existing grip/corner-resize/remove trio, two more
+						// permanently-visible controls left too little bare tile
+						// surface to grab-and-drag on the smaller widget sizes,
+						// which the organizer's feedback described as "you added
+						// more buttons, I can't move anything else - it's just not
+						// working" rather than as an improvement.
 						<button
 							type="button"
+							data-testid="widget-resize-handle-corner"
 							tabIndex={-1}
 							aria-hidden="true"
 							onPointerDown={(e) => {
@@ -332,43 +335,6 @@ function EditableWidgetTile({
 						>
 							<ResizeHandleIcon />
 						</button>
-					)}
-					{showPlacementControls && !isPlacing && (
-						// Right-edge handle (#830): width-only resize, dragged
-						// horizontally like a spreadsheet column border - grabbing
-						// just an edge to change one dimension is a far more
-						// familiar direct-manipulation pattern than only ever
-						// having a single corner dot that changes both dimensions
-						// at once. Same stopPropagation/tab-order/hidden/hidden-
-						// while-placing reasoning as the corner handle above.
-						<button
-							type="button"
-							data-testid="widget-resize-handle-width"
-							tabIndex={-1}
-							aria-hidden="true"
-							onPointerDown={(e) => {
-								e.stopPropagation();
-								onResizeWidthPointerDown(e);
-							}}
-							disabled={placingDisabled}
-							className="pointer-events-auto absolute right-0 top-1/2 z-20 h-10 w-2.5 -translate-y-1/2 cursor-ew-resize touch-none rounded-full bg-gray-300/70 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-30"
-						/>
-					)}
-					{showPlacementControls && !isPlacing && (
-						// Bottom-edge handle (#830): height-only resize, the same
-						// idea as the right-edge handle but for the vertical axis.
-						<button
-							type="button"
-							data-testid="widget-resize-handle-height"
-							tabIndex={-1}
-							aria-hidden="true"
-							onPointerDown={(e) => {
-								e.stopPropagation();
-								onResizeHeightPointerDown(e);
-							}}
-							disabled={placingDisabled}
-							className="pointer-events-auto absolute bottom-0 left-1/2 z-20 h-2.5 w-10 -translate-x-1/2 cursor-ns-resize touch-none rounded-full bg-gray-300/70 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-30"
-						/>
 					)}
 					<button
 						type="button"
@@ -620,7 +586,7 @@ export default function OrgDashboardPage() {
 	function startDrag(
 		event: ReactPointerEvent<HTMLElement>,
 		key: WidgetKey,
-		mode: "move" | "resize" | "resize-width" | "resize-height",
+		mode: "move" | "resize",
 	) {
 		if (event.pointerType === "mouse" && event.button !== 0) return;
 		const widget = (draftLayout ?? []).find((w) => w.widgetKey === key);
@@ -666,11 +632,6 @@ export default function OrgDashboardPage() {
 			}
 			const deltaCol = Math.round(deltaX / session.colPx);
 			const deltaRow = Math.round(deltaY / session.rowPx);
-			// "resize" (the corner handle) changes both axes together; the two
-			// edge handles (#830) change only the one axis they sit on, so a
-			// widget can be widened/narrowed or shortened/heightened
-			// independently, without also nudging the axis the organizer didn't
-			// touch.
 			const nextRect: PlacedWidget =
 				session.mode === "move"
 					? {
@@ -678,21 +639,11 @@ export default function OrgDashboardPage() {
 							x: Math.max(1, session.origRect.x + deltaCol),
 							y: Math.max(1, session.origRect.y + deltaRow),
 						}
-					: session.mode === "resize-width"
-						? {
-								...session.origRect,
-								width: Math.max(1, session.origRect.width + deltaCol),
-							}
-						: session.mode === "resize-height"
-							? {
-									...session.origRect,
-									height: Math.max(1, session.origRect.height + deltaRow),
-								}
-							: {
-									...session.origRect,
-									width: Math.max(1, session.origRect.width + deltaCol),
-									height: Math.max(1, session.origRect.height + deltaRow),
-								};
+					: {
+							...session.origRect,
+							width: Math.max(1, session.origRect.width + deltaCol),
+							height: Math.max(1, session.origRect.height + deltaRow),
+						};
 			session.currentRect = nextRect;
 			setDragPreview(nextRect);
 		}
@@ -828,11 +779,7 @@ export default function OrgDashboardPage() {
 		});
 	}
 
-	function renderWidget(
-		key: WidgetKey,
-		size: WidgetSizeClass,
-		heightRows: number,
-	) {
+	function renderWidget(key: WidgetKey, size: WidgetSizeClass) {
 		switch (key) {
 			case "ToDo":
 				return <ToDoWidget organizationId={organizationId} size={size} />;
@@ -850,7 +797,6 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
-						heightRows={heightRows}
 					/>
 				);
 			case "Settings":
@@ -932,15 +878,25 @@ export default function OrgDashboardPage() {
 	) : (
 		<div
 			data-testid="dashboard-widget-grid"
-			// Fixed row height, not minmax(64px, auto): CSS Grid auto-rows apply
-			// to the whole row band across every column, not just the cell whose
-			// content demanded the extra height - so a single tall widget used to
-			// stretch its ENTIRE row, including the plain green backdrop guide
-			// cells and any other widget sharing that row, making edit mode look
-			// like an inconsistent, randomly-sized grid instead of the uniform
-			// one it's meant to convey. A widget whose content exceeds its
-			// allotted rows now scrolls internally instead (see WidgetCard).
-			className="grid grid-cols-1 gap-4 lg:grid-cols-8 lg:auto-rows-[64px]"
+			// Uniform (not minmax(64px, auto)) row height: CSS Grid auto-rows
+			// apply to the whole row band across every column, not just the cell
+			// whose content demanded the extra height - so a single tall widget
+			// used to stretch its ENTIRE row, including the plain green backdrop
+			// guide cells and any other widget sharing that row, making edit mode
+			// look like an inconsistent, randomly-sized grid instead of the
+			// uniform one it's meant to convey. A widget whose content exceeds
+			// its allotted rows scrolls internally instead (see WidgetCard).
+			//
+			// The row height itself (see .dashboard-widget-grid in global.css)
+			// tracks the actual rendered column width via a container query,
+			// rather than a flat pixel constant - width already scales with the
+			// viewport (grid-cols-8's 1fr tracks), so a fixed row height meant a
+			// widget's on-screen shape (short-and-wide vs. tall-and-narrow)
+			// warped between a wide monitor and a narrower one even though its
+			// stored cell width/height never changed. Matching the two keeps
+			// every cell roughly square, and a widget's proportions consistent,
+			// on any screen the organizer views it on.
+			className="dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8"
 		>
 			{/* Light green cell backdrop behind the whole grid while editing, so
 			an organizer can see the underlying 8-column structure. These cells
@@ -1016,14 +972,8 @@ export default function OrgDashboardPage() {
 						onResizePointerDown={(e) =>
 							startDrag(e, widget.widgetKey, "resize")
 						}
-						onResizeWidthPointerDown={(e) =>
-							startDrag(e, widget.widgetKey, "resize-width")
-						}
-						onResizeHeightPointerDown={(e) =>
-							startDrag(e, widget.widgetKey, "resize-height")
-						}
 					>
-						{renderWidget(widget.widgetKey, sizeClass, rect.height)}
+						{renderWidget(widget.widgetKey, sizeClass)}
 					</EditableWidgetTile>
 				);
 			})}

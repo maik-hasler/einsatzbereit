@@ -332,6 +332,28 @@ input[type="number"]::-webkit-outer-spin-button {
 	}
 }
 
+/* ── Dashboard widget grid: row height tracks column width ───────────────
+ * A widget's stored width/height (OrgDashboardPage/widgetCatalog.ts) are
+ * grid-cell counts meant to describe one consistent on-screen shape -
+ * that only holds if a cell is the same shape on every screen. grid-cols-8
+ * already makes column width a fraction of the container (so it scales
+ * with the viewport); rows need the same treatment, or a widget's
+ * proportions warp between a wide monitor and a narrower one even though
+ * its cell counts never changed. Container query units key off this
+ * element's own measured width rather than the viewport, matching exactly
+ * what a column's 1fr track resolves to (100cqw minus the 7 inter-column
+ * gaps, split across 8 columns). Floored at 64px so rows stay usable on
+ * the narrowest qualifying (`lg`, 1024px) viewport. */
+.dashboard-widget-grid {
+	container-type: inline-size;
+}
+
+@media (min-width: 1024px) {
+	.dashboard-widget-grid {
+		grid-auto-rows: max(64px, calc((100cqw - 7rem) / 8));
+	}
+}
+
 @theme {
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;
