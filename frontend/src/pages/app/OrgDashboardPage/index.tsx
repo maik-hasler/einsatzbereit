@@ -839,7 +839,15 @@ export default function OrgDashboardPage() {
 	) : (
 		<div
 			data-testid="dashboard-widget-grid"
-			className="grid grid-cols-1 gap-4 lg:grid-cols-8 lg:auto-rows-[minmax(64px,auto)]"
+			// Fixed row height, not minmax(64px, auto): CSS Grid auto-rows apply
+			// to the whole row band across every column, not just the cell whose
+			// content demanded the extra height - so a single tall widget used to
+			// stretch its ENTIRE row, including the plain green backdrop guide
+			// cells and any other widget sharing that row, making edit mode look
+			// like an inconsistent, randomly-sized grid instead of the uniform
+			// one it's meant to convey. A widget whose content exceeds its
+			// allotted rows now scrolls internally instead (see WidgetCard).
+			className="grid grid-cols-1 gap-4 lg:grid-cols-8 lg:auto-rows-[64px]"
 		>
 			{/* Light green cell backdrop behind the whole grid while editing, so
 			an organizer can see the underlying 8-column structure. These cells
