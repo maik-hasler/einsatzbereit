@@ -624,9 +624,9 @@ export default function ProfileOverviewPage() {
 			)}
 
 			{/* Mounted unconditionally (not gated behind profileLoading) so their
-			    own independent data fetches start immediately, and so their
-			    section ids exist right away for the legacy ?tab= scroll-to-section
-			    effect above regardless of how long the profile fetch takes. */}
+			own independent data fetches start immediately, and so their
+			section ids exist right away for the legacy ?tab= scroll-to-section
+			effect above regardless of how long the profile fetch takes. */}
 			<AchievementsSection />
 			<ActivitySection />
 
