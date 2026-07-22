@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import type {
 	Organization,
 	OrganizationSummaryDto,
-} from "../client/api-client";
-import CreateOrganizationModal from "./CreateOrganizationModal";
+} from "../../client/api-client";
+import CreateOrganizationModal from "../CreateOrganizationModal";
 
 export default function OrganizationSwitcher({
 	currentOrgId,
