@@ -83,6 +83,12 @@ edit on your own initiative):
   (label `lens`, capped at 5/run), never code or a PR.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
+  `.claude/skills/frontend-design/` (vendored from `anthropics/skills`,
+  Apache-2.0, `LICENSE` alongside it) pushes frontend redesign work
+  toward a deliberate, non-generic visual direction - typography, color
+  theming, motion, spatial composition - instead of generic AI-layout
+  defaults; load it before visual/layout changes to frontend components
+  or pages.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
