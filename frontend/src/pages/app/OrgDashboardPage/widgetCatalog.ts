@@ -206,31 +206,57 @@ export function resolveOverlaps(
 	return result;
 }
 
-// Slides each of `movable` up as far as it can go without overlapping
-// anything already settled above it - starting from `obstacles`, which are
-// never themselves moved or reordered. Processes `movable` top-to-bottom,
-// then left-to-right, so each one only ever lands against widgets (obstacle
-// or already-settled movable) that have already reached their own final
-// resting position.
+// Settles `movable` into the tightest gap-free arrangement possible without
+// overlapping `obstacles` (never themselves moved) or each other - sliding
+// each widget up, then left, as far as it can go, and repeating that to a
+// fixed point so a widget freed up by an earlier widget's own move gets a
+// chance to slide further in a later pass (#830: closes gaps on BOTH axes
+// automatically after every placement/removal, not just vertically - a
+// widget shrunk or removed used to leave a horizontal hole next to it that
+// nothing ever reflowed into, which read as the grid being only halfway
+// "automatic"). Bounded to terminate: every successful move strictly
+// decreases some widget's x+y, floored at 1 on both axes.
 function compactAgainstObstacles(
 	movable: PlacedWidget[],
 	obstacles: PlacedWidget[],
 ): PlacedWidget[] {
-	const sorted = [...movable].sort((a, b) => a.y - b.y || a.x - b.x);
-	const settled: PlacedWidget[] = [...obstacles];
-	const result: PlacedWidget[] = [];
-	for (const widget of sorted) {
-		let bestY = widget.y;
-		for (let y = widget.y - 1; y >= 1; y--) {
-			const candidate = { ...widget, y };
-			if (settled.some((s) => rectsOverlap(candidate, s))) break;
-			bestY = y;
+	const settled = movable.map((w) => ({ ...w }));
+	let changed = true;
+	while (changed) {
+		changed = false;
+		// Re-sort every pass (top-to-bottom, then left-to-right) against the
+		// CURRENT positions - a widget that slid up in an earlier pass may now
+		// be the thing a later widget in this same pass should settle against.
+		const order = settled
+			.map((_, index) => index)
+			.sort(
+				(a, b) => settled[a].y - settled[b].y || settled[a].x - settled[b].x,
+			);
+		for (const i of order) {
+			const widget = settled[i];
+			const others = [...obstacles, ...settled.filter((_, j) => j !== i)];
+
+			let bestY = widget.y;
+			for (let y = widget.y - 1; y >= 1; y--) {
+				const candidate = { ...widget, y };
+				if (others.some((o) => rectsOverlap(candidate, o))) break;
+				bestY = y;
+			}
+
+			let bestX = widget.x;
+			for (let x = widget.x - 1; x >= 1; x--) {
+				const candidate = { ...widget, x, y: bestY };
+				if (others.some((o) => rectsOverlap(candidate, o))) break;
+				bestX = x;
+			}
+
+			if (bestY !== widget.y || bestX !== widget.x) {
+				settled[i] = { ...widget, x: bestX, y: bestY };
+				changed = true;
+			}
 		}
-		const placed = { ...widget, y: bestY };
-		settled.push(placed);
-		result.push(placed);
 	}
-	return result;
+	return settled;
 }
 
 // Slides every widget up as far as it can go without overlapping another
