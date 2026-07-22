@@ -78,10 +78,11 @@ edit on your own initiative):
   routine - the durable process lives here, checked in and versioned,
   rather than only in the routine's own (unowned, unversioned) prompt text.
   `.claude/skills/persona-simulation/` is that routine's fallback for a
-  genuinely empty backlog - it drives the live app as Volunteer Vera/Organizer
-  Olaf to find real gaps in the existing feature set, filing GitHub issues
-  only (never code) and labelling anything needing the repo owner's own
-  product call as `needs-decision`, which `issue-triage` then leaves alone.
+  genuinely empty backlog - it drives the live app as Volunteer Vera,
+  Organizer Olaf, and Platform Admin to find real gaps in the existing
+  feature set, filing GitHub issues only (never code) and labelling anything
+  needing the repo owner's own product call as `needs-decision`, which
+  `issue-triage` then leaves alone.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
   `.claude/skills/deep-lens-review/` is a separate, on-demand routine: one
@@ -106,12 +107,26 @@ edit on your own initiative):
   verification) plugins are enabled in `.claude/settings.json`. The
   `playwright` plugin is for interactive poking around, not a replacement
   for the persisted smoke-test script required below - that stays as the
-  reviewable, committed record of what was verified.
+  reviewable, committed record of what was verified. **MCP tool grants do
+  not propagate to a subagent spawned via the `Agent` tool** - confirmed by
+  a subagent explicitly failing on this (its report: "MCP tool grants
+  apparently don't propagate down to subagents here"). A subagent asked to
+  drive a live browser session (persona-simulation-style work, a design
+  review) will have no `browser_*`/`playwright` tools at all, silently,
+  even though the parent session does. Do that work in the current session
+  directly, not a delegated one. The plugin's tool availability can also be
+  inconsistent turn-to-turn even in the main session - `ToolSearch` for
+  `browser_navigate` before relying on it; if nothing resolves, fall back to
+  a plain script against `scripts/lib/live-browser.mjs` (`npm install` once
+  per session pulls in the root `package.json`'s pinned `playwright`; no
+  `npx playwright install` needed, Chromium ships pre-installed at
+  `/opt/pw-browsers`).
 
 ## Sandbox Limitations (Claude Code on the web)
 
 - **No reliable Docker** - `dotnet run --project backend/src/Aspire/AppHost`, the `IntegrationTests` project (Testcontainers), and the `VisualTests` project (Aspire + Playwright) all need real container networking. Don't try to run them locally in a web/cloud session, even if `docker info` succeeds - Aspire/DCP orchestration still fails. Verify locally with `dotnet build` + `Application.UnitTests` + `ArchitectureTests` (no Docker needed); CI's `dotnet.yml` runs the full suite including `IntegrationTests`/`VisualTests` on a real runner. For anything user-visible, use the release-candidate + live-staging Playwright flow below instead of a local dev server.
 - **Direct pushes to `main` are blocked** by the git proxy (working-branch only) - always commit to the designated `claude/...` branch and open a PR, even if an instruction says to work "directly on main".
+- **This repo ships fast under the autonomous routine** - `git fetch origin main` and skim `git log origin/main --oneline -20` before any review, audit, or analysis task, not just before implementation work. A review session that assumes last week's state is current will spend most of its effort re-finding things that already shipped; a design/UX review of this repo has hit exactly that before.
 
 ## Releases (autonomous from Claude Code on the web)
 
@@ -151,3 +166,5 @@ After every bug fix or feature implementation, **always** cut a release candidat
 7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this.
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.
+
+Live staging accumulates smoke-test debris over time - the shared `vera`/`olaf`/`admin` accounts get reused by every verification script, and a script that creates or edits state (an opportunity, a profile field) rather than only reading is a real, observed source of visible junk (a live design review of the site found staging's own opportunity list and Vera's profile dominated by leftover `Smoke...`-prefixed test data). Prefer scripts that clean up after themselves. `.github/workflows/reset-staging.yml` wipes staging and reseeds it from the checked-in Keycloak realm + seed data (see `.github/AGENTS.md`) when it gets bad enough to need a hard reset - it's manual (`workflow_dispatch`) with a destructive confirmation gate, so don't trigger it without the repo owner's go-ahead, but know it exists rather than working around dirty data by hand.

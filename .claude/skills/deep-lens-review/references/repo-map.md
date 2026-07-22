@@ -25,7 +25,7 @@ maintainer, German-named but English-documented.
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
 | `.github/workflows` | 9 workflows; `publish.yml` alone is ~500 lines. |
-| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (issue-triage, persona-simulation, self-review), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
+| `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (issue-triage, persona-simulation, deep-lens-review itself, self-review, ingest/query/lint for `wiki/`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
 | `scripts/`, `docker-compose.yml`, `.env.example`, `renovate.json` | Ops/dev support. docker-compose coexists with Aspire - do not assume one makes the other dead without checking who consumes which. |
 
 ## False-positive traps

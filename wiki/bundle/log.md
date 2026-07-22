@@ -10,6 +10,10 @@ dates and a bold action-word prefix, e.g. `**Added**`, `**Updated**`,
 - **Added** - <one-line description of what changed and why>
 ```
 
+## 2026-07-22
+
+- **Updated** - `decisions/autonomous-routines.md`: `persona-simulation` gained a third persona, Platform Admin (`admin/admin123`) exercising the new `AdministrationPage` (#768), alongside a same-day audit of `.claude/skills/` and root/`frontend` `AGENTS.md` that fixed stale component references (`OrganizationOverviewPage` -> the widget-based `app/OrgDashboardPage/`, a nonexistent `OrganizationEngagementsPage`/`OpportunityMap`) and added two root-`AGENTS.md` gotchas: MCP tool grants (incl. the `playwright` plugin) don't propagate to `Agent`-tool subagents, and live staging accumulates smoke-test debris from shared `vera`/`olaf`/`admin` accounts (`.github/workflows/reset-staging.yml` is the fix).
+
 ## 2026-07-18
 
 - **Added** - first roundup: 17 concept pages harvested from the repo, `docs/`, `.claude/` config, git history, and the GitHub tracker, grouped under `process/`, `gotchas/`, `reference/`, `decisions/`, `ci/`. Every falsifiable claim was adversarially verified against the working tree and public issues/PRs; 8 refuted claims were corrected (Testcontainers -> Aspire/DCP, the OwnershipGuard path, the full Keycloak `passwordPolicy`, the organizations-are-both-Keycloak-and-DB correction, React Router v8, PR #716 merged not open, and two others). Graph is fully bidirectional; `backend-conventions` is the hub.
