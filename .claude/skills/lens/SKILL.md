@@ -8,13 +8,12 @@ description: >
   bugs, dead code, dead features, repo hygiene, docs drift, test gaps, CI
   health, security, contributor accessibility, live personas (Volunteer
   Vera/Organizer Olaf/Platform Admin - functional friction and visual/
-  content quality together), or accessibility, or code/comment complexity -
+  content quality together), accessibility, or code/comment complexity -
   and files evidenced, ranked GitHub issues. Never writes code, never opens
-  a branch or PR. Use whenever asked
-  to review the repo or the live app, run the recurring routine, audit
-  einsatzbereit, hunt for dead code/bugs/UX gaps/accessibility issues/
-  overly complex code, simulate a user, or names any of the lenses - even
-  without the word "review".
+  a branch or PR. Use whenever asked to review the repo or the live app,
+  run the recurring routine, audit einsatzbereit, hunt for dead code/bugs/
+  UX gaps/accessibility issues/overly complex code, simulate a user, or
+  names any of the lenses - even without the word "review".
 ---
 
 # Lens
