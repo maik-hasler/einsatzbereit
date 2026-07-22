@@ -65,7 +65,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Expect(opportunitiesLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await opportunitiesLink.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities"), new() { Timeout = 15_000 });
 
 		// Re-open and confirm the remaining tabs are all reachable too.
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
@@ -75,7 +75,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
@@ -84,7 +84,7 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await banner.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true })
 			.ClickAsync(new() { Timeout = 10_000 });
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/settings"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/settings"), new() { Timeout = 15_000 });
 
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
