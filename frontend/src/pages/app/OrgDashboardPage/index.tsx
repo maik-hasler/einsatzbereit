@@ -261,6 +261,29 @@ function EditableWidgetTile({
 						// (#16) on its own, so this button's own onPointerDown
 						// would otherwise fire a second, redundant drag-start for
 						// the exact same press; stopPropagation keeps it to one.
+						//
+						// Mouse hit-testing only (#830 follow-up), not pointer-
+						// events-none outright: while the click-click-click corner
+						// flow is active for this widget with no anchor picked yet,
+						// its tile has collapsed to a 1x1 preview box at its own
+						// current top-left cell (see previewRect/normalizeRect
+						// (cursor, cursor, ...) below), putting this centered
+						// button almost exactly on top of the very backdrop cell
+						// the next click needs to land on - so it stops claiming
+						// mouse clicks for that one narrow window. Gated on
+						// isCornerFlowActive specifically, not the broader
+						// isPlacing (which a fresh press's own onPointerDown/
+						// startDrag call above already flips true, transiently,
+						// before the browser has even dispatched this SAME click's
+						// "click" event) - isCornerFlowActive only reflects
+						// placingKey, set by onAdvance below, which only runs once
+						// the click event actually fires - so a fresh press can
+						// never self-disable its own click via this class.
+						// Keyboard Enter/Space activation is untouched regardless
+						// (pointer-events doesn't gate that), so the accessible
+						// path this button exists for - not requiring pointer
+						// precision on a tiny backdrop cell - still works exactly
+						// the same via a focused Enter press.
 						<button
 							type="button"
 							onClick={onAdvance}
@@ -270,13 +293,13 @@ function EditableWidgetTile({
 								onGripPointerDown(e);
 							}}
 							disabled={placingDisabled}
-							className={`pointer-events-auto absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
+							className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
 							<GripIcon />
 						</button>
 					)}
-					{showPlacementControls && (
+					{showPlacementControls && !isPlacing && (
 						// Pure mouse/touch drag-to-resize affordance (#16) - the
 						// existing grip button + arrow keys already cover resizing
 						// accessibly via the two-corner flow, so this one is taken out
@@ -286,6 +309,16 @@ function EditableWidgetTile({
 						// optimization - without it, the tile's own move-drag handler
 						// (above) would also see this same press and immediately
 						// overwrite the resize session with a move session.
+						//
+						// Hidden entirely while THIS widget is being placed (#830
+						// follow-up): starting a placement collapses the tile to a
+						// 1x1 preview box at its own current top-left cell (see
+						// previewRect/normalizeRect(cursor, cursor, ...) below) until
+						// a first corner is picked - with the tile that small, this
+						// handle (and the two edge handles below) would otherwise sit
+						// almost exactly on top of the very backdrop cell the
+						// corner-to-corner flow needs the next click to land on.
+						// Resizing mid-placement isn't a meaningful action anyway.
 						<button
 							type="button"
 							tabIndex={-1}
@@ -300,14 +333,14 @@ function EditableWidgetTile({
 							<ResizeHandleIcon />
 						</button>
 					)}
-					{showPlacementControls && (
+					{showPlacementControls && !isPlacing && (
 						// Right-edge handle (#830): width-only resize, dragged
 						// horizontally like a spreadsheet column border - grabbing
 						// just an edge to change one dimension is a far more
 						// familiar direct-manipulation pattern than only ever
 						// having a single corner dot that changes both dimensions
-						// at once. Same stopPropagation/tab-order/hidden reasoning
-						// as the corner handle above.
+						// at once. Same stopPropagation/tab-order/hidden/hidden-
+						// while-placing reasoning as the corner handle above.
 						<button
 							type="button"
 							data-testid="widget-resize-handle-width"
@@ -321,7 +354,7 @@ function EditableWidgetTile({
 							className="pointer-events-auto absolute right-0 top-1/2 z-20 h-10 w-2.5 -translate-y-1/2 cursor-ew-resize touch-none rounded-full bg-gray-300/70 hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-30"
 						/>
 					)}
-					{showPlacementControls && (
+					{showPlacementControls && !isPlacing && (
 						// Bottom-edge handle (#830): height-only resize, the same
 						// idea as the right-edge handle but for the vertical axis.
 						<button
