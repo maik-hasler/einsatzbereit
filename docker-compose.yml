@@ -166,6 +166,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       Database__MigrateOnStartup: "true"
+      Database__SeedOnStartup: "true"
       ConnectionStrings__einsatzbereit: "Host=postgres;Database=einsatzbereit;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
       Authentication__Authority: https://login.maik-hasler.de/realms/einsatzbereit
       Authentication__ValidIssuers__0: https://login.maik-hasler.de/realms/einsatzbereit
