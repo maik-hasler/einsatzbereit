@@ -215,15 +215,17 @@ function EditableWidgetTile({
 			// anything are exactly the friction this is meant to remove. That
 			// means the tile opts INTO pointer events here (rather than passing
 			// clicks through to the grid-guide backdrop beneath, as it used to) -
-			// but only while it's NOT the widget actively being placed
-			// (!isPlacing): once a placement starts (real drag or the
-			// click-click-click flow), completing it very often means clicking a
-			// backdrop cell that falls inside THIS SAME widget's own current
-			// footprint (e.g. shrinking/growing it from within its own bounds) -
-			// if the tile itself still captured pointer events, it would
-			// intercept exactly those clicks meant for its own backdrop. A real
-			// drag already committed to via document-level pointermove/pointerup
-			// listeners isn't affected by this tile losing pointer-events
+			// but only while NO placement is active at all anywhere on the
+			// board (!isPlacing && !placingDisabled, i.e. activeKey === null).
+			// Once ANY widget's placement is active (real drag or the
+			// click-click-click flow), completing it very often means clicking
+			// a backdrop cell that falls inside another widget's current
+			// footprint - that's the whole point of #18 (an overlapping
+			// placement displaces what's in the way instead of being
+			// rejected), so every OTHER tile must let those clicks through
+			// too, not just the one actually being placed. A real drag
+			// already committed to via document-level pointermove/pointerup
+			// listeners isn't affected by tiles losing pointer-events
 			// mid-drag - only where a NEW press lands is.
 			onPointerDown={
 				editing && showPlacementControls && !placingDisabled && !isPlacing
@@ -231,7 +233,7 @@ function EditableWidgetTile({
 					: undefined
 			}
 			className={`relative h-full ${
-				editing && showPlacementControls && !isPlacing
+				editing && showPlacementControls && !isPlacing && !placingDisabled
 					? "cursor-grab touch-none active:cursor-grabbing"
 					: editing
 						? "pointer-events-none"
