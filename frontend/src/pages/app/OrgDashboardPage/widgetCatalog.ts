@@ -153,6 +153,20 @@ export function rectsOverlap(a: PlacedWidget, b: PlacedWidget): boolean {
 // displaces whatever is in the way instead of being rejected - see
 // resolveOverlaps.
 export function isValidPlacement(rect: PlacedWidget): boolean {
+	// A real pointer drag (#16) derives x/y/width/height from a division by
+	// a measured pixel size - if that measurement ever races to 0 in a real
+	// browser, the result is NaN/Infinity, and every check below is a `<`/`>`
+	// comparison that's silently false for both, letting a garbage rect
+	// sail through as "valid" and get saved. Reject outright instead of
+	// relying on the comparisons to catch it incidentally.
+	if (
+		!Number.isFinite(rect.x) ||
+		!Number.isFinite(rect.y) ||
+		!Number.isFinite(rect.width) ||
+		!Number.isFinite(rect.height)
+	) {
+		return false;
+	}
 	const entry = WIDGET_CATALOG[rect.widgetKey];
 	if (rect.x < 1 || rect.y < 1) return false;
 	if (rect.width < entry.minWidth || rect.height < entry.minHeight)

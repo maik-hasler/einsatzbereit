@@ -519,6 +519,12 @@ export default function OrgDashboardPage() {
 		);
 		if (!widget || !tile) return;
 		const box = tile.getBoundingClientRect();
+		// A tile mid-layout (just resized, just re-rendered) can momentarily
+		// measure as 0x0 in a real browser - dividing by that produces
+		// Infinity/NaN deltas for the rest of the drag. Bail out rather than
+		// starting a session on a bad measurement; the user's next press
+		// gets a fresh, presumably-settled measurement.
+		if (box.width <= 0 || box.height <= 0) return;
 		dragSessionRef.current = {
 			key,
 			mode,
@@ -773,7 +779,19 @@ export default function OrgDashboardPage() {
 	const previewBottom = previewRect
 		? previewRect.y + previewRect.height - 1
 		: 0;
-	const guideRows = Math.max(contentRows, cursor?.row ?? 0, previewBottom) + 4;
+	// Clamped, not just summed - `Array.from({ length })` below throws a
+	// RangeError (taking down the whole page, not just this component) for
+	// a non-finite or absurdly large length, and Math.min/max propagate NaN
+	// rather than ignoring it, so a plain Math.min(ceiling, ...) wouldn't
+	// actually catch that case. contentRows/previewBottom are normally
+	// well-behaved, but this is the one spot a stray NaN/Infinity anywhere
+	// upstream would otherwise become unrecoverable rather than just a
+	// visually-wrong backdrop.
+	const rawGuideRows =
+		Math.max(contentRows, cursor?.row ?? 0, previewBottom) + 4;
+	const guideRows = Number.isFinite(rawGuideRows)
+		? Math.min(GRID_MAX_ROWS + 4, rawGuideRows)
+		: GRID_MAX_ROWS + 4;
 
 	const grid = isEmpty ? (
 		<div data-testid="dashboard-empty-state">
