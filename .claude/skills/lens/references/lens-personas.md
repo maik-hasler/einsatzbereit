@@ -1,10 +1,17 @@
 # Lens: Personas
 
-Goal: friction, breakage, and gaps a real user hits - not from reading code,
-from actually being Volunteer Vera, Organizer Olaf, or Platform Admin on live
-staging. This is the one lens that runs the app instead of reading it; it
-catches what static lenses structurally cannot (a page that renders without
-error but reads as empty, a control that "works" but confuses).
+Goal: friction, breakage, visual inconsistency, and content gaps a real
+user hits - not from reading code, from actually being Volunteer Vera,
+Organizer Olaf, or Platform Admin on live staging. This is the one lens
+that runs the app instead of reading it; it catches what static lenses
+structurally cannot - a page that renders without error but reads as
+empty, a control that "works" but confuses, a tab that's visibly plainer
+than its neighbors.
+
+Functional breakage and visual/content quality used to be two separate
+lenses here. They were merged: both come from the same browser session,
+the same screenshots, the same signals - splitting them meant describing
+the same page twice under two different framings instead of once.
 
 ## Method - drive it yourself, in this session
 
@@ -41,16 +48,42 @@ against `scripts/lib/live-browser.mjs` (`npm install` pulls the root
    your script's wait condition (`networkidle` resolves before a
    post-redirect effect fires its own fetch). Re-navigate with an explicit
    extra wait (5-10s) and re-check before reporting something as broken -
-   otherwise you'll report a script-timing artifact as a product bug.
+   otherwise you'll report a script-timing artifact as a product bug (the
+   same caution applies to a still image catching a page mid-load: it can
+   look sparse without being sparse).
 5. **A mobile pass on anything you flag.** 390x844 at minimum. Something
-   that's a rough edge on desktop can be a dead end on mobile, or vice
-   versa - don't assume either way without checking.
-6. **When a live observation looks systemic, root-cause it with a grep
+   that's a rough edge on desktop can be a dead end - or fine - on mobile;
+   don't assume either way without checking.
+6. **Compare siblings, not pages in isolation**, for visual/content
+   findings specifically. Tabs in the same shell (an org app's
+   Opportunities vs. Members vs. Settings), or pages serving a comparable
+   role (a public org profile vs. a public user profile), are the
+   highest-signal comparison - a real product usually has one visual
+   language, and a tab that's visibly plainer or emptier than its
+   neighbors is a finding even if it "works" fine on its own. Don't
+   confuse "different because it's a different kind of screen" (a data
+   table vs. a marketing hero, allowed to differ) with "inconsistent"
+   (two screens playing the *same role* that don't match).
+7. **Check for a visual-language split.** Do "discovery" surfaces
+   (browse, list, landing) and "transactional" surfaces (forms, modals,
+   admin tables) look like the same product? A repo-wide plain-form
+   convention can be a legitimate deliberate choice (check
+   `lib/formClasses.ts` or equivalent before assuming it's an oversight) -
+   the finding, if there is one, is the *contrast* being jarring next to a
+   much more polished neighbor, not the plainness itself.
+8. **When a live observation looks systemic, root-cause it with a grep
    before writing it up.** A single visual anomaly (a blank column, a
    misaligned block) is worth one line; the same grep-able pattern
    appearing in three files is worth naming the shared root cause and
    citing all three - much more actionable, and it's usually one fix
-   instead of three.
+   instead of three. (`className="mx-auto max-w-2xl"` was a real repo
+   example: one wrapper, reused in four files, each looking like an
+   unrelated "sparse page" until the grep tied them together.)
+9. **Give credit where it's due.** A findings-only report reads as more
+   broken than the product is. Note 3-5 things that are genuinely well
+   built (a rich filter bar, a well-illustrated 404 page, a cohesive
+   badge/achievement system) alongside the problems - it costs one line
+   each and makes the rest of the report more trustworthy, not less.
 
 ## What counts as a finding
 
@@ -61,13 +94,21 @@ against `scripts/lib/live-browser.mjs` (`npm install` pulls the root
 - Falls short of what the persona's role actually needs to get the
   real-life job done - "Olaf can't tell if anyone applied without opening
   every opportunity", not "wouldn't it be nice if...".
+- Looks visibly thinner, less polished, or inconsistent next to a sibling
+  page or tab playing the same role - not a subjective taste call, one
+  backed by the side-by-side comparison and, where the cause is
+  structural, the shared component/wrapper.
 
 ## Verification bar
 
 A finding names the exact page/URL, the persona, and the observed evidence
-(screenshot description, network log line, or console error) - not a vague
-"felt off". A claim that something is broken (not just unpolished) needs
-the retry-with-wait from step 4 first, or it caps at Likely.
+(screenshot description, network log line, console error, or a
+side-by-side sibling comparison) - not a vague "felt off" or "looks bad".
+A claim that something is *broken* (not just unpolished) needs the
+retry-with-wait from step 4 first, or it caps at Likely. A "this feels
+sparse" claim without a side-by-side comparison to a sibling page is a
+Hypothesis. Where a design finding's cause is structural, cite every file
+the shared wrapper/component appears in, not just the one you saw first.
 
 ## Traps
 
@@ -75,13 +116,6 @@ Staging is a shared environment reused by every deploy-verify smoke test in
 `scripts/` - a cluttered opportunity list or a demo account's profile full
 of `Smoke...`-prefixed junk is a data-hygiene finding (real, worth one
 line, `.github/workflows/reset-staging.yml` is the fix), not evidence the
-product itself is broken. Keep the two apart. If a flow requires creating
-real data to see the next screen, clean it up before the run ends - this
-lens reports, it does not leave debris behind.
-
-## Related
-
-`lens-design-content.md` shares this lens's screenshots and infrastructure
-but asks a different question (does this look right / feel complete, vs.
-does this work) - run both together when doing a persona pass, they're
-cheap to combine and the findings rarely overlap.
+product itself is broken or badly designed. Keep the two apart. If a flow
+requires creating real data to see the next screen, clean it up before the
+run ends - this lens reports, it does not leave debris behind.

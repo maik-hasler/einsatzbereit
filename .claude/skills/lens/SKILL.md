@@ -7,9 +7,10 @@ description: >
   effort is most valuable right now, then goes deep on exactly ONE lens -
   bugs, dead code, dead features, repo hygiene, docs drift, test gaps, CI
   health, security, contributor accessibility, live personas (Volunteer
-  Vera/Organizer Olaf/Platform Admin), accessibility, design & content
-  quality, or code/comment complexity - and files evidenced, ranked GitHub
-  issues. Never writes code, never opens a branch or PR. Use whenever asked
+  Vera/Organizer Olaf/Platform Admin - functional friction and visual/
+  content quality together), or accessibility, or code/comment complexity -
+  and files evidenced, ranked GitHub issues. Never writes code, never opens
+  a branch or PR. Use whenever asked
   to review the repo or the live app, run the recurring routine, audit
   einsatzbereit, hunt for dead code/bugs/UX gaps/accessibility issues/
   overly complex code, simulate a user, or names any of the lenses - even
@@ -55,9 +56,9 @@ take on a specific filed issue.
    grants (including the `playwright` plugin) do not propagate to a
    subagent spawned via the `Agent` tool - confirmed the hard way, a
    subagent asked to drive a browser had none of the tools it needed and
-   came back empty-handed. `lens-personas.md`, `lens-accessibility.md`,
-   and `lens-design-content.md` all drive the live app; do that in the
-   current session directly.
+   came back empty-handed. `lens-personas.md` and `lens-accessibility.md`'s
+   live pass both drive the live app; do that in the current session
+   directly.
 
 ## Environment capabilities - probe, don't assume
 
@@ -74,13 +75,12 @@ probe them first and set the verification bar accordingly:
 - **Frontend toolchain:** npm registry is usually reachable everywhere.
   `npm i -g pnpm`, `pnpm install`, then real tooling: `pnpm check`,
   `pnpm lint`, `npx knip`.
-- **Live browser access:** required for `lens-personas.md`,
-  `lens-accessibility.md`'s live pass, and `lens-design-content.md`.
-  `ToolSearch` for `browser_navigate` (the `playwright` plugin); if
-  nothing resolves, fall back to a script against
-  `scripts/lib/live-browser.mjs` (`npm install` once per session pulls in
-  the pinned `playwright`; Chromium ships pre-installed at
-  `/opt/pw-browsers`). If neither is available at all, these three lenses
+- **Live browser access:** required for `lens-personas.md` and
+  `lens-accessibility.md`'s live pass. `ToolSearch` for `browser_navigate`
+  (the `playwright` plugin); if nothing resolves, fall back to a script
+  against `scripts/lib/live-browser.mjs` (`npm install` once per session
+  pulls in the pinned `playwright`; Chromium ships pre-installed at
+  `/opt/pw-browsers`). If neither is available at all, these two lenses
   cannot run this session - say so in triage and exclude them from
   scoring rather than attempting a code-only substitute.
 - **GitHub API:** `search_issues`/`issue_write` for dedup and filing;
@@ -131,7 +131,7 @@ lens; it is not the review. Do not start investigating findings here.
 | Test-to-src churn | ratio of changed test files to changed src files (from churn probe) | test-gaps |
 | a11y coverage gap | grep `AccessibilityTests.cs` for `HasNoSeriousA11yViolations`, diff against `App.tsx` routes | accessibility |
 | Comment hedge scan | grep `careful\|hack\|workaround\|don't\|must\|NOTE\|WARNING` density across `backend/src`, `frontend/src` | complexity |
-| Days since last live pass | check recent closed/open issues labeled `lens` for a persona/design-content finding's timestamp | personas, design-content |
+| Days since last live pass | check recent closed/open issues labeled `lens` for a personas-lens finding's timestamp | personas |
 
 Score every lens 1-5 for **signal** (evidence something is off) and
 **impact** (cost if it stays unaddressed). Pick the highest product. On a
@@ -157,9 +157,8 @@ Then read exactly one lens file:
 | CI health & performance | `references/lens-ci.md` | static |
 | Security smells | `references/lens-security.md` | static |
 | Contributor accessibility | `references/lens-contributor-dx.md` | static |
-| Personas | `references/lens-personas.md` | live - drives staging as Vera/Olaf/Admin |
+| Personas | `references/lens-personas.md` | live - drives staging as Vera/Olaf/Admin; functional friction and visual/content quality together |
 | Accessibility | `references/lens-accessibility.md` | static + live |
-| Design & content | `references/lens-design-content.md` | live - screenshots, layout/content quality |
 | Code & comment complexity | `references/lens-complexity.md` | static |
 
 ### Step 3 - Execute the lens
