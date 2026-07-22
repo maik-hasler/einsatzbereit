@@ -242,9 +242,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		// #771: the tab bar is gone - reach the page via the Settings widget's
-		// member-count link instead.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();

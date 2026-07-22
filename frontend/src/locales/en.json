@@ -19,6 +19,8 @@
       "myAchievements": "My Achievements",
       "profileSettings": "Profile Settings",
       "administration": "Administration",
+      "organizationDashboard": "Organization Dashboard",
+      "organization": "Organization",
       "signOut": "Sign out",
       "signIn": "Sign in",
       "register": "Register",
@@ -334,7 +336,8 @@
     },
     "orgApp": {
       "backToSite": "Back to Einsatzbereit",
-      "notAuthorized": "You don't have access to this organization."
+      "notAuthorized": "You don't have access to this organization.",
+      "tabsLabel": "Organization sections"
     },
     "orgOpportunities": {
       "loading": "Loading…",

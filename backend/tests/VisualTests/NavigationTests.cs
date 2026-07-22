@@ -246,8 +246,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		// #771: the tab bar is gone - reach Members via the dashboard widget link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });

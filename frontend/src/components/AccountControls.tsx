@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../hooks/useAccountMenu";
+import type { OrganizationSummaryDto } from "../client/api-client";
+import { ORG_TABS } from "../lib/orgTabs";
 
 export default function AccountControls({
 	transparent = false,
@@ -8,6 +11,7 @@ export default function AccountControls({
 	displayName,
 	initials,
 	isAdmin = false,
+	activeOrg,
 	onSignOut,
 	onNotificationNavigate,
 }: {
@@ -16,10 +20,16 @@ export default function AccountControls({
 	displayName: string;
 	initials: string;
 	isAdmin?: boolean;
+	// When set, the avatar dropdown grows a collapsible "Organization
+	// Dashboard" entry linking to each ORG_TABS page - the desktop
+	// counterpart to the mobile burger menu's own org submenu (see
+	// Header.tsx), so the entry point into the org app isn't mobile-only.
+	activeOrg?: OrganizationSummaryDto | null;
 	onSignOut: () => void;
 	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 }) {
 	const { t } = useTranslation();
+	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
 	const {
 		avatarUrl,
 		notifications,
@@ -33,6 +43,10 @@ export default function AccountControls({
 		markAllRead,
 		markOneRead,
 	} = menu;
+
+	useEffect(() => {
+		if (!dropdownOpen) setOrgMenuOpen(false);
+	}, [dropdownOpen]);
 
 	return (
 		<>
@@ -224,6 +238,63 @@ export default function AccountControls({
 									</svg>
 									{t("nav.administration")}
 								</Link>
+							)}
+							{activeOrg && (
+								<div className="relative">
+									<button
+										type="button"
+										onClick={() => setOrgMenuOpen((o) => !o)}
+										aria-expanded={orgMenuOpen}
+										aria-haspopup="true"
+										className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+									>
+										<span className="flex items-center gap-3">
+											<svg
+												className="w-4 h-4"
+												fill="none"
+												viewBox="0 0 24 24"
+												strokeWidth="1.5"
+												stroke="currentColor"
+												aria-hidden="true"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+												/>
+											</svg>
+											{t("nav.organization")}
+										</span>
+										<svg
+											className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${orgMenuOpen ? "-rotate-180" : ""}`}
+											fill="none"
+											viewBox="0 0 24 24"
+											strokeWidth="2"
+											stroke="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="m8.25 4.5 7.5 7.5-7.5 7.5"
+											/>
+										</svg>
+									</button>
+									{orgMenuOpen && (
+										<div className="absolute right-full top-0 mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+											{ORG_TABS.map((tab) => (
+												<Link
+													key={tab.key}
+													to={`/app/${activeOrg.id}/${tab.key}`}
+													onClick={() => setDropdownOpen(false)}
+													className="block px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
+												>
+													{t(tab.labelKey)}
+												</Link>
+											))}
+										</div>
+									)}
+								</div>
 							)}
 							<button
 								type="button"
