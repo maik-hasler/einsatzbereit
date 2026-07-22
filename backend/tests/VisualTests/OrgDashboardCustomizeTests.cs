@@ -267,13 +267,26 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		var todoGrip = Page.GetByRole(AriaRole.Button, new() { Name = "Drag Needs Your Attention to reorder" });
 		await todoGrip.FocusAsync();
 		await Page.Keyboard.PressAsync("Space");
-		await Page.Keyboard.PressAsync("ArrowLeft");
 
-		// handleDragOver reorders live as the dragged tile crosses another one
-		// - wait for that to land before dropping, rather than assuming a
-		// fixed delay.
-		await Expect(Page.Locator("[data-testid^='widget-tile-']").First)
-			.ToHaveAttributeAsync("data-testid", "widget-tile-ToDo", new() { Timeout = 10_000 });
+		// A single ArrowLeft right after grabbing can race dnd-kit's
+		// post-grab rect measurement - a real user always leaves a natural
+		// gap between grabbing and steering that Playwright's instant
+		// keypress doesn't, and a keypress that lands before measurement
+		// finishes is silently swallowed by handleDragOver's over===null
+		// bail-out with nothing left to retry it later. Poll the key instead
+		// of trusting one press to land; once the swap has actually
+		// happened, further presses are no-ops (ToDo has no more left
+		// neighbor to swap with).
+		var firstTile = Page.Locator("[data-testid^='widget-tile-']").First;
+		var deadline = DateTime.UtcNow.AddSeconds(10);
+		while (await firstTile.GetAttributeAsync("data-testid") != "widget-tile-ToDo")
+		{
+			if (DateTime.UtcNow > deadline)
+				throw new TimeoutException(
+					"Keyboard ArrowLeft never reordered ToDo to the front of the widget grid.");
+			await Page.Keyboard.PressAsync("ArrowLeft");
+			await Page.WaitForTimeoutAsync(200);
+		}
 
 		await Page.Keyboard.PressAsync("Space");
 
