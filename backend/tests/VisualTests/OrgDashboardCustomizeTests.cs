@@ -337,20 +337,24 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
-	public async Task EdgeResizeHandles_ResizeOnlyTheirOwnAxis_AndPersistAcrossReload()
+	public async Task CornerResizeHandle_PointerDrag_ResizesBothAxesTogether_AndPersistsAcrossReload()
 	{
-		// #830 follow-up on the widget-placement UX: alongside the existing
-		// corner handle (which resizes both axes together), dedicated
-		// right-edge and bottom-edge handles let an organizer change just the
-		// width or just the height - a more familiar direct-manipulation
-		// pattern (like a spreadsheet column border) than only ever having a
-		// single corner dot for both dimensions at once.
+		// #830 briefly added dedicated right-edge/bottom-edge handles alongside
+		// this corner one, for single-axis resizing - reverted in the #783
+		// review round-trip: on top of the existing grip/corner-resize/remove
+		// trio, two more permanently-visible controls left too little bare
+		// tile surface to grab-and-drag on the smaller widget sizes, which the
+		// organizer read as "you added more buttons, I can't move anything
+		// else - it's just not working". The corner handle (both axes at once
+		// via a real pointer drag, distinct from the click-click-click/
+		// keyboard flow covered elsewhere in this file) is the only
+		// mouse-driven resize affordance again - this is its regression guard.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual DashEdgeResize");
+		await CreateOrganizationAsync("Visual DashCornerResize");
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
@@ -368,34 +372,17 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		var colPx = tileBox!.Width / 4;
 		var rowPx = tileBox.Height / 2;
 
-		// Drag the right-edge handle one column further right: width 4 -> 5,
-		// height must stay exactly 2.
-		var widthHandle = tile.GetByTestId("widget-resize-handle-width");
-		var widthHandleBox = await widthHandle.BoundingBoxAsync();
-		widthHandleBox.Should().NotBeNull();
-		var widthStartX = widthHandleBox!.X + widthHandleBox.Width / 2;
-		var widthStartY = widthHandleBox.Y + widthHandleBox.Height / 2;
+		// Drag the corner handle one column right and one row down: width
+		// 4 -> 5 and height 2 -> 3 together, from the same single drag.
+		var cornerHandle = tile.GetByTestId("widget-resize-handle-corner");
+		var cornerHandleBox = await cornerHandle.BoundingBoxAsync();
+		cornerHandleBox.Should().NotBeNull();
+		var startX = cornerHandleBox!.X + cornerHandleBox.Width / 2;
+		var startY = cornerHandleBox.Y + cornerHandleBox.Height / 2;
 
-		await Page.Mouse.MoveAsync(widthStartX, widthStartY);
+		await Page.Mouse.MoveAsync(startX, startY);
 		await Page.Mouse.DownAsync();
-		await Page.Mouse.MoveAsync(widthStartX + colPx, widthStartY, new() { Steps = 5 });
-		await Page.Mouse.UpAsync();
-
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
-
-		// Drag the bottom-edge handle one row further down: height 2 -> 3,
-		// width must stay exactly the 5 the previous step just set.
-		tileBox = await tile.BoundingBoxAsync();
-		tileBox.Should().NotBeNull();
-		var heightHandle = tile.GetByTestId("widget-resize-handle-height");
-		var heightHandleBox = await heightHandle.BoundingBoxAsync();
-		heightHandleBox.Should().NotBeNull();
-		var heightStartX = heightHandleBox!.X + heightHandleBox.Width / 2;
-		var heightStartY = heightHandleBox.Y + heightHandleBox.Height / 2;
-
-		await Page.Mouse.MoveAsync(heightStartX, heightStartY);
-		await Page.Mouse.DownAsync();
-		await Page.Mouse.MoveAsync(heightStartX, heightStartY + rowPx, new() { Steps = 5 });
+		await Page.Mouse.MoveAsync(startX + colPx, startY + rowPx, new() { Steps = 5 });
 		await Page.Mouse.UpAsync();
 
 		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 3);
@@ -408,6 +395,52 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 3);
+	}
+
+	[Test]
+	public async Task GridCellShape_StaysConsistentAcrossViewportWidths()
+	{
+		// #783 review feedback (comment #5049781309): "When I move it to a
+		// different sized monitor, everything becomes a weird size." The grid
+		// used a flat auto-rows-[64px] while column width already scaled with
+		// the viewport (grid-cols-8's 1fr tracks) - a widget's on-screen shape
+		// (row height relative to column width) would warp between a wide
+		// monitor and a narrower one even though its stored cell width/height
+		// never changed. Row height now tracks the actual rendered column
+		// width via a container query (.dashboard-widget-grid in global.css),
+		// so a grid cell's aspect ratio should barely move between two very
+		// differently-sized viewports, even though its absolute pixel size
+		// does.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.SetViewportSizeAsync(1400, 900);
+		await CreateOrganizationAsync("Visual DashViewportShape");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		var cell = Page.GetByTestId("dashboard-grid-guide-cell").First;
+		await Expect(cell).ToBeVisibleAsync();
+
+		var wideBox = await cell.BoundingBoxAsync();
+		wideBox.Should().NotBeNull();
+
+		await Page.SetViewportSizeAsync(1024, 900);
+		// The grid reflows on viewport change - re-fetch rather than reuse
+		// the same Locator's now-stale box.
+		var narrowBox = await Page.GetByTestId("dashboard-grid-guide-cell").First.BoundingBoxAsync();
+		narrowBox.Should().NotBeNull();
+
+		(wideBox!.Width - narrowBox!.Width).Should().BeGreaterThan(5,
+			"column width should actually shrink at the narrower viewport - otherwise this test isn't exercising anything");
+
+		var wideAspect = wideBox.Height / wideBox.Width;
+		var narrowAspect = narrowBox.Height / narrowBox.Width;
+		Math.Abs(wideAspect - narrowAspect).Should().BeLessThan(0.15,
+			"a grid cell's shape (row height relative to column width) should stay roughly the same across viewport "
+				+ "widths - a fixed row height would keep cells short-and-wide on a wide viewport and "
+				+ "square-ish on a narrow one, changing every widget's on-screen proportions between screens");
 	}
 
 	[Test]
