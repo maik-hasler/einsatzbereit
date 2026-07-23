@@ -11,10 +11,11 @@ import type { QuickAction } from "../../contexts/QuickActionsContext";
 // This is the single implementation both the org app shell (via its
 // orgSwitcher-style breadcrumb prop) and the public site (via
 // usePageToolbar, see ToolbarContext.tsx) render through - see Header's
-// `breadcrumb` prop. `actions` (only ever set by org-app pages via
-// useQuickActions, see QuickActionsContext.tsx) render right-aligned next to
-// the breadcrumb - icon+label on desktop, icon-only (label becomes the
-// button's aria-label) below the `sm` breakpoint.
+// `breadcrumb` prop. `actions` (set by any page under either shell via
+// useQuickActions, see QuickActionsContext.tsx - both AppLayout.tsx and
+// OrgAppLayout.tsx wrap their pages in QuickActionsProvider) render
+// right-aligned next to the breadcrumb - icon+label on desktop, icon-only
+// (label becomes the button's aria-label) below the `sm` breakpoint.
 export default function BreadcrumbBar({
 	homeHref,
 	items,

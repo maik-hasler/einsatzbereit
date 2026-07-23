@@ -51,9 +51,9 @@ export function useQuickActionsList() {
 	return useQuickActionsCtx().actions;
 }
 
-// Opt-in mechanism for a page nested under OrgAppLayout to publish the
-// action-bar quick actions rendered right of the breadcrumb (see Header.tsx's
-// `breadcrumb.actions` and OrgAppLayout.tsx) - the same shape as
+// Opt-in mechanism for a page nested under either AppLayout or OrgAppLayout
+// to publish the action-bar quick actions rendered right of the breadcrumb
+// (see Header.tsx's `breadcrumb.actions`) - the same shape as
 // useSetOrgBreadcrumbExtra/usePageToolbar. Not calling it means no quick
 // actions render for that page.
 //

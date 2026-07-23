@@ -480,7 +480,7 @@
       "loadError": "Profil konnte nicht geladen werden.",
       "loading": "Wird geladen…",
       "dangerZoneTitle": "Gefahrenzone",
-      "dangerZoneDescription": "Konto und alle personenbezogenen Daten dauerhaft löschen. Diese Aktion ist unwiderruflich. Engagements werden anonymisiert und das Keycloak-Konto wird gelöscht.",
+      "dangerZoneDescription": "Konto und alle personenbezogenen Daten dauerhaft löschen. Diese Aktion ist unwiderruflich. Engagements werden anonymisiert und dein Konto wird gelöscht.",
       "deleteAccountButton": "Mein Konto löschen",
       "deleteConfirmTitle": "Konto löschen?",
       "deleteConfirmMessage": "Bist du sicher, dass du dein Konto dauerhaft löschen möchtest? Alle persönlichen Daten werden gelöscht und deine Engagements werden anonymisiert. Das kann nicht rückgängig gemacht werden.",
@@ -690,8 +690,6 @@
       "verified": "Verifizierte Organisation"
     },
     "profileOverview": {
-      "tabProfile": "Profil",
-      "tabActivity": "Aktivität",
       "invitationsHeading": "Offene Einladungen"
     },
     "invitations": {
@@ -722,10 +720,6 @@
       "preferredContactEmail": "E-Mail",
       "preferredContactPhone": "Telefon",
       "preferredContactNone": "Keine Präferenz",
-      "edit": "Bearbeiten",
-      "cancel": "Abbrechen",
-      "saving": "Wird gespeichert…",
-      "save": "Speichern",
       "savedSuccess": "Profil gespeichert.",
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Profil konnte nicht geladen werden.",
@@ -745,11 +739,6 @@
       "streakTitle": "Deine Serien",
       "loginStreak": "Login-Serie",
       "activityStreak": "Aktivitätsserie",
-      "shareButton": "Errungenschaften teilen",
-      "shareText": "Schau dir meine Errungenschaften auf Einsatzbereit an!",
-      "shareCopied": "Link in die Zwischenablage kopiert!",
-      "shareClose": "Schließen",
-      "shareCopyLink": "Link kopieren",
       "newBadge": "🏆 Neues Abzeichen freigeschaltet: {{name}}!",
       "types": {
         "Milestone": "Meilenstein",
