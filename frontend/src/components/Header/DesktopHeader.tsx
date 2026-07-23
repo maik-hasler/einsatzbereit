@@ -35,7 +35,7 @@ export default function DesktopHeader({
 
 	return (
 		<nav
-			aria-label={t("nav.accountLabel")}
+			aria-label={t("nav.primaryLabel")}
 			className="hidden md:flex items-center gap-3"
 		>
 			{isLoggedIn ? (

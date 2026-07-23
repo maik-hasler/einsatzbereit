@@ -155,6 +155,7 @@ As of this writing no domain event has a registered `INotificationHandler` - the
 | Method | Route | Auth | Handler |
 |---|---|---|---|
 | GET | `/v1/organizations` | DefaultUser | `GetOrganizations` |
+| GET | `/v1/organizations/directory` | Anonymous | `GetPublicOrganizations` |
 | POST | `/v1/organizations` | DefaultUser | `CreateOrganization` |
 | GET | `/v1/organizations/{id}` | Organisator | `GetOrganizationDetails` |
 | PUT | `/v1/organizations/{id}` | Organisator | `UpdateOrganization` |

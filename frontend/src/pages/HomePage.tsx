@@ -120,6 +120,7 @@ export default function HomePage() {
 	const heroTitleId = useId();
 	const howItWorksTitleId = useId();
 	const missionTitleId = useId();
+	const orgsTeaserTitleId = useId();
 
 	const [showOnboarding, setShowOnboarding] = useState(false);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
@@ -516,6 +517,30 @@ export default function HomePage() {
 					>
 						{t("landing.missionCta")}
 					</a>
+				</div>
+			</section>
+
+			{/* Organizations directory teaser */}
+			<section aria-labelledby={orgsTeaserTitleId} className="mb-20">
+				<div className="animate-fade-up flex flex-col items-center gap-6 rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-10 sm:text-left">
+					<div>
+						<h2
+							id={orgsTeaserTitleId}
+							className="text-xl font-bold text-gray-900 sm:text-2xl"
+						>
+							{t("landing.orgsTeaserTitle")}
+						</h2>
+						<p className="mt-2 text-sm text-gray-600 sm:text-base">
+							{t("landing.orgsTeaserDesc")}
+						</p>
+					</div>
+					<Link
+						to="/organizations"
+						data-testid="organizations-teaser-cta"
+						className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+					>
+						{t("landing.orgsTeaserCta")}
+					</Link>
 				</div>
 			</section>
 

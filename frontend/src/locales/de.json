@@ -12,7 +12,7 @@
       "cancel": "Abbrechen"
     },
     "nav": {
-      "accountLabel": "Konto",
+      "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
       "myEngagements": "Meine Engagements",
       "myProfile": "Mein Profil",
@@ -29,6 +29,7 @@
       "platform": "Plattform",
       "findOpportunities": "Einsätze finden",
       "participate": "Mitmachen",
+      "browseOrganizations": "Organisationen durchsuchen",
       "legal": "Rechtliches",
       "imprint": "Impressum",
       "privacy": "Datenschutz",
@@ -87,7 +88,10 @@
       "heroRightCard1": "In Minuten veröffentlichen",
       "heroRightCard2": "Freiwillige einfach verwalten",
       "heroRightCard3": "Kostenlos & Open Source",
-      "heroRightCardActive": "Jetzt Einsätze verfügbar"
+      "heroRightCardActive": "Jetzt Einsätze verfügbar",
+      "orgsTeaserTitle": "Kennst du schon eine Organisation?",
+      "orgsTeaserDesc": "Durchsuche das Verzeichnis, um eine Organisation zu finden, die du schon kennst, etwa das Rote Kreuz, und zu sehen, was sie gerade macht.",
+      "orgsTeaserCta": "Organisationen durchsuchen"
     },
     "opportunities": {
       "currentNeeds": "Aktuelle Einsätze",
@@ -789,7 +793,8 @@
       "account": "Konto",
       "profile": "Profil",
       "achievements": "Meine Errungenschaften",
-      "userAchievements": "Errungenschaften"
+      "userAchievements": "Errungenschaften",
+      "organizations": "Organisationen"
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",
@@ -859,6 +864,21 @@
         "demoteError": "Admin-Rechte konnten nicht entzogen werden.",
         "loadMore": "Mehr laden"
       }
+    },
+    "organizationsPage": {
+      "title": "Organisationen",
+      "subtitle": "Durchsuche Organisationen, um eine bereits bekannte zu finden.",
+      "searchPlaceholder": "Organisationen nach Namen suchen…",
+      "loading": "Organisationen werden geladen…",
+      "error": "Fehler: {{message}}",
+      "noResults": "Keine Organisationen gefunden.",
+      "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
+      "clearSearch": "Suche zurücksetzen",
+      "loadMore": "Mehr laden",
+      "verified": "Verifizierte Organisation",
+      "openOpportunities": "{{count}} offene Einsätze",
+      "openOpportunities_one": "{{count}} offener Einsatz",
+      "openOpportunities_other": "{{count}} offene Einsätze"
     },
     "orgOverview": {
       "tabDashboard": "Dashboard",

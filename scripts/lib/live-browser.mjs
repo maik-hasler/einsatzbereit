@@ -7,25 +7,32 @@
  * Playwright scripts" for why the launch args below are required.
  */
 import { chromium } from "playwright";
+import { existsSync } from "node:fs";
+
+const SANDBOX_CHROMIUM_PATH = "/opt/pw-browsers/chromium";
 
 /**
- * Launches Chromium with the args needed to survive this sandbox's
- * TLS-reterminating egress proxy, and returns a ready-to-use page.
- * Not needed outside this sandboxed runner.
+ * Launches Chromium with the args needed to survive the Claude Code web/cloud
+ * sandbox's TLS-reterminating egress proxy, and returns a ready-to-use page.
+ * Outside that sandbox (e.g. a local dev machine with direct internet
+ * access) the sandbox-only chromium binary this relies on doesn't exist, so
+ * this falls back to a plain launch instead.
  */
 export async function launchLiveBrowser() {
-	const browser = await chromium.launch({
-		executablePath: "/opt/pw-browsers/chromium",
-		proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
-		args: [
-			"--no-sandbox",
-			"--disable-setuid-sandbox",
-			"--disable-http2",
-			"--disable-quic",
-			"--ssl-version-max=tls1.2",
-			"--disable-features=PostQuantumKyber,EncryptedClientHello",
-		],
-	});
+	const browser = existsSync(SANDBOX_CHROMIUM_PATH)
+		? await chromium.launch({
+				executablePath: SANDBOX_CHROMIUM_PATH,
+				proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
+				args: [
+					"--no-sandbox",
+					"--disable-setuid-sandbox",
+					"--disable-http2",
+					"--disable-quic",
+					"--ssl-version-max=tls1.2",
+					"--disable-features=PostQuantumKyber,EncryptedClientHello",
+				],
+			})
+		: await chromium.launch();
 	const context = await browser.newContext({ ignoreHTTPSErrors: true });
 	const page = await context.newPage();
 	return { browser, context, page };

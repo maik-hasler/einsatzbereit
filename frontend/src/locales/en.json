@@ -12,7 +12,7 @@
       "cancel": "Cancel"
     },
     "nav": {
-      "accountLabel": "Account",
+      "primaryLabel": "Main navigation",
       "userMenu": "User menu",
       "myEngagements": "My Engagements",
       "myProfile": "My Profile",
@@ -29,6 +29,7 @@
       "platform": "Platform",
       "findOpportunities": "Find opportunities",
       "participate": "Get involved",
+      "browseOrganizations": "Browse organizations",
       "legal": "Legal",
       "imprint": "Imprint",
       "privacy": "Privacy Policy",
@@ -87,7 +88,10 @@
       "heroRightCard1": "Publish in minutes",
       "heroRightCard2": "Manage volunteers easily",
       "heroRightCard3": "Free & open source",
-      "heroRightCardActive": "Opportunities available now"
+      "heroRightCardActive": "Opportunities available now",
+      "orgsTeaserTitle": "Already know an organization?",
+      "orgsTeaserDesc": "Search the directory to find an organization you already know, like the Red Cross, and see what they're up to.",
+      "orgsTeaserCta": "Browse organizations"
     },
     "opportunities": {
       "currentNeeds": "Current Opportunities",
@@ -789,7 +793,8 @@
       "account": "Account",
       "profile": "Profile",
       "achievements": "My Achievements",
-      "userAchievements": "Achievements"
+      "userAchievements": "Achievements",
+      "organizations": "Organizations"
     },
     "error": {
       "forbidden": "You do not have permission to do this.",
@@ -859,6 +864,21 @@
         "demoteError": "Failed to remove admin access.",
         "loadMore": "Load more"
       }
+    },
+    "organizationsPage": {
+      "title": "Organizations",
+      "subtitle": "Browse and search organizations to find one you already know.",
+      "searchPlaceholder": "Search organizations by name…",
+      "loading": "Loading organizations…",
+      "error": "Error: {{message}}",
+      "noResults": "No organizations found.",
+      "noResultsWithSearch": "No organizations match \"{{search}}\".",
+      "clearSearch": "Clear search",
+      "loadMore": "Load more",
+      "verified": "Verified organization",
+      "openOpportunities": "{{count}} open opportunities",
+      "openOpportunities_one": "{{count}} open opportunity",
+      "openOpportunities_other": "{{count}} open opportunities"
     },
     "orgOverview": {
       "tabDashboard": "Dashboard",
