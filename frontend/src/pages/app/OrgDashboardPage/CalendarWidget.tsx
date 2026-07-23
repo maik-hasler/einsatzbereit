@@ -69,6 +69,18 @@ interface Props {
 	size: WidgetSizeClass;
 }
 
+// The dashboard grid's row height isn't a flat pixel constant (it tracks
+// the rendered column width, see .dashboard-widget-grid in global.css, so a
+// widget's on-screen shape stays consistent across screen sizes) - mirroring
+// that in a second, JS-side constant here would just be a new way for the
+// two to drift apart again. Filling 100% of the widget's own card area (see
+// WidgetCard) instead means the calendar always matches whatever height the
+// organizer's placement actually rendered at, on any screen, with no
+// separate row-to-pixel formula to keep in sync. MIN_HEIGHT is just a floor
+// so a very short placement doesn't squash the calendar unusably small -
+// WidgetCard's own overflow-y-auto handles the rest.
+const CALENDAR_MIN_HEIGHT_PX = 400;
+
 function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
@@ -149,7 +161,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 				</p>
 			)}
 			{!calLoading && !calError && (
-				<div className="rbc-container">
+				<div className="rbc-container h-full">
 					<Calendar
 						localizer={localizer}
 						events={calEvents}
@@ -158,7 +170,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 						date={calDate}
 						onNavigate={(d: Date) => setCalDate(d)}
 						views={["month", "week", "work_week", "day", "agenda"]}
-						style={{ height: 600 }}
+						style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
 						components={{ event: CalEventChip }}
 						eventPropGetter={(event: object) => {
 							const e = event as CalEvent;
@@ -242,7 +254,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 									{t("orgOverview.eventNavigate")}
 								</Link>
 								<Link
-									to={`/app/${organizationId}/opportunities/${selectedEvent.opportunityId}/engagements`}
+									to={`/app/${organizationId}/dashboard/opportunities/${selectedEvent.opportunityId}/engagements`}
 									className="text-sm text-brand-700 hover:underline"
 									onClick={() => setSelectedEvent(null)}
 								>

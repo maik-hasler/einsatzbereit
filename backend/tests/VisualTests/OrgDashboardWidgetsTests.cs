@@ -9,8 +9,8 @@ namespace VisualTests;
 /// calendar into a widget grid (Calendar, Upcoming Opportunities, Settings,
 /// To-Do) so an organizer sees pending-application and signed-up-volunteer
 /// counts without navigating to another tab. #771 review feedback made the
-/// grid customizable (add/remove/resize/reorder via the "Edit" quick action)
-/// and added a "Create Opportunity" widget to the default layout - see
+/// grid customizable (add/remove/place via the "Edit" quick action) and
+/// added a "Create Opportunity" widget to the default layout - see
 /// OrgDashboardCustomizeTests for coverage of the customization itself.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
@@ -119,23 +119,23 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// Opportunities: reachable via a dashboard widget's "opportunities" link.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForURLAsync(
-			$"{origin}/app/{organizationId}/opportunities", new() { Timeout = 10_000 });
+			$"{origin}/app/{organizationId}/dashboard/opportunities", new() { Timeout = 10_000 });
 
 		await Page.GoBackAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard$"), new() { Timeout = 10_000 });
 
 		// Members: reachable via the Settings widget's member-count link -
 		// scoped to that widget since the tab bar has its own, separate
 		// "Members" link now too.
 		await settingsWidget.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/members", new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/members", new() { Timeout = 10_000 });
 
 		await Page.GoBackAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard$"), new() { Timeout = 10_000 });
 
 		// Settings: reachable via the Settings widget's "Edit settings" link.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/settings", new() { Timeout = 10_000 });
+		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/settings", new() { Timeout = 10_000 });
 	}
 
 	private async Task CreateOrganizationAsync(string namePrefix)

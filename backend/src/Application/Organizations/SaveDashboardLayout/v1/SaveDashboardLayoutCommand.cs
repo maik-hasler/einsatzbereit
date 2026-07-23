@@ -3,7 +3,7 @@ using Domain.Users;
 
 namespace Application.Organizations.SaveDashboardLayout.v1;
 
-public sealed record DashboardWidgetPlacementInput(string WidgetKey);
+public sealed record DashboardWidgetPlacementInput(string WidgetKey, int X, int Y, int Width, int Height);
 
 public sealed record SaveDashboardLayoutCommand(
 	Guid OrganizationId,

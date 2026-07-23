@@ -60,9 +60,37 @@ internal sealed class SaveDashboardLayoutCommandHandler(
 				throw new ResultFailureException(Error.Validation(
 					"DashboardLayout.DuplicateWidget", $"Widget '{key}' is placed more than once."));
 
-			widgets.Add(new DashboardWidgetPlacement(key));
+			// Widths/heights arrive as plain ints from the request body - a
+			// crafted (or otherwise corrupted) huge X/Y/Width/Height could
+			// overflow int arithmetic in the bounds check itself, wrapping
+			// around to a small or negative sum that wrongly passes. Widening
+			// to long before adding closes that hole without changing the
+			// bound's actual value (both sides still fit comfortably in long).
+			if (input.Width < 1 || input.Height < 1 || input.X < 1 || input.Y < 1
+				|| (long)input.X + input.Width - 1 > DashboardGrid.Columns
+				|| (long)input.Y + input.Height - 1 > DashboardGrid.MaxRows)
+				throw new ResultFailureException(Error.Validation(
+					"DashboardLayout.InvalidPlacement",
+					$"Widget '{key}' has an invalid grid placement (x={input.X}, y={input.Y}, width={input.Width}, height={input.Height})."));
+
+			widgets.Add(new DashboardWidgetPlacement(key, input.X, input.Y, input.Width, input.Height));
+		}
+
+		for (var i = 0; i < widgets.Count; i++)
+		{
+			for (var j = i + 1; j < widgets.Count; j++)
+			{
+				if (Overlaps(widgets[i], widgets[j]))
+					throw new ResultFailureException(Error.Validation(
+						"DashboardLayout.OverlappingPlacement",
+						$"Widgets '{widgets[i].WidgetKey}' and '{widgets[j].WidgetKey}' overlap on the grid."));
+			}
 		}
 
 		return widgets;
 	}
+
+	private static bool Overlaps(DashboardWidgetPlacement a, DashboardWidgetPlacement b) =>
+		a.X < b.X + b.Width && b.X < a.X + a.Width &&
+		a.Y < b.Y + b.Height && b.Y < a.Y + a.Height;
 }

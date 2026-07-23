@@ -226,7 +226,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
+		// The tab bar is gone (dashboard UX redesign) - reach Members via the
+		// Settings widget's member-count link instead (its accessible name is
+		// "N members", so match the substring rather than an exact count).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -273,16 +276,35 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrgDashboardPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// The customizable widget grid's edit-mode chrome (inert widget
-		// content, drag-handle/size-cycle/remove toolbar) only exists in the
-		// DOM while editing - the read-only scan above can't reach it. The
-		// "Add Widget" modal is its own DOM-only-while-open surface, scanned
-		// separately below.
+		// content, move/resize/remove toolbar) only exists in the DOM while
+		// editing - the read-only scan above can't reach it. The "Add
+		// Widget" modal and the corner-to-corner placement surface are their
+		// own DOM-only-while-open states, scanned separately below.
 		var frontend = Fixture.GetEndpoint("frontend");
 		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
 			return;
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgDashboardPage_PlacingAWidget_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// Corner-to-corner placement (#782) renders its own extra surface
+		// while active - the green/blue/red-tinted grid backdrop and the
+		// role="status" placement banner - that the plain edit-mode scan
+		// above never reaches, since it never clicks "Move or resize".
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }).ClickAsync();
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

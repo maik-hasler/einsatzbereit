@@ -35,7 +35,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		});
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		pinRequested.Should().BeFalse(
@@ -60,7 +60,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 		};
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities/{opportunityId}/engagements");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		pinResponseStatuses.Should().ContainSingle().Which.Should().Be(200);

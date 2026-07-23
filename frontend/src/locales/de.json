@@ -340,8 +340,7 @@
     },
     "orgApp": {
       "backToSite": "Zurueck zu Einsatzbereit",
-      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation.",
-      "tabsLabel": "Organisationsbereiche"
+      "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
     },
     "orgOpportunities": {
       "loading": "Wird geladen…",
@@ -398,7 +397,12 @@
       "quickCheckInOpenScanner": "QR-Code scannen",
       "settingsIconWidgetTitle": "Einstellungen",
       "settingsIconWidgetDesc": "Eine minimale Verknüpfung zur Einstellungsseite.",
-      "dragToReorder": "\"{{widget}}\" zum Umsortieren ziehen",
+      "moveOrResize": "\"{{widget}}\" verschieben oder Größe ändern",
+      "placementPickStartCorner": "Erste Ecke für \"{{widget}}\" festlegen",
+      "placementPickEndCorner": "Gegenüberliegende Ecke für \"{{widget}}\" festlegen",
+      "placingBannerPickStart": "Spalte {{column}}, Zeile {{row}}. Klicke auf eine Rasterzelle (oder nutze die Pfeiltasten), um hier die erste Ecke von \"{{widget}}\" festzulegen. Escape zum Abbrechen.",
+      "placingBannerPickEnd": "Spalte {{column}}, Zeile {{row}}. Klicke auf eine weitere Zelle (oder nutze die Pfeiltasten und Enter), um hier die gegenüberliegende Ecke von \"{{widget}}\" festzulegen. Escape zum Abbrechen.",
+      "placementInvalid": "Diese Platzierung passt nicht - sie liegt außerhalb des Rasters oder unterschreitet die Mindestgröße dieses Widgets. Bitte erneut versuchen.",
       "removeWidget": "Widget \"{{widget}}\" entfernen",
       "addWidgetHeading": "Widget hinzufügen",
       "addWidgetModalDesc": "Wähle ein Widget aus, das du deinem Dashboard hinzufügen möchtest.",

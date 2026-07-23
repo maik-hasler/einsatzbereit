@@ -175,7 +175,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task EngagementManagementPage_KeepsOrgAppChromeVisible_BreadcrumbReturnsToOpportunities()
 	{
 		// #751: engagement management moved into the org app as a nested route
-		// under /app/:organizationId/opportunities/:opportunityId/engagements -
+		// under /app/:organizationId/dashboard/opportunities/:opportunityId/engagements -
 		// the org switcher must stay visible instead of swapping to the public
 		// site header/footer. #771 removed the tab bar entirely (aria-current
 		// on a tab link no longer applies), so leaving back to the opportunities
@@ -204,7 +204,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(breadcrumbOpportunitiesLink).ToBeVisibleAsync();
 
 		await breadcrumbOpportunitiesLink.ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/opportunities$"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities$"), new() { Timeout = 15_000 });
 	}
 
 	[Test]
@@ -218,8 +218,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Members", Exact = true }).ClickAsync();
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		// The tab bar is gone (dashboard UX redesign) - reach Members via the
+		// Settings widget's member-count link instead (its accessible name is
+		// "N members", so match the substring rather than an exact count).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
@@ -233,8 +236,59 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var otherOrgName = (await otherRow.TextContentAsync() ?? "").Trim();
 		await otherRow.ClickAsync();
 
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/members"), new() { Timeout = 15_000 });
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 		await Expect(switcherBtn).ToContainTextAsync(otherOrgName);
+	}
+
+	[Test]
+	public async Task DirectNavigation_ToEachDashboardNestedRoute_RendersRealContent_NotErrorBoundary()
+	{
+		// Regression for #783/#787: opportunities/members/settings (and the
+		// dashboard index) are nested under a pathless "dashboard" parent
+		// route (see App.tsx) whose element used to be a bare <Outlet />
+		// with no `context` prop - that starts a brand new outlet context
+		// instead of forwarding OrgAppLayout's <Outlet context={{org,
+		// reloadOrg}}>, so every one of these pages got undefined from
+		// useOutletContext<OrgAppContext>() and crashed on the very first
+		// destructure, caught by the app-wide ErrorBoundary. A direct
+		// (full page load) navigation to each route below exercises that
+		// same render chain from scratch every time, unlike a client-side
+		// Link click that could in principle reuse already-mounted state.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = match.Groups[1].Value;
+
+		var errorBoundaryHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong" });
+		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
+
+		foreach (var (path, activePageLabel) in new[]
+		{
+			("dashboard", "Dashboard"),
+			("dashboard/opportunities", "Opportunities"),
+			("dashboard/members", "Members"),
+			("dashboard/settings", "Settings"),
+		})
+		{
+			await Page.GotoAsync($"{origin}/app/{organizationId}/{path}");
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+			(await errorBoundaryHeading.CountAsync()).Should().Be(0,
+				$"/{path} should render real content, not the ErrorBoundary fallback");
+
+			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
+			// above it, at the app root), taking the breadcrumb down with it -
+			// so its current-page label is present precisely when the page
+			// rendered for real, regardless of whether the org has any
+			// opportunities/members/etc. to show.
+			await Expect(breadcrumb.Locator("[aria-current='page']"))
+				.ToHaveTextAsync(activePageLabel, new() { Timeout = 10_000 });
+		}
 	}
 
 	[Test]

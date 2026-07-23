@@ -113,7 +113,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// Editing now lives exclusively in the org app's Opportunities tab,

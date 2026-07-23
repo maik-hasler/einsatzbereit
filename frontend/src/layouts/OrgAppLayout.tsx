@@ -5,7 +5,7 @@ import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { setActiveOrgId } from "../lib/activeOrg";
-import { ORG_TABS } from "../lib/orgTabs";
+import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -45,15 +45,31 @@ function OrgAppShell({
 	const extra = useOrgBreadcrumbExtra();
 	const quickActions = useQuickActionsList();
 
-	const breadcrumbItems = extra
-		? [
-				{
-					label: activeTabLabel,
-					href: `/app/${organizationId}/${activeTabKey}`,
-				},
-				{ label: extra },
-			]
-		: [{ label: activeTabLabel }];
+	// Now that the tab bar is gone (dashboard UX redesign), the breadcrumb is
+	// the only thing that shows an organizer where they are relative to the
+	// dashboard - so every non-dashboard tab gets an explicit leading
+	// "Dashboard" crumb (linking back to it) instead of starting directly at
+	// the tab's own name.
+	const dashboardTab = ORG_TABS.find((tab) => tab.key === "dashboard");
+	const isDashboardTab = activeTabKey === "dashboard";
+	const breadcrumbItems = [
+		...(isDashboardTab || !organizationId || !dashboardTab
+			? []
+			: [
+					{
+						label: t(dashboardTab.labelKey),
+						href: `/app/${organizationId}/dashboard`,
+					},
+				]),
+		{
+			label: activeTabLabel,
+			href:
+				extra && organizationId
+					? orgTabPath(organizationId, activeTabKey)
+					: undefined,
+		},
+		...(extra ? [{ label: extra }] : []),
+	];
 
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
@@ -67,25 +83,6 @@ function OrgAppShell({
 			/>
 
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-				<nav aria-label={t("orgApp.tabsLabel")} className="mb-6 sm:mb-8">
-					<div className="flex gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-						{ORG_TABS.map((tab) => (
-							<Link
-								key={tab.key}
-								to={`/app/${organizationId}/${tab.key}`}
-								aria-current={activeTabKey === tab.key ? "page" : undefined}
-								className={`shrink-0 whitespace-nowrap border-b-2 pb-3 pt-3 text-sm font-medium transition-colors ${
-									activeTabKey === tab.key
-										? "border-brand-700 text-brand-700"
-										: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-								}`}
-							>
-								{t(tab.labelKey)}
-							</Link>
-						))}
-					</div>
-				</nav>
-
 				<Outlet
 					context={{ org, reloadOrg: load } satisfies OrgAppContext}
 					// Outlet re-mounts children on org identity change so per-tab state resets cleanly
@@ -137,12 +134,18 @@ export default function OrgAppLayout() {
 
 	usePageTitle(org?.name ?? t("orgDashboard.title"));
 
-	// Matches the tab segment directly rather than endsWith(), so nested
-	// routes under a tab (e.g. opportunities/:opportunityId/engagements) still
-	// keep that tab active.
-	const tabSegment = location.pathname
-		.slice(`/app/${organizationId}/`.length)
-		.split("/")[0];
+	// #9: every tab now lives under /dashboard/... (App.tsx's pathless
+	// "dashboard" parent route), so the segment right after "dashboard" -
+	// not the first segment, which is always "dashboard" itself - is what
+	// identifies the active tab. Matches that segment directly rather than
+	// endsWith(), so nested routes under a tab (e.g.
+	// opportunities/:opportunityId/engagements) still keep that tab active.
+	// Missing entirely (bare /dashboard) means the dashboard tab itself.
+	const tabSegment =
+		location.pathname
+			.slice(`/app/${organizationId}/dashboard`.length)
+			.split("/")
+			.filter(Boolean)[0] ?? "dashboard";
 	const activeTabKey =
 		ORG_TABS.find((tab) => tab.key === tabSegment)?.key ?? "dashboard";
 	const activeTab =

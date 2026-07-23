@@ -625,7 +625,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		});
 		publishedResponse.EnsureSuccessStatusCode();
 
-		await Page.GotoAsync($"{origin}/app/{organizationId}/opportunities");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var draftsSection = Page.GetByTestId("drafts-section");
