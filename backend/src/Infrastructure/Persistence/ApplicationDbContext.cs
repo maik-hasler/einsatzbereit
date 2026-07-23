@@ -92,6 +92,13 @@ internal sealed class ApplicationDbContext(
 				&& m.UserId == userId
 				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
 
+	public async Task<int> CountOrganizersAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.CountAsync(m => m.OrganizationId == organizationId
+				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
+
 	public async Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,

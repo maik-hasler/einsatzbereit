@@ -447,7 +447,7 @@
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
       "leaveOrganization": "Verlassen",
       "leaveOrganizationError": "Organisation konnte nicht verlassen werden.",
-      "leaveOrganizationLastMemberHint": "Du bist das einzige Mitglied - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
+      "leaveOrganizationLastOrganizerHint": "Du bist der einzige Organisator dieser Organisation - lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
       "searching": "Suche läuft…",
       "noSearchResults": "Keine Benutzer gefunden.",
       "loading": "Wird geladen…",

@@ -24,20 +24,27 @@ internal sealed class RemoveMemberCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var members = await keycloakOrganizationService.GetMembersAsync(
-			request.OrganizationId, cancellationToken);
+		var organizationId = OrganizationId.Create(request.OrganizationId).GetValueOrThrow();
+		var userId = UserId.Create(request.UserId).GetValueOrThrow();
 
-		if (members.Count == 1 && members[0].UserId == request.UserId)
-			throw new ResultFailureException(Error.Conflict(
-				"Organization.SoleMember",
-				"Conflict: you are the only member of this organization. Delete the organization instead of leaving it."));
+		var isOrganizer = await dbContext.IsOrganizerAsync(organizationId, userId, cancellationToken);
+
+		if (isOrganizer)
+		{
+			var organizerCount = await dbContext.CountOrganizersAsync(organizationId, cancellationToken);
+
+			if (organizerCount <= 1)
+				throw new ResultFailureException(Error.Conflict(
+					"Organization.SoleOrganizer",
+					"Conflict: you are the only organizer of this organization. Delete the organization instead of leaving it."));
+		}
 
 		await keycloakOrganizationService.RemoveMemberAsync(
 			request.OrganizationId, request.UserId, cancellationToken);
 
 		await dbContext.RemoveMembershipAsync(
-			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(),
-			UserId.Create(request.UserId).GetValueOrThrow(),
+			organizationId,
+			userId,
 			cancellationToken);
 
 		return true;

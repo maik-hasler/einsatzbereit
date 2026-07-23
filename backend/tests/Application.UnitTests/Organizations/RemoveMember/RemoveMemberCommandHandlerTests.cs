@@ -30,23 +30,25 @@ public class RemoveMemberCommandHandlerTests
 			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
 			.Returns(true);
 
-	private void SetMembers(Guid orgId, params KeycloakOrganizationMember[] members) =>
-		_keycloakService
-			.GetMembersAsync(orgId, Arg.Any<CancellationToken>())
-			.Returns((IReadOnlyList<KeycloakOrganizationMember>)members);
+	private void SetTargetIsOrganizer(Guid orgId, Guid targetUserId, bool isOrganizer) =>
+		_dbContext
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), UserId.Create(targetUserId).GetValueOrThrow(), Arg.Any<CancellationToken>())
+			.Returns(isOrganizer);
 
-	private static KeycloakOrganizationMember Member(Guid userId) =>
-		new(userId, "user", "First", "Last", "user@example.com", IsOrganisator: false);
+	private void SetOrganizerCount(Guid orgId, int count) =>
+		_dbContext
+			.CountOrganizersAsync(OrganizationId.Create(orgId).GetValueOrThrow(), Arg.Any<CancellationToken>())
+			.Returns(count);
 
 	[Test]
 	public async Task Handle_ShouldCallRemoveMemberOnKeycloak(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - target is a regular (non-organizer) member.
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
-		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(userId));
+		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		// Act
@@ -64,7 +66,7 @@ public class RemoveMemberCommandHandlerTests
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
-		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(userId));
+		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		// Act
@@ -82,7 +84,7 @@ public class RemoveMemberCommandHandlerTests
 		var orgId = Guid.NewGuid();
 		var userId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
-		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(userId));
+		SetTargetIsOrganizer(orgId, userId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, userId, DefaultRequestingUserId);
 
 		_keycloakService
@@ -118,13 +120,18 @@ public class RemoveMemberCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRemovingTheLastRemainingMember(
+	public async Task Handle_ShouldThrow_WhenRemovingTheLastRemainingOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the requesting user is the org's sole member removing (leaving) themselves.
+		// Arrange - the requesting user is the org's sole organizer, removing (leaving)
+		// themselves. This is the previously-unblocked regression: the org may well have
+		// other, non-organizer members (e.g. an accepted-but-never-promoted invitee) - the
+		// old guard only blocked when the org had exactly one member *in total*, so an
+		// organizer with company could still leave and permanently orphan the org. Only
+		// the organizer count - never the total headcount - may gate this.
 		var orgId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
-		SetMembers(orgId, Member(DefaultRequestingUserId.Value));
+		SetOrganizerCount(orgId, 1);
 		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
 
 		// Act
@@ -132,19 +139,20 @@ public class RemoveMemberCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
-			.WithMessage("*only member*");
+			.WithMessage("*only organizer*");
 		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, Arg.Any<CancellationToken>());
 	}
 
 	[Test]
-	public async Task Handle_ShouldAllowRemoval_WhenMultipleMembersRemain(
+	public async Task Handle_ShouldAllowRemoval_WhenTargetIsNotAnOrganizer(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - two members left, removing one is fine.
+		// Arrange - removing a non-organizer member never triggers the guard, regardless
+		// of how many organizers the org has.
 		var orgId = Guid.NewGuid();
 		var otherUserId = Guid.NewGuid();
 		AllowRequestingUserInOrg(orgId);
-		SetMembers(orgId, Member(DefaultRequestingUserId.Value), Member(otherUserId));
+		SetTargetIsOrganizer(orgId, otherUserId, isOrganizer: false);
 		var command = new RemoveMemberCommand(orgId, otherUserId, DefaultRequestingUserId);
 
 		// Act
@@ -153,5 +161,24 @@ public class RemoveMemberCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, otherUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldAllowRemoval_WhenAnotherOrganizerRemains(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - two organizers; one of them leaving is fine because the org still
+		// has an organizer afterwards.
+		var orgId = Guid.NewGuid();
+		AllowRequestingUserInOrg(orgId);
+		SetOrganizerCount(orgId, 2);
+		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _keycloakService.Received(1).RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, cancellationToken);
 	}
 }
