@@ -437,7 +437,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		var wideAspect = wideBox.Height / wideBox.Width;
 		var narrowAspect = narrowBox.Height / narrowBox.Width;
-		Math.Abs(wideAspect - narrowAspect).Should().BeLessThan(0.15,
+		Math.Abs(wideAspect - narrowAspect).Should().BeLessThan(0.15f,
 			"a grid cell's shape (row height relative to column width) should stay roughly the same across viewport "
 				+ "widths - a fixed row height would keep cells short-and-wide on a wide viewport and "
 				+ "square-ish on a narrow one, changing every widget's on-screen proportions between screens");
