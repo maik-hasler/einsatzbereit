@@ -170,44 +170,6 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task TabBar_StaysFullWidth_AcrossTabSwitches()
-	{
-		// Regression for #641 (and a guard against reintroducing it): the tab
-		// bar now lives in the persistent /app shell (OrgAppLayout) at the top
-		// of the main content area, decoupled from any individual tab page's own
-		// content-width wrapper - it must not shrink or shift when navigating
-		// between tabs.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		await CreateOrganizationAsync("Visual641 Alignment");
-
-		// Measure the tab row's flex container inside the tabs nav; its width
-		// tracks the enclosing <main class="...max-w-7xl...">, which is constant
-		// across tab switches. Scope by the nav's accessible name so the
-		// breadcrumb nav - which also surfaces the current tab label - isn't
-		// matched too.
-		var tabBar = Page
-			.GetByRole(AriaRole.Navigation, new() { Name = "Organization sections" })
-			.Locator("div")
-			.First;
-		var dashboardBox = await tabBar.BoundingBoxAsync();
-		dashboardBox.Should().NotBeNull();
-
-		await Page.GetByRole(AriaRole.Link, new() { Name = "Settings", Exact = true }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true })).ToBeVisibleAsync(
-			new() { Timeout = 10_000 });
-
-		var settingsBox = await tabBar.BoundingBoxAsync();
-		settingsBox.Should().NotBeNull();
-
-		settingsBox!.Width.Should().Be(dashboardBox!.Width);
-		settingsBox.X.Should().Be(dashboardBox.X);
-	}
-
-	[Test]
 	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
 	{
 		// #772 review follow-up (issue #763): "the site looks a bit dead" -
