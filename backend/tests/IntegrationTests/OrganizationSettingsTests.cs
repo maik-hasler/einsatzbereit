@@ -273,6 +273,34 @@ public class OrganizationSettingsTests(
 	}
 
 	[Test]
+	public async Task AcceptInvitation_ShouldGrantOrganizerCapability_NotJustKeycloakMembership(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #826: accepting an invitation used to only add the
+		// user to Keycloak's org group, never to the local organization_membership
+		// table - so the org never showed up in the invitee's own organization
+		// list, and every org-scoped endpoint (all gated by a per-org Organizer
+		// check) stayed a 403 for them. Accepting now grants full Organizer
+		// capability, so both must work immediately afterwards.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Accept Grants Capability Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var veraOrganizations = await veraClient.GetOrganizationsAsync(cancellationToken);
+		veraOrganizations.Should().Contain(o => o.Id == org.Id.Value);
+
+		var details = await veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		details.Members.Should().Contain(m => m.UserId == vera.Id && m.IsOrganisator);
+	}
+
+	[Test]
 	public async Task GetOrgInvitations_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
