@@ -56,7 +56,7 @@ public class AcceptInvitationCommandHandlerTests
 		await _keycloakService.Received(1).AssignOrganizerRoleAsync(InviteeId.Value, cancellationToken);
 		await _membershipRepo.Received(1).AddAsync(
 			Arg.Is<OrganizationMembership>(m =>
-				m.OrganizationId == OrgId && m.UserId == InviteeId && m.Role == OrganizationMemberRole.Organizer),
+				m != null && m.OrganizationId == OrgId && m.UserId == InviteeId && m.Role == OrganizationMemberRole.Organizer),
 			cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
