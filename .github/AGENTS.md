@@ -37,26 +37,33 @@
 
 ## Publish Workflows (tag-triggered)
 
-Components are released independently with their own tags.
+All components share a single unified repo-level tag - see [VERSIONING.md](../VERSIONING.md).
 
-| Component | Tag pattern | Image name |
-|---|---|---|
-| Backend | `backend/vX.Y.Z` | `{repo}-backend` |
-| Frontend | `frontend/vX.Y.Z` | `{repo}-frontend` |
-| Keycloak | `keycloak/vX.Y.Z.W` | `{repo}-keycloak` |
+| Tag pattern | Description |
+|---|---|
+| `vX.Y.Z` | Stable release |
+| `vX.Y.Z-rc.N` | Release candidate |
+
+Every component gets the same version tag:
+
+| Component | Image name |
+|---|---|
+| Backend | `{repo}-backend` |
+| Frontend | `{repo}-frontend` |
+| Keycloak | `{repo}-keycloak` |
 
 All images pushed to **GitHub Container Registry (GHCR)**.
 
-**Release candidates:** Append `-rc.N` to the tag (e.g., `backend/v1.0.0-rc.1`). Image is published but `latest` tag is NOT updated.
+**Release candidates:** `-rc.N` suffix (e.g., `v1.0.0-rc.1`). Image is published, tagged `staging` instead of `latest`, and `deploy-staging` runs.
 
 **Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
 
-### Publish flow (backend/frontend)
-1. Run full test suite - for backend, this is three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend` waits on via `needs:` before building anything
+### Publish flow (backend/frontend/keycloak)
+1. Run full test suite - for backend, this is three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend` waits on via `needs:` before building anything. Frontend runs its own lint/type-check/build inline; keycloak has no test gate
 2. Login to GHCR
-3. Extract version from tag (strips component prefix)
+3. Extract version from tag (strips leading `v`)
 4. Build and push Docker image
-5. Tag with version + `latest` (if not RC)
+5. Tag with version + `latest` (if not RC) or `staging` (if RC)
 
 ## Cutting a release from Claude Code on the web
 
@@ -124,5 +131,5 @@ Both templates are in **German**. Fields:
 ## Notes
 
 - Path filters prevent unnecessary builds (backend change → only `dotnet.yml` runs)
-- Keycloak version uses 4-part semver (`vX.Y.Z.W`) matching upstream Keycloak releases
+- Keycloak shares the same unified tag as backend/frontend; the upstream Keycloak version is tracked separately as an OCI label (`org.opencontainers.image.base.version`), extracted from `keycloak/Dockerfile`'s `FROM` line
 - GitHub Pages deployment uses `permissions: pages: write, id-token: write` with concurrency group to cancel stale deployments
