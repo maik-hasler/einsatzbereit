@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
 
@@ -65,5 +66,43 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 			.ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign out" }))
 			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task MobileHeader_OrgSwitcherName_StaysLegibleForOrgsSharingAnInitial()
+	{
+		// #809: olaf organizes "Fairview Red Cross" and "Fairview Animal Welfare
+		// Association" - two names sharing both a first letter and a "Fairview "
+		// prefix. The switcher's name span used to collapse to almost nothing on
+		// phone widths (the brand wordmark plus the mobile bell/hamburger left it
+		// no room), rendering as just "F.." for both - indistinguishable. Fixed by
+		// cropping the header wordmark to its icon mark on mobile whenever the org
+		// switcher is present (frees the width the name needs) plus a min-width
+		// floor on the name span itself (OrganizationSwitcher.tsx).
+		var frontend = Fixture.GetEndpoint("frontend");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+
+		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
+		await switcherBtn.ClickAsync();
+
+		var animalWelfareRow = Page.GetByTestId("org-switch-row")
+			.Filter(new() { HasText = "Fairview Animal Welfare Association" });
+		if (await animalWelfareRow.CountAsync() == 0)
+			return; // seed data changed - nothing to compare against
+
+		await animalWelfareRow.ClickAsync();
+		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+
+		// The name span's rendered box, not its (untruncated-by-CSS) text content,
+		// is what actually regresses - assert on the box width so a truncated
+		// render is caught even though the DOM text is always the full name.
+		var nameSpan = Page.GetByTestId("org-switcher-current-name");
+		var box = await nameSpan.BoundingBoxAsync();
+		box.Should().NotBeNull();
+		box!.Width.Should().BeGreaterThan(60,
+			"the org name must keep enough width on mobile to show more than just its "
+			+ "first letter - it previously rendered at ~0px wide here");
 	}
 }

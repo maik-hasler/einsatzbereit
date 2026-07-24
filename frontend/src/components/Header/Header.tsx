@@ -133,12 +133,19 @@ export default function Header({
 					<div
 						className={`flex items-center justify-between h-16 ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
 					>
-						{/* Brand */}
-						<Link to="/" className="flex shrink-0 items-center">
+						{/* Brand. When the org switcher is present, the wordmark is
+						cropped to just its icon mark below the `sm` breakpoint - the
+						full wordmark plus the switcher plus the mobile bell/hamburger
+						don't fit a phone-width viewport with enough room left for the
+						org name to stay legible (#809). */}
+						<Link
+							to="/"
+							className={`flex shrink-0 items-center ${orgSwitcher ? "w-8 overflow-hidden sm:w-auto sm:overflow-visible" : ""}`}
+						>
 							<img
 								src="/logo.svg"
 								alt={t("brand.name")}
-								className={`h-8 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
+								className={`h-8 w-auto max-w-none shrink-0 transition-all duration-300 ${isTransparent ? "brightness-0 invert" : ""}`}
 							/>
 						</Link>
 
