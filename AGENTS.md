@@ -88,7 +88,10 @@ edit on your own initiative):
   toward a deliberate, non-generic visual direction - typography, color
   theming, motion, spatial composition - instead of generic AI-layout
   defaults; load it before visual/layout changes to frontend components
-  or pages.
+  or pages. `.claude/skills/live-verify/` (`/live-verify`) is step 6 of
+  "Mandatory: Deploy and verify" below - the throwaway live-staging
+  Playwright recipe (TLS launch args, Keycloak login) lives there, not
+  inlined in this file.
 - **Hooks** - `.claude/hooks/protect-generated-clients.sh` blocks Edit/Write
   on the three NSwag-generated files (see "API client" row above).
   `.claude/hooks/pre-stop-verify.sh` (`Stop` hook) runs `dotnet build`/`pnpm lint`+`check`
@@ -108,10 +111,8 @@ edit on your own initiative):
   live browser sessions (a `lens` live pass, a design review) in the
   current session directly, never delegate them. Availability can also
   vary turn-to-turn even in the main session - `ToolSearch` for
-  `browser_navigate` first; if nothing resolves, fall back to a scratch
-  Playwright script (see "Mandatory: Deploy and verify" below for the
-  launch args a plain `chromium.launch()` needs to survive the sandbox's
-  egress proxy; Chromium is pre-installed at `/opt/pw-browsers`).
+  `browser_navigate` first; if nothing resolves, fall back to the
+  `/live-verify` skill's scratch-script recipe.
 
 ## Sandbox Limitations (Claude Code on the web)
 
@@ -139,38 +140,7 @@ After every bug fix or feature implementation, **always** cut a release candidat
    git push -u origin release/vX.Y.Z-rc.N
    ```
 5. `release-rc.yml` creates the tag; `publish.yml` builds images and runs `deploy-staging`. Monitor via `mcp__github__pull_request_read get_check_runs` on the release commit, or poll the Actions tab.
-6. Once `deploy-staging` reports success, smoke-test with Playwright against the live site:
-   - `curl -sf https://api.maik-hasler.de/health` - must return HTTP 200
-   - Write and run a **throwaway Playwright script in a scratch directory outside the repo** (this session's scratchpad directory, or `/tmp`) that exercises the changed behaviour end-to-end against `https://einsatzbereit.maik-hasler.de`. The script must exit 0 (all assertions green), then delete it - nothing under this step is committed to the repo; there is no `scripts/` directory and no root `package.json` anymore (see `wiki/bundle/decisions/scripts-folder-removed.md`).
-     ```bash
-     # Once per session, install playwright into the scratch dir, not the repo.
-     cd <scratch-dir> && npm init -y && npm install playwright
-     # Chromium is pre-installed at /opt/pw-browsers, so no separate
-     # `playwright install chromium` download is needed.
-     node <scratch-dir>/smoke-test.mjs
-     ```
-   - The sandbox's egress proxy re-terminates TLS, and Chromium's default ClientHello does not survive that - a plain `chromium.launch()` fails. Launch it like this instead:
-     ```js
-     import { chromium } from "playwright";
-     import { existsSync } from "node:fs";
-     const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium";
-     const browser = existsSync(SANDBOX_CHROMIUM)
-       ? await chromium.launch({
-           executablePath: SANDBOX_CHROMIUM,
-           proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
-           args: [
-             "--no-sandbox",
-             "--disable-setuid-sandbox",
-             "--disable-http2",
-             "--disable-quic",
-             "--ssl-version-max=tls1.2",
-             "--disable-features=PostQuantumKyber,EncryptedClientHello",
-           ],
-         })
-       : await chromium.launch(); // outside the sandbox, the pinned binary doesn't exist
-     const page = await (await browser.newContext({ ignoreHTTPSErrors: true })).newPage();
-     ```
-   - The sign-in button text may be "Sign in" or "Anmelden" - click `/sign in|anmelden/i` to reach Keycloak, then fill `#username`, click `#kc-login`, fill `#password`, click `#kc-login`, and wait for network idle. Live Keycloak's login is two steps; the local Aspire Keycloak the next step's TUnit test drives is one step - do not carry one flow's assumption to the other.
+6. Once `deploy-staging` reports success, run the **`/live-verify`** skill: it checks the health endpoint, then writes and runs a throwaway Playwright script in a scratch directory (never `scripts/` - see `wiki/bundle/decisions/scripts-folder-removed.md`) against `https://einsatzbereit.maik-hasler.de`. Must exit 0 (all assertions green), then get deleted.
 7. Add the same assertions as an **automated C# TUnit test** in `backend/tests/VisualTests/` (runs against the local Aspire stack in CI). The local Keycloak uses a single-step login - `AuthHelper.LoginAsync` handles this. This is the durable, reviewable record of the fix; the scratch script from step 6 is not - it gets deleted once it has served its purpose.
 8. Document the result (pass/fail + what was observed) in the PR description under a **"Live verification"** section.
 9. Only then mark the task complete.

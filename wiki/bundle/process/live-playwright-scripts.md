@@ -13,7 +13,7 @@ timestamp: 2026-07-24
 
 # Writing live-staging Playwright scripts
 
-A live-staging smoke script exercises the changed behaviour end-to-end against `https://einsatzbereit.maik-hasler.de` and must exit 0. Step 6 of the deploy-verify flow runs one. Write it to a scratch directory outside the repo checkout (this session's scratchpad, or `/tmp`) and delete it once it has served its purpose - there is no `scripts/` directory to commit it to anymore ([scripts-folder-removed](/decisions/scripts-folder-removed.md) has the why). The two things that break a fresh script are the browser launch (TLS handshake) and the login (form shape), both covered below.
+A live-staging smoke script exercises the changed behaviour end-to-end against `https://einsatzbereit.maik-hasler.de` and must exit 0. Step 6 of the deploy-verify flow runs one. Write it to a scratch directory outside the repo checkout (this session's scratchpad, or `/tmp`) and delete it once it has served its purpose - there is no `scripts/` directory to commit it to anymore ([scripts-folder-removed](/decisions/scripts-folder-removed.md) has the why). Claude Code should prefer `.claude/skills/live-verify/SKILL.md` over reading this page end to end - it's the self-contained, actionable copy of the recipe below, same relationship as `.claude/skills/{ingest,query,lint}/` to `wiki/AGENTS.md`. This page is the copy other agents and humans read directly. The two things that break a fresh script are the browser launch (TLS handshake) and the login (form shape), both covered below.
 
 # Launch args, inlined - there is no shared helper anymore
 

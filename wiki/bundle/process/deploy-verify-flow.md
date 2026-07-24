@@ -53,10 +53,11 @@ behaviour against `https://einsatzbereit.maik-hasler.de` must exit 0 with every
 assertion green. The script is written to a scratch directory outside the repo
 (never a committed `scripts/` folder - see
 [scripts-folder-removed](/decisions/scripts-folder-removed.md)) and deleted once
-it has served its purpose. It inlines the egress-proxy TLS workaround that a
-plain `chromium.launch()` lacks; see
-[live-playwright-scripts](/process/live-playwright-scripts.md) for the exact
-launch args.
+it has served its purpose. Claude Code runs step 6 as the `.claude/skills/live-verify/`
+skill (`/live-verify`), which holds the egress-proxy TLS launch args and the
+Keycloak login steps so root `AGENTS.md` doesn't have to inline them; see
+[live-playwright-scripts](/process/live-playwright-scripts.md) for the same
+recipe as wiki knowledge.
 
 # Two artifacts, not one
 
@@ -80,7 +81,7 @@ midpoint of the flow, not the end of it.
 
 - [release-workflow](/process/release-workflow.md) - steps 3-5 (RC version, release branch, deploy) are the release mechanics this flow drives
 - [live-playwright-scripts](/process/live-playwright-scripts.md) - step 6's live smoke script, now written to a scratch dir instead of a shared committed helper
-- [scripts-folder-removed](/decisions/scripts-folder-removed.md) - why the smoke script is no longer a committed artifact under `scripts/`
+- [scripts-folder-removed](/decisions/scripts-folder-removed.md) - why the smoke script is no longer a committed artifact under `scripts/`, and why the recipe moved into `.claude/skills/live-verify/`
 - [sandbox-limitations](/gotchas/sandbox-limitations.md) - the reason local verification is impossible and live staging is the only option
 - [project-vision](/project/project-vision.md) - the ship-for-Oldenburg-first priority is what makes 'not done until observed live' non-negotiable
 - [claude-check-setup](/decisions/claude-check-setup.md) - step 1 is /self-review, which fans out to the check agents

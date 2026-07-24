@@ -48,13 +48,16 @@ Step 6 of the mandatory flow is unchanged in substance: write a Playwright
 script, launch it with the sandbox's TLS-workaround args, log in, exercise the
 changed behaviour, require exit 0. Only where the script lives changed - a
 scratch directory instead of a tracked one - and the TLS launch args and
-Keycloak login steps that used to live in `scripts/lib/live-browser.mjs` are
-now inlined in [live-playwright-scripts](/process/live-playwright-scripts.md)
-and in `AGENTS.md` itself, since there is no committed file left to import
-them from. Root `package.json` also carried an `editorconfig-checker`
-devDependency, but CI's `lint.yml` already invokes
-`npx --yes editorconfig-checker@6.1.1` directly with its own pinned version,
-never through that file - removing it did not touch CI.
+Keycloak login steps that used to live in `scripts/lib/live-browser.mjs` now
+live in `.claude/skills/live-verify/SKILL.md` (root `AGENTS.md`'s step 6 just
+names the skill, rather than inlining the recipe there - keeping the
+always-loaded root doc short was the point of pulling this into a skill in
+the first place). [live-playwright-scripts](/process/live-playwright-scripts.md)
+carries the same recipe as wiki knowledge for non-Claude-Code agents. Root
+`package.json` also carried an `editorconfig-checker` devDependency, but
+CI's `lint.yml` already invokes `npx --yes editorconfig-checker@6.1.1`
+directly with its own pinned version, never through that file - removing it
+did not touch CI.
 
 # Related
 
