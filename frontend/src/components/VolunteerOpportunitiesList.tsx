@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
+import { fetchVolunteerOpportunities } from "../lib/volunteerOpportunities";
 import EmptyState from "./EmptyState";
 import Skeleton from "./Skeleton";
 
@@ -979,26 +980,21 @@ export default function VolunteerOpportunitiesList() {
 		const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
 		const radiusKm = hasLocation ? parseFloat(radius) : undefined;
 
-		api
-			.getVolunteerOpportunities(
-				page,
-				LIST_PAGE_SIZE,
-				undefined,
-				occurrence || undefined,
-				participationType || undefined,
-				isRemoteBool,
-				dateFromParsed,
-				dateToParsed,
-				undefined,
-				undefined,
-				undefined,
-				undefined,
-				centerLatitude,
-				centerLongitude,
-				radiusKm,
+		fetchVolunteerOpportunities(api, {
+			pageNumber: page,
+			pageSize: LIST_PAGE_SIZE,
+			occurrence: occurrence || undefined,
+			participationType: participationType || undefined,
+			isRemote: isRemoteBool,
+			dateFrom: dateFromParsed,
+			dateTo: dateToParsed,
+			centerLatitude,
+			centerLongitude,
+			radiusKm,
+			categories:
 				selectedCategories.length > 0 ? selectedCategories : undefined,
-				tag || undefined,
-			)
+			tag: tag || undefined,
+		})
 			.then((result) => {
 				if (cancelled) return;
 				if (page === 1) setItems(result.items);

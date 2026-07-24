@@ -63,6 +63,8 @@ await api.createOrganization({ name });
 
 For one-off calls outside React (e.g., scripts), use `createApiClient(token)` directly.
 
+For endpoints with many optional query params (e.g. `getVolunteerOpportunities`, 17 positional params), don't call the generated client method directly - write a named-options wrapper instead, see `lib/volunteerOpportunities.ts`'s `fetchVolunteerOpportunities`.
+
 ## Environment Variables
 
 Defined in `.env.development`. Exposed client-side via Vite (must use `VITE_` prefix).
