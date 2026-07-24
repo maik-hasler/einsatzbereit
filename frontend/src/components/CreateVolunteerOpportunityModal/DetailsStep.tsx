@@ -13,7 +13,15 @@ interface TimeSlotRow {
 	startDateTime: string;
 	endDateTime: string;
 	maxParticipants: number;
+	bookedCount: number;
 	persisted: boolean;
+}
+
+interface EditingSlot {
+	id: string;
+	startDateTime: string;
+	endDateTime: string;
+	maxParticipants: number;
 }
 
 interface Props {
@@ -25,6 +33,12 @@ interface Props {
 	removingSlotId: string | null;
 	onRemoveExistingSlot: (id: string) => void;
 	onRemovePendingSlot: (id: string) => void;
+	editingSlot: EditingSlot | null;
+	onStartEditSlot: (slot: TimeSlotRow) => void;
+	onEditingSlotChange: (slot: EditingSlot) => void;
+	onCancelEditSlot: () => void;
+	onSaveEditSlot: (bookedCount: number) => void;
+	updatingSlotId: string | null;
 	newSlot: {
 		startDateTime: string;
 		endDateTime: string;
@@ -77,6 +91,12 @@ export default function DetailsStep({
 	removingSlotId,
 	onRemoveExistingSlot,
 	onRemovePendingSlot,
+	editingSlot,
+	onStartEditSlot,
+	onEditingSlotChange,
+	onCancelEditSlot,
+	onSaveEditSlot,
+	updatingSlotId,
 	newSlot,
 	onNewSlotChange,
 	slotError,
@@ -159,32 +179,150 @@ export default function DetailsStep({
 						<p className="text-xs text-gray-400">{t("timeSlots.noSlots")}</p>
 					) : (
 						<ul className="mb-3 space-y-2">
-							{allTimeSlots.map((slot) => (
-								<li
-									key={slot.id}
-									className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
-								>
-									<span className="text-gray-700">
-										{formatDateTime(slot.startDateTime, i18n.language)} -{" "}
-										{formatDateTime(slot.endDateTime, i18n.language)} (
-										{slot.maxParticipants})
-									</span>
-									<button
-										type="button"
-										disabled={slot.persisted && removingSlotId === slot.id}
-										onClick={() =>
-											slot.persisted
-												? onRemoveExistingSlot(slot.id)
-												: onRemovePendingSlot(slot.id)
-										}
-										className="ml-2 text-xs text-red-600 hover:underline disabled:opacity-50"
+							{allTimeSlots.map((slot) =>
+								editingSlot?.id === slot.id ? (
+									<li
+										key={slot.id}
+										className="rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
 									>
-										{slot.persisted && removingSlotId === slot.id
-											? t("timeSlots.removing")
-											: t("timeSlots.removeButton")}
-									</button>
-								</li>
-							))}
+										<div className="space-y-2">
+											{slot.bookedCount > 0 && (
+												<p className="text-xs text-amber-600">
+													{t("timeSlots.bookedCount", {
+														count: slot.bookedCount,
+													})}
+												</p>
+											)}
+											<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+												<div>
+													<label
+														htmlFor={`edit-slot-start-${slot.id}`}
+														className="mb-1 block text-xs font-medium text-gray-600"
+													>
+														{t("timeSlots.fieldStart")}
+													</label>
+													<input
+														id={`edit-slot-start-${slot.id}`}
+														type="datetime-local"
+														value={editingSlot.startDateTime}
+														onChange={(e) =>
+															onEditingSlotChange({
+																...editingSlot,
+																startDateTime: e.target.value,
+															})
+														}
+														className={dateInputClass}
+													/>
+												</div>
+												<div>
+													<label
+														htmlFor={`edit-slot-end-${slot.id}`}
+														className="mb-1 block text-xs font-medium text-gray-600"
+													>
+														{t("timeSlots.fieldEnd")}
+													</label>
+													<input
+														id={`edit-slot-end-${slot.id}`}
+														type="datetime-local"
+														value={editingSlot.endDateTime}
+														onChange={(e) =>
+															onEditingSlotChange({
+																...editingSlot,
+																endDateTime: e.target.value,
+															})
+														}
+														className={dateInputClass}
+													/>
+												</div>
+											</div>
+											<div>
+												<label
+													htmlFor={`edit-slot-max-${slot.id}`}
+													className="mb-1 block text-xs font-medium text-gray-600"
+												>
+													{t("timeSlots.fieldMaxParticipants")}
+												</label>
+												<input
+													id={`edit-slot-max-${slot.id}`}
+													type="number"
+													min={1}
+													value={editingSlot.maxParticipants}
+													onChange={(e) =>
+														onEditingSlotChange({
+															...editingSlot,
+															maxParticipants:
+																parseInt(e.target.value, 10) || 1,
+														})
+													}
+													className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+												/>
+											</div>
+											<div className="flex justify-end gap-3">
+												<button
+													type="button"
+													onClick={onCancelEditSlot}
+													className="text-xs text-gray-500 hover:underline"
+												>
+													{t("timeSlots.cancelEditButton")}
+												</button>
+												<button
+													type="button"
+													disabled={updatingSlotId === slot.id}
+													onClick={() => onSaveEditSlot(slot.bookedCount)}
+													className="rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
+												>
+													{updatingSlotId === slot.id
+														? t("timeSlots.editing")
+														: t("timeSlots.saveButton")}
+												</button>
+											</div>
+										</div>
+									</li>
+								) : (
+									<li
+										key={slot.id}
+										className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
+									>
+										<span className="text-gray-700">
+											{formatDateTime(slot.startDateTime, i18n.language)} -{" "}
+											{formatDateTime(slot.endDateTime, i18n.language)} (
+											{slot.maxParticipants})
+											{slot.bookedCount > 0 && (
+												<span className="ml-2 text-xs text-gray-400">
+													{t("timeSlots.bookedCount", {
+														count: slot.bookedCount,
+													})}
+												</span>
+											)}
+										</span>
+										<span className="ml-2 flex shrink-0 items-center gap-3">
+											{slot.persisted && (
+												<button
+													type="button"
+													onClick={() => onStartEditSlot(slot)}
+													className="text-xs text-brand-700 hover:underline"
+												>
+													{t("timeSlots.editButton")}
+												</button>
+											)}
+											<button
+												type="button"
+												disabled={slot.persisted && removingSlotId === slot.id}
+												onClick={() =>
+													slot.persisted
+														? onRemoveExistingSlot(slot.id)
+														: onRemovePendingSlot(slot.id)
+												}
+												className="text-xs text-red-600 hover:underline disabled:opacity-50"
+											>
+												{slot.persisted && removingSlotId === slot.id
+													? t("timeSlots.removing")
+													: t("timeSlots.removeButton")}
+											</button>
+										</span>
+									</li>
+								),
+							)}
 						</ul>
 					)}
 

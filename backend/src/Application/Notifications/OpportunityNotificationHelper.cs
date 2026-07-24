@@ -13,21 +13,24 @@ internal static class OpportunityNotificationHelper
 
 	/// <summary>
 	/// Creates a notification of the given kind for every distinct volunteer who
-	/// has an active (pending or confirmed) engagement on the opportunity. The
-	/// opportunity id is used as the related entity id.
+	/// has an active (pending or confirmed) engagement on the opportunity, or -
+	/// when <paramref name="timeSlotId"/> is given - only those engaged on that
+	/// specific time slot. The opportunity id is used as the related entity id.
 	/// </summary>
 	public static async Task NotifyActiveVolunteersAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
 		VolunteerOpportunityId opportunityId,
 		NotificationKind kind,
-		CancellationToken cancellationToken)
+		CancellationToken cancellationToken,
+		TimeSlotId? timeSlotId = null)
 	{
 		var engagements = await engagementReadRepository.GetByOpportunityAsync(
 			opportunityId, cancellationToken);
 
 		var volunteerIds = engagements
 			.Where(e => ActiveStatuses.Contains(e.Status) && e.VolunteerId is not null)
+			.Where(e => timeSlotId is null || e.TimeSlotId == timeSlotId.Value.Value)
 			.Select(e => e.VolunteerId!.Value)
 			.Distinct();
 

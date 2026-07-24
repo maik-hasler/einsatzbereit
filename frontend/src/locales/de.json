@@ -266,12 +266,18 @@
       "fieldMaxParticipants": "Max. Teilnehmer",
       "addButton": "Hinzufügen",
       "adding": "Wird hinzugefügt…",
+      "editButton": "Bearbeiten",
+      "editing": "Wird gespeichert…",
+      "saveButton": "Speichern",
+      "cancelEditButton": "Abbrechen",
       "removeButton": "Entfernen",
       "removing": "…",
       "noSlots": "Noch keine Zeitslots hinzugefügt.",
       "requiredForPublish": "Ein Zeitslots-Einsatz muss mindestens einen Zeitslot haben, bevor er veröffentlicht werden kann.",
       "addError": "Zeitslot konnte nicht hinzugefügt werden.",
       "removeError": "Zeitslot konnte nicht entfernt werden.",
+      "editError": "Zeitslot konnte nicht aktualisiert werden.",
+      "bookedCount": "{{count}} angemeldet",
       "recurrenceFrequency": "Wiederholungsrhythmus",
       "recurrenceWeekly": "Wöchentlich",
       "recurrenceMonthly": "Monatlich",
@@ -630,6 +636,13 @@
         "title": "Engagement absagen?",
         "message": "Möchtest du dieses Engagement wirklich absagen? Der Freiwillige wird informiert.",
         "confirm": "Ja, absagen"
+      },
+      "editTimeSlot": {
+        "title": "Zeitslot bearbeiten?",
+        "message": "{{count}} Personen sind für diesen Zeitslot angemeldet und werden über die Änderung benachrichtigt, damit sie entscheiden können, ob sie weiterhin teilnehmen möchten.",
+        "message_one": "{{count}} Person ist für diesen Zeitslot angemeldet und wird über die Änderung benachrichtigt, damit sie entscheiden kann, ob sie weiterhin teilnehmen möchte.",
+        "message_other": "{{count}} Personen sind für diesen Zeitslot angemeldet und werden über die Änderung benachrichtigt, damit sie entscheiden können, ob sie weiterhin teilnehmen möchten.",
+        "confirm": "Ja, speichern"
       },
       "leaveOrganization": {
         "title": "Organisation verlassen?",
