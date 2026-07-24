@@ -37,14 +37,18 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 	const typeName = isEarned ? typeLabel(earned.type) : typeLabel(catalog.type);
 	const icon = TYPE_ICON[typeName] ?? "🏅";
 	const tooltipId = `badge-tooltip-${catalog.key}`;
+	const nameId = `badge-name-${catalog.key}`;
 
 	return (
 		<div
-			className={`group relative flex flex-col items-center rounded-xl border p-4 text-center transition-all ${
+			className={`group relative flex flex-col items-center rounded-xl border p-4 text-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
 				isEarned
 					? "border-brand-200 bg-white shadow-sm hover:shadow-md"
 					: "border-gray-100 bg-gray-50"
 			}`}
+			tabIndex={isHidden ? undefined : 0}
+			role={isHidden ? undefined : "group"}
+			aria-labelledby={!isHidden ? nameId : undefined}
 			aria-describedby={!isHidden ? tooltipId : undefined}
 		>
 			<div
@@ -55,6 +59,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 				{isHidden ? "?" : icon}
 			</div>
 			<p
+				id={nameId}
 				className={`text-sm font-semibold leading-snug ${
 					isEarned ? "text-gray-900" : "text-gray-500"
 				}`}
@@ -83,7 +88,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 				<div
 					id={tooltipId}
 					role="tooltip"
-					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block"
+					className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block group-focus:block"
 				>
 					<p className="font-semibold">
 						{t(`achievements.badges.${catalog.key}.name`, {

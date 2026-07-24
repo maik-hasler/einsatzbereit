@@ -198,6 +198,37 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	[Test]
+	public async Task UserAchievementsPage_HasNoSeriousA11yViolations()
+	{
+		// #800: /users/{userId}/achievements was never visited by any a11y
+		// test, despite being a major user-facing page (BadgeGrid's badge
+		// cards + hover/focus tooltips).
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		var userId = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.profile?.sub) return entry.profile.sub;
+				}
+			}
+			return null;
+		}");
+		if (userId is null)
+			return; // could not resolve the logged-in user's id, skip
+
+		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	// Olaf's seed data always organizes at least one org, so the home page's
 	// "Organization overview" CTA always resolves straight to a dashboard.
 	private async Task<bool> NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
