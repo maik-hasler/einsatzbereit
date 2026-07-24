@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Application.Common.Exceptions;
 using Application.Common.Pagination;
 using Application.Organizations.GetOrganizationCalendarEvents.v1;
@@ -26,28 +25,33 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
-			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= now));
+			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= now))
+			.Join(
+				dbContext.OrganizationsQuery,
+				vo => vo.OrganizationId,
+				org => org.Id,
+				(vo, org) => new { vo, org });
 
 		if (!string.IsNullOrWhiteSpace(filter.City))
 		{
 			var city = filter.City.ToLower();
-			query = query.Where(vo => vo.Address != null && vo.Address.City.ToLower().Contains(city));
+			query = query.Where(x => x.vo.Address != null && x.vo.Address.City.ToLower().Contains(city));
 		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Occurrence) && Enum.TryParse<Occurrence>(filter.Occurrence, ignoreCase: true, out var occ))
-			query = query.Where(vo => vo.Occurrence == occ);
+			query = query.Where(x => x.vo.Occurrence == occ);
 
 		if (!string.IsNullOrWhiteSpace(filter.ParticipationType) && Enum.TryParse<ParticipationType>(filter.ParticipationType, ignoreCase: true, out var pt))
-			query = query.Where(vo => vo.ParticipationType == pt);
+			query = query.Where(x => x.vo.ParticipationType == pt);
 
 		if (filter.IsRemote is bool isRemote)
-			query = query.Where(vo => vo.IsRemote == isRemote);
+			query = query.Where(x => x.vo.IsRemote == isRemote);
 
 		if (filter.DateFrom is DateTimeOffset dateFrom)
-			query = query.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
 
 		if (filter.DateTo is DateTimeOffset dateTo)
-			query = query.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
 		if (filter.Categories is { Length: > 0 })
 		{
@@ -60,29 +64,48 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.ToList();
 
 			if (parsedCategories.Count > 0)
-				query = query.Where(vo => vo.Category.HasValue && parsedCategories.Contains(vo.Category.Value));
+				query = query.Where(x => x.vo.Category.HasValue && parsedCategories.Contains(x.vo.Category.Value));
 		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Tag))
-			query = query.Where(vo => vo.Tags.Contains(filter.Tag));
+			query = query.Where(x => x.vo.Tags.Contains(filter.Tag));
 
 		var boundingBox = ResolveBoundingBox(filter);
 
 		if (boundingBox is GeoBoundingBox box)
-			query = query.Where(vo =>
-				vo.Address != null &&
-				vo.Address.Latitude != null && vo.Address.Longitude != null &&
-				vo.Address.Latitude >= box.South && vo.Address.Latitude <= box.North &&
-				vo.Address.Longitude >= box.West && vo.Address.Longitude <= box.East);
+			query = query.Where(x =>
+				x.vo.Address != null &&
+				x.vo.Address.Latitude != null && x.vo.Address.Longitude != null &&
+				x.vo.Address.Latitude >= box.South && x.vo.Address.Latitude <= box.North &&
+				x.vo.Address.Longitude >= box.West && x.vo.Address.Longitude <= box.East);
 
 		var baseQuery = query
-			.OrderByDescending(vo => vo.CreatedOn)
-			.Join(
-				dbContext.OrganizationsQuery,
-				vo => vo.OrganizationId,
-				org => org.Id,
-				(vo, org) => new VoOrgPair(vo, org))
-			.Select(ToSummaryRow);
+			.OrderByDescending(x => x.vo.CreatedOn)
+			.Select(x => new
+			{
+				Id = x.vo.Id.Value,
+				x.vo.Title,
+				x.vo.Description,
+				OrganizationId = x.vo.OrganizationId.Value,
+				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
+				OrgLogoUrl = x.org.LogoUrl,
+				Street = x.vo.Address != null ? x.vo.Address.Street : null,
+				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
+				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
+				City = x.vo.Address != null ? x.vo.Address.City : null,
+				Latitude = x.vo.Address != null ? x.vo.Address.Latitude : null,
+				Longitude = x.vo.Address != null ? x.vo.Address.Longitude : null,
+				x.vo.IsRemote,
+				x.vo.Occurrence,
+				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
+				x.vo.Category,
+				x.vo.Tags,
+				x.vo.CreatedOn,
+				x.vo.Status,
+				x.vo.BannerImageUrl,
+			});
 
 		if (filter.HasRadius)
 		{
@@ -107,7 +130,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
 
 			var summaries = page
-				.Select(x => ToSummary(x, maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0)))
+				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+					maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0)))
 				.ToList();
 
 			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
@@ -126,7 +152,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var result = rows
-			.Select(x => ToSummary(x, maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
 
 		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
@@ -174,86 +203,60 @@ internal sealed class VolunteerOpportunityReadRepository(
 		);
 	}
 
-	private sealed record VoOrgPair(VolunteerOpportunity Vo, Organization Org);
-
-	private sealed record VolunteerOpportunitySummaryRow(
-		Guid Id,
-		string Title,
-		string Description,
-		Guid OrganizationId,
-		string OrgName,
-		bool OrgIsVerified,
-		string? OrgLogoUrl,
-		string? Street,
-		string? HouseNumber,
-		string? ZipCode,
-		string? City,
-		double? Latitude,
-		double? Longitude,
-		bool IsRemote,
-		Occurrence Occurrence,
-		ParticipationType ParticipationType,
-		CheckInMethod CheckInMethod,
-		Category? Category,
-		IReadOnlyList<string> Tags,
-		DateTimeOffset CreatedOn,
-		OpportunityStatus Status,
-		string? BannerImageUrl);
-
-	private static readonly Expression<Func<VoOrgPair, VolunteerOpportunitySummaryRow>> ToSummaryRow =
-		x => new VolunteerOpportunitySummaryRow(
-			x.Vo.Id.Value,
-			x.Vo.Title,
-			x.Vo.Description,
-			x.Vo.OrganizationId.Value,
-			x.Org.Name,
-			x.Org.IsVerified,
-			x.Org.LogoUrl,
-			x.Vo.Address != null ? x.Vo.Address.Street : null,
-			x.Vo.Address != null ? x.Vo.Address.HouseNumber : null,
-			x.Vo.Address != null ? x.Vo.Address.ZipCode : null,
-			x.Vo.Address != null ? x.Vo.Address.City : null,
-			x.Vo.Address != null ? x.Vo.Address.Latitude : null,
-			x.Vo.Address != null ? x.Vo.Address.Longitude : null,
-			x.Vo.IsRemote,
-			x.Vo.Occurrence,
-			x.Vo.ParticipationType,
-			x.Vo.CheckInMethod,
-			x.Vo.Category,
-			x.Vo.Tags,
-			x.Vo.CreatedOn,
-			x.Vo.Status,
-			x.Vo.BannerImageUrl);
-
+	// Shared post-materialization mapping only - the ~20-field EF projection itself stays
+	// duplicated in each query below. Introducing a named type for the Join/Select result
+	// broke EF Core's column pruning (it fell back to selecting every column of both
+	// entities and fully materializing them client-side) - see #869 follow-up.
 	private static VolunteerOpportunitySummary ToSummary(
-		VolunteerOpportunitySummaryRow row,
+		Guid id,
+		string title,
+		string description,
+		Guid organizationId,
+		string orgName,
+		bool orgIsVerified,
+		string? orgLogoUrl,
+		string? street,
+		string? houseNumber,
+		string? zipCode,
+		string? city,
+		double? latitude,
+		double? longitude,
+		bool isRemote,
+		Occurrence occurrence,
+		ParticipationType participationType,
+		CheckInMethod checkInMethod,
+		Category? category,
+		IReadOnlyList<string> tags,
+		DateTimeOffset createdOn,
+		OpportunityStatus status,
+		string? bannerImageUrl,
 		int totalMaxParticipants,
 		int currentParticipantCount) =>
 		new(
-			row.Id,
-			row.Title,
-			row.Description,
-			row.OrganizationId,
-			row.OrgName,
-			row.Street,
-			row.HouseNumber,
-			row.ZipCode,
-			row.City,
-			row.Latitude,
-			row.Longitude,
-			row.IsRemote,
-			row.Occurrence.ToString(),
-			row.ParticipationType.ToString(),
-			row.CheckInMethod.ToString(),
-			row.Category?.ToString(),
-			row.Tags,
-			row.CreatedOn,
+			id,
+			title,
+			description,
+			organizationId,
+			orgName,
+			street,
+			houseNumber,
+			zipCode,
+			city,
+			latitude,
+			longitude,
+			isRemote,
+			occurrence.ToString(),
+			participationType.ToString(),
+			checkInMethod.ToString(),
+			category?.ToString(),
+			tags,
+			createdOn,
 			totalMaxParticipants,
 			currentParticipantCount,
-			row.Status.ToString(),
-			row.BannerImageUrl,
-			row.OrgIsVerified,
-			row.OrgLogoUrl);
+			status.ToString(),
+			bannerImageUrl,
+			orgIsVerified,
+			orgLogoUrl);
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
 		Guid opportunityId,
@@ -372,13 +375,37 @@ internal sealed class VolunteerOpportunityReadRepository(
 			orgQuery = orgQuery.Where(vo => vo.Status == s);
 
 		var rows = await orgQuery
-			.OrderByDescending(vo => vo.CreatedOn)
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
 				org => org.Id,
-				(vo, org) => new VoOrgPair(vo, org))
-			.Select(ToSummaryRow)
+				(vo, org) => new { vo, org })
+			.OrderByDescending(x => x.vo.CreatedOn)
+			.Select(x => new
+			{
+				Id = x.vo.Id.Value,
+				x.vo.Title,
+				x.vo.Description,
+				OrganizationId = x.vo.OrganizationId.Value,
+				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
+				OrgLogoUrl = x.org.LogoUrl,
+				Street = x.vo.Address != null ? x.vo.Address.Street : null,
+				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
+				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
+				City = x.vo.Address != null ? x.vo.Address.City : null,
+				Latitude = x.vo.Address != null ? x.vo.Address.Latitude : null,
+				Longitude = x.vo.Address != null ? x.vo.Address.Longitude : null,
+				x.vo.IsRemote,
+				x.vo.Occurrence,
+				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
+				x.vo.Category,
+				x.vo.Tags,
+				x.vo.CreatedOn,
+				x.vo.Status,
+				x.vo.BannerImageUrl,
+			})
 			.ToListAsync(cancellationToken);
 
 		if (rows.Count == 0)
@@ -388,7 +415,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		return rows
-			.Select(x => ToSummary(x, maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
 	}
 
