@@ -38,6 +38,18 @@ export default function Modal({
 		scope?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
 	}, [initialFocusRef]);
 
+	// Restore focus to whatever triggered the modal once it unmounts (close),
+	// per the WAI-ARIA Dialog pattern - otherwise focus falls back to <body>.
+	useEffect(() => {
+		const trigger =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
+		return () => {
+			if (trigger?.isConnected) trigger.focus();
+		};
+	}, []);
+
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
 			if (suspended) return;
