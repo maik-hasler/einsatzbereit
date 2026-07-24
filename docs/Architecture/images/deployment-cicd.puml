@@ -12,7 +12,7 @@ participant "Staging host\n(Docker Compose)" as staging
 
 dev -> github: Push commit or open PR
 github -> ci: Trigger workflows
-ci -> ci: Backend (dotnet.yml): build, then\nUnit + Architecture + Integration + Visual tests\n(Integration/Visual boot the Aspire stack)
+ci -> ci: Backend (dotnet.yml): format-check + fast-tests + integration-tests + visual-tests\nrun as 4 parallel jobs, no needs between them\n(integration-tests/visual-tests boot the Aspire stack)
 ci -> ci: Frontend (frontend.yml): lint + build
 ci -> ci: Lint (lint.yml): ASCII dashes + EditorConfig
 

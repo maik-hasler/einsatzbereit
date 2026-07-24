@@ -72,12 +72,13 @@ The CI/CD pipeline runs on GitHub Actions and covers three concerns: quality gat
 
 ==== Quality Gate (on every push / PR to `main`)
 
-The backend workflow (`dotnet.yml`) runs `dotnet build`, then four test projects sequentially via `dotnet run`:
+The backend workflow (`dotnet.yml`) runs four independent jobs in parallel (no `needs` between them), each doing its own `dotnet build` via `dotnet run`:
 
-* `Application.UnitTests` and `ArchitectureTests` - fast, no containers.
-* `IntegrationTests` and `VisualTests` - both boot the Aspire AppHost stack (the same stack as local development) under Docker; `VisualTests` adds Playwright end-to-end checks.
+* `format-check` - verifies `dotnet format`.
+* `fast-tests` - `Application.UnitTests` and `ArchitectureTests`, no containers.
+* `integration-tests` and `visual-tests` - both boot the Aspire AppHost stack (the same stack as local development) under Docker; `visual-tests` adds Playwright end-to-end checks.
 
-A parallel `format-check` job verifies `dotnet format`. The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. Typical `dotnet.yml` runtime is about 10 minutes, dominated by `VisualTests` - see TDR-2.
+The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. Typical `dotnet.yml` critical-path runtime is about 6 minutes, down from ~10 minutes before the jobs were split into parallel jobs in issue #773 - `visual-tests` remains the longest-running job - see TDR-2.
 
 The architecture docs build (`docs.yml`) is a separate, main-branch-only deployment to GitHub Pages, not a pull-request gate.
 
