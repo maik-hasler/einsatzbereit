@@ -1,6 +1,6 @@
 # Frontend
 
-Vite SPA - React 19, React Router v7, Tailwind CSS 4, react-oidc-context (Keycloak PKCE).
+Vite SPA - React 19, React Router v8, Tailwind CSS 4, react-oidc-context (Keycloak PKCE).
 
 ## Commands
 

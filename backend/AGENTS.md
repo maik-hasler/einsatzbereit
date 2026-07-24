@@ -165,7 +165,7 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 
 ## Database
 
-- PostgreSQL 18, EF Core 9, `UseSnakeCaseNamingConvention()`
+- PostgreSQL 18, EF Core 10, `UseSnakeCaseNamingConvention()`
 - Migrations in `Infrastructure/Persistence/Migrations/`
 - Add migration: `dotnet ef migrations add <Name> -p src/Infrastructure -s src/Api`
 - Apply migrations: runs automatically on startup in Development; `dotnet ef database update` otherwise
