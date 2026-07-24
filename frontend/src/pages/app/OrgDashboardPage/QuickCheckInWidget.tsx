@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "../../../lib/apiError";
 import QRScannerModal from "../../../components/QRScannerModal";
 import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
+import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -70,7 +71,7 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 			{opportunities === null && !error && (
 				<Spinner label={t("orgDashboard.loading")} size="sm" />
 			)}
-			{error && <p className="text-sm text-red-600">{error}</p>}
+			{error && <ErrorBanner message={error} />}
 			{opportunities !== null && !error && opportunities.length === 0 && (
 				<p className="text-sm text-gray-500">
 					{t("orgDashboard.quickCheckInNoOpportunities")}

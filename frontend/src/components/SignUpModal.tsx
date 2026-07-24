@@ -8,6 +8,7 @@ import { textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
 import Button from "./Button";
+import ErrorBanner from "./ErrorBanner";
 
 interface Props {
 	opportunityId: string;
@@ -135,7 +136,7 @@ export default function SignUpModal({
 					</div>
 				)}
 
-				{error && <p className="text-sm text-red-600">{error}</p>}
+				{error && <ErrorBanner message={error} />}
 
 				<div className="flex justify-end gap-2">
 					<button

@@ -7,6 +7,7 @@ import type {
 	BadgeCatalogEntry,
 } from "../client/api-client";
 import BadgeGrid from "../components/BadgeGrid";
+import ErrorBanner from "../components/ErrorBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { runtimeConfig } from "../lib/runtimeConfig";
@@ -56,9 +57,7 @@ export default function UserAchievementsPage() {
 
 	if (error) {
 		return (
-			<p className="text-sm text-red-600">
-				{t("achievements.error", { message: error })}
-			</p>
+			<ErrorBanner message={t("achievements.error", { message: error })} />
 		);
 	}
 

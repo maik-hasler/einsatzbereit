@@ -12,6 +12,7 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
+import ErrorBanner from "../components/ErrorBanner";
 
 const PAGE_SIZE = 10;
 
@@ -123,7 +124,7 @@ function OrganizationsSection() {
 			</div>
 		);
 	}
-	if (error) return <p className="text-red-600">{error}</p>;
+	if (error) return <ErrorBanner message={error} />;
 	if (rows.length === 0)
 		return (
 			<EmptyState title={t("administration.organizations.noOrganizations")} />
@@ -318,7 +319,7 @@ function UsersSection() {
 					<Spinner label={t("administration.users.loading")} />
 				</div>
 			) : error ? (
-				<p className="text-red-600">{error}</p>
+				<ErrorBanner message={error} />
 			) : rows.length === 0 ? (
 				<EmptyState title={t("administration.users.noUsers")} />
 			) : (

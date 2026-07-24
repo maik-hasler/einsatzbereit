@@ -13,6 +13,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Spinner from "../../components/Spinner";
 import Button from "../../components/Button";
+import ErrorBanner from "../../components/ErrorBanner";
 import { PlusIcon } from "../../components/QuickActionIcons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -282,9 +283,9 @@ export default function OrgOpportunitiesPage() {
 			)}
 
 			{error && (
-				<p className="text-red-600">
-					{t("orgOpportunities.error", { message: error })}
-				</p>
+				<ErrorBanner
+					message={t("orgOpportunities.error", { message: error })}
+				/>
 			)}
 
 			{items !== null && !error && items.length === 0 && (

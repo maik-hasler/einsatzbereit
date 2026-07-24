@@ -9,6 +9,7 @@ import type {
 import BadgeGrid from "../components/BadgeGrid";
 import ProfileFieldsView from "../components/ProfileFieldsView";
 import Spinner from "../components/Spinner";
+import ErrorBanner from "../components/ErrorBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -46,7 +47,7 @@ export default function UserProfilePage() {
 				<Spinner label={t("userProfile.loading")} />
 			</div>
 		);
-	if (error) return <p className="text-red-600">{error}</p>;
+	if (error) return <ErrorBanner message={error} />;
 	if (!profile)
 		return <p className="text-gray-500">{t("userProfile.notFound")}</p>;
 

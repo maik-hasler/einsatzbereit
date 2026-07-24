@@ -4,6 +4,7 @@ import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
 import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
+import ErrorBanner from "../ErrorBanner";
 import { formatDateTime } from "../../lib/format";
 import type { OpportunityFormValues } from "./schema";
 
@@ -331,14 +332,12 @@ export default function DetailsStep({
 			)}
 
 			{error && (
-				<p
+				<ErrorBanner
 					ref={errorRef}
-					role="alert"
+					message={error}
 					tabIndex={-1}
-					className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 focus:outline-none"
-				>
-					{error}
-				</p>
+					className="focus:outline-none"
+				/>
 			)}
 		</div>
 	);
