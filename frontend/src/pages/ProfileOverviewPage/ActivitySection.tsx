@@ -6,6 +6,7 @@ import type {
 	MyInvitationDto,
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { formatDateTime } from "../../lib/format";
@@ -38,12 +39,26 @@ export default function ActivitySection() {
 	// --- Engagements ---
 	const [engagementsScope, setEngagementsScope] =
 		useState<EngagementsScope>("upcoming");
-	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
-	const [engagementsPage, setEngagementsPage] = useState(1);
-	const [engagementsPageCount, setEngagementsPageCount] = useState(1);
-	const [engagementsLoading, setEngagementsLoading] = useState(false);
-	const [engagementsLoadingMore, setEngagementsLoadingMore] = useState(false);
-	const [engagementsError, setEngagementsError] = useState<string | null>(null);
+	const {
+		items: engagements,
+		setItems: setEngagements,
+		loading: engagementsLoading,
+		loadingMore: engagementsLoadingMore,
+		error: engagementsError,
+		hasMore: hasMoreEngagements,
+		loadMore: loadMoreEngagements,
+		reset: resetEngagements,
+	} = useLoadMore<EngagementSummary>(
+		(pageNumber) =>
+			api.getMyEngagements(
+				pageNumber,
+				ENGAGEMENTS_PAGE_SIZE,
+				engagementsScope === "upcoming",
+			),
+		{
+			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
+		},
+	);
 	const [confirmWithdrawId, setConfirmWithdrawId] = useState<string | null>(
 		null,
 	);
@@ -64,39 +79,11 @@ export default function ActivitySection() {
 		string | null
 	>(null);
 
-	function fetchEngagements(scope: EngagementsScope, page: number) {
-		if (page > 1) setEngagementsLoadingMore(true);
-		else setEngagementsLoading(true);
-		setEngagementsError(null);
-		api
-			.getMyEngagements(page, ENGAGEMENTS_PAGE_SIZE, scope === "upcoming")
-			.then((result) => {
-				setEngagements((prev) =>
-					page === 1 ? result.items : [...prev, ...result.items],
-				);
-				setEngagementsPage(page);
-				setEngagementsPageCount(result.pageCount ?? 1);
-			})
-			.catch((err) =>
-				setEngagementsError(getApiErrorMessage(err, t("error.serverError"))),
-			)
-			.finally(() => {
-				setEngagementsLoading(false);
-				setEngagementsLoadingMore(false);
-			});
-	}
-
 	function switchEngagementsScope(scope: EngagementsScope) {
 		if (scope === engagementsScope) return;
 		setEngagementsScope(scope);
-		setEngagements([]);
-		fetchEngagements(scope, 1);
+		resetEngagements();
 	}
-
-	useEffect(() => {
-		fetchEngagements("upcoming", 1);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
 	useEffect(() => {
 		setInvitationsLoading(true);
@@ -451,12 +438,10 @@ export default function ActivitySection() {
 			{!engagementsLoading &&
 				!engagementsError &&
 				engagements.length > 0 &&
-				engagementsPage < engagementsPageCount && (
+				hasMoreEngagements && (
 					<div className="mt-6 flex justify-center">
 						<button
-							onClick={() =>
-								fetchEngagements(engagementsScope, engagementsPage + 1)
-							}
+							onClick={loadMoreEngagements}
 							disabled={engagementsLoadingMore}
 							className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
 						>

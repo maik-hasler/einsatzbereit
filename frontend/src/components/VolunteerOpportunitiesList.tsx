@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useLoadMore } from "../hooks/useLoadMore";
 import { formatOccurrence } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
@@ -846,12 +847,54 @@ export default function VolunteerOpportunitiesList() {
 	const nominatimAbortRef = useRef<AbortController | null>(null);
 	const filterBarRef = useRef<HTMLDivElement>(null);
 
-	const [items, setItems] = useState<VolunteerOpportunitySummary[]>([]);
-	const [page, setPage] = useState(1);
-	const [pageCount, setPageCount] = useState(1);
-	const [loading, setLoading] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const { items, loading, loadingMore, error, hasMore, loadMore } =
+		useLoadMore<VolunteerOpportunitySummary>(
+			(pageNumber) => {
+				const isRemoteBool =
+					isRemoteParam === "true"
+						? true
+						: isRemoteParam === "false"
+							? false
+							: undefined;
+				const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
+				const dateToParsed = dateTo ? new Date(dateTo) : undefined;
+				const centerLatitude = hasLocation ? parseFloat(lat) : undefined;
+				const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
+				const radiusKm = hasLocation ? parseFloat(radius) : undefined;
+
+				return fetchVolunteerOpportunities(api, {
+					pageNumber,
+					pageSize: LIST_PAGE_SIZE,
+					occurrence: occurrence || undefined,
+					participationType: participationType || undefined,
+					isRemote: isRemoteBool,
+					dateFrom: dateFromParsed,
+					dateTo: dateToParsed,
+					centerLatitude,
+					centerLongitude,
+					radiusKm,
+					categories:
+						selectedCategories.length > 0 ? selectedCategories : undefined,
+					tag: tag || undefined,
+				});
+			},
+			{
+				deps: [
+					lat,
+					lng,
+					radius,
+					occurrence,
+					participationType,
+					isRemoteParam,
+					dateFrom,
+					dateTo,
+					categoriesParam,
+					tag,
+				],
+				getErrorMessage: (err) =>
+					getApiErrorMessage(err, t("error.serverError")),
+			},
+		);
 
 	useEffect(() => {
 		function handleOutside(e: MouseEvent) {
@@ -913,120 +956,6 @@ export default function VolunteerOpportunitiesList() {
 			controller.abort();
 		};
 	}, [locationCityInput]);
-
-	const prevFiltersRef = useRef({
-		lat,
-		lng,
-		radius,
-		occurrence,
-		participationType,
-		isRemoteParam,
-		dateFrom,
-		dateTo,
-		categories: categoriesParam,
-		tag,
-	});
-
-	useEffect(() => {
-		const prev = prevFiltersRef.current;
-		const filterChanged =
-			prev.lat !== lat ||
-			prev.lng !== lng ||
-			prev.radius !== radius ||
-			prev.occurrence !== occurrence ||
-			prev.participationType !== participationType ||
-			prev.isRemoteParam !== isRemoteParam ||
-			prev.dateFrom !== dateFrom ||
-			prev.dateTo !== dateTo ||
-			prev.categories !== categoriesParam ||
-			prev.tag !== tag;
-
-		prevFiltersRef.current = {
-			lat,
-			lng,
-			radius,
-			occurrence,
-			participationType,
-			isRemoteParam,
-			dateFrom,
-			dateTo,
-			categories: categoriesParam,
-			tag,
-		};
-
-		if (filterChanged) {
-			setItems([]);
-			if (page !== 1) {
-				setPage(1);
-				return;
-			}
-		}
-
-		if (page > 1) setLoadingMore(true);
-		else setLoading(true);
-		setError(null);
-
-		let cancelled = false;
-		const isRemoteBool =
-			isRemoteParam === "true"
-				? true
-				: isRemoteParam === "false"
-					? false
-					: undefined;
-		const dateFromParsed = dateFrom ? new Date(dateFrom) : undefined;
-		const dateToParsed = dateTo ? new Date(dateTo) : undefined;
-
-		const centerLatitude = hasLocation ? parseFloat(lat) : undefined;
-		const centerLongitude = hasLocation ? parseFloat(lng) : undefined;
-		const radiusKm = hasLocation ? parseFloat(radius) : undefined;
-
-		fetchVolunteerOpportunities(api, {
-			pageNumber: page,
-			pageSize: LIST_PAGE_SIZE,
-			occurrence: occurrence || undefined,
-			participationType: participationType || undefined,
-			isRemote: isRemoteBool,
-			dateFrom: dateFromParsed,
-			dateTo: dateToParsed,
-			centerLatitude,
-			centerLongitude,
-			radiusKm,
-			categories:
-				selectedCategories.length > 0 ? selectedCategories : undefined,
-			tag: tag || undefined,
-		})
-			.then((result) => {
-				if (cancelled) return;
-				if (page === 1) setItems(result.items);
-				else setItems((prev) => [...prev, ...result.items]);
-				setPageCount(result.pageCount ?? 1);
-				setLoading(false);
-				setLoadingMore(false);
-			})
-			.catch((err) => {
-				if (cancelled) return;
-				setError(getApiErrorMessage(err, t("error.serverError")));
-				setLoading(false);
-				setLoadingMore(false);
-			});
-
-		return () => {
-			cancelled = true;
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		page,
-		lat,
-		lng,
-		radius,
-		occurrence,
-		participationType,
-		isRemoteParam,
-		dateFrom,
-		dateTo,
-		categoriesParam,
-		tag,
-	]);
 
 	function updateFilter(key: string, value: string) {
 		const next = new URLSearchParams(window.location.search);
@@ -1737,10 +1666,10 @@ export default function VolunteerOpportunitiesList() {
 						</ul>
 					)}
 
-					{items.length > 0 && page < pageCount && (
+					{items.length > 0 && hasMore && (
 						<div className="mt-8 flex justify-center">
 							<button
-								onClick={() => setPage((p) => p + 1)}
+								onClick={loadMore}
 								disabled={loadingMore}
 								className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
 							>
