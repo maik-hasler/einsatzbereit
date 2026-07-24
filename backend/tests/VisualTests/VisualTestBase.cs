@@ -73,4 +73,33 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 		Math.Abs(leftGap - rightGap).Should().BeLessThan(2,
 			$"{label}: .max-w-2xl content should be horizontally centered within <main>");
 	}
+
+	/// <summary>
+	/// Asserts the page's `.max-w-2xl` content wrapper inside `&lt;main&gt;` sits
+	/// flush against the left edge, i.e. it is left-aligned rather than centered
+	/// via `mx-auto`. See #766.
+	/// </summary>
+	protected async Task AssertMaxWidthContentLeftAlignedAsync(string label)
+	{
+		var main = Page.Locator("main");
+		await Expect(main).ToBeVisibleAsync();
+		var container = main.Locator(".max-w-2xl").First;
+		await Expect(container).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var mainBox = await main.BoundingBoxAsync();
+		var containerBox = await container.BoundingBoxAsync();
+		mainBox.Should().NotBeNull();
+		containerBox.Should().NotBeNull();
+
+		// BoundingBoxAsync returns <main>'s border box, which includes its own
+		// (symmetric) horizontal padding - net that out so a left-aligned child
+		// is expected to sit at <main>'s padded content edge, not at X=0.
+		var mainPaddingLeft = await main.EvaluateAsync<double>(
+			"el => parseFloat(getComputedStyle(el).paddingLeft)");
+
+		var leftGap = containerBox!.X - mainBox!.X - mainPaddingLeft;
+
+		Math.Abs(leftGap).Should().BeLessThan(2,
+			$"{label}: .max-w-2xl content should sit flush against <main>'s left padding edge, not be centered");
+	}
 }

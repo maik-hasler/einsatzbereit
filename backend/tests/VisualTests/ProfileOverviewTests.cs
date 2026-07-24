@@ -177,6 +177,11 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Preferred contact channel")).ToBeVisibleAsync();
+
+		// Regression for #766: this bio/skills/contact wrapper had `mx-auto`,
+		// centering it independently of the left-aligned avatar/name row
+		// above it - a dead column on wide viewports.
+		await AssertMaxWidthContentLeftAlignedAsync("Public user profile page");
 	}
 
 	[Test]
