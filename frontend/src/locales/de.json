@@ -14,10 +14,7 @@
     "nav": {
       "primaryLabel": "Hauptnavigation",
       "userMenu": "Benutzermenü",
-      "myEngagements": "Meine Engagements",
       "myProfile": "Mein Profil",
-      "myAchievements": "Meine Errungenschaften",
-      "profileSettings": "Profileinstellungen",
       "administration": "Administration",
       "organization": "Organisation",
       "signOut": "Abmelden",
