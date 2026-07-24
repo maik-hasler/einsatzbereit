@@ -5,6 +5,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
 import Button from "./Button";
+import ErrorBanner from "./ErrorBanner";
 
 declare global {
 	class BarcodeDetector {
@@ -150,13 +151,13 @@ export default function QRScannerModal({
 			)}
 
 			{supported === false && (
-				<p className="text-sm text-red-600">{t("checkIn.qrNotSupported")}</p>
+				<ErrorBanner message={t("checkIn.qrNotSupported")} />
 			)}
 
 			{supported === true && !success && (
 				<>
 					{cameraError ? (
-						<p className="text-sm text-red-600">{cameraError}</p>
+						<ErrorBanner message={cameraError} />
 					) : (
 						<div className="relative overflow-hidden rounded-lg bg-black">
 							<video
@@ -175,11 +176,7 @@ export default function QRScannerModal({
 							</div>
 						</div>
 					)}
-					{scanError && (
-						<p className="mt-2 text-sm text-red-600" role="alert">
-							{scanError}
-						</p>
-					)}
+					{scanError && <ErrorBanner message={scanError} className="mt-2" />}
 					{!cameraError && !scanError && (
 						<p className="mt-3 text-sm text-gray-500">
 							{t("checkIn.qrScanHint")}

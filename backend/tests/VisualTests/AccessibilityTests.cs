@@ -319,6 +319,32 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrganizationSettingsPage_EditModeValidationError_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #851: OrgSettingsPage gained the same react-hook-form + zod
+		// validation as CreateOrganizationModal (previously it had none) -
+		// scan the new inline validation-error state, not just the clean
+		// edit-mode form covered above.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		await Page.Locator("#org-name").FillAsync("");
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+
+		await Expect(Page.Locator("#org-name-error")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrganizationSettingsPage_EditModeWithLogo_HasNoSeriousA11yViolations()
 	{
 		// #845: the "Remove" button next to the logo only renders once an
@@ -618,6 +644,35 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var nestedResult = await Page.RunAxe();
 		AssertNoViolations(nestedResult);
+	}
+
+	[Test]
+	public async Task CreateOrganizationModal_HasNoSeriousA11yViolations()
+	{
+		// #851: this modal gained react-hook-form + zod validation (it
+		// previously had none) - scan both the clean state and the
+		// blank-submit validation-error state it can now render.
+		var frontend = Fixture.GetEndpoint("frontend");
+		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
+			return;
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+
+		var createDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(createDialog).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+
+		await createDialog.GetByTestId("modal-submit").ClickAsync();
+		await Expect(createDialog.Locator("#create-org-name-error")).ToBeVisibleAsync(
+			new() { Timeout = 5_000 });
+
+		var errorResult = await Page.RunAxe();
+		AssertNoViolations(errorResult);
+
+		await createDialog.GetByTestId("modal-cancel").ClickAsync();
 	}
 
 	[Test]

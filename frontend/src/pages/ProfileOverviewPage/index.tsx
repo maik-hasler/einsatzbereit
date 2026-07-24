@@ -11,6 +11,7 @@ import { inputClass, textareaClass } from "../../lib/formClasses";
 import Dropdown from "../../components/Dropdown";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
+import ErrorBanner from "../../components/ErrorBanner";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
 import DangerZoneCard from "./DangerZoneCard";
@@ -269,9 +270,7 @@ export default function ProfileOverviewPage() {
 			{!profileLoading && (
 				<>
 					{profileError && (
-						<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-							{profileError}
-						</div>
+						<ErrorBanner message={profileError} className="mb-4" />
 					)}
 					{successMessage && (
 						<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">

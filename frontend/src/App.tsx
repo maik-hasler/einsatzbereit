@@ -8,6 +8,7 @@ import {
 } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import ErrorBanner from "./components/ErrorBanner";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
@@ -65,9 +66,9 @@ function CallbackPage() {
 	if (auth.error) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
-				<span className="text-red-600">
-					{t("auth.authError", { message: auth.error.message })}
-				</span>
+				<ErrorBanner
+					message={t("auth.authError", { message: auth.error.message })}
+				/>
 			</div>
 		);
 	}

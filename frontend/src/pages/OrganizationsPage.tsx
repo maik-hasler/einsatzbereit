@@ -9,6 +9,7 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
+import ErrorBanner from "../components/ErrorBanner";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -105,9 +106,9 @@ export default function OrganizationsPage() {
 						))}
 					</div>
 				) : error ? (
-					<p className="text-red-600">
-						{t("organizationsPage.error", { message: error })}
-					</p>
+					<ErrorBanner
+						message={t("organizationsPage.error", { message: error })}
+					/>
 				) : items.length === 0 ? (
 					<EmptyState
 						title={

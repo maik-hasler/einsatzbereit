@@ -12,6 +12,7 @@ import { inputClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
+import ErrorBanner from "../../components/ErrorBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 export default function OrgMembersPage() {
@@ -141,9 +142,7 @@ export default function OrgMembersPage() {
 					</div>
 				)}
 				{settingsError && (
-					<div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-						{settingsError}
-					</div>
+					<ErrorBanner message={settingsError} className="mb-4" />
 				)}
 
 				<div className="mb-6">

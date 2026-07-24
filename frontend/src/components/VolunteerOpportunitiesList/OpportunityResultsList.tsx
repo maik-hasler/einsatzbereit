@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import EmptyState from "../EmptyState";
 import Skeleton from "../Skeleton";
+import ErrorBanner from "../ErrorBanner";
 import OpportunityListItem from "./OpportunityListItem";
 
 export default function OpportunityResultsList({
@@ -47,9 +48,10 @@ export default function OpportunityResultsList({
 				</div>
 			)}
 			{error && (
-				<p className="text-red-600" data-testid="opportunities-error">
-					{t("opportunities.error", { message: error })}
-				</p>
+				<ErrorBanner
+					message={t("opportunities.error", { message: error })}
+					data-testid="opportunities-error"
+				/>
 			)}
 
 			{!error && (

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Button from "./Button";
+import ErrorBanner from "./ErrorBanner";
 
 interface SubmitFeedbackModalProps {
 	engagementId: string;
@@ -117,7 +118,7 @@ export default function SubmitFeedbackModal({
 					</p>
 				</div>
 
-				{error && <p className="text-sm text-red-600">{error}</p>}
+				{error && <ErrorBanner message={error} />}
 
 				<div className="flex gap-3">
 					<Button

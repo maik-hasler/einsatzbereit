@@ -414,6 +414,8 @@
       "fieldHouseNumber": "Hausnummer",
       "fieldZip": "PLZ",
       "fieldCity": "Stadt",
+      "fieldRequired": "Erforderlich",
+      "zipInvalid": "Die PLZ muss genau 5 Zeichen lang sein.",
       "savedSuccess": "Änderungen gespeichert.",
       "saveError": "Speichern fehlgeschlagen.",
       "loadError": "Organisation konnte nicht geladen werden.",

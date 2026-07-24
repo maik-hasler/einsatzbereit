@@ -7,6 +7,7 @@ import type {
 } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
+import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -91,11 +92,7 @@ function UpcomingOpportunitiesWidget({
 			{items === null && !error && (
 				<Spinner label={t("orgDashboard.upcomingLoading")} />
 			)}
-			{error && (
-				<p className="text-sm text-red-600">
-					{t("orgDashboard.upcomingError")}
-				</p>
-			)}
+			{error && <ErrorBanner message={t("orgDashboard.upcomingError")} />}
 			{items !== null && !error && items.length === 0 && (
 				<p className="text-sm text-gray-500">
 					{t("orgDashboard.upcomingEmpty")}

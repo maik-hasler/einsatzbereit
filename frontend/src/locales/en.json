@@ -414,6 +414,8 @@
       "fieldHouseNumber": "House number",
       "fieldZip": "ZIP",
       "fieldCity": "City",
+      "fieldRequired": "Required",
+      "zipInvalid": "ZIP code must be exactly 5 characters.",
       "savedSuccess": "Changes saved.",
       "saveError": "Failed to save.",
       "loadError": "Could not load organization.",

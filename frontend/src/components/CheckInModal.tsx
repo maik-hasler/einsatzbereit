@@ -7,6 +7,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
 import Button from "./Button";
+import ErrorBanner from "./ErrorBanner";
 
 interface CheckInModalProps {
 	engagementId: string;
@@ -72,11 +73,7 @@ export default function CheckInModal({
 				</div>
 			)}
 
-			{loadError && (
-				<p className="text-sm text-red-600" role="alert">
-					{t("checkIn.loadError")}
-				</p>
-			)}
+			{loadError && <ErrorBanner message={t("checkIn.loadError")} />}
 
 			{details && !success && checkInMethod === "QRCode" && (
 				<div className="flex flex-col items-center gap-4">
@@ -115,7 +112,7 @@ export default function CheckInModal({
 								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 							/>
 						</div>
-						{error && <p className="text-sm text-red-600">{error}</p>}
+						{error && <ErrorBanner message={error} />}
 						<Button
 							type="submit"
 							disabled={submitting || pin.length < 4}

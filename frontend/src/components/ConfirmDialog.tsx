@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
 import Button from "./Button";
+import ErrorBanner from "./ErrorBanner";
 
 interface Props {
 	title: string;
@@ -37,7 +38,7 @@ export default function ConfirmDialog({
 			</h2>
 			<p className="mt-2 text-sm text-gray-600">{message}</p>
 
-			{error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+			{error && <ErrorBanner message={error} className="mt-3" />}
 
 			<div className="mt-5 flex justify-end gap-3">
 				<Button
