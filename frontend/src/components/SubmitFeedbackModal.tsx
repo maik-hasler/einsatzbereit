@@ -120,13 +120,14 @@ export default function SubmitFeedbackModal({
 				{error && <p className="text-sm text-red-600">{error}</p>}
 
 				<div className="flex gap-3">
-					<button
+					<Button
 						type="button"
+						variant="secondary"
 						onClick={onClose}
-						className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+						className="flex-1"
 					>
 						{t("feedback.cancel")}
-					</button>
+					</Button>
 					<Button
 						type="submit"
 						disabled={submitting || rating === 0}

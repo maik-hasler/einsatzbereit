@@ -138,13 +138,9 @@ export default function SignUpModal({
 				{error && <p className="text-sm text-red-600">{error}</p>}
 
 				<div className="flex justify-end gap-2">
-					<button
-						type="button"
-						onClick={onClose}
-						className="rounded-xl px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100"
-					>
+					<Button type="button" variant="secondary" onClick={onClose}>
 						{t("signUp.cancel")}
-					</button>
+					</Button>
 					<Button
 						type="submit"
 						disabled={submitting || (isWaitlist && timeSlots.length === 0)}

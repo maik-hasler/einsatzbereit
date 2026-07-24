@@ -9,13 +9,25 @@ const SIZE_CLASSES = {
 
 type Size = keyof typeof SIZE_CLASSES;
 
-// Solid brand-color primary CTA - the single style every "call to action"
-// button/link in the app should share (see issue #846: four different
-// border-radius values across primary buttons before this existed).
+// Shared shape/behavior every button/link in the app should share (see
+// issue #846: four different border-radius values across primary buttons
+// before this existed).
 const BASE_CLASSES =
-	"inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-700 font-semibold text-white transition-colors hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+	"inline-flex items-center justify-center gap-1.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
+// primary: solid brand-color CTA. secondary: borderless cancel/close action -
+// the single style every modal's cancel/close button should share (see
+// issue #847: three different visual treatments for the same action before
+// this existed).
+const VARIANT_CLASSES = {
+	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
+	secondary: "text-gray-600 hover:bg-gray-100",
+} as const;
+
+type Variant = keyof typeof VARIANT_CLASSES;
 
 interface CommonProps {
+	variant?: Variant;
 	size?: Size;
 	fullWidth?: boolean;
 	className?: string;
@@ -33,6 +45,7 @@ type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 export default function Button(props: ButtonProps) {
 	const {
+		variant = "primary",
 		size = "md",
 		fullWidth = false,
 		className = "",
@@ -41,6 +54,7 @@ export default function Button(props: ButtonProps) {
 	} = props;
 	const classes = [
 		BASE_CLASSES,
+		VARIANT_CLASSES[variant],
 		SIZE_CLASSES[size],
 		fullWidth && "w-full",
 		className,

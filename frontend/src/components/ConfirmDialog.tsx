@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
+import Button from "./Button";
 
 interface Props {
 	title: string;
@@ -39,13 +40,14 @@ export default function ConfirmDialog({
 			{error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
 			<div className="mt-5 flex justify-end gap-3">
-				<button
+				<Button
+					type="button"
+					variant="secondary"
 					onClick={onClose}
 					disabled={loading}
-					className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
 				>
 					{t("confirmDialog.keep")}
-				</button>
+				</Button>
 				<button
 					onClick={onConfirm}
 					disabled={loading}
