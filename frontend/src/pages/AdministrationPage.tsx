@@ -339,7 +339,7 @@ function UsersSection() {
 									return (
 										<tr
 											key={row.id}
-											className="flex flex-wrap items-center gap-3 px-4 py-3"
+											className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
 										>
 											<td className="min-w-0 flex-1">
 												<p className="truncate font-medium text-gray-900">
@@ -354,9 +354,9 @@ function UsersSection() {
 													{row.username} &middot; {row.email}
 												</p>
 											</td>
-											<td className="shrink-0">
+											<td className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
 												<span
-													className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+													className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
 														row.enabled
 															? "bg-green-50 text-green-700"
 															: "bg-red-50 text-red-700"
@@ -366,43 +366,45 @@ function UsersSection() {
 														? t("administration.users.statusActive")
 														: t("administration.users.statusBlocked")}
 												</span>
-											</td>
-											<td className="flex shrink-0 items-center gap-2">
-												{isSelf ? (
-													<span
-														className="text-xs text-gray-500"
-														title={t(
-															"administration.users.selfActionDisabledHint",
-														)}
-													>
-														{t("administration.users.selfActionDisabledHint")}
-													</span>
-												) : (
-													<>
-														<button
-															type="button"
-															disabled={isPending}
-															onClick={() =>
-																void toggleEnabled(row.id, !row.enabled)
-															}
-															className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+												<div className="flex shrink-0 items-center gap-2">
+													{isSelf ? (
+														<span
+															className="text-xs text-gray-500"
+															title={t(
+																"administration.users.selfActionDisabledHint",
+															)}
 														>
-															{row.enabled
-																? t("administration.users.block")
-																: t("administration.users.unblock")}
-														</button>
-														<button
-															type="button"
-															disabled={isPending}
-															onClick={() => void toggleAdmin(row.id, !isAdmin)}
-															className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-														>
-															{isAdmin
-																? t("administration.users.demote")
-																: t("administration.users.promote")}
-														</button>
-													</>
-												)}
+															{t("administration.users.selfActionDisabledHint")}
+														</span>
+													) : (
+														<>
+															<button
+																type="button"
+																disabled={isPending}
+																onClick={() =>
+																	void toggleEnabled(row.id, !row.enabled)
+																}
+																className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+															>
+																{row.enabled
+																	? t("administration.users.block")
+																	: t("administration.users.unblock")}
+															</button>
+															<button
+																type="button"
+																disabled={isPending}
+																onClick={() =>
+																	void toggleAdmin(row.id, !isAdmin)
+																}
+																className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+															>
+																{isAdmin
+																	? t("administration.users.demote")
+																	: t("administration.users.promote")}
+															</button>
+														</>
+													)}
+												</div>
 											</td>
 										</tr>
 									);
