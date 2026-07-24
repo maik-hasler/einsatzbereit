@@ -776,13 +776,6 @@
       "reload": "Reload",
       "dismiss": "Dismiss"
     },
-    "onboarding": {
-      "ariaLabel": "Welcome banner",
-      "title": "Welcome to Einsatzbereit!",
-      "body": "Browse volunteer opportunities near you, sign up with one click, and earn badges as you help your community.",
-      "cta": "Browse opportunities",
-      "dismiss": "Dismiss"
-    },
     "userProfile": {
       "loading": "Loading profile...",
       "notFound": "User not found.",

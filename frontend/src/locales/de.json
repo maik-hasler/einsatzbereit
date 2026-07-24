@@ -776,13 +776,6 @@
       "reload": "Neu laden",
       "dismiss": "Schließen"
     },
-    "onboarding": {
-      "ariaLabel": "Willkommensbanner",
-      "title": "Willkommen bei Einsatzbereit!",
-      "body": "Entdecke Einsatzgelegenheiten in deiner Nähe, melde dich mit einem Klick an und sammle Abzeichen, während du deiner Gemeinschaft hilfst.",
-      "cta": "Angebote entdecken",
-      "dismiss": "Schließen"
-    },
     "userProfile": {
       "loading": "Profil wird geladen...",
       "notFound": "Benutzer nicht gefunden.",
