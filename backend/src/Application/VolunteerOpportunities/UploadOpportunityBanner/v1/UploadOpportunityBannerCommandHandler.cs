@@ -17,7 +17,7 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 		UploadOpportunityBannerCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		ImageUploadValidator.EnsureValid(request.Content.Length, request.ContentType, "Banner");
+		var contentType = ImageUploadValidator.EnsureValid(request.Content, request.ContentType, "Banner");
 
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
@@ -29,11 +29,11 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var ext = ImageUploadValidator.GetExtension(request.ContentType);
+		var ext = ImageUploadValidator.GetExtension(contentType);
 		var objectKey = $"opportunity-banners/{request.OpportunityId}{ext}";
 
 		using var stream = new MemoryStream(request.Content);
-		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, request.ContentType, cancellationToken);
+		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, contentType, cancellationToken);
 
 		opportunity.SetBannerImageUrl(url).ThrowIfFailure();
 
