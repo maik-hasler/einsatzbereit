@@ -130,10 +130,12 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	}
 
 	[Test]
-	public async Task LegacyOrganizationDashboardUrl_RedirectsIntoAppShell()
+	public async Task LegacyOrganizationDashboardUrl_NoLongerRoutes_FallsThroughToNotFound()
 	{
-		// Pre-restructure bookmarks/links to /organizations/{id}/dashboard must
-		// still land the user in the right place, under /app now.
+		// #844: the pre-restructure /organizations/{id}/dashboard redirect had
+		// no in-app link pointing at it (only /app/{id}/dashboard is ever
+		// linked) and was removed - a direct visit now falls through to the
+		// catch-all NotFoundPage, same as the /app legacy entry above.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -145,6 +147,10 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var organizationId = match.Groups[1].Value;
 
 		await Page.GotoAsync($"{origin}/organizations/{organizationId}/dashboard");
-		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page).ToHaveURLAsync($"{origin}/organizations/{organizationId}/dashboard");
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 }
