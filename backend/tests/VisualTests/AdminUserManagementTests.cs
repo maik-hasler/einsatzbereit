@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -15,6 +16,8 @@ namespace VisualTests;
 public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	private const string Realm = "einsatzbereit";
+	private const int MobileWidth = 390;
+	private const int MobileHeight = 844;
 
 	[Test]
 	public async Task AdministrationPage_BlockAndPromote_UpdatesRowState()
@@ -44,6 +47,53 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await row.GetByRole(AriaRole.Button, new() { Name = "Promote to admin" }).ClickAsync();
 			await Expect(row.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
 			await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Remove admin" })).ToBeVisibleAsync();
+		}
+		finally
+		{
+			await DeleteKeycloakUserAsync(keycloak, userId);
+		}
+	}
+
+	[Test]
+	public async Task AdministrationPage_MobileViewport_UserRowStacksNameAboveActions()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var (username, userId) = await CreateDisposableUserAsync(keycloak);
+		try
+		{
+			await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+			await Page.GotoAsync($"{origin}/administration");
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+			await Page.Locator("#admin-user-search").FillAsync(username);
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
+
+			var row = Page.Locator("tr").Filter(new() { HasTextString = username });
+			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+			var nameCell = row.Locator("p").First;
+			var nameBox = await nameCell.BoundingBoxAsync();
+			nameBox.Should().NotBeNull("Could not get bounding box for the user name");
+
+			var blockButton = row.GetByRole(AriaRole.Button, new() { Name = "Block" });
+			await Expect(blockButton).ToBeVisibleAsync();
+			var blockBox = await blockButton.BoundingBoxAsync();
+			blockBox.Should().NotBeNull("Could not get bounding box for the Block button");
+
+			// Regression #813: on narrow viewports the name/email cell used to shrink
+			// to a sliver next to the still-full-width status badge and action
+			// buttons instead of wrapping onto its own line above them.
+			nameBox!.Width.Should().BeGreaterThan(
+				200f,
+				$"Name cell width ({nameBox.Width:F0}px) should span most of the {MobileWidth}px viewport, not be compressed next to the action buttons");
+
+			blockBox!.Y.Should().BeGreaterThanOrEqualTo(
+				nameBox.Y + nameBox.Height,
+				"Block button should stack below the name/email text on narrow viewports, not sit beside it");
 		}
 		finally
 		{
