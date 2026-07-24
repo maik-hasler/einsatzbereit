@@ -34,8 +34,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
-		// "N members", so match the substring rather than an exact count).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		// "N member(s)" - #834 made the count grammatically correct German/
+		// English plural forms, so match "member" to cover both N=1 and N>1).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 
 		await Page.Locator("#member-search").FillAsync("vera");
 
@@ -76,8 +77,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
-		// "N members", so match the substring rather than an exact count).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		// "N member(s)" - #834 made the count grammatically correct German/
+		// English plural forms, so match "member" to cover both N=1 and N>1).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 
 		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
 		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -378,7 +380,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await CreateOrganizationAsync("Visual766 Members");
 
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		// #834: the widget link's accessible name is "1 member" (singular) for
+		// a fresh single-member org, so match "member" rather than "members".
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await AssertMaxWidthContentLeftAlignedAsync("Organization members page");
