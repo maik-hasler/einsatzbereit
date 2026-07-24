@@ -12,7 +12,7 @@ dates and a bold action-word prefix, e.g. `**Added**`, `**Updated**`,
 
 ## 2026-07-24
 
-- **Added** - `decisions/scripts-folder-removed.md`: root `scripts/` (98 tracked files) and root `package.json`/`package-lock.json` deleted per #791 discussion, expanded beyond the issue's 16 orphaned scripts to the whole persisted-script convention. Live-verification scripts are now scratch-only, never committed.
+- **Added** - `decisions/scripts-folder-removed.md`: root `scripts/` (106 tracked files, re-verified against `origin/main` rather than the issue's now-stale 98) and root `package.json`/`package-lock.json` deleted per #791 discussion, expanded beyond the issue's 16 orphaned scripts to the whole persisted-script convention. Live-verification scripts are now scratch-only, never committed.
 - **Updated** - `process/deploy-verify-flow.md` and `process/live-playwright-scripts.md`: smoke script section and the shared-helper page rewritten for the scratch-directory approach (no more `scripts/lib/live-browser.mjs`); `process/index.md` description updated to match. `gotchas/sandbox-limitations.md`'s Related line reworded ("browser helper" -> "launch args") to match.
 
 ## 2026-07-18

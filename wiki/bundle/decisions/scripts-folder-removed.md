@@ -1,7 +1,7 @@
 ---
 type: "decision-note"
 title: "The root scripts/ folder and root package.json were removed"
-description: "98 tracked .mjs/.sh files and the Playwright pin they depended on are gone; live-verification scripts are now scratch-only and never committed."
+description: "106 tracked .mjs/.sh files and the Playwright pin they depended on are gone; live-verification scripts are now scratch-only and never committed."
 tags:
   - scripts
   - playwright
@@ -13,10 +13,15 @@ timestamp: 2026-07-24
 
 # What changed
 
-The root `scripts/` directory (98 tracked files: 16 orphaned debug/explore
-scripts with zero references anywhere, plus 80+ `smoke-test-*.mjs` files
-mapping to past issues/PRs, plus `scripts/lib/live-browser.mjs`) and the root
-`package.json`/`package-lock.json` that pinned Playwright for it are deleted.
+The root `scripts/` directory (106 tracked files as of the deletion commit: 16
+orphaned debug/explore scripts with zero references anywhere - the count #791
+was filed against, 87 `smoke-test-*.mjs` files mapping to past issues/PRs, plus
+`scripts/lib/live-browser.mjs`, `scripts/wait-and-smoke-rc121.sh`, and
+`scripts/verify-pr347-issues.mjs`) and the root `package.json`/`package-lock.json`
+that pinned Playwright for it are deleted. The smoke-test count grew from ~80 to
+87 in the two days between #791 being filed and this decision landing - this
+repo ships fast (`AGENTS.md`, "Sandbox Limitations"), so the number was
+re-verified against `origin/main` rather than copied from the issue.
 The mandatory deploy-and-verify flow (root `AGENTS.md`, step 6) still requires
 a live Playwright script against staging for every fix, but that script is now
 written to a scratch directory outside the repo, run once, and discarded - it

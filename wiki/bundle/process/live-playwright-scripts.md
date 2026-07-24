@@ -21,24 +21,28 @@ Copy this launch snippet into the scratch script:
 
 ```js
 import { chromium } from "playwright";
+import { existsSync } from "node:fs";
 
-const browser = await chromium.launch({
-  executablePath: "/opt/pw-browsers/chromium",
-  proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-http2",
-    "--disable-quic",
-    "--ssl-version-max=tls1.2",
-    "--disable-features=PostQuantumKyber,EncryptedClientHello",
-  ],
-});
+const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium";
+const browser = existsSync(SANDBOX_CHROMIUM)
+  ? await chromium.launch({
+      executablePath: SANDBOX_CHROMIUM,
+      proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-http2",
+        "--disable-quic",
+        "--ssl-version-max=tls1.2",
+        "--disable-features=PostQuantumKyber,EncryptedClientHello",
+      ],
+    })
+  : await chromium.launch();
 const context = await browser.newContext({ ignoreHTTPSErrors: true });
 const page = await context.newPage();
 ```
 
-`executablePath` points at the sandbox's pre-installed Chromium. The sandbox routes egress through a proxy that re-terminates TLS, and Chromium's default ClientHello does not survive that without the pinned `args`. Outside the sandbox (a local machine with direct internet access) that binary doesn't exist - fall back to a plain `chromium.launch()` there instead.
+`executablePath` points at the sandbox's pre-installed Chromium, used only when that path exists. The sandbox routes egress through a proxy that re-terminates TLS, and Chromium's default ClientHello does not survive that without the pinned `args`. Outside the sandbox (a local machine with direct internet access) that binary doesn't exist, so the `existsSync` check falls back to a plain `chromium.launch()` - skipping this check was a real trap in the old shared helper's absence: a hardcoded `executablePath` fails outright on a machine without it, instead of degrading gracefully.
 
 # Live login is two parts, and each part is two steps
 

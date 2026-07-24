@@ -152,18 +152,22 @@ After every bug fix or feature implementation, **always** cut a release candidat
    - The sandbox's egress proxy re-terminates TLS, and Chromium's default ClientHello does not survive that - a plain `chromium.launch()` fails. Launch it like this instead:
      ```js
      import { chromium } from "playwright";
-     const browser = await chromium.launch({
-       executablePath: "/opt/pw-browsers/chromium",
-       proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
-       args: [
-         "--no-sandbox",
-         "--disable-setuid-sandbox",
-         "--disable-http2",
-         "--disable-quic",
-         "--ssl-version-max=tls1.2",
-         "--disable-features=PostQuantumKyber,EncryptedClientHello",
-       ],
-     });
+     import { existsSync } from "node:fs";
+     const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium";
+     const browser = existsSync(SANDBOX_CHROMIUM)
+       ? await chromium.launch({
+           executablePath: SANDBOX_CHROMIUM,
+           proxy: { server: process.env.HTTPS_PROXY ?? "http://127.0.0.1:42149" },
+           args: [
+             "--no-sandbox",
+             "--disable-setuid-sandbox",
+             "--disable-http2",
+             "--disable-quic",
+             "--ssl-version-max=tls1.2",
+             "--disable-features=PostQuantumKyber,EncryptedClientHello",
+           ],
+         })
+       : await chromium.launch(); // outside the sandbox, the pinned binary doesn't exist
      const page = await (await browser.newContext({ ignoreHTTPSErrors: true })).newPage();
      ```
    - The sign-in button text may be "Sign in" or "Anmelden" - click `/sign in|anmelden/i` to reach Keycloak, then fill `#username`, click `#kc-login`, fill `#password`, click `#kc-login`, and wait for network idle. Live Keycloak's login is two steps; the local Aspire Keycloak the next step's TUnit test drives is one step - do not carry one flow's assumption to the other.
