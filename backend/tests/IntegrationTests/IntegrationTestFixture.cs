@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
+using Infrastructure.Persistence;
+using Infrastructure.Persistence.Outbox;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Projects;
@@ -133,6 +136,47 @@ public class IntegrationTestFixture
 		cmd.Parameters.AddWithValue("value", value);
 		var count = await cmd.ExecuteScalarAsync();
 		return Convert.ToInt32(count);
+	}
+
+	// Test-only escape hatch for asserting that a domain event was captured as an
+	// outbox row transactionally, alongside the triggering command's own writes -
+	// there's no API surface for the outbox itself (#828).
+	public async Task<int> CountOutboxMessagesOfTypeAsync(string domainEventTypeFullName)
+	{
+		await using var context = CreateApplicationDbContext();
+		return await context.Set<OutboxMessage>()
+			.CountAsync(m => m.Type == domainEventTypeFullName);
+	}
+
+	// Polls for OutboxProcessorJob (Infrastructure/BackgroundJobs/OutboxProcessorJob.cs)
+	// to have picked up and dispatched a message - proving the full write -> background
+	// dispatch -> INotificationHandler<T> round trip, not just the transactional write.
+	public async Task<bool> WaitForOutboxMessageProcessedAsync(
+		string domainEventTypeFullName, TimeSpan timeout)
+	{
+		var deadline = DateTime.UtcNow.Add(timeout);
+
+		while (DateTime.UtcNow < deadline)
+		{
+			await using var context = CreateApplicationDbContext();
+			var processed = await context.Set<OutboxMessage>()
+				.AnyAsync(m => m.Type == domainEventTypeFullName && m.ProcessedOnUtc != null);
+
+			if (processed) return true;
+
+			await Task.Delay(500);
+		}
+
+		return false;
+	}
+
+	private ApplicationDbContext CreateApplicationDbContext()
+	{
+		var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+			.UseNpgsql(_connectionString)
+			.UseSnakeCaseNamingConvention()
+			.Options;
+		return new ApplicationDbContext(options);
 	}
 
 	public async Task ResetAsync()

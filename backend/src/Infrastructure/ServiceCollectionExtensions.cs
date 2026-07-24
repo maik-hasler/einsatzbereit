@@ -40,7 +40,7 @@ public static class ServiceCollectionExtensions
 
 		services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 		services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
-		services.AddScoped<ISaveChangesInterceptor, DomainEventInterceptor>();
+		services.AddScoped<ISaveChangesInterceptor, ConvertDomainEventsToOutboxMessagesInterceptor>();
 
 		services.AddSingleton<IPinGenerator, RandomPinGenerator>();
 
@@ -84,6 +84,7 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<SmtpOptionsSetup>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddHostedService<EngagementReminderJob>();
+		services.AddHostedService<OutboxProcessorJob>();
 
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
