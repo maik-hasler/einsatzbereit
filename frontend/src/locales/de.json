@@ -625,10 +625,10 @@
       "empty": "Keine Benachrichtigungen.",
       "deletedOpportunityPlaceholder": "einen gelöschten Bedarf",
       "kinds": {
-        "EngagementCreated": "Neue Bewerbung eingegangen fur {{title}}",
-        "EngagementConfirmed": "Deine Bewerbung fur {{title}} wurde bestätigt",
-        "EngagementCancelled": "Deine Bewerbung fur {{title}} wurde abgesagt",
-        "EngagementWithdrawn": "Eine Bewerbung fur {{title}} wurde zurückgezogen",
+        "EngagementCreated": "Neue Bewerbung eingegangen für {{title}}",
+        "EngagementConfirmed": "Deine Bewerbung für {{title}} wurde bestätigt",
+        "EngagementCancelled": "Deine Bewerbung für {{title}} wurde abgesagt",
+        "EngagementWithdrawn": "Eine Bewerbung für {{title}} wurde zurückgezogen",
         "OpportunityUpdated": "{{title}} wurde aktualisiert",
         "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt",
         "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten"
