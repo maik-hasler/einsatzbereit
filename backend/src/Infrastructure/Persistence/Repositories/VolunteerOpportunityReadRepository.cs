@@ -379,18 +379,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.ToList();
 	}
 
-	public async ValueTask<string?> GetBannerUrlAsync(
-		Guid opportunityId,
-		CancellationToken cancellationToken = default)
-	{
-		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
-
-		return await dbContext.VolunteerOpportunitiesQuery
-			.Where(vo => vo.Id == opportunityId_)
-			.Select(vo => vo.BannerImageUrl)
-			.FirstOrDefaultAsync(cancellationToken);
-	}
-
 	public async ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default)

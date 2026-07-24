@@ -98,48 +98,6 @@
           }
         }
       },
-      "get": {
-        "tags": [
-          "GetOpportunityBannerEndpoint"
-        ],
-        "operationId": "GetOpportunityBanner",
-        "parameters": [
-          {
-            "name": "opportunityId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Found"
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      },
       "delete": {
         "tags": [
           "DeleteOpportunityBannerEndpoint"
@@ -7095,9 +7053,6 @@
   "tags": [
     {
       "name": "UploadOpportunityBannerEndpoint"
-    },
-    {
-      "name": "GetOpportunityBannerEndpoint"
     },
     {
       "name": "DeleteOpportunityBannerEndpoint"
