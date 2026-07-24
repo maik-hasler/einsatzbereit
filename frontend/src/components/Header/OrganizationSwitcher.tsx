@@ -75,7 +75,10 @@ export default function OrganizationSwitcher({
 							data-initial={(currentOrg?.name ?? "?").charAt(0).toUpperCase()}
 						/>
 					)}
-					<span className="min-w-0 max-w-[200px] flex-1 truncate">
+					<span
+						data-testid="org-switcher-current-name"
+						className="min-w-[6rem] max-w-[200px] flex-1 truncate"
+					>
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
 					<svg
