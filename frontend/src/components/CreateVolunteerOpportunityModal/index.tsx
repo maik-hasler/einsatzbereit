@@ -572,7 +572,10 @@ export default function CreateVolunteerOpportunityModal({
 				suspended={showDiscardConfirm}
 				initialFocusRef={bodyRef}
 			>
-				{/* Plain header, matching the app's other modals. */}
+				{/* Unlike the app's other (single-step) modals, this one is a multi-step
+				wizard - the footer's "Back"/"Cancel" button changes meaning across
+				steps, so this is the only modal with a dedicated header close (X)
+				button giving a step-independent way out. */}
 				<div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
 					<h2
 						id="create-opportunity-dialog-title"
