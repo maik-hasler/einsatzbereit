@@ -184,11 +184,23 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Grid borders */
 .rbc-month-view,
-.rbc-time-view,
-.rbc-agenda-view {
+.rbc-time-view {
 	border: 1px solid rgb(229 231 235);
 	border-radius: 0.5rem;
 	overflow: hidden;
+}
+
+/* Agenda view scrolls horizontally rather than squeezing its fixed-width
+date/time columns down to nothing - table.rbc-agenda-table below gets a
+min-width so the browser has something to scroll to instead of just
+shrinking the flexible EVENT column to a few characters. overflow-y stays
+hidden (matching the month/time views above) since WidgetCard's own
+overflow-y-auto already handles vertical scrolling. */
+.rbc-agenda-view {
+	border: 1px solid rgb(229 231 235);
+	border-radius: 0.5rem;
+	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 .rbc-month-row + .rbc-month-row {
@@ -282,6 +294,11 @@ input[type="number"]::-webkit-outer-spin-button {
 .rbc-agenda-view table.rbc-agenda-table {
 	border: 1px solid rgb(229 231 235);
 	border-radius: 0.5rem;
+	/* Forces the table (and its fixed-width date/time columns) to keep a
+	readable layout instead of the browser's table auto-layout shrinking the
+	only flexible column (EVENT) down to a couple of characters on a narrow
+	widget - the wrapping .rbc-agenda-view above scrolls horizontally to it. */
+	min-width: 30rem;
 }
 
 .rbc-agenda-table thead > tr > th {
@@ -322,12 +339,20 @@ input[type="number"]::-webkit-outer-spin-button {
 		text-align: center;
 	}
 
+	/* Even stacked onto its own row, a group of 5 view buttons (or 3 nav
+	buttons in a longer locale) can still be wider than a narrow widget -
+	scroll that one row horizontally instead of letting it overflow into
+	html's page-wide overflow-x: clip, where it'd be unreachable. Anchored
+	to flex-start (not the centered default) so the first button - not just
+	the ones nearer the middle - is always reachable at scrollLeft: 0. */
 	.rbc-btn-group {
-		justify-content: center;
+		justify-content: flex-start;
+		overflow-x: auto;
+		max-width: 100%;
 	}
 
 	.rbc-btn-group button {
-		flex: 1;
+		flex: 1 0 auto;
 		min-height: 2.75rem;
 	}
 }
