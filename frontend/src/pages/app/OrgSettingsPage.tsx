@@ -295,6 +295,7 @@ export default function OrgSettingsPage() {
 											{logoUrl && (
 												<button
 													type="button"
+													data-testid="logo-remove"
 													onClick={handleRemoveLogo}
 													disabled={uploadingLogo || removingLogo}
 													className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"

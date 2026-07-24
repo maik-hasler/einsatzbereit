@@ -7,6 +7,7 @@ import { useLoadMore } from "../hooks/useLoadMore";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
+import { inputClass } from "../lib/formClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
@@ -83,7 +84,7 @@ export default function OrganizationsPage() {
 					value={searchInput}
 					onChange={(e) => handleSearchInputChange(e.target.value)}
 					placeholder={t("organizationsPage.searchPlaceholder")}
-					className="w-full max-w-md rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+					className={`${inputClass} max-w-md`}
 				/>
 			</div>
 
