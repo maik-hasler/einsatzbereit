@@ -59,6 +59,15 @@ codebases.
    configuration abstractions (`IConfiguration`, `import.meta.env`).
    Search both naming conventions (SCREAMING_SNAKE and colon-nested)
    before claiming a variable is unread.
+8. **Wiki staleness.** `wiki/` is informal knowledge, not a lagging formal
+   doc - `wiki/AGENTS.md`'s Ingest section claims completeness only for
+   the `notes/` channel, never for how current a page stays against
+   `docs/` or code. Unlike `docs/` or a `CLAUDE.md`, a wiki page falling
+   behind fast-moving source is expected, not drift. Keeping it current is
+   the `/lint` skill's job, on its own cadence, not something a repo-wide
+   lens should independently re-flag. Don't treat a stale wiki page as a
+   docs-drift or repo-hygiene finding (see issue #862, filed for exactly
+   this).
 
 ## Tooling quick reference
 
