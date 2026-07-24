@@ -119,7 +119,7 @@ jobs:
 
       - name: Pre-pull Docker images
         run: |
-          docker pull quay.io/keycloak/keycloak:26.6.1
+          docker pull quay.io/keycloak/keycloak:26.7.0
           docker pull ghcr.io/axllent/mailpit:latest
           docker pull quay.io/minio/minio:latest
 
@@ -169,7 +169,7 @@ jobs:
 
       - name: Pre-pull Docker images
         run: |
-          docker pull quay.io/keycloak/keycloak:26.6.1
+          docker pull quay.io/keycloak/keycloak:26.7.0
           docker pull ghcr.io/axllent/mailpit:latest
           docker pull quay.io/minio/minio:latest
 
