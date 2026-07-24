@@ -81,7 +81,7 @@ tests/
 5. Frontend api-client.ts regenerates with it - do not hand-edit
 ```
 
-Reference implementations (newest first): `Organizations/RemoveMember/`, `Organizations/GetOrganizationDetails/`, `Organizations/AddMember/`.
+Reference implementations (newest first): `Organizations/RemoveMember/`, `Organizations/GetOrganizationDetails/`.
 
 ## Key Patterns
 
@@ -160,7 +160,6 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 | POST | `/v1/organizations` | DefaultUser | `CreateOrganization` |
 | GET | `/v1/organizations/{id}` | Organisator | `GetOrganizationDetails` |
 | PUT | `/v1/organizations/{id}` | Organisator | `UpdateOrganization` |
-| POST | `/v1/organizations/{id}/members` | DefaultUser | `AddMember` |
 | DELETE | `/v1/organizations/{id}/members/{userId}` | Organisator | `RemoveMember` |
 
 ## Database
