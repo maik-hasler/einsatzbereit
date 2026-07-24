@@ -358,6 +358,36 @@ public class OrganizationSettingsTests(
 		stillThere.Members.Should().ContainSingle(m => m.UserId == olaf.Id);
 	}
 
+	[Test]
+	public async Task RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #825: the org has *two* members overall, but only one
+		// Organizer (accepting an invitation does not grant the Organizer role -
+		// see #826). The old guard only blocked removal when the org had exactly
+		// one member in total, so the organizer here could leave and permanently
+		// orphan the org, since no path exists to promote the remaining member.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Sole Organizer Test Org" }, cancellationToken);
+		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var act = () => olafClient.RemoveMemberAsync(org.Id.Value, olaf.Id, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id);
+	}
+
 	// ── DeleteOrganization (#580) ─────────────────────────────────────────────
 
 	[Test]

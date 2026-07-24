@@ -33,6 +33,10 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	Task<int> CountOrganizersAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
 	Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,

@@ -86,6 +86,21 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).Not.ToBeVisibleAsync();
 	}
 
+	// A UI-level regression test mirroring #825's two-member scenario (organizer
+	// + accepted invitee) was tried here and removed: the frontend's "isLastOrganizer"
+	// check relies on KeycloakOrganizationMember.IsOrganisator, which is a
+	// *global* Keycloak role, not scoped to a specific org (see
+	// HomePageOrgCtaTests.cs and OrgAppRestructureTests.cs, which already work
+	// around the same thing - "vera already organizes an org, skip"). VisualTests
+	// share one Aspire session with no DB reset between tests, so by the time
+	// any given test runs, vera may already be a global organizer from an
+	// earlier, unrelated test - making an assertion on her org's organizer
+	// *count* nondeterministic here. The actual regression (the backend guard)
+	// is covered deterministically by
+	// IntegrationTests.OrganizationSettingsTests.RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains,
+	// which asserts the real per-organization guard and isn't affected by vera's
+	// global role elsewhere.
+
 	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{

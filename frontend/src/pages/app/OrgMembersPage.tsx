@@ -24,7 +24,10 @@ export default function OrgMembersPage() {
 
 	const [members, setMembers] = useState(org.members);
 	useEffect(() => setMembers(org.members), [org.members]);
-	const isSoleMember = members.length === 1;
+	const currentMember = members.find((m) => m.userId === currentUserId);
+	const organizerCount = members.filter((m) => m.isOrganisator).length;
+	const isLastOrganizer =
+		Boolean(currentMember?.isOrganisator) && organizerCount <= 1;
 
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -294,10 +297,10 @@ export default function OrgMembersPage() {
 									<button
 										type="button"
 										onClick={() => setShowLeaveConfirm(true)}
-										disabled={isSoleMember}
+										disabled={isLastOrganizer}
 										title={
-											isSoleMember
-												? t("orgSettings.leaveOrganizationLastMemberHint")
+											isLastOrganizer
+												? t("orgSettings.leaveOrganizationLastOrganizerHint")
 												: undefined
 										}
 										className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
@@ -317,9 +320,9 @@ export default function OrgMembersPage() {
 						))}
 					</ul>
 				)}
-				{isSoleMember && (
+				{isLastOrganizer && (
 					<p className="mt-3 text-xs text-gray-500">
-						{t("orgSettings.leaveOrganizationLastMemberHint")}
+						{t("orgSettings.leaveOrganizationLastOrganizerHint")}
 					</p>
 				)}
 			</div>
