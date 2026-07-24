@@ -758,12 +758,7 @@
     "breadcrumb": {
       "label": "Navigationspfad",
       "home": "Startseite",
-      "volunteerOpportunities": "Einsatzmöglichkeiten",
-      "engagements": "Bewerbungen",
-      "settings": "Einstellungen",
-      "account": "Konto",
       "profile": "Profil",
-      "achievements": "Meine Errungenschaften",
       "userAchievements": "Errungenschaften",
       "organizations": "Organisationen"
     },
