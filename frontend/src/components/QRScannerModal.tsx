@@ -4,6 +4,7 @@ import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
+import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 
 declare global {
@@ -190,13 +191,15 @@ export default function QRScannerModal({
 				</p>
 			)}
 
-			<button
+			<Button
 				type="button"
+				variant="secondary"
 				onClick={onClose}
-				className="mt-5 w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+				fullWidth
+				className="mt-5"
 			>
 				{t("checkIn.close")}
-			</button>
+			</Button>
 		</Modal>
 	);
 }

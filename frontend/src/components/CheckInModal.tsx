@@ -140,13 +140,15 @@ export default function CheckInModal({
 				</p>
 			)}
 
-			<button
+			<Button
 				type="button"
+				variant="secondary"
 				onClick={onClose}
-				className="mt-5 w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+				fullWidth
+				className="mt-5"
 			>
 				{t("checkIn.close")}
-			</button>
+			</Button>
 		</Modal>
 	);
 }

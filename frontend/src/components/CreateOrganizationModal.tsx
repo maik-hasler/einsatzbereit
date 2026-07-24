@@ -436,14 +436,14 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 				</div>
 
 				<div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-					<button
+					<Button
 						type="button"
+						variant="secondary"
 						onClick={onClose}
 						data-testid="modal-cancel"
-						className="rounded-xl px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100"
 					>
 						{t("organization.cancel")}
-					</button>
+					</Button>
 					<Button type="submit" disabled={loading} data-testid="modal-submit">
 						{loading ? t("organization.creating") : t("organization.submit")}
 					</Button>
