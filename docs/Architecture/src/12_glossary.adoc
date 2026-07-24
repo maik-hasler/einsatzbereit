@@ -20,7 +20,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |.NET's local orchestration framework. The AppHost project provisions PostgreSQL, pgAdmin, Keycloak, MinIO, Mailpit, the backend API, and the Vite frontend with a single `dotnet run`.
 
 |CQRS
-|Command Query Responsibility Segregation. An architectural pattern that separates read operations (queries) from write operations (commands). In Einsatzbereit, implemented via the in-house `ISender` mediator (see Mediator (ISender) below) in the Application layer.
+|Command Query Responsibility Segregation. An architectural pattern that separates read operations (queries) from write operations (commands). In Einsatzbereit, implemented via the in-house `ISender` mediator.
 
 |EF Core
 |Entity Framework Core. The ORM (Object-Relational Mapper) used in the backend to interact with PostgreSQL. Manages the database schema via migrations.
