@@ -5,6 +5,7 @@ using Application.Common.Email;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
+using Application.Common.RateLimiting;
 using Application.Common.Storage;
 using Application.Engagements;
 using Application.Notifications;
@@ -19,6 +20,7 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
 using Infrastructure.Persistence.Repositories;
+using Infrastructure.RateLimiting;
 using Infrastructure.Storage;
 using Infrastructure.VolunteerOpportunities;
 using Domain.VolunteerOpportunities;
@@ -41,6 +43,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<ISaveChangesInterceptor, DomainEventInterceptor>();
 
 		services.AddSingleton<IPinGenerator, RandomPinGenerator>();
+
+		services.AddSingleton<ICheckInAttemptLimiter, CheckInAttemptLimiter>();
 
 		services.AddDbContext<ApplicationDbContext>((sp, options) =>
 		{

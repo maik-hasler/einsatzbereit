@@ -432,6 +432,49 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(400);
 	}
 
+	[Test]
+	public async Task CheckInWithPin_ShouldReturn403_WhenTooManyFailedAttempts(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
+
+		var pin = await olafClient.GetOpportunityCheckInPinAsync(opportunity.Id, cancellationToken)
+			?? throw new InvalidOperationException("PIN was not generated for PINCode opportunity.");
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Ready to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		// 5 wrong guesses trip the per-engagement lockout (independent of the
+		// generic 100 req/60s rate limit - see #806).
+		for (var attempt = 0; attempt < 5; attempt++)
+		{
+			var wrongAttempt = () => veraClient.CheckInWithPinAsync(
+				engagement.Id,
+				new CheckInWithPinRequest { Pin = "wrong-pin" },
+				cancellationToken);
+
+			var wrongException = await wrongAttempt.Should().ThrowAsync<ApiException>();
+			wrongException.Which.StatusCode.Should().Be(400);
+		}
+
+		// Even the correct PIN must now be rejected while locked out - proves the
+		// lockout blocks further attempts outright rather than just rate-limiting them.
+		var lockedOutAttempt = () => veraClient.CheckInWithPinAsync(
+			engagement.Id,
+			new CheckInWithPinRequest { Pin = pin },
+			cancellationToken);
+
+		var lockedException = await lockedOutAttempt.Should().ThrowAsync<ApiException>();
+		lockedException.Which.StatusCode.Should().Be(403);
+	}
+
 	// ── Duplicate sign-up rejection ───────────────────────────────────────────
 
 	[Test]

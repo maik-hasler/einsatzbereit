@@ -22,6 +22,7 @@ internal sealed class CheckInWithPinEndpoint
 			.Produces<EngagementStatusResponse>()
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
