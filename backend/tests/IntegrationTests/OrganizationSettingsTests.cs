@@ -195,7 +195,6 @@ public class OrganizationSettingsTests(
 		// Regression for #691: being an organizer of one org (which grants the
 		// platform-wide Keycloak "organisator" role) must not grant authority
 		// over a different org the same user is merely a plain member of.
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -209,12 +208,13 @@ public class OrganizationSettingsTests(
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Escalation Test Org" }, cancellationToken);
 
-		// olaf's org gains vera as a plain member via the admin-only AddMember
-		// path - never promoted to Organizer of this specific org. (Accepting
-		// an invitation now also grants Organizer capability on the invited
-		// org - #826 - so that flow no longer produces a plain-member-only
-		// state and can't be used to set this scenario up anymore.)
-		await adminClient.AddMemberAsync(org.Id.Value, new AddMemberRequest { UserId = vera.Id }, cancellationToken);
+		// olaf's org gains vera as a plain member - never promoted to Organizer
+		// of this specific org. (Accepting an invitation now also grants
+		// Organizer capability on the invited org - #826 - so that flow no
+		// longer produces a plain-member-only state and can't be used to set
+		// this scenario up anymore; the admin-only AddMember endpoint that
+		// used to fill this gap was removed as dead code - #810.)
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
 		var act = () => veraClient.UpdateOrganizationAsync(
 			org.Id.Value,
@@ -523,9 +523,10 @@ public class OrganizationSettingsTests(
 		// permanently orphan the org, since no path exists to promote the
 		// remaining member. (Accepting an invitation now also grants
 		// Organizer capability - #826 - so that flow no longer produces a
-		// plain-member-only state; the admin-only AddMember path is used
-		// here instead to reconstruct it.)
-		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		// plain-member-only state; the fixture's direct Keycloak escape hatch
+		// is used here instead to reconstruct it, since the admin-only
+		// AddMember endpoint that used to fill this gap was removed as dead
+		// code - #810.)
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -534,7 +535,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Sole Organizer Test Org" }, cancellationToken);
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
 
-		await adminClient.AddMemberAsync(org.Id.Value, new AddMemberRequest { UserId = vera.Id }, cancellationToken);
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
 		var act = () => olafClient.RemoveMemberAsync(org.Id.Value, olaf.Id, cancellationToken);
 

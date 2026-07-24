@@ -257,6 +257,27 @@ public class IntegrationTestFixture
 		}
 	}
 
+	// Test-only escape hatch replicating what the now-removed admin-only
+	// AddMember endpoint did (#810): add a user to a Keycloak organization as a
+	// plain member, without granting the Organizer role. Accepting an
+	// invitation grants Organizer too (#826), so it's the only way left to
+	// reconstruct a plain-member-only state for regression tests (#691, #825).
+	public async Task AddPlainMemberDirectlyAsync(
+		Guid organizationId, Guid userId, CancellationToken cancellationToken = default)
+	{
+		var adminToken = await GetAdminTokenAsync();
+
+		using var request = new HttpRequestMessage(
+			HttpMethod.Post, $"/admin/realms/{Realm}/organizations/{organizationId}/members")
+		{
+			Content = JsonContent.Create(userId.ToString()),
+		};
+		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var response = await _keycloakClient.SendAsync(request, cancellationToken);
+		await EnsureSuccessAsync(response);
+	}
+
 	// Creates a brand-new, disposable Keycloak user with the realm's baseline
 	// "user" role. This fixture is shared PerTestSession, so tests that need to
 	// destructively mutate an account (e.g. deleting it, #829) must never touch
