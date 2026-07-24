@@ -16,6 +16,7 @@ import {
 } from "../contexts/QuickActionsContext";
 import Header from "../components/Header/Header";
 import Spinner from "../components/Spinner";
+import Button from "../components/Button";
 
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
@@ -166,12 +167,7 @@ export default function OrgAppLayout() {
 				<h1 className="text-xl font-semibold text-gray-900">
 					{t("orgApp.notAuthorized")}
 				</h1>
-				<Link
-					to="/"
-					className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
-				>
-					{t("orgApp.backToSite")}
-				</Link>
+				<Button to="/">{t("orgApp.backToSite")}</Button>
 			</div>
 		);
 	}

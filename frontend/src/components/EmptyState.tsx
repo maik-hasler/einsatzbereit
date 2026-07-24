@@ -1,3 +1,5 @@
+import Button from "./Button";
+
 interface Props {
 	title: string;
 	message?: string;
@@ -13,12 +15,9 @@ export default function EmptyState({ title, message, action }: Props) {
 			<p className="font-medium text-gray-900">{title}</p>
 			{message && <p className="mt-1 text-sm text-gray-500">{message}</p>}
 			{action && (
-				<button
-					onClick={action.onClick}
-					className="mt-4 rounded-md bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800"
-				>
+				<Button onClick={action.onClick} className="mt-4">
 					{action.label}
-				</button>
+				</Button>
 			)}
 		</div>
 	);

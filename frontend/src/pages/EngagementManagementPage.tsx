@@ -12,6 +12,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import QRScannerModal from "../components/QRScannerModal";
 import Spinner from "../components/Spinner";
+import Button from "../components/Button";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -196,11 +197,7 @@ export default function EngagementManagementPage() {
 
 			{showQrScanner && (
 				<div className="mb-6">
-					<button
-						type="button"
-						onClick={() => setQrScannerOpen(true)}
-						className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800"
-					>
+					<Button type="button" onClick={() => setQrScannerOpen(true)}>
 						<svg
 							className="h-4 w-4"
 							fill="none"
@@ -221,7 +218,7 @@ export default function EngagementManagementPage() {
 							/>
 						</svg>
 						{t("checkIn.qrScanButton")}
-					</button>
+					</Button>
 				</div>
 			)}
 
@@ -339,15 +336,15 @@ export default function EngagementManagementPage() {
 									{e.status === "Confirmed" && (
 										<div className="flex gap-2">
 											{showManualCheckIn && !e.isCheckedIn && (
-												<button
+												<Button
 													onClick={() => handleCheckIn(e.id)}
 													disabled={checkingIn === e.id}
-													className="rounded-xl bg-brand-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
+													size="sm"
 												>
 													{checkingIn === e.id
 														? t("checkIn.markingCheckedIn")
 														: t("checkIn.markCheckedIn")}
-												</button>
+												</Button>
 											)}
 											<button
 												onClick={() => setConfirmCancelId(e.id)}

@@ -5,6 +5,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
 import Modal from "./Modal";
+import Button from "./Button";
 
 interface Props {
 	onClose: () => void;
@@ -301,14 +302,9 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					>
 						{t("organization.cancel")}
 					</button>
-					<button
-						type="submit"
-						disabled={loading}
-						data-testid="modal-submit"
-						className="rounded-xl bg-brand-700 px-4 py-2 text-sm text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
-					>
+					<Button type="submit" disabled={loading} data-testid="modal-submit">
 						{loading ? t("organization.creating") : t("organization.submit")}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</Modal>

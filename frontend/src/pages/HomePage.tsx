@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import type { OrganizationSummaryDto } from "../client/api-client";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
+import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { signinLocaleArgs } from "../lib/authLocale";
@@ -484,13 +485,14 @@ export default function HomePage() {
 							{t("landing.orgsTeaserDesc")}
 						</p>
 					</div>
-					<Link
+					<Button
 						to="/organizations"
 						data-testid="organizations-teaser-cta"
-						className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800"
+						size="lg"
+						className="shadow-sm shrink-0"
 					>
 						{t("landing.orgsTeaserCta")}
-					</Link>
+					</Button>
 				</div>
 			</section>
 

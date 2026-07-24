@@ -10,6 +10,7 @@ import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Modal from "../../../components/Modal";
 import Spinner from "../../../components/Spinner";
+import Button from "../../../components/Button";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -270,16 +271,16 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 								>
 									{t("createOpportunity.cancel")}
 								</button>
-								<button
+								<Button
 									type="button"
 									disabled={savingColor}
 									onClick={handleColorSave}
-									className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+									size="sm"
 								>
 									{savingColor
 										? t("orgOverview.eventColorSaving")
 										: t("orgOverview.eventColorSave")}
-								</button>
+								</Button>
 							</div>
 						</div>
 					</div>

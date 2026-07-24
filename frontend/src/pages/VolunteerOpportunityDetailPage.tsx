@@ -15,6 +15,7 @@ import {
 } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Button from "../components/Button";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import Skeleton from "../components/Skeleton";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -467,15 +468,16 @@ export default function VolunteerOpportunityDetailPage() {
 									: t("opportunities.spotsLeft", { count: spotsLeft })}
 						</p>
 					)}
-					<button
+					<Button
 						onClick={() => setShowSignUp(true)}
 						disabled={isFull}
-						className="w-full rounded-xl bg-brand-700 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+						fullWidth
+						size="lg"
 					>
 						{opportunity.participationType === "Waitlist"
 							? t("opportunities.joinWaitlist")
 							: t("opportunities.expressInterest")}
-					</button>
+					</Button>
 				</div>
 			)}
 

@@ -6,6 +6,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
+import Button from "./Button";
 
 interface CheckInModalProps {
 	engagementId: string;
@@ -115,13 +116,13 @@ export default function CheckInModal({
 							/>
 						</div>
 						{error && <p className="text-sm text-red-600">{error}</p>}
-						<button
+						<Button
 							type="submit"
 							disabled={submitting || pin.length < 4}
-							className="w-full rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+							fullWidth
 						>
 							{submitting ? t("checkIn.submitting") : t("checkIn.submitPin")}
-						</button>
+						</Button>
 					</form>
 				</div>
 			)}

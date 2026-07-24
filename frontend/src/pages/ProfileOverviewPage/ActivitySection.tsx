@@ -16,6 +16,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import SubmitFeedbackModal from "../../components/SubmitFeedbackModal";
 import Skeleton from "../../components/Skeleton";
+import Button from "../../components/Button";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -199,18 +200,18 @@ export default function ActivitySection() {
 										</p>
 									</div>
 									<div className="flex shrink-0 gap-2">
-										<button
+										<Button
 											type="button"
 											onClick={() => handleAcceptInvitation(inv.id)}
 											disabled={
 												acceptingId === inv.id || decliningId === inv.id
 											}
-											className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+											size="sm"
 										>
 											{acceptingId === inv.id
 												? t("invitations.accepting")
 												: t("invitations.accept")}
-										</button>
+										</Button>
 										<button
 											type="button"
 											onClick={() => handleDeclineInvitation(inv.id)}
@@ -384,12 +385,9 @@ export default function ActivitySection() {
 									{e.status === "Confirmed" &&
 										!e.isCheckedIn &&
 										e.opportunityTitle && (
-											<button
-												onClick={() => setCheckInEngagement(e)}
-												className="rounded-lg bg-brand-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800"
-											>
+											<Button onClick={() => setCheckInEngagement(e)} size="sm">
 												{t("checkIn.buttonLabel")}
-											</button>
+											</Button>
 										)}
 									{e.isCheckedIn && !e.hasFeedback && (
 										<button

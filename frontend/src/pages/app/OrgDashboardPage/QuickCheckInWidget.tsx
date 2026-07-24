@@ -9,6 +9,7 @@ import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import QRScannerModal from "../../../components/QRScannerModal";
 import Spinner from "../../../components/Spinner";
+import Button from "../../../components/Button";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -104,17 +105,17 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 							))}
 						</select>
 					</div>
-					<button
+					<Button
 						type="button"
 						onClick={() => void startScanning()}
 						disabled={loadingEngagements}
 						data-testid="quick-checkin-scan-btn"
-						className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none disabled:opacity-50 ${size !== "compact" ? "shrink-0" : "w-full"}`}
+						className={`shadow-sm ${size !== "compact" ? "shrink-0" : "w-full"}`}
 					>
 						{loadingEngagements
 							? t("orgDashboard.loading")
 							: t("orgDashboard.quickCheckInOpenScanner")}
-					</button>
+					</Button>
 				</div>
 			)}
 

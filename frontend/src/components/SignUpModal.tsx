@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
+import Button from "./Button";
 
 interface Props {
 	opportunityId: string;
@@ -144,13 +145,12 @@ export default function SignUpModal({
 					>
 						{t("signUp.cancel")}
 					</button>
-					<button
+					<Button
 						type="submit"
 						disabled={submitting || (isWaitlist && timeSlots.length === 0)}
-						className="rounded-xl bg-brand-700 px-4 py-2 text-sm text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
 					>
 						{submitting ? t("signUp.submitting") : t("signUp.submit")}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</Modal>
