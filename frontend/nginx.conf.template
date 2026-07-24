@@ -15,6 +15,7 @@ server {
 	add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 	add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 	add_header Strict-Transport-Security "max-age=31536000" always;
+	add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 
 	location / {
 		try_files $uri $uri/ /index.html;
@@ -28,6 +29,7 @@ server {
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 	}
 
 	location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
@@ -39,6 +41,7 @@ server {
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 	}
 
 	location = /index.html {
@@ -49,5 +52,6 @@ server {
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 	}
 }
