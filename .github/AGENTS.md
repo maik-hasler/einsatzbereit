@@ -31,9 +31,11 @@
 - **No E2E job** - E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
 
 ### `docs.yml`
-- **Trigger:** `docs/**` path filter or manual
-- **Jobs:** build AsciiDoc → deploy to GitHub Pages
+- **Trigger:** `docs/**` path filter, push/PR to main, or manual
+- **Jobs:** build AsciiDoc (`build`) -> deploy to GitHub Pages (`deploy`, `needs: build`)
+- `deploy` is gated with `if: github.event_name == 'push'` so PRs only build and never deploy
 - Uses `tonynv/asciidoctor-action` with `asciidoctor-diagram` for PlantUML
+- `build` uses a per-ref concurrency group (`docs-build-${{ github.ref }}`) separate from `deploy`'s `pages` group, so a PR build can't cancel an in-progress production deployment
 
 ## Publish Workflows (tag-triggered)
 
