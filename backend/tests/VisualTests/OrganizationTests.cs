@@ -185,6 +185,76 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task CreateOrganizationModal_NameRequired_BlocksSubmitWithInlineError()
+	{
+		// #851: the create-organization form used to only enforce Name via the
+		// browser's native "required" attribute (or fail at the server round-trip
+		// for every other field). It now uses the same react-hook-form + zod
+		// approach as the volunteer-opportunity wizard, so submitting blank
+		// blocks client-side with a styled inline error instead of a native
+		// tooltip or a server error.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+
+		var createDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(createDialog).ToBeVisibleAsync();
+
+		await createDialog.GetByTestId("modal-submit").ClickAsync();
+
+		await Expect(createDialog.Locator("#create-org-name-error")).ToBeVisibleAsync(
+			new() { Timeout = 5_000 });
+		await Expect(createDialog.Locator("#create-org-name")).ToHaveAttributeAsync(
+			"aria-invalid", "true");
+
+		// Blocked client-side - the dialog is still open, nothing was created.
+		await Expect(createDialog).ToBeVisibleAsync();
+
+		await createDialog.GetByTestId("modal-cancel").ClickAsync();
+	}
+
+	[Test]
+	public async Task CreateOrganizationModal_PartialAddress_ShowsInlineErrorsForMissingFields()
+	{
+		// #851: Address.Create requires street/houseNumber/zipCode/city together
+		// - filling in only some of them used to pass client-side silently and
+		// only fail once the request round-tripped to the server. The shared
+		// zod schema (organizationFormSchema.ts) now mirrors that same
+		// conditional-required rule client-side, same as LocationStep does for
+		// the volunteer-opportunity wizard.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var orgName = $"Visual851 PartialAddress {Guid.NewGuid():N}";
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+
+		var createDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(createDialog).ToBeVisibleAsync();
+
+		await createDialog.Locator("#create-org-name").FillAsync(orgName);
+		await createDialog.Locator("#create-org-street").FillAsync("Main Street");
+
+		await createDialog.GetByTestId("modal-submit").ClickAsync();
+
+		await Expect(createDialog.Locator("#create-org-house-number-error")).ToBeVisibleAsync(
+			new() { Timeout = 5_000 });
+		await Expect(createDialog.Locator("#create-org-zip-error")).ToBeVisibleAsync();
+		await Expect(createDialog.Locator("#create-org-city-error")).ToBeVisibleAsync();
+
+		// Blocked client-side - the dialog is still open, nothing was created.
+		await Expect(createDialog).ToBeVisibleAsync();
+
+		await createDialog.GetByTestId("modal-cancel").ClickAsync();
+	}
+
+	[Test]
 	public async Task Directory_ShowsOpenOpportunityCount_ForOrgWithPublishedOpportunity()
 	{
 		// #772 review follow-up (issue #763): "the site looks a bit dead" -
