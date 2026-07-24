@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { MyProfileResponse, StreakSummary } from "../../client/api-client";
@@ -8,16 +8,14 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, textareaClass } from "../../lib/formClasses";
-import ConfirmDialog from "../../components/ConfirmDialog";
 import Dropdown from "../../components/Dropdown";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
-
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
-type ContactPref = "Email" | "Phone" | "";
+import DangerZoneCard from "./DangerZoneCard";
+import { useProfileForm, type ContactPref } from "./useProfileForm";
+import { useAvatarUpload } from "./useAvatarUpload";
 
 // Legacy ?tab= values - from the pre-#794 two-tab scheme (profile/activity)
 // and the older four-tab scheme still used by the /my-engagements and
@@ -121,7 +119,6 @@ export default function ProfileOverviewPage() {
 	const auth = useAuth();
 	const api = useApiClient();
 	const { t } = useTranslation();
-	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	usePageTitle(t("profile.title"));
 	usePageToolbar([{ label: t("breadcrumb.profile") }]);
@@ -133,26 +130,13 @@ export default function ProfileOverviewPage() {
 	const [saving, setSaving] = useState(false);
 	const [profileError, setProfileError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
-	const [bio, setBio] = useState("");
-	const [skills, setSkills] = useState<string[]>([]);
-	const [languages, setLanguages] = useState<string[]>([]);
-	const [preferredContact, setPreferredContact] = useState<ContactPref>("");
-	const [skillInput, setSkillInput] = useState("");
-	const [langInput, setLangInput] = useState("");
-	const skillInputRef = useRef<HTMLInputElement>(null);
-	const langInputRef = useRef<HTMLInputElement>(null);
-	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-	const [deleting, setDeleting] = useState(false);
-	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-	const [uploadingAvatar, setUploadingAvatar] = useState(false);
-	const [avatarError, setAvatarError] = useState<string | null>(null);
-	const avatarInputRef = useRef<HTMLInputElement>(null);
 	const [editing, setEditing] = useState(false);
 	const [streaks, setStreaks] = useState<StreakSummary | null>(null);
 	const formRef = useRef<HTMLFormElement>(null);
+
+	const form = useProfileForm(profile);
+	const avatarUpload = useAvatarUpload(setAvatarUrl);
 
 	// Load profile data (always load on mount with retry)
 	useEffect(() => {
@@ -166,14 +150,8 @@ export default function ProfileOverviewPage() {
 					const data = await api.getUserProfile();
 					if (cancelled) return;
 					setProfile(data);
-					setFirstName(data.firstName ?? "");
-					setLastName(data.lastName ?? "");
-					setBio(data.bio ?? "");
-					setSkills(data.skills ?? []);
-					setLanguages(data.languages ?? []);
+					form.reset(data);
 					setAvatarUrl(data.avatarUrl ?? null);
-					const pref = data.preferredContact;
-					setPreferredContact(pref === "Email" || pref === "Phone" ? pref : "");
 					setProfileError(null);
 					return;
 				} catch {
@@ -228,51 +206,6 @@ export default function ProfileOverviewPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	function addChip(
-		value: string,
-		list: string[],
-		setList: (l: string[]) => void,
-		setInput: (s: string) => void,
-	) {
-		const trimmed = value.trim();
-		if (trimmed && !list.includes(trimmed)) {
-			setList([...list, trimmed]);
-		}
-		setInput("");
-	}
-
-	function removeChip(
-		item: string,
-		list: string[],
-		setList: (l: string[]) => void,
-	) {
-		setList(list.filter((s) => s !== item));
-	}
-
-	async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		if (!AVATAR_TYPES.includes(file.type)) {
-			setAvatarError(t("profile.avatarHint"));
-			return;
-		}
-		if (file.size > MAX_AVATAR_BYTES) {
-			setAvatarError(t("profile.avatarHint"));
-			return;
-		}
-		setUploadingAvatar(true);
-		setAvatarError(null);
-		try {
-			await api.uploadUserAvatar({ data: file, fileName: file.name });
-			setAvatarUrl(URL.createObjectURL(file));
-		} catch {
-			setAvatarError(t("profile.avatarUploadError"));
-		} finally {
-			setUploadingAvatar(false);
-			if (avatarInputRef.current) avatarInputRef.current.value = "";
-		}
-	}
-
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
 		setSaving(true);
@@ -280,12 +213,12 @@ export default function ProfileOverviewPage() {
 		setSuccessMessage(null);
 		try {
 			await api.updateUserProfile({
-				firstName: firstName || undefined,
-				lastName: lastName || undefined,
-				bio: bio || undefined,
-				skills,
-				languages,
-				preferredContact: preferredContact || undefined,
+				firstName: form.state.firstName || undefined,
+				lastName: form.state.lastName || undefined,
+				bio: form.state.bio || undefined,
+				skills: form.state.skills,
+				languages: form.state.languages,
+				preferredContact: form.state.preferredContact || undefined,
 			});
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
@@ -297,30 +230,9 @@ export default function ProfileOverviewPage() {
 	}
 
 	function handleCancel() {
-		if (profile) {
-			setFirstName(profile.firstName ?? "");
-			setLastName(profile.lastName ?? "");
-			setBio(profile.bio ?? "");
-			setSkills(profile.skills ?? []);
-			setLanguages(profile.languages ?? []);
-			const pref = profile.preferredContact;
-			setPreferredContact(pref === "Email" || pref === "Phone" ? pref : "");
-		}
+		form.reset(profile);
 		setProfileError(null);
 		setEditing(false);
-	}
-
-	async function handleDeleteAccount() {
-		setDeleting(true);
-		setDeleteError(null);
-		try {
-			await api.deleteMyAccount();
-			await auth.removeUser();
-			navigate("/");
-		} catch {
-			setDeleteError(t("account.deleteError"));
-			setDeleting(false);
-		}
 	}
 
 	useEditModeQuickActions({
@@ -384,8 +296,8 @@ export default function ProfileOverviewPage() {
 								)}
 								<div>
 									<p className="text-xl font-semibold text-gray-900">
-										{firstName || lastName
-											? `${firstName} ${lastName}`.trim()
+										{form.state.firstName || form.state.lastName
+											? `${form.state.firstName} ${form.state.lastName}`.trim()
 											: profile?.username}
 									</p>
 									<p className="text-sm text-gray-500">@{profile?.username}</p>
@@ -438,10 +350,10 @@ export default function ProfileOverviewPage() {
 
 						{!editing && (
 							<ProfileFieldsView
-								bio={bio}
-								skills={skills}
-								languages={languages}
-								preferredContact={preferredContact || null}
+								bio={form.state.bio}
+								skills={form.state.skills}
+								languages={form.state.languages}
+								preferredContact={form.state.preferredContact || null}
 							/>
 						)}
 
@@ -471,27 +383,27 @@ export default function ProfileOverviewPage() {
 												<div>
 													<label
 														htmlFor="avatar-upload"
-														className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingAvatar ? "opacity-50 pointer-events-none" : ""}`}
+														className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${avatarUpload.uploading ? "opacity-50 pointer-events-none" : ""}`}
 													>
-														{uploadingAvatar
+														{avatarUpload.uploading
 															? t("profile.avatarUploading")
 															: t("profile.avatarUpload")}
 													</label>
 													<input
-														ref={avatarInputRef}
+														ref={avatarUpload.inputRef}
 														id="avatar-upload"
 														type="file"
 														accept="image/jpeg,image/png,image/webp"
 														className="sr-only"
-														onChange={handleAvatarChange}
-														disabled={uploadingAvatar}
+														onChange={avatarUpload.handleChange}
+														disabled={avatarUpload.uploading}
 													/>
 													<p className="mt-1 text-xs text-gray-500">
 														{t("profile.avatarHint")}
 													</p>
-													{avatarError && (
+													{avatarUpload.error && (
 														<p className="mt-1 text-xs text-red-600">
-															{avatarError}
+															{avatarUpload.error}
 														</p>
 													)}
 												</div>
@@ -527,8 +439,8 @@ export default function ProfileOverviewPage() {
 											>
 												<input
 													id="first-name"
-													value={firstName}
-													onChange={(e) => setFirstName(e.target.value)}
+													value={form.state.firstName}
+													onChange={(e) => form.setFirstName(e.target.value)}
 													className={inputClass}
 												/>
 											</Field>
@@ -536,8 +448,8 @@ export default function ProfileOverviewPage() {
 											<Field label={t("account.fieldLastName")} id="last-name">
 												<input
 													id="last-name"
-													value={lastName}
-													onChange={(e) => setLastName(e.target.value)}
+													value={form.state.lastName}
+													onChange={(e) => form.setLastName(e.target.value)}
 													className={inputClass}
 												/>
 											</Field>
@@ -552,41 +464,37 @@ export default function ProfileOverviewPage() {
 										<textarea
 											id="bio"
 											rows={4}
-											value={bio}
+											value={form.state.bio}
 											placeholder={t("profile.bioPlaceholder")}
-											onChange={(e) => setBio(e.target.value)}
+											onChange={(e) => form.setBio(e.target.value)}
 											className={textareaClass}
 										/>
 									</Field>
 
 									<Field label={t("profile.fieldSkills")} id="skill-input">
 										<ChipInput
-											inputRef={skillInputRef}
+											inputRef={form.skillInputRef}
 											inputId="skill-input"
-											chips={skills}
-											inputValue={skillInput}
+											chips={form.state.skills}
+											inputValue={form.state.skillInput}
 											placeholder={t("profile.skillsPlaceholder")}
-											onInputChange={setSkillInput}
-											onAdd={(v) =>
-												addChip(v, skills, setSkills, setSkillInput)
-											}
-											onRemove={(v) => removeChip(v, skills, setSkills)}
+											onInputChange={form.setSkillInput}
+											onAdd={form.addSkill}
+											onRemove={form.removeSkill}
 											removeLabel={t("profile.removeChip")}
 										/>
 									</Field>
 
 									<Field label={t("profile.fieldLanguages")} id="lang-input">
 										<ChipInput
-											inputRef={langInputRef}
+											inputRef={form.langInputRef}
 											inputId="lang-input"
-											chips={languages}
-											inputValue={langInput}
+											chips={form.state.languages}
+											inputValue={form.state.langInput}
 											placeholder={t("profile.languagesPlaceholder")}
-											onInputChange={setLangInput}
-											onAdd={(v) =>
-												addChip(v, languages, setLanguages, setLangInput)
-											}
-											onRemove={(v) => removeChip(v, languages, setLanguages)}
+											onInputChange={form.setLangInput}
+											onAdd={form.addLanguage}
+											onRemove={form.removeLanguage}
 											removeLabel={t("profile.removeChip")}
 										/>
 									</Field>
@@ -597,8 +505,10 @@ export default function ProfileOverviewPage() {
 									>
 										<Dropdown
 											id="preferred-contact"
-											value={preferredContact}
-											onChange={(v) => setPreferredContact(v as ContactPref)}
+											value={form.state.preferredContact}
+											onChange={(v) =>
+												form.setPreferredContact(v as ContactPref)
+											}
 											className={inputClass}
 											options={[
 												{
@@ -630,36 +540,7 @@ export default function ProfileOverviewPage() {
 			<AchievementsSection />
 			<ActivitySection />
 
-			<div className="rounded-lg border border-red-200 bg-red-50 p-6">
-				<h2 className="mb-1 text-base font-semibold text-red-800">
-					{t("account.dangerZoneTitle")}
-				</h2>
-				<p className="mb-4 text-sm text-red-700">
-					{t("account.dangerZoneDescription")}
-				</p>
-				<button
-					type="button"
-					onClick={() => setShowDeleteDialog(true)}
-					className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-				>
-					{t("account.deleteAccountButton")}
-				</button>
-			</div>
-
-			{showDeleteDialog && (
-				<ConfirmDialog
-					title={t("account.deleteConfirmTitle")}
-					message={t("account.deleteConfirmMessage")}
-					confirmLabel={t("account.deleteConfirmButton")}
-					onConfirm={handleDeleteAccount}
-					onClose={() => {
-						setShowDeleteDialog(false);
-						setDeleteError(null);
-					}}
-					loading={deleting}
-					error={deleteError}
-				/>
-			)}
+			<DangerZoneCard />
 		</>
 	);
 }
