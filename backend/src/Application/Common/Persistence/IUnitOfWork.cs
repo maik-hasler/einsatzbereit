@@ -3,6 +3,8 @@ namespace Application.Common.Persistence;
 public interface IUnitOfWork
 	: IDisposable
 {
+	bool HasActiveTransaction { get; }
+
 	Task BeginTransactionAsync(
 		CancellationToken cancellationToken = default);
 

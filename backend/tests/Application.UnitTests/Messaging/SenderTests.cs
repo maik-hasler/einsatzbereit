@@ -108,6 +108,55 @@ public class SenderTests
 			"A:After");
 	}
 
+	[Test]
+	public async Task Send_ShouldReuseCallingScope_WhenInvokedFromWithinAnotherHandler(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var services = new ServiceCollection();
+		services.AddScoped<ScopedMarker>();
+
+		services.AddScoped<IRequestHandler<OuterRequest, (Guid Outer, Guid Inner)>, OuterHandler>();
+		services.AddScoped<IRequestHandler<InnerRequest, Guid>, InnerHandler>();
+
+		services.AddScoped<ISender, Sender>();
+
+		var sender = services.BuildServiceProvider().GetRequiredService<ISender>();
+
+		// Act
+		var (outerMarkerId, innerMarkerId) = await sender.Send(new OuterRequest(), cancellationToken);
+
+		// Assert
+		innerMarkerId.Should().Be(outerMarkerId);
+	}
+
+	private sealed class ScopedMarker
+	{
+		public Guid Id { get; } = Guid.NewGuid();
+	}
+
+	private sealed record OuterRequest : ICommand<(Guid Outer, Guid Inner)>;
+
+	private sealed record InnerRequest : ICommand<Guid>;
+
+	private sealed class OuterHandler(ISender sender, ScopedMarker marker)
+		: ICommandHandler<OuterRequest, (Guid Outer, Guid Inner)>
+	{
+		public async ValueTask<(Guid Outer, Guid Inner)> Handle(OuterRequest request, CancellationToken cancellationToken)
+		{
+			var innerMarkerId = await sender.Send(new InnerRequest(), cancellationToken);
+
+			return (marker.Id, innerMarkerId);
+		}
+	}
+
+	private sealed class InnerHandler(ScopedMarker marker)
+		: ICommandHandler<InnerRequest, Guid>
+	{
+		public ValueTask<Guid> Handle(InnerRequest request, CancellationToken cancellationToken) =>
+			ValueTask.FromResult(marker.Id);
+	}
+
 	private sealed record TestRequest(string Input) : ICommand<string>;
 
 	private sealed class TestHandler : ICommandHandler<TestRequest, string>

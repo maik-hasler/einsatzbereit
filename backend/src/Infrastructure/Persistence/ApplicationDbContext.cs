@@ -287,6 +287,9 @@ internal sealed class ApplicationDbContext(
 			modelBuilder.ApplyConfigurationsFromAssembly(
 				Assembly.GetExecutingAssembly());
 
+	public bool HasActiveTransaction =>
+		Database.CurrentTransaction != null;
+
 	public async Task BeginTransactionAsync(
 		CancellationToken cancellationToken = default) =>
 			await Database.BeginTransactionAsync(cancellationToken);

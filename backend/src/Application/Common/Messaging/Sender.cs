@@ -9,6 +9,15 @@ internal sealed class Sender(
 {
 	private static readonly ConcurrentDictionary<Type, IHandlerWrapper> HandlerWrapperCache = [];
 
+	// A Send() call issued from within a handler that is itself running inside
+	// a Send() call (e.g. ConfirmEngagementCommandHandler dispatching
+	// AwardAchievementCommand) reuses the outer call's DI scope instead of
+	// opening a new one. This makes the nested command share the same
+	// IApplicationDbContext/IUnitOfWork instance as its caller, so
+	// TransactionPipelineBehavior can let the outermost command own the single
+	// begin/commit/rollback and nested writes rise or fall with it.
+	private static readonly AsyncLocal<IServiceScope?> AmbientScope = new();
+
 	public async ValueTask<TResponse> Send<TResponse>(
 		IRequest<TResponse> request,
 		CancellationToken cancellationToken = default)
@@ -17,11 +26,29 @@ internal sealed class Sender(
 
 		var handlerWrapper = HandlerWrapperCache.GetOrAdd(requestType, CreateHandlerWrapper);
 
+		var ambientScope = AmbientScope.Value;
+
+		if (ambientScope is not null)
+		{
+			var nestedResult = await handlerWrapper.HandleAsync(request, ambientScope, cancellationToken);
+
+			return (TResponse)nestedResult!;
+		}
+
 		using var scope = serviceProvider.CreateScope();
 
-		var result = await handlerWrapper.HandleAsync(request, scope, cancellationToken);
+		AmbientScope.Value = scope;
 
-		return (TResponse)result!;
+		try
+		{
+			var result = await handlerWrapper.HandleAsync(request, scope, cancellationToken);
+
+			return (TResponse)result!;
+		}
+		finally
+		{
+			AmbientScope.Value = null;
+		}
 	}
 
 	private static IHandlerWrapper CreateHandlerWrapper(
