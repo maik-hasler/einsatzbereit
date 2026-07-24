@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
+import { getApiErrorMessage } from "../lib/apiError";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
@@ -46,8 +47,8 @@ export default function CheckInModal({
 			await api.checkInWithPin(engagementId, { pin });
 			setSuccess(true);
 			onCheckedIn();
-		} catch {
-			setError(t("checkIn.invalidPin"));
+		} catch (e) {
+			setError(getApiErrorMessage(e, t("checkIn.invalidPin")));
 		} finally {
 			setSubmitting(false);
 		}
