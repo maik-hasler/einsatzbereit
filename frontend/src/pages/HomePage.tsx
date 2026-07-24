@@ -11,8 +11,6 @@ import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
 
-const ONBOARDING_KEY = "onboarding-dismissed";
-
 // ── Icons ────────────────────────────────────────────────────────────────────
 
 function BrowseIcon() {
@@ -72,42 +70,6 @@ function SparklesIcon() {
 	);
 }
 
-function OnboardingBanner({ onDismiss }: { onDismiss: () => void }) {
-	const { t } = useTranslation();
-	return (
-		<div
-			role="region"
-			aria-label={t("onboarding.ariaLabel")}
-			className="mb-8 overflow-hidden rounded-2xl border border-brand-200 bg-brand-50 px-6 py-5"
-		>
-			<div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-				<div className="flex-1">
-					<p className="text-base font-semibold text-brand-900">
-						{t("onboarding.title")}
-					</p>
-					<p className="mt-1 text-sm text-brand-700">{t("onboarding.body")}</p>
-				</div>
-				<div className="flex shrink-0 items-center gap-3">
-					<a
-						href="#opportunities"
-						onClick={onDismiss}
-						className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
-					>
-						{t("onboarding.cta")}
-					</a>
-					<button
-						type="button"
-						onClick={onDismiss}
-						className="rounded-lg border border-brand-300 bg-white px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100"
-					>
-						{t("onboarding.dismiss")}
-					</button>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -122,16 +84,9 @@ export default function HomePage() {
 	const missionTitleId = useId();
 	const orgsTeaserTitleId = useId();
 
-	const [showOnboarding, setShowOnboarding] = useState(false);
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
 	const [searchParams, setSearchParams] = useSearchParams();
-
-	useEffect(() => {
-		if (auth.isAuthenticated && !localStorage.getItem(ONBOARDING_KEY)) {
-			setShowOnboarding(true);
-		}
-	}, [auth.isAuthenticated]);
 
 	useEffect(() => {
 		if (!auth.isAuthenticated) {
@@ -163,11 +118,6 @@ export default function HomePage() {
 			setSearchParams(next, { replace: true });
 		}
 	}, [searchParams, auth.isAuthenticated, setSearchParams]);
-
-	function handleDismissOnboarding() {
-		localStorage.setItem(ONBOARDING_KEY, "1");
-		setShowOnboarding(false);
-	}
 
 	function handleOrgCta() {
 		if (auth.isAuthenticated) {
@@ -545,9 +495,6 @@ export default function HomePage() {
 			</section>
 
 			<div id="opportunities">
-				{showOnboarding && (
-					<OnboardingBanner onDismiss={handleDismissOnboarding} />
-				)}
 				<VolunteerOpportunitiesList />
 			</div>
 
