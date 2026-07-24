@@ -755,12 +755,7 @@
     "breadcrumb": {
       "label": "Breadcrumb",
       "home": "Home",
-      "volunteerOpportunities": "Volunteer Opportunities",
-      "engagements": "Engagements",
-      "settings": "Settings",
-      "account": "Account",
       "profile": "Profile",
-      "achievements": "My Achievements",
       "userAchievements": "Achievements",
       "organizations": "Organizations"
     },
