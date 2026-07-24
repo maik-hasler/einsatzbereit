@@ -129,7 +129,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		var secondSignUpResponse = await secondSignUpResponseTask;
 		secondSignUpResponse.Status.Should().Be(409);
 
-		var errorText = await page2.Locator("p.text-red-600").First.TextContentAsync();
+		var errorText = await page2.GetByRole(AriaRole.Alert).First.TextContentAsync();
 		errorText.Should().NotBeNullOrEmpty();
 		errorText.Should().NotContain("Unknown error");
 		errorText.Should().Contain("already signed up");

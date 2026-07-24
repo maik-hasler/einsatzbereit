@@ -18,6 +18,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import Button from "../components/Button";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import Skeleton from "../components/Skeleton";
+import ErrorBanner from "../components/ErrorBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
@@ -162,9 +163,7 @@ export default function VolunteerOpportunityDetailPage() {
 		);
 	if (error)
 		return (
-			<p className="text-red-600">
-				{t("opportunities.error", { message: error })}
-			</p>
+			<ErrorBanner message={t("opportunities.error", { message: error })} />
 		);
 	if (!opportunity)
 		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;

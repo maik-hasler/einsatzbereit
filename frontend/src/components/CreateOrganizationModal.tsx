@@ -6,6 +6,7 @@ import { inputClass, labelClass, textareaClass } from "../lib/formClasses";
 import { getApiErrorMessage } from "../lib/apiError";
 import Modal from "./Modal";
 import Button from "./Button";
+import ErrorBanner from "./ErrorBanner";
 
 interface Props {
 	onClose: () => void;
@@ -290,7 +291,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						</div>
 					</fieldset>
 
-					{error && <p className="text-sm text-red-600">{error}</p>}
+					{error && <ErrorBanner message={error} />}
 				</div>
 
 				<div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">

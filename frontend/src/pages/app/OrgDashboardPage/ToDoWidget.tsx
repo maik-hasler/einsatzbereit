@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
+import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
@@ -46,7 +47,7 @@ function ToDoWidget({ organizationId, size }: Props) {
 			title={t("orgDashboard.todoWidgetTitle")}
 		>
 			{loading && <Spinner label={t("orgDashboard.loading")} />}
-			{!loading && error && <p className="text-sm text-red-600">{error}</p>}
+			{!loading && error && <ErrorBanner message={error} />}
 			{!loading && !error && kpis && (
 				// Side by side once there's room for two columns to breathe;
 				// stacked when the widget only got a narrow slice of the grid

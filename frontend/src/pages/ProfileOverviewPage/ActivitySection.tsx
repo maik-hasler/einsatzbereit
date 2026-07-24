@@ -17,6 +17,7 @@ import EmptyState from "../../components/EmptyState";
 import SubmitFeedbackModal from "../../components/SubmitFeedbackModal";
 import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
+import ErrorBanner from "../../components/ErrorBanner";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -169,11 +170,11 @@ export default function ActivitySection() {
 
 	return (
 		<section id="activity" className="mb-6">
-			{invitationsError && <p className="text-red-600">{invitationsError}</p>}
+			{invitationsError && (
+				<ErrorBanner message={invitationsError} className="mb-4" />
+			)}
 			{invitationActionError && (
-				<div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-					{invitationActionError}
-				</div>
+				<ErrorBanner message={invitationActionError} className="mb-4" />
 			)}
 			{!invitationsLoading && invitations.length > 0 && (
 				<div className="mb-6">
@@ -289,9 +290,9 @@ export default function ActivitySection() {
 				</div>
 			)}
 			{engagementsError && (
-				<p className="text-red-600">
-					{t("myEngagements.error", { message: engagementsError })}
-				</p>
+				<ErrorBanner
+					message={t("myEngagements.error", { message: engagementsError })}
+				/>
 			)}
 
 			{!engagementsLoading &&

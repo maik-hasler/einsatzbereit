@@ -7,6 +7,7 @@ import { inputClass, labelClass } from "../../lib/formClasses";
 import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
+import ErrorBanner from "../../components/ErrorBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -209,9 +210,7 @@ export default function OrgSettingsPage() {
 									</div>
 								)}
 								{settingsError && (
-									<div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-										{settingsError}
-									</div>
+									<ErrorBanner message={settingsError} className="mb-4" />
 								)}
 							</>
 						}
@@ -238,9 +237,7 @@ export default function OrgSettingsPage() {
 				{editing && (
 					<>
 						{settingsError && (
-							<div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-								{settingsError}
-							</div>
+							<ErrorBanner message={settingsError} className="mb-4" />
 						)}
 
 						<form ref={formRef} onSubmit={handleSave} className="space-y-5">

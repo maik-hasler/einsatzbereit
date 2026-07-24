@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { PublicOrganizationProfileResponse } from "../client/api-client";
 import OrganizationProfileView from "../components/OrganizationProfileView";
 import Spinner from "../components/Spinner";
+import ErrorBanner from "../components/ErrorBanner";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -43,11 +44,7 @@ export default function OrganizationProfilePage() {
 			</div>
 		);
 	if (error)
-		return (
-			<p className="text-red-600">
-				{t("orgProfile.error", { message: error })}
-			</p>
-		);
+		return <ErrorBanner message={t("orgProfile.error", { message: error })} />;
 	if (!profile)
 		return <p className="text-gray-500">{t("orgProfile.notFound")}</p>;
 

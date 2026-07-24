@@ -11,6 +11,7 @@ import { useApiClient } from "../../../hooks/useApiClient";
 import Modal from "../../../components/Modal";
 import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
+import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -157,9 +158,9 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 				</div>
 			)}
 			{calError && (
-				<p className="text-red-600">
-					{t("orgOverview.calendarError", { message: calError })}
-				</p>
+				<ErrorBanner
+					message={t("orgOverview.calendarError", { message: calError })}
+				/>
 			)}
 			{!calLoading && !calError && (
 				<div className="rbc-container h-full">
@@ -243,9 +244,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 								<span className="text-sm text-gray-500">{pickerColor}</span>
 							</div>
 						</div>
-						{colorSaveError && (
-							<p className="text-sm text-red-600">{colorSaveError}</p>
-						)}
+						{colorSaveError && <ErrorBanner message={colorSaveError} />}
 						<div className="flex flex-col gap-2">
 							<div className="flex gap-4">
 								<Link

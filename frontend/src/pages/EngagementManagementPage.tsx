@@ -13,6 +13,7 @@ import EmptyState from "../components/EmptyState";
 import QRScannerModal from "../components/QRScannerModal";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
+import ErrorBanner from "../components/ErrorBanner";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -228,9 +229,9 @@ export default function EngagementManagementPage() {
 				</div>
 			)}
 			{error && (
-				<p className="text-red-600">
-					{t("engagementManagement.error", { message: error })}
-				</p>
+				<ErrorBanner
+					message={t("engagementManagement.error", { message: error })}
+				/>
 			)}
 
 			{!loading && !error && engagements.length === 0 && (
