@@ -98,25 +98,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task AccountPage_HasNoSeriousA11yViolations()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/account");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
 		// into a single page - Profile Details, Badges, and My Engagements all
-		// render together here (distinct from AccountPage_HasNoSeriousA11yViolations
-		// above, which covers the legacy /account -> /profile redirect path).
+		// render together here.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");

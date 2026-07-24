@@ -63,7 +63,6 @@ did not touch CI.
 
 - [deploy-verify-flow](/process/deploy-verify-flow.md) - step 6 is the process this decision changed the mechanics of, not the substance
 - [live-playwright-scripts](/process/live-playwright-scripts.md) - now describes the scratch-script approach this decision put in place
-- [bookmark-compat-redirect-retention](/decisions/bookmark-compat-redirect-retention.md) - same shape of problem (unmarked debris nobody goes back to remove), resolved for three App.tsx routes instead of a whole folder
 
 # Citations
 
