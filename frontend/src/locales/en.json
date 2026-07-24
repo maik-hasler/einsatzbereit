@@ -266,12 +266,18 @@
       "fieldMaxParticipants": "Max. participants",
       "addButton": "Add",
       "adding": "Adding…",
+      "editButton": "Edit",
+      "editing": "Saving…",
+      "saveButton": "Save",
+      "cancelEditButton": "Cancel",
       "removeButton": "Remove",
       "removing": "…",
       "noSlots": "No time slots added yet.",
       "requiredForPublish": "A Scheduled slots opportunity must have at least one time slot before it can be published.",
       "addError": "Could not add time slot.",
       "removeError": "Could not remove time slot.",
+      "editError": "Could not update time slot.",
+      "bookedCount": "{{count}} signed up",
       "recurrenceFrequency": "Frequency",
       "recurrenceWeekly": "Weekly",
       "recurrenceMonthly": "Monthly",
@@ -626,6 +632,13 @@
         "title": "Cancel engagement?",
         "message": "Are you sure you want to cancel this engagement? The volunteer will be informed.",
         "confirm": "Yes, cancel"
+      },
+      "editTimeSlot": {
+        "title": "Edit time slot?",
+        "message": "{{count}} people are signed up for this time slot and will be notified of the change so they can decide whether to still participate.",
+        "message_one": "{{count}} person is signed up for this time slot and will be notified of the change so they can decide whether to still participate.",
+        "message_other": "{{count}} people are signed up for this time slot and will be notified of the change so they can decide whether to still participate.",
+        "confirm": "Yes, save changes"
       },
       "leaveOrganization": {
         "title": "Leave organization?",

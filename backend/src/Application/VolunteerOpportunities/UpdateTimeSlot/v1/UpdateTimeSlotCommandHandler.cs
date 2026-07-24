@@ -45,13 +45,16 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			request.MaxParticipants,
 			DateTimeOffset.UtcNow).ThrowIfFailure();
 
-		// Notify volunteers with an active engagement that a time slot changed (#406).
+		// Notify volunteers with an active engagement on this time slot that it
+		// changed (#406) - scoped to the slot itself, not every volunteer on the
+		// opportunity, so editing one slot doesn't spam registrants of others (#811).
 		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
 			dbContext,
 			engagementReadRepository,
 			opportunityId,
 			NotificationKind.OpportunityUpdated,
-			cancellationToken);
+			cancellationToken,
+			timeSlotId);
 
 		return true;
 	}

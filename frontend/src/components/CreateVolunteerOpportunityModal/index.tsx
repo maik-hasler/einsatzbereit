@@ -89,6 +89,22 @@ interface PendingTimeSlot {
 	maxParticipants: number;
 }
 
+interface EditingSlot {
+	id: string;
+	startDateTime: string;
+	endDateTime: string;
+	maxParticipants: number;
+}
+
+/** Converts a Date (or ISO string) to the `YYYY-MM-DDTHH:mm` value a
+ * `datetime-local` input expects, in the viewer's local time. */
+function toDatetimeLocalValue(value: Date | string): string {
+	const date = value instanceof Date ? value : new Date(value);
+	return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+		.toISOString()
+		.slice(0, 16);
+}
+
 const DEFAULT_VALUES: OpportunityFormValues = {
 	title: "",
 	description: "",
@@ -192,6 +208,11 @@ export default function CreateVolunteerOpportunityModal({
 	const [slotError, setSlotError] = useState<string | null>(null);
 	const [removingSlotId, setRemovingSlotId] = useState<string | null>(null);
 	const [addingSlot, setAddingSlot] = useState(false);
+	const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
+	const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
+	const [pendingSlotEdit, setPendingSlotEdit] = useState<
+		(EditingSlot & { bookedCount: number }) | null
+	>(null);
 	const [recurrenceFrequency, setRecurrenceFrequency] = useState("Weekly");
 	const [recurrenceCount, setRecurrenceCount] = useState(1);
 
@@ -402,6 +423,69 @@ export default function CreateVolunteerOpportunityModal({
 		}
 	}
 
+	function handleStartEditSlot(slot: {
+		id: string;
+		startDateTime: string;
+		endDateTime: string;
+		maxParticipants: number;
+	}) {
+		setSlotError(null);
+		setEditingSlot({
+			id: slot.id,
+			startDateTime: toDatetimeLocalValue(slot.startDateTime),
+			endDateTime: toDatetimeLocalValue(slot.endDateTime),
+			maxParticipants: slot.maxParticipants,
+		});
+	}
+
+	async function applySlotEdit(edit: EditingSlot) {
+		if (!initialOpportunity) return;
+		setUpdatingSlotId(edit.id);
+		setSlotError(null);
+		try {
+			await api.updateTimeSlot(initialOpportunity.id, edit.id, {
+				startDateTime: new Date(edit.startDateTime),
+				endDateTime: new Date(edit.endDateTime),
+				maxParticipants: edit.maxParticipants,
+			});
+			setExistingSlots((prev) =>
+				prev.map((s) =>
+					s.id === edit.id
+						? {
+								...s,
+								startDateTime: new Date(edit.startDateTime),
+								endDateTime: new Date(edit.endDateTime),
+								maxParticipants: edit.maxParticipants,
+							}
+						: s,
+				),
+			);
+			setEditingSlot(null);
+		} catch {
+			setSlotError(t("timeSlots.editError"));
+		} finally {
+			setUpdatingSlotId(null);
+			setPendingSlotEdit(null);
+		}
+	}
+
+	function handleRequestSaveEditSlot(bookedCount: number) {
+		if (!editingSlot) return;
+		if (!editingSlot.startDateTime || !editingSlot.endDateTime) return;
+		const start = new Date(editingSlot.startDateTime);
+		const end = new Date(editingSlot.endDateTime);
+		if (end <= start) {
+			setSlotError(t("timeSlots.editError"));
+			return;
+		}
+		setSlotError(null);
+		if (bookedCount > 0) {
+			setPendingSlotEdit({ ...editingSlot, bookedCount });
+		} else {
+			void applySlotEdit(editingSlot);
+		}
+	}
+
 	const submit = async (asDraft: boolean) => {
 		if (!asDraft) {
 			// Walk the steps in order and stop at the first one that fails -
@@ -557,9 +641,14 @@ export default function CreateVolunteerOpportunityModal({
 						? s.endDateTime.toISOString()
 						: String(s.endDateTime),
 				maxParticipants: s.maxParticipants,
+				bookedCount: s.bookedCount,
 				persisted: true as const,
 			}))
-		: pendingSlots.map((s) => ({ ...s, persisted: false as const }));
+		: pendingSlots.map((s) => ({
+				...s,
+				bookedCount: 0,
+				persisted: false as const,
+			}));
 
 	return (
 		<>
@@ -569,7 +658,7 @@ export default function CreateVolunteerOpportunityModal({
 				maxWidth="max-w-xl"
 				className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
 				backdropClassName="bg-black/60 backdrop-blur-sm"
-				suspended={showDiscardConfirm}
+				suspended={showDiscardConfirm || pendingSlotEdit !== null}
 				initialFocusRef={bodyRef}
 			>
 				{/* Unlike the app's other (single-step) modals, this one is a multi-step
@@ -687,6 +776,12 @@ export default function CreateVolunteerOpportunityModal({
 							removingSlotId={removingSlotId}
 							onRemoveExistingSlot={(id) => void handleRemoveExistingSlot(id)}
 							onRemovePendingSlot={handleRemovePendingSlot}
+							editingSlot={editingSlot}
+							onStartEditSlot={handleStartEditSlot}
+							onEditingSlotChange={setEditingSlot}
+							onCancelEditSlot={() => setEditingSlot(null)}
+							onSaveEditSlot={handleRequestSaveEditSlot}
+							updatingSlotId={updatingSlotId}
 							newSlot={newSlot}
 							onNewSlotChange={setNewSlot}
 							slotError={slotError}
@@ -767,6 +862,19 @@ export default function CreateVolunteerOpportunityModal({
 						onClose();
 					}}
 					onClose={() => setShowDiscardConfirm(false)}
+				/>
+			)}
+
+			{pendingSlotEdit && (
+				<ConfirmDialog
+					title={t("confirmDialog.editTimeSlot.title")}
+					message={t("confirmDialog.editTimeSlot.message", {
+						count: pendingSlotEdit.bookedCount,
+					})}
+					confirmLabel={t("confirmDialog.editTimeSlot.confirm")}
+					loading={updatingSlotId === pendingSlotEdit.id}
+					onConfirm={() => void applySlotEdit(pendingSlotEdit)}
+					onClose={() => setPendingSlotEdit(null)}
 				/>
 			)}
 		</>
