@@ -343,7 +343,7 @@
       "unknownError": "Unbekannter Fehler"
     },
     "orgApp": {
-      "backToSite": "Zurueck zu Einsatzbereit",
+      "backToSite": "Zurück zu Einsatzbereit",
       "notAuthorized": "Du hast keinen Zugriff auf diese Organisation."
     },
     "orgOpportunities": {
@@ -749,26 +749,26 @@
       "badges": {
         "first-step": {
           "name": "Erster Schritt",
-          "description": "Verdient bei deinem ersten bestaetigen Einsatz."
+          "description": "Verdient bei deinem ersten bestätigten Einsatz."
         },
         "dedicated-5": {
           "name": "Engagiert",
-          "description": "Verdient nach 5 bestaetigten Einsaetzen."
+          "description": "Verdient nach 5 bestätigten Einsätzen."
         },
         "centurion-100": {
           "name": "Jahrhundert",
-          "description": "Verdient nach 100 bestaetigten Einsaetzen."
+          "description": "Verdient nach 100 bestätigten Einsätzen."
         },
         "on-a-roll-7": {
           "name": "Auf Kurs",
-          "description": "Verdient fuer eine 7-taegige Login-Serie."
+          "description": "Verdient für eine 7-tägige Login-Serie."
         },
         "weekly-hero-4": {
           "name": "Wochenheld",
-          "description": "Verdient fuer 4 aufeinanderfolgende Aktivitaetswochen."
+          "description": "Verdient für 4 aufeinanderfolgende Aktivitätswochen."
         },
         "early-adopter": {
-          "name": "Frueheinsteiger",
+          "name": "Früheinsteiger",
           "description": "Einer der ersten Freiwilligen auf der Plattform."
         }
       }
@@ -875,15 +875,15 @@
       "tabMembers": "Mitglieder",
       "tabSettings": "Einstellungen",
       "calendarLoading": "Kalender wird geladen...",
-      "calendarError": "Kalendereintraege konnten nicht geladen werden.",
-      "calendarNoEvents": "Keine Eintraege in diesem Zeitraum.",
+      "calendarError": "Kalendereinträge konnten nicht geladen werden.",
+      "calendarNoEvents": "Keine Einträge in diesem Zeitraum.",
       "eventColorLabel": "Farbe des Eintrags",
       "eventColorSave": "Speichern",
       "eventColorSaving": "Wird gespeichert...",
       "colorSaveError": "Farbe konnte nicht gespeichert werden.",
-      "eventNavigate": "Einsatzmoglichkeit verwalten",
+      "eventNavigate": "Einsatzmöglichkeit verwalten",
       "calendarToday": "Heute",
-      "calendarBack": "Zuruck",
+      "calendarBack": "Zurück",
       "calendarNext": "Weiter",
       "calendarMonth": "Monat",
       "calendarWeek": "Woche",
