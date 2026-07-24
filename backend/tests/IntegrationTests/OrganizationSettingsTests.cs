@@ -195,6 +195,7 @@ public class OrganizationSettingsTests(
 		// Regression for #691: being an organizer of one org (which grants the
 		// platform-wide Keycloak "organisator" role) must not grant authority
 		// over a different org the same user is merely a plain member of.
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -203,16 +204,17 @@ public class OrganizationSettingsTests(
 		// the platform-wide "organisator" role.
 		await veraClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Vera's Own Org 4" }, cancellationToken);
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Escalation Test Org" }, cancellationToken);
 
-		// olaf invites vera to his org as a plain member; she accepts but is
-		// never promoted to organizer of this specific org.
-		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
-		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
-		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+		// olaf's org gains vera as a plain member via the admin-only AddMember
+		// path - never promoted to Organizer of this specific org. (Accepting
+		// an invitation now also grants Organizer capability on the invited
+		// org - #826 - so that flow no longer produces a plain-member-only
+		// state and can't be used to set this scenario up anymore.)
+		await adminClient.AddMemberAsync(org.Id.Value, new AddMemberRequest { UserId = vera.Id }, cancellationToken);
 
 		var act = () => veraClient.UpdateOrganizationAsync(
 			org.Id.Value,
@@ -296,6 +298,12 @@ public class OrganizationSettingsTests(
 		var veraOrganizations = await veraClient.GetOrganizationsAsync(cancellationToken);
 		veraOrganizations.Should().Contain(o => o.Id == org.Id.Value);
 
+		// GetOrganizationDetails is gated by the Organisator policy, a role
+		// claim baked into the JWT at mint time - vera's original token
+		// predates the "organisator" role grant that just happened as a side
+		// effect of accepting, so a fresh token is needed here (same pattern
+		// as the #691 escalation test below).
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var details = await veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		details.Members.Should().Contain(m => m.UserId == vera.Id && m.IsOrganisator);
 	}
@@ -391,10 +399,14 @@ public class OrganizationSettingsTests(
 		CancellationToken cancellationToken)
 	{
 		// Regression for #825: the org has *two* members overall, but only one
-		// Organizer (accepting an invitation does not grant the Organizer role -
-		// see #826). The old guard only blocked removal when the org had exactly
-		// one member in total, so the organizer here could leave and permanently
-		// orphan the org, since no path exists to promote the remaining member.
+		// Organizer. The old guard only blocked removal when the org had
+		// exactly one member in total, so the organizer here could leave and
+		// permanently orphan the org, since no path exists to promote the
+		// remaining member. (Accepting an invitation now also grants
+		// Organizer capability - #826 - so that flow no longer produces a
+		// plain-member-only state; the admin-only AddMember path is used
+		// here instead to reconstruct it.)
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
@@ -403,9 +415,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Sole Organizer Test Org" }, cancellationToken);
 		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
 
-		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
-		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+		await adminClient.AddMemberAsync(org.Id.Value, new AddMemberRequest { UserId = vera.Id }, cancellationToken);
 
 		var act = () => olafClient.RemoveMemberAsync(org.Id.Value, olaf.Id, cancellationToken);
 
