@@ -4,6 +4,7 @@ import { Controller } from "react-hook-form";
 import type { Control } from "react-hook-form";
 import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
+import { formatDateTime } from "../../lib/format";
 import type { OpportunityFormValues } from "./schema";
 
 interface TimeSlotRow {
@@ -88,7 +89,6 @@ export default function DetailsStep({
 	errorToken,
 }: Props) {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 	const errorRef = useRef<HTMLParagraphElement>(null);
 
 	// The publish-blocking error (e.g. "needs a time slot") can land below the
@@ -164,16 +164,9 @@ export default function DetailsStep({
 									className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
 								>
 									<span className="text-gray-700">
-										{new Date(slot.startDateTime).toLocaleString(locale, {
-											dateStyle: "medium",
-											timeStyle: "short",
-										})}{" "}
-										-{" "}
-										{new Date(slot.endDateTime).toLocaleString(locale, {
-											dateStyle: "medium",
-											timeStyle: "short",
-										})}{" "}
-										({slot.maxParticipants})
+										{formatDateTime(slot.startDateTime, i18n.language)} -{" "}
+										{formatDateTime(slot.endDateTime, i18n.language)} (
+										{slot.maxParticipants})
 									</span>
 									<button
 										type="button"
