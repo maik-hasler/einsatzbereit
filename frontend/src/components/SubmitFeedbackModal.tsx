@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
+import Button from "./Button";
 
 interface SubmitFeedbackModalProps {
 	engagementId: string;
@@ -126,13 +127,13 @@ export default function SubmitFeedbackModal({
 					>
 						{t("feedback.cancel")}
 					</button>
-					<button
+					<Button
 						type="submit"
 						disabled={submitting || rating === 0}
-						className="flex-1 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
+						className="flex-1"
 					>
 						{submitting ? t("feedback.submitting") : t("feedback.submit")}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</Modal>

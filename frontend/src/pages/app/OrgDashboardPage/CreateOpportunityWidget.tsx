@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
+import Button from "../../../components/Button";
 import WidgetCard from "./WidgetCard";
 import type { WidgetSizeClass } from "./widgetCatalog";
 import { PlusIcon } from "../../../components/QuickActionIcons";
@@ -32,15 +33,16 @@ function CreateOpportunityWidget({ organizationId, onCreated, size }: Props) {
 					{t("orgDashboard.createOpportunityWidgetDesc")}
 				</p>
 			)}
-			<button
+			<Button
 				type="button"
 				onClick={() => setShowCreateModal(true)}
 				data-testid="create-opportunity-btn"
-				className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 focus:outline-none ${compact ? "" : "mt-4"}`}
+				fullWidth
+				className={`shadow-sm ${compact ? "" : "mt-4"}`}
 			>
 				{compact && <PlusIcon />}
 				{t("orgOverview.createOpportunity")}
-			</button>
+			</Button>
 
 			{showCreateModal && (
 				<CreateVolunteerOpportunityModal

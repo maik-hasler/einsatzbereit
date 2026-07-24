@@ -14,6 +14,7 @@ import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
+import Button from "../Button";
 import { Stepper } from "./shared";
 import BasicsStep from "./BasicsStep";
 import LocationStep from "./LocationStep";
@@ -726,21 +727,19 @@ export default function CreateVolunteerOpportunityModal({
 							</button>
 						)}
 						{step < TOTAL_STEPS ? (
-							<button
+							<Button
 								type="button"
 								data-testid="modal-next"
 								onClick={() => void handleNext()}
-								className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
 							>
 								{t("createOpportunity.next")}
-							</button>
+							</Button>
 						) : (
-							<button
+							<Button
 								type="button"
 								disabled={submitting !== null}
 								data-testid="modal-submit"
 								onClick={() => void submit(false)}
-								className="rounded-xl bg-brand-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-40"
 							>
 								{submitting === "publish"
 									? isEditMode
@@ -749,7 +748,7 @@ export default function CreateVolunteerOpportunityModal({
 									: isEditMode
 										? t("createOpportunity.save")
 										: t("createOpportunity.publish")}
-							</button>
+							</Button>
 						)}
 					</div>
 				</div>

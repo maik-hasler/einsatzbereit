@@ -12,6 +12,7 @@ import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpp
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import Spinner from "../../components/Spinner";
+import Button from "../../components/Button";
 import { PlusIcon } from "../../components/QuickActionIcons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -230,17 +231,17 @@ export default function OrgOpportunitiesPage() {
 							{t("opportunities.delete")}
 						</button>
 						{isDraft ? (
-							<button
+							<Button
 								type="button"
 								onClick={() => void publish(item.id)}
 								disabled={publishingId === item.id}
 								data-testid="opportunity-publish"
-								className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
+								size="sm"
 							>
 								{publishingId === item.id
 									? t("opportunities.publishing")
 									: t("opportunities.publish")}
-							</button>
+							</Button>
 						) : (
 							<Link
 								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}

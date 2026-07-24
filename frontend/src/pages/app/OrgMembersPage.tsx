@@ -11,6 +11,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import { inputClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import Button from "../../components/Button";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 export default function OrgMembersPage() {
@@ -182,13 +183,14 @@ export default function OrgMembersPage() {
 											{candidate.email}
 										</p>
 									</div>
-									<button
+									<Button
 										type="button"
 										onClick={() => handleInviteMember(candidate.userId)}
-										className="ml-3 shrink-0 rounded-xl bg-brand-700 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-800"
+										size="sm"
+										className="ml-3 shrink-0"
 									>
 										{t("orgSettings.invite")}
-									</button>
+									</Button>
 								</li>
 							))}
 						</ul>

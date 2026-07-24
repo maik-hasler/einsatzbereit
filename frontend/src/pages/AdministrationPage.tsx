@@ -11,6 +11,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
+import Button from "../components/Button";
 
 const PAGE_SIZE = 10;
 
@@ -164,14 +165,14 @@ function OrganizationsSection() {
 											{t("administration.organizations.unverify")}
 										</button>
 									) : (
-										<button
+										<Button
 											type="button"
 											disabled={toggling === row.id}
 											onClick={() => void toggleVerified(row.id, true)}
-											className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-800 disabled:opacity-50"
+											size="sm"
 										>
 											{t("administration.organizations.verify")}
-										</button>
+										</Button>
 									)}
 								</td>
 							</tr>
@@ -305,12 +306,7 @@ function UsersSection() {
 						className={inputClass}
 					/>
 				</div>
-				<button
-					type="submit"
-					className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800"
-				>
-					{t("administration.users.searchButton")}
-				</button>
+				<Button type="submit">{t("administration.users.searchButton")}</Button>
 			</form>
 
 			<p className="mb-4 text-xs text-gray-500">

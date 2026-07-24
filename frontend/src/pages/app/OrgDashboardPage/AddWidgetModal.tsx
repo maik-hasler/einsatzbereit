@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import Modal from "../../../components/Modal";
+import Button from "../../../components/Button";
 import { WIDGET_CATALOG, type WidgetKey } from "./widgetCatalog";
 
 const WIDGET_DESC_KEY: Record<WidgetKey, string> = {
@@ -161,14 +162,9 @@ export default function AddWidgetModal({
 			</div>
 
 			<div className="flex justify-end border-t border-gray-100 px-6 py-4">
-				<button
-					type="button"
-					onClick={onClose}
-					data-testid="add-widget-done"
-					className="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-				>
+				<Button type="button" onClick={onClose} data-testid="add-widget-done">
 					{t("orgDashboard.addWidgetDone")}
-				</button>
+				</Button>
 			</div>
 		</Modal>
 	);
