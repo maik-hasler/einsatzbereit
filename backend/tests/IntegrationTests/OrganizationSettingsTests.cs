@@ -524,6 +524,86 @@ public class OrganizationSettingsTests(
 		stillThere.Id.Should().Be(org.Id.Value);
 	}
 
+	// ── VerifyOrganization (#885) ────────────────────────────────────────────
+
+	[Test]
+	public async Task VerifyOrganization_ShouldReturn401_WhenNotAuthenticated(
+		CancellationToken cancellationToken)
+	{
+		var client = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => client.VerifyOrganizationAsync(
+			Guid.NewGuid(), new VerifyOrganizationRequest { IsVerified = true }, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(401);
+	}
+
+	[Test]
+	public async Task VerifyOrganization_ShouldReturn403_WhenRequestingUserIsNotAdmin(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Verify 403 Test Org" }, cancellationToken);
+
+		var act = () => olafClient.VerifyOrganizationAsync(
+			org.Id.Value, new VerifyOrganizationRequest { IsVerified = true }, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.IsVerified.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task VerifyOrganization_ShouldReturn204AndPersistFlag_WhenAdminVerifies(
+		CancellationToken cancellationToken)
+	{
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Verify Success Test Org" }, cancellationToken);
+
+		await adminClient.VerifyOrganizationAsync(
+			org.Id.Value, new VerifyOrganizationRequest { IsVerified = true }, cancellationToken);
+
+		var result = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		result.IsVerified.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task VerifyOrganization_ShouldReturn204AndPersistFlag_WhenAdminRevokesVerification(
+		CancellationToken cancellationToken)
+	{
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Revoke Verify Test Org" }, cancellationToken);
+		await adminClient.VerifyOrganizationAsync(
+			org.Id.Value, new VerifyOrganizationRequest { IsVerified = true }, cancellationToken);
+
+		await adminClient.VerifyOrganizationAsync(
+			org.Id.Value, new VerifyOrganizationRequest { IsVerified = false }, cancellationToken);
+
+		var result = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		result.IsVerified.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task VerifyOrganization_ShouldReturn404_WhenOrganizationDoesNotExist(
+		CancellationToken cancellationToken)
+	{
+		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
+
+		var act = () => adminClient.VerifyOrganizationAsync(
+			Guid.NewGuid(), new VerifyOrganizationRequest { IsVerified = true }, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);
