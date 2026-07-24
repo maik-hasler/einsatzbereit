@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
 	OpportunityFeedbackSummary,
+	TimeSlotDetail,
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -42,6 +43,14 @@ export default function EngagementManagementPage() {
 	};
 
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+
+	const timeSlotsById = useMemo(() => {
+		const map = new Map<string, TimeSlotDetail>();
+		for (const slot of opportunity?.timeSlots ?? []) {
+			map.set(slot.id, slot);
+		}
+		return map;
+	}, [opportunity]);
 
 	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [feedback, setFeedback] = useState<OpportunityFeedbackSummary | null>(
@@ -270,9 +279,7 @@ export default function EngagementManagementPage() {
 									)}
 									{e.timeSlotId &&
 										(() => {
-											const slot = opportunity?.timeSlots.find(
-												(s) => s.id === e.timeSlotId,
-											);
+											const slot = timeSlotsById.get(e.timeSlotId);
 											return (
 												<p className="mt-1 text-xs text-gray-500">
 													{slot
