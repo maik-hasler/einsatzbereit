@@ -147,6 +147,10 @@ export default function App() {
 					path="/my-engagements"
 					element={<Navigate to="/profile?tab=engagements" replace />}
 				/>
+				{/* Bookmark-compat only (#843): no in-app link points here since the
+				profile consolidation (#508, 2026-06-22). Retention decision:
+				wiki/bundle/decisions/bookmark-compat-redirect-retention.md -
+				fair game to remove after 2026-12-22. */}
 				<Route path="/account" element={<Navigate to="/profile" replace />} />
 				<Route
 					path="/profile"
@@ -169,6 +173,10 @@ export default function App() {
 					path="/organizations/:organizationId/engagements"
 					element={<OrgAppRedirect tab="dashboard/opportunities" />}
 				/>
+				{/* Bookmark-compat only (#843): no in-app link points here since the
+				profile consolidation (#508, 2026-06-22). Retention decision:
+				wiki/bundle/decisions/bookmark-compat-redirect-retention.md -
+				fair game to remove after 2026-12-22. */}
 				<Route
 					path="/achievements"
 					element={<Navigate to="/profile?tab=achievements" replace />}
@@ -186,6 +194,10 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
+				{/* Bookmark-compat only (#843): no in-app link points here since the
+				/opportunities redirect fix (#271/#297, 2026-05-24). Retention
+				decision: wiki/bundle/decisions/bookmark-compat-redirect-retention.md
+				- fair game to remove after 2026-11-24. */}
 				<Route
 					path="/opportunities"
 					element={<Navigate to="/#opportunities" replace />}
