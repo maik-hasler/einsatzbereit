@@ -3,6 +3,7 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
+using Application.Common.Storage;
 using Application.Users.UploadUserAvatar.v1;
 using Domain.Primitives;
 using Domain.Users;
@@ -14,11 +15,6 @@ namespace Api.Users.UploadUserAvatar.v1;
 internal sealed class UploadUserAvatarEndpoint
 	: IEndpoint
 {
-	private const long MaxFileSizeBytes = 2 * 1024 * 1024;
-
-	private static readonly string[] AllowedContentTypes =
-		["image/jpeg", "image/png", "image/webp"];
-
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
 		app.MapPut("/users/me/avatar", UploadUserAvatarAsync)
 			.WithName("UploadUserAvatar")
@@ -42,26 +38,7 @@ internal sealed class UploadUserAvatarEndpoint
 			? UserId.Create(uid).GetValueOrThrow()
 			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		if (file.Length == 0)
-		{
-			return Results.Problem(
-				"Avatar image must not be empty.",
-				statusCode: StatusCodes.Status400BadRequest);
-		}
-
-		if (file.Length > MaxFileSizeBytes)
-		{
-			return Results.Problem(
-				"Avatar image must not exceed 2 MB.",
-				statusCode: StatusCodes.Status400BadRequest);
-		}
-
-		if (!AllowedContentTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
-		{
-			return Results.Problem(
-				"Avatar image must be a JPEG, PNG or WebP image.",
-				statusCode: StatusCodes.Status400BadRequest);
-		}
+		ImageUploadValidator.EnsureValid(file.Length, file.ContentType, "Avatar");
 
 		using var memoryStream = new MemoryStream();
 		await file.CopyToAsync(memoryStream, cancellationToken);

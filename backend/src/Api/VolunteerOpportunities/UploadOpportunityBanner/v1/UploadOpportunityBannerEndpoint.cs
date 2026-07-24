@@ -3,6 +3,7 @@ using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
+using Application.Common.Storage;
 using Application.VolunteerOpportunities.UploadOpportunityBanner.v1;
 using Domain.Primitives;
 using Domain.Users;
@@ -14,11 +15,6 @@ namespace Api.VolunteerOpportunities.UploadOpportunityBanner.v1;
 internal sealed class UploadOpportunityBannerEndpoint
 	: IEndpoint
 {
-	private const long MaxFileSizeBytes = 2 * 1024 * 1024;
-
-	private static readonly string[] AllowedContentTypes =
-		["image/jpeg", "image/png", "image/webp"];
-
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
 		app.MapPut("/volunteer-opportunities/{opportunityId:guid}/banner", UploadOpportunityBannerAsync)
 			.WithName("UploadOpportunityBanner")
@@ -44,26 +40,7 @@ internal sealed class UploadOpportunityBannerEndpoint
 			? UserId.Create(uid).GetValueOrThrow()
 			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		if (file.Length == 0)
-		{
-			return Results.Problem(
-				"Banner image must not be empty.",
-				statusCode: StatusCodes.Status400BadRequest);
-		}
-
-		if (file.Length > MaxFileSizeBytes)
-		{
-			return Results.Problem(
-				"Banner image must not exceed 2 MB.",
-				statusCode: StatusCodes.Status400BadRequest);
-		}
-
-		if (!AllowedContentTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
-		{
-			return Results.Problem(
-				"Banner image must be a JPEG, PNG or WebP image.",
-				statusCode: StatusCodes.Status400BadRequest);
-		}
+		ImageUploadValidator.EnsureValid(file.Length, file.ContentType, "Banner");
 
 		using var memoryStream = new MemoryStream();
 		await file.CopyToAsync(memoryStream, cancellationToken);
