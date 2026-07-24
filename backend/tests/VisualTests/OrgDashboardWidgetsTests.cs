@@ -67,9 +67,14 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// Settings widget surfaces the org identity and a link back to the
 		// full Settings tab instead of duplicating the whole edit form.
-		// #834: singular member count must use "1 member", not "1 members" -
-		// word-boundary regex so a regression back to the plural form fails.
-		await Expect(settingsWidget).ToContainTextAsync(new Regex(@"\b1 member\b"));
+		// #834: singular member count must use "1 member", not "1 members".
+		// Assert on the member-count link's own text rather than the whole
+		// widget's flattened text - Playwright concatenates sibling DOM text
+		// with no separator, so the org name's random Guid suffix can glue
+		// directly onto the leading "1" (e.g. "...dc97351 member") and defeat
+		// a regex checked against the whole section.
+		await Expect(settingsWidget.GetByRole(AriaRole.Link, new() { Name = "member" }))
+			.ToHaveTextAsync("1 member");
 		await Expect(settingsWidget.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }))
 			.ToBeVisibleAsync();
 
