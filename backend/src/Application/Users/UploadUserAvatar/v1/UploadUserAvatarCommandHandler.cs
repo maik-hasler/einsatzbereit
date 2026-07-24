@@ -14,7 +14,7 @@ internal sealed class UploadUserAvatarCommandHandler(
 		UploadUserAvatarCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		ImageUploadValidator.EnsureValid(request.Content.Length, request.ContentType, "Avatar");
+		var contentType = ImageUploadValidator.EnsureValid(request.Content, request.ContentType, "Avatar");
 
 		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
 
@@ -24,11 +24,11 @@ internal sealed class UploadUserAvatarCommandHandler(
 			await dbContext.Users.AddAsync(user, cancellationToken);
 		}
 
-		var ext = ImageUploadValidator.GetExtension(request.ContentType);
+		var ext = ImageUploadValidator.GetExtension(contentType);
 		var objectKey = $"user-avatars/{request.UserId.Value}{ext}";
 
 		using var stream = new MemoryStream(request.Content);
-		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, request.ContentType, cancellationToken);
+		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, contentType, cancellationToken);
 
 		user.SetAvatarUrl(url);
 

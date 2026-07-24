@@ -72,7 +72,7 @@ export default function VolunteerOpportunitiesList() {
 
 	const filterBarRef = useRef<HTMLDivElement>(null);
 
-	const { items, page, setPage, pageCount, loading, loadingMore, error } =
+	const { items, loading, loadingMore, error, hasMore, loadMore } =
 		useVolunteerOpportunitiesData({
 			occurrence,
 			participationType,
@@ -626,10 +626,9 @@ export default function VolunteerOpportunitiesList() {
 				items={items}
 				hasFilters={hasFilters}
 				onClearFilters={clearFilters}
-				page={page}
-				pageCount={pageCount}
+				hasMore={hasMore}
 				loadingMore={loadingMore}
-				onLoadMore={() => setPage((p) => p + 1)}
+				onLoadMore={loadMore}
 			/>
 		</div>
 	);

@@ -67,4 +67,68 @@ public class ImageUploadValidatorTests
 		// Assert
 		extension.Should().Be(expectedExtension);
 	}
+
+	private static byte[] JpegBytes => [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46];
+
+	private static byte[] PngBytes => [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00];
+
+	private static byte[] WebpBytes =>
+		[0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50];
+
+	[Test]
+	public void EnsureValid_WithContentBytes_ShouldReturnDetectedType_ForJpegMagicBytes()
+	{
+		// Act
+		var contentType = ImageUploadValidator.EnsureValid(JpegBytes, "image/jpeg", "Avatar");
+
+		// Assert
+		contentType.Should().Be("image/jpeg");
+	}
+
+	[Test]
+	public void EnsureValid_WithContentBytes_ShouldReturnDetectedType_ForPngMagicBytes()
+	{
+		// Act
+		var contentType = ImageUploadValidator.EnsureValid(PngBytes, "image/png", "Logo");
+
+		// Assert
+		contentType.Should().Be("image/png");
+	}
+
+	[Test]
+	public void EnsureValid_WithContentBytes_ShouldReturnDetectedType_ForWebpMagicBytes()
+	{
+		// Act
+		var contentType = ImageUploadValidator.EnsureValid(WebpBytes, "image/webp", "Banner");
+
+		// Assert
+		contentType.Should().Be("image/webp");
+	}
+
+	[Test]
+	public void EnsureValid_WithContentBytes_ShouldThrow_WhenDeclaredTypeIsSpoofed()
+	{
+		// Arrange: declares image/png but the bytes are neither JPEG, PNG nor WebP.
+		var htmlBytes = "<script>alert(1)</script>"u8.ToArray();
+
+		// Act
+		Action act = () => ImageUploadValidator.EnsureValid(htmlBytes, "image/png", "Avatar");
+
+		// Assert
+		act.Should().Throw<ResultFailureException>()
+			.WithMessage("Avatar image must be a JPEG, PNG or WebP image.")
+			.Which.Error.Type.Should().Be(ErrorType.Validation);
+	}
+
+	[Test]
+	public void EnsureValid_WithContentBytes_ShouldReturnRealType_WhenDeclaredTypeDoesNotMatchActualBytes()
+	{
+		// Arrange: client declares PNG but the actual bytes are a valid JPEG - the
+		// detected, real type must win over the client-supplied header.
+		// Act
+		var contentType = ImageUploadValidator.EnsureValid(JpegBytes, "image/png", "Avatar");
+
+		// Assert
+		contentType.Should().Be("image/jpeg");
+	}
 }

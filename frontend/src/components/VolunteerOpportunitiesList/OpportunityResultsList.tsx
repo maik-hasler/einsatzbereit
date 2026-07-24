@@ -10,8 +10,7 @@ export default function OpportunityResultsList({
 	items,
 	hasFilters,
 	onClearFilters,
-	page,
-	pageCount,
+	hasMore,
 	loadingMore,
 	onLoadMore,
 }: {
@@ -20,8 +19,7 @@ export default function OpportunityResultsList({
 	items: VolunteerOpportunitySummary[];
 	hasFilters: boolean;
 	onClearFilters: () => void;
-	page: number;
-	pageCount: number;
+	hasMore: boolean;
 	loadingMore: boolean;
 	onLoadMore: () => void;
 }) {
@@ -79,7 +77,7 @@ export default function OpportunityResultsList({
 						</ul>
 					)}
 
-					{items.length > 0 && page < pageCount && (
+					{items.length > 0 && hasMore && (
 						<div className="mt-8 flex justify-center">
 							<button
 								onClick={onLoadMore}

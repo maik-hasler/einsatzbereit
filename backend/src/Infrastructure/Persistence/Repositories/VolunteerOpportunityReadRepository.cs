@@ -248,6 +248,18 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (result is null)
 			return null;
 
+		if (result.Status != OpportunityStatus.Published)
+		{
+			var isOrganizer = requestingUserId is Guid requestingUserId_ &&
+				await dbContext.IsOrganizerAsync(
+					result.OrganizationId,
+					UserId.Create(requestingUserId_).GetValueOrThrow(),
+					cancellationToken);
+
+			if (!isOrganizer)
+				return null;
+		}
+
 		var timeSlots = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Id == opportunityId_)
 			.SelectMany(vo => vo.TimeSlots)

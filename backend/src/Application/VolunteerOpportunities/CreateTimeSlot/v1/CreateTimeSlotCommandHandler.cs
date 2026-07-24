@@ -28,7 +28,9 @@ internal sealed class CreateTimeSlotCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var count = Math.Clamp(request.RecurrenceCount, 1, MaxRecurrenceCount);
+		var count = request.RecurrenceFrequency is null
+			? 1
+			: Math.Clamp(request.RecurrenceCount, 1, MaxRecurrenceCount);
 		var duration = request.EndDateTime - request.StartDateTime;
 		var slots = new List<TimeSlot>(count);
 		var now = DateTimeOffset.UtcNow;

@@ -144,6 +144,27 @@ public class CreateTimeSlotCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldCreateSingleSlot_WhenFrequencyIsNullEvenIfCountIsGreaterThan1(
+		CancellationToken cancellationToken)
+	{
+		var opportunity = CreateOpportunity();
+		var opportunityId = Guid.CreateVersion7();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new CreateTimeSlotCommand(
+			opportunityId, BaseStart, BaseEnd, 10, DefaultRequestingUserId,
+			RecurrenceFrequency: null, RecurrenceCount: 5);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().HaveCount(1);
+		result[0].StartDateTime.Should().Be(BaseStart);
+		result[0].EndDateTime.Should().Be(BaseEnd);
+	}
+
+	[Test]
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
 	{

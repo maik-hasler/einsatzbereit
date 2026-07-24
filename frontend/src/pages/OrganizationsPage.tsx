@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { PublicOrganizationSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useLoadMore } from "../hooks/useLoadMore";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -20,54 +21,20 @@ export default function OrganizationsPage() {
 	const search = searchParams.get("search") ?? "";
 	const [searchInput, setSearchInput] = useState(search);
 	const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const prevSearchRef = useRef(search);
 
-	const [items, setItems] = useState<PublicOrganizationSummary[]>([]);
-	const [page, setPage] = useState(1);
-	const [pageCount, setPageCount] = useState(1);
-	const [loading, setLoading] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const { items, loading, loadingMore, error, hasMore, loadMore } =
+		useLoadMore<PublicOrganizationSummary>(
+			(pageNumber) =>
+				api.getPublicOrganizations(pageNumber, PAGE_SIZE, search || undefined),
+			{
+				deps: [search],
+				getErrorMessage: (err) =>
+					getApiErrorMessage(err, t("error.serverError")),
+			},
+		);
 
 	usePageTitle(t("organizationsPage.title"));
 	usePageToolbar([{ label: t("breadcrumb.organizations") }]);
-
-	useEffect(() => {
-		if (prevSearchRef.current === search) return;
-		prevSearchRef.current = search;
-		setItems([]);
-		setPage(1);
-	}, [search]);
-
-	useEffect(() => {
-		let cancelled = false;
-		if (page > 1) setLoadingMore(true);
-		else setLoading(true);
-		setError(null);
-
-		api
-			.getPublicOrganizations(page, PAGE_SIZE, search || undefined)
-			.then((result) => {
-				if (cancelled) return;
-				if (page === 1) setItems(result.items);
-				else setItems((prev) => [...prev, ...result.items]);
-				setPageCount(result.pageCount ?? 1);
-			})
-			.catch((err) => {
-				if (cancelled) return;
-				setError(getApiErrorMessage(err, t("error.serverError")));
-			})
-			.finally(() => {
-				if (cancelled) return;
-				setLoading(false);
-				setLoadingMore(false);
-			});
-
-		return () => {
-			cancelled = true;
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [page, search]);
 
 	function commitSearch(value: string) {
 		setSearchParams(
@@ -222,10 +189,10 @@ export default function OrganizationsPage() {
 							))}
 						</ul>
 
-						{page < pageCount && (
+						{hasMore && (
 							<div className="mt-8 flex justify-center">
 								<button
-									onClick={() => setPage((p) => p + 1)}
+									onClick={loadMore}
 									disabled={loadingMore}
 									className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
 								>
