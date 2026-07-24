@@ -14,7 +14,7 @@ import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
 import SubmitFeedbackModal from "../../components/SubmitFeedbackModal";
-import Spinner from "../../components/Spinner";
+import Skeleton from "../../components/Skeleton";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -280,8 +280,24 @@ export default function ActivitySection() {
 			</div>
 
 			{engagementsLoading && (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("myEngagements.loading")} />
+				<div role="status" className="space-y-3">
+					<span className="sr-only">{t("myEngagements.loading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							aria-hidden="true"
+							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+						>
+							<div className="flex items-start justify-between gap-3">
+								<div className="min-w-0 flex-1 space-y-2">
+									<Skeleton className="h-4 w-2/3" />
+									<Skeleton className="h-3 w-1/3" />
+									<Skeleton className="h-3 w-1/2" />
+								</div>
+								<Skeleton className="h-5 w-20 shrink-0 rounded-full" />
+							</div>
+						</div>
+					))}
 				</div>
 			)}
 			{engagementsError && (
