@@ -147,6 +147,7 @@ jobs:
     name: Publish Backend
     needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       IMAGE_NAME: ${{ github.repository }}-backend
     outputs:
@@ -194,6 +195,7 @@ jobs:
   publish-frontend:
     name: Publish Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       IMAGE_NAME: ${{ github.repository }}-frontend
     steps:
@@ -263,6 +265,7 @@ jobs:
   publish-keycloak:
     name: Publish Keycloak
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       IMAGE_NAME: ${{ github.repository }}-keycloak
     steps:
@@ -317,6 +320,7 @@ jobs:
     needs: [publish-backend, publish-frontend, publish-keycloak]
     if: needs.publish-backend.outputs.prerelease == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: staging
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

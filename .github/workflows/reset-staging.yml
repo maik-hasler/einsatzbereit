@@ -15,6 +15,7 @@ jobs:
   reset-staging:
     name: Reset Staging Data
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: staging
     steps:
       - name: Verify confirmation
