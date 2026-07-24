@@ -161,9 +161,22 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		await removeButton.ClickAsync();
 		await Expect(removeButton).ToBeHiddenAsync(new() { Timeout = 10_000 });
 
-		var afterResponse = await http.GetAsync($"/v1/organizations/{organizationId}");
-		afterResponse.EnsureSuccessStatusCode();
-		var afterOrg = await afterResponse.Content.ReadFromJsonAsync<JsonElement>();
+		// The DELETE the button click awaited has already committed by the time
+		// it resolves (TransactionPipelineBehavior commits before the endpoint
+		// returns), but this is a separate HTTP connection from a fresh
+		// HttpClient - poll briefly instead of asserting on a single read, to
+		// absorb any connection-pool/scheduling jitter between the two rather
+		// than flake on it (observed intermittently in CI - see #946).
+		JsonElement afterOrg = default;
+		for (var attempt = 0; ; attempt++)
+		{
+			var afterResponse = await http.GetAsync($"/v1/organizations/{organizationId}");
+			afterResponse.EnsureSuccessStatusCode();
+			afterOrg = await afterResponse.Content.ReadFromJsonAsync<JsonElement>();
+			if (afterOrg.GetProperty("logoUrl").ValueKind == JsonValueKind.Null || attempt >= 5)
+				break;
+			await Task.Delay(500);
+		}
 		afterOrg.GetProperty("logoUrl").ValueKind.Should().Be(JsonValueKind.Null);
 	}
 

@@ -1,10 +1,14 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { buildOrganizationFormSchema } from "../../lib/organizationFormSchema";
+import type { OrganizationFormValues } from "../../lib/organizationFormSchema";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
@@ -39,17 +43,32 @@ export default function OrgSettingsPage() {
 	const navigate = useNavigate();
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
-	const [form, setForm] = useState({
-		name: org.name,
-		description: org.description ?? "",
-		contactEmail: org.contactEmail ?? "",
-		contactPhone: org.contactPhone ?? "",
-		website: org.website ?? "",
-		street: org.address?.street ?? "",
-		houseNumber: org.address?.houseNumber ?? "",
-		zipCode: org.address?.zipCode ?? "",
-		city: org.address?.city ?? "",
+	function organizationToFormValues(): OrganizationFormValues {
+		return {
+			name: org.name,
+			description: org.description ?? "",
+			contactEmail: org.contactEmail ?? "",
+			contactPhone: org.contactPhone ?? "",
+			website: org.website ?? "",
+			street: org.address?.street ?? "",
+			houseNumber: org.address?.houseNumber ?? "",
+			zipCode: org.address?.zipCode ?? "",
+			city: org.address?.city ?? "",
+		};
+	}
+
+	const schema = useMemo(() => buildOrganizationFormSchema(t), [t]);
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { errors },
+	} = useForm<OrganizationFormValues>({
+		resolver: zodResolver(schema),
+		mode: "onBlur",
+		defaultValues: organizationToFormValues(),
 	});
+
 	const [logoUrl, setLogoUrl] = useState<string | null>(org.logoUrl ?? null);
 	const [uploadingLogo, setUploadingLogo] = useState(false);
 	const [removingLogo, setRemovingLogo] = useState(false);
@@ -65,33 +84,20 @@ export default function OrgSettingsPage() {
 	const [deleting, setDeleting] = useState(false);
 	const isSoleMember = org.members.length === 1;
 
-	const hasAddress =
-		form.street || form.houseNumber || form.zipCode || form.city;
-
 	useEditModeQuickActions({
 		editing,
 		saving,
 		onEdit: () => setEditing(true),
-		// Goes through the form's native submit (not handleSave() directly) so
-		// the browser still runs constraint validation (e.g. the required name
-		// field) and focuses/announces the offending field, same as pressing
-		// Enter in the form used to.
+		// Goes through the form's native submit (not onSubmit() directly) so
+		// react-hook-form's handleSubmit runs the same zod validation, error
+		// display and focus-the-offending-field behavior as pressing Enter in
+		// the form would.
 		onSave: () => formRef.current?.requestSubmit(),
 		onCancel: handleCancelEdit,
 	});
 
 	function handleCancelEdit() {
-		setForm({
-			name: org.name,
-			description: org.description ?? "",
-			contactEmail: org.contactEmail ?? "",
-			contactPhone: org.contactPhone ?? "",
-			website: org.website ?? "",
-			street: org.address?.street ?? "",
-			houseNumber: org.address?.houseNumber ?? "",
-			zipCode: org.address?.zipCode ?? "",
-			city: org.address?.city ?? "",
-		});
+		reset(organizationToFormValues());
 		setLogoError(null);
 		setSettingsError(null);
 		setEditing(false);
@@ -133,24 +139,30 @@ export default function OrgSettingsPage() {
 		}
 	}
 
-	async function handleSave(e: React.FormEvent) {
-		e.preventDefault();
+	async function onSubmit(values: OrganizationFormValues) {
 		setSaving(true);
 		setSettingsError(null);
 		setSuccessMessage(null);
+
+		const hasAddress =
+			values.street.trim() ||
+			values.houseNumber.trim() ||
+			values.zipCode.trim() ||
+			values.city.trim();
+
 		try {
 			await api.updateOrganization(org.id, {
-				name: form.name,
-				description: form.description || undefined,
-				contactEmail: form.contactEmail || undefined,
-				contactPhone: form.contactPhone || undefined,
-				website: form.website || undefined,
+				name: values.name,
+				description: values.description || undefined,
+				contactEmail: values.contactEmail || undefined,
+				contactPhone: values.contactPhone || undefined,
+				website: values.website || undefined,
 				address: hasAddress
 					? {
-							street: form.street,
-							houseNumber: form.houseNumber,
-							zipCode: form.zipCode,
-							city: form.city,
+							street: values.street,
+							houseNumber: values.houseNumber,
+							zipCode: values.zipCode,
+							city: values.city,
 						}
 					: undefined,
 			});
@@ -240,7 +252,11 @@ export default function OrgSettingsPage() {
 							<ErrorBanner message={settingsError} className="mb-4" />
 						)}
 
-						<form ref={formRef} onSubmit={handleSave} className="space-y-5">
+						<form
+							ref={formRef}
+							onSubmit={(e) => void handleSubmit(onSubmit)(e)}
+							className="space-y-5"
+						>
 							<div>
 								<p className="mb-1 block text-sm font-medium text-gray-700">
 									{t("orgSettings.fieldLogo")}
@@ -302,13 +318,21 @@ export default function OrgSettingsPage() {
 							<Field label={t("orgSettings.fieldName")} id="org-name">
 								<input
 									id="org-name"
-									required
-									value={form.name}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, name: e.target.value }))
-									}
+									aria-invalid={errors.name ? true : undefined}
+									aria-describedby={errors.name ? "org-name-error" : undefined}
+									aria-required="true"
 									className={inputClass}
+									{...register("name")}
 								/>
+								{errors.name && (
+									<p
+										id="org-name-error"
+										className="mt-1 text-xs text-red-600"
+										role="alert"
+									>
+										{errors.name.message}
+									</p>
+								)}
 							</Field>
 
 							<Field
@@ -318,12 +342,23 @@ export default function OrgSettingsPage() {
 								<textarea
 									id="org-description"
 									rows={3}
-									value={form.description}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, description: e.target.value }))
+									maxLength={1000}
+									aria-invalid={errors.description ? true : undefined}
+									aria-describedby={
+										errors.description ? "org-description-error" : undefined
 									}
 									className={inputClass}
+									{...register("description")}
 								/>
+								{errors.description && (
+									<p
+										id="org-description-error"
+										className="mt-1 text-xs text-red-600"
+										role="alert"
+									>
+										{errors.description.message}
+									</p>
+								)}
 							</Field>
 
 							<Field
@@ -333,37 +368,70 @@ export default function OrgSettingsPage() {
 								<input
 									id="org-contact-email"
 									type="email"
-									value={form.contactEmail}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, contactEmail: e.target.value }))
+									maxLength={254}
+									aria-invalid={errors.contactEmail ? true : undefined}
+									aria-describedby={
+										errors.contactEmail ? "org-contact-email-error" : undefined
 									}
 									className={inputClass}
+									{...register("contactEmail")}
 								/>
+								{errors.contactEmail && (
+									<p
+										id="org-contact-email-error"
+										className="mt-1 text-xs text-red-600"
+										role="alert"
+									>
+										{errors.contactEmail.message}
+									</p>
+								)}
 							</Field>
 
 							<Field label={t("orgSettings.fieldPhone")} id="org-phone">
 								<input
 									id="org-phone"
 									type="tel"
-									value={form.contactPhone}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, contactPhone: e.target.value }))
+									maxLength={30}
+									aria-invalid={errors.contactPhone ? true : undefined}
+									aria-describedby={
+										errors.contactPhone ? "org-phone-error" : undefined
 									}
 									className={inputClass}
+									{...register("contactPhone")}
 								/>
+								{errors.contactPhone && (
+									<p
+										id="org-phone-error"
+										className="mt-1 text-xs text-red-600"
+										role="alert"
+									>
+										{errors.contactPhone.message}
+									</p>
+								)}
 							</Field>
 
 							<Field label={t("orgSettings.fieldWebsite")} id="org-website">
 								<input
 									id="org-website"
 									type="url"
-									value={form.website}
-									onChange={(e) =>
-										setForm((f) => ({ ...f, website: e.target.value }))
-									}
+									maxLength={500}
 									placeholder="https://"
+									aria-invalid={errors.website ? true : undefined}
+									aria-describedby={
+										errors.website ? "org-website-error" : undefined
+									}
 									className={inputClass}
+									{...register("website")}
 								/>
+								{errors.website && (
+									<p
+										id="org-website-error"
+										className="mt-1 text-xs text-red-600"
+										role="alert"
+									>
+										{errors.website.message}
+									</p>
+								)}
 							</Field>
 
 							<fieldset className="rounded-xl border border-gray-200 p-4">
@@ -377,12 +445,23 @@ export default function OrgSettingsPage() {
 										</label>
 										<input
 											id="org-street"
-											value={form.street}
-											onChange={(e) =>
-												setForm((f) => ({ ...f, street: e.target.value }))
+											maxLength={200}
+											aria-invalid={errors.street ? true : undefined}
+											aria-describedby={
+												errors.street ? "org-street-error" : undefined
 											}
 											className={inputClass}
+											{...register("street")}
 										/>
+										{errors.street && (
+											<p
+												id="org-street-error"
+												className="mt-1 text-xs text-red-600"
+												role="alert"
+											>
+												{errors.street.message}
+											</p>
+										)}
 									</div>
 									<div>
 										<label htmlFor="org-house-number" className={labelClass}>
@@ -390,12 +469,25 @@ export default function OrgSettingsPage() {
 										</label>
 										<input
 											id="org-house-number"
-											value={form.houseNumber}
-											onChange={(e) =>
-												setForm((f) => ({ ...f, houseNumber: e.target.value }))
+											maxLength={20}
+											aria-invalid={errors.houseNumber ? true : undefined}
+											aria-describedby={
+												errors.houseNumber
+													? "org-house-number-error"
+													: undefined
 											}
 											className={inputClass}
+											{...register("houseNumber")}
 										/>
+										{errors.houseNumber && (
+											<p
+												id="org-house-number-error"
+												className="mt-1 text-xs text-red-600"
+												role="alert"
+											>
+												{errors.houseNumber.message}
+											</p>
+										)}
 									</div>
 									<div>
 										<label htmlFor="org-zip" className={labelClass}>
@@ -404,12 +496,22 @@ export default function OrgSettingsPage() {
 										<input
 											id="org-zip"
 											maxLength={5}
-											value={form.zipCode}
-											onChange={(e) =>
-												setForm((f) => ({ ...f, zipCode: e.target.value }))
+											aria-invalid={errors.zipCode ? true : undefined}
+											aria-describedby={
+												errors.zipCode ? "org-zip-error" : undefined
 											}
 											className={inputClass}
+											{...register("zipCode")}
 										/>
+										{errors.zipCode && (
+											<p
+												id="org-zip-error"
+												className="mt-1 text-xs text-red-600"
+												role="alert"
+											>
+												{errors.zipCode.message}
+											</p>
+										)}
 									</div>
 									<div className="col-span-2">
 										<label htmlFor="org-city" className={labelClass}>
@@ -417,12 +519,23 @@ export default function OrgSettingsPage() {
 										</label>
 										<input
 											id="org-city"
-											value={form.city}
-											onChange={(e) =>
-												setForm((f) => ({ ...f, city: e.target.value }))
+											maxLength={100}
+											aria-invalid={errors.city ? true : undefined}
+											aria-describedby={
+												errors.city ? "org-city-error" : undefined
 											}
 											className={inputClass}
+											{...register("city")}
 										/>
+										{errors.city && (
+											<p
+												id="org-city-error"
+												className="mt-1 text-xs text-red-600"
+												role="alert"
+											>
+												{errors.city.message}
+											</p>
+										)}
 									</div>
 								</div>
 							</fieldset>
