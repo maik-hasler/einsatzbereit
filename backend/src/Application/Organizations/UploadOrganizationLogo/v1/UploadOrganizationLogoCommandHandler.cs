@@ -17,7 +17,7 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 		UploadOrganizationLogoCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		ImageUploadValidator.EnsureValid(request.Content.Length, request.ContentType, "Logo");
+		var contentType = ImageUploadValidator.EnsureValid(request.Content, request.ContentType, "Logo");
 
 		var organization = await dbContext.Organizations.FindAsync(
 			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken)
@@ -29,11 +29,11 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var ext = ImageUploadValidator.GetExtension(request.ContentType);
+		var ext = ImageUploadValidator.GetExtension(contentType);
 		var objectKey = $"organization-logos/{request.OrganizationId}{ext}";
 
 		using var stream = new MemoryStream(request.Content);
-		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, request.ContentType, cancellationToken);
+		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, contentType, cancellationToken);
 
 		organization.SetLogoUrl(url);
 
