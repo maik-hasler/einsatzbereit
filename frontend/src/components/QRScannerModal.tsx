@@ -91,6 +91,7 @@ export default function QRScannerModal({
 				try {
 					const detector = new BarcodeDetector({ formats: ["qr_code"] });
 					const barcodes = await detector.detect(video);
+					let sawNotFound = false;
 					for (const barcode of barcodes) {
 						const raw = barcode.rawValue.trim();
 						if (!UUID_RE.test(raw)) continue;
@@ -98,7 +99,7 @@ export default function QRScannerModal({
 							(e) => e.id === raw && e.status === "Confirmed" && !e.isCheckedIn,
 						);
 						if (!match) {
-							setScanError(t("checkIn.qrNotFound"));
+							sawNotFound = true;
 							continue;
 						}
 						alive = false;
@@ -112,7 +113,11 @@ export default function QRScannerModal({
 						}
 						return;
 					}
-					setScanError(null);
+					// A single state update per iteration - setting then immediately
+					// clearing scanError in the same synchronous pass would just have
+					// React's automatic batching collapse both into the last write,
+					// so the "not found" message would never actually render.
+					setScanError(sawNotFound ? t("checkIn.qrNotFound") : null);
 				} catch {
 					// detection failure - retry on next tick
 				}

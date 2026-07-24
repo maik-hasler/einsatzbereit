@@ -81,7 +81,7 @@ export default function UserProfilePage() {
 				profile.skills.length > 0 ||
 				profile.languages.length > 0 ||
 				profile.preferredContact) && (
-				<div className="mx-auto mb-8 max-w-2xl space-y-5">
+				<div className="mb-8 max-w-2xl space-y-5">
 					<ProfileFieldsView
 						bio={profile.bio}
 						skills={profile.skills}
