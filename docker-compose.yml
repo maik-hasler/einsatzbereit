@@ -68,6 +68,11 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
       KC_SPI_REALM_IMPORTER_FILE_IMPORT_BEHAVIOR: OVERWRITE_EXISTING
+      # Resolves the "${KEYCLOAK_BACKEND_SECRET}" placeholder in the imported
+      # realm JSON (keycloak/realms/einsatzbereit-realm.json) into the backend
+      # client's actual secret. Must match the backend service's own
+      # Keycloak__ClientSecret below.
+      KEYCLOAK_BACKEND_SECRET: ${KEYCLOAK_BACKEND_SECRET:?set KEYCLOAK_BACKEND_SECRET in .env}
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy

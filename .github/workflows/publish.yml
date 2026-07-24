@@ -338,9 +338,10 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           KEYCLOAK_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
-          # Backend Keycloak client secret. Matches the static value defined in
-          # keycloak/realms/einsatzbereit-realm.json ("secret": "backend-secret").
-          KEYCLOAK_BACKEND_SECRET: backend-secret
+          # Backend Keycloak client secret. Resolves the "${KEYCLOAK_BACKEND_SECRET}"
+          # placeholder in keycloak/realms/einsatzbereit-realm.json ("secret") at
+          # import time - see docker-compose.yml's keycloak service.
+          KEYCLOAK_BACKEND_SECRET: ${{ secrets.KEYCLOAK_BACKEND_SECRET }}
           MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
           MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
         run: |
