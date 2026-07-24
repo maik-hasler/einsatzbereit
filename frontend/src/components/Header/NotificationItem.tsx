@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { NotificationSummary } from "../../client/api-client";
+import { formatDateTime } from "../../lib/format";
 
 export default function NotificationItem({
 	notification,
@@ -8,7 +9,7 @@ export default function NotificationItem({
 	notification: NotificationSummary;
 	onSelect: (notification: NotificationSummary) => Promise<void>;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const n = notification;
 
 	return (
@@ -31,7 +32,7 @@ export default function NotificationItem({
 						})}
 						<br />
 						<span className="text-xs text-gray-400">
-							{new Date(n.createdOn).toLocaleString()}
+							{formatDateTime(n.createdOn as unknown as string, i18n.language)}
 						</span>
 					</span>
 				</span>
