@@ -14,10 +14,7 @@
     "nav": {
       "primaryLabel": "Main navigation",
       "userMenu": "User menu",
-      "myEngagements": "My Engagements",
       "myProfile": "My Profile",
-      "myAchievements": "My Achievements",
-      "profileSettings": "Profile Settings",
       "administration": "Administration",
       "organization": "Organization",
       "signOut": "Sign out",
