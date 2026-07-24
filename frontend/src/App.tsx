@@ -4,7 +4,6 @@ import {
 	Navigate,
 	Outlet,
 	useOutletContext,
-	useParams,
 } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
@@ -29,11 +28,6 @@ import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
 import OrgMembersPage from "./pages/app/OrgMembersPage";
 import OrgSettingsPage from "./pages/app/OrgSettingsPage";
 
-function OrgAppRedirect({ tab }: { tab: string }) {
-	const { organizationId } = useParams<{ organizationId: string }>();
-	return <Navigate to={`/app/${organizationId}/${tab}`} replace />;
-}
-
 // A bare <Outlet /> element (no `context` prop) starts a brand new outlet
 // context of its own - it does NOT transparently forward whatever an
 // ancestor <Outlet context={...}> (OrgAppLayout's) already provided. Without
@@ -43,21 +37,6 @@ function OrgAppRedirect({ tab }: { tab: string }) {
 function OrgAppOutletRelay() {
 	const context = useOutletContext<OrgAppContext>();
 	return <Outlet context={context} />;
-}
-
-// Pre-#9 bookmarks to a specific opportunity's engagement management page
-// need their :opportunityId preserved, unlike OrgAppRedirect's fixed tab path.
-function OrgAppEngagementsRedirect() {
-	const { organizationId, opportunityId } = useParams<{
-		organizationId: string;
-		opportunityId: string;
-	}>();
-	return (
-		<Navigate
-			to={`/app/${organizationId}/dashboard/opportunities/${opportunityId}/engagements`}
-			replace
-		/>
-	);
 }
 
 function CallbackPage() {
@@ -109,28 +88,6 @@ export default function App() {
 					<Route path="members" element={<OrgMembersPage />} />
 					<Route path="settings" element={<OrgSettingsPage />} />
 				</Route>
-				{/* Old tab key: the "Engagements" tab is now the Opportunities hub - keep old bookmarks working. */}
-				<Route
-					path="engagements"
-					element={<OrgAppRedirect tab="dashboard/opportunities" />}
-				/>
-				{/* Pre-#9 bookmarks: these three lived flat under /app/:organizationId/... before opportunities/members/settings were nested under /dashboard. */}
-				<Route
-					path="opportunities"
-					element={<OrgAppRedirect tab="dashboard/opportunities" />}
-				/>
-				<Route
-					path="opportunities/:opportunityId/engagements"
-					element={<OrgAppEngagementsRedirect />}
-				/>
-				<Route
-					path="members"
-					element={<OrgAppRedirect tab="dashboard/members" />}
-				/>
-				<Route
-					path="settings"
-					element={<OrgAppRedirect tab="dashboard/settings" />}
-				/>
 			</Route>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<HomePage />} />
@@ -155,19 +112,6 @@ export default function App() {
 							<ProfileOverviewPage />
 						</ProtectedRoute>
 					}
-				/>
-				{/* Pre-restructure bookmarks: org dashboard/settings/engagements used to live here, nested in the main site shell - now their own app context. */}
-				<Route
-					path="/organizations/:organizationId/dashboard"
-					element={<OrgAppRedirect tab="dashboard" />}
-				/>
-				<Route
-					path="/organizations/:organizationId/settings"
-					element={<OrgAppRedirect tab="dashboard/settings" />}
-				/>
-				<Route
-					path="/organizations/:organizationId/engagements"
-					element={<OrgAppRedirect tab="dashboard/opportunities" />}
 				/>
 				<Route
 					path="/users/:userId/achievements"

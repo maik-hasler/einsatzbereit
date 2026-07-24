@@ -102,10 +102,6 @@ Routes declared in `src/App.tsx`. Add new routes there.
 <Route path="/secure" element={<ProtectedRoute><SecurePage /></ProtectedRoute>} />
 ```
 
-Current protected routes:
-
-- `/organizations/:organizationId/settings` → `OrganizationSettingsPage` (requires `organisator`)
-
 **Note:** New API methods become available in `useApiClient()` only after running `dotnet build` in `backend/` (NSwag regenerates `src/client/api-client.ts`). During development, new page code may use `(api as any)` until the client is regenerated.
 
 ## Scripts
