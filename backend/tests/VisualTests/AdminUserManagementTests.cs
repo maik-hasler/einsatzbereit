@@ -64,8 +64,11 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		var (username, userId) = await CreateDisposableUserAsync(keycloak);
 		try
 		{
-			await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
+			// LoginAsync's "Sign in" button is CSS-hidden below the md breakpoint
+			// (it moves into the mobile burger menu), so sign in at desktop size
+			// first and only shrink afterwards - see OrganizationDashboardNavLinkTests.
 			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+			await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 			await Page.GotoAsync($"{origin}/administration");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
