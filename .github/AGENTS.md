@@ -11,8 +11,7 @@
 ├── release-rc.yml    Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── reset-staging.yml Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
 ├── lint.yml          Ban em/en dashes + EditorConfig check
-├── pr-title.yml      Validate PR title against Conventional Commits
-└── security.yml      Dependency vulnerability scan: NuGet + npm audit
+└── pr-title.yml      Validate PR title against Conventional Commits
 ```
 
 ## CI Workflows (run on push/PR to main)
@@ -35,10 +34,6 @@
 - **Trigger:** `docs/**` path filter or manual
 - **Jobs:** build AsciiDoc → deploy to GitHub Pages
 - Uses `tonynv/asciidoctor-action` with `asciidoctor-diagram` for PlantUML
-
-### `security.yml`
-- **Trigger:** dependency-manifest path filter (`backend/**/*.csproj`, `backend/Directory.Packages.props`, `backend/global.json`, `frontend/package.json`, `frontend/pnpm-lock.yaml`) on push/PR to main, **plus** a weekly Monday 06:00 UTC cron and manual dispatch - the cron catches vulnerabilities newly disclosed against dependencies already in the lockfiles, which a path filter alone would never re-trigger on
-- **Jobs (parallel):** `nuget-audit` (`dotnet list package --vulnerable --include-transitive`, fails on critical/high), `npm-audit` (`pnpm audit --audit-level=high`)
 
 ## Publish Workflows (tag-triggered)
 
