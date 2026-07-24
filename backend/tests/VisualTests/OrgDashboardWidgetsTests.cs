@@ -67,7 +67,9 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// Settings widget surfaces the org identity and a link back to the
 		// full Settings tab instead of duplicating the whole edit form.
-		await Expect(settingsWidget).ToContainTextAsync("1 members");
+		// #834: singular member count must use "1 member", not "1 members" -
+		// word-boundary regex so a regression back to the plural form fails.
+		await Expect(settingsWidget).ToContainTextAsync(new Regex(@"\b1 member\b"));
 		await Expect(settingsWidget.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }))
 			.ToBeVisibleAsync();
 
@@ -126,8 +128,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// Members: reachable via the Settings widget's member-count link -
 		// scoped to that widget since the tab bar has its own, separate
-		// "Members" link now too.
-		await settingsWidget.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		// "Members" link now too. #834: the link reads "1 member" (singular)
+		// for a fresh single-member org, so match on "member" rather than
+		// "members".
+		await settingsWidget.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/members", new() { Timeout = 10_000 });
 
 		await Page.GoBackAsync();

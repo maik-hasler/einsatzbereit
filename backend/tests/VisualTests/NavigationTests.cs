@@ -248,8 +248,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
-		// "N members", so match the substring rather than an exact count).
-		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		// "N member(s)" - #834 made the count grammatically correct German/
+		// English plural forms, so match "member" to cover both N=1 and N>1).
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/members"), new() { Timeout = 15_000 });
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
