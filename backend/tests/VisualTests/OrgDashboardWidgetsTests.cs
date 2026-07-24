@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -170,6 +172,128 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(calendarWidget).ToBeVisibleAsync();
 		await Expect(calendarWidget.Locator(".rbc-header", new() { HasText = "Di." }))
 			.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
+	{
+		// #812: WidgetCard only set overflow-y-auto on its content wrapper, and
+		// html sets overflow-x: clip page-wide (global.css) - together, any
+		// widget content wider than its rendered width (the Calendar widget's
+		// toolbar button rows, and its Agenda table's fixed-width date/time
+		// columns squeezing the flexible EVENT column) silently blew out past
+		// the widget on a narrow viewport with no way to reach it, rather than
+		// scrolling within the widget itself. Fixed by giving WidgetCard's
+		// wrapper overflow-x-auto too (containing the blowout so it scrolls
+		// instead of clipping) and letting the toolbar's button rows and the
+		// Agenda table scroll horizontally on their own (global.css) instead
+		// of being clipped or squeezed unreadably.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		// Sign in and land on the dashboard at the default (desktop) viewport
+		// first - FastSignInAsync's "User menu" button doesn't exist in the DOM
+		// at all below the mobile breakpoint (see OrgAppMobileResponsiveTests),
+		// only appearing inside the hamburger menu once opened.
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual812 {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		// Gives the Calendar widget an event to render - without one, the
+		// Agenda view shows its empty-state span instead of the table whose
+		// EVENT column this test needs to measure.
+		var oppTitle = $"Visual812 Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CalendarWidget mobile overflow test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "Waitlist",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(3);
+		var end = start.AddHours(2);
+		(await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 }))
+			.EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Calendar", Exact = true }),
+		});
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Narrow the browser to exactly the mobile viewport #812 was reported on.
+		await Page.SetViewportSizeAsync(390, 844);
+
+		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
+		var agendaButton = viewGroup.GetByRole(AriaRole.Button, new() { Name = "Agenda", Exact = true });
+		// Reachable only by scrolling this one row (its own overflow-x: auto,
+		// not the whole page) - if the fix regresses back to a plain clipped
+		// row, this button has no scrollable ancestor to bring it into view
+		// and the click below times out instead of landing.
+		await agendaButton.ScrollIntoViewIfNeededAsync();
+		await Expect(agendaButton).ToBeVisibleAsync();
+		await agendaButton.ClickAsync();
+
+		var eventHeader = calendarWidget.Locator(".rbc-agenda-table thead th", new() { HasText = "Event" });
+		await Expect(eventHeader).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var eventHeaderBox = await eventHeader.BoundingBoxAsync();
+		eventHeaderBox.Should().NotBeNull();
+		eventHeaderBox!.Width.Should().BeGreaterThan(80,
+			"the EVENT column should stay legibly wide (the Agenda table scrolls "
+			+ "horizontally instead) rather than being squeezed down to a couple "
+			+ "of characters to fit the narrow viewport");
+		await Expect(calendarWidget.GetByText(oppTitle)).ToBeVisibleAsync();
+
+		var toolbarLabel = calendarWidget.Locator(".rbc-toolbar-label");
+		var labelBeforeNext = await toolbarLabel.InnerTextAsync();
+
+		var navGroup = calendarWidget.Locator(".rbc-btn-group").First;
+		var nextButton = navGroup.GetByRole(AriaRole.Button, new() { Name = "Next", Exact = true });
+		await nextButton.ScrollIntoViewIfNeededAsync();
+		await Expect(nextButton).ToBeVisibleAsync();
+		await nextButton.ClickAsync();
+		await Expect(toolbarLabel).Not.ToHaveTextAsync(labelBeforeNext);
+
+		var dayButton = viewGroup.GetByRole(AriaRole.Button, new() { Name = "Day", Exact = true });
+		await dayButton.ScrollIntoViewIfNeededAsync();
+		await Expect(dayButton).ToBeVisibleAsync();
+		await dayButton.ClickAsync();
+		await Expect(calendarWidget.Locator(".rbc-time-view")).ToBeVisibleAsync();
 	}
 
 	private async Task CreateOrganizationAsync(string namePrefix)

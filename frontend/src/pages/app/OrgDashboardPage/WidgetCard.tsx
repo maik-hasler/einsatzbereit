@@ -30,8 +30,16 @@ export default function WidgetCard({
 			OrgDashboardPage's grid className), so a widget whose content is
 			taller than its allotted rows scrolls within itself here instead of
 			growing the shared row band and throwing off every other tile's
-			height. */}
-			<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+			height. overflow-x-auto is the same idea sideways: html sets
+			overflow-x: clip page-wide (see global.css), so a widget whose
+			content is wider than its rendered width - e.g. the Calendar
+			widget's toolbar/agenda table on a narrow viewport - would
+			otherwise blow out this grid cell's column and get silently
+			clipped with no way to reach it, rather than scrolling within the
+			one box that actually has room to show a scrollbar. */}
+			<div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto">
+				{children}
+			</div>
 		</section>
 	);
 }
