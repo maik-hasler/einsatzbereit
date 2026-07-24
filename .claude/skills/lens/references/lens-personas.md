@@ -20,10 +20,11 @@ Aspire/Docker stack here). Run this yourself in the current session, never
 delegate it to a subagent: MCP tool grants, including the `playwright`
 plugin, do not propagate to a spawned subagent, so it would silently have no
 way to browse (confirmed the hard way - see root `AGENTS.md`). `ToolSearch`
-for `browser_navigate` first; if nothing resolves, fall back to a script
-against `scripts/lib/live-browser.mjs` (`npm install` pulls the root
-`package.json`'s pinned `playwright`; Chromium ships pre-installed at
-`/opt/pw-browsers`).
+for `browser_navigate` first; if nothing resolves, fall back to a scratch
+Playwright script (`npm install playwright` in a scratch dir, not the repo -
+there is no root `package.json` anymore; Chromium ships pre-installed at
+`/opt/pw-browsers`; see `wiki/bundle/process/live-playwright-scripts.md` for
+the TLS-workaround launch args).
 
 1. **One browser context per persona, never reused.** Signing out and back
    in inside one context is fragile (session state bleeds, a failed

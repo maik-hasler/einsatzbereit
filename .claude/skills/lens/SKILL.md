@@ -76,12 +76,14 @@ probe them first and set the verification bar accordingly:
   `pnpm lint`, `npx knip`.
 - **Live browser access:** required for `lens-personas.md` and
   `lens-accessibility.md`'s live pass. `ToolSearch` for `browser_navigate`
-  (the `playwright` plugin); if nothing resolves, fall back to a script
-  against `scripts/lib/live-browser.mjs` (`npm install` once per session
-  pulls in the pinned `playwright`; Chromium ships pre-installed at
-  `/opt/pw-browsers`). If neither is available at all, these two lenses
-  cannot run this session - say so in triage and exclude them from
-  scoring rather than attempting a code-only substitute.
+  (the `playwright` plugin); if nothing resolves, fall back to a scratch
+  Playwright script (`npm install playwright` once per session in a scratch
+  dir, not the repo - there is no root `package.json` anymore; Chromium ships
+  pre-installed at `/opt/pw-browsers`; see
+  `wiki/bundle/process/live-playwright-scripts.md` for the TLS-workaround
+  launch args). If neither is available at all, these two lenses cannot run
+  this session - say so in triage and exclude them from scoring rather than
+  attempting a code-only substitute.
 - **GitHub API:** `search_issues`/`issue_write` for dedup and filing;
   unauthenticated `https://api.github.com/repos/maik-hasler/einsatzbereit/...`
   for Actions run durations and outcomes if authenticated tools aren't

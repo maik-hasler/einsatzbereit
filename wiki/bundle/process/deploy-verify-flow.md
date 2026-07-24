@@ -48,22 +48,25 @@ the feature branch so the fix is actually in the build):
 # The health gate and smoke script
 
 Step 6 has two hard gates. `curl -sf https://api.maik-hasler.de/health` must
-return HTTP 200, and a manual Playwright script in `scripts/` that exercises the
-changed behaviour against `https://einsatzbereit.maik-hasler.de` must exit 0
-with every assertion green. The script imports `scripts/lib/live-browser.mjs`
-(`launchLiveBrowser()`, `loginKeycloak()`) rather than launching its own browser -
-the helper carries the egress-proxy TLS workaround that plain `chromium.launch()`
-lacks.
+return HTTP 200, and a throwaway Playwright script that exercises the changed
+behaviour against `https://einsatzbereit.maik-hasler.de` must exit 0 with every
+assertion green. The script is written to a scratch directory outside the repo
+(never a committed `scripts/` folder - see
+[scripts-folder-removed](/decisions/scripts-folder-removed.md)) and deleted once
+it has served its purpose. It inlines the egress-proxy TLS workaround that a
+plain `chromium.launch()` lacks; see
+[live-playwright-scripts](/process/live-playwright-scripts.md) for the exact
+launch args.
 
 # Two artifacts, not one
 
-The manual script and the TUnit test are both required because they do different
-jobs. The `scripts/` Playwright script is throwaway proof that the change works
-on live staging right now. The C# TUnit test in `backend/tests/VisualTests/` is
-the reviewable, committed record that runs against the local Aspire stack in CI
-on every future change. Skipping the TUnit test leaves nothing durable behind;
-skipping the live script means the fix was never observed in production. One does
-not substitute for the other.
+The scratch script and the TUnit test are both required because they do different
+jobs. The scratch Playwright script is throwaway proof that the change works
+on live staging right now - it is never committed. The C# TUnit test in
+`backend/tests/VisualTests/` is the reviewable, committed record that runs
+against the local Aspire stack in CI on every future change. Skipping the TUnit
+test leaves nothing durable behind; skipping the live script means the fix was
+never observed in production. One does not substitute for the other.
 
 # The trap: green does not mean done
 
@@ -76,7 +79,8 @@ midpoint of the flow, not the end of it.
 # Related
 
 - [release-workflow](/process/release-workflow.md) - steps 3-5 (RC version, release branch, deploy) are the release mechanics this flow drives
-- [live-playwright-scripts](/process/live-playwright-scripts.md) - step 6's live smoke script must use the shared helper
+- [live-playwright-scripts](/process/live-playwright-scripts.md) - step 6's live smoke script, now written to a scratch dir instead of a shared committed helper
+- [scripts-folder-removed](/decisions/scripts-folder-removed.md) - why the smoke script is no longer a committed artifact under `scripts/`
 - [sandbox-limitations](/gotchas/sandbox-limitations.md) - the reason local verification is impossible and live staging is the only option
 - [project-vision](/project/project-vision.md) - the ship-for-Oldenburg-first priority is what makes 'not done until observed live' non-negotiable
 - [claude-check-setup](/decisions/claude-check-setup.md) - step 1 is /self-review, which fans out to the check agents
@@ -88,3 +92,4 @@ midpoint of the flow, not the end of it.
 - AGENTS.md:120
 - AGENTS.md:136
 - AGENTS.md:151
+- #791
