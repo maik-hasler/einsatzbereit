@@ -19,14 +19,14 @@ maintainer, German-named but English-documented.
 | `backend/src/Infrastructure` | EF Core + PostgreSQL persistence, external services. |
 | `backend/src/Api` | Minimal-API endpoints, one folder per feature/operation, versioned (`v1`). Endpoints resolve handlers via MediatR `ISender`. |
 | `backend/src/Aspire` | AppHost orchestrates Postgres, Keycloak, API, Vite frontend for local dev. |
-| `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright - root `package.json` exists solely for editorconfig-checker + playwright). |
+| `backend/tests` | 4 projects: Application.UnitTests, IntegrationTests, ArchitectureTests, VisualTests (Playwright, C#). Live-staging Playwright scripts are scratch-only now - no root `package.json`, no committed `scripts/` (see `wiki/bundle/decisions/scripts-folder-removed.md`). |
 | `frontend/` | React + TypeScript + Vite. pnpm. i18n de/en via `src/locales/*.json` + custom checker `frontend/scripts/check-i18n-keys.js`. No unit test runner - quality gate is `tsc --noEmit`, eslint (`--max-warnings 0`, plugins: jsx-a11y, i18next, react-hooks), prettier. |
 | `frontend/src/client` | **NSwag-generated** API client (`api-client.ts`, `api-instance.ts` wraps it). |
 | `keycloak/` | Realm export JSON + custom themes (FTL templates). |
 | `docs/` | ADRs, TDRs, Architecture docs. |
 | `.github/workflows` | 9 workflows; `publish.yml` alone is ~500 lines. |
 | `.claude/` | AI tooling for Claude Code: check agents (a11y, architecture, ef-migration, i18n, nswag), skills (`lens` itself, `self-review`, `ingest`/`query`/`lint` for `wiki/`), hooks (incl. `protect-generated-clients.sh`). Treat as first-class repo content, not junk. |
-| `scripts/`, `docker-compose.yml`, `.env.example`, `renovate.json` | Ops/dev support. docker-compose coexists with Aspire - do not assume one makes the other dead without checking who consumes which. |
+| `docker-compose.yml`, `.env.example`, `renovate.json` | Ops/dev support. docker-compose coexists with Aspire - do not assume one makes the other dead without checking who consumes which. |
 
 ## False-positive traps
 

@@ -40,7 +40,7 @@ The proxy blocks two push targets: `main` and any tag. Both blocks hold even whe
 # Related
 - [deploy-verify-flow](/process/deploy-verify-flow.md) - no local run is why user-visible changes must be verified on live staging instead
 - [release-workflow](/process/release-workflow.md) - the tag-push block is the reason releases go through a release/* branch
-- [live-playwright-scripts](/process/live-playwright-scripts.md) - the egress-proxy TLS trap the browser helper works around is a sandbox effect
+- [live-playwright-scripts](/process/live-playwright-scripts.md) - the egress-proxy TLS trap the launch args work around is a sandbox effect
 - [backend-conventions](/reference/backend-conventions.md) - the IntegrationTests/VisualTests that need DCP orchestration are the ones that cannot run here
 
 # Citations

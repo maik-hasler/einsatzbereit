@@ -87,7 +87,8 @@ export default function DetailsStep({
 	error,
 	errorToken,
 }: Props) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
+	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 	const errorRef = useRef<HTMLParagraphElement>(null);
 
 	// The publish-blocking error (e.g. "needs a time slot") can land below the
@@ -163,9 +164,16 @@ export default function DetailsStep({
 									className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm"
 								>
 									<span className="text-gray-700">
-										{new Date(slot.startDateTime).toLocaleString()} -{" "}
-										{new Date(slot.endDateTime).toLocaleString()} (
-										{slot.maxParticipants})
+										{new Date(slot.startDateTime).toLocaleString(locale, {
+											dateStyle: "medium",
+											timeStyle: "short",
+										})}{" "}
+										-{" "}
+										{new Date(slot.endDateTime).toLocaleString(locale, {
+											dateStyle: "medium",
+											timeStyle: "short",
+										})}{" "}
+										({slot.maxParticipants})
 									</span>
 									<button
 										type="button"
