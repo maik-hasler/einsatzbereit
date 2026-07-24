@@ -72,22 +72,20 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
-	public async Task Achievements_Redirects_ToProfileAchievementsTab()
+	public async Task ProfileAchievementsTabDeepLink_ScrollsToBadgesSection()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
-		await Page.GotoAsync($"{origin}/achievements");
+		// #794: there's no more Achievements tab to switch to - the legacy
+		// ?tab=achievements deep link (formerly reached via the now-removed
+		// /achievements redirect, #843) scrolls the single-page profile to
+		// the Badges section instead.
+		await Page.GotoAsync($"{origin}/profile?tab=achievements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Should land on /profile?tab=achievements
-		await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex(@"/profile\?tab=achievements"));
-
-		// #794: there's no more Achievements tab to switch to - the legacy
-		// ?tab=achievements deep link now scrolls the single-page profile to
-		// the Badges section instead.
 		var badgesHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" });
 		await Expect(badgesHeading).ToBeVisibleAsync(new() { Timeout = 20_000 });
 
@@ -179,5 +177,66 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Preferred contact channel")).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task ProfileEditForm_ShowsUsernameAndEmailFields()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+
+		// Edit is a single quick-action button in the header toolbar (#794) -
+		// .First is a harmless no-op.
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await editButton.ClickAsync();
+
+		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(Page.GetByLabel("Email address")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
+
+	[Test]
+	public async Task ProfileEditForm_DisplaysUsername_AfterLogin()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 30_000 });
+		await editButton.ClickAsync();
+
+		await Expect(Page.GetByLabel("Username")).ToHaveValueAsync("vera",
+			new() { Timeout = 10_000 });
+	}
+
+	[Test]
+	public async Task ProfileEditForm_SavesProfileChanges()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await editButton.ClickAsync();
+
+		await Page.GetByLabel("First name").FillAsync("Vera", new() { Timeout = 10_000 });
+		await Page.GetByLabel("Last name").FillAsync("Sample");
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
+
+		await Expect(Page.GetByText("Profile saved.")).ToBeVisibleAsync();
 	}
 }

@@ -147,7 +147,6 @@ export default function App() {
 					path="/my-engagements"
 					element={<Navigate to="/profile?tab=engagements" replace />}
 				/>
-				<Route path="/account" element={<Navigate to="/profile" replace />} />
 				<Route
 					path="/profile"
 					element={
@@ -170,10 +169,6 @@ export default function App() {
 					element={<OrgAppRedirect tab="dashboard/opportunities" />}
 				/>
 				<Route
-					path="/achievements"
-					element={<Navigate to="/profile?tab=achievements" replace />}
-				/>
-				<Route
 					path="/users/:userId/achievements"
 					element={<UserAchievementsPage />}
 				/>
@@ -185,10 +180,6 @@ export default function App() {
 							<AdministrationPage />
 						</ProtectedRoute>
 					}
-				/>
-				<Route
-					path="/opportunities"
-					element={<Navigate to="/#opportunities" replace />}
 				/>
 				<Route path="/organizations" element={<OrganizationsPage />} />
 				<Route path="*" element={<NotFoundPage />} />
