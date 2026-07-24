@@ -138,6 +138,33 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.WaitForURLAsync($"{origin}/app/{organizationId}/dashboard/settings", new() { Timeout = 10_000 });
 	}
 
+	[Test]
+	public async Task CalendarWidget_MonthView_RendersGermanWeekdayLabels_WhenAppLocaleIsGerman()
+	{
+		// #878: CalendarWidget imported the German date-fns locale into its
+		// `locales` map but never passed a `culture` prop to the underlying
+		// Calendar component, so react-big-calendar always fell back to its
+		// default (English) formatting regardless of the app's selected
+		// language. German weekday abbreviations carry a trailing "."
+		// (e.g. "Di.") that English abbreviations never do, so their
+		// presence in the month header row is a signal that the culture is
+		// actually applied - and one that holds on any date the test happens
+		// to run on, unlike asserting a specific localized month name.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.AddInitScriptAsync("window.localStorage.setItem('i18nextLng', 'de');");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Kalender", Exact = true }),
+		});
+		await Expect(calendarWidget).ToBeVisibleAsync();
+		await Expect(calendarWidget.Locator(".rbc-header", new() { HasText = "Di." }))
+			.ToBeVisibleAsync();
+	}
+
 	private async Task CreateOrganizationAsync(string namePrefix)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry

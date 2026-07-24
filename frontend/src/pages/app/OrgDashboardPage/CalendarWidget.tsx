@@ -82,7 +82,7 @@ interface Props {
 const CALENDAR_MIN_HEIGHT_PX = 400;
 
 function CalendarWidget({ organizationId, refreshKey, size }: Props) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
 	// Shared with UpcomingOpportunitiesWidget, which fetches the same
@@ -164,6 +164,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 				<div className="rbc-container h-full">
 					<Calendar
 						localizer={localizer}
+						culture={i18n.language === "de" ? "de" : "en-US"}
 						events={calEvents}
 						view={calView}
 						onView={(v: View) => setCalView(v)}
