@@ -26,33 +26,28 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
-			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= now))
-			.Join(
-				dbContext.OrganizationsQuery,
-				vo => vo.OrganizationId,
-				org => org.Id,
-				(vo, org) => new VoOrgPair(vo, org));
+			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= now));
 
 		if (!string.IsNullOrWhiteSpace(filter.City))
 		{
 			var city = filter.City.ToLower();
-			query = query.Where(x => x.Vo.Address != null && x.Vo.Address.City.ToLower().Contains(city));
+			query = query.Where(vo => vo.Address != null && vo.Address.City.ToLower().Contains(city));
 		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Occurrence) && Enum.TryParse<Occurrence>(filter.Occurrence, ignoreCase: true, out var occ))
-			query = query.Where(x => x.Vo.Occurrence == occ);
+			query = query.Where(vo => vo.Occurrence == occ);
 
 		if (!string.IsNullOrWhiteSpace(filter.ParticipationType) && Enum.TryParse<ParticipationType>(filter.ParticipationType, ignoreCase: true, out var pt))
-			query = query.Where(x => x.Vo.ParticipationType == pt);
+			query = query.Where(vo => vo.ParticipationType == pt);
 
 		if (filter.IsRemote is bool isRemote)
-			query = query.Where(x => x.Vo.IsRemote == isRemote);
+			query = query.Where(vo => vo.IsRemote == isRemote);
 
 		if (filter.DateFrom is DateTimeOffset dateFrom)
-			query = query.Where(x => x.Vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+			query = query.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
 
 		if (filter.DateTo is DateTimeOffset dateTo)
-			query = query.Where(x => x.Vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+			query = query.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
 		if (filter.Categories is { Length: > 0 })
 		{
@@ -65,23 +60,28 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.ToList();
 
 			if (parsedCategories.Count > 0)
-				query = query.Where(x => x.Vo.Category.HasValue && parsedCategories.Contains(x.Vo.Category.Value));
+				query = query.Where(vo => vo.Category.HasValue && parsedCategories.Contains(vo.Category.Value));
 		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Tag))
-			query = query.Where(x => x.Vo.Tags.Contains(filter.Tag));
+			query = query.Where(vo => vo.Tags.Contains(filter.Tag));
 
 		var boundingBox = ResolveBoundingBox(filter);
 
 		if (boundingBox is GeoBoundingBox box)
-			query = query.Where(x =>
-				x.Vo.Address != null &&
-				x.Vo.Address.Latitude != null && x.Vo.Address.Longitude != null &&
-				x.Vo.Address.Latitude >= box.South && x.Vo.Address.Latitude <= box.North &&
-				x.Vo.Address.Longitude >= box.West && x.Vo.Address.Longitude <= box.East);
+			query = query.Where(vo =>
+				vo.Address != null &&
+				vo.Address.Latitude != null && vo.Address.Longitude != null &&
+				vo.Address.Latitude >= box.South && vo.Address.Latitude <= box.North &&
+				vo.Address.Longitude >= box.West && vo.Address.Longitude <= box.East);
 
 		var baseQuery = query
-			.OrderByDescending(x => x.Vo.CreatedOn)
+			.OrderByDescending(vo => vo.CreatedOn)
+			.Join(
+				dbContext.OrganizationsQuery,
+				vo => vo.OrganizationId,
+				org => org.Id,
+				(vo, org) => new VoOrgPair(vo, org))
 			.Select(ToSummaryRow);
 
 		if (filter.HasRadius)
@@ -372,12 +372,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 			orgQuery = orgQuery.Where(vo => vo.Status == s);
 
 		var rows = await orgQuery
+			.OrderByDescending(vo => vo.CreatedOn)
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
 				org => org.Id,
 				(vo, org) => new VoOrgPair(vo, org))
-			.OrderByDescending(x => x.Vo.CreatedOn)
 			.Select(ToSummaryRow)
 			.ToListAsync(cancellationToken);
 
