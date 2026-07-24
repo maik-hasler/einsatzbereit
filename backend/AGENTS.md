@@ -45,10 +45,12 @@ src/
 └── Infrastructure/             Implements Application interfaces
     ├── ServiceCollectionExtensions.cs   EF Core, Keycloak HTTP client, repositories
     ├── DomainEventDispatcher.cs         IDomainEventDispatcher -> IPublisher (see "Domain events" below)
+    ├── BackgroundJobs/                  IHostedService jobs, incl. OutboxProcessorJob (domain event dispatch)
     ├── Persistence/
     │   ├── ApplicationDbContext.cs       EF Core DbContext + IUnitOfWork
     │   ├── Configurations/               Fluent API entity mappings
-    │   ├── Interceptors/                 AuditableEntityInterceptor (created_on/modified_on), DomainEventInterceptor
+    │   ├── Interceptors/                 AuditableEntityInterceptor (created_on/modified_on), ConvertDomainEventsToOutboxMessagesInterceptor
+    │   ├── Outbox/                       OutboxMessage (transactional outbox row for domain events)
     │   ├── Repositories/                 AggregateRepository<T,TId>, read repositories
     │   └── Migrations/                   EF Core migrations
     └── Keycloak/                         KeycloakOrganizationService (HttpClient wrapper)
@@ -125,13 +127,12 @@ Both throw `ResultFailureException(Error)`, caught by `Api/Common/ExceptionHandl
 Reserve a raw `throw` (not wrapped in a `Result`) for truly exceptional/programmer-error cases that aren't part of a use case's expected failure modes.
 
 ### Domain events
-Aggregates raise events via `AddEvent(...)` (see `EngagementConfirmedDomainEvent` etc. in `Domain/Engagements/`). `Infrastructure/Persistence/Interceptors/DomainEventInterceptor.cs` collects an aggregate's events and calls `IDomainEventDispatcher.DispatchAsync` from inside `DbContext.SaveChangesAsync`'s `SavedChangesAsync` callback - i.e. **after the DB write for the triggering command but before `TransactionPipelineBehavior` commits the transaction**.
+Aggregates raise events via `AddEvent(...)` (see `EngagementConfirmedDomainEvent` etc. in `Domain/Engagements/`). Dispatch is transactional-outbox based (#828), not direct:
 
-This timing means an `INotificationHandler<T>` for a domain event **cannot safely**:
-- call `ISender.Send(...)` to dispatch a nested command - `TransactionPipelineBehavior` would call `BeginTransactionAsync` again on a `DbContext` that already has an open transaction, and EF Core throws.
-- add/modify entities on the injected `IApplicationDbContext` expecting them to persist - no further `SaveChangesAsync` call happens before the outer transaction commits, so those changes are silently dropped.
+1. `Infrastructure/Persistence/Interceptors/ConvertDomainEventsToOutboxMessagesInterceptor.cs` collects an aggregate's events during `SavingChangesAsync` (before the write) and converts each into an `OutboxMessage` row (`Infrastructure/Persistence/Outbox/OutboxMessage.cs`) added to the same `DbContext` - so it's part of the *same* DB transaction as the triggering command, all-or-nothing.
+2. `Infrastructure/BackgroundJobs/OutboxProcessorJob.cs` polls for unprocessed `OutboxMessage` rows on its own timer, in its own DI scope/DbContext, well after the triggering command's transaction has committed. It deserializes each message back to a `DomainEvent` and calls `IDomainEventDispatcher.DispatchAsync`, which invokes `IPublisher`/`Publisher` -> the registered `INotificationHandler<T>`(s).
 
-As of this writing no domain event has a registered `INotificationHandler` - the pipe (`IPublisher`/`Publisher`) exists but nothing consumes it yet (see #710). Wiring one up requires first resolving the timing issue above (e.g. dispatching after commit, or handlers writing through a fresh scope/DbContext) - don't add a handler that writes to the database or calls `ISender` without addressing it first.
+Because dispatch now happens in a fresh scope after commit (not inline inside the triggering `SaveChangesAsync`), an `INotificationHandler<T>` **can** safely call `ISender.Send(...)` or write through its own injected `IApplicationDbContext` - there's no outer open transaction to conflict with. `EngagementCheckedInAuditLogHandler` (`Application/Engagements/CheckInEngagement/v1/`) is the first registered consumer (a structured audit log entry); it doesn't touch the DB itself, but nothing about the pipeline stops a future handler from doing so.
 
 ### Pipeline behaviors (run in this order)
 1. `TransactionPipelineBehavior` - wraps commands in a DB transaction
