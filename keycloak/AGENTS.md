@@ -42,9 +42,9 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 - Same protocol mappers as `frontend` (roles, realm-name, backend-audience)
 
 **`backend`** (confidential service account)
-- Client secret: `backend-secret` (dev); injected via `KEYCLOAK_BACKEND_SECRET` env var on staging
+- Client secret: `backend-secret` for local Aspire dev/tests (`AppHost.cs` overwrites whatever is in the realm JSON before import, so the checked-in value is irrelevant there). On staging/production the realm JSON's `secret` is instead the placeholder `${KEYCLOAK_BACKEND_SECRET}` - Keycloak's realm import resolves `${VAR}` placeholders in any JSON value from an env var of the same name at container startup - and `docker-compose.yml` sources that env var from the `KEYCLOAK_BACKEND_SECRET` GitHub Environment secret (see `.github/workflows/publish.yml`), not a committed literal that would be usable against production the moment it lands in git history
 - No user login flows - server-to-server only
-- Service account permissions: `manage-realm`, `manage-users`, `manage-organizations`
+- Service account permissions: `view-realm`, `manage-users`, `manage-organizations` - deliberately not `manage-realm` (full realm-admin), which the backend never needs and would let a leaked secret reconfigure clients, auth flows, and other realm settings
 - Used by `KeycloakOrganizationService` in the backend to manage org membership
 
 ### Test Users

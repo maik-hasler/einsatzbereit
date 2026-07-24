@@ -7,7 +7,7 @@ tags:
   - authorization
   - adr
   - playwright
-timestamp: 2026-07-18
+timestamp: 2026-07-24
 ---
 
 # Keycloak realm config
@@ -20,7 +20,7 @@ There are three OIDC clients, and picking the wrong one for a task is the common
 
 - **frontend** (public): Authorization Code + PKCE with S256 enforced, and nothing else. ROPC is off (`directAccessGrantsEnabled: false`). This is the real app client.
 - **frontend-test** (public): identical mappers to `frontend` but with ROPC enabled (`directAccessGrantsEnabled: true`). It is the password-grant client for the test suites - `IntegrationTestFixture.GetAccessTokenAsync` and the many VisualTests that request their own token both use it. Its redirect URIs are `http://localhost:*` only, never production. Do not enable ROPC on `frontend` to shortcut a test; use this client.
-- **backend** (confidential service account): no user login flow, server-to-server only. Its service account holds `manage-realm`, `manage-users`, and `manage-organizations`, and `KeycloakOrganizationService` uses it. Dev secret is `backend-secret`; staging injects it via `KEYCLOAK_BACKEND_SECRET`.
+- **backend** (confidential service account): no user login flow, server-to-server only. Its service account holds `view-realm`, `manage-users`, and `manage-organizations` (not `manage-realm` - the backend never touches realm-level config, so that role was dropped as unnecessary privilege, see #805), and `KeycloakOrganizationService` uses it. Dev secret is `backend-secret` (`AppHost.cs` overwrites the realm JSON's value before import for local Aspire runs and tests); the checked-in realm JSON instead carries the placeholder `"secret": "${KEYCLOAK_BACKEND_SECRET}"`, which Keycloak's realm import resolves from an env var of the same name at container startup - staging sources that env var from a `KEYCLOAK_BACKEND_SECRET` GitHub Environment secret rather than a committed literal.
 
 # The mappers backend auth depends on
 
@@ -59,6 +59,7 @@ The split that matters at request time: whether a user is an organizer of a give
 
 # Citations
 
+- #805 - hardcoded `backend` client secret and excessive `manage-realm` service-account role, fixed by sourcing the secret from a `KEYCLOAK_BACKEND_SECRET` GitHub Environment secret and dropping `manage-realm` in favor of `view-realm`
 - keycloak/AGENTS.md:16-62
 - keycloak/AGENTS.md:30-48
 - keycloak/AGENTS.md:50-56
