@@ -408,6 +408,8 @@
       "logoUploading": "Uploading…",
       "logoUploadError": "Failed to upload logo.",
       "logoRemove": "Remove",
+      "logoRemoving": "Removing…",
+      "logoRemoveError": "Failed to remove logo.",
       "fieldName": "Name *",
       "fieldDescription": "Description",
       "fieldContactEmail": "Contact email",

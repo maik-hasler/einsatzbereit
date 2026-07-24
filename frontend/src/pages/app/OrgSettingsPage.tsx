@@ -51,6 +51,7 @@ export default function OrgSettingsPage() {
 	});
 	const [logoUrl, setLogoUrl] = useState<string | null>(org.logoUrl ?? null);
 	const [uploadingLogo, setUploadingLogo] = useState(false);
+	const [removingLogo, setRemovingLogo] = useState(false);
 	const [logoError, setLogoError] = useState<string | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const formRef = useRef<HTMLFormElement>(null);
@@ -115,6 +116,19 @@ export default function OrgSettingsPage() {
 		} finally {
 			setUploadingLogo(false);
 			if (logoInputRef.current) logoInputRef.current.value = "";
+		}
+	}
+
+	async function handleRemoveLogo() {
+		setRemovingLogo(true);
+		setLogoError(null);
+		try {
+			await api.deleteOrganizationLogo(org.id);
+			setLogoUrl(null);
+		} catch {
+			setLogoError(t("orgSettings.logoRemoveError"));
+		} finally {
+			setRemovingLogo(false);
 		}
 	}
 
@@ -247,23 +261,37 @@ export default function OrgSettingsPage() {
 										</span>
 									)}
 									<div>
-										<label
-											htmlFor="logo-upload"
-											className={`cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}
-										>
-											{uploadingLogo
-												? t("orgSettings.logoUploading")
-												: t("orgSettings.logoUpload")}
-										</label>
-										<input
-											ref={logoInputRef}
-											id="logo-upload"
-											type="file"
-											accept="image/jpeg,image/png,image/webp"
-											className="sr-only"
-											onChange={handleLogoChange}
-											disabled={uploadingLogo}
-										/>
+										<div className="flex items-center gap-3">
+											<label
+												htmlFor="logo-upload"
+												className={`cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 ${uploadingLogo || removingLogo ? "opacity-50 pointer-events-none" : ""}`}
+											>
+												{uploadingLogo
+													? t("orgSettings.logoUploading")
+													: t("orgSettings.logoUpload")}
+											</label>
+											<input
+												ref={logoInputRef}
+												id="logo-upload"
+												type="file"
+												accept="image/jpeg,image/png,image/webp"
+												className="sr-only"
+												onChange={handleLogoChange}
+												disabled={uploadingLogo || removingLogo}
+											/>
+											{logoUrl && (
+												<button
+													type="button"
+													onClick={handleRemoveLogo}
+													disabled={uploadingLogo || removingLogo}
+													className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+												>
+													{removingLogo
+														? t("orgSettings.logoRemoving")
+														: t("orgSettings.logoRemove")}
+												</button>
+											)}
+										</div>
 										<p className="mt-1 text-xs text-gray-500">
 											{t("orgSettings.logoHint")}
 										</p>

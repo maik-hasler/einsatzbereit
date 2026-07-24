@@ -408,6 +408,8 @@
       "logoUploading": "Wird hochgeladen…",
       "logoUploadError": "Logo-Upload fehlgeschlagen.",
       "logoRemove": "Entfernen",
+      "logoRemoving": "Wird entfernt…",
+      "logoRemoveError": "Logo konnte nicht entfernt werden.",
       "fieldName": "Name *",
       "fieldDescription": "Beschreibung",
       "fieldContactEmail": "Kontakt-E-Mail",
