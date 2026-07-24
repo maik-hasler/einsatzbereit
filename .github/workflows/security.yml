@@ -1,12 +1,34 @@
 name: Dependency Security Scan
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**/*.csproj'
+      - 'backend/Directory.Packages.props'
+      - 'backend/global.json'
+      - 'frontend/package.json'
+      - 'frontend/pnpm-lock.yaml'
+      - '.github/workflows/security.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**/*.csproj'
+      - 'backend/Directory.Packages.props'
+      - 'backend/global.json'
+      - 'frontend/package.json'
+      - 'frontend/pnpm-lock.yaml'
+      - '.github/workflows/security.yml'
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   nuget-audit:
