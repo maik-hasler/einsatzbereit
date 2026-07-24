@@ -21,6 +21,7 @@ public class IntegrationTestFixture
 	private const string BackendClientId = "backend";
 	private const string BackendClientSecret = "backend-secret";
 	private const string OrganisatorRole = "organisator";
+	private const string DefaultUserRole = "user";
 	private const string BaselineOrganisator = "olaf";
 
 	private DistributedApplication _app = null!;
@@ -118,6 +119,22 @@ public class IntegrationTestFixture
 		await cmd.ExecuteNonQueryAsync();
 	}
 
+	// Test-only helper for asserting hard-deletes/anonymization at the DB level,
+	// e.g. proving a notification or user row no longer exists after an account
+	// deletion (#829) - there's no API to observe another user's rows directly.
+	// Column names are trusted call-site literals, not user input, so building
+	// the SQL string is fine here even though it wouldn't be for production code.
+	public async Task<int> CountRowsWhereAsync(string table, string column, Guid value)
+	{
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+		await using var cmd = new NpgsqlCommand(
+			$"SELECT COUNT(*) FROM \"{table}\" WHERE {column} = @value", conn);
+		cmd.Parameters.AddWithValue("value", value);
+		var count = await cmd.ExecuteScalarAsync();
+		return Convert.ToInt32(count);
+	}
+
 	public async Task ResetAsync()
 	{
 		await ResetDatabaseAsync();
@@ -194,6 +211,69 @@ public class IntegrationTestFixture
 			var deleteResponse = await _keycloakClient.SendAsync(deleteRequest);
 			await EnsureSuccessAsync(deleteResponse);
 		}
+	}
+
+	// Creates a brand-new, disposable Keycloak user with the realm's baseline
+	// "user" role. This fixture is shared PerTestSession, so tests that need to
+	// destructively mutate an account (e.g. deleting it, #829) must never touch
+	// the shared vera/olaf/admin seed users - they should operate on a
+	// throwaway account like this one instead. No cleanup is needed even if a
+	// test fails mid-way: unlike the shared seed accounts, a leftover ephemeral
+	// user cannot affect other tests' assumptions since nothing else
+	// references it by name.
+	public async Task<(Guid UserId, string Username, string Password)> CreateEphemeralUserAsync(
+		CancellationToken cancellationToken = default)
+	{
+		var username = $"itest-{Guid.NewGuid():N}";
+		const string password = "TestPass1";
+
+		var adminToken = await GetAdminTokenAsync();
+
+		using var createRequest = new HttpRequestMessage(
+			HttpMethod.Post, $"/admin/realms/{Realm}/users")
+		{
+			Content = JsonContent.Create(new
+			{
+				username,
+				enabled = true,
+				emailVerified = true,
+				email = $"{username}@example.com",
+				credentials = new[]
+				{
+					new { type = "password", value = password, temporary = false },
+				},
+			}),
+		};
+		createRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var createResponse = await _keycloakClient.SendAsync(createRequest, cancellationToken);
+		await EnsureSuccessAsync(createResponse);
+
+		var location = createResponse.Headers.Location
+			?? throw new InvalidOperationException("Keycloak did not return a Location header for the new user.");
+		var userId = location.Segments[^1];
+
+		using var roleRequest = new HttpRequestMessage(
+			HttpMethod.Get, $"/admin/realms/{Realm}/roles/{DefaultUserRole}");
+		roleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var roleResponse = await _keycloakClient.SendAsync(roleRequest, cancellationToken);
+		await EnsureSuccessAsync(roleResponse);
+
+		var userRole = await roleResponse.Content.ReadFromJsonAsync<KeycloakRole>(cancellationToken)
+			?? throw new InvalidOperationException("Keycloak role 'user' not found.");
+
+		using var assignRequest = new HttpRequestMessage(
+			HttpMethod.Post, $"/admin/realms/{Realm}/users/{userId}/role-mappings/realm")
+		{
+			Content = JsonContent.Create(new[] { new { id = userRole.Id, name = userRole.Name } }),
+		};
+		assignRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var assignResponse = await _keycloakClient.SendAsync(assignRequest, cancellationToken);
+		await EnsureSuccessAsync(assignResponse);
+
+		return (Guid.Parse(userId), username, password);
 	}
 
 	public Task WaitForResourceAsync(string resourceName) =>
