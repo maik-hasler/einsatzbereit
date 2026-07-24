@@ -13,17 +13,12 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 	IFileStorageService fileStorage)
 	: ICommandHandler<UploadOrganizationLogoCommand, bool>
 {
-	private static readonly Dictionary<string, string> Extensions = new(StringComparer.OrdinalIgnoreCase)
-	{
-		["image/jpeg"] = ".jpg",
-		["image/png"] = ".png",
-		["image/webp"] = ".webp",
-	};
-
 	public async ValueTask<bool> Handle(
 		UploadOrganizationLogoCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		ImageUploadValidator.EnsureValid(request.Content.Length, request.ContentType, "Logo");
+
 		var organization = await dbContext.Organizations.FindAsync(
 			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(), cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
@@ -34,7 +29,7 @@ internal sealed class UploadOrganizationLogoCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var ext = Extensions.GetValueOrDefault(request.ContentType, ".jpg");
+		var ext = ImageUploadValidator.GetExtension(request.ContentType);
 		var objectKey = $"organization-logos/{request.OrganizationId}{ext}";
 
 		using var stream = new MemoryStream(request.Content);

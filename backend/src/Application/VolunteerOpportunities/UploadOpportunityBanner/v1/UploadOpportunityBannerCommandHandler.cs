@@ -13,17 +13,12 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 	IFileStorageService fileStorage)
 	: ICommandHandler<UploadOpportunityBannerCommand, bool>
 {
-	private static readonly Dictionary<string, string> Extensions = new(StringComparer.OrdinalIgnoreCase)
-	{
-		["image/jpeg"] = ".jpg",
-		["image/png"] = ".png",
-		["image/webp"] = ".webp",
-	};
-
 	public async ValueTask<bool> Handle(
 		UploadOpportunityBannerCommand request,
 		CancellationToken cancellationToken = default)
 	{
+		ImageUploadValidator.EnsureValid(request.Content.Length, request.ContentType, "Banner");
+
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(
 			VolunteerOpportunityId.Create(request.OpportunityId).GetValueOrThrow(), cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
@@ -34,7 +29,7 @@ internal sealed class UploadOpportunityBannerCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var ext = Extensions.GetValueOrDefault(request.ContentType, ".jpg");
+		var ext = ImageUploadValidator.GetExtension(request.ContentType);
 		var objectKey = $"opportunity-banners/{request.OpportunityId}{ext}";
 
 		using var stream = new MemoryStream(request.Content);
