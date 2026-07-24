@@ -1,6 +1,7 @@
 #!/bin/sh
-# Substitutes runtime env vars into config.js at container start, so a single
-# image can be deployed to any environment (build once, deploy anywhere).
+# Substitutes runtime env vars into config.js and the nginx CSP header at
+# container start, so a single image can be deployed to any environment
+# (build once, deploy anywhere).
 set -eu
 
 config="/usr/share/nginx/html/config.js"
@@ -13,3 +14,25 @@ if [ -f "$config" ]; then
 	# return 403 without world-readable perms.
 	chmod 644 "$config"
 fi
+
+# The Content-Security-Policy's connect-src/frame-src need the backend API
+# and Keycloak origins (scheme+host, no path), derived from the same env vars
+# as config.js above rather than hardcoded, so a fork or a second deployment
+# target isn't silently locked to this repo's staging domains.
+: "${VITE_API_URL:=http://localhost:5000}"
+: "${VITE_KEYCLOAK_AUTHORITY_URL:=http://localhost:8080/realms/einsatzbereit}"
+
+url_origin() {
+	proto="${1%%://*}"
+	rest="${1#*://}"
+	host="${rest%%/*}"
+	printf '%s://%s' "$proto" "$host"
+}
+
+CSP_API_ORIGIN="$(url_origin "$VITE_API_URL")"
+CSP_KEYCLOAK_ORIGIN="$(url_origin "$VITE_KEYCLOAK_AUTHORITY_URL")"
+export CSP_API_ORIGIN CSP_KEYCLOAK_ORIGIN
+
+envsubst '${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN}' \
+	< /etc/nginx/nginx.conf.template \
+	> /etc/nginx/conf.d/default.conf

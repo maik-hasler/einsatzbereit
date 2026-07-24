@@ -166,6 +166,6 @@ Automated axe-core checks run in the Playwright visual tests (`backend/tests/Vis
 
 ## Production
 
-Static files in `dist/` served by nginx. `nginx.conf` handles SPA routing via `try_files $uri /index.html`.
+Static files in `dist/` served by nginx. `nginx.conf.template` handles SPA routing via `try_files $uri /index.html`; `docker-entrypoint.d/99-runtime-config.sh` renders it (and `config.js`) into their final form at container start via `envsubst`, filling in the Content-Security-Policy's `connect-src`/`frame-src` origins from the same `VITE_API_URL`/`VITE_KEYCLOAK_AUTHORITY_URL` env vars used for runtime config, so one image works across environments.
 
 **Important:** CORS must be configured on the backend to allow the frontend origin, since API calls are now cross-origin (no server-side proxy).
