@@ -38,12 +38,6 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		if (request.Title is { Length: > 200 })
-			return Results.Problem("Title must not exceed 200 characters.", statusCode: StatusCodes.Status400BadRequest);
-
-		if (request.Description is { Length: > 5000 })
-			return Results.Problem("Description must not exceed 5000 characters.", statusCode: StatusCodes.Status400BadRequest);
-
 		if (request.CheckInPin is { Length: > 0 } pin && (pin.Length < 4 || pin.Length > 6 || !pin.All(char.IsAsciiDigit)))
 		{
 			return Results.Problem(
