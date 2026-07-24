@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Vite SPA. React Router v7 for routing. Client-side OIDC via `react-oidc-context`. Static files served by nginx in production.
+Vite SPA. React Router v8 for routing. Client-side OIDC via `react-oidc-context`. Static files served by nginx in production.
 
 ```
 src/

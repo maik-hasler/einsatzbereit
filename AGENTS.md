@@ -18,9 +18,9 @@ einsatzbereit/
 
 | | |
 |---|---|
-| Backend | .NET 10 (SDK 10.0.300, see `backend/global.json`), EF Core 9, PostgreSQL 18 |
+| Backend | .NET 10 (SDK 10.0.302, see `backend/global.json`), EF Core 10, PostgreSQL 18 |
 | Auth | Keycloak 26.7.0 (OIDC, JWT) |
-| Frontend | Vite SPA, React 19, React Router v7, Tailwind CSS 4 |
+| Frontend | Vite SPA, React 19, React Router v8, Tailwind CSS 4 |
 | API client | NSwag-generated - **never hand-edit** `api-client.ts` |
 | Tests (BE) | TUnit, Aspire.Hosting.Testing, Respawn, NetArchTest |
 | Tests (FE) | E2E lives in backend `tests/VisualTests/` (TUnit.Playwright + Aspire) |
@@ -28,7 +28,7 @@ einsatzbereit/
 
 ## Development Setup
 
-Required: .NET SDK **10.0.300** (enforced via `backend/global.json`).
+Required: .NET SDK **10.0.302** (enforced via `backend/global.json`).
 
 ```bash
 dotnet run --project backend/src/Aspire/AppHost
@@ -98,10 +98,11 @@ edit on your own initiative):
   once before ending a turn if backend/frontend source changed, blocking
   only on an actual failure (capped at 2 blocks per session so it fails
   open rather than risk a loop) - a safety net since this routine has no
-  human review before a PR goes out. The `SessionStart` hook installs .NET
-  SDK **10.0.300** automatically via `dotnet-install.sh` in Claude Code
-  web/cloud sessions if `dotnet` is not already on `PATH` (see this file's
-  Development Setup for the SDK requirement itself).
+  human review before a PR goes out. The `SessionStart` hook installs the
+  .NET SDK version pinned in `backend/global.json` automatically via
+  `dotnet-install.sh` in Claude Code web/cloud sessions if `dotnet` is not
+  already on `PATH` (see this file's Development Setup for the SDK
+  requirement itself).
 - **Plugins** - the `dotnet/skills` marketplace (`dotnet-aspnetcore`,
   `dotnet-test`, `dotnet-nuget`, `dotnet-data`) plus `csharp-lsp`,
   `typescript-lsp`, and `playwright` (live browser control) are enabled in
