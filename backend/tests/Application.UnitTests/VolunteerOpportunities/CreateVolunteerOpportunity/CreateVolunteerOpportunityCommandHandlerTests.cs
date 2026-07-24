@@ -70,6 +70,32 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldPersistEmptyTitle_WhenDraftAndTitleOmitted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new CreateVolunteerOpportunityCommand(
+			string.Empty,
+			"For moving",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			null,
+			[],
+			OpportunityStatus.Draft,
+			DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Title.Should().Be(string.Empty);
+	}
+
+	[Test]
 	public async Task Handle_ShouldUseGivenCheckInPin(
 		CancellationToken cancellationToken)
 	{

@@ -87,6 +87,30 @@ public class VolunteerOpportunityTests
 	[Arguments("")]
 	[Arguments("   ")]
 	[Arguments(null)]
+	public void Create_ShouldAllow_EmptyTitle_WhenDraft(string? title)
+	{
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			title!,
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		result.Value.Title.Should().Be(title);
+	}
+
+	[Test]
+	[Arguments("")]
+	[Arguments("   ")]
+	[Arguments(null)]
 	public void Create_ShouldFail_WhenDescriptionIsEmpty(string? description)
 	{
 		// Act
@@ -270,9 +294,23 @@ public class VolunteerOpportunityTests
 	[Arguments("")]
 	[Arguments("   ")]
 	[Arguments(null)]
-	public void Rename_ShouldFail_WhenTitleIsEmpty(string? title)
+	public void Rename_ShouldAllow_EmptyTitle_WhenDraft(string? title)
 	{
 		var opportunity = CreateDraftWaitlistOpportunity();
+
+		var result = opportunity.Rename(title!);
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Title.Should().Be(title);
+	}
+
+	[Test]
+	[Arguments("")]
+	[Arguments("   ")]
+	[Arguments(null)]
+	public void Rename_ShouldFail_WhenTitleIsEmpty_AndPublished(string? title)
+	{
+		var opportunity = CreatePublishedWaitlistOpportunity();
 
 		var result = opportunity.Rename(title!);
 
