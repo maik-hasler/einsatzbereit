@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import LanguageSelector from "./LanguageSelector";
@@ -18,6 +18,7 @@ export default function MobileMenu({
 	activeOrg,
 	orgMenuOpen,
 	setOrgMenuOpen,
+	triggerRef,
 	onClose,
 	onSignIn,
 	onRegister,
@@ -32,6 +33,11 @@ export default function MobileMenu({
 	activeOrg: OrganizationSummaryDto | null | undefined;
 	orgMenuOpen: boolean;
 	setOrgMenuOpen: Dispatch<SetStateAction<boolean>>;
+	// The hamburger button that toggles this menu open/closed - rendered as a
+	// sibling in MobileHeader, not a descendant here. Without treating it as
+	// "inside", the outside-click check below would see the very click that
+	// opens this menu as an outside click and immediately close it again.
+	triggerRef: RefObject<HTMLButtonElement | null>;
 	onClose: () => void;
 	onSignIn: () => void;
 	onRegister: () => void;
@@ -46,7 +52,9 @@ export default function MobileMenu({
 		: "text-gray-700 hover:bg-brand-50 hover:text-brand-600";
 	// Only ever mounted while open (see Header.tsx), so dismissal listeners
 	// attach for this component's entire lifetime.
-	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose);
+	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose, [
+		triggerRef,
+	]);
 
 	return (
 		<div
