@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { AdminUserListItem } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass } from "../lib/formClasses";
@@ -73,41 +74,28 @@ function OrganizationsSection() {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
-	const [rows, setRows] = useState<OrgRow[]>([]);
-	const [page, setPage] = useState(1);
-	const [pageCount, setPageCount] = useState(1);
-	const [loading, setLoading] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [toggling, setToggling] = useState<string | null>(null);
 
-	function load(pageNumber: number) {
-		if (pageNumber > 1) setLoadingMore(true);
-		else setLoading(true);
-		setError(null);
-		api
-			.listOrganizations(pageNumber, PAGE_SIZE)
-			.then((result) => {
-				const mapped = result.items.map((o) => ({
+	const {
+		items: rows,
+		setItems: setRows,
+		loading,
+		loadingMore,
+		error,
+		hasMore,
+		loadMore,
+	} = useLoadMore<OrgRow>(
+		(pageNumber) =>
+			api.listOrganizations(pageNumber, PAGE_SIZE).then((result) => ({
+				items: result.items.map((o) => ({
 					id: o.id,
 					name: o.name,
 					isVerified: o.isVerified,
-				}));
-				if (pageNumber === 1) setRows(mapped);
-				else setRows((prev) => [...prev, ...mapped]);
-				setPageCount(result.pageCount ?? 1);
-			})
-			.catch(() => setError(t("administration.organizations.error")))
-			.finally(() => {
-				setLoading(false);
-				setLoadingMore(false);
-			});
-	}
-
-	useEffect(() => {
-		load(1);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+				})),
+				pageCount: result.pageCount,
+			})),
+		{ getErrorMessage: () => t("administration.organizations.error") },
+	);
 
 	async function toggleVerified(orgId: string, next: boolean) {
 		setToggling(orgId);
@@ -191,15 +179,11 @@ function OrganizationsSection() {
 					</tbody>
 				</table>
 			</div>
-			{page < pageCount && (
+			{hasMore && (
 				<LoadMoreButton
 					loading={loadingMore}
 					label={t("administration.organizations.loadMore")}
-					onClick={() => {
-						const next = page + 1;
-						setPage(next);
-						load(next);
-					}}
+					onClick={loadMore}
 				/>
 			)}
 		</>
@@ -212,44 +196,29 @@ function UsersSection() {
 	const api = useApiClient();
 	const currentUserId = auth.user?.profile?.sub;
 
-	const [rows, setRows] = useState<AdminUserListItem[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 	const [appliedSearch, setAppliedSearch] = useState("");
-	const [page, setPage] = useState(1);
-	const [pageCount, setPageCount] = useState(1);
 	const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
-	function load(searchTerm: string, pageNumber: number) {
-		if (pageNumber > 1) setLoadingMore(true);
-		else setLoading(true);
-		setError(null);
-		api
-			.listUsers(searchTerm.trim() || undefined, pageNumber, PAGE_SIZE)
-			.then((result) => {
-				if (pageNumber === 1) setRows(result.items);
-				else setRows((prev) => [...prev, ...result.items]);
-				setPageCount(result.pageCount ?? 1);
-			})
-			.catch(() => setError(t("administration.users.error")))
-			.finally(() => {
-				setLoading(false);
-				setLoadingMore(false);
-			});
-	}
-
-	useEffect(() => {
-		load("", 1);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	const {
+		items: rows,
+		setItems: setRows,
+		loading,
+		loadingMore,
+		error,
+		hasMore,
+		loadMore,
+		reset,
+	} = useLoadMore<AdminUserListItem>(
+		(pageNumber) =>
+			api.listUsers(appliedSearch.trim() || undefined, pageNumber, PAGE_SIZE),
+		{ getErrorMessage: () => t("administration.users.error") },
+	);
 
 	function handleSearchSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setAppliedSearch(search);
-		setPage(1);
-		load(search, 1);
+		reset();
 	}
 
 	async function toggleEnabled(userId: string, next: boolean) {
@@ -444,15 +413,11 @@ function UsersSection() {
 							</tbody>
 						</table>
 					</div>
-					{page < pageCount && (
+					{hasMore && (
 						<LoadMoreButton
 							loading={loadingMore}
 							label={t("administration.users.loadMore")}
-							onClick={() => {
-								const next = page + 1;
-								setPage(next);
-								load(appliedSearch, next);
-							}}
+							onClick={loadMore}
 						/>
 					)}
 				</>
