@@ -116,8 +116,8 @@ services:
           memory: 512m
           cpus: "0.50"
     environment:
-      MINIO_ROOT_USER: einsatzbereit-minio
-      MINIO_ROOT_PASSWORD: einsatzbereit-minio-secret
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -174,8 +174,8 @@ services:
       Keycloak__ClientSecret: ${KEYCLOAK_BACKEND_SECRET:?set KEYCLOAK_BACKEND_SECRET in .env}
       Cors__Origins__0: https://einsatzbereit.maik-hasler.de
       Storage__Endpoint: http://minio:9000
-      Storage__AccessKey: einsatzbereit-minio
-      Storage__SecretKey: einsatzbereit-minio-secret
+      Storage__AccessKey: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
       Storage__BucketName: einsatzbereit
       Storage__PublicEndpoint: https://storage.maik-hasler.de
     labels:

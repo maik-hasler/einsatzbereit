@@ -337,6 +337,8 @@ jobs:
           # Backend Keycloak client secret. Matches the static value defined in
           # keycloak/realms/einsatzbereit-realm.json ("secret": "backend-secret").
           KEYCLOAK_BACKEND_SECRET: backend-secret
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
         run: |
           umask 077
           # Wrap each value in double quotes and escape \ and " so secrets that
@@ -354,6 +356,8 @@ jobs:
             printf 'KEYCLOAK_ADMIN_USER="%s"\n' "$(escape "$KEYCLOAK_ADMIN_USER")"
             printf 'KEYCLOAK_ADMIN_PASSWORD="%s"\n' "$(escape "$KEYCLOAK_ADMIN_PASSWORD")"
             printf 'KEYCLOAK_BACKEND_SECRET="%s"\n' "$(escape "$KEYCLOAK_BACKEND_SECRET")"
+            printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
+            printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
           } > .env
 
       - name: Copy compose file and .env
