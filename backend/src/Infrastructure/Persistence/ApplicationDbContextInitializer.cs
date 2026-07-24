@@ -67,6 +67,7 @@ internal sealed class ApplicationDbContextInitializer(
 				ParticipationType.Waitlist,
 				CheckInMethod.Manual,
 				pinGenerator,
+				category: Category.Health,
 				status: OpportunityStatus.Draft).GetValueOrThrow();
 			opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20, now).GetValueOrThrow();
 			opp1.Publish().ThrowIfFailure();
@@ -80,7 +81,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Health).GetValueOrThrow();
 
 			var opp2b = VolunteerOpportunity.Create(
 				org1Id,
@@ -91,7 +93,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.OneTime,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Health).GetValueOrThrow();
 
 			var opp2c = VolunteerOpportunity.Create(
 				org1Id,
@@ -102,7 +105,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Social).GetValueOrThrow();
 
 			var opp2d = VolunteerOpportunity.Create(
 				org1Id,
@@ -113,7 +117,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Education).GetValueOrThrow();
 
 			var opp3 = VolunteerOpportunity.Create(
 				org2Id,
@@ -125,6 +130,7 @@ internal sealed class ApplicationDbContextInitializer(
 				ParticipationType.Waitlist,
 				CheckInMethod.QRCode,
 				pinGenerator,
+				category: Category.Animals,
 				status: OpportunityStatus.Draft).GetValueOrThrow();
 			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5, now).GetValueOrThrow();
 			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), 5, now).GetValueOrThrow();
@@ -139,7 +145,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.OneTime,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Social).GetValueOrThrow();
 
 			var opp4b = VolunteerOpportunity.Create(
 				org2Id,
@@ -150,7 +157,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Animals).GetValueOrThrow();
 
 			var opp4c = VolunteerOpportunity.Create(
 				org2Id,
@@ -161,7 +169,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.OneTime,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Animals).GetValueOrThrow();
 
 			var opp4d = VolunteerOpportunity.Create(
 				org2Id,
@@ -172,7 +181,8 @@ internal sealed class ApplicationDbContextInitializer(
 				Occurrence.Recurring,
 				ParticipationType.IndividualContact,
 				CheckInMethod.None,
-				pinGenerator).GetValueOrThrow();
+				pinGenerator,
+				category: Category.Animals).GetValueOrThrow();
 
 			dbContext.Set<VolunteerOpportunity>().AddRange(
 				opp1, opp2, opp2b, opp2c, opp2d, opp3, opp4, opp4b, opp4c, opp4d);
