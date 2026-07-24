@@ -59,6 +59,62 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		notification.ActionUrl.Should().Be("/my-engagements");
 	}
 
+	[Test]
+	public async Task MarkNotificationRead_ShouldReturn204AndFlagAsRead_WhenRequestingUserIsTheRecipient(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Mark Read Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
+		var notification = olafNotifications.Single(n => n.Kind == "EngagementCreated");
+
+		await olafClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
+
+		var updatedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
+		updatedNotifications.Single(n => n.Id == notification.Id).IsRead.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task MarkNotificationRead_ShouldReturn404AndLeaveItUnread_WhenRequestingUserIsNotTheRecipient(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Cross-User Mark Read Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
+		var notification = olafNotifications.Single(n => n.Kind == "EngagementCreated");
+
+		// Direct ownership-check coverage for #829: vera is not the recipient of
+		// olaf's notification, so this must 404 (not 403, to avoid leaking
+		// existence) and must not flip IsRead as a side effect.
+		var act = () => veraClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+
+		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
+		unchangedNotifications.Single(n => n.Id == notification.Id).IsRead.Should().BeFalse();
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{
