@@ -52,6 +52,9 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
 		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).Value;
 
+	private VolunteerOpportunity CreateDraftOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
+		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+
 	private VolunteerOpportunity CreatePublishedWaitlistOpportunity()
 	{
 		var opportunity = VolunteerOpportunity.Create(
@@ -287,6 +290,29 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Title must not be empty*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldAllowEmptyTitle_WhenDraft(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateDraftOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		opportunity.Title.Should().Be(string.Empty);
 	}
 
 	[Test]

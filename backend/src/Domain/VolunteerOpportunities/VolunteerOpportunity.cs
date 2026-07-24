@@ -105,9 +105,6 @@ public sealed class VolunteerOpportunity
 		OpportunityStatus status = OpportunityStatus.Published,
 		string? checkInPin = null)
 	{
-		if (string.IsNullOrWhiteSpace(title))
-			return Result.Failure<VolunteerOpportunity>(Error.Validation("VolunteerOpportunity.TitleRequired", "Title must not be empty."));
-
 		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
 		{
 			var validPin = EnsureValidPin(checkInPin);
@@ -117,7 +114,7 @@ public sealed class VolunteerOpportunity
 
 		if (status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(description, isRemote, address);
+			var publishable = EnsurePublishable(title, description, isRemote, address);
 			if (publishable.IsFailure)
 				return Result.Failure<VolunteerOpportunity>(publishable.Error);
 
@@ -149,10 +146,14 @@ public sealed class VolunteerOpportunity
 	}
 
 	private static Result EnsurePublishable(
+		string title,
 		string description,
 		bool isRemote,
 		Address? address)
 	{
+		if (string.IsNullOrWhiteSpace(title))
+			return Result.Failure(Error.Validation("VolunteerOpportunity.TitleRequired", "Title must not be empty."));
+
 		if (string.IsNullOrWhiteSpace(description))
 			return Result.Failure(Error.Validation("VolunteerOpportunity.DescriptionRequired", "Description must not be empty."));
 
@@ -167,7 +168,7 @@ public sealed class VolunteerOpportunity
 		if (Status == OpportunityStatus.Published)
 			return Result.Failure(Error.Conflict("VolunteerOpportunity.AlreadyPublished", "Opportunity is already published."));
 
-		var publishable = EnsurePublishable(Description, IsRemote, Address);
+		var publishable = EnsurePublishable(Title, Description, IsRemote, Address);
 		if (publishable.IsFailure)
 			return publishable;
 
@@ -202,8 +203,12 @@ public sealed class VolunteerOpportunity
 
 	public Result Rename(string title)
 	{
-		if (string.IsNullOrWhiteSpace(title))
-			return Result.Failure(Error.Validation("VolunteerOpportunity.TitleRequired", "Title must not be empty."));
+		if (Status == OpportunityStatus.Published)
+		{
+			var publishable = EnsurePublishable(title, Description, IsRemote, Address);
+			if (publishable.IsFailure)
+				return publishable;
+		}
 
 		Title = title;
 		return Result.Success();
@@ -213,7 +218,7 @@ public sealed class VolunteerOpportunity
 	{
 		if (Status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(description, IsRemote, Address);
+			var publishable = EnsurePublishable(Title, description, IsRemote, Address);
 			if (publishable.IsFailure)
 				return publishable;
 		}
@@ -226,7 +231,7 @@ public sealed class VolunteerOpportunity
 	{
 		if (Status == OpportunityStatus.Published)
 		{
-			var publishable = EnsurePublishable(Description, isRemote, address);
+			var publishable = EnsurePublishable(Title, Description, isRemote, address);
 			if (publishable.IsFailure)
 				return publishable;
 		}

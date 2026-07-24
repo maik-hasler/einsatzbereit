@@ -51,11 +51,6 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 					"ParticipationType cannot be changed while active engagements exist."));
 		}
 
-		var title = opportunity.Status == OpportunityStatus.Draft
-			&& string.IsNullOrWhiteSpace(request.Title)
-				? "Unbenannt"
-				: request.Title;
-
 		var address = request.Address;
 
 		if (!request.IsRemote && address is not null)
@@ -66,7 +61,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		var prevAddress = opportunity.Address;
 		var prevOccurrence = opportunity.Occurrence;
 
-		opportunity.Rename(title).ThrowIfFailure();
+		opportunity.Rename(request.Title).ThrowIfFailure();
 		opportunity.ChangeDescription(request.Description).ThrowIfFailure();
 		opportunity.Relocate(request.IsRemote, address).ThrowIfFailure();
 		opportunity.Reschedule(request.Occurrence);

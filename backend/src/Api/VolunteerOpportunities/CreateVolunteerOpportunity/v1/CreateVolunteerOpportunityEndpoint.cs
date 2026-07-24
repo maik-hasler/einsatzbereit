@@ -104,12 +104,8 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 				request.ZipCode ?? string.Empty,
 				request.City ?? string.Empty).GetValueOrThrow();
 
-		var title = status == OpportunityStatus.Draft && string.IsNullOrWhiteSpace(request.Title)
-			? "Unbenannt"
-			: request.Title ?? string.Empty;
-
 		var command = new CreateVolunteerOpportunityCommand(
-			title,
+			request.Title ?? string.Empty,
 			request.Description ?? string.Empty,
 			OrganizationId.Create(request.OrganizationId).GetValueOrThrow(),
 			request.IsRemote,
