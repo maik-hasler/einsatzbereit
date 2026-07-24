@@ -22,10 +22,6 @@ public interface IVolunteerOpportunityReadRepository
 		OpportunityStatus? status = null,
 		CancellationToken cancellationToken = default);
 
-	ValueTask<string?> GetBannerUrlAsync(
-		Guid opportunityId,
-		CancellationToken cancellationToken = default);
-
 	ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default);
