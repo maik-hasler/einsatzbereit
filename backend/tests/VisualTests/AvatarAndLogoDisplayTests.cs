@@ -117,6 +117,56 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(orgLink.Locator("img")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
 
+	[Test]
+	public async Task RemoveOrganizationLogo_ClearsLogoUrl_AndHidesRemoveButton()
+	{
+		// #845: the organization-logo upload feature had no matching
+		// delete/remove endpoint, unlike the symmetric opportunity-banner
+		// feature. Verifies the new DELETE endpoint and its "Remove" button
+		// in OrgSettingsPage actually clear the stored logo.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await GetAccessTokenAsync();
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"LogoRemoval {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		using var content = new MultipartFormDataContent();
+		using var fileContent = new ByteArrayContent(TinyPng);
+		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+		content.Add(fileContent, "file", "logo.png");
+
+		(await http.PutAsync($"/v1/organizations/{organizationId}/logo", content)).EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var removeButton = Page.GetByRole(AriaRole.Button, new() { Name = "Remove" });
+		await Expect(removeButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await removeButton.ClickAsync();
+		await Expect(removeButton).ToBeHiddenAsync(new() { Timeout = 10_000 });
+
+		var afterResponse = await http.GetAsync($"/v1/organizations/{organizationId}");
+		afterResponse.EnsureSuccessStatusCode();
+		var afterOrg = await afterResponse.Content.ReadFromJsonAsync<JsonElement>();
+		afterOrg.GetProperty("logoUrl").ValueKind.Should().Be(JsonValueKind.Null);
+	}
+
 	private async Task<string> GetAccessTokenAsync()
 	{
 		var token = await Page.EvaluateAsync<string?>(@"() => {

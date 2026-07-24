@@ -1,3 +1,6 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using AwesomeAssertions;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
@@ -328,6 +331,70 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
+
+	[Test]
+	public async Task OrganizationSettingsPage_EditModeWithLogo_HasNoSeriousA11yViolations()
+	{
+		// #845: the "Remove" button next to the logo only renders once an
+		// organization has a logo. Olaf's seeded org has none, so the edit-mode
+		// scan above never renders it - seed a fresh org with a logo here
+		// instead of mutating Olaf's shared seed data.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await GetAccessTokenAsync();
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11yLogo {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		using var content = new MultipartFormDataContent();
+		using var fileContent = new ByteArrayContent(TinyPng);
+		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+		content.Add(fileContent, "file", "logo.png");
+
+		(await http.PutAsync($"/v1/organizations/{organizationId}/logo", content)).EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/settings");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	private async Task<string> GetAccessTokenAsync()
+	{
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		return token!;
+	}
+
+	// 1x1 transparent PNG.
+	private static readonly byte[] TinyPng = Convert.FromBase64String(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
 	[Test]
 	public async Task OrgDashboardPage_EditMode_AsOlaf_HasNoSeriousA11yViolations()
