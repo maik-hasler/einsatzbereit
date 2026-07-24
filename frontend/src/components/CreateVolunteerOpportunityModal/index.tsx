@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import type {
 	AddressDto,
+	EinsatzbereitApi,
 	TimeSlotDetail,
 	VolunteerOpportunityDetails,
 } from "../../client/api-client";
@@ -41,6 +42,30 @@ function advanceDate(
 		d.setMonth(d.getMonth() + steps);
 	}
 	return d;
+}
+
+function resolveCheckInPin(
+	values: Pick<OpportunityFormValues, "checkInMethod" | "checkInPin">,
+): string | undefined {
+	return values.checkInMethod === "PINCode"
+		? values.checkInPin || undefined
+		: undefined;
+}
+
+async function uploadBanner(
+	api: EinsatzbereitApi,
+	opportunityId: string,
+	bannerFile: File,
+	onError: () => void,
+): Promise<void> {
+	try {
+		await api.uploadOpportunityBanner(opportunityId, {
+			data: bannerFile,
+			fileName: bannerFile.name,
+		});
+	} catch {
+		onError();
+	}
 }
 
 interface Props {
@@ -421,22 +446,14 @@ export default function CreateVolunteerOpportunityModal({
 					occurrence: values.occurrence,
 					participationType: values.participationType,
 					checkInMethod: values.checkInMethod,
-					checkInPin:
-						values.checkInMethod === "PINCode"
-							? values.checkInPin || undefined
-							: undefined,
+					checkInPin: resolveCheckInPin(values),
 					category: values.category || undefined,
 					tags: values.tags,
 				});
 				if (bannerFile) {
-					try {
-						await api.uploadOpportunityBanner(initialOpportunity.id, {
-							data: bannerFile,
-							fileName: bannerFile.name,
-						});
-					} catch {
-						dispatchToast("error", t("editOpportunity.bannerUploadFailed"));
-					}
+					await uploadBanner(api, initialOpportunity.id, bannerFile, () =>
+						dispatchToast("error", t("editOpportunity.bannerUploadFailed")),
+					);
 				} else if (bannerRemoved) {
 					try {
 						await api.deleteOpportunityBanner(initialOpportunity.id);
@@ -463,23 +480,15 @@ export default function CreateVolunteerOpportunityModal({
 					occurrence: values.occurrence,
 					participationType: values.participationType,
 					checkInMethod: values.checkInMethod,
-					checkInPin:
-						values.checkInMethod === "PINCode"
-							? values.checkInPin || undefined
-							: undefined,
+					checkInPin: resolveCheckInPin(values),
 					category: values.category,
 					tags: values.tags,
 					isDraft: asDraft || publishWaitlistAfterCreate,
 				});
 				if (bannerFile) {
-					try {
-						await api.uploadOpportunityBanner(opportunity.id, {
-							data: bannerFile,
-							fileName: bannerFile.name,
-						});
-					} catch {
-						dispatchToast("error", t("createOpportunity.bannerUploadFailed"));
-					}
+					await uploadBanner(api, opportunity.id, bannerFile, () =>
+						dispatchToast("error", t("createOpportunity.bannerUploadFailed")),
+					);
 				}
 				for (const slot of pendingSlots) {
 					await api.createTimeSlot(opportunity.id, {
