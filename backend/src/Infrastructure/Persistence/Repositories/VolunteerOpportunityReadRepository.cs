@@ -130,14 +130,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
 
 			var summaries = page
-				.Select(x => new VolunteerOpportunitySummary(
-					x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
-					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
-					x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
-					x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
-					maxPMap.GetValueOrDefault(x.Id, 0),
-					partCountMap.GetValueOrDefault(x.Id, 0),
-					x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified, x.OrgLogoUrl))
+				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+					maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0)))
 				.ToList();
 
 			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
@@ -156,14 +152,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var result = rows
-			.Select(x => new VolunteerOpportunitySummary(
-				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
-				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
-				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
-				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
-				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
-				participantCountMap.GetValueOrDefault(x.Id, 0),
-				x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified, x.OrgLogoUrl))
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
 
 		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
@@ -210,6 +202,61 @@ internal sealed class VolunteerOpportunityReadRepository(
 			participantCounts.ToDictionary(x => x.OpportunityId, x => x.Count)
 		);
 	}
+
+	// Shared post-materialization mapping only - the ~20-field EF projection itself stays
+	// duplicated in each query below. Introducing a named type for the Join/Select result
+	// broke EF Core's column pruning (it fell back to selecting every column of both
+	// entities and fully materializing them client-side) - see #869 follow-up.
+	private static VolunteerOpportunitySummary ToSummary(
+		Guid id,
+		string title,
+		string description,
+		Guid organizationId,
+		string orgName,
+		bool orgIsVerified,
+		string? orgLogoUrl,
+		string? street,
+		string? houseNumber,
+		string? zipCode,
+		string? city,
+		double? latitude,
+		double? longitude,
+		bool isRemote,
+		Occurrence occurrence,
+		ParticipationType participationType,
+		CheckInMethod checkInMethod,
+		Category? category,
+		IReadOnlyList<string> tags,
+		DateTimeOffset createdOn,
+		OpportunityStatus status,
+		string? bannerImageUrl,
+		int totalMaxParticipants,
+		int currentParticipantCount) =>
+		new(
+			id,
+			title,
+			description,
+			organizationId,
+			orgName,
+			street,
+			houseNumber,
+			zipCode,
+			city,
+			latitude,
+			longitude,
+			isRemote,
+			occurrence.ToString(),
+			participationType.ToString(),
+			checkInMethod.ToString(),
+			category?.ToString(),
+			tags,
+			createdOn,
+			totalMaxParticipants,
+			currentParticipantCount,
+			status.ToString(),
+			bannerImageUrl,
+			orgIsVerified,
+			orgLogoUrl);
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
 		Guid opportunityId,
@@ -380,14 +427,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		return rows
-			.Select(x => new VolunteerOpportunitySummary(
-				x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName,
-				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude,
-				x.IsRemote, x.Occurrence.ToString(), x.ParticipationType.ToString(),
-				x.CheckInMethod.ToString(), x.Category?.ToString(), x.Tags, x.CreatedOn,
-				maxParticipantsMap.GetValueOrDefault(x.Id, 0),
-				participantCountMap.GetValueOrDefault(x.Id, 0),
-				x.Status.ToString(), x.BannerImageUrl, x.OrgIsVerified, x.OrgLogoUrl))
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
 	}
 
