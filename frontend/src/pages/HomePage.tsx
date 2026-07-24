@@ -3,7 +3,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import type { OrganizationSummaryDto } from "../client/api-client";
-import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList";
+import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";

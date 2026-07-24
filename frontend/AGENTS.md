@@ -15,7 +15,7 @@ src/
 │   ├── Header/             Header with auth state (login/logout buttons, org switcher, notifications) + optional per-page breadcrumb/action bar (see `breadcrumb` prop) - split across Header.tsx (orchestrator), DesktopHeader.tsx, MobileHeader.tsx, MobileMenu.tsx, AccountControls.tsx, NotificationDropdown.tsx, NotificationItem.tsx, OrganizationSwitcher.tsx, LanguageSelector.tsx, BreadcrumbBar.tsx - all exclusive to Header, nothing here is imported outside this folder
 │   ├── Footer.tsx          Footer with links and social icons
 │   ├── CreateOrganizationModal.tsx     Modal form for org creation
-│   ├── VolunteerOpportunitiesList.tsx  Paginated list (size=10), filter bar, gated create button
+│   ├── VolunteerOpportunitiesList/     Paginated list (size=10), filter bar - split across VolunteerOpportunitiesList.tsx (orchestrator), icons.tsx, MiniCalendar.tsx, FilterDropdown.tsx, OpportunityListItem.tsx, OpportunityResultsList.tsx, useVolunteerOpportunitiesData.ts, useCitySuggestions.ts - all exclusive to this folder, nothing here is imported outside it
 │   └── CreateVolunteerOpportunityModal.tsx  Modal form for opportunity creation
 ├── layouts/
 │   ├── AppLayout.tsx       Header + <Outlet /> + Footer
