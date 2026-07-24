@@ -47,9 +47,9 @@ function fmtIso(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function fmtShortDate(iso: string): string {
+function fmtShortDate(iso: string, locale: string): string {
 	const d = new Date(iso + "T00:00:00");
-	return new Intl.DateTimeFormat(undefined, {
+	return new Intl.DateTimeFormat(locale, {
 		day: "numeric",
 		month: "short",
 	}).format(d);
@@ -458,7 +458,8 @@ function MiniCalendar({
 	toStr: string;
 	onChange: (from: string, to: string) => void;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
+	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
 	const todayMidnight = (() => {
 		const d = new Date();
@@ -529,12 +530,12 @@ function MiniCalendar({
 		}
 	}
 
-	const monthName = new Intl.DateTimeFormat(undefined, {
+	const monthName = new Intl.DateTimeFormat(locale, {
 		month: "long",
 	}).format(firstOfMonth);
 	const dayLabels = Array.from({ length: 7 }, (_, i) => {
 		const ref = new Date(2024, 0, 1 + i); // 2024-01-01 was Monday
-		return new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(ref);
+		return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(ref);
 	});
 
 	return (
@@ -635,8 +636,8 @@ function MiniCalendar({
 			{from && (
 				<div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2">
 					<span className="text-xs text-gray-500">
-						{fmtShortDate(fmtIso(from))}
-						{to ? ` - ${fmtShortDate(fmtIso(to))}` : ""}
+						{fmtShortDate(fmtIso(from), locale)}
+						{to ? ` - ${fmtShortDate(fmtIso(to), locale)}` : ""}
 					</span>
 					<button
 						type="button"
@@ -812,7 +813,8 @@ function FilterDropdown({
 
 export default function VolunteerOpportunitiesList() {
 	const api = useApiClient();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
+	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const occurrence = searchParams.get("occurrence") ?? "";
@@ -1175,10 +1177,12 @@ export default function VolunteerOpportunitiesList() {
 	const dateDisplayValue = dateFrom
 		? dateTo
 			? t("opportunities.dateRangeDisplay", {
-					from: fmtShortDate(dateFrom),
-					to: fmtShortDate(dateTo),
+					from: fmtShortDate(dateFrom, locale),
+					to: fmtShortDate(dateTo, locale),
 				})
-			: t("opportunities.dateFromDisplay", { date: fmtShortDate(dateFrom) })
+			: t("opportunities.dateFromDisplay", {
+					date: fmtShortDate(dateFrom, locale),
+				})
 		: "";
 
 	return (
