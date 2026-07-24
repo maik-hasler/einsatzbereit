@@ -156,7 +156,7 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
 
-		var removeButton = Page.GetByRole(AriaRole.Button, new() { Name = "Remove" });
+		var removeButton = Page.GetByTestId("logo-remove");
 		await Expect(removeButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await removeButton.ClickAsync();
 		await Expect(removeButton).ToBeHiddenAsync(new() { Timeout = 10_000 });
