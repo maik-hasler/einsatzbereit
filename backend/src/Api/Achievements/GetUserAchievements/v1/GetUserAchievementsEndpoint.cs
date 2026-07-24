@@ -18,6 +18,7 @@ internal sealed class GetUserAchievementsEndpoint
 			.WithTags("Achievements")
 			.Produces<List<AchievementSummary>>()
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 

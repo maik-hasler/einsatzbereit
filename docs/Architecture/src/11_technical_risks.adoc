@@ -20,9 +20,9 @@ The following table lists the relevant risks and technical debts. Each risk or t
 
 |2
 |CI Pipeline Performance
-|Slow, steadily growing backend CI pipeline dominated by end-to-end tests.
+|Steadily growing backend CI pipeline dominated by end-to-end tests; critical path cut from ~10 min to ~6 min by splitting into parallel jobs (#773), full resolution still pending.
 |Low-Medium
-|Analyzed
+|In Progress
 |2026-07-18
 |link:TDRs/2_slow_ci_pipeline.html[Slow CI Pipeline]
 
