@@ -48,6 +48,13 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
+		if (request.RecurrenceFrequency is null && recurrenceCount > 1)
+		{
+			return Results.Problem(
+				"RecurrenceFrequency is required when RecurrenceCount is greater than 1.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
 		var command = new CreateTimeSlotCommand(
 			opportunityId,
 			request.StartDateTime,
