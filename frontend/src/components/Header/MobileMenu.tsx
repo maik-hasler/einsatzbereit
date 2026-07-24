@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
+import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
 // toggled open by MobileHeader's burger button.
@@ -43,9 +44,13 @@ export default function MobileMenu({
 	const menuItemVariant = isTransparent
 		? "text-white/90 hover:bg-white/10 hover:text-white"
 		: "text-gray-700 hover:bg-brand-50 hover:text-brand-600";
+	// Only ever mounted while open (see Header.tsx), so dismissal listeners
+	// attach for this component's entire lifetime.
+	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose);
 
 	return (
 		<div
+			ref={rootRef}
 			className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
 		>
 			{isTransparent && (

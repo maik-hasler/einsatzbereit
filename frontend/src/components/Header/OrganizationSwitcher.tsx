@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
@@ -6,6 +6,7 @@ import type {
 	OrganizationSummaryDto,
 } from "../../client/api-client";
 import { orgTabPath } from "../../lib/orgTabs";
+import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import CreateOrganizationModal from "../CreateOrganizationModal";
 
 export default function OrganizationSwitcher({
@@ -26,26 +27,15 @@ export default function OrganizationSwitcher({
 	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
 	const [showModal, setShowModal] = useState(false);
-	const containerRef = useRef<HTMLDivElement>(null);
+	const containerRef = useDismissableOverlay<HTMLDivElement>(open, () =>
+		setOpen(false),
+	);
 
 	const currentOrg = orgs.find((o) => o.id === currentOrgId) ?? null;
 
 	function orgPath(org: OrganizationSummaryDto) {
 		return orgTabPath(org.id, currentTab);
 	}
-
-	useEffect(() => {
-		const handleClick = (e: MouseEvent) => {
-			if (
-				containerRef.current &&
-				!containerRef.current.contains(e.target as Node)
-			) {
-				setOpen(false);
-			}
-		};
-		document.addEventListener("click", handleClick);
-		return () => document.removeEventListener("click", handleClick);
-	}, []);
 
 	function handleSwitch(org: OrganizationSummaryDto) {
 		setOpen(false);

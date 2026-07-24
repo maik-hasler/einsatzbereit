@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useAuth } from "react-oidc-context";
 import { useApiClient } from "./useApiClient";
+import { useDismissableOverlay } from "./useDismissableOverlay";
 import type { NotificationSummary } from "../client/api-client";
 
 export interface AccountMenuState {
@@ -36,30 +37,14 @@ export function useAccountMenu(
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [notifOpen, setNotifOpen] = useState(false);
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
-	const dropdownRef = useRef<HTMLDivElement>(null);
-	const notifRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handler = (e: MouseEvent) => {
-			if (
-				dropdownRef.current &&
-				!dropdownRef.current.contains(e.target as Node)
-			) {
-				setDropdownOpen(false);
-			}
-			const insideNotif =
-				(notifRef.current && notifRef.current.contains(e.target as Node)) ||
-				extraNotifContainers.some(
-					(ref) => ref.current && ref.current.contains(e.target as Node),
-				);
-			if (!insideNotif) {
-				setNotifOpen(false);
-			}
-		};
-		document.addEventListener("click", handler);
-		return () => document.removeEventListener("click", handler);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	const dropdownRef = useDismissableOverlay<HTMLDivElement>(dropdownOpen, () =>
+		setDropdownOpen(false),
+	);
+	const notifRef = useDismissableOverlay<HTMLDivElement>(
+		notifOpen,
+		() => setNotifOpen(false),
+		extraNotifContainers,
+	);
 
 	useEffect(() => {
 		if (!isLoggedIn) return;

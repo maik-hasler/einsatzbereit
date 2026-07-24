@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { runtimeConfig } from "../lib/runtimeConfig";
+import { useDismissableOverlay } from "../hooks/useDismissableOverlay";
 
 interface AddToCalendarMenuProps {
 	engagementId: string;
@@ -33,18 +34,9 @@ export default function AddToCalendarMenu({
 }: AddToCalendarMenuProps) {
 	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
-	const rootRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (!open) return;
-		function handleClick(e: MouseEvent) {
-			if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-				setOpen(false);
-			}
-		}
-		document.addEventListener("click", handleClick);
-		return () => document.removeEventListener("click", handleClick);
-	}, [open]);
+	const rootRef = useDismissableOverlay<HTMLDivElement>(open, () =>
+		setOpen(false),
+	);
 
 	const startDate = new Date(start);
 	const endDate = new Date(end);
