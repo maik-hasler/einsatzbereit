@@ -131,6 +131,100 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
+	public void Create_ShouldFail_WhenTitleExceedsMaxLength()
+	{
+		// Arrange
+		var title = new string('a', VolunteerOpportunity.MaxTitleLength + 1);
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			title,
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"Title must not exceed {VolunteerOpportunity.MaxTitleLength} characters.");
+	}
+
+	[Test]
+	public void Create_ShouldAllow_TitleAtMaxLength()
+	{
+		// Arrange
+		var title = new string('a', VolunteerOpportunity.MaxTitleLength);
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			title,
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+	}
+
+	[Test]
+	public void Create_ShouldFail_WhenDescriptionExceedsMaxLength()
+	{
+		// Arrange
+		var description = new string('a', VolunteerOpportunity.MaxDescriptionLength + 1);
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			description,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"Description must not exceed {VolunteerOpportunity.MaxDescriptionLength} characters.");
+	}
+
+	[Test]
+	public void Create_ShouldAllow_DescriptionAtMaxLength()
+	{
+		// Arrange
+		var description = new string('a', VolunteerOpportunity.MaxDescriptionLength);
+
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			description,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+	}
+
+	[Test]
 	public void Create_ShouldFail_WhenNotRemoteAndAddressIsNull()
 	{
 		// Act
@@ -330,6 +424,30 @@ public class VolunteerOpportunityTests
 
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Be("Description must not be empty.");
+	}
+
+	[Test]
+	public void Rename_ShouldFail_WhenTitleExceedsMaxLength_EvenWhenDraft()
+	{
+		var opportunity = CreateDraftWaitlistOpportunity();
+		var title = new string('a', VolunteerOpportunity.MaxTitleLength + 1);
+
+		var result = opportunity.Rename(title);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"Title must not exceed {VolunteerOpportunity.MaxTitleLength} characters.");
+	}
+
+	[Test]
+	public void ChangeDescription_ShouldFail_WhenDescriptionExceedsMaxLength_EvenWhenDraft()
+	{
+		var opportunity = CreateDraftWaitlistOpportunity();
+		var description = new string('a', VolunteerOpportunity.MaxDescriptionLength + 1);
+
+		var result = opportunity.ChangeDescription(description);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be($"Description must not exceed {VolunteerOpportunity.MaxDescriptionLength} characters.");
 	}
 
 	[Test]

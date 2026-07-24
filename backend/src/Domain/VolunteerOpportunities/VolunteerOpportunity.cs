@@ -8,6 +8,10 @@ public sealed class VolunteerOpportunity
 	: AggregateRoot<VolunteerOpportunityId>,
 		IAuditableEntity
 {
+	public const int MaxTitleLength = 200;
+
+	public const int MaxDescriptionLength = 5000;
+
 	private readonly List<TimeSlot> _timeSlots = [];
 
 	private List<string> _tags = [];
@@ -90,6 +94,22 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
+	private static Result EnsureValidTitleLength(string? title)
+	{
+		if (title is { Length: > MaxTitleLength })
+			return Result.Failure(Error.Validation("VolunteerOpportunity.TitleTooLong", $"Title must not exceed {MaxTitleLength} characters."));
+
+		return Result.Success();
+	}
+
+	private static Result EnsureValidDescriptionLength(string? description)
+	{
+		if (description is { Length: > MaxDescriptionLength })
+			return Result.Failure(Error.Validation("VolunteerOpportunity.DescriptionTooLong", $"Description must not exceed {MaxDescriptionLength} characters."));
+
+		return Result.Success();
+	}
+
 	public static Result<VolunteerOpportunity> Create(
 		OrganizationId organizationId,
 		string title,
@@ -105,6 +125,14 @@ public sealed class VolunteerOpportunity
 		OpportunityStatus status = OpportunityStatus.Published,
 		string? checkInPin = null)
 	{
+		var validTitleLength = EnsureValidTitleLength(title);
+		if (validTitleLength.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validTitleLength.Error);
+
+		var validDescriptionLength = EnsureValidDescriptionLength(description);
+		if (validDescriptionLength.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validDescriptionLength.Error);
+
 		if (checkInMethod == CheckInMethod.PINCode && checkInPin is not null)
 		{
 			var validPin = EnsureValidPin(checkInPin);
@@ -203,6 +231,10 @@ public sealed class VolunteerOpportunity
 
 	public Result Rename(string title)
 	{
+		var validTitleLength = EnsureValidTitleLength(title);
+		if (validTitleLength.IsFailure)
+			return validTitleLength;
+
 		if (Status == OpportunityStatus.Published)
 		{
 			var publishable = EnsurePublishable(title, Description, IsRemote, Address);
@@ -216,6 +248,10 @@ public sealed class VolunteerOpportunity
 
 	public Result ChangeDescription(string description)
 	{
+		var validDescriptionLength = EnsureValidDescriptionLength(description);
+		if (validDescriptionLength.IsFailure)
+			return validDescriptionLength;
+
 		if (Status == OpportunityStatus.Published)
 		{
 			var publishable = EnsurePublishable(Title, description, IsRemote, Address);

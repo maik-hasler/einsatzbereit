@@ -27,9 +27,11 @@ internal sealed class VolunteerOpportunityConfiguration
 			.IsRequired();
 
 		builder.Property(vo => vo.Title)
+			.HasMaxLength(VolunteerOpportunity.MaxTitleLength)
 			.IsRequired();
 
 		builder.Property(vo => vo.Description)
+			.HasMaxLength(VolunteerOpportunity.MaxDescriptionLength)
 			.IsRequired();
 
 		builder.Property(vo => vo.IsRemote)
