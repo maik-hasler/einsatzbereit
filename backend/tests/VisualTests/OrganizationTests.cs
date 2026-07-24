@@ -245,18 +245,24 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task PublicProfilePage_ContentIsCenteredWithinMain()
+	public async Task PublicProfilePage_ContentIsLeftAlignedUnderHeading()
 	{
-		// Regression for #694: OrganizationProfileView's content wrapper
-		// (`max-w-2xl`) had no `mx-auto`, so it hugged the left edge of <main>
-		// instead of being centered like every other page.
+		// Regression for #766: OrganizationProfileView's content wrapper had
+		// `mx-auto`, so it centered itself against the whole page instead of
+		// sitting flush under the left-aligned heading above it - a dead
+		// column on wide viewports. This reverses the `mx-auto` #694 added
+		// for the opposite problem (the wrapper hugging the left edge with no
+		// centering at all); left-aligning was the chosen fix direction over
+		// centering the heading to match, for consistency with the rest of
+		// the org app shell (Opportunities tab, dashboard, breadcrumb bar),
+		// none of which centers a content block.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual694 Centering");
+		await CreateOrganizationAsync("Visual766 LeftAlign");
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
@@ -265,7 +271,47 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{origin}/organizations/{organizationId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await AssertMaxWidthContentCenteredAsync("Organization profile page");
+		await AssertMaxWidthContentLeftAlignedAsync("Organization profile page");
+	}
+
+	[Test]
+	public async Task SettingsPage_ContentIsLeftAlignedWithinMain()
+	{
+		// Regression for #766: OrgSettingsPage wraps its content in its own
+		// separate `mx-auto max-w-2xl` div - independent of
+		// OrganizationProfileView's own wrapper - which produced the same
+		// dead-column effect. This is the page shown in the issue's primary
+		// repro steps.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual766 Settings");
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger Zone" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await AssertMaxWidthContentLeftAlignedAsync("Organization settings page");
+	}
+
+	[Test]
+	public async Task MembersPage_ContentIsLeftAlignedWithinMain()
+	{
+		// Regression for #766: OrgMembersPage's content wrapper had
+		// `mx-auto`, independently centering it against the whole page.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual766 Members");
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "members" }).ClickAsync();
+		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await AssertMaxWidthContentLeftAlignedAsync("Organization members page");
 	}
 
 	private async Task<string> CreateOrganizationAsync(string namePrefix)
