@@ -43,3 +43,8 @@ Style findings are Low/Medium and never outnumber drift findings.
 Docs may describe intended future state - check git history: if the doc
 predates the divergent code, it is drift; if it postdates it, it may be
 a roadmap statement. Say which.
+
+`wiki/` is out of scope for this lens (repo-map trap 8). It is informal
+knowledge by design, not held to the same currency bar as the docs above -
+its own `/lint` skill is what keeps it current, on its own cadence. Do not
+file a wiki page falling behind `docs/`/code as a drift finding.

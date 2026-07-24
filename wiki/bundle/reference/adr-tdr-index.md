@@ -8,14 +8,14 @@ tags:
   - keycloak
   - rate-limiting
   - wiki
-timestamp: 2026-07-18
+timestamp: 2026-07-24
 ---
 
 # Index of formal ADRs and TDRs
 
 The reviewed decisions live under `docs/` as arc42-style AsciiDoc, not in this wiki. This page is a pointer so agents find the authoritative record fast. When a topic is already an ADR or TDR, link the `.adoc` file; do not copy its content into a wiki page, which would then drift.
 
-Trust the directory listing, not the summary. The structure block in `docs/AGENTS.md` stops at ADR-3, but `docs/ADRs/` also contains ADR-4. Run `ls docs/ADRs docs/TDRs` for the real set.
+Trust the directory listing over any prose summary, including this page's own table below. `docs/AGENTS.md`'s structure block has drifted behind `docs/ADRs/` before - it listed only ADR-1 through ADR-3 for about 90 minutes after ADR-4 was accepted, until commit `6d8ead5` caught it up the same day (2026-07-18). Run `ls docs/ADRs docs/TDRs` for the real set rather than trusting either summary.
 
 ## Architecture decisions (docs/ADRs/)
 
