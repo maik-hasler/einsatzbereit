@@ -2,9 +2,3 @@
 
 # Deployment secrets (server-side only, see .env.example)
 .env
-
-# Root-level node_modules (Playwright smoke-test scripts)
-node_modules/
-
-# Playwright screenshots from exploratory testing
-scripts/screenshots/

@@ -24,10 +24,10 @@ be, what is missing that should exist, what sits in the wrong place.
    maintainer - probably noise), CHANGELOG (VERSIONING.md exists; is the
    release process's output discoverable?), .editorconfig ↔ prettier
    overlap/conflict.
-5. **Placement:** root-level clutter vs `docs/`; scripts split between
-   `scripts/` and `frontend/scripts/` - consistent logic? Config files
-   that belong closer to their consumer. Naming consistency of dirs
-   (casing, singular/plural).
+5. **Placement:** root-level clutter vs `docs/`; `frontend/scripts/` is the
+   only scripts dir now (root `scripts/` was removed wholesale, see trap
+   below - don't flag its absence). Config files that belong closer to
+   their consumer. Naming consistency of dirs (casing, singular/plural).
 6. **Config drift:** `.env.example` keys vs variables actually read in
    code, docker-compose, AppHost, and workflows (repo-map trap 7 - search
    both naming conventions). Ports/credentials consistent across
@@ -45,5 +45,7 @@ the concrete confusion they cause.
 
 `.claude/` is first-class content. docker-compose next to Aspire is not
 automatically redundant - find its consumer (CI? production?) before
-flagging. Root `package.json` exists for editorconfig-checker +
-Playwright; it is intentional.
+flagging. There is no root `package.json` anymore - live-verification
+Playwright scripts are scratch-only, installed ad hoc outside the repo
+(`wiki/bundle/decisions/scripts-folder-removed.md`); do not flag its
+absence as a gap.
