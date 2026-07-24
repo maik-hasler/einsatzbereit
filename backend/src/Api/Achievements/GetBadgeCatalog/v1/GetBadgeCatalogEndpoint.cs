@@ -16,6 +16,7 @@ internal sealed class GetBadgeCatalogEndpoint
 			.WithTags("Achievements")
 			.Produces<List<BadgeCatalogEntry>>()
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
 			.MapToApiVersion(1);
 
