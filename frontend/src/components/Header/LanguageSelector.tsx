@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 
 const LANGUAGES = [
 	{ code: "en", flag: "🇬🇧", label: "English" },
@@ -15,22 +16,12 @@ export default function LanguageSelector({
 }) {
 	const { i18n, t } = useTranslation();
 	const [open, setOpen] = useState(false);
-	const ref = useRef<HTMLDivElement>(null);
+	const ref = useDismissableOverlay<HTMLDivElement>(open, () => setOpen(false));
 
 	const currentCode: LangCode = LANGUAGES.some((l) => l.code === i18n.language)
 		? (i18n.language as LangCode)
 		: "en";
 	const current = LANGUAGES.find((l) => l.code === currentCode) ?? LANGUAGES[0];
-
-	useEffect(() => {
-		const handler = (e: MouseEvent) => {
-			if (ref.current && !ref.current.contains(e.target as Node)) {
-				setOpen(false);
-			}
-		};
-		document.addEventListener("click", handler);
-		return () => document.removeEventListener("click", handler);
-	}, []);
 
 	return (
 		<div className="relative" ref={ref}>

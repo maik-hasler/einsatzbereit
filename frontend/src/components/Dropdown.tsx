@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useDismissableOverlay } from "../hooks/useDismissableOverlay";
 
 export interface DropdownOption {
 	value: string;
@@ -45,7 +46,9 @@ export default function Dropdown({
 }: DropdownProps) {
 	const [open, setOpen] = useState(false);
 	const [activeIndex, setActiveIndex] = useState(-1);
-	const rootRef = useRef<HTMLDivElement>(null);
+	const rootRef = useDismissableOverlay<HTMLDivElement>(open, () =>
+		setOpen(false),
+	);
 	const listRef = useRef<HTMLUListElement>(null);
 	const typeaheadBuffer = useRef("");
 	const typeaheadTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -55,17 +58,6 @@ export default function Dropdown({
 
 	const selectedIndex = options.findIndex((o) => o.value === value);
 	const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined;
-
-	useEffect(() => {
-		if (!open) return;
-		function handleClick(e: MouseEvent) {
-			if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-				setOpen(false);
-			}
-		}
-		document.addEventListener("click", handleClick);
-		return () => document.removeEventListener("click", handleClick);
-	}, [open]);
 
 	useEffect(() => {
 		if (open) {
@@ -150,12 +142,6 @@ export default function Dropdown({
 				e.preventDefault();
 				if (open) commit(activeIndex);
 				else setOpen(true);
-				break;
-			case "Escape":
-				if (open) {
-					e.preventDefault();
-					setOpen(false);
-				}
 				break;
 			case "Tab":
 				setOpen(false);

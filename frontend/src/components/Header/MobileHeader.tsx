@@ -13,6 +13,7 @@ export default function MobileHeader({
 	setMobileOpen,
 	menu,
 	notifContainerRef,
+	menuButtonRef,
 	onNotificationNavigate,
 }: {
 	isLoggedIn: boolean;
@@ -21,6 +22,7 @@ export default function MobileHeader({
 	setMobileOpen: Dispatch<SetStateAction<boolean>>;
 	menu: AccountMenuState;
 	notifContainerRef: RefObject<HTMLDivElement | null>;
+	menuButtonRef: RefObject<HTMLButtonElement | null>;
 	onNotificationNavigate: (actionUrl: string | null | undefined) => void;
 }) {
 	const { t } = useTranslation();
@@ -38,6 +40,7 @@ export default function MobileHeader({
 				/>
 			)}
 			<button
+				ref={menuButtonRef}
 				type="button"
 				onClick={() => setMobileOpen((o) => !o)}
 				className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}

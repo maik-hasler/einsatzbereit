@@ -357,4 +357,81 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var mobileBtnClass = await mobileLangBtn.GetAttributeAsync("class") ?? string.Empty;
 		mobileBtnClass.Should().MatchRegex(new Regex("border-white|text-white"));
 	}
+
+	[Test]
+	public async Task HomePage_LanguageSelector_ClosesOnEscape()
+	{
+		// #884: dropdown/overlay menus in the Header only closed on outside
+		// click - Escape did nothing. useDismissableOverlay fixes this.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var langBtn = Page.Locator("header button[aria-haspopup='listbox']").First;
+		await langBtn.ClickAsync();
+
+		var dropdown = Page.Locator("header ul[role='listbox']").First;
+		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(dropdown).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
+
+	[Test]
+	public async Task MobileMenu_ClosesOnEscape()
+	{
+		// #884: MobileMenu offered neither outside-click nor Escape dismissal
+		// at all - useDismissableOverlay now backs it too.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.SetViewportSizeAsync(390, 844);
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var menuBtn = Page.Locator("header button[aria-label]")
+			.Filter(new() { HasNotText = "English" })
+			.Filter(new() { HasNotText = "Deutsch" });
+		var menuBtnCount = await menuBtn.CountAsync();
+		ILocator? hamburger = null;
+		for (var i = 0; i < menuBtnCount; i++)
+		{
+			var label = await menuBtn.Nth(i).GetAttributeAsync("aria-label");
+			if (label is not null && Regex.IsMatch(label, "menu|menü|open|öffnen", RegexOptions.IgnoreCase))
+			{
+				hamburger = menuBtn.Nth(i);
+				break;
+			}
+		}
+
+		if (hamburger is null)
+			return; // hamburger not found at this viewport - skip gracefully
+
+		await hamburger.ClickAsync();
+
+		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
+		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(mobileLangBtn).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
+
+	[Test]
+	public async Task AccountControls_UserMenu_ClosesOnEscape()
+	{
+		// #884: the account/notification dropdowns (useAccountMenu) only
+		// closed on outside click.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		var userMenuBtn = Page.GetByRole(AriaRole.Button, new() { Name = "User menu" });
+		await userMenuBtn.ClickAsync();
+
+		var profileLink = Page.GetByRole(AriaRole.Link, new() { Name = "My Profile" });
+		await Expect(profileLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(profileLink).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
 }

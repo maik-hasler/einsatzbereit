@@ -61,6 +61,7 @@ export default function Header({
 	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const mobileNotifRef = useRef<HTMLDivElement>(null);
+	const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 	const menu = useAccountMenu([mobileNotifRef]);
 	const { avatarUrl } = menu;
 
@@ -173,6 +174,7 @@ export default function Header({
 							setMobileOpen={setMobileOpen}
 							menu={menu}
 							notifContainerRef={mobileNotifRef}
+							menuButtonRef={mobileMenuButtonRef}
 							onNotificationNavigate={handleNotificationNavigate}
 						/>
 					</div>
@@ -189,6 +191,7 @@ export default function Header({
 						activeOrg={activeOrg}
 						orgMenuOpen={orgMenuOpen}
 						setOrgMenuOpen={setOrgMenuOpen}
+						triggerRef={mobileMenuButtonRef}
 						onClose={() => setMobileOpen(false)}
 						onSignIn={handleSignIn}
 						onRegister={handleRegister}
