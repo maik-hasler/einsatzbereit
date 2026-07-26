@@ -859,6 +859,130 @@
       "eventFillState": "{{booked}} / {{max}} booked",
       "eventManageApplications": "Manage applications",
       "createOpportunity": "Create opportunity"
+    },
+    "apiError": {
+      "AchievementId": {
+        "Empty": "AchievementId must not be empty."
+      },
+      "NotificationId": {
+        "Empty": "NotificationId must not be empty."
+      },
+      "EngagementId": {
+        "Empty": "EngagementId must not be empty."
+      },
+      "VolunteerOpportunityId": {
+        "Empty": "VolunteerOpportunityId must not be empty."
+      },
+      "OrganizationId": {
+        "Empty": "OrganizationId must not be empty."
+      },
+      "OrganizationInvitationId": {
+        "Empty": "OrganizationInvitationId must not be empty."
+      },
+      "OrganizationMembershipId": {
+        "Empty": "OrganizationMembershipId must not be empty."
+      },
+      "OrganizationDashboardLayoutId": {
+        "Empty": "OrganizationDashboardLayoutId must not be empty."
+      },
+      "TimeSlotId": {
+        "Empty": "TimeSlotId must not be empty."
+      },
+      "UserId": {
+        "Empty": "UserId must not be empty."
+      },
+      "UserStreakId": {
+        "Empty": "UserStreakId must not be empty."
+      },
+      "User": {
+        "InvalidId": "Invalid user."
+      },
+      "Users": {
+        "CannotModifyServiceAccount": "The backend's own service account cannot be modified.",
+        "CannotDisableSelf": "You cannot block your own account.",
+        "CannotDemoteSelf": "You cannot remove your own admin access."
+      },
+      "Address": {
+        "StreetRequired": "Street must not be empty.",
+        "HouseNumberRequired": "House number must not be empty.",
+        "ZipCodeInvalid": "Zip code must be exactly 5 characters.",
+        "CityRequired": "City must not be empty.",
+        "LatitudeOutOfRange": "Latitude must be between -90 and 90.",
+        "LongitudeOutOfRange": "Longitude must be between -180 and 180."
+      },
+      "Organization": {
+        "NameRequired": "Name must not be empty.",
+        "NameTooLong": "Organization name must not exceed 100 characters.",
+        "AlreadyVerified": "Organization is already verified.",
+        "NotVerified": "Organization is not verified.",
+        "NotFound": "Organization not found.",
+        "MultipleMembers": "Only the organization's sole remaining member can delete it. Remove the other members first.",
+        "HasBlockingOpportunities": "This organization has opportunities with future time slots or active engagements. Resolve or cancel these first.",
+        "SoleOrganizer": "You are the only organizer of this organization. Delete the organization instead of leaving it.",
+        "NotOrganizer": "You do not have permission to modify this resource."
+      },
+      "OrganizationInvitation": {
+        "NotPending": "Invitation is not pending.",
+        "NotFound": "Invitation not found.",
+        "NotRecipient": "You are not the recipient of this invitation.",
+        "WrongOrganization": "Invitation does not belong to this organization.",
+        "NotDeclined": "Only declined invitations can be dismissed.",
+        "AlreadyMember": "User is already a member of this organization.",
+        "AlreadyInvited": "A pending invitation already exists for this user."
+      },
+      "VolunteerOpportunity": {
+        "InvalidCheckInPin": "Check-in PIN must be 4 to 6 digits.",
+        "TitleTooLong": "Title must not exceed 200 characters.",
+        "DescriptionTooLong": "Description must not exceed 5000 characters.",
+        "WaitlistMustStartAsDraft": "A Waitlist opportunity must be created as a draft and published after adding at least one time slot.",
+        "TitleRequired": "Title must not be empty.",
+        "DescriptionRequired": "Description must not be empty.",
+        "AddressRequired": "Address is required for non-remote opportunities.",
+        "AlreadyPublished": "Opportunity is already published.",
+        "WaitlistRequiresTimeSlot": "A Waitlist opportunity must have at least one time slot before it can be published.",
+        "BannerImageUrlRequired": "Banner image URL must not be empty.",
+        "TimeSlotNotAllowed": "Time slots can only be added to opportunities with Waitlist participation type.",
+        "TimeSlotNotFound": "Time slot not found.",
+        "NotFound": "Volunteer opportunity not found.",
+        "ParticipationTypeLocked": "Participation type cannot be changed while active engagements exist.",
+        "TimeSlotCapacityBelowActive": "Cannot reduce capacity below the current number of active sign-ups.",
+        "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected engagements first."
+      },
+      "TimeSlot": {
+        "StartMustBeFuture": "Start date must be in the future.",
+        "EndMustBeAfterStart": "End date must be after start date.",
+        "MaxParticipantsMustBePositive": "Max participants must be greater than zero."
+      },
+      "Engagement": {
+        "MessageRequired": "A message is required when expressing interest via individual contact.",
+        "NotPending": "Only pending engagements can be confirmed.",
+        "AlreadyTerminated": "Engagement is already terminated.",
+        "CheckedIn": "A checked-in engagement can no longer be withdrawn.",
+        "NotTerminated": "Only withdrawn or cancelled engagements can be reactivated.",
+        "NotConfirmed": "Only confirmed engagements can be checked in.",
+        "NotCheckedIn": "Feedback can only be submitted for checked-in engagements.",
+        "FeedbackAlreadySubmitted": "Feedback has already been submitted for this engagement.",
+        "RatingOutOfRange": "Rating must be between 1 and 5.",
+        "CommentTooLong": "Comment must not exceed 500 characters.",
+        "NotFound": "Engagement not found.",
+        "NotOwner": "You can only manage your own engagements.",
+        "AlreadySignedUp": "You are already signed up for this opportunity.",
+        "TimeSlotNotInOpportunity": "The selected time slot does not belong to this opportunity.",
+        "TimeSlotFull": "This time slot has reached its capacity and cannot accept more sign-ups.",
+        "InvalidPin": "Invalid PIN. Please try again.",
+        "CheckInLocked": "Too many failed PIN attempts. Try again later."
+      },
+      "DashboardLayout": {
+        "InvalidWidgetKey": "Unknown widget.",
+        "DuplicateWidget": "A widget is placed more than once.",
+        "InvalidPlacement": "A widget has an invalid grid placement.",
+        "OverlappingPlacement": "Two widgets overlap on the grid."
+      },
+      "FileUpload": {
+        "Empty": "The image must not be empty.",
+        "TooLarge": "The image must not exceed 2 MB.",
+        "InvalidContentType": "The image must be a JPEG, PNG or WebP image."
+      }
     }
   }
 }
