@@ -39,8 +39,34 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section3Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="text-gray-700 leading-relaxed mb-4">
 					{t("privacyPolicy.section3Body")}
+				</p>
+				<h3 className="mb-1 text-lg font-medium">
+					{t("privacyPolicy.section3bTitle")}
+				</h3>
+				<p className="text-gray-700 leading-relaxed mb-2">
+					{t("privacyPolicy.section3bBody")}
+				</p>
+				<p className="text-gray-700 leading-relaxed">
+					{t("privacyPolicy.section3bLinksIntro")}{" "}
+					<a
+						href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+					>
+						{t("privacyPolicy.section3bLinkOsm")}
+					</a>
+					{", "}
+					<a
+						href="https://operations.osmfoundation.org/policies/nominatim/"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+					>
+						{t("privacyPolicy.section3bLinkNominatim")}
+					</a>
 				</p>
 			</section>
 
