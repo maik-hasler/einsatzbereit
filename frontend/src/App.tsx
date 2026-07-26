@@ -7,6 +7,7 @@ import {
 } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
 import ErrorBanner from "./components/ErrorBanner";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
@@ -59,6 +60,7 @@ function CallbackPage() {
 }
 
 export default function App() {
+	useSessionExpiryHandler();
 	return (
 		<Routes>
 			<Route path="/callback" element={<CallbackPage />} />
