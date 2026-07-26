@@ -1,9 +1,11 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Common.Storage;
 using Application.Users.DeleteMyAccount.v1;
 using AwesomeAssertions;
 using Domain.Engagements;
+using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
@@ -28,11 +30,17 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetEngagementsForVolunteerTrackingAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Engagement>());
+		_dbContext
+			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Organization>());
 		_sut = new DeleteMyAccountCommandHandler(_dbContext, _keycloakUserService, _fileStorage);
 	}
 
 	private static Engagement CreateEngagementFor(UserId volunteerId) =>
 		Engagement.CreateWaitlistSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+
+	private static Organization CreateOrganization(string name) =>
+		Organization.Create(OrganizationId.New(), name).Value;
 
 	[Test]
 	public async Task Handle_ShouldAnonymizeAllEngagements_ReturnedForVolunteerTracking(
@@ -155,5 +163,136 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		result.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteTheUserStreak(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).DeleteUserStreakAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteAchievementsForTheUser(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).DeleteAchievementsForUserAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldRemoveOrganizationMembershipsAndDashboardLayoutsForTheUser(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).RemoveMembershipsForUserAsync(DefaultUserId, cancellationToken);
+		await _dbContext.Received(1).RemoveDashboardLayoutsForUserAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteOrganizationInvitationsForTheUser(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).DeleteInvitationsForUserAsync(DefaultUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowConflict_AndPerformNoOtherAction_WhenSoleOrganizerOfAnOrganization(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var organization = CreateOrganization("Solo Org");
+		_dbContext
+			.GetOrganizerOrganizationsAsync(DefaultUserId, cancellationToken)
+			.Returns([organization]);
+		_dbContext
+			.CountOrganizersAsync(organization.Id, cancellationToken)
+			.Returns(1);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		var thrown = await act.Should().ThrowAsync<ResultFailureException>();
+		thrown.Which.Message.Should().Contain("Solo Org");
+		await _dbContext.DidNotReceive().DeleteNotificationsForRecipientAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().RemoveMembershipsForUserAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().DeleteUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await _keycloakUserService.DidNotReceive().DeleteUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldListEveryBlockingOrganizationByName_WhenSoleOrganizerOfMultipleOrganizations(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgAlpha = CreateOrganization("Org Alpha");
+		var orgBeta = CreateOrganization("Org Beta");
+		_dbContext
+			.GetOrganizerOrganizationsAsync(DefaultUserId, cancellationToken)
+			.Returns([orgAlpha, orgBeta]);
+		_dbContext.CountOrganizersAsync(orgAlpha.Id, cancellationToken).Returns(1);
+		_dbContext.CountOrganizersAsync(orgBeta.Id, cancellationToken).Returns(1);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		var thrown = await act.Should().ThrowAsync<ResultFailureException>();
+		thrown.Which.Message.Should().Contain("Org Alpha");
+		thrown.Which.Message.Should().Contain("Org Beta");
+	}
+
+	[Test]
+	public async Task Handle_ShouldProceed_WhenOrganizerButOtherOrganizersRemainForThatOrganization(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var organization = CreateOrganization("Shared Org");
+		_dbContext
+			.GetOrganizerOrganizationsAsync(DefaultUserId, cancellationToken)
+			.Returns([organization]);
+		_dbContext
+			.CountOrganizersAsync(organization.Id, cancellationToken)
+			.Returns(2);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _dbContext.Received(1).RemoveMembershipsForUserAsync(DefaultUserId, cancellationToken);
+		await _keycloakUserService.Received(1).DeleteUserAsync(DefaultUserId.Value, cancellationToken);
 	}
 }

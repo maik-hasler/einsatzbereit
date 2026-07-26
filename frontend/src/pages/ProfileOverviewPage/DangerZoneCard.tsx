@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
+import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../../components/ConfirmDialog";
 
 // Self-contained account-deletion card, split out of ProfileOverviewPage -
@@ -25,8 +26,8 @@ export default function DangerZoneCard() {
 			await api.deleteMyAccount();
 			await auth.removeUser();
 			navigate("/");
-		} catch {
-			setDeleteError(t("account.deleteError"));
+		} catch (err) {
+			setDeleteError(getApiErrorMessage(err, t("account.deleteError")));
 			setDeleting(false);
 		}
 	}
