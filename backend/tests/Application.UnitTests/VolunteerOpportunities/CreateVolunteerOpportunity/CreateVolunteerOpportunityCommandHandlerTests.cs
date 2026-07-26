@@ -257,4 +257,39 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.DidNotReceive()
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: caller is not an organizer of the target organization.
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title",
+			"Description",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			CheckInMethod.None,
+			null,
+			[],
+			OpportunityStatus.Draft,
+			DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
+		await _dbContext
+			.VolunteerOpportunities
+			.DidNotReceive()
+			.AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
+	}
 }
