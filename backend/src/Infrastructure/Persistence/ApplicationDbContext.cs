@@ -128,6 +128,27 @@ internal sealed class ApplicationDbContext(
 			.Where(l => l.OrganizationId == organizationId)
 			.ExecuteDeleteAsync(cancellationToken);
 
+	public async Task RemoveMembershipsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.Where(m => m.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task RemoveDashboardLayoutsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationDashboardLayout>()
+			.Where(l => l.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
+
+	public async Task DeleteInvitationsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationInvitation>()
+			.Where(i => i.InviteeId == userId || i.InvitedById == userId)
+			.ExecuteDeleteAsync(cancellationToken);
+
 	public async Task<List<Organization>> GetOrganizerOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default) =>
@@ -148,6 +169,13 @@ internal sealed class ApplicationDbContext(
 		CancellationToken cancellationToken = default) =>
 		await Set<Achievement>()
 			.AnyAsync(a => a.UserId == userId && a.Name == badgeName, cancellationToken);
+
+	public async Task DeleteAchievementsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Achievement>()
+			.Where(a => a.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
 
 	public async Task<bool> HasEngagementAsync(
 		UserId volunteerId,
@@ -173,6 +201,12 @@ internal sealed class ApplicationDbContext(
 		await Set<UserStreak>()
 			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
 
+	public async Task DeleteUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<UserStreak>()
+			.Where(s => s.UserId == userId)
+			.ExecuteDeleteAsync(cancellationToken);
 
 	public async ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,
