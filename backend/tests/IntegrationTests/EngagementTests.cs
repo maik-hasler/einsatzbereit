@@ -386,6 +386,65 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task CheckInWithPin_ShouldReturn409_WhenOpportunityDoesNotUsePinCheckIn(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1139: a "None" (or QRCode/Manual) opportunity never sets
+		// a CheckInPin, so it stays null server-side. Posting a check-in with a
+		// blank/empty PIN must be rejected outright, not accidentally accepted
+		// because "null equals null".
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "None", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Ready to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		var act = () => veraClient.CheckInWithPinAsync(
+			engagement.Id,
+			new CheckInWithPinRequest { Pin = "" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+
+		// Confirmed + not-checked-in + opportunity still exists stays in the
+		// upcoming bucket (EngagementReadRepository.cs), not past.
+		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
+		myEngagements.Items.Single().IsCheckedIn.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task CheckInWithPin_ShouldReturn400_WhenPinIsEmpty_OnPinCodeOpportunity(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "PINCode", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "Ready to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		var act = () => veraClient.CheckInWithPinAsync(
+			engagement.Id,
+			new CheckInWithPinRequest { Pin = "" },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
 	public async Task GetVolunteerOpportunityDetails_ShouldNotExposeCheckInPin(
 		CancellationToken cancellationToken)
 	{
