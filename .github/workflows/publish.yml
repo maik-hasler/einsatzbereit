@@ -194,6 +194,7 @@ jobs:
 
   publish-frontend:
     name: Publish Frontend
+    needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -264,6 +265,7 @@ jobs:
 
   publish-keycloak:
     name: Publish Keycloak
+    needs: [backend-fast-tests, backend-integration-tests, backend-visual-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
