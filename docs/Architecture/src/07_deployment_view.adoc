@@ -155,6 +155,21 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |`storage.maik-hasler.de`
 |S3-compatible object storage
 
+|Grafana
+|`grafana/grafana`
+|`grafana.maik-hasler.de`
+|Dashboards; only datasource is Prometheus
+
+|Prometheus
+|`prom/prometheus`
+|internal only
+|Metrics store; scrapes node-exporter, not exposed via Traefik
+
+|node-exporter
+|`prom/node-exporter`
+|internal only
+|Host-level CPU/memory/disk/network metrics, read-only mounts, no privileged mode
+
 |Traefik
 |host-level (shared)
 |`*.maik-hasler.de`
@@ -162,3 +177,5 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |===
 
 Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`). The deploy is health-gated (backend `/alive` and `/health`) and rolls back to the previous images on failure.
+
+Prometheus and node-exporter are metrics only, not logs - they sit on an internal-only `monitoring` Docker network with no Traefik route, since Prometheus has no built-in auth and would leak all scraped labels if reachable from the internet. Grafana is the only service in this group with a public route, gated by its own admin login (`GF_SECURITY_ADMIN_USER`/`GF_SECURITY_ADMIN_PASSWORD`). Centralized log aggregation (a Loki + Promtail stack) and per-container metrics (cAdvisor, which needs Docker socket access and broad host mounts) were deliberately left out of this pass; both are natural follow-ups if the host-level view here proves insufficient.
