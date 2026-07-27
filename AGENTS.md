@@ -78,8 +78,8 @@ edit on your own initiative):
   review tool: one lens per run - static repo audits (bugs, dead code, dead
   features, repo hygiene, docs drift, test gaps, CI, security, contributor
   accessibility) or live passes against staging as Vera/Olaf/Admin
-  (personas, accessibility), or code/comment complexity - chosen by triage
-  or named by the user. Report-only: files GitHub issues
+  (personas, accessibility), code/comment complexity, or comment bloat -
+  chosen by triage or named by the user. Report-only: files GitHub issues
   (label `lens`, capped at 5/run), never code or a PR.
   `.claude/skills/{ingest,query,lint}/` (`/ingest`, `/query`, `/lint`) run
   the `wiki/` bundle's ingest/query/lint workflow - see `wiki/AGENTS.md`.
