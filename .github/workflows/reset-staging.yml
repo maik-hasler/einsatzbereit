@@ -34,6 +34,49 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
 
+      # Without this, the restart below reuses whatever .env is already on
+      # the host from the last deploy-staging run - so a secret rotated
+      # since then (a changed password, a fixed typo) silently keeps not
+      # applying, which is exactly the confusing state this workflow exists
+      # to get out of. Kept byte-for-byte in sync with publish.yml's own
+      # "Render .env" step - see that step's secrets list before assuming
+      # this one is complete.
+      - name: Render .env
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          KEYCLOAK_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          KEYCLOAK_BACKEND_SECRET: ${{ secrets.KEYCLOAK_BACKEND_SECRET }}
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        run: |
+          umask 077
+          escape() {
+            local v="$1"
+            v="${v//\\/\\\\}"
+            v="${v//\"/\\\"}"
+            printf '%s' "$v"
+          }
+          {
+            printf 'POSTGRES_USER="%s"\n' "$(escape "$POSTGRES_USER")"
+            printf 'POSTGRES_PASSWORD="%s"\n' "$(escape "$POSTGRES_PASSWORD")"
+            printf 'KEYCLOAK_ADMIN_USER="%s"\n' "$(escape "$KEYCLOAK_ADMIN_USER")"
+            printf 'KEYCLOAK_ADMIN_PASSWORD="%s"\n' "$(escape "$KEYCLOAK_ADMIN_PASSWORD")"
+            printf 'KEYCLOAK_BACKEND_SECRET="%s"\n' "$(escape "$KEYCLOAK_BACKEND_SECRET")"
+            printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
+            printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
+            printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
+            printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
+          } > .env
+
+      - name: Copy .env
+        run: |
+          scp -i ~/.ssh/id_ed25519 .env \
+            "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:/opt/einsatzbereit/"
+
       - name: Wipe data volumes and restart stack
         run: |
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
