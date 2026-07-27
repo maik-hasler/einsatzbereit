@@ -71,6 +71,13 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		await ephemeralClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
+		// #826: SaveDashboardLayout/CreateInvitation below are gated by the
+		// Organisator policy, a role claim baked into the JWT at mint time -
+		// ephemeralClient's original token predates the "organisator" role
+		// grant that just happened as a side effect of accepting, so a fresh
+		// token is needed (same pattern as OrganizationSettingsTests).
+		ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
+
 		// #1192: the ephemeral user (now an organizer of sharedOrg) saves a
 		// dashboard layout for it, giving an organization_dashboard_layout row.
 		await ephemeralClient.SaveDashboardLayoutAsync(
@@ -146,6 +153,13 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 
 		var org = await ephemeralClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Sole Organizer Test Org" }, cancellationToken);
+
+		// #826: GetOrganizationDetails below is gated by the Organisator
+		// policy, a role claim baked into the JWT at mint time -
+		// ephemeralClient's original token predates the "organisator" role
+		// grant that just happened as a side effect of creating the
+		// organization, so a fresh token is needed.
+		ephemeralClient = await CreateAuthenticatedClientAsync(ephemeralUsername, ephemeralPassword);
 
 		var deleteAccount = () => ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
