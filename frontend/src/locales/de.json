@@ -760,6 +760,7 @@
     },
     "error": {
       "forbidden": "Du hast keine Berechtigung für diese Aktion.",
+      "sessionExpired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
       "serverError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.",
       "boundaryTitle": "Etwas ist schiefgelaufen",
       "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zurück navigieren oder die Seite neu laden.",

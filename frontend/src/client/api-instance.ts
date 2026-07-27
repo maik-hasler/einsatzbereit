@@ -1,12 +1,23 @@
 import { dispatchToast } from "../lib/toastBus";
+import { notifySessionExpired } from "../lib/sessionExpiryBus";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { EinsatzbereitApi } from "./api-client";
 import i18next from "../i18n";
 
-async function handleErrorResponse(response: Response): Promise<void> {
+async function handleErrorResponse(
+	response: Response,
+	hadAccessToken: boolean,
+): Promise<void> {
 	if (response.ok) return;
 
 	if (response.status === 401) {
+		// A 401 without a token just means "not logged in" (e.g. anonymous
+		// browsing) - expected, not a session expiring. Only a 401 on a
+		// request that *did* carry a bearer token means the Keycloak session
+		// backing it is no longer valid.
+		if (hadAccessToken) {
+			notifySessionExpired();
+		}
 		return;
 	}
 
@@ -40,7 +51,7 @@ export function createApiClient(accessToken?: string): EinsatzbereitApi {
 					"X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
 				},
 			});
-			await handleErrorResponse(response);
+			await handleErrorResponse(response, Boolean(accessToken));
 			return response;
 		},
 	});
