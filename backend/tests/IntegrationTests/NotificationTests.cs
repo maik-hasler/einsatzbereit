@@ -31,7 +31,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		var notification = olafNotifications.Single(n => n.Kind == "EngagementCreated");
 		notification.RelatedTitle.Should().Be(opportunityTitle);
 		notification.ActionUrl.Should()
-			.Be($"/app/{orgId}/opportunities/{opportunity.Id}/engagements");
+			.Be($"/app/{orgId}/dashboard/opportunities/{opportunity.Id}/engagements");
 	}
 
 	[Test]
