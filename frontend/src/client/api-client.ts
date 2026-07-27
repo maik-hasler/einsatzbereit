@@ -2958,6 +2958,108 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
+    searchCities(q: string, signal?: AbortSignal): Promise<CitySuggestion[]> {
+        let url_ = this.baseUrl + "/v1/maps/cities?";
+        if (q === undefined || q === null)
+            throw new globalThis.Error("The parameter 'q' must be defined and cannot be null.");
+        else
+            url_ += "Q=" + encodeURIComponent("" + q) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearchCities(_response);
+        });
+    }
+
+    protected processSearchCities(response: Response): Promise<CitySuggestion[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CitySuggestion[];
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CitySuggestion[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getMapTile(zoom: number, x: number, y: number, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/maps/tiles/{zoom}/{x}/{y}.png";
+        if (zoom === undefined || zoom === null)
+            throw new globalThis.Error("The parameter 'zoom' must be defined.");
+        url_ = url_.replace("{zoom}", encodeURIComponent("" + zoom));
+        if (x === undefined || x === null)
+            throw new globalThis.Error("The parameter 'x' must be defined.");
+        url_ = url_.replace("{x}", encodeURIComponent("" + x));
+        if (y === undefined || y === null)
+            throw new globalThis.Error("The parameter 'y' must be defined.");
+        url_ = url_.replace("{y}", encodeURIComponent("" + y));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMapTile(_response);
+        });
+    }
+
+    protected processGetMapTile(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     getMyInvitations(signal?: AbortSignal): Promise<MyInvitationDto[]> {
         let url_ = this.baseUrl + "/v1/invitations";
         url_ = url_.replace(/[?&]$/, "");
@@ -3987,6 +4089,14 @@ export interface CancelEngagementRequest {
 
 export interface CheckInWithPinRequest {
     pin: string;
+
+    [key: string]: any;
+}
+
+export interface CitySuggestion {
+    label: string;
+    latitude: number;
+    longitude: number;
 
     [key: string]: any;
 }

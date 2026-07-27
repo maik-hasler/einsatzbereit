@@ -1,15 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-
-interface NominatimPlace {
-	lat: string;
-	lon: string;
-	address?: {
-		city?: string;
-		town?: string;
-		village?: string;
-		municipality?: string;
-	};
-}
+import { useApiClient } from "../../hooks/useApiClient";
 
 export interface CitySuggestion {
 	label: string;
@@ -17,9 +7,13 @@ export interface CitySuggestion {
 	lng: number;
 }
 
-// Debounced city-name autocomplete against the public Nominatim (OpenStreetMap)
-// geocoder, used by the location filter's "search by city" input.
+// Debounced city-name autocomplete for the location filter's "search by city"
+// input. Proxied through the backend's /v1/maps/cities endpoint (which in turn
+// queries the public Nominatim/OpenStreetMap geocoder) so the visitor's IP
+// address and search text are never sent to Nominatim directly - see
+// docs/ADRs/5_map_and_geocoding_request_proxying.adoc.
 export function useCitySuggestions(query: string) {
+	const api = useApiClient();
 	const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
 	const [show, setShow] = useState(false);
 	const abortRef = useRef<AbortController | null>(null);
@@ -35,31 +29,12 @@ export function useCitySuggestions(query: string) {
 		abortRef.current = controller;
 		const timer = setTimeout(async () => {
 			try {
-				const res = await fetch(
-					`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&featuretype=city&q=${encodeURIComponent(query)}&limit=6`,
-					{
-						signal: controller.signal,
-						headers: { "Accept-Language": "de,en" },
-					},
-				);
-				if (!res.ok) return;
-				const data = (await res.json()) as NominatimPlace[];
-				const results: CitySuggestion[] = data
-					.map((r) => ({
-						label:
-							r.address?.city ??
-							r.address?.town ??
-							r.address?.village ??
-							r.address?.municipality ??
-							"",
-						lat: parseFloat(r.lat),
-						lng: parseFloat(r.lon),
-					}))
-					.filter((s) => s.label.length > 0)
-					.filter(
-						(s, i, arr) => arr.findIndex((x) => x.label === s.label) === i,
-					)
-					.slice(0, 6);
+				const places = await api.searchCities(query, controller.signal);
+				const results: CitySuggestion[] = places.map((place) => ({
+					label: place.label,
+					lat: place.latitude,
+					lng: place.longitude,
+				}));
 				setSuggestions(results);
 				setShow(results.length > 0);
 			} catch {
@@ -70,6 +45,7 @@ export function useCitySuggestions(query: string) {
 			clearTimeout(timer);
 			controller.abort();
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [query]);
 
 	function reset() {
