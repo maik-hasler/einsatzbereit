@@ -413,7 +413,9 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(409);
 
-		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: false, cancellationToken);
+		// Confirmed + not-checked-in + opportunity still exists stays in the
+		// upcoming bucket (EngagementReadRepository.cs), not past.
+		var myEngagements = await veraClient.GetMyEngagementsAsync(1, 20, upcoming: true, cancellationToken);
 		myEngagements.Items.Single().IsCheckedIn.Should().BeFalse();
 	}
 
