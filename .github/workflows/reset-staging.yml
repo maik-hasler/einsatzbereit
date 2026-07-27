@@ -45,10 +45,14 @@ jobs:
 
             # postgres_data holds both the "einsatzbereit" and "keycloak" databases
             # (single Postgres instance, see docker-compose.yml). minio_data holds
-            # uploaded files. postgres_backups is deliberately NOT removed - it is
+            # uploaded files. grafana_data holds Grafana's own admin account -
+            # GF_SECURITY_ADMIN_USER/PASSWORD only apply on a completely empty
+            # volume, so it has to be wiped here too or a changed
+            # GRAFANA_ADMIN_PASSWORD secret silently stops matching the live
+            # account. postgres_backups is deliberately NOT removed - it is
             # the safety net if this reset needs to be walked back.
-            echo "Removing data volumes (postgres_data, minio_data)..."
-            docker volume rm einsatzbereit_postgres_data einsatzbereit_minio_data
+            echo "Removing data volumes (postgres_data, minio_data, grafana_data)..."
+            docker volume rm einsatzbereit_postgres_data einsatzbereit_minio_data einsatzbereit_grafana_data
 
             # No `docker compose pull` here on purpose: we restart with whatever
             # images are already cached locally, i.e. the exact same tags/versions
@@ -79,7 +83,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set +e
             cd /opt/einsatzbereit
-            for svc in backend keycloak postgres minio; do
+            for svc in backend keycloak postgres minio grafana; do
               echo "::group::docker inspect ${svc} (state)"
               docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
               echo "::endgroup::"

@@ -222,20 +222,252 @@ services:
       - traefik.http.routers.frontend.tls.certresolver=myresolver
       - traefik.http.services.frontend.loadbalancer.server.port=80
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    networks:
+      - monitoring
+    # Only 2 scrape targets (itself + node-exporter), so a low ceiling is
+    # plenty - trimmed down from 256m to leave more host headroom on a
+    # memory-constrained box (staging runs on a 4GB VM).
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+    volumes:
+      - prometheus_data:/prometheus
+    configs:
+      - source: prometheus-config
+        target: /etc/prometheus/prometheus.yml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # Host-level metrics only (CPU/memory/disk/network), read-only mounts, no
+  # privileged mode. Deliberately not pairing this with cAdvisor for
+  # per-container metrics - cAdvisor needs the Docker socket and broad host
+  # access, which is too invasive for a box shared with other projects.
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 32m
+          cpus: "0.10"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - proxy
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.25"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_SERVER_ROOT_URL: https://grafana.maik-hasler.de
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    configs:
+      - source: grafana-datasources
+        target: /etc/grafana/provisioning/datasources/prometheus.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.grafana.rule=Host(`grafana.maik-hasler.de`)
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.tls.certresolver=myresolver
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    networks:
+      - monitoring
+    # Now scoped to just this stack's own ~6 containers (see alloy's
+    # discovery filter below), so log volume is small - trimmed down from
+    # 256m to leave more host headroom on a memory-constrained box
+    # (staging runs on a 4GB VM).
+    deploy:
+      resources:
+        limits:
+          memory: 160m
+          cpus: "0.25"
+    volumes:
+      - loki_data:/loki
+    # No Docker healthcheck: confirmed on staging that grafana/loki has
+    # neither wget nor a shell, so CMD-SHELL and exec-form CMD wget both
+    # fail regardless of whether Loki itself is fine - `docker ps` showed
+    # "unhealthy" even while Loki's own logs proved it was serving queries
+    # successfully. Nothing depends on this healthcheck (see alloy's
+    # depends_on below), so leaving it out is honest instead of misleading.
+
+  # Ships container logs to Loki. Uses the Docker API (read-only socket mount)
+  # to discover containers and stream their logs, rather than tailing
+  # /var/lib/docker/containers directly - this is the standard, well-tested
+  # pattern Grafana documents for Alloy/Promtail + Docker. This is a narrower
+  # grant than cAdvisor's (list containers + read their logs, not full host
+  # filesystem + cgroup access), but a leaked docker.sock is still
+  # effectively host-level access - worth knowing, not a reason to avoid it
+  # for a single-purpose, Grafana-maintained log shipper.
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    restart: unless-stopped
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 96m
+          cpus: "0.15"
+    # Plain depends_on (wait for container start, not health): Alloy's Loki
+    # writer retries and buffers on its own, so it doesn't need Loki to be
+    # fully ready first. Deliberately not `condition: service_healthy` -
+    # observability's own startup issues should never be able to block or
+    # roll back the application deploy the way this one did.
+    depends_on:
+      - loki
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+    configs:
+      - source: alloy-config
+        target: /etc/alloy/config.alloy
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+
 networks:
   proxy:
     name: proxy
     external: true
   db:
     name: einsatzbereit-db
+  monitoring:
+    name: einsatzbereit-monitoring
 
 volumes:
   postgres_data:
   postgres_backups:
   minio_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  alloy_data:
 
 configs:
   postgres-init:
     content: |
       SELECT 'CREATE DATABASE einsatzbereit' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'einsatzbereit')\gexec
       SELECT 'CREATE DATABASE keycloak' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'keycloak')\gexec
+  prometheus-config:
+    content: |
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets: ["localhost:9090"]
+
+        - job_name: node-exporter
+          static_configs:
+            - targets: ["node-exporter:9100"]
+  grafana-datasources:
+    content: |
+      apiVersion: 1
+
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus:9090
+          isDefault: true
+          editable: false
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+          editable: false
+  alloy-config:
+    content: |
+      discovery.docker "containers" {
+        host = "unix:///var/run/docker.sock"
+      }
+
+      discovery.relabel "containers" {
+        targets = discovery.docker.containers.targets
+
+        # This host runs other projects behind the same shared Traefik
+        # (see this file's top comment) - without this filter Alloy
+        # discovers every container on the box, not just this stack's,
+        # and tries to ship their logs too. Besides leaking unrelated
+        # projects' log data into this stack's Loki, a long-running
+        # container discovered for the first time gets its full log
+        # backlog tailed, which Loki correctly rejects as "too old" and
+        # drops the whole batch over - taking this stack's own log lines
+        # down with it.
+        rule {
+          source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+          regex         = "einsatzbereit"
+          action        = "keep"
+        }
+
+        rule {
+          source_labels = ["__meta_docker_container_name"]
+          regex         = "/(.*)"
+          target_label  = "container"
+        }
+      }
+
+      loki.source.docker "default" {
+        host          = "unix:///var/run/docker.sock"
+        targets       = discovery.docker.containers.targets
+        labels        = {"job" = "docker"}
+        relabel_rules = discovery.relabel.containers.rules
+        forward_to    = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki:3100/loki/api/v1/push"
+        }
+      }
