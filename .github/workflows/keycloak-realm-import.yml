@@ -54,9 +54,18 @@ jobs:
           mkdir -p "$IMPORT_DIR"
           cp keycloak/realms/*-realm.json "$IMPORT_DIR/"
 
+          # Dummy values, not real credentials - just enough for Keycloak to
+          # resolve the realm's "${KC_SMTP_*}" placeholders into well-formed
+          # config (it validates smtpServer.from as a real address shape at
+          # import time even though this check never actually sends mail).
           docker run -d --name kc-import-check -p 8080:8080 \
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+            -e KC_SMTP_HOST=localhost \
+            -e KC_SMTP_PORT=1025 \
+            -e KC_SMTP_FROM=noreply@example.test \
+            -e KC_SMTP_USER=test \
+            -e KC_SMTP_PASSWORD=test \
             -v "$IMPORT_DIR:/opt/keycloak/data/import:ro" \
             "quay.io/keycloak/keycloak:$KC_VERSION" \
             start-dev --import-realm
