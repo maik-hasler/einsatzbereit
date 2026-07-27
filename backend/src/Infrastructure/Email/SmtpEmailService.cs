@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Mail;
 using Application.Common.Email;
 using Microsoft.Extensions.Logging;
@@ -24,10 +25,13 @@ internal sealed class SmtpEmailService(
 			using var client = new SmtpClient(_options.Host, _options.Port)
 			{
 				DeliveryMethod = SmtpDeliveryMethod.Network,
-				EnableSsl = false,
+				EnableSsl = _options.EnableSsl,
 				UseDefaultCredentials = false
 			};
 #pragma warning restore SYSLIB0006
+
+			if (!string.IsNullOrEmpty(_options.Username))
+				client.Credentials = new NetworkCredential(_options.Username, _options.Password);
 
 			using var message = new MailMessage
 			{
@@ -42,7 +46,7 @@ internal sealed class SmtpEmailService(
 		}
 		catch (Exception ex)
 		{
-			logger.LogWarning(ex, "Failed to send email to {To} with subject {Subject}", to, subject);
+			logger.LogError(ex, "Failed to send email to {To} with subject {Subject}", to, subject);
 		}
 	}
 }

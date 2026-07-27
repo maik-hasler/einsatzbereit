@@ -344,6 +344,12 @@ jobs:
           KEYCLOAK_BACKEND_SECRET: ${{ secrets.KEYCLOAK_BACKEND_SECRET }}
           MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
           MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          # SMTP relay mailbox shared by Keycloak (KC_SMTP_*) and the backend
+          # (Smtp__*) in docker-compose.yml - see #1070, #1341, #1342.
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_ADDRESS: ${{ secrets.SMTP_FROM_ADDRESS }}
         run: |
           umask 077
           # Wrap each value in double quotes and escape \ and " so secrets that
@@ -363,6 +369,10 @@ jobs:
             printf 'KEYCLOAK_BACKEND_SECRET="%s"\n' "$(escape "$KEYCLOAK_BACKEND_SECRET")"
             printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
             printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
+            printf 'SMTP_HOST="%s"\n' "$(escape "$SMTP_HOST")"
+            printf 'SMTP_USERNAME="%s"\n' "$(escape "$SMTP_USERNAME")"
+            printf 'SMTP_PASSWORD="%s"\n' "$(escape "$SMTP_PASSWORD")"
+            printf 'SMTP_FROM_ADDRESS="%s"\n' "$(escape "$SMTP_FROM_ADDRESS")"
           } > .env
 
       - name: Copy compose file and .env

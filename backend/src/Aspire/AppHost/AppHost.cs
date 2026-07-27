@@ -62,6 +62,22 @@ if (localRealm["clients"] is JsonArray realmClients)
 
 localRealm["bruteForceProtected"] = false;
 
+// Local dev never has a real SMTP relay - point straight at the Mailpit
+// container by literal value instead of relying on Keycloak's "${VAR}"
+// realm-import substitution (which the committed realm now uses for
+// staging/production - see docker-compose.yml's keycloak service). Same
+// literal-override approach as the "backend" client secret above.
+localRealm["smtpServer"] = new JsonObject
+{
+	["host"] = "mailpit",
+	["port"] = "1025",
+	["from"] = "noreply@einsatzbereit.local",
+	["fromDisplayName"] = "Einsatzbereit",
+	["ssl"] = "false",
+	["starttls"] = "false",
+	["auth"] = "false",
+};
+
 var keycloakRealmImportPath = Path.Combine(
 	Path.GetTempPath(), "einsatzbereit-aspire-realm-import");
 Directory.CreateDirectory(keycloakRealmImportPath);
