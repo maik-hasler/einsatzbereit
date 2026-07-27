@@ -53,6 +53,9 @@ jobs:
       - name: Check nginx CSP header
         run: pnpm check:nginx-csp
 
+      - name: Check config.js defer
+        run: pnpm check:config-defer
+
       - name: Type check
         run: pnpm check
 

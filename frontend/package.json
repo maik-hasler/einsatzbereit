@@ -15,7 +15,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
     "format:write": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
     "i18n:check": "node scripts/check-i18n-keys.js",
-    "check:nginx-csp": "node scripts/check-nginx-csp.js"
+    "check:nginx-csp": "node scripts/check-nginx-csp.js",
+    "check:config-defer": "node scripts/check-config-defer.js"
   },
   "dependencies": {
     "@hookform/resolvers": "5.4.0",
