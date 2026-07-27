@@ -47,6 +47,8 @@ Aspire AppHost provisions Postgres, Keycloak, backend API, and the Vite frontend
 
 Test users: `vera/vera123` (user), `olaf/olaf123` (user + organisator), `admin/admin123` (admin)
 
+These same test-user credentials are intentionally also live on the public staging deployment (`https://einsatzbereit.maik-hasler.de`) - staging bakes in the same Keycloak realm as local dev, on purpose, since staging is disposable demo/QA infrastructure rather than production (see the `README.md` Test Users note and `keycloak/AGENTS.md` for the full rationale). Full admin access via these credentials on staging is a known, accepted trade-off, not a vulnerability to report.
+
 ## Key Conventions
 
 - Feature folders: `{Layer}/{Domain}/{Feature}/v1/` in both backend and frontend

@@ -57,6 +57,8 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 
 These credentials are stored **pre-hashed** (PBKDF2-SHA256) in the realm file, not as plaintext `value`. The realm's `passwordPolicy` (`upperCase(1)`, `length(8)`) rejects these short dev passwords, and Keycloak validates plaintext credentials against the policy during `--import-realm` - a fresh import (CI, a clean local stack, a first-time deploy) crashes with `invalidPasswordMinUpperCaseCharsMessage` and never starts. Pre-hashed credentials skip that validation, so **do not** replace them with plaintext `value` fields. To rotate one: import the realm, set the password in the UI, then partial-export the user.
 
+Because the same realm file ships in the published Keycloak image, these accounts (including `admin`) are also reachable on the public staging deployment with the exact passwords above, and `OVERWRITE_EXISTING` (see `docker-compose.yml`) recreates them on every restart even if someone changes or deletes them there. This is intentional, not an oversight: staging is disposable demo/QA infrastructure, not production, and gets fully wiped on demand via `.github/workflows/reset-staging.yml`. Do not "fix" this by removing the accounts from the shipped image or by trying to give staging its own secret password without checking with the repo owner first - see #1166.
+
 ### Organizations Feature
 
 Keycloak organizations are enabled (`"organizationsEnabled": true`). The backend delegates all org membership management to Keycloak - organizations are **not** duplicated in the application database.
