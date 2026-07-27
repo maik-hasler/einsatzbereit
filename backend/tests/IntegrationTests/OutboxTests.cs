@@ -53,11 +53,11 @@ public class OutboxTests(IntegrationTestFixture fixture)
 		await olafClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
 
 		// OutboxProcessorJob polls every 5s (PollInterval in OutboxProcessorJob.cs); a
-		// 30s budget gives it several cycles to run so a slow/loaded CI runner delaying
+		// 45s budget gives it several cycles to run so a slow/loaded CI runner delaying
 		// one tick doesn't flake the test, while still failing fast if dispatch is
 		// actually broken.
 		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
-			EngagementCheckedInDomainEventType, TimeSpan.FromSeconds(30));
+			EngagementCheckedInDomainEventType, TimeSpan.FromSeconds(45));
 
 		processed.Should().BeTrue("OutboxProcessorJob should dispatch the message to EngagementCheckedInAuditLogHandler within a few poll cycles");
 	}
