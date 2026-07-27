@@ -450,6 +450,24 @@ jobs:
               img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
               docker tag "${img}:staging" "${img}:staging-previous" 2>/dev/null || true
             done
+            # One-time remediation for the first Grafana rollout: Grafana only
+            # applies GF_SECURITY_ADMIN_USER/PASSWORD on a completely empty
+            # data volume, and it already bootstrapped once (with whatever
+            # secret value existed at the time) during the initial deploy
+            # attempt that later failed on an unrelated loki healthcheck bug.
+            # A changed GRAFANA_ADMIN_PASSWORD since then silently doesn't
+            # take effect. Wipe just the grafana volume, once, guarded by a
+            # marker file so this never repeats and never touches
+            # Postgres/MinIO. Remove this block entirely once confirmed fixed
+            # - it is not meant to be a permanent step (it would wipe
+            # dashboards on every future deploy otherwise).
+            if [ ! -f .grafana-admin-bootstrap-reset-done ]; then
+              echo "One-time: resetting grafana_data so admin credentials re-bootstrap from current secrets..."
+              docker compose stop grafana 2>/dev/null || true
+              docker compose rm -f grafana 2>/dev/null || true
+              docker volume rm einsatzbereit_grafana_data 2>/dev/null || true
+              touch .grafana-admin-bootstrap-reset-done
+            fi
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune --force || true
