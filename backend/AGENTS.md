@@ -58,7 +58,8 @@ src/
 tests/
 ├── Application.UnitTests/      Handler tests, NSubstitute mocks, no DB
 ├── IntegrationTests/           Testcontainers (Postgres 18 + Keycloak 26), Respawn
-└── ArchitectureTests/          NetArchTest layer rules + naming conventions
+├── ArchitectureTests/          NetArchTest layer rules + naming conventions
+└── VisualTests/                TUnit.Playwright + Aspire, E2E and axe-core a11y - largest, slowest suite
 ```
 
 ## Adding a Feature (canonical pattern)
@@ -187,6 +188,13 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 - `EndpointConventionTests.cs` - endpoint naming/structure rules
 - `MessagingConventionTests.cs` - handler/command/query naming rules
 - Run these if you rename namespaces or move files between layers
+
+### Visual tests (`VisualTests`)
+- TUnit.Playwright + Aspire: boots the full stack (Postgres, Keycloak, backend API, frontend) and drives it through a real browser - E2E flows plus axe-core a11y checks
+- Largest and slowest suite (~50 test classes) - included in `dotnet.yml`'s CI run, not a separate job
+- `AccessibilityTests.cs` - axe-core scans per page, fails on serious/critical violations; add a case here for any new page
+- `AuthHelper.cs` - `LoginAsync` drives the real Keycloak login UI; `FastSignInAsync` seeds a minted token straight into `localStorage` to skip the redirect round trip for tests that only need an authenticated session as a precondition
+- Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 7
 
 ### Run all tests
 ```bash
