@@ -26,7 +26,7 @@ server {
 	add_header X-XSS-Protection "1; mode=block" always;
 	add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 	add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
-	add_header Strict-Transport-Security "max-age=31536000" always;
+	add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 	add_header Content-Security-Policy $csp_header always;
 
 	location / {
@@ -40,7 +40,7 @@ server {
 		add_header X-XSS-Protection "1; mode=block" always;
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
-		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 		add_header Content-Security-Policy $csp_header always;
 	}
 
@@ -52,7 +52,7 @@ server {
 		add_header X-XSS-Protection "1; mode=block" always;
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
-		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 		add_header Content-Security-Policy $csp_header always;
 	}
 
@@ -63,7 +63,7 @@ server {
 		add_header X-XSS-Protection "1; mode=block" always;
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
-		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 		add_header Content-Security-Policy $csp_header always;
 	}
 }

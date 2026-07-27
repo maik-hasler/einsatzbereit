@@ -17,7 +17,8 @@
     "i18n:check": "node scripts/check-i18n-keys.js",
     "check:nginx-csp": "node scripts/check-nginx-csp.js",
     "check:config-defer": "node scripts/check-config-defer.js",
-    "check:nginx-gzip-static": "node scripts/check-nginx-gzip-static.js"
+    "check:nginx-gzip-static": "node scripts/check-nginx-gzip-static.js",
+    "check:nginx-hsts": "node scripts/check-nginx-hsts.js"
   },
   "dependencies": {
     "@hookform/resolvers": "5.4.0",

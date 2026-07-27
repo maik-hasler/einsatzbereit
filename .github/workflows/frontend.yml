@@ -59,6 +59,9 @@ jobs:
       - name: Check nginx gzip_static wiring
         run: pnpm check:nginx-gzip-static
 
+      - name: Check nginx HSTS header
+        run: pnpm check:nginx-hsts
+
       - name: Type check
         run: pnpm check
 
