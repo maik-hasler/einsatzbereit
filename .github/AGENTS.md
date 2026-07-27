@@ -61,7 +61,7 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 **Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
 
 ### Publish flow (backend/frontend/keycloak)
-1. Run full test suite - for backend, this is three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend` waits on via `needs:` before building anything. Frontend runs its own lint/type-check/build inline; keycloak has no test gate
+1. Run full test suite - three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend`, `publish-frontend`, and `publish-keycloak` all wait on via `needs:` before building anything, so a test failure blocks every image, not just the backend's. Frontend additionally runs its own lint/type-check/build inline; keycloak has no additional test gate beyond the shared backend suite
 2. Login to GHCR
 3. Extract version from tag (strips leading `v`)
 4. Build and push Docker image
