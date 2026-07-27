@@ -2,6 +2,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Minio" />
+		<PackageReference Include="MailKit" />
+		<PackageReference Include="MimeKit" />
 		<PackageReference Include="EFCore.NamingConventions" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />

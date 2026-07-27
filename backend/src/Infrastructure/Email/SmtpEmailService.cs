@@ -1,8 +1,9 @@
-using System.Net;
-using System.Net.Mail;
 using Application.Common.Email;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 
 namespace Infrastructure.Email;
 
@@ -22,28 +23,24 @@ internal sealed class SmtpEmailService(
 	{
 		try
 		{
-#pragma warning disable SYSLIB0006
-			using var client = new SmtpClient(_options.Host, _options.Port)
-			{
-				DeliveryMethod = SmtpDeliveryMethod.Network,
-				EnableSsl = _options.EnableSsl,
-				UseDefaultCredentials = false
-			};
-#pragma warning restore SYSLIB0006
+			using var client = new SmtpClient();
+
+			var secureSocketOptions = _options.EnableSsl
+				? SecureSocketOptions.StartTls
+				: SecureSocketOptions.None;
+			await client.ConnectAsync(_options.Host, _options.Port, secureSocketOptions, cancellationToken);
 
 			if (!string.IsNullOrEmpty(_options.Username))
-				client.Credentials = new NetworkCredential(_options.Username, _options.Password);
+				await client.AuthenticateAsync(_options.Username, _options.Password ?? string.Empty, cancellationToken);
 
-			using var message = new MailMessage
-			{
-				From = new MailAddress(_options.FromAddress, _options.FromName),
-				Subject = subject,
-				Body = body,
-				IsBodyHtml = false
-			};
-			message.To.Add(to);
+			using var message = new MimeMessage();
+			message.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
+			message.To.Add(MailboxAddress.Parse(to));
+			message.Subject = subject;
+			message.Body = new TextPart("plain") { Text = body };
 
-			await client.SendMailAsync(message, cancellationToken);
+			await client.SendAsync(message, cancellationToken);
+			await client.DisconnectAsync(true, cancellationToken);
 
 			metrics.RecordSucceeded();
 		}
