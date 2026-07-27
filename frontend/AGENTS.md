@@ -114,6 +114,7 @@ pnpm check         # tsc --noEmit
 pnpm lint          # eslint, zero warnings allowed
 pnpm format:write  # apply Prettier formatting - run before every commit
 pnpm format:check  # check Prettier formatting (used by CI)
+pnpm i18n:check    # verify en.json/de.json key parity - CI hard gate, run before committing locale changes
 ```
 
 ## Key Dependencies
@@ -122,7 +123,7 @@ pnpm format:check  # check Prettier formatting (used by CI)
 | -------------------- | ------------------------------------ |
 | `vite`               | Build tool + dev server              |
 | `react` 19           | UI framework                         |
-| `react-router` v7    | Client-side routing                  |
+| `react-router` v8    | Client-side routing                  |
 | `react-oidc-context` | Keycloak OIDC (wraps oidc-client-ts) |
 | `oidc-client-ts`     | PKCE flow, token management          |
 | `@tailwindcss/vite`  | Tailwind CSS 4 via Vite              |
