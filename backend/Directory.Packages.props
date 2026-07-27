@@ -13,6 +13,8 @@
 		<PackageVersion Include="NSwag.MSBuild" Version="[14.7.1]" PrivateAssets="All" />
 		<!-- Infrastructure -->
 		<PackageVersion Include="Minio" Version="[7.0.0]" />
+		<PackageVersion Include="MailKit" Version="[4.17.0]" />
+		<PackageVersion Include="MimeKit" Version="[4.17.0]" />
 		<PackageVersion Include="EFCore.NamingConventions" Version="[10.0.1]" />
 		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="[10.0.10]" />
 		<PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="[10.0.10]" PrivateAssets="All" />

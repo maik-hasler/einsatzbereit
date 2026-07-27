@@ -130,7 +130,7 @@ public class SmtpEmailServiceTests
 
 	// Minimal but protocol-correct SMTP responder: greets, accepts EHLO/MAIL
 	// FROM/RCPT TO/DATA/QUIT with no auth or TLS (matching EnableSsl=false,
-	// Username=null in these tests), just enough for SmtpClient.SendMailAsync
+	// Username=null in these tests), just enough for MailKit's SmtpClient.SendAsync
 	// to consider the send successful.
 	private sealed class FakeSmtpServer : IAsyncDisposable
 	{
