@@ -323,19 +323,12 @@ services:
           cpus: "0.25"
     volumes:
       - loki_data:/loki
-    # Exec-form CMD (not CMD-SHELL) so this doesn't also depend on a shell
-    # existing in the image - only on wget, which is what actually mattered
-    # here (see the deploy failure this fixed: alloy's hard `service_healthy`
-    # dependency on this healthcheck took the whole app deploy down with it
-    # when the check itself turned out to be wrong, not Loki). Nothing gates
-    # on this anymore (see alloy's depends_on below), so a wrong guess here
-    # is now cosmetic (shows "unhealthy" in `docker ps`), not deploy-blocking.
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/ready"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
+    # No Docker healthcheck: confirmed on staging that grafana/loki has
+    # neither wget nor a shell, so CMD-SHELL and exec-form CMD wget both
+    # fail regardless of whether Loki itself is fine - `docker ps` showed
+    # "unhealthy" even while Loki's own logs proved it was serving queries
+    # successfully. Nothing depends on this healthcheck (see alloy's
+    # depends_on below), so leaving it out is honest instead of misleading.
 
   # Ships container logs to Loki. Uses the Docker API (read-only socket mount)
   # to discover containers and stream their logs, rather than tailing
@@ -435,6 +428,21 @@ configs:
 
       discovery.relabel "containers" {
         targets = discovery.docker.containers.targets
+
+        # This host runs other projects behind the same shared Traefik
+        # (see this file's top comment) - without this filter Alloy
+        # discovers every container on the box, not just this stack's,
+        # and tries to ship their logs too. Besides leaking unrelated
+        # projects' log data into this stack's Loki, a long-running
+        # container discovered for the first time gets its full log
+        # backlog tailed, which Loki correctly rejects as "too old" and
+        # drops the whole batch over - taking this stack's own log lines
+        # down with it.
+        rule {
+          source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+          regex         = "einsatzbereit"
+          action        = "keep"
+        }
 
         rule {
           source_labels = ["__meta_docker_container_name"]
