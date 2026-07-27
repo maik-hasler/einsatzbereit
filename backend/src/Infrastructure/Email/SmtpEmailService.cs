@@ -8,7 +8,8 @@ namespace Infrastructure.Email;
 
 internal sealed class SmtpEmailService(
 	IOptions<SmtpOptions> options,
-	ILogger<SmtpEmailService> logger)
+	ILogger<SmtpEmailService> logger,
+	EmailMetrics metrics)
 	: IEmailService
 {
 	private readonly SmtpOptions _options = options.Value;
@@ -43,10 +44,13 @@ internal sealed class SmtpEmailService(
 			message.To.Add(to);
 
 			await client.SendMailAsync(message, cancellationToken);
+
+			metrics.RecordSucceeded();
 		}
 		catch (Exception ex)
 		{
 			logger.LogError(ex, "Failed to send email to {To} with subject {Subject}", to, subject);
+			metrics.RecordFailed();
 		}
 	}
 }

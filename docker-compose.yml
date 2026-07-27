@@ -155,6 +155,7 @@ services:
     networks:
       - proxy
       - db
+      - monitoring
     deploy:
       resources:
         limits:
@@ -199,6 +200,12 @@ services:
       Smtp__FromAddress: ${SMTP_FROM_ADDRESS:?set SMTP_FROM_ADDRESS in .env}
       Smtp__FromName: ${SMTP_FROM_NAME:?set SMTP_FROM_NAME in .env}
       Smtp__EnableSsl: "true"
+      # Second Kestrel listener, scraped by prometheus over the "monitoring"
+      # network above. Deliberately not a value from .env/secrets - it isn't
+      # sensitive, and the safety property that matters (not publicly
+      # reachable) comes from Traefik's backend router below only ever
+      # pointing at port 8080, never 8081 (#1341).
+      Metrics__Port: "8081"
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
@@ -244,9 +251,9 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
-    # Only 2 scrape targets (itself + node-exporter), so a low ceiling is
-    # plenty - trimmed down from 256m to leave more host headroom on a
-    # memory-constrained box (staging runs on a 4GB VM).
+    # Only a handful of scrape targets (itself, node-exporter, backend), so a
+    # low ceiling is plenty - trimmed down from 256m to leave more host
+    # headroom on a memory-constrained box (staging runs on a 4GB VM).
     deploy:
       resources:
         limits:
@@ -427,6 +434,12 @@ configs:
         - job_name: node-exporter
           static_configs:
             - targets: ["node-exporter:9100"]
+
+        # Port 8081, not the Traefik-routed 8080 - see backend's Metrics__Port
+        # and networks above (#1341).
+        - job_name: backend
+          static_configs:
+            - targets: ["backend:8081"]
   grafana-datasources:
     content: |
       apiVersion: 1
