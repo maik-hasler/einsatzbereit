@@ -381,6 +381,12 @@ jobs:
             printf 'SMTP_FROM_NAME="%s"\n' "$(escape "$SMTP_FROM_NAME")"
             printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
             printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
+            # Not a secret - staging is meant to come back seeded with demo
+            # organizations/opportunities on every deploy/reset (see
+            # reset-staging.yml). docker-compose.yml defaults this to
+            # "false" for any other deployment of the same compose file
+            # (#1375).
+            printf 'DATABASE_SEED_ON_STARTUP="true"\n'
           } > .env
 
       - name: Copy compose file and .env
