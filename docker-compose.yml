@@ -185,7 +185,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       Database__MigrateOnStartup: "true"
-      Database__SeedOnStartup: "true"
+      # Defaults to false so a fresh non-staging deployment of this compose
+      # file doesn't come up populated with the fictional "Fairview" demo
+      # organizations/opportunities from ApplicationDbContextInitializer.
+      # The staging deploy job (publish.yml) explicitly overrides this to
+      # "true" in the rendered .env - staging is meant to come back seeded
+      # (#1375).
+      Database__SeedOnStartup: ${DATABASE_SEED_ON_STARTUP:-false}
       ConnectionStrings__einsatzbereit: "Host=postgres;Database=einsatzbereit;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
       Authentication__Authority: https://login.maik-hasler.de/realms/einsatzbereit
       Authentication__ValidIssuers__0: https://login.maik-hasler.de/realms/einsatzbereit
