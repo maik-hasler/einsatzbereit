@@ -30,6 +30,7 @@
       "legal": "Legal",
       "imprint": "Imprint",
       "privacy": "Privacy Policy",
+      "contact": "Contact",
       "followUs": "Follow us",
       "copyright": "© {{year}} Einsatzbereit. All rights reserved."
     },
@@ -625,6 +626,32 @@
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
     },
+    "contact": {
+      "title": "Contact",
+      "reportSectionTitle": "Reporting abusive content",
+      "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
+      "otherSectionTitle": "Other questions or concerns",
+      "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint."
+    },
+    "reportContent": {
+      "reportButton": "Report",
+      "reportButtonAriaLabel": "Report this content",
+      "title": "Report content",
+      "reasonLabel": "Why are you reporting this?",
+      "reason": {
+        "Spam": "Spam",
+        "IllegalContent": "Illegal content",
+        "Fraud": "Fraud or scam",
+        "Other": "Other"
+      },
+      "detailLabelOptional": "Additional details (optional)",
+      "detailLabelRequired": "Additional details",
+      "detailRequiredError": "Please describe the issue.",
+      "submit": "Submit report",
+      "submitting": "Submitting…",
+      "success": "Thank you, your report has been submitted.",
+      "error": "Failed to submit report."
+    },
     "confirmDialog": {
       "keep": "Keep",
       "delete": {
@@ -788,9 +815,36 @@
     },
     "administration": {
       "title": "Administration",
+      "reportsHeading": "Reports",
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
       "loadingMore": "Loading more...",
+      "reports": {
+        "filterLabel": "Filter reports by status",
+        "status": {
+          "Pending": "Pending",
+          "Resolved": "Resolved",
+          "Dismissed": "Dismissed"
+        },
+        "loading": "Loading reports...",
+        "error": "Failed to load reports.",
+        "noReports": "No reports found.",
+        "contentGone": "Content no longer exists",
+        "contentType": {
+          "VolunteerOpportunity": "Opportunity",
+          "Organization": "Organization"
+        },
+        "reportedOn": "Reported {{date}}",
+        "dismiss": "Dismiss",
+        "deleteContent": "Delete content",
+        "dismissSuccess": "Report dismissed.",
+        "dismissError": "Failed to dismiss report.",
+        "deleteSuccess": "Content deleted and report resolved.",
+        "deleteError": "Failed to delete content.",
+        "deleteConfirmTitle": "Delete reported content?",
+        "deleteConfirmMessage": "Are you sure you want to permanently delete this content? This cannot be undone.",
+        "loadMore": "Load more"
+      },
       "organizations": {
         "loading": "Loading organizations...",
         "error": "Failed to load organizations.",
@@ -953,6 +1007,13 @@
         "ParticipationTypeLocked": "Participation type cannot be changed while active engagements exist.",
         "TimeSlotCapacityBelowActive": "Cannot reduce capacity below the current number of active sign-ups.",
         "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected engagements first."
+      },
+      "Report": {
+        "ContentNotFound": "The reported content was not found.",
+        "DetailRequired": "A detail description is required when the reason is 'Other'.",
+        "DetailTooLong": "Detail must not exceed 1000 characters.",
+        "NotFound": "Report not found.",
+        "NotPending": "This report has already been handled."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",

@@ -238,4 +238,28 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
 	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteOpportunity_WhenIsAdminAndNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: the acting admin is not a member of the opportunity's organization.
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+
+		// Act
+		var result = await _sut.Handle(
+			new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId, IsAdmin: true), cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		_opportunityRepo.Received(1).Delete(opportunity);
+	}
 }

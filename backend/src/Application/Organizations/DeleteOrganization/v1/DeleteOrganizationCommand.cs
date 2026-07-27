@@ -5,5 +5,6 @@ namespace Application.Organizations.DeleteOrganization.v1;
 
 public sealed record DeleteOrganizationCommand(
 	Guid OrganizationId,
-	UserId RequestingUserId)
+	UserId RequestingUserId,
+	bool IsAdmin = false)
 	: ICommand<bool>;

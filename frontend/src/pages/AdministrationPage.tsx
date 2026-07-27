@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import type { AdminUserListItem } from "../client/api-client";
+import { Link } from "react-router";
+import type {
+	AdminReportSummary,
+	AdminUserListItem,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -13,6 +17,7 @@ import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const PAGE_SIZE = 10;
 
@@ -32,6 +37,12 @@ export default function AdministrationPage() {
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
 				{t("administration.title")}
 			</h1>
+			<section className="mb-10">
+				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+					{t("administration.reportsHeading")}
+				</h2>
+				<ReportsSection />
+			</section>
 			<section className="mb-10">
 				<h2 className="mb-4 text-lg font-semibold text-gray-900">
 					{t("administration.organizationsHeading")}
@@ -420,6 +431,214 @@ function UsersSection() {
 						/>
 					)}
 				</>
+			)}
+		</>
+	);
+}
+
+const REPORT_STATUS_FILTERS = ["Pending", "Resolved", "Dismissed"] as const;
+type ReportStatusFilter = (typeof REPORT_STATUS_FILTERS)[number];
+
+function contentHref(report: AdminReportSummary): string {
+	return report.contentType === "Organization"
+		? `/organizations/${report.contentId}`
+		: `/volunteer-opportunities/${report.contentId}`;
+}
+
+function ReportsSection() {
+	const { t } = useTranslation();
+	const api = useApiClient();
+
+	const [statusFilter, setStatusFilter] =
+		useState<ReportStatusFilter>("Pending");
+	const [pendingReportId, setPendingReportId] = useState<string | null>(null);
+	const [confirmDeleteReport, setConfirmDeleteReport] =
+		useState<AdminReportSummary | null>(null);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+
+	const {
+		items: rows,
+		setItems: setRows,
+		loading,
+		loadingMore,
+		error,
+		hasMore,
+		loadMore,
+	} = useLoadMore<AdminReportSummary>(
+		(pageNumber) =>
+			api.listReports(statusFilter, pageNumber, PAGE_SIZE).then((result) => ({
+				items: result.items,
+				pageCount: result.pageCount,
+			})),
+		{
+			deps: [statusFilter],
+			getErrorMessage: () => t("administration.reports.error"),
+		},
+	);
+
+	async function handleDismiss(reportId: string) {
+		setPendingReportId(reportId);
+		try {
+			await api.dismissReport(reportId);
+			setRows((prev) => prev.filter((r) => r.id !== reportId));
+			dispatchToast("success", t("administration.reports.dismissSuccess"));
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("administration.reports.dismissError")),
+			);
+		} finally {
+			setPendingReportId(null);
+		}
+	}
+
+	async function handleConfirmDelete() {
+		if (!confirmDeleteReport) return;
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			await api.resolveReport(confirmDeleteReport.id);
+			setRows((prev) => prev.filter((r) => r.id !== confirmDeleteReport.id));
+			setConfirmDeleteReport(null);
+			dispatchToast("success", t("administration.reports.deleteSuccess"));
+		} catch (err) {
+			setDeleteError(
+				getApiErrorMessage(err, t("administration.reports.deleteError")),
+			);
+		} finally {
+			setDeleting(false);
+		}
+	}
+
+	return (
+		<>
+			<div
+				role="group"
+				aria-label={t("administration.reports.filterLabel")}
+				className="mb-4 flex gap-2"
+			>
+				{REPORT_STATUS_FILTERS.map((status) => (
+					<button
+						key={status}
+						type="button"
+						aria-pressed={statusFilter === status}
+						onClick={() => setStatusFilter(status)}
+						className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+							statusFilter === status
+								? "bg-brand-700 text-white"
+								: "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+						}`}
+					>
+						{t(`administration.reports.status.${status}`)}
+					</button>
+				))}
+			</div>
+
+			{loading ? (
+				<div className="flex items-center justify-center py-16">
+					<Spinner label={t("administration.reports.loading")} />
+				</div>
+			) : error ? (
+				<ErrorBanner message={error} />
+			) : rows.length === 0 ? (
+				<EmptyState title={t("administration.reports.noReports")} />
+			) : (
+				<>
+					<div className="overflow-hidden rounded-2xl border border-gray-200">
+						<table className="w-full text-sm">
+							<tbody className="divide-y divide-gray-100">
+								{rows.map((row) => {
+									const isPending = pendingReportId === row.id;
+									return (
+										<tr
+											key={row.id}
+											className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+										>
+											<td className="min-w-0 flex-1">
+												<p className="flex flex-wrap items-center gap-2">
+													{row.contentTitle ? (
+														<Link
+															to={contentHref(row)}
+															className="font-medium text-brand-700 hover:underline"
+														>
+															{row.contentTitle}
+														</Link>
+													) : (
+														<span className="italic text-gray-500">
+															{t("administration.reports.contentGone")}
+														</span>
+													)}
+													<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+														{t(
+															`administration.reports.contentType.${row.contentType}`,
+														)}
+													</span>
+													<span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+														{t(`reportContent.reason.${row.reason}`)}
+													</span>
+												</p>
+												{row.detail && (
+													<p className="mt-1 text-xs text-gray-600">
+														{row.detail}
+													</p>
+												)}
+												<p className="mt-1 text-xs text-gray-400">
+													{t("administration.reports.reportedOn", {
+														date: new Date(row.createdOn).toLocaleString(),
+													})}
+												</p>
+											</td>
+											{row.status === "Pending" && (
+												<td className="flex shrink-0 items-center gap-2">
+													<button
+														type="button"
+														disabled={isPending}
+														onClick={() => void handleDismiss(row.id)}
+														className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+													>
+														{t("administration.reports.dismiss")}
+													</button>
+													<button
+														type="button"
+														disabled={isPending}
+														onClick={() => setConfirmDeleteReport(row)}
+														className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+													>
+														{t("administration.reports.deleteContent")}
+													</button>
+												</td>
+											)}
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+					</div>
+					{hasMore && (
+						<LoadMoreButton
+							loading={loadingMore}
+							label={t("administration.reports.loadMore")}
+							onClick={loadMore}
+						/>
+					)}
+				</>
+			)}
+
+			{confirmDeleteReport && (
+				<ConfirmDialog
+					title={t("administration.reports.deleteConfirmTitle")}
+					message={t("administration.reports.deleteConfirmMessage")}
+					confirmLabel={t("administration.reports.deleteContent")}
+					onConfirm={() => void handleConfirmDelete()}
+					onClose={() => {
+						if (deleting) return;
+						setConfirmDeleteReport(null);
+						setDeleteError(null);
+					}}
+					loading={deleting}
+					error={deleteError}
+				/>
 			)}
 		</>
 	);

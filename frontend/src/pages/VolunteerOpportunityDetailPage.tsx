@@ -15,6 +15,7 @@ import {
 } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import ReportContentModal from "../components/ReportContentModal";
 import Button from "../components/Button";
 import SingleMarkerMap from "../components/SingleMarkerMap";
 import Skeleton from "../components/Skeleton";
@@ -51,6 +52,7 @@ export default function VolunteerOpportunityDetailPage() {
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
+	const [showReport, setShowReport] = useState(false);
 
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
@@ -235,6 +237,31 @@ export default function VolunteerOpportunityDetailPage() {
 						</svg>
 						<span className="hidden sm:inline">{t("opportunities.share")}</span>
 					</button>
+					{isAuthenticated && (
+						<button
+							onClick={() => setShowReport(true)}
+							aria-label={t("reportContent.reportButtonAriaLabel")}
+							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth="2"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M3 3v18m0-18h12l-1.5 3L15 9H3"
+								/>
+							</svg>
+							<span className="hidden sm:inline">
+								{t("reportContent.reportButton")}
+							</span>
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -699,6 +726,15 @@ export default function VolunteerOpportunityDetailPage() {
 					}}
 					loading={withdrawing}
 					error={withdrawError}
+				/>
+			)}
+
+			{showReport && (
+				<ReportContentModal
+					contentType="VolunteerOpportunity"
+					contentId={opportunity.id}
+					onClose={() => setShowReport(false)}
+					onSuccess={() => dispatchToast("success", t("reportContent.success"))}
 				/>
 			)}
 		</div>

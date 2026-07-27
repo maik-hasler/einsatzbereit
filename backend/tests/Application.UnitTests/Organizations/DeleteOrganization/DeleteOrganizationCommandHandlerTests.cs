@@ -138,6 +138,28 @@ public class DeleteOrganizationCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldDeleteOrganization_WhenIsAdminAndNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: the acting admin is not a member of the organization at all.
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		_dbContext
+			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
+			.Returns(false);
+		SetMembers(orgId, Guid.NewGuid());
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId, IsAdmin: true);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		_organizationRepo.Received(1).Delete(organization);
+	}
+
+	[Test]
 	public async Task Handle_ShouldThrow_WhenOpportunityHasFutureTimeSlotOrActiveEngagement(
 		CancellationToken cancellationToken)
 	{

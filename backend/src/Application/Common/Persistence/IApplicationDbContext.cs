@@ -2,6 +2,7 @@ using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
@@ -27,6 +28,8 @@ public interface IApplicationDbContext
 	IAggregateRepository<OrganizationMembership, OrganizationMembershipId> OrganizationMemberships { get; }
 
 	IAggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId> OrganizationDashboardLayouts { get; }
+
+	IAggregateRepository<Report, ReportId> Reports { get; }
 
 	Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,

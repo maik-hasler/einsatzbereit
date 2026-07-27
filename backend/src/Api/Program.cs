@@ -59,7 +59,10 @@ builder.Services.AddAuthorizationBuilder()
 			.RequireRole(AuthorizationPolicies.DefaultUser))
 	.AddPolicy(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy, policy =>
 		policy.RequireClaim(AuthorizationPolicies.RealmClaim, AuthorizationPolicies.EinsatzbereitRealm)
-			.RequireRole(AuthorizationPolicies.OrganisatorRole));
+			.RequireRole(AuthorizationPolicies.OrganisatorRole))
+	.AddPolicy(AuthorizationPolicies.EinsatzbereitOrganisatorOrAdminPolicy, policy =>
+		policy.RequireClaim(AuthorizationPolicies.RealmClaim, AuthorizationPolicies.EinsatzbereitRealm)
+			.RequireRole(AuthorizationPolicies.OrganisatorRole, AuthorizationPolicies.AdminRole));
 
 builder.Services.AddCors(options =>
 	options.AddDefaultPolicy(policy =>

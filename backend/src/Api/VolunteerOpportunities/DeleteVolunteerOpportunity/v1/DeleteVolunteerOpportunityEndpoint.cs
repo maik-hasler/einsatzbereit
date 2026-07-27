@@ -22,7 +22,7 @@ internal sealed class DeleteVolunteerOpportunityEndpoint
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
-			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
+			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorOrAdminPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 
@@ -35,7 +35,8 @@ internal sealed class DeleteVolunteerOpportunityEndpoint
 		try
 		{
 			var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
-			var command = new DeleteVolunteerOpportunityCommand(opportunityId, userId);
+			var isAdmin = user.IsInRole(AuthorizationPolicies.AdminRole);
+			var command = new DeleteVolunteerOpportunityCommand(opportunityId, userId, isAdmin);
 			await sender.Send(command, cancellationToken);
 			return Results.NoContent();
 		}

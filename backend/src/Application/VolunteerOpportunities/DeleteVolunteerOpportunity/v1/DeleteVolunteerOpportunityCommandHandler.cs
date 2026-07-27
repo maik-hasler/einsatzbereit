@@ -25,10 +25,11 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			opportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsOrganizerOrAdminAsync(
 			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,
+			request.IsAdmin,
 			cancellationToken);
 
 		// Notify volunteers with an active engagement before the opportunity is

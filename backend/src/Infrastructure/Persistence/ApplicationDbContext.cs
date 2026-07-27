@@ -4,6 +4,7 @@ using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Repositories;
@@ -82,6 +83,14 @@ internal sealed class ApplicationDbContext(
 			Set<OrganizationDashboardLayout>(),
 			Set<OrganizationDashboardLayout>(),
 			l => l.Id);
+
+	public IAggregateRepository<Report, ReportId> Reports
+		=> new AggregateRepository<Report, ReportId>(
+			Set<Report>(),
+			Set<Report>(),
+			r => r.Id);
+
+	internal IQueryable<Report> ReportsQuery => Set<Report>().AsNoTracking();
 
 	public async Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,

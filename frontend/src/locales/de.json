@@ -30,6 +30,7 @@
       "legal": "Rechtliches",
       "imprint": "Impressum",
       "privacy": "Datenschutz",
+      "contact": "Kontakt",
       "followUs": "Folge uns",
       "copyright": "© {{year}} Einsatzbereit. Alle Rechte vorbehalten."
     },
@@ -625,6 +626,32 @@
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
     },
+    "contact": {
+      "title": "Kontakt",
+      "reportSectionTitle": "Missbräuchliche Inhalte melden",
+      "reportSectionBody": "Wenn dir ein Bedarf oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Bedarfs-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
+      "otherSectionTitle": "Andere Fragen oder Anliegen",
+      "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform."
+    },
+    "reportContent": {
+      "reportButton": "Melden",
+      "reportButtonAriaLabel": "Diesen Inhalt melden",
+      "title": "Inhalt melden",
+      "reasonLabel": "Warum meldest du diesen Inhalt?",
+      "reason": {
+        "Spam": "Spam",
+        "IllegalContent": "Illegale Inhalte",
+        "Fraud": "Betrug oder Abzocke",
+        "Other": "Sonstiges"
+      },
+      "detailLabelOptional": "Zusätzliche Details (optional)",
+      "detailLabelRequired": "Zusätzliche Details",
+      "detailRequiredError": "Bitte beschreibe das Problem.",
+      "submit": "Meldung absenden",
+      "submitting": "Wird gesendet…",
+      "success": "Danke, deine Meldung wurde übermittelt.",
+      "error": "Meldung konnte nicht übermittelt werden."
+    },
     "confirmDialog": {
       "keep": "Behalten",
       "delete": {
@@ -788,9 +815,36 @@
     },
     "administration": {
       "title": "Administration",
+      "reportsHeading": "Meldungen",
       "organizationsHeading": "Organisationen",
       "usersHeading": "Benutzer",
       "loadingMore": "Weitere werden geladen...",
+      "reports": {
+        "filterLabel": "Meldungen nach Status filtern",
+        "status": {
+          "Pending": "Offen",
+          "Resolved": "Bearbeitet",
+          "Dismissed": "Verworfen"
+        },
+        "loading": "Meldungen werden geladen...",
+        "error": "Meldungen konnten nicht geladen werden.",
+        "noReports": "Keine Meldungen gefunden.",
+        "contentGone": "Inhalt existiert nicht mehr",
+        "contentType": {
+          "VolunteerOpportunity": "Bedarf",
+          "Organization": "Organisation"
+        },
+        "reportedOn": "Gemeldet am {{date}}",
+        "dismiss": "Verwerfen",
+        "deleteContent": "Inhalt löschen",
+        "dismissSuccess": "Meldung verworfen.",
+        "dismissError": "Meldung konnte nicht verworfen werden.",
+        "deleteSuccess": "Inhalt gelöscht und Meldung bearbeitet.",
+        "deleteError": "Inhalt konnte nicht gelöscht werden.",
+        "deleteConfirmTitle": "Gemeldeten Inhalt löschen?",
+        "deleteConfirmMessage": "Möchtest du diesen Inhalt wirklich dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.",
+        "loadMore": "Mehr laden"
+      },
       "organizations": {
         "loading": "Organisationen werden geladen...",
         "error": "Organisationen konnten nicht geladen werden.",
@@ -953,6 +1007,13 @@
         "ParticipationTypeLocked": "Die Teilnahmeart kann nicht geändert werden, solange aktive Engagements bestehen.",
         "TimeSlotCapacityBelowActive": "Die Kapazität kann nicht unter die Anzahl der aktuell aktiven Anmeldungen gesenkt werden.",
         "TimeSlotHasActiveEngagements": "Ein Zeitslot mit aktiven Anmeldungen kann nicht gelöscht werden. Sage zuerst die betroffenen Anmeldungen ab."
+      },
+      "Report": {
+        "ContentNotFound": "Der gemeldete Inhalt wurde nicht gefunden.",
+        "DetailRequired": "Bei der Meldeart „Sonstiges“ ist eine Beschreibung erforderlich.",
+        "DetailTooLong": "Die Beschreibung darf maximal 1000 Zeichen lang sein.",
+        "NotFound": "Meldung nicht gefunden.",
+        "NotPending": "Diese Meldung wurde bereits bearbeitet."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Das Startdatum muss in der Zukunft liegen.",

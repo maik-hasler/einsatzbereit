@@ -24,7 +24,7 @@ internal sealed class DeleteOrganizationEndpoint
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status409Conflict)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
-			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
+			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorOrAdminPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.MapToApiVersion(1);
 	}
@@ -37,7 +37,9 @@ internal sealed class DeleteOrganizationEndpoint
 	{
 		var requestingUserId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		var command = new DeleteOrganizationCommand(organizationId, requestingUserId);
+		var isAdmin = user.IsInRole(AuthorizationPolicies.AdminRole);
+
+		var command = new DeleteOrganizationCommand(organizationId, requestingUserId, isAdmin);
 
 		await sender.Send(command, cancellationToken);
 

@@ -390,6 +390,60 @@ namespace Infrastructure.Persistence.Migrations
 					b.ToTable("organization_membership", (string)null);
 				});
 
+			modelBuilder.Entity("Domain.Reports.Report", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<Guid>("ContentId")
+						.HasColumnType("uuid")
+						.HasColumnName("content_id");
+
+					b.Property<string>("ContentType")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("content_type");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<string>("Detail")
+						.HasMaxLength(1000)
+						.HasColumnType("character varying(1000)")
+						.HasColumnName("detail");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<string>("Reason")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("reason");
+
+					b.Property<Guid>("ReporterId")
+						.HasColumnType("uuid")
+						.HasColumnName("reporter_id");
+
+					b.Property<string>("Status")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("status");
+
+					b.HasKey("Id")
+						.HasName("pk_report");
+
+					b.HasIndex("Status")
+						.HasDatabaseName("ix_report_status");
+
+					b.HasIndex("ContentType", "ContentId")
+						.HasDatabaseName("ix_report_content_type_content_id");
+
+					b.ToTable("report", (string)null);
+				});
+
 			modelBuilder.Entity("Domain.Users.User", b =>
 				{
 					b.Property<Guid>("Id")

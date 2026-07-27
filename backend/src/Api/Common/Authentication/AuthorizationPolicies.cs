@@ -17,4 +17,6 @@ internal static class AuthorizationPolicies
 	public const string EinsatzbereitDefaultUserPolicy = "einsatzbereit-default-user-policy";
 
 	public const string EinsatzbereitOrganisatorPolicy = "einsatzbereit-organisator-policy";
+
+	public const string EinsatzbereitOrganisatorOrAdminPolicy = "einsatzbereit-organisator-or-admin-policy";
 }
