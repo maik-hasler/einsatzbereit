@@ -1,7 +1,11 @@
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { runtimeConfig } from "../lib/runtimeConfig";
 
-const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+// Proxied through the backend rather than tile.openstreetmap.org directly so
+// visitor IP addresses aren't disclosed to the OpenStreetMap Foundation - see
+// docs/ADRs/5_map_and_geocoding_request_proxying.adoc.
+const TILE_URL = `${runtimeConfig.apiUrl}/v1/maps/tiles/{z}/{x}/{y}.png`;
 const ATTRIBUTION =
 	'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 

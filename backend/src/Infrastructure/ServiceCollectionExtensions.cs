@@ -4,6 +4,7 @@ using Application.Common;
 using Application.Common.Email;
 using Application.Common.Geocoding;
 using Application.Common.Keycloak;
+using Application.Common.Maps;
 using Application.Common.Persistence;
 using Application.Common.RateLimiting;
 using Application.Common.Storage;
@@ -16,6 +17,7 @@ using Infrastructure.BackgroundJobs;
 using Infrastructure.Email;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
+using Infrastructure.Maps;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Options;
@@ -95,6 +97,17 @@ public static class ServiceCollectionExtensions
 				client.BaseAddress = new Uri(geocodingOptions.BaseUrl.TrimEnd('/') + "/");
 				client.Timeout = TimeSpan.FromSeconds(geocodingOptions.TimeoutSeconds);
 				client.DefaultRequestHeaders.UserAgent.ParseAdd(geocodingOptions.UserAgent);
+			});
+
+		services.AddMemoryCache();
+		services.ConfigureOptions<MapTileOptionsSetup>();
+		services.AddHttpClient<IMapTileService, OpenStreetMapTileService>(
+			(sp, client) =>
+			{
+				var mapTileOptions = sp.GetRequiredService<IOptions<MapTileOptions>>().Value;
+				client.BaseAddress = new Uri(mapTileOptions.BaseUrl.TrimEnd('/') + "/");
+				client.Timeout = TimeSpan.FromSeconds(mapTileOptions.TimeoutSeconds);
+				client.DefaultRequestHeaders.UserAgent.ParseAdd(mapTileOptions.UserAgent);
 			});
 
 		services.ConfigureOptions<StorageSettingsSetup>();

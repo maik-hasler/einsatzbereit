@@ -38,6 +38,13 @@ The following table lists the relevant architecture decisions. Each decision lin
 |2026-05-13
 |link:ADRs/4_geocoding_and_geo_search.html[Geocoding]
 
+|5
+|Map/geocoding proxying
+|Proxy OpenStreetMap tile and Nominatim requests through the backend so visitor IP addresses are never sent to these third parties directly.
+|Accepted
+|2026-07-27
+|link:ADRs/5_map_and_geocoding_request_proxying.html[Proxying]
+
 |===
 
 See <<section-solution-strategy>> for how the key decisions map to the quality goals.
