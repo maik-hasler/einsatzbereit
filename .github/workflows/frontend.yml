@@ -53,6 +53,9 @@ jobs:
       - name: Check nginx CSP header
         run: pnpm check:nginx-csp
 
+      - name: Check nginx gzip_static wiring
+        run: pnpm check:nginx-gzip-static
+
       - name: Type check
         run: pnpm check
 

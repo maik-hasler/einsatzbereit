@@ -3,12 +3,23 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import svgr from "vite-plugin-svgr";
 import { VitePWA } from "vite-plugin-pwa";
+import { compression } from "vite-plugin-compression2";
 
 export default defineConfig({
 	plugins: [
 		react(),
 		tailwindcss(),
 		svgr(),
+		// Pre-compress build output so nginx can serve a .gz sibling directly
+		// (gzip_static in nginx.conf.template) instead of re-gzipping every
+		// asset from scratch on each cold-cache request. Matches nginx's
+		// gzip_types/gzip_min_length so only the same file types/sizes it
+		// would otherwise compress on the fly get a pre-built .gz.
+		compression({
+			algorithms: ["gzip"],
+			include: /\.(js|mjs|css|json|svg)$/,
+			threshold: 1024,
+		}),
 		VitePWA({
 			registerType: "autoUpdate",
 			workbox: {
