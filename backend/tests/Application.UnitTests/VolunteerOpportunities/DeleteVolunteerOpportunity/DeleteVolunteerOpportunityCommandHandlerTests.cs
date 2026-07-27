@@ -214,4 +214,28 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		// Assert
 		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: caller belongs to a different organization than the opportunity's.
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
+		_opportunityRepo.DidNotReceive().Delete(Arg.Any<VolunteerOpportunity>());
+	}
 }

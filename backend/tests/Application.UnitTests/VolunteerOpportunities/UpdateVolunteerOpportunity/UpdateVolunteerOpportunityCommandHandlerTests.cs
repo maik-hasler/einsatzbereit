@@ -404,4 +404,32 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Address is required*");
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: caller belongs to a different organization than the opportunity's.
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
+		opportunity.Title.Should().Be("Altes Thema");
+		opportunity.Description.Should().Be("Alte Beschreibung");
+	}
 }

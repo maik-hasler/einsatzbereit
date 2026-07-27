@@ -98,7 +98,12 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// The name span's rendered box, not its (untruncated-by-CSS) text content,
 		// is what actually regresses - assert on the box width so a truncated
 		// render is caught even though the DOM text is always the full name.
+		// The switcher re-fetches orgs on navigation and briefly renders a
+		// loading skeleton with no name span at all, so wait for the new org's
+		// name to actually be showing before measuring - otherwise BoundingBoxAsync
+		// races the skeleton and returns null.
 		var nameSpan = Page.GetByTestId("org-switcher-current-name");
+		await Expect(nameSpan).ToHaveTextAsync("Fairview Animal Welfare Association", new() { Timeout = 15_000 });
 		var box = await nameSpan.BoundingBoxAsync();
 		box.Should().NotBeNull();
 		box!.Width.Should().BeGreaterThan(60,
