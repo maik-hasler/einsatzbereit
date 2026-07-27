@@ -8,12 +8,13 @@ description: >
   bugs, dead code, dead features, repo hygiene, docs drift, test gaps, CI
   health, security, contributor accessibility, live personas (Volunteer
   Vera/Organizer Olaf/Platform Admin - functional friction and visual/
-  content quality together), accessibility, or code/comment complexity -
-  and files evidenced, ranked GitHub issues. Never writes code, never opens
-  a branch or PR. Use whenever asked to review the repo or the live app,
-  run the recurring routine, audit einsatzbereit, hunt for dead code/bugs/
-  UX gaps/accessibility issues/overly complex code, simulate a user, or
-  names any of the lenses - even without the word "review".
+  content quality together), accessibility, code/comment complexity, or
+  comment bloat - and files evidenced, ranked GitHub issues. Never writes
+  code, never opens a branch or PR. Use whenever asked to review the repo
+  or the live app, run the recurring routine, audit einsatzbereit, hunt
+  for dead code/bugs/UX gaps/accessibility issues/overly complex code,
+  huge or meaningless comments, simulate a user, or names any of the
+  lenses - even without the word "review".
 ---
 
 # Lens
@@ -96,7 +97,8 @@ it and raise the confidence bar.
 
 If the user names a lens (or something that clearly maps to one, e.g.
 "simulate a user" -> personas, "check contrast" -> accessibility, "find
-overly clever code" -> complexity), skip triage and go to Step 2. If they
+overly clever code" -> complexity, "comments are too long/AI writes huge
+comments" -> comment-bloat), skip triage and go to Step 2. If they
 reference the previous run ("last time was CI"), exclude that lens from
 triage.
 
@@ -128,6 +130,7 @@ lens; it is not the review. Do not start investigating findings here.
 | Test-to-src churn | ratio of changed test files to changed src files (from churn probe) | test-gaps |
 | a11y coverage gap | grep `AccessibilityTests.cs` for `HasNoSeriousA11yViolations`, diff against `App.tsx` routes | accessibility |
 | Comment hedge scan | grep `careful\|hack\|workaround\|don't\|must\|NOTE\|WARNING` density across `backend/src`, `frontend/src` | complexity |
+| Comment density outliers | rough comment-line-to-code-line ratio per file (`grep -c '^\s*//\|^\s*\*\|^\s*///'` vs `wc -l`) on the churn-hotspot files from the churn probe; eyeball the 5 highest-ratio files | comment-bloat |
 | Days since last live pass | check recent closed/open issues labeled `lens` for a personas-lens finding's timestamp | personas |
 
 Score every lens 1-5 for **signal** (evidence something is off) and
@@ -157,6 +160,7 @@ Then read exactly one lens file:
 | Personas | `references/lens-personas.md` | live - drives staging as Vera/Olaf/Admin; functional friction and visual/content quality together |
 | Accessibility | `references/lens-accessibility.md` | static + live |
 | Code & comment complexity | `references/lens-complexity.md` | static |
+| Comment bloat & noise | `references/lens-comment-bloat.md` | static |
 
 ### Step 3 - Execute the lens
 

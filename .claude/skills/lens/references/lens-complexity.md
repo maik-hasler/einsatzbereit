@@ -34,15 +34,16 @@ its own; unexplained or unnecessary complexity is.
    whether the comment is compensating for complexity that could instead
    be removed (extract a function, name the invariant in a type, add a
    guard clause) rather than just narrated.
-3. **Find comment noise in the other direction.** Comments that restate
-   what the next line already says (`// increment counter` above
-   `counter++`), comments describing behavior the code below no longer
-   has (stale - cross-check against git blame/history if the mismatch is
-   surprising), and outlier comment-to-code density (a file or function
-   with far more comment lines than its neighbors) - the last one cuts
-   both ways: it can mean good documentation of real complexity, or it can
-   mean the code needed that many words *because* it's more tangled than
-   it should be. Read enough to tell which.
+3. **Read comment density as a structural symptom, not a style nit.** An
+   outlier comment-to-code ratio (a file or function with far more comment
+   lines than its neighbors) cuts both ways: it can mean good documentation
+   of real complexity, or it can mean the code needed that many words
+   *because* it's more tangled than it should be - read enough to tell
+   which, and only flag it here if the conclusion is "this needs
+   restructuring", not "this comment is bloated". Redundant, stale, or
+   over-explained comments in their own right (regardless of what the
+   surrounding code's structure looks like) are `lens-comment-bloat.md`'s
+   job, not this one - see that file's boundary section.
 4. **Cross-reference against this repo's own stated preference.** Root
    `AGENTS.md`'s "Simple code: the source code should be simple enough
    that anyone can contribute" is a named goal, not an aspiration to

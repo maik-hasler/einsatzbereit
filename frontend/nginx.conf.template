@@ -1,4 +1,5 @@
 gzip on;
+gzip_static on;
 gzip_types text/plain text/css text/javascript application/javascript application/json image/svg+xml;
 gzip_min_length 1024;
 gzip_vary on;

@@ -4,6 +4,7 @@ using Application.Common.Persistence;
 using Application.Common.RateLimiting;
 using Domain.Engagements;
 using Domain.Primitives;
+using Domain.VolunteerOpportunities;
 
 namespace Application.Engagements.CheckInWithPin.v1;
 
@@ -33,7 +34,16 @@ internal sealed class CheckInWithPinCommandHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", "Opportunity not found."));
 
-		if (opportunity.CheckInPin != request.Pin)
+		// CheckInPin is only ever populated for PINCode opportunities - every other
+		// CheckInMethod leaves it null, which would otherwise let a null request.Pin
+		// (an empty JSON body) pass a plain `!=` comparison as "null == null" (#1139).
+		if (opportunity.CheckInMethod != CheckInMethod.PINCode)
+			throw new ResultFailureException(Error.Conflict("Engagement.CheckInMethodNotPin", "This opportunity does not use PIN check-in."));
+
+		if (string.IsNullOrWhiteSpace(request.Pin))
+			throw new ResultFailureException(Error.Validation("Engagement.PinRequired", "PIN is required."));
+
+		if (!string.Equals(opportunity.CheckInPin, request.Pin, StringComparison.Ordinal))
 		{
 			await attemptLimiter.RegisterFailedAttemptAsync(request.EngagementId, cancellationToken);
 			throw new ResultFailureException(Error.Validation("Engagement.InvalidPin", "Invalid PIN."));

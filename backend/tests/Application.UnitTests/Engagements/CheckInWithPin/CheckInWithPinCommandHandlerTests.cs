@@ -139,6 +139,92 @@ public class CheckInWithPinCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage($"*{engagementId.Value}*");
 	}
 
+	[Test]
+	[Arguments(null)]
+	[Arguments("")]
+	[Arguments("   ")]
+	public async Task Handle_ShouldThrowValidation_WhenPinIsNullOrWhitespace_OnNonPinOpportunity(
+		string? submittedPin,
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1139: a "None"/"QRCode"/"Manual" opportunity never sets
+		// CheckInPin, so it stays null. Before this fix, submitting an empty body
+		// (deserializing Pin as null) made `opportunity.CheckInPin != request.Pin`
+		// compare null to null and pass, checking the volunteer in without any PIN.
+		var engagementId = EngagementId.New();
+		var owner = UserId.New();
+		var opportunity = CreateNonPinOpportunity(CheckInMethod.None);
+
+		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		engagement.Confirm();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+
+		var command = new CheckInWithPinCommand(engagementId, submittedPin!, owner);
+
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*does not use PIN check-in*");
+		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	[Arguments(CheckInMethod.QRCode)]
+	[Arguments(CheckInMethod.Manual)]
+	public async Task Handle_ShouldThrowConflict_WhenOpportunityDoesNotUsePinCheckIn(
+		CheckInMethod checkInMethod,
+		CancellationToken cancellationToken)
+	{
+		var engagementId = EngagementId.New();
+		var owner = UserId.New();
+		var opportunity = CreateNonPinOpportunity(checkInMethod);
+
+		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		engagement.Confirm();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+
+		var command = new CheckInWithPinCommand(engagementId, CorrectPin, owner);
+
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*does not use PIN check-in*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowValidation_WhenPinIsNullOrWhitespace_OnPinOpportunity(
+		CancellationToken cancellationToken)
+	{
+		var engagementId = EngagementId.New();
+		var owner = UserId.New();
+		var opportunity = CreatePinOpportunity();
+
+		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		engagement.Confirm();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+
+		var command = new CheckInWithPinCommand(engagementId, "", owner);
+
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*PIN is required*");
+		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
+	}
+
+	private VolunteerOpportunity CreateNonPinOpportunity(CheckInMethod checkInMethod) =>
+		VolunteerOpportunity.Create(
+			DefaultOrgId,
+			"Test",
+			"Test",
+			false,
+			DefaultAddress,
+			Occurrence.OneTime,
+			ParticipationType.Waitlist,
+			checkInMethod,
+			_pinGenerator,
+			status: OpportunityStatus.Draft).Value;
+
 	private VolunteerOpportunity CreatePinOpportunity() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId,
