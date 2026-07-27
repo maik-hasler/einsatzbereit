@@ -19,13 +19,15 @@
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 5,
   "smtpServer": {
-    "host": "mailpit",
-    "port": "1025",
-    "from": "noreply@einsatzbereit.local",
+    "host": "${KC_SMTP_HOST}",
+    "port": "${KC_SMTP_PORT}",
+    "from": "${KC_SMTP_FROM}",
     "fromDisplayName": "Einsatzbereit",
     "ssl": "false",
-    "starttls": "false",
-    "auth": "false"
+    "starttls": "true",
+    "auth": "true",
+    "user": "${KC_SMTP_USER}",
+    "password": "${KC_SMTP_PASSWORD}"
   },
   "internationalizationEnabled": true,
   "supportedLocales": [
