@@ -15,7 +15,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
     "format:write": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{ts,js}\"",
     "i18n:check": "node scripts/check-i18n-keys.js",
-    "check:nginx-csp": "node scripts/check-nginx-csp.js"
+    "check:nginx-csp": "node scripts/check-nginx-csp.js",
+    "check:nginx-gzip-static": "node scripts/check-nginx-gzip-static.js"
   },
   "dependencies": {
     "@hookform/resolvers": "5.4.0",
@@ -54,6 +55,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.65.0",
     "vite": "8.1.5",
+    "vite-plugin-compression2": "2.5.3",
     "vite-plugin-pwa": "1.3.0",
     "vite-plugin-svgr": "5.2.0"
   }
