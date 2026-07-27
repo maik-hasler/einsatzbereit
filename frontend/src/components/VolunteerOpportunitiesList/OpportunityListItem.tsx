@@ -2,10 +2,10 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
-import { formatOccurrence } from "../../lib/format";
+import { formatDateTime, formatOccurrence } from "../../lib/format";
 import { useApiClient } from "../../hooks/useApiClient";
 import ReportFlagButton from "../ReportFlagButton";
-import { CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
+import { CalendarIcon, CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
 
 function orgInitials(name: string): string {
 	const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -19,7 +19,7 @@ export default function OpportunityListItem({
 }: {
 	item: VolunteerOpportunitySummary;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const auth = useAuth();
 	const spotsLeft =
@@ -107,6 +107,17 @@ export default function OpportunityListItem({
 					<h3 className="text-base font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
 					</h3>
+					{item.nextTimeSlotStart && (
+						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-brand-700">
+							<CalendarIcon className="h-4 w-4 shrink-0" />
+							<span>
+								{formatDateTime(
+									item.nextTimeSlotStart as unknown as string,
+									i18n.language,
+								)}
+							</span>
+						</p>
+					)}
 					{item.description && (
 						<p className="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-500">
 							{item.description}

@@ -11689,6 +11689,12 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("nextTimeSlotStart")]
+        public System.DateTimeOffset? NextTimeSlotStart { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("nextTimeSlotEnd")]
+        public System.DateTimeOffset? NextTimeSlotEnd { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("totalMaxParticipants")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
