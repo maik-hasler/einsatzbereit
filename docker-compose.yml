@@ -77,7 +77,7 @@ services:
       # verifyEmail/resetPasswordAllowed can actually deliver mail (#1070,
       # #1342). Same mailbox credentials as the backend's Smtp__* below.
       KC_SMTP_HOST: ${SMTP_HOST:?set SMTP_HOST in .env}
-      KC_SMTP_PORT: ${SMTP_PORT:-587}
+      KC_SMTP_PORT: ${SMTP_PORT:?set SMTP_PORT in .env}
       KC_SMTP_FROM: ${SMTP_FROM_ADDRESS:?set SMTP_FROM_ADDRESS in .env}
       KC_SMTP_USER: ${SMTP_USERNAME:?set SMTP_USERNAME in .env}
       KC_SMTP_PASSWORD: ${SMTP_PASSWORD:?set SMTP_PASSWORD in .env}
@@ -193,11 +193,11 @@ services:
       Storage__PublicEndpoint: https://storage.maik-hasler.de
       # Same mailbox as the keycloak service's KC_SMTP_* above (#1341).
       Smtp__Host: ${SMTP_HOST:?set SMTP_HOST in .env}
-      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__Port: ${SMTP_PORT:?set SMTP_PORT in .env}
       Smtp__Username: ${SMTP_USERNAME:?set SMTP_USERNAME in .env}
       Smtp__Password: ${SMTP_PASSWORD:?set SMTP_PASSWORD in .env}
       Smtp__FromAddress: ${SMTP_FROM_ADDRESS:?set SMTP_FROM_ADDRESS in .env}
-      Smtp__FromName: ${SMTP_FROM_NAME:-Einsatzbereit}
+      Smtp__FromName: ${SMTP_FROM_NAME:?set SMTP_FROM_NAME in .env}
       Smtp__EnableSsl: "true"
     labels:
       - traefik.enable=true

@@ -347,9 +347,11 @@ jobs:
           # SMTP relay mailbox shared by Keycloak (KC_SMTP_*) and the backend
           # (Smtp__*) in docker-compose.yml - see #1070, #1341, #1342.
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM_ADDRESS: ${{ secrets.SMTP_FROM_ADDRESS }}
+          SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
         run: |
           umask 077
           # Wrap each value in double quotes and escape \ and " so secrets that
@@ -370,9 +372,11 @@ jobs:
             printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
             printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
             printf 'SMTP_HOST="%s"\n' "$(escape "$SMTP_HOST")"
+            printf 'SMTP_PORT="%s"\n' "$(escape "$SMTP_PORT")"
             printf 'SMTP_USERNAME="%s"\n' "$(escape "$SMTP_USERNAME")"
             printf 'SMTP_PASSWORD="%s"\n' "$(escape "$SMTP_PASSWORD")"
             printf 'SMTP_FROM_ADDRESS="%s"\n' "$(escape "$SMTP_FROM_ADDRESS")"
+            printf 'SMTP_FROM_NAME="%s"\n' "$(escape "$SMTP_FROM_NAME")"
           } > .env
 
       - name: Copy compose file and .env
