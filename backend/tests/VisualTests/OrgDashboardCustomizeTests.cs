@@ -279,6 +279,111 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	}
 
 	[Test]
+	public async Task CornerPlacement_HoveringAGuideCell_UpdatesThePlacementBanner()
+	{
+		// #1402: the grid-guide backdrop cells' click/hover handling moved from
+		// one onClick/onPointerEnter pair per cell (up to 832 of them) to a
+		// single delegated pair on the grid container, which reads the hovered
+		// cell's col/row off data-col/data-row attributes via closest() rather
+		// than a per-cell closure. This is the regression guard for the hover
+		// half of that refactor: hovering a cell that was never clicked must
+		// still move the live placement cursor, purely via a real bubbled
+		// pointerover - the click-driven half is already exercised end to end
+		// by every other placement test in this file (each click bubbles
+		// through the same delegated container handler).
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashHoverBanner");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
+
+		// Add exactly one widget so its placement lands at a known (x=1, y=1,
+		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }).ClickAsync();
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToContainTextAsync("Column 1, row 1");
+
+		// Hover a distant cell without clicking it - a real mouse move, so the
+		// resulting pointerover must bubble to the container's delegated
+		// handler exactly like a real drag/hover would.
+		await HoverGridCellAsync(col: 8, row: 3);
+
+		await Expect(Page.GetByTestId("dashboard-placement-status")).ToContainTextAsync("Column 8, row 3");
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task PointerDrag_WithManyRapidIntermediateMoves_StillCommitsTheFinalPosition()
+	{
+		// #1402: dragging now batches its live preview updates to at most one
+		// per animation frame (see useWidgetPlacement's rAF throttle) instead
+		// of one per raw pointermove - a high-polling-rate mouse/trackpad can
+		// fire pointermove well past the screen's refresh rate. The widget's
+		// actual committed rect on release must still reflect the very last
+		// pointer position even though most of the intermediate ones were
+		// coalesced away, so this drags through many more intermediate steps
+		// than PointerDrag_MovingAWidget_... above to make sure nothing about
+		// that batching drops or staggers the final commit.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual DashRapidDrag");
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await RemoveAllWidgetsAsync();
+
+		// Add exactly one widget so its placement lands at a known (x=1, y=1,
+		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
+		await dialog.GetByTestId("add-widget-done").ClickAsync();
+
+		var tile = Page.GetByTestId("widget-tile-ToDo");
+		var tileBox = await tile.BoundingBoxAsync();
+		tileBox.Should().NotBeNull();
+		var colPx = tileBox!.Width / 4;
+
+		var grip = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
+		var gripBox = await grip.BoundingBoxAsync();
+		gripBox.Should().NotBeNull();
+		var startX = gripBox!.X + gripBox.Width / 2;
+		var startY = gripBox.Y + gripBox.Height / 2;
+
+		// Drag four grid columns to the right (x=1 -> x=5) over many small
+		// steps, well beyond what a single animation frame could each get its
+		// own render for.
+		await Page.Mouse.MoveAsync(startX, startY);
+		await Page.Mouse.DownAsync();
+		await Page.Mouse.MoveAsync(startX + colPx * 4, startY, new() { Steps = 40 });
+		await Page.Mouse.UpAsync();
+
+		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 2);
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 2);
+	}
+
+	[Test]
 	public async Task PointerDrag_MovingAWidget_UpdatesItsGridPosition_AndPersistsAcrossReload()
 	{
 		// #16: a real press-and-drag on the grip button, distinct from the
@@ -773,6 +878,16 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 	private async Task ClickGridCellAsync(int col, int row)
 	{
 		await Page.GetByTestId("dashboard-grid-guide-cell").Nth(GridCellIndex(col, row)).ClickAsync();
+	}
+
+	/// <summary>
+	/// Hovers the grid guide cell at 1-based (col, row) without clicking it -
+	/// a real mouse move, so it exercises the same delegated pointerover
+	/// handler on the grid container a real drag would (see #1402).
+	/// </summary>
+	private async Task HoverGridCellAsync(int col, int row)
+	{
+		await Page.GetByTestId("dashboard-grid-guide-cell").Nth(GridCellIndex(col, row)).HoverAsync();
 	}
 
 	/// <summary>

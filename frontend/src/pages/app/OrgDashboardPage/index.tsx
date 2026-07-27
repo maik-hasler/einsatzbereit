@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	type MouseEvent as ReactMouseEvent,
+	type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrgAppContext } from "../../../layouts/OrgAppLayout";
@@ -315,6 +322,76 @@ export default function OrgDashboardPage() {
 		? Math.min(GRID_MAX_ROWS + 4, rawGuideRows)
 		: GRID_MAX_ROWS + 4;
 
+	// #1402: previously rebuilt with a fresh onClick/onPointerEnter closure
+	// per cell on every render - up to 832 cells at GRID_MAX_ROWS, so up to
+	// 1664 throwaway closures per pointermove while dragging (see
+	// useWidgetPlacement's rAF throttle for the other half of that fix).
+	// Handlers now live once on the grid container (see handleGuideCellClick/
+	// handleGuideCellPointerOver below) and read data-col/data-row off the
+	// event target instead, and the array itself is memoized so an unrelated
+	// re-render (e.g. `saving` toggling) doesn't recompute all 832 cells for
+	// no reason.
+	const guideCells = useMemo(() => {
+		if (!editing || !isLargeViewport) return null;
+		return Array.from({ length: guideRows * GRID_COLUMNS }, (_, i) => {
+			const col = (i % GRID_COLUMNS) + 1;
+			const row = Math.floor(i / GRID_COLUMNS) + 1;
+			const inPreview = previewRect && cellInRect(col, row, previewRect);
+			const tint = inPreview
+				? previewValid
+					? "bg-brand-300/50"
+					: "bg-red-400/50"
+				: "bg-green-300/40";
+			return (
+				<div
+					key={`grid-guide-${col}-${row}`}
+					data-testid="dashboard-grid-guide-cell"
+					data-col={col}
+					data-row={row}
+					aria-hidden="true"
+					className={`-m-1 rounded-md ${tint} ${placingKey ? "cursor-pointer" : "pointer-events-none"}`}
+					style={{ gridColumn: col, gridRow: row }}
+				/>
+			);
+		});
+	}, [
+		editing,
+		isLargeViewport,
+		guideRows,
+		previewRect,
+		previewValid,
+		placingKey,
+	]);
+
+	// Delegated handlers for the grid-guide backdrop cells (see guideCells
+	// above) - a single pair of listeners on the container instead of one
+	// onClick/onPointerEnter per cell. Cells carry no handlers of their own;
+	// pointer-events-none (see the className above) already keeps events from
+	// reaching them at all while nothing is being placed, so both of these
+	// are effectively no-ops outside an active placement even though they're
+	// always wired up.
+	function guideCellFromEvent(
+		target: EventTarget | null,
+	): { col: number; row: number } | null {
+		const cellEl = (target as HTMLElement | null)?.closest<HTMLElement>(
+			'[data-testid="dashboard-grid-guide-cell"]',
+		);
+		if (!cellEl) return null;
+		return { col: Number(cellEl.dataset.col), row: Number(cellEl.dataset.row) };
+	}
+
+	function handleGuideCellClick(event: ReactMouseEvent<HTMLDivElement>) {
+		const cell = guideCellFromEvent(event.target);
+		if (cell) placement.handleCellClick(cell);
+	}
+
+	function handleGuideCellPointerOver(
+		event: ReactPointerEvent<HTMLDivElement>,
+	) {
+		const cell = guideCellFromEvent(event.target);
+		if (cell) placement.handleCellHover(cell);
+	}
+
 	const grid = isEmpty ? (
 		<div data-testid="dashboard-empty-state">
 			<EmptyState
@@ -348,46 +425,35 @@ export default function OrgDashboardPage() {
 			// every cell roughly square, and a widget's proportions consistent,
 			// on any screen the organizer views it on.
 			className="dashboard-widget-grid grid grid-cols-1 gap-4 lg:grid-cols-8"
+			// role="presentation": this delegated onClick/onPointerOver only ever
+			// acts on a bubbled event that actually originated on one of the
+			// aria-hidden guide cells above (see guideCellFromEvent) - the
+			// container's own "clickability" isn't a perceivable action in its
+			// own right, and doesn't affect its real interactive descendants
+			// (the widget tiles' own buttons keep their normal roles/focus).
+			// Satisfies jsx-a11y/click-events-have-key-events and
+			// jsx-a11y/no-static-element-interactions, which both exempt
+			// presentation/hidden elements - the keyboard-accessible equivalent
+			// of this same placement flow is the per-widget "Move or resize"
+			// button + arrow keys (see useWidgetPlacement's handleArrowKeyDown).
+			// Must be a literal string, not a conditional - both rules read it
+			// via getLiteralPropValue and don't resolve a ternary.
+			role="presentation"
+			onClick={editing && isLargeViewport ? handleGuideCellClick : undefined}
+			onPointerOver={
+				editing && isLargeViewport ? handleGuideCellPointerOver : undefined
+			}
 		>
 			{/* Light green cell backdrop behind the whole grid while editing, so
 			an organizer can see the underlying 8-column structure. These cells
 			double as the corner-to-corner placement surface: while a widget is
-			being placed, they become clickable (see handleCellClick) and are
-			tinted blue/red to preview whether the current selection is a valid
-			placement. Gated on isLargeViewport since the grid itself collapses
-			to a single stacked column below `lg`, where this wouldn't mean
-			anything. */}
-			{editing &&
-				isLargeViewport &&
-				Array.from({ length: guideRows * GRID_COLUMNS }, (_, i) => {
-					const col = (i % GRID_COLUMNS) + 1;
-					const row = Math.floor(i / GRID_COLUMNS) + 1;
-					const inPreview = previewRect && cellInRect(col, row, previewRect);
-					const tint = inPreview
-						? previewValid
-							? "bg-brand-300/50"
-							: "bg-red-400/50"
-						: "bg-green-300/40";
-					return (
-						<div
-							key={`grid-guide-${col}-${row}`}
-							data-testid="dashboard-grid-guide-cell"
-							aria-hidden="true"
-							onClick={
-								placingKey
-									? () => placement.handleCellClick({ col, row })
-									: undefined
-							}
-							onPointerEnter={
-								placingKey
-									? () => placement.handleCellHover({ col, row })
-									: undefined
-							}
-							className={`-m-1 rounded-md ${tint} ${placingKey ? "cursor-pointer" : "pointer-events-none"}`}
-							style={{ gridColumn: col, gridRow: row }}
-						/>
-					);
-				})}
+			being placed, they become clickable (see handleGuideCellClick above -
+			delegated once at the container instead of a listener per cell, #1402)
+			and are tinted blue/red to preview whether the current selection is a
+			valid placement. Gated on isLargeViewport since the grid itself
+			collapses to a single stacked column below `lg`, where this wouldn't
+			mean anything. */}
+			{guideCells}
 			{layout.map((widget) => {
 				const isPlacingThis = activeKey === widget.widgetKey;
 				const rect = isPlacingThis && previewRect ? previewRect : widget;

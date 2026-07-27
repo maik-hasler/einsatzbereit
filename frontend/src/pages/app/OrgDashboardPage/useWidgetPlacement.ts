@@ -283,6 +283,23 @@ export function useWidgetPlacement({
 	useEffect(() => {
 		if (!dragActive) return;
 
+		// #1402: a real pointer/mouse can fire pointermove far more often than
+		// the browser actually paints (well past 60-120Hz on a high-polling-
+		// rate mouse or trackpad), and each call used to setDragPreview
+		// synchronously - re-rendering OrgDashboardPage, and with it every one
+		// of the up to 832 grid-guide backdrop cells, once per raw event
+		// instead of once per displayed frame. rafId batches every pointermove
+		// that arrives between two frames into a single state update, so the
+		// preview still tracks the pointer smoothly but the backdrop only
+		// re-renders as often as the screen can actually show it.
+		let rafId: number | null = null;
+		let pendingRect: PlacedWidget | null = null;
+
+		function flushPendingRect() {
+			rafId = null;
+			if (pendingRect) setDragPreview(pendingRect);
+		}
+
 		function handlePointerMove(event: globalThis.PointerEvent) {
 			const session = dragSessionRef.current;
 			if (!session) return;
@@ -309,10 +326,15 @@ export function useWidgetPlacement({
 							height: Math.max(1, session.origRect.height + deltaRow),
 						};
 			session.currentRect = nextRect;
-			setDragPreview(nextRect);
+			pendingRect = nextRect;
+			rafId ??= requestAnimationFrame(flushPendingRect);
 		}
 
 		function endDrag() {
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId);
+				rafId = null;
+			}
 			const session = dragSessionRef.current;
 			dragSessionRef.current = null;
 			setDragActive(false);
@@ -327,6 +349,7 @@ export function useWidgetPlacement({
 		document.addEventListener("pointerup", endDrag);
 		document.addEventListener("pointercancel", endDrag);
 		return () => {
+			if (rafId !== null) cancelAnimationFrame(rafId);
 			document.removeEventListener("pointermove", handlePointerMove);
 			document.removeEventListener("pointerup", endDrag);
 			document.removeEventListener("pointercancel", endDrag);
