@@ -2,7 +2,7 @@
 
 ## Overview
 
-Custom Keycloak 26.7.0 image with the `einsatzbereit` realm pre-baked. Built and published to GHCR via `.github/workflows/keycloak.yml`.
+Custom Keycloak 26.7.0 image with the `einsatzbereit` realm pre-baked. Built and published to GHCR via the `publish-keycloak` job in `.github/workflows/publish.yml`; `.github/workflows/keycloak-realm-import.yml` guards that the committed realm still imports cleanly on that Keycloak version before it reaches staging.
 
 ```
 keycloak/
