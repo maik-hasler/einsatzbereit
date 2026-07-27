@@ -10,6 +10,7 @@ using Application.Common.Storage;
 using Application.Engagements;
 using Application.Notifications;
 using Application.Organizations;
+using Application.Reports;
 using Application.VolunteerOpportunities;
 using Infrastructure.Achievements;
 using Infrastructure.BackgroundJobs;
@@ -75,6 +76,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IOrganizationDashboardReadRepository, OrganizationDashboardReadRepository>();
 
 		services.AddScoped<IAdminOrganizationReadRepository, AdminOrganizationReadRepository>();
+
+		services.AddScoped<IAdminReportReadRepository, AdminReportReadRepository>();
 
 		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
 

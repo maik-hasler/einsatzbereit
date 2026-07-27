@@ -144,6 +144,8 @@
       "deleting": "…",
       "share": "Share",
       "shareOpportunity": "Share opportunity",
+      "report": "Report",
+      "reportOpportunity": "Report opportunity",
       "linkCopied": "Link copied to clipboard",
       "confirmDelete": "Really delete this opportunity?",
       "deleteError": "Error deleting",
@@ -625,6 +627,24 @@
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
     },
+    "report": {
+      "title": "Report content",
+      "reasonLabel": "Reason",
+      "detailsLabel": "Details (optional)",
+      "detailsPlaceholder": "Add any context that would help us review this…",
+      "cancel": "Cancel",
+      "submit": "Submit report",
+      "submitting": "Submitting…",
+      "submitError": "Failed to submit report.",
+      "submitSuccess": "Report submitted. Thank you for helping keep the platform safe.",
+      "reasons": {
+        "Spam": "Spam",
+        "IllegalContent": "Illegal content",
+        "Fraud": "Fraud or scam",
+        "Harassment": "Harassment",
+        "Other": "Other"
+      }
+    },
     "confirmDialog": {
       "keep": "Keep",
       "delete": {
@@ -658,6 +678,11 @@
         "title": "Delete organization?",
         "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone.",
         "confirm": "Yes, delete"
+      },
+      "adminDeleteReported": {
+        "title": "Delete reported content?",
+        "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone and will resolve the report.",
+        "confirm": "Yes, delete"
       }
     },
     "orgProfile": {
@@ -670,7 +695,9 @@
       "address": "Address:",
       "currentNeeds": "Current Opportunities",
       "noOpportunities": "No current opportunities available.",
-      "verified": "Verified Organization"
+      "verified": "Verified Organization",
+      "report": "Report",
+      "reportOrganization": "Report organization"
     },
     "profileOverview": {
       "invitationsHeading": "Open Invitations"
@@ -790,6 +817,7 @@
       "title": "Administration",
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
+      "reportsHeading": "Reports",
       "loadingMore": "Loading more...",
       "organizations": {
         "loading": "Loading organizations...",
@@ -824,6 +852,26 @@
         "demoteSuccess": "Admin access removed.",
         "demoteError": "Failed to remove admin access.",
         "loadMore": "Load more"
+      },
+      "reports": {
+        "loading": "Loading reports...",
+        "error": "Failed to load reports.",
+        "noReports": "No open reports. All caught up.",
+        "unknownTarget": "(deleted)",
+        "dismiss": "Dismiss",
+        "dismissSuccess": "Report dismissed.",
+        "dismissError": "Failed to dismiss report.",
+        "delete": "Delete",
+        "deleteSuccess": "Content deleted and report resolved.",
+        "deleteError": "Failed to delete content.",
+        "loadMore": "Load more",
+        "reason": {
+          "Spam": "Spam",
+          "IllegalContent": "Illegal content",
+          "Fraud": "Fraud or scam",
+          "Harassment": "Harassment",
+          "Other": "Other"
+        }
       }
     },
     "organizationsPage": {
@@ -900,6 +948,9 @@
       "UserStreakId": {
         "Empty": "UserStreakId must not be empty."
       },
+      "ReportId": {
+        "Empty": "ReportId must not be empty."
+      },
       "User": {
         "InvalidId": "Invalid user."
       },
@@ -953,6 +1004,12 @@
         "ParticipationTypeLocked": "Participation type cannot be changed while active engagements exist.",
         "TimeSlotCapacityBelowActive": "Cannot reduce capacity below the current number of active sign-ups.",
         "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected engagements first."
+      },
+      "Report": {
+        "NotFound": "Report not found.",
+        "AlreadyResolved": "This report has already been resolved.",
+        "AlreadyReported": "You have already reported this.",
+        "DetailsTooLong": "Details must not exceed 1000 characters."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",

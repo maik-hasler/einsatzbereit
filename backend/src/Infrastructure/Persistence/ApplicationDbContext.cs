@@ -4,6 +4,7 @@ using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Repositories;
@@ -82,6 +83,14 @@ internal sealed class ApplicationDbContext(
 			Set<OrganizationDashboardLayout>(),
 			Set<OrganizationDashboardLayout>(),
 			l => l.Id);
+
+	public IAggregateRepository<Report, ReportId> Reports
+		=> new AggregateRepository<Report, ReportId>(
+			Set<Report>(),
+			Set<Report>(),
+			r => r.Id);
+
+	internal IQueryable<Report> ReportsQuery => Set<Report>().AsNoTracking();
 
 	public async Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,
@@ -278,6 +287,35 @@ internal sealed class ApplicationDbContext(
 				|| opportunityIdsWithActiveEngagements.Contains(vo.Id))
 			.ToList();
 	}
+
+	public async Task<List<VolunteerOpportunity>> GetOpportunitiesForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<VolunteerOpportunity>()
+			.Include(vo => vo.TimeSlots)
+			.Where(vo => vo.OrganizationId == organizationId)
+			.ToListAsync(cancellationToken);
+
+	public async Task<bool> HasOpenReportAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		UserId reporterId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Report>()
+			.AnyAsync(r => r.TargetType == targetType
+				&& r.TargetId == targetId
+				&& r.ReporterId == reporterId
+				&& r.Status == ReportStatus.Open, cancellationToken);
+
+	public async Task<List<Report>> GetOpenReportsForTargetAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Report>()
+			.Where(r => r.TargetType == targetType
+				&& r.TargetId == targetId
+				&& r.Status == ReportStatus.Open)
+			.ToListAsync(cancellationToken);
 
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import type { AdminUserListItem } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
@@ -13,6 +14,7 @@ import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const PAGE_SIZE = 10;
 
@@ -38,11 +40,17 @@ export default function AdministrationPage() {
 				</h2>
 				<OrganizationsSection />
 			</section>
-			<section>
+			<section className="mb-10">
 				<h2 className="mb-4 text-lg font-semibold text-gray-900">
 					{t("administration.usersHeading")}
 				</h2>
 				<UsersSection />
+			</section>
+			<section>
+				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+					{t("administration.reportsHeading")}
+				</h2>
+				<ReportsSection />
 			</section>
 		</>
 	);
@@ -420,6 +428,183 @@ function UsersSection() {
 						/>
 					)}
 				</>
+			)}
+		</>
+	);
+}
+
+interface ReportRow {
+	id: string;
+	targetType: string;
+	targetId: string;
+	targetTitle: string;
+	reason: string;
+	details?: string;
+}
+
+function ReportsSection() {
+	const { t } = useTranslation();
+	const api = useApiClient();
+
+	const [pendingId, setPendingId] = useState<string | null>(null);
+	const [confirmDelete, setConfirmDelete] = useState<ReportRow | null>(null);
+	const [deleting, setDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+
+	const {
+		items: rows,
+		setItems: setRows,
+		loading,
+		loadingMore,
+		error,
+		hasMore,
+		loadMore,
+	} = useLoadMore<ReportRow>(
+		(pageNumber) =>
+			api.listOpenReports(pageNumber, PAGE_SIZE).then((result) => ({
+				items: result.items.map((r) => ({
+					id: r.id,
+					targetType: r.targetType,
+					targetId: r.targetId,
+					targetTitle: r.targetTitle,
+					reason: r.reason,
+					details: r.details,
+				})),
+				pageCount: result.pageCount,
+			})),
+		{ getErrorMessage: () => t("administration.reports.error") },
+	);
+
+	async function dismiss(reportId: string) {
+		setPendingId(reportId);
+		try {
+			await api.dismissReport(reportId);
+			setRows((prev) => prev.filter((r) => r.id !== reportId));
+			dispatchToast("success", t("administration.reports.dismissSuccess"));
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("administration.reports.dismissError")),
+			);
+		} finally {
+			setPendingId(null);
+		}
+	}
+
+	async function confirmDeleteTarget() {
+		if (!confirmDelete) return;
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			if (confirmDelete.targetType === "VolunteerOpportunity") {
+				await api.adminDeleteVolunteerOpportunity(confirmDelete.targetId);
+			} else {
+				await api.adminDeleteOrganization(confirmDelete.targetId);
+			}
+			setRows((prev) => prev.filter((r) => r.id !== confirmDelete.id));
+			dispatchToast("success", t("administration.reports.deleteSuccess"));
+			setConfirmDelete(null);
+		} catch (err) {
+			setDeleteError(
+				getApiErrorMessage(err, t("administration.reports.deleteError")),
+			);
+		} finally {
+			setDeleting(false);
+		}
+	}
+
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center py-16">
+				<Spinner label={t("administration.reports.loading")} />
+			</div>
+		);
+	}
+	if (error) return <ErrorBanner message={error} />;
+	if (rows.length === 0)
+		return <EmptyState title={t("administration.reports.noReports")} />;
+
+	return (
+		<>
+			<div className="overflow-hidden rounded-2xl border border-gray-200">
+				<table className="w-full text-sm">
+					<tbody className="divide-y divide-gray-100">
+						{rows.map((row) => {
+							const isPending = pendingId === row.id;
+							const targetHref =
+								row.targetType === "VolunteerOpportunity"
+									? `/volunteer-opportunities/${row.targetId}`
+									: `/organizations/${row.targetId}`;
+
+							return (
+								<tr
+									key={row.id}
+									className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+								>
+									<td className="min-w-0 flex-1">
+										<Link
+											to={targetHref}
+											className="font-medium text-brand-700 hover:underline"
+										>
+											{row.targetTitle ||
+												t("administration.reports.unknownTarget")}
+										</Link>
+										<p className="mt-1 text-xs text-gray-500">
+											{t(`administration.reports.reason.${row.reason}`)}
+										</p>
+										{row.details && (
+											<p className="mt-1 text-sm text-gray-600">
+												{row.details}
+											</p>
+										)}
+									</td>
+									<td className="flex shrink-0 items-center gap-2">
+										<button
+											type="button"
+											disabled={isPending}
+											onClick={() => void dismiss(row.id)}
+											className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+										>
+											{t("administration.reports.dismiss")}
+										</button>
+										<button
+											type="button"
+											disabled={isPending}
+											onClick={() => setConfirmDelete(row)}
+											className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+										>
+											{t("administration.reports.delete")}
+										</button>
+									</td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
+			</div>
+			{hasMore && (
+				<LoadMoreButton
+					loading={loadingMore}
+					label={t("administration.reports.loadMore")}
+					onClick={loadMore}
+				/>
+			)}
+			{confirmDelete && (
+				<ConfirmDialog
+					title={t("confirmDialog.adminDeleteReported.title")}
+					message={t("confirmDialog.adminDeleteReported.message", {
+						name: confirmDelete.targetTitle,
+					})}
+					confirmLabel={t("confirmDialog.adminDeleteReported.confirm")}
+					onConfirm={() => void confirmDeleteTarget()}
+					onClose={() => {
+						if (deleting) return;
+						setConfirmDelete(null);
+						setDeleteError(null);
+					}}
+					loading={deleting}
+					error={deleteError}
+				/>
 			)}
 		</>
 	);

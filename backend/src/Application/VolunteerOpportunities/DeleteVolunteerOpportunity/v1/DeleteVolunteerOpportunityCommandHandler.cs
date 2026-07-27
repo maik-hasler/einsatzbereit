@@ -3,8 +3,7 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
-using Application.Notifications;
-using Domain.Notifications;
+using Application.VolunteerOpportunities.Common;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 
@@ -31,24 +30,16 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		// Notify volunteers with an active engagement before the opportunity is
-		// removed, so they learn it is no longer available (#405).
-		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
+		// Notifies volunteers (#405), cancels active engagements (#548), and
+		// resolves any open abuse reports against the opportunity (#1075).
+		await VolunteerOpportunityDeletionHelper.DeleteAsync(
 			dbContext,
 			engagementReadRepository,
+			opportunity,
 			opportunityId,
-			NotificationKind.OpportunityDeleted,
+			request.RequestingUserId,
+			DateTimeOffset.UtcNow,
 			cancellationToken);
-
-		// Cancel active engagements so they do not outlive the opportunity (#548).
-		var activeEngagements = await dbContext.GetActiveEngagementsForOpportunityAsync(
-			opportunityId, cancellationToken);
-		foreach (var engagement in activeEngagements)
-		{
-			engagement.Cancel("Opportunity was deleted.").ThrowIfFailure();
-		}
-
-		dbContext.VolunteerOpportunities.Delete(opportunity);
 
 		return true;
 	}

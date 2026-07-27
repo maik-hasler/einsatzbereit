@@ -144,6 +144,8 @@
       "deleting": "…",
       "share": "Teilen",
       "shareOpportunity": "Bedarf teilen",
+      "report": "Melden",
+      "reportOpportunity": "Bedarf melden",
       "linkCopied": "Link in die Zwischenablage kopiert",
       "confirmDelete": "Bedarf wirklich löschen?",
       "deleteError": "Fehler beim Löschen",
@@ -625,6 +627,24 @@
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
     },
+    "report": {
+      "title": "Inhalt melden",
+      "reasonLabel": "Grund",
+      "detailsLabel": "Details (optional)",
+      "detailsPlaceholder": "Füge Kontext hinzu, der uns bei der Prüfung hilft…",
+      "cancel": "Abbrechen",
+      "submit": "Meldung absenden",
+      "submitting": "Wird gesendet…",
+      "submitError": "Meldung konnte nicht gesendet werden.",
+      "submitSuccess": "Meldung gesendet. Danke, dass du hilfst, die Plattform sicher zu halten.",
+      "reasons": {
+        "Spam": "Spam",
+        "IllegalContent": "Illegale Inhalte",
+        "Fraud": "Betrug",
+        "Harassment": "Belästigung",
+        "Other": "Sonstiges"
+      }
+    },
     "confirmDialog": {
       "keep": "Behalten",
       "delete": {
@@ -658,6 +678,11 @@
         "title": "Organisation löschen?",
         "message": "Möchtest du \"{{name}}\" wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
         "confirm": "Ja, löschen"
+      },
+      "adminDeleteReported": {
+        "title": "Gemeldeten Inhalt löschen?",
+        "message": "Möchtest du \"{{name}}\" wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden und löst die Meldung auf.",
+        "confirm": "Ja, löschen"
       }
     },
     "orgProfile": {
@@ -670,7 +695,9 @@
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden.",
-      "verified": "Verifizierte Organisation"
+      "verified": "Verifizierte Organisation",
+      "report": "Melden",
+      "reportOrganization": "Organisation melden"
     },
     "profileOverview": {
       "invitationsHeading": "Offene Einladungen"
@@ -790,6 +817,7 @@
       "title": "Administration",
       "organizationsHeading": "Organisationen",
       "usersHeading": "Benutzer",
+      "reportsHeading": "Meldungen",
       "loadingMore": "Weitere werden geladen...",
       "organizations": {
         "loading": "Organisationen werden geladen...",
@@ -824,6 +852,26 @@
         "demoteSuccess": "Admin-Rechte entzogen.",
         "demoteError": "Admin-Rechte konnten nicht entzogen werden.",
         "loadMore": "Mehr laden"
+      },
+      "reports": {
+        "loading": "Meldungen werden geladen...",
+        "error": "Meldungen konnten nicht geladen werden.",
+        "noReports": "Keine offenen Meldungen. Alles erledigt.",
+        "unknownTarget": "(gelöscht)",
+        "dismiss": "Verwerfen",
+        "dismissSuccess": "Meldung verworfen.",
+        "dismissError": "Meldung konnte nicht verworfen werden.",
+        "delete": "Löschen",
+        "deleteSuccess": "Inhalt gelöscht und Meldung aufgelöst.",
+        "deleteError": "Inhalt konnte nicht gelöscht werden.",
+        "loadMore": "Mehr laden",
+        "reason": {
+          "Spam": "Spam",
+          "IllegalContent": "Illegale Inhalte",
+          "Fraud": "Betrug",
+          "Harassment": "Belästigung",
+          "Other": "Sonstiges"
+        }
       }
     },
     "organizationsPage": {
@@ -900,6 +948,9 @@
       "UserStreakId": {
         "Empty": "UserStreakId darf nicht leer sein."
       },
+      "ReportId": {
+        "Empty": "ReportId darf nicht leer sein."
+      },
       "User": {
         "InvalidId": "Ungültiger Benutzer."
       },
@@ -953,6 +1004,12 @@
         "ParticipationTypeLocked": "Die Teilnahmeart kann nicht geändert werden, solange aktive Engagements bestehen.",
         "TimeSlotCapacityBelowActive": "Die Kapazität kann nicht unter die Anzahl der aktuell aktiven Anmeldungen gesenkt werden.",
         "TimeSlotHasActiveEngagements": "Ein Zeitslot mit aktiven Anmeldungen kann nicht gelöscht werden. Sage zuerst die betroffenen Anmeldungen ab."
+      },
+      "Report": {
+        "NotFound": "Meldung nicht gefunden.",
+        "AlreadyResolved": "Diese Meldung wurde bereits bearbeitet.",
+        "AlreadyReported": "Du hast dies bereits gemeldet.",
+        "DetailsTooLong": "Details dürfen 1000 Zeichen nicht überschreiten."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Das Startdatum muss in der Zukunft liegen.",
