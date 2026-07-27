@@ -117,6 +117,28 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithEnvironment("RateLimiting__Write__PermitLimit", "10000")
 	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "10000");
 
+if (isTestEnv)
+{
+	// isTestEnv only reflects the AppHost's OWN environment (set via
+	// DistributedApplicationTestingBuilder.CreateAsync<AppHost>(["--environment",
+	// "Testing"]) in IntegrationTestFixture/AspireFixture) - it says nothing
+	// about the backend project resource's own environment, which Aspire may or
+	// may not inherit from the apphost process. Force it explicitly so the
+	// Program.cs IsDevelopment() migrate/seed logic keeps behaving exactly as it
+	// always has for these test runs, regardless of that inheritance question.
+	backend.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+
+	// Integration/Visual tests create opportunities with placeholder addresses
+	// ("Test Street", "Sample City", ...) that the real Nominatim API correctly
+	// reports as not found - since #975 that's now a hard validation error, so
+	// hitting the live public API here would both break those tests and violate
+	// Nominatim's usage policy against automated/bulk querying from CI. Swap in
+	// a fake IGeocodingService instead of pointing at an unreachable address -
+	// no network call at all, so no dependence on HTTP client resilience/retry
+	// timing either.
+	backend.WithEnvironment("Geocoding__UseFakeService", "true");
+}
+
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()
 	.WithReference(backend)

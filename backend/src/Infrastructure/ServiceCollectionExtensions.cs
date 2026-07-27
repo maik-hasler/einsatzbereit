@@ -29,6 +29,7 @@ using Infrastructure.VolunteerOpportunities;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -37,7 +38,8 @@ namespace Infrastructure;
 public static class ServiceCollectionExtensions
 {
 	public static IServiceCollection AddInfrastructureServices(
-		this IServiceCollection services)
+		this IServiceCollection services,
+		IConfiguration configuration)
 	{
 		services.ConfigureOptions<ConnectionStringOptionsSetup>();
 
@@ -91,17 +93,39 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddHostedService<EngagementReminderJob>();
 		services.AddHostedService<OutboxProcessorJob>();
+		services.AddHostedService<GeocodingRetryJob>();
 
 
-		services.ConfigureOptions<GeocodingOptionsSetup>();
-		services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
-			(sp, client) =>
-			{
-				var geocodingOptions = sp.GetRequiredService<IOptions<GeocodingOptions>>().Value;
-				client.BaseAddress = new Uri(geocodingOptions.BaseUrl.TrimEnd('/') + "/");
-				client.Timeout = TimeSpan.FromSeconds(geocodingOptions.TimeoutSeconds);
-				client.DefaultRequestHeaders.UserAgent.ParseAdd(geocodingOptions.UserAgent);
-			});
+		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see
+		// AppHost.cs) so they never make a real network call to Nominatim -
+		// deterministic, instant, and independent of any HTTP client resilience
+		// timing (unlike an earlier version of this override that pointed
+		// BaseUrl at an unroutable address instead).
+		if (configuration.GetValue<bool>("Geocoding:UseFakeService"))
+		{
+			services.AddSingleton<IGeocodingService, FakeGeocodingService>();
+		}
+		else
+		{
+			services.ConfigureOptions<GeocodingOptionsSetup>();
+			services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(
+				(sp, client) =>
+				{
+					var geocodingOptions = sp.GetRequiredService<IOptions<GeocodingOptions>>().Value;
+					client.BaseAddress = new Uri(geocodingOptions.BaseUrl.TrimEnd('/') + "/");
+					client.Timeout = TimeSpan.FromSeconds(geocodingOptions.TimeoutSeconds);
+					client.DefaultRequestHeaders.UserAgent.ParseAdd(geocodingOptions.UserAgent);
+				})
+				// ServiceDefaults.AddServiceDefaults applies AddStandardResilienceHandler
+				// (3 retries, exponential backoff, ~30s worst case) to every HttpClient by
+				// default. Geocoding already has its own retry story - GeocodingHelper's
+				// Found/NotFound/TransientFailure classification plus the hourly
+				// GeocodingRetryJob - so stacking Polly's retries on top would make a
+				// single create/update call block for tens of seconds on any hiccup
+				// instead of failing fast to TransientFailure. 1 is the minimum
+				// MaxRetryAttempts accepts (0 fails options validation on startup).
+				.AddStandardResilienceHandler(options => options.Retry.MaxRetryAttempts = 1);
+		}
 
 		services.AddMemoryCache();
 		services.ConfigureOptions<MapTileOptionsSetup>();

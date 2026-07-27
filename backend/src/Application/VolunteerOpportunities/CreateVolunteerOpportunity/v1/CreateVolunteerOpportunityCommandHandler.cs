@@ -28,7 +28,7 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 		var address = request.Address;
 
 		if (!request.IsRemote && address is not null)
-			address = await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken);
+			address = (await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken)).GetValueOrThrow();
 
 		var opportunity = VolunteerOpportunity.Create(
 			request.OrganizationId,

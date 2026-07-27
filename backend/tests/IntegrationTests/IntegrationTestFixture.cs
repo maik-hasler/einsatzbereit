@@ -34,8 +34,13 @@ public class IntegrationTestFixture
 
 	public async Task InitializeAsync()
 	{
+		// DistributedApplicationTestingBuilder.CreateAsync<AppHost>() defaults the
+		// AppHost's own hosting environment to "Development", not "Testing" -
+		// passing --environment explicitly is required for AppHost.cs's isTestEnv
+		// gate (skipping the Postgres data volume, pointing Geocoding__BaseUrl at
+		// an unroutable address for #975) to actually activate during test runs.
 		var appHost = await DistributedApplicationTestingBuilder
-			.CreateAsync<AppHost>();
+			.CreateAsync<AppHost>(["--environment", "Testing"]);
 
 		_app = await appHost.BuildAsync();
 		await _app.StartAsync();

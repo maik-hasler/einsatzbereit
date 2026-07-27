@@ -189,7 +189,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(new GeoCoordinates(52.52, 13.405));
+			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
 
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
@@ -203,13 +203,37 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldSaveWithoutCoordinates_WhenGeocodingReturnsNull(
+	public async Task Handle_ShouldThrowValidationError_WhenGeocodingReturnsNotFound(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns((GeoCoordinates?)null);
+			.Returns(GeocodingResult.NotFound);
+
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Code.Should().Be("Address.NotFound");
+		await _dbContext
+			.VolunteerOpportunities
+			.DidNotReceive()
+			.AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldSaveWithoutCoordinates_WhenGeocodingIsATransientFailure(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.TransientFailure);
 
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
@@ -229,7 +253,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Arrange
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(Task.FromException<GeoCoordinates?>(new HttpRequestException("boom")));
+			.Returns(Task.FromException<GeocodingResult>(new HttpRequestException("boom")));
 
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);

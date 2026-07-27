@@ -101,6 +101,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.TransientFailure);
+
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
 
@@ -211,7 +215,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 
 		_geocodingService
 			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(new GeoCoordinates(53.55, 9.99));
+			.Returns(GeocodingResult.Found(new GeoCoordinates(53.55, 9.99)));
 
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "Neue Beschreibung", false, Address.Create("Neue Straße", "99", "20095", "Hamburg").Value, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
@@ -335,6 +339,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", activeVolunteer, null, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
 			]);
 
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.TransientFailure);
+
 		// Material change: new address (city changed).
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -431,5 +439,96 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		opportunity.Title.Should().Be("Altes Thema");
 		opportunity.Description.Should().Be("Alte Beschreibung");
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowValidationError_WhenGeocodingReturnsNotFound_ForChangedAddress(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.NotFound);
+
+		var newAddress = Address.Create("Nirgendwostraße", "999", "99999", "Nirgendwo").Value;
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Code.Should().Be("Address.NotFound");
+		opportunity.Title.Should().Be("Altes Thema");
+		opportunity.Address.Should().Be(DefaultAddress);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotReGeocode_AndShouldPreserveExistingCoordinates_WhenAddressTextUnchanged(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
+		var opportunity = VolunteerOpportunity.Create(
+			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, geocodedAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).GetValueOrThrow();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		// Same street/house number/zip/city as geocodedAddress - only cosmetic fields change.
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _geocodingService
+			.DidNotReceive()
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		opportunity.Address!.Latitude.Should().Be(52.52);
+		opportunity.Address!.Longitude.Should().Be(13.405);
+	}
+
+	[Test]
+	public async Task Handle_ShouldReGeocode_WhenSwitchingFromRemoteToPhysicalAddress(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = VolunteerOpportunity.Create(
+			DefaultOrgId, "Altes Thema", "Alte Beschreibung", true, null, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).GetValueOrThrow();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _geocodingService
+			.Received(1)
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		opportunity.Address!.Latitude.Should().Be(52.52);
 	}
 }

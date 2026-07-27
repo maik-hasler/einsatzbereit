@@ -53,8 +53,16 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 
 		var address = request.Address;
 
+		// Only re-geocode when the address text actually changed (or is newly added
+		// after switching away from remote) - re-running it on every unrelated edit
+		// would re-block a save on a legacy address that was already accepted before
+		// NotFound became a hard validation error.
 		if (!request.IsRemote && address is not null)
-			address = await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken);
+		{
+			address = AddressTextChanged(opportunity.Address, address)
+				? (await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken)).GetValueOrThrow()
+				: opportunity.Address;
+		}
 
 		// Snapshot material fields before mutation to detect meaningful changes.
 		var prevIsRemote = opportunity.IsRemote;
