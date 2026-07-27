@@ -170,6 +170,12 @@ app.Use(async (context, next) =>
 	context.Response.Headers["X-Content-Type-Options"] = "nosniff";
 	context.Response.Headers["X-Frame-Options"] = "DENY";
 	context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+	// Bearer tokens must never travel over a downgraded HTTP connection - skipped in
+	// Development since local dev runs over plain HTTP (#1370).
+	if (!app.Environment.IsDevelopment())
+		context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+
 	context.Response.Headers["X-Trace-Id"] =
 		Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
 	await next();
