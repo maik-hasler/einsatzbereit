@@ -44,6 +44,15 @@ The Aspire AppHost provisions PostgreSQL, Keycloak, the backend API, and the Vit
 | `olaf`   | `olaf123`    | `user`, `organisator` | Organizer Olaf       | Browse and create opportunities      |
 | `admin`  | `admin123`   | `admin`               | Administrator        | Full administration                  |
 
+> **Note:** These same credentials are intentionally also active on the public staging
+> deployment (https://einsatzbereit.maik-hasler.de) - staging runs the same baked-in
+> Keycloak realm as local dev, on purpose. Staging is disposable demo/QA infrastructure,
+> not production: it holds no data worth protecting and can be fully wiped and restarted
+> at any time (see `.github/workflows/reset-staging.yml`). Anyone signing in with `admin`
+> on staging, including to modify or delete other accounts, is operating within the
+> intended threat model - this is a known, accepted trade-off, not a vulnerability to
+> report.
+
 ### Databases
 
 | Database        | Purpose                 |

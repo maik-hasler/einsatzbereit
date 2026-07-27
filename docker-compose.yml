@@ -67,6 +67,11 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      # Deliberately keeps the einsatzbereit realm's baked-in vera/olaf/admin demo
+      # accounts (and their public, documented passwords) alive across restarts -
+      # staging is disposable demo/QA infrastructure, not production, and these
+      # accounts are meant to be publicly known and instantly restorable rather
+      # than rotated or hardened. See keycloak/AGENTS.md and #1166.
       KC_SPI_REALM_IMPORTER_FILE_IMPORT_BEHAVIOR: OVERWRITE_EXISTING
       # Resolves the "${KEYCLOAK_BACKEND_SECRET}" placeholder in the imported
       # realm JSON (keycloak/realms/einsatzbereit-realm.json) into the backend
