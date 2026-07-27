@@ -30,6 +30,7 @@
       "legal": "Rechtliches",
       "imprint": "Impressum",
       "privacy": "Datenschutz",
+      "contact": "Kontakt",
       "followUs": "Folge uns",
       "copyright": "© {{year}} Einsatzbereit. Alle Rechte vorbehalten."
     },
@@ -596,6 +597,13 @@
       "section4aBody": "Die Inhalte dieser Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.",
       "section4bTitle": "Haftung für Links",
       "section4bBody": "Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "reportSectionTitle": "Missbräuchliche Inhalte melden",
+      "reportSectionBody": "Wenn dir ein Bedarf oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Bedarfs-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
+      "otherSectionTitle": "Andere Fragen oder Anliegen",
+      "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform."
     },
     "notifications": {
       "bellLabel": "Benachrichtigungen",

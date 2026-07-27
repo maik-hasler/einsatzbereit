@@ -15,6 +15,7 @@ import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import ImprintPage from "./pages/ImprintPage";
+import ContactPage from "./pages/ContactPage";
 import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
 import EngagementManagementPage from "./pages/EngagementManagementPage";
 import ProfileOverviewPage from "./pages/ProfileOverviewPage";
@@ -95,6 +96,7 @@ export default function App() {
 				<Route path="/" element={<HomePage />} />
 				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 				<Route path="/imprint" element={<ImprintPage />} />
+				<Route path="/contact" element={<ContactPage />} />
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}

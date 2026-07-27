@@ -30,6 +30,7 @@
       "legal": "Legal",
       "imprint": "Imprint",
       "privacy": "Privacy Policy",
+      "contact": "Contact",
       "followUs": "Follow us",
       "copyright": "© {{year}} Einsatzbereit. All rights reserved."
     },
@@ -596,6 +597,13 @@
       "section4aBody": "The contents of these pages have been created with the greatest care. However, we cannot guarantee the accuracy, completeness and timeliness of the content.",
       "section4bTitle": "Liability for links",
       "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages."
+    },
+    "contact": {
+      "title": "Contact",
+      "reportSectionTitle": "Reporting abusive content",
+      "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
+      "otherSectionTitle": "Other questions or concerns",
+      "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint."
     },
     "notifications": {
       "bellLabel": "Notifications",
