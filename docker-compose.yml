@@ -228,10 +228,13 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    # Only 2 scrape targets (itself + node-exporter), so a low ceiling is
+    # plenty - trimmed down from 256m to leave more host headroom on a
+    # memory-constrained box (staging runs on a 4GB VM).
     deploy:
       resources:
         limits:
-          memory: 256m
+          memory: 128m
           cpus: "0.25"
     volumes:
       - prometheus_data:/prometheus
@@ -258,7 +261,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 64m
+          memory: 32m
           cpus: "0.10"
     volumes:
       - /proc:/host/proc:ro
@@ -316,10 +319,14 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    # Now scoped to just this stack's own ~6 containers (see alloy's
+    # discovery filter below), so log volume is small - trimmed down from
+    # 256m to leave more host headroom on a memory-constrained box
+    # (staging runs on a 4GB VM).
     deploy:
       resources:
         limits:
-          memory: 256m
+          memory: 160m
           cpus: "0.25"
     volumes:
       - loki_data:/loki
@@ -347,7 +354,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128m
+          memory: 96m
           cpus: "0.15"
     # Plain depends_on (wait for container start, not health): Alloy's Loki
     # writer retries and buffers on its own, so it doesn't need Loki to be
