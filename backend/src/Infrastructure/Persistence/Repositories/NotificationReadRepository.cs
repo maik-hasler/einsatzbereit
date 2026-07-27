@@ -83,7 +83,7 @@ internal sealed class NotificationReadRepository(
 
 				actionUrl = n.Kind is NotificationKind.EngagementCreated or NotificationKind.EngagementWithdrawn
 					? (opportunityOrganizations.TryGetValue(opportunityId, out var organizationId)
-						? $"/app/{organizationId}/opportunities/{opportunityId}/engagements"
+						? $"/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements"
 						: null)
 					: "/my-engagements";
 			}
