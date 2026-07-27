@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import type { PublicOrganizationSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
@@ -11,6 +12,7 @@ import { inputClass } from "../lib/formClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
+import ReportFlagButton from "../components/ReportFlagButton";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -18,6 +20,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 export default function OrganizationsPage() {
 	const api = useApiClient();
 	const { t } = useTranslation();
+	const auth = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const search = searchParams.get("search") ?? "";
@@ -187,6 +190,18 @@ export default function OrganizationsPage() {
 											</p>
 										)}
 									</div>
+									{auth.isAuthenticated && (
+										<ReportFlagButton
+											targetLabel={org.name}
+											ariaLabel={t("orgProfile.reportOrganization")}
+											onReport={async (reason, details) => {
+												await api.reportOrganization(org.id, {
+													reason,
+													details: details || undefined,
+												});
+											}}
+										/>
+									)}
 								</li>
 							))}
 						</ul>

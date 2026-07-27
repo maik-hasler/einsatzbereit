@@ -687,10 +687,15 @@
         "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone.",
         "confirm": "Yes, delete"
       },
-      "adminDeleteReported": {
-        "title": "Delete reported content?",
-        "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone and will resolve the report.",
-        "confirm": "Yes, delete"
+      "adminShadowDelete": {
+        "title": "Shadow-delete this content?",
+        "message": "Are you sure you want to hide \"{{name}}\" from everyone? This can be undone with Restore, and resolves all open reports against it.",
+        "confirm": "Yes, shadow-delete"
+      },
+      "adminRestore": {
+        "title": "Restore this content?",
+        "message": "Are you sure you want to restore \"{{name}}\"? It will become visible again.",
+        "confirm": "Yes, restore"
       }
     },
     "orgProfile": {
@@ -813,7 +818,8 @@
       "notFound": "User not found.",
       "engagementCount": "{{count}} confirmed engagement",
       "engagementCount_other": "{{count}} confirmed engagements",
-      "viewAllAchievements": "View all achievements"
+      "viewAllAchievements": "View all achievements",
+      "reportUser": "Report user"
     },
     "organizations": {
       "verified": "Verified organization",
@@ -864,15 +870,37 @@
       "reports": {
         "loading": "Loading reports...",
         "error": "Failed to load reports.",
-        "noReports": "No open reports. All caught up.",
+        "noReports": "No flagged content. All caught up.",
         "unknownTarget": "(deleted)",
         "dismiss": "Dismiss",
         "dismissSuccess": "Report dismissed.",
         "dismissError": "Failed to dismiss report.",
-        "delete": "Delete",
-        "deleteSuccess": "Content deleted and report resolved.",
-        "deleteError": "Failed to delete content.",
+        "shadowDelete": "Shadow delete",
+        "deleteSuccess": "Content hidden and open reports resolved.",
+        "deleteError": "Failed to shadow-delete content.",
+        "restore": "Restore",
+        "restoreSuccess": "Content restored.",
+        "restoreError": "Failed to restore content.",
         "loadMore": "Load more",
+        "viewHistory": "View history",
+        "historyTitle": "Report history",
+        "openFlags": "{{count}} open flag",
+        "openFlags_other": "{{count}} open flags",
+        "totalFlags": "{{count}} flag total",
+        "totalFlags_other": "{{count}} flags total",
+        "lastFlagged": "last flagged {{date}}",
+        "statusActive": "Active",
+        "statusDeleted": "Shadow-deleted",
+        "targetType": {
+          "VolunteerOpportunity": "Opportunity",
+          "Organization": "Organization",
+          "User": "User"
+        },
+        "status": {
+          "Open": "Open",
+          "Dismissed": "Dismissed",
+          "Actioned": "Actioned"
+        },
         "reason": {
           "Spam": "Spam",
           "IllegalContent": "Illegal content",

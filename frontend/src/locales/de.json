@@ -687,10 +687,15 @@
         "message": "Möchtest du \"{{name}}\" wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
         "confirm": "Ja, löschen"
       },
-      "adminDeleteReported": {
-        "title": "Gemeldeten Inhalt löschen?",
-        "message": "Möchtest du \"{{name}}\" wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden und löst die Meldung auf.",
-        "confirm": "Ja, löschen"
+      "adminShadowDelete": {
+        "title": "Inhalt schattenlöschen?",
+        "message": "Möchtest du \"{{name}}\" wirklich vor allen anderen verbergen? Dies kann mit \"Wiederherstellen\" rückgängig gemacht werden und löst alle offenen Meldungen dazu auf.",
+        "confirm": "Ja, schattenlöschen"
+      },
+      "adminRestore": {
+        "title": "Inhalt wiederherstellen?",
+        "message": "Möchtest du \"{{name}}\" wirklich wiederherstellen? Der Inhalt wird wieder sichtbar.",
+        "confirm": "Ja, wiederherstellen"
       }
     },
     "orgProfile": {
@@ -813,7 +818,8 @@
       "notFound": "Benutzer nicht gefunden.",
       "engagementCount": "{{count}} bestatigter Einsatz",
       "engagementCount_other": "{{count}} bestatige Einsatze",
-      "viewAllAchievements": "Alle Abzeichen anzeigen"
+      "viewAllAchievements": "Alle Abzeichen anzeigen",
+      "reportUser": "Nutzer melden"
     },
     "organizations": {
       "verified": "Verifizierte Organisation",
@@ -864,15 +870,37 @@
       "reports": {
         "loading": "Meldungen werden geladen...",
         "error": "Meldungen konnten nicht geladen werden.",
-        "noReports": "Keine offenen Meldungen. Alles erledigt.",
+        "noReports": "Keine gemeldeten Inhalte. Alles erledigt.",
         "unknownTarget": "(gelöscht)",
         "dismiss": "Verwerfen",
         "dismissSuccess": "Meldung verworfen.",
         "dismissError": "Meldung konnte nicht verworfen werden.",
-        "delete": "Löschen",
-        "deleteSuccess": "Inhalt gelöscht und Meldung aufgelöst.",
-        "deleteError": "Inhalt konnte nicht gelöscht werden.",
+        "shadowDelete": "Schattenlöschen",
+        "deleteSuccess": "Inhalt verborgen und offene Meldungen aufgelöst.",
+        "deleteError": "Inhalt konnte nicht schattengelöscht werden.",
+        "restore": "Wiederherstellen",
+        "restoreSuccess": "Inhalt wiederhergestellt.",
+        "restoreError": "Inhalt konnte nicht wiederhergestellt werden.",
         "loadMore": "Mehr laden",
+        "viewHistory": "Verlauf anzeigen",
+        "historyTitle": "Meldungsverlauf",
+        "openFlags": "{{count}} offene Meldung",
+        "openFlags_other": "{{count}} offene Meldungen",
+        "totalFlags": "{{count}} Meldung insgesamt",
+        "totalFlags_other": "{{count}} Meldungen insgesamt",
+        "lastFlagged": "zuletzt gemeldet {{date}}",
+        "statusActive": "Aktiv",
+        "statusDeleted": "Schattengelöscht",
+        "targetType": {
+          "VolunteerOpportunity": "Bedarf",
+          "Organization": "Organisation",
+          "User": "Nutzer"
+        },
+        "status": {
+          "Open": "Offen",
+          "Dismissed": "Verworfen",
+          "Actioned": "Bearbeitet"
+        },
         "reason": {
           "Spam": "Spam",
           "IllegalContent": "Illegale Inhalte",

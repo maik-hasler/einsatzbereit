@@ -1120,7 +1120,7 @@ export class EinsatzbereitApi {
     /**
      * @return No Content
      */
-    adminDeleteVolunteerOpportunity(opportunityId: string, signal?: AbortSignal): Promise<void> {
+    adminShadowDeleteVolunteerOpportunity(opportunityId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/admin/volunteer-opportunities/{opportunityId}";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
@@ -1135,11 +1135,11 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAdminDeleteVolunteerOpportunity(_response);
+            return this.processAdminShadowDeleteVolunteerOpportunity(_response);
         });
     }
 
-    protected processAdminDeleteVolunteerOpportunity(response: Response): Promise<void> {
+    protected processAdminShadowDeleteVolunteerOpportunity(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 204) {
@@ -1163,6 +1163,73 @@ export class EinsatzbereitApi {
             let result404: any = null;
             result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    adminRestoreVolunteerOpportunity(opportunityId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/admin/volunteer-opportunities/{opportunityId}/restore";
+        if (opportunityId === undefined || opportunityId === null)
+            throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
+        url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAdminRestoreVolunteerOpportunity(_response);
+        });
+    }
+
+    protected processAdminRestoreVolunteerOpportunity(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Conflict", status, _responseText, _headers, result409);
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
@@ -1514,6 +1581,77 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return No Content
+     */
+    reportUser(userId: string, body: ReportUserRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/users/{userId}/reports";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReportUser(_response);
+        });
+    }
+
+    protected processReportUser(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @param search (optional) 
      * @return OK
      */
@@ -1683,10 +1821,138 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @return No Content
+     */
+    adminShadowDeleteUser(userId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/admin/users/{userId}";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAdminShadowDeleteUser(_response);
+        });
+    }
+
+    protected processAdminShadowDeleteUser(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    adminRestoreUser(userId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/admin/users/{userId}/restore";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAdminRestoreUser(_response);
+        });
+    }
+
+    protected processAdminRestoreUser(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
      * @return OK
      */
-    listOpenReports(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfAdminReportSummary> {
-        let url_ = this.baseUrl + "/v1/admin/reports?";
+    listFlaggedTargets(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfFlaggedTargetSummary> {
+        let url_ = this.baseUrl + "/v1/admin/reports/targets?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
         else
@@ -1706,17 +1972,17 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processListOpenReports(_response);
+            return this.processListFlaggedTargets(_response);
         });
     }
 
-    protected processListOpenReports(response: Response): Promise<PagedListOfAdminReportSummary> {
+    protected processListFlaggedTargets(response: Response): Promise<PagedListOfFlaggedTargetSummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfAdminReportSummary;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfFlaggedTargetSummary;
             return result200;
             });
         } else if (status === 401) {
@@ -1742,7 +2008,74 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<PagedListOfAdminReportSummary>(null as any);
+        return Promise.resolve<PagedListOfFlaggedTargetSummary>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getReportHistoryForTarget(targetType: string, targetId: string, signal?: AbortSignal): Promise<ReportHistoryEntry[]> {
+        let url_ = this.baseUrl + "/v1/admin/reports/targets/{targetType}/{targetId}/history";
+        if (targetType === undefined || targetType === null)
+            throw new globalThis.Error("The parameter 'targetType' must be defined.");
+        url_ = url_.replace("{targetType}", encodeURIComponent("" + targetType));
+        if (targetId === undefined || targetId === null)
+            throw new globalThis.Error("The parameter 'targetId' must be defined.");
+        url_ = url_.replace("{targetId}", encodeURIComponent("" + targetId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetReportHistoryForTarget(_response);
+        });
+    }
+
+    protected processGetReportHistoryForTarget(response: Response): Promise<ReportHistoryEntry[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ReportHistoryEntry[];
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ReportHistoryEntry[]>(null as any);
     }
 
     /**
@@ -3141,7 +3474,7 @@ export class EinsatzbereitApi {
     /**
      * @return No Content
      */
-    adminDeleteOrganization(organizationId: string, signal?: AbortSignal): Promise<void> {
+    adminShadowDeleteOrganization(organizationId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/v1/admin/organizations/{organizationId}";
         if (organizationId === undefined || organizationId === null)
             throw new globalThis.Error("The parameter 'organizationId' must be defined.");
@@ -3156,11 +3489,11 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAdminDeleteOrganization(_response);
+            return this.processAdminShadowDeleteOrganization(_response);
         });
     }
 
-    protected processAdminDeleteOrganization(response: Response): Promise<void> {
+    protected processAdminShadowDeleteOrganization(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 204) {
@@ -3184,6 +3517,73 @@ export class EinsatzbereitApi {
             let result404: any = null;
             result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    adminRestoreOrganization(organizationId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/v1/admin/organizations/{organizationId}/restore";
+        if (organizationId === undefined || organizationId === null)
+            throw new globalThis.Error("The parameter 'organizationId' must be defined.");
+        url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PUT",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAdminRestoreOrganization(_response);
+        });
+    }
+
+    protected processAdminRestoreOrganization(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Conflict", status, _responseText, _headers, result409);
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
@@ -4341,18 +4741,6 @@ export interface AdminOrganizationSummary {
     [key: string]: any;
 }
 
-export interface AdminReportSummary {
-    id: string;
-    targetType: string;
-    targetId: string;
-    targetTitle: string;
-    reason: string;
-    details: string | undefined;
-    createdOn: Date;
-
-    [key: string]: any;
-}
-
 export interface AdminUserListItem {
     id: string;
     username: string;
@@ -4586,6 +4974,18 @@ export interface FeedbackItemDto {
     [key: string]: any;
 }
 
+export interface FlaggedTargetSummary {
+    targetType: string;
+    targetId: string;
+    targetTitle: string;
+    openReportCount: number;
+    totalReportCount: number;
+    lastReportedOn: Date;
+    isDeleted: boolean;
+
+    [key: string]: any;
+}
+
 export interface MemberCandidateDto {
     userId: string;
     username: string;
@@ -4651,6 +5051,8 @@ export interface Organization {
     isVerified?: boolean;
     createdOn?: Date;
     modifiedOn?: Date | undefined;
+    isDeleted?: boolean;
+    deletedOn?: Date | undefined;
     events?: DomainEvent[] | undefined;
     id?: OrganizationId;
 
@@ -4737,15 +5139,6 @@ export interface PagedListOfAdminOrganizationSummary {
     [key: string]: any;
 }
 
-export interface PagedListOfAdminReportSummary {
-    totalItems?: number;
-    currentPage: number;
-    pageCount?: number;
-    items: AdminReportSummary[];
-
-    [key: string]: any;
-}
-
 export interface PagedListOfAdminUserListItem {
     totalItems?: number;
     currentPage: number;
@@ -4760,6 +5153,15 @@ export interface PagedListOfEngagementSummary {
     currentPage: number;
     pageCount?: number;
     items: EngagementSummary[];
+
+    [key: string]: any;
+}
+
+export interface PagedListOfFlaggedTargetSummary {
+    totalItems?: number;
+    currentPage: number;
+    pageCount?: number;
+    items: FlaggedTargetSummary[];
 
     [key: string]: any;
 }
@@ -4857,7 +5259,27 @@ export interface PublicUserProfileResponse {
     [key: string]: any;
 }
 
+export interface ReportHistoryEntry {
+    id: string;
+    reporterId: string;
+    reason: string;
+    details: string | undefined;
+    status: string;
+    createdOn: Date;
+    resolvedByUserId: string | undefined;
+    resolvedOn: Date | undefined;
+
+    [key: string]: any;
+}
+
 export interface ReportOrganizationRequest {
+    reason: string;
+    details: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface ReportUserRequest {
     reason: string;
     details: string | undefined;
 

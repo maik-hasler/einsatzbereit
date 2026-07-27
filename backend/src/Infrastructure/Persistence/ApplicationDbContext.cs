@@ -56,6 +56,8 @@ internal sealed class ApplicationDbContext(
 			Set<User>(),
 			u => u.Id);
 
+	internal IQueryable<User> UsersQuery => Set<User>().AsNoTracking();
+
 	internal IQueryable<Notification> NotificationsQuery => Set<Notification>().AsNoTracking();
 
 	public IAggregateRepository<Achievement, AchievementId> Achievements
@@ -316,6 +318,37 @@ internal sealed class ApplicationDbContext(
 				&& r.TargetId == targetId
 				&& r.Status == ReportStatus.Open)
 			.ToListAsync(cancellationToken);
+
+	public async Task<List<Report>> GetReportHistoryForTargetAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Report>()
+			.Where(r => r.TargetType == targetType && r.TargetId == targetId)
+			.OrderByDescending(r => r.CreatedOn)
+			.ToListAsync(cancellationToken);
+
+	public async Task<Organization?> FindOrganizationIncludingDeletedAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default) =>
+		await Set<Organization>()
+			.IgnoreQueryFilters()
+			.FirstOrDefaultAsync(o => o.Id == organizationId, cancellationToken);
+
+	public async Task<VolunteerOpportunity?> FindVolunteerOpportunityIncludingDeletedAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default) =>
+		await Set<VolunteerOpportunity>()
+			.IgnoreQueryFilters()
+			.Include(vo => vo.TimeSlots)
+			.FirstOrDefaultAsync(vo => vo.Id == opportunityId, cancellationToken);
+
+	public async Task<User?> FindUserIncludingDeletedAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<User>()
+			.IgnoreQueryFilters()
+			.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,

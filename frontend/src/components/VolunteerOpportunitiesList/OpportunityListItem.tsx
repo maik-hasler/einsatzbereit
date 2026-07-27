@@ -1,7 +1,10 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatOccurrence } from "../../lib/format";
+import { useApiClient } from "../../hooks/useApiClient";
+import ReportFlagButton from "../ReportFlagButton";
 import { CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
 
 function orgInitials(name: string): string {
@@ -17,6 +20,8 @@ export default function OpportunityListItem({
 	item: VolunteerOpportunitySummary;
 }) {
 	const { t } = useTranslation();
+	const api = useApiClient();
+	const auth = useAuth();
 	const spotsLeft =
 		item.totalMaxParticipants > 0
 			? item.totalMaxParticipants - item.currentParticipantCount
@@ -85,6 +90,19 @@ export default function OpportunityListItem({
 									})}
 								</span>
 							))}
+						{auth.isAuthenticated && (
+							<ReportFlagButton
+								targetLabel={item.title}
+								ariaLabel={t("opportunities.reportOpportunity")}
+								onReport={async (reason, details) => {
+									await api.reportVolunteerOpportunity(item.id, {
+										reason,
+										details: details || undefined,
+									});
+								}}
+								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null ? " ml-auto" : ""}`}
+							/>
+						)}
 					</div>
 					<h3 className="text-base font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}

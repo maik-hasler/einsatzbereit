@@ -3,7 +3,8 @@ using Domain.Primitives;
 namespace Domain.Users;
 
 public sealed class User
-	: AggregateRoot<UserId>
+	: AggregateRoot<UserId>,
+		ISoftDeletableEntity
 {
 	private List<string> _skills = [];
 
@@ -18,6 +19,10 @@ public sealed class User
 	public IReadOnlyList<string> Languages => _languages.AsReadOnly();
 
 	public PreferredContact? PreferredContact { get; private set; }
+
+	public bool IsDeleted { get; private set; }
+
+	public DateTimeOffset? DeletedOn { get; private set; }
 
 #pragma warning disable CS8618
 	private User() : base(default) { }
@@ -50,5 +55,25 @@ public sealed class User
 	public void SetPreferredContact(PreferredContact? preferredContact)
 	{
 		PreferredContact = preferredContact;
+	}
+
+	public Result MarkDeleted(DateTimeOffset deletedOn)
+	{
+		if (IsDeleted)
+			return Result.Failure(Error.Conflict("User.AlreadyDeleted", "User is already shadow-deleted."));
+
+		IsDeleted = true;
+		DeletedOn = deletedOn;
+		return Result.Success();
+	}
+
+	public Result Restore()
+	{
+		if (!IsDeleted)
+			return Result.Failure(Error.Conflict("User.NotDeleted", "User is not shadow-deleted."));
+
+		IsDeleted = false;
+		DeletedOn = null;
+		return Result.Success();
 	}
 }

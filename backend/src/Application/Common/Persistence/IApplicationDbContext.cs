@@ -154,6 +154,23 @@ public interface IApplicationDbContext
 		Guid targetId,
 		CancellationToken cancellationToken = default);
 
+	Task<List<Report>> GetReportHistoryForTargetAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		CancellationToken cancellationToken = default);
+
+	Task<Organization?> FindOrganizationIncludingDeletedAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task<VolunteerOpportunity?> FindVolunteerOpportunityIncludingDeletedAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
+
+	Task<User?> FindUserIncludingDeletedAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
 	Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import type { AdminUserListItem } from "../client/api-client";
+import type {
+	AdminUserListItem,
+	ReportHistoryEntry,
+} from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass } from "../lib/formClasses";
+import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import Spinner from "../components/Spinner";
@@ -15,6 +19,7 @@ import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Modal from "../components/Modal";
 
 const PAGE_SIZE = 10;
 
@@ -433,23 +438,72 @@ function UsersSection() {
 	);
 }
 
-interface ReportRow {
-	id: string;
+interface FlaggedTargetRow {
 	targetType: string;
 	targetId: string;
 	targetTitle: string;
-	reason: string;
-	details?: string;
+	openReportCount: number;
+	totalReportCount: number;
+	lastReportedOn: string;
+	isDeleted: boolean;
+}
+
+function targetHref(targetType: string, targetId: string): string {
+	switch (targetType) {
+		case "VolunteerOpportunity":
+			return `/volunteer-opportunities/${targetId}`;
+		case "Organization":
+			return `/organizations/${targetId}`;
+		case "User":
+			return `/users/${targetId}`;
+		default:
+			return "#";
+	}
+}
+
+function shadowDeleteTarget(
+	api: ReturnType<typeof useApiClient>,
+	targetType: string,
+	targetId: string,
+) {
+	switch (targetType) {
+		case "VolunteerOpportunity":
+			return api.adminShadowDeleteVolunteerOpportunity(targetId);
+		case "Organization":
+			return api.adminShadowDeleteOrganization(targetId);
+		default:
+			return api.adminShadowDeleteUser(targetId);
+	}
+}
+
+function restoreTarget(
+	api: ReturnType<typeof useApiClient>,
+	targetType: string,
+	targetId: string,
+) {
+	switch (targetType) {
+		case "VolunteerOpportunity":
+			return api.adminRestoreVolunteerOpportunity(targetId);
+		case "Organization":
+			return api.adminRestoreOrganization(targetId);
+		default:
+			return api.adminRestoreUser(targetId);
+	}
 }
 
 function ReportsSection() {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
-	const [pendingId, setPendingId] = useState<string | null>(null);
-	const [confirmDelete, setConfirmDelete] = useState<ReportRow | null>(null);
-	const [deleting, setDeleting] = useState(false);
-	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [confirmAction, setConfirmAction] = useState<{
+		row: FlaggedTargetRow;
+		kind: "delete" | "restore";
+	} | null>(null);
+	const [actioning, setActioning] = useState(false);
+	const [actionError, setActionError] = useState<string | null>(null);
+	const [historyTarget, setHistoryTarget] = useState<FlaggedTargetRow | null>(
+		null,
+	);
 
 	const {
 		items: rows,
@@ -459,57 +513,55 @@ function ReportsSection() {
 		error,
 		hasMore,
 		loadMore,
-	} = useLoadMore<ReportRow>(
+	} = useLoadMore<FlaggedTargetRow>(
 		(pageNumber) =>
-			api.listOpenReports(pageNumber, PAGE_SIZE).then((result) => ({
+			api.listFlaggedTargets(pageNumber, PAGE_SIZE).then((result) => ({
 				items: result.items.map((r) => ({
-					id: r.id,
 					targetType: r.targetType,
 					targetId: r.targetId,
 					targetTitle: r.targetTitle,
-					reason: r.reason,
-					details: r.details,
+					openReportCount: r.openReportCount,
+					totalReportCount: r.totalReportCount,
+					lastReportedOn: r.lastReportedOn as unknown as string,
+					isDeleted: r.isDeleted,
 				})),
 				pageCount: result.pageCount,
 			})),
 		{ getErrorMessage: () => t("administration.reports.error") },
 	);
 
-	async function dismiss(reportId: string) {
-		setPendingId(reportId);
+	async function confirmActionSubmit() {
+		if (!confirmAction) return;
+		const { row, kind } = confirmAction;
+		setActioning(true);
+		setActionError(null);
 		try {
-			await api.dismissReport(reportId);
-			setRows((prev) => prev.filter((r) => r.id !== reportId));
-			dispatchToast("success", t("administration.reports.dismissSuccess"));
-		} catch (err) {
-			dispatchToast(
-				"error",
-				getApiErrorMessage(err, t("administration.reports.dismissError")),
-			);
-		} finally {
-			setPendingId(null);
-		}
-	}
-
-	async function confirmDeleteTarget() {
-		if (!confirmDelete) return;
-		setDeleting(true);
-		setDeleteError(null);
-		try {
-			if (confirmDelete.targetType === "VolunteerOpportunity") {
-				await api.adminDeleteVolunteerOpportunity(confirmDelete.targetId);
+			if (kind === "delete") {
+				await shadowDeleteTarget(api, row.targetType, row.targetId);
+				dispatchToast("success", t("administration.reports.deleteSuccess"));
 			} else {
-				await api.adminDeleteOrganization(confirmDelete.targetId);
+				await restoreTarget(api, row.targetType, row.targetId);
+				dispatchToast("success", t("administration.reports.restoreSuccess"));
 			}
-			setRows((prev) => prev.filter((r) => r.id !== confirmDelete.id));
-			dispatchToast("success", t("administration.reports.deleteSuccess"));
-			setConfirmDelete(null);
+			setRows((prev) =>
+				prev.map((r) =>
+					r.targetType === row.targetType && r.targetId === row.targetId
+						? { ...r, isDeleted: kind === "delete" }
+						: r,
+				),
+			);
+			setConfirmAction(null);
 		} catch (err) {
-			setDeleteError(
-				getApiErrorMessage(err, t("administration.reports.deleteError")),
+			setActionError(
+				getApiErrorMessage(
+					err,
+					kind === "delete"
+						? t("administration.reports.deleteError")
+						: t("administration.reports.restoreError"),
+				),
 			);
 		} finally {
-			setDeleting(false);
+			setActioning(false);
 		}
 	}
 
@@ -529,56 +581,77 @@ function ReportsSection() {
 			<div className="overflow-hidden rounded-2xl border border-gray-200">
 				<table className="w-full text-sm">
 					<tbody className="divide-y divide-gray-100">
-						{rows.map((row) => {
-							const isPending = pendingId === row.id;
-							const targetHref =
-								row.targetType === "VolunteerOpportunity"
-									? `/volunteer-opportunities/${row.targetId}`
-									: `/organizations/${row.targetId}`;
-
-							return (
-								<tr
-									key={row.id}
-									className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
-								>
-									<td className="min-w-0 flex-1">
+						{rows.map((row) => (
+							<tr
+								key={`${row.targetType}:${row.targetId}`}
+								className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+							>
+								<td className="min-w-0 flex-1">
+									<div className="flex flex-wrap items-center gap-2">
 										<Link
-											to={targetHref}
+											to={targetHref(row.targetType, row.targetId)}
 											className="font-medium text-brand-700 hover:underline"
 										>
 											{row.targetTitle ||
 												t("administration.reports.unknownTarget")}
 										</Link>
-										<p className="mt-1 text-xs text-gray-500">
-											{t(`administration.reports.reason.${row.reason}`)}
-										</p>
-										{row.details && (
-											<p className="mt-1 text-sm text-gray-600">
-												{row.details}
-											</p>
-										)}
-									</td>
-									<td className="flex shrink-0 items-center gap-2">
+										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+											{t(`administration.reports.targetType.${row.targetType}`)}
+										</span>
+										<span
+											className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+												row.isDeleted
+													? "bg-red-50 text-red-600"
+													: "bg-green-50 text-green-700"
+											}`}
+										>
+											{row.isDeleted
+												? t("administration.reports.statusDeleted")
+												: t("administration.reports.statusActive")}
+										</span>
+									</div>
+									<p className="mt-1 text-xs text-gray-500">
+										{t("administration.reports.openFlags", {
+											count: row.openReportCount,
+										})}
+										{" · "}
+										{t("administration.reports.totalFlags", {
+											count: row.totalReportCount,
+										})}
+										{" · "}
+										{t("administration.reports.lastFlagged", {
+											date: formatDateTime(row.lastReportedOn, i18n.language),
+										})}
+									</p>
+								</td>
+								<td className="flex shrink-0 items-center gap-2">
+									<button
+										type="button"
+										onClick={() => setHistoryTarget(row)}
+										className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+									>
+										{t("administration.reports.viewHistory")}
+									</button>
+									{row.isDeleted ? (
 										<button
 											type="button"
-											disabled={isPending}
-											onClick={() => void dismiss(row.id)}
-											className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+											onClick={() => setConfirmAction({ row, kind: "restore" })}
+											className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 										>
-											{t("administration.reports.dismiss")}
+											{t("administration.reports.restore")}
 										</button>
+									) : (
 										<button
 											type="button"
-											disabled={isPending}
-											onClick={() => setConfirmDelete(row)}
-											className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+											onClick={() => setConfirmAction({ row, kind: "delete" })}
+											className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
 										>
-											{t("administration.reports.delete")}
+											{t("administration.reports.shadowDelete")}
 										</button>
-									</td>
-								</tr>
-							);
-						})}
+									)}
+								</td>
+							</tr>
+						))}
 					</tbody>
 				</table>
 			</div>
@@ -589,23 +662,151 @@ function ReportsSection() {
 					onClick={loadMore}
 				/>
 			)}
-			{confirmDelete && (
+			{historyTarget && (
+				<ReportHistoryModal
+					target={historyTarget}
+					onClose={() => setHistoryTarget(null)}
+				/>
+			)}
+			{confirmAction && (
 				<ConfirmDialog
-					title={t("confirmDialog.adminDeleteReported.title")}
-					message={t("confirmDialog.adminDeleteReported.message", {
-						name: confirmDelete.targetTitle,
-					})}
-					confirmLabel={t("confirmDialog.adminDeleteReported.confirm")}
-					onConfirm={() => void confirmDeleteTarget()}
+					title={t(
+						confirmAction.kind === "delete"
+							? "confirmDialog.adminShadowDelete.title"
+							: "confirmDialog.adminRestore.title",
+					)}
+					message={t(
+						confirmAction.kind === "delete"
+							? "confirmDialog.adminShadowDelete.message"
+							: "confirmDialog.adminRestore.message",
+						{ name: confirmAction.row.targetTitle },
+					)}
+					confirmLabel={t(
+						confirmAction.kind === "delete"
+							? "confirmDialog.adminShadowDelete.confirm"
+							: "confirmDialog.adminRestore.confirm",
+					)}
+					onConfirm={() => void confirmActionSubmit()}
 					onClose={() => {
-						if (deleting) return;
-						setConfirmDelete(null);
-						setDeleteError(null);
+						if (actioning) return;
+						setConfirmAction(null);
+						setActionError(null);
 					}}
-					loading={deleting}
-					error={deleteError}
+					loading={actioning}
+					error={actionError}
 				/>
 			)}
 		</>
+	);
+}
+
+function ReportHistoryModal({
+	target,
+	onClose,
+}: {
+	target: FlaggedTargetRow;
+	onClose: () => void;
+}) {
+	const { t, i18n } = useTranslation();
+	const api = useApiClient();
+
+	const [entries, setEntries] = useState<ReportHistoryEntry[] | null>(null);
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [pendingId, setPendingId] = useState<string | null>(null);
+
+	useEffect(() => {
+		api
+			.getReportHistoryForTarget(target.targetType, target.targetId)
+			.then(setEntries)
+			.catch((err) =>
+				setLoadError(
+					getApiErrorMessage(err, t("administration.reports.error")),
+				),
+			);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [target.targetType, target.targetId]);
+
+	async function dismiss(reportId: string) {
+		setPendingId(reportId);
+		try {
+			await api.dismissReport(reportId);
+			setEntries(
+				(prev) =>
+					prev?.map((e) =>
+						e.id === reportId ? { ...e, status: "Dismissed" } : e,
+					) ?? null,
+			);
+			dispatchToast("success", t("administration.reports.dismissSuccess"));
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("administration.reports.dismissError")),
+			);
+		} finally {
+			setPendingId(null);
+		}
+	}
+
+	return (
+		<Modal
+			onClose={onClose}
+			labelledBy="report-history-title"
+			maxWidth="max-w-lg"
+		>
+			<h2
+				id="report-history-title"
+				className="mb-1 text-lg font-semibold text-gray-900"
+			>
+				{t("administration.reports.historyTitle")}
+			</h2>
+			<p className="mb-5 text-sm text-gray-500">{target.targetTitle}</p>
+
+			{loadError ? (
+				<ErrorBanner message={loadError} />
+			) : entries === null ? (
+				<div className="flex justify-center py-8">
+					<Spinner label={t("administration.reports.loading")} />
+				</div>
+			) : (
+				<ul className="max-h-96 space-y-3 overflow-y-auto">
+					{entries.map((entry) => (
+						<li
+							key={entry.id}
+							className="rounded-lg border border-gray-100 p-3"
+						>
+							<div className="flex items-center justify-between gap-2">
+								<span className="text-sm font-medium text-gray-900">
+									{t(`administration.reports.reason.${entry.reason}`)}
+								</span>
+								<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+									{t(`administration.reports.status.${entry.status}`)}
+								</span>
+							</div>
+							{entry.details && (
+								<p className="mt-1 text-sm text-gray-600">{entry.details}</p>
+							)}
+							<div className="mt-2 flex items-center justify-between gap-2">
+								<p className="text-xs text-gray-400">
+									{formatDateTime(
+										entry.createdOn as unknown as string,
+										i18n.language,
+									)}
+								</p>
+								{entry.status === "Open" && (
+									<button
+										type="button"
+										disabled={pendingId === entry.id}
+										onClick={() => void dismiss(entry.id)}
+										className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+									>
+										{t("administration.reports.dismiss")}
+									</button>
+								)}
+							</div>
+						</li>
+					))}
+				</ul>
+			)}
+		</Modal>
 	);
 }

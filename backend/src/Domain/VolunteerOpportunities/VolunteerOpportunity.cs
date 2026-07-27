@@ -6,7 +6,8 @@ namespace Domain.VolunteerOpportunities;
 
 public sealed class VolunteerOpportunity
 	: AggregateRoot<VolunteerOpportunityId>,
-		IAuditableEntity
+		IAuditableEntity,
+		ISoftDeletableEntity
 {
 	public const int MaxTitleLength = 200;
 
@@ -49,6 +50,10 @@ public sealed class VolunteerOpportunity
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
+
+	public bool IsDeleted { get; private set; }
+
+	public DateTimeOffset? DeletedOn { get; private set; }
 
 #pragma warning disable CS8618
 	private VolunteerOpportunity() : base(default) { }
@@ -356,6 +361,26 @@ public sealed class VolunteerOpportunity
 			return Result.Failure(Error.NotFound("VolunteerOpportunity.TimeSlotNotFound", $"Time slot with id '{timeSlotId.Value}' not found."));
 
 		_timeSlots.Remove(timeSlot);
+		return Result.Success();
+	}
+
+	public Result MarkDeleted(DateTimeOffset deletedOn)
+	{
+		if (IsDeleted)
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.AlreadyDeleted", "Opportunity is already shadow-deleted."));
+
+		IsDeleted = true;
+		DeletedOn = deletedOn;
+		return Result.Success();
+	}
+
+	public Result Restore()
+	{
+		if (!IsDeleted)
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.NotDeleted", "Opportunity is not shadow-deleted."));
+
+		IsDeleted = false;
+		DeletedOn = null;
 		return Result.Success();
 	}
 }
