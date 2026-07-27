@@ -102,8 +102,8 @@ PR titles are validated against Conventional Commits in CI by the [`PR Title`](.
 1. Keep PRs focused - one logical change per PR
 2. Update documentation if your change affects behavior
 3. Ensure CI passes before requesting review
-4. The PR description should explain *why* the change is needed
-5. Request review from `@maik-hasler`
+4. Fill in the PR template (`.github/PULL_REQUEST_TEMPLATE.md`) - it explains *why* the change is needed and links the issue
+5. Review is auto-requested via [`.github/CODEOWNERS`](.github/CODEOWNERS) (`@maik-hasler`)
 
 ## Testing
 
