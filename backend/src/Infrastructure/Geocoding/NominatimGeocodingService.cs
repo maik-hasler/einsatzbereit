@@ -22,7 +22,7 @@ internal sealed class NominatimGeocodingService(
 
 	private readonly GeocodingOptions _options = options.Value;
 
-	public async Task<GeoCoordinates?> GeocodeAsync(
+	public async Task<GeocodingResult> GeocodeAsync(
 		string street,
 		string houseNumber,
 		string zipCode,
@@ -33,27 +33,30 @@ internal sealed class NominatimGeocodingService(
 
 		try
 		{
-			return await ThrottledAsync<GeoCoordinates?>(
+			return await ThrottledAsync(
 				async () =>
 				{
 					var results = await httpClient.GetFromJsonAsync<IReadOnlyList<NominatimResult>>(requestUri, cancellationToken);
 
 					var first = results?.FirstOrDefault();
 					if (first is null)
-						return null;
+						return GeocodingResult.NotFound;
 
 					if (!double.TryParse(first.Lat, NumberStyles.Float, CultureInfo.InvariantCulture, out var latitude) ||
 						!double.TryParse(first.Lon, NumberStyles.Float, CultureInfo.InvariantCulture, out var longitude))
-						return null;
+					{
+						logger.LogWarning("Nominatim returned unparsable coordinates for {RequestUri}.", requestUri);
+						return GeocodingResult.TransientFailure;
+					}
 
-					return new GeoCoordinates(latitude, longitude);
+					return GeocodingResult.Found(new GeoCoordinates(latitude, longitude));
 				},
 				cancellationToken);
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
 			logger.LogWarning(ex, "Nominatim geocoding request failed for {RequestUri}.", requestUri);
-			return null;
+			return GeocodingResult.TransientFailure;
 		}
 	}
 

@@ -91,6 +91,7 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddHostedService<EngagementReminderJob>();
 		services.AddHostedService<OutboxProcessorJob>();
+		services.AddHostedService<GeocodingRetryJob>();
 
 
 		services.ConfigureOptions<GeocodingOptionsSetup>();
