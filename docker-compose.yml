@@ -310,6 +310,59 @@ services:
       - traefik.http.routers.grafana.tls.certresolver=myresolver
       - traefik.http.services.grafana.loadbalancer.server.port=3000
 
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.25"
+    volumes:
+      - loki_data:/loki
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # Ships container logs to Loki. Uses the Docker API (read-only socket mount)
+  # to discover containers and stream their logs, rather than tailing
+  # /var/lib/docker/containers directly - this is the standard, well-tested
+  # pattern Grafana documents for Alloy/Promtail + Docker. This is a narrower
+  # grant than cAdvisor's (list containers + read their logs, not full host
+  # filesystem + cgroup access), but a leaked docker.sock is still
+  # effectively host-level access - worth knowing, not a reason to avoid it
+  # for a single-purpose, Grafana-maintained log shipper.
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    restart: unless-stopped
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.15"
+    depends_on:
+      loki:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+    configs:
+      - source: alloy-config
+        target: /etc/alloy/config.alloy
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+
 networks:
   proxy:
     name: proxy
@@ -325,6 +378,8 @@ volumes:
   minio_data:
   prometheus_data:
   grafana_data:
+  loki_data:
+  alloy_data:
 
 configs:
   postgres-init:
@@ -356,3 +411,37 @@ configs:
           url: http://prometheus:9090
           isDefault: true
           editable: false
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki:3100
+          editable: false
+  alloy-config:
+    content: |
+      discovery.docker "containers" {
+        host = "unix:///var/run/docker.sock"
+      }
+
+      discovery.relabel "containers" {
+        targets = discovery.docker.containers.targets
+
+        rule {
+          source_labels = ["__meta_docker_container_name"]
+          regex         = "/(.*)"
+          target_label  = "container"
+        }
+      }
+
+      loki.source.docker "default" {
+        host          = "unix:///var/run/docker.sock"
+        targets       = discovery.docker.containers.targets
+        labels        = {"job" = "docker"}
+        relabel_rules = discovery.relabel.containers.rules
+        forward_to    = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki:3100/loki/api/v1/push"
+        }
+      }

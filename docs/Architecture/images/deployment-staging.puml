@@ -45,6 +45,14 @@ Deployment_Node(host, "Staging Host (VM)", "Docker Compose") {
 	Deployment_Node(ne_node, "node-exporter", "prom/node-exporter") {
 		Container(ne, "Host metrics", "node_exporter", "internal only")
 	}
+
+	Deployment_Node(lo_node, "loki", "grafana/loki") {
+		Container(lo, "Log store", "Loki", "internal only")
+	}
+
+	Deployment_Node(al_node, "alloy", "grafana/alloy") {
+		Container(al, "Log shipper", "Grafana Alloy", "internal only")
+	}
 }
 
 Rel(traefik, fe, "HTTPS")
@@ -58,6 +66,8 @@ Rel(be, mo, "S3 API")
 Rel(kc, pg, "Realm data")
 Rel(bk, pg, "pg_dump")
 Rel(gf, pr, "PromQL queries")
+Rel(gf, lo, "LogQL queries")
 Rel(pr, ne, "scrape /metrics")
+Rel(al, lo, "push logs")
 
 @enduml
