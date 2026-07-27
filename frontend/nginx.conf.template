@@ -3,6 +3,17 @@ gzip_types text/plain text/css text/javascript application/javascript applicatio
 gzip_min_length 1024;
 gzip_vary on;
 
+# Single source of truth for the Content-Security-Policy value. The $host
+# map key is a no-op (server_name is the catch-all "_"), used only as the
+# idiomatic nginx trick for defining a reusable constant outside of a
+# location block - add_header does not inherit across location blocks
+# that define their own add_header (e.g. Cache-Control below), so every
+# location still has to re-emit this header, but from one definition
+# instead of four copies that can drift out of sync.
+map $host $csp_header {
+	default "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org ${CSP_STORAGE_ORIGIN}; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+}
+
 server {
 	listen 80;
 	server_name _;
@@ -15,7 +26,7 @@ server {
 	add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 	add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 	add_header Strict-Transport-Security "max-age=31536000" always;
-	add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+	add_header Content-Security-Policy $csp_header always;
 
 	location / {
 		try_files $uri $uri/ /index.html;
@@ -29,7 +40,7 @@ server {
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000" always;
-		add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+		add_header Content-Security-Policy $csp_header always;
 	}
 
 	location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
@@ -41,7 +52,7 @@ server {
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000" always;
-		add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+		add_header Content-Security-Policy $csp_header always;
 	}
 
 	location = /index.html {
@@ -52,6 +63,6 @@ server {
 		add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 		add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=()" always;
 		add_header Strict-Transport-Security "max-age=31536000" always;
-		add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN} https://nominatim.openstreetmap.org; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+		add_header Content-Security-Policy $csp_header always;
 	}
 }

@@ -50,6 +50,9 @@ jobs:
       - name: Check i18n key parity
         run: pnpm i18n:check
 
+      - name: Check nginx CSP header
+        run: pnpm check:nginx-csp
+
       - name: Type check
         run: pnpm check
 

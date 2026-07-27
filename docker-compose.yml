@@ -212,6 +212,7 @@ services:
       VITE_KEYCLOAK_AUTHORITY_URL: https://login.maik-hasler.de/realms/einsatzbereit
       VITE_KEYCLOAK_CLIENT_ID: frontend
       VITE_API_URL: https://api.maik-hasler.de
+      STORAGE_PUBLIC_URL: https://storage.maik-hasler.de
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy

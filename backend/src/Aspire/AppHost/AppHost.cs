@@ -107,7 +107,8 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WaitFor(backend)
 	.WithEnvironment("VITE_API_URL", backend.GetEndpoint("http"))
 	.WithEnvironment("VITE_KEYCLOAK_AUTHORITY_URL",
-		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"));
+		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
+	.WithEnvironment("STORAGE_PUBLIC_URL", ReferenceExpression.Create($"{minioApiEndpoint}"));
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 
