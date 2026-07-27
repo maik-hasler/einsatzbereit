@@ -132,6 +132,11 @@ Both templates are in **German**. Fields:
 
 **Feature request:** Priorität, User Story (Als X, möchte ich Y, damit Z), Akzeptanzkriterien (checkboxes), Beschreibung, Umsetzungsideen, Zusätzliche Infos
 
+## Review & PR Template
+
+- `.github/CODEOWNERS` - `* @maik-hasler`, so review is auto-requested on every PR instead of relying on contributors to remember (see `CONTRIBUTING.md` "Pull Request Process")
+- `.github/PULL_REQUEST_TEMPLATE.md` - prompts for What/Why, the issue link, a Testing section, and the "Live verification" section required by root `AGENTS.md`'s deploy-and-verify flow
+
 ## Notes
 
 - Path filters prevent unnecessary builds (backend change → only `dotnet.yml` runs)
