@@ -5,6 +5,7 @@ using Application.Organizations.DeleteOrganization.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
@@ -28,6 +29,9 @@ public class DeleteOrganizationCommandHandlerTests
 		_dbContext
 			.GetBlockingOpportunitiesForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<VolunteerOpportunity>());
+		_dbContext
+			.GetOpenReportsForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Report>());
 		_sut = new DeleteOrganizationCommandHandler(_dbContext, _keycloakService);
 	}
 
@@ -75,6 +79,30 @@ public class DeleteOrganizationCommandHandlerTests
 		await _keycloakService.Received(1).DeleteOrganizationAsync(orgId, cancellationToken);
 		await _dbContext.Received(1).RemoveDashboardLayoutsForOrganizationAsync(
 			OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldMarkOpenReportsActioned_WhenOrganizationDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		var report = Report.Create(ReportTargetType.Organization, orgId, UserId.New(), ReportReason.Fraud, null).Value;
+		_dbContext
+			.GetOpenReportsForTargetAsync(ReportTargetType.Organization, orgId, cancellationToken)
+			.Returns([report]);
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		report.Status.Should().Be(ReportStatus.Actioned);
+		report.ResolvedByUserId.Should().Be(DefaultRequestingUserId);
 	}
 
 	[Test]

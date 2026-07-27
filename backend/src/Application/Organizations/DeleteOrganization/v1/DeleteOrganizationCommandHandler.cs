@@ -5,6 +5,7 @@ using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Reports;
 
 namespace Application.Organizations.DeleteOrganization.v1;
 
@@ -52,6 +53,15 @@ internal sealed class DeleteOrganizationCommandHandler(
 
 		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForOrganizationAsync(organizationId, cancellationToken);
+
+		// Resolves any open abuse reports against the organization itself - it
+		// can't be reported-and-open once it no longer exists (#1075).
+		var openReports = await dbContext.GetOpenReportsForTargetAsync(
+			ReportTargetType.Organization, organizationId.Value, cancellationToken);
+		foreach (var report in openReports)
+		{
+			report.MarkActioned(request.RequestingUserId, DateTimeOffset.UtcNow).ThrowIfFailure();
+		}
 
 		dbContext.Organizations.Delete(organization);
 

@@ -5,7 +5,8 @@ namespace Domain.Organizations;
 
 public sealed class Organization
 	: AggregateRoot<OrganizationId>,
-		IAuditableEntity
+		IAuditableEntity,
+		ISoftDeletableEntity
 {
 	public string Name { get; private set; }
 
@@ -26,6 +27,10 @@ public sealed class Organization
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
+
+	public bool IsDeleted { get; private set; }
+
+	public DateTimeOffset? DeletedOn { get; private set; }
 
 #pragma warning disable CS8618
 	private Organization() : base(default) { }
@@ -98,5 +103,25 @@ public sealed class Organization
 	public void Relocate(Address? address)
 	{
 		Address = address;
+	}
+
+	public Result MarkDeleted(DateTimeOffset deletedOn)
+	{
+		if (IsDeleted)
+			return Result.Failure(Error.Conflict("Organization.AlreadyDeleted", "Organization is already shadow-deleted."));
+
+		IsDeleted = true;
+		DeletedOn = deletedOn;
+		return Result.Success();
+	}
+
+	public Result Restore()
+	{
+		if (!IsDeleted)
+			return Result.Failure(Error.Conflict("Organization.NotDeleted", "Organization is not shadow-deleted."));
+
+		IsDeleted = false;
+		DeletedOn = null;
+		return Result.Success();
 	}
 }

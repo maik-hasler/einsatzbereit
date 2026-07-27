@@ -47,6 +47,13 @@ internal sealed class UserConfiguration
 		builder.Property(u => u.PreferredContact)
 			.HasConversion<string>();
 
+		builder.Property(u => u.IsDeleted)
+			.HasDefaultValue(false);
+
+		builder.Property(u => u.DeletedOn);
+
+		builder.HasQueryFilter(u => !u.IsDeleted);
+
 		builder.Ignore(u => u.Events);
 	}
 }

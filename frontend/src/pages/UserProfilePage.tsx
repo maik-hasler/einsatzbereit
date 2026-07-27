@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { createApiClient } from "../client/api-instance";
+import { useAuth } from "react-oidc-context";
 import type {
 	BadgeCatalogEntry,
 	PublicUserProfileResponse,
 } from "../client/api-client";
 import BadgeGrid from "../components/BadgeGrid";
 import ProfileFieldsView from "../components/ProfileFieldsView";
+import ReportFlagButton from "../components/ReportFlagButton";
 import Spinner from "../components/Spinner";
 import ErrorBanner from "../components/ErrorBanner";
+import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
@@ -17,6 +19,8 @@ import { getApiErrorMessage } from "../lib/apiError";
 export default function UserProfilePage() {
 	const { userId } = useParams<{ userId: string }>();
 	const { t } = useTranslation();
+	const api = useApiClient();
+	const auth = useAuth();
 
 	const [profile, setProfile] = useState<PublicUserProfileResponse | null>(
 		null,
@@ -30,7 +34,6 @@ export default function UserProfilePage() {
 
 	useEffect(() => {
 		if (!userId) return;
-		const api = createApiClient();
 		Promise.all([api.getPublicUserProfile(userId), api.getBadgeCatalog()])
 			.then(([prof, cat]) => {
 				setProfile(prof);
@@ -75,6 +78,20 @@ export default function UserProfilePage() {
 						})}
 					</p>
 				</div>
+				{auth.isAuthenticated && auth.user?.profile.sub !== userId && (
+					<ReportFlagButton
+						targetLabel={profile.displayName}
+						ariaLabel={t("userProfile.reportUser")}
+						onReport={async (reason, details) => {
+							if (!userId) return;
+							await api.reportUser(userId, {
+								reason,
+								details: details || undefined,
+							});
+						}}
+						className="relative z-20 ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+					/>
+				)}
 			</div>
 
 			{(profile.bio ||

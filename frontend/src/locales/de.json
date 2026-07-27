@@ -30,6 +30,7 @@
       "legal": "Rechtliches",
       "imprint": "Impressum",
       "privacy": "Datenschutz",
+      "contact": "Kontakt",
       "followUs": "Folge uns",
       "copyright": "© {{year}} Einsatzbereit. Alle Rechte vorbehalten."
     },
@@ -144,6 +145,8 @@
       "deleting": "…",
       "share": "Teilen",
       "shareOpportunity": "Bedarf teilen",
+      "report": "Melden",
+      "reportOpportunity": "Bedarf melden",
       "linkCopied": "Link in die Zwischenablage kopiert",
       "confirmDelete": "Bedarf wirklich löschen?",
       "deleteError": "Fehler beim Löschen",
@@ -595,6 +598,13 @@
       "section4bTitle": "Haftung für Links",
       "section4bBody": "Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich."
     },
+    "contact": {
+      "title": "Kontakt",
+      "reportSectionTitle": "Missbräuchliche Inhalte melden",
+      "reportSectionBody": "Wenn dir ein Bedarf oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Bedarfs-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
+      "otherSectionTitle": "Andere Fragen oder Anliegen",
+      "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform."
+    },
     "notifications": {
       "bellLabel": "Benachrichtigungen",
       "markAllRead": "Alle als gelesen markieren",
@@ -624,6 +634,24 @@
       "title": "Seite nicht gefunden",
       "description": "Die Seite existiert nicht oder wurde verschoben. Vielleicht hat der Hund sie gefressen…",
       "backHome": "Zur Startseite"
+    },
+    "report": {
+      "title": "Inhalt melden",
+      "reasonLabel": "Grund",
+      "detailsLabel": "Details (optional)",
+      "detailsPlaceholder": "Füge Kontext hinzu, der uns bei der Prüfung hilft…",
+      "cancel": "Abbrechen",
+      "submit": "Meldung absenden",
+      "submitting": "Wird gesendet…",
+      "submitError": "Meldung konnte nicht gesendet werden.",
+      "submitSuccess": "Meldung gesendet. Danke, dass du hilfst, die Plattform sicher zu halten.",
+      "reasons": {
+        "Spam": "Spam",
+        "IllegalContent": "Illegale Inhalte",
+        "Fraud": "Betrug",
+        "Harassment": "Belästigung",
+        "Other": "Sonstiges"
+      }
     },
     "confirmDialog": {
       "keep": "Behalten",
@@ -658,6 +686,16 @@
         "title": "Organisation löschen?",
         "message": "Möchtest du \"{{name}}\" wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
         "confirm": "Ja, löschen"
+      },
+      "adminShadowDelete": {
+        "title": "Inhalt schattenlöschen?",
+        "message": "Möchtest du \"{{name}}\" wirklich vor allen anderen verbergen? Dies kann mit \"Wiederherstellen\" rückgängig gemacht werden und löst alle offenen Meldungen dazu auf.",
+        "confirm": "Ja, schattenlöschen"
+      },
+      "adminRestore": {
+        "title": "Inhalt wiederherstellen?",
+        "message": "Möchtest du \"{{name}}\" wirklich wiederherstellen? Der Inhalt wird wieder sichtbar.",
+        "confirm": "Ja, wiederherstellen"
       }
     },
     "orgProfile": {
@@ -670,7 +708,9 @@
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden.",
-      "verified": "Verifizierte Organisation"
+      "verified": "Verifizierte Organisation",
+      "report": "Melden",
+      "reportOrganization": "Organisation melden"
     },
     "profileOverview": {
       "invitationsHeading": "Offene Einladungen"
@@ -778,7 +818,8 @@
       "notFound": "Benutzer nicht gefunden.",
       "engagementCount": "{{count}} bestatigter Einsatz",
       "engagementCount_other": "{{count}} bestatige Einsatze",
-      "viewAllAchievements": "Alle Abzeichen anzeigen"
+      "viewAllAchievements": "Alle Abzeichen anzeigen",
+      "reportUser": "Nutzer melden"
     },
     "organizations": {
       "verified": "Verifizierte Organisation",
@@ -790,6 +831,7 @@
       "title": "Administration",
       "organizationsHeading": "Organisationen",
       "usersHeading": "Benutzer",
+      "reportsHeading": "Meldungen",
       "loadingMore": "Weitere werden geladen...",
       "organizations": {
         "loading": "Organisationen werden geladen...",
@@ -824,6 +866,48 @@
         "demoteSuccess": "Admin-Rechte entzogen.",
         "demoteError": "Admin-Rechte konnten nicht entzogen werden.",
         "loadMore": "Mehr laden"
+      },
+      "reports": {
+        "loading": "Meldungen werden geladen...",
+        "error": "Meldungen konnten nicht geladen werden.",
+        "noReports": "Keine gemeldeten Inhalte. Alles erledigt.",
+        "unknownTarget": "(gelöscht)",
+        "dismiss": "Verwerfen",
+        "dismissSuccess": "Meldung verworfen.",
+        "dismissError": "Meldung konnte nicht verworfen werden.",
+        "shadowDelete": "Schattenlöschen",
+        "deleteSuccess": "Inhalt verborgen und offene Meldungen aufgelöst.",
+        "deleteError": "Inhalt konnte nicht schattengelöscht werden.",
+        "restore": "Wiederherstellen",
+        "restoreSuccess": "Inhalt wiederhergestellt.",
+        "restoreError": "Inhalt konnte nicht wiederhergestellt werden.",
+        "loadMore": "Mehr laden",
+        "viewHistory": "Verlauf anzeigen",
+        "historyTitle": "Meldungsverlauf",
+        "openFlags": "{{count}} offene Meldung",
+        "openFlags_other": "{{count}} offene Meldungen",
+        "totalFlags": "{{count}} Meldung insgesamt",
+        "totalFlags_other": "{{count}} Meldungen insgesamt",
+        "lastFlagged": "zuletzt gemeldet {{date}}",
+        "statusActive": "Aktiv",
+        "statusDeleted": "Schattengelöscht",
+        "targetType": {
+          "VolunteerOpportunity": "Bedarf",
+          "Organization": "Organisation",
+          "User": "Nutzer"
+        },
+        "status": {
+          "Open": "Offen",
+          "Dismissed": "Verworfen",
+          "Actioned": "Bearbeitet"
+        },
+        "reason": {
+          "Spam": "Spam",
+          "IllegalContent": "Illegale Inhalte",
+          "Fraud": "Betrug",
+          "Harassment": "Belästigung",
+          "Other": "Sonstiges"
+        }
       }
     },
     "organizationsPage": {
@@ -900,6 +984,9 @@
       "UserStreakId": {
         "Empty": "UserStreakId darf nicht leer sein."
       },
+      "ReportId": {
+        "Empty": "ReportId darf nicht leer sein."
+      },
       "User": {
         "InvalidId": "Ungültiger Benutzer."
       },
@@ -953,6 +1040,12 @@
         "ParticipationTypeLocked": "Die Teilnahmeart kann nicht geändert werden, solange aktive Engagements bestehen.",
         "TimeSlotCapacityBelowActive": "Die Kapazität kann nicht unter die Anzahl der aktuell aktiven Anmeldungen gesenkt werden.",
         "TimeSlotHasActiveEngagements": "Ein Zeitslot mit aktiven Anmeldungen kann nicht gelöscht werden. Sage zuerst die betroffenen Anmeldungen ab."
+      },
+      "Report": {
+        "NotFound": "Meldung nicht gefunden.",
+        "AlreadyResolved": "Diese Meldung wurde bereits bearbeitet.",
+        "AlreadyReported": "Du hast dies bereits gemeldet.",
+        "DetailsTooLong": "Details dürfen 1000 Zeichen nicht überschreiten."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Das Startdatum muss in der Zukunft liegen.",

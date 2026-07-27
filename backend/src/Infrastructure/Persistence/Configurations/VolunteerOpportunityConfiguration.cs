@@ -80,6 +80,13 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.Property(vo => vo.ModifiedOn);
 
+		builder.Property(vo => vo.IsDeleted)
+			.HasDefaultValue(false);
+
+		builder.Property(vo => vo.DeletedOn);
+
+		builder.HasQueryFilter(vo => !vo.IsDeleted);
+
 		builder.HasMany(vo => vo.TimeSlots)
 			.WithOne()
 			.HasForeignKey("volunteer_opportunity_id")

@@ -230,9 +230,19 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");
 
+					b.Property<DateTimeOffset?>("DeletedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("deleted_on");
+
 					b.Property<string>("Description")
 						.HasColumnType("text")
 						.HasColumnName("description");
+
+					b.Property<bool>("IsDeleted")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_deleted");
 
 					b.Property<bool>("IsVerified")
 						.ValueGeneratedOnAdd()
@@ -390,6 +400,68 @@ namespace Infrastructure.Persistence.Migrations
 					b.ToTable("organization_membership", (string)null);
 				});
 
+			modelBuilder.Entity("Domain.Reports.Report", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<string>("Details")
+						.HasMaxLength(1000)
+						.HasColumnType("character varying(1000)")
+						.HasColumnName("details");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<string>("Reason")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("reason");
+
+					b.Property<Guid>("ReporterId")
+						.HasColumnType("uuid")
+						.HasColumnName("reporter_id");
+
+					b.Property<Guid?>("ResolvedByUserId")
+						.HasColumnType("uuid")
+						.HasColumnName("resolved_by_user_id");
+
+					b.Property<DateTimeOffset?>("ResolvedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("resolved_on");
+
+					b.Property<string>("Status")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("status");
+
+					b.Property<Guid>("TargetId")
+						.HasColumnType("uuid")
+						.HasColumnName("target_id");
+
+					b.Property<string>("TargetType")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("target_type");
+
+					b.HasKey("Id")
+						.HasName("pk_report");
+
+					b.HasIndex("Status")
+						.HasDatabaseName("ix_report_status");
+
+					b.HasIndex("TargetType", "TargetId")
+						.HasDatabaseName("ix_report_target_type_target_id");
+
+					b.ToTable("report", (string)null);
+				});
+
 			modelBuilder.Entity("Domain.Users.User", b =>
 				{
 					b.Property<Guid>("Id")
@@ -403,6 +475,16 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<string>("Bio")
 						.HasColumnType("text")
 						.HasColumnName("bio");
+
+					b.Property<DateTimeOffset?>("DeletedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("deleted_on");
+
+					b.Property<bool>("IsDeleted")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_deleted");
 
 					b.Property<string>("Languages")
 						.IsRequired()
@@ -544,11 +626,21 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("created_on");
 
+					b.Property<DateTimeOffset?>("DeletedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("deleted_on");
+
 					b.Property<string>("Description")
 						.IsRequired()
 						.HasMaxLength(5000)
 						.HasColumnType("character varying(5000)")
 						.HasColumnName("description");
+
+					b.Property<bool>("IsDeleted")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(false)
+						.HasColumnName("is_deleted");
 
 					b.Property<bool>("IsRemote")
 						.HasColumnType("boolean")

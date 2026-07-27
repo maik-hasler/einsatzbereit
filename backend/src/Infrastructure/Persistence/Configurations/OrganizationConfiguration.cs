@@ -52,6 +52,13 @@ internal sealed class OrganizationConfiguration
 
 		builder.Property(org => org.ModifiedOn);
 
+		builder.Property(org => org.IsDeleted)
+			.HasDefaultValue(false);
+
+		builder.Property(org => org.DeletedOn);
+
+		builder.HasQueryFilter(org => !org.IsDeleted);
+
 		builder.Ignore(org => org.Events);
 	}
 }

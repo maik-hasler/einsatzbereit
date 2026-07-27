@@ -30,6 +30,7 @@
       "legal": "Legal",
       "imprint": "Imprint",
       "privacy": "Privacy Policy",
+      "contact": "Contact",
       "followUs": "Follow us",
       "copyright": "© {{year}} Einsatzbereit. All rights reserved."
     },
@@ -144,6 +145,8 @@
       "deleting": "…",
       "share": "Share",
       "shareOpportunity": "Share opportunity",
+      "report": "Report",
+      "reportOpportunity": "Report opportunity",
       "linkCopied": "Link copied to clipboard",
       "confirmDelete": "Really delete this opportunity?",
       "deleteError": "Error deleting",
@@ -595,6 +598,13 @@
       "section4bTitle": "Liability for links",
       "section4bBody": "Our offer contains links to external third-party websites over whose content we have no influence. The respective provider is always responsible for the content of the linked pages."
     },
+    "contact": {
+      "title": "Contact",
+      "reportSectionTitle": "Reporting abusive content",
+      "reportSectionBody": "If you come across an opportunity or organization that looks like spam, fraud, or otherwise illegal content, use the \"Report\" button on its <opportunitiesLink>opportunity</opportunitiesLink> or <organizationsLink>organization</organizationsLink> page. Our administrators review every report and can remove the content.",
+      "otherSectionTitle": "Other questions or concerns",
+      "otherSectionBody": "For anything else, please reach out to the organization you are volunteering with directly, or contact the platform operator listed in the imprint."
+    },
     "notifications": {
       "bellLabel": "Notifications",
       "markAllRead": "Mark all as read",
@@ -624,6 +634,24 @@
       "title": "Page not found",
       "description": "This page doesn't exist or has been moved. Maybe the dog ate it…",
       "backHome": "Back to home"
+    },
+    "report": {
+      "title": "Report content",
+      "reasonLabel": "Reason",
+      "detailsLabel": "Details (optional)",
+      "detailsPlaceholder": "Add any context that would help us review this…",
+      "cancel": "Cancel",
+      "submit": "Submit report",
+      "submitting": "Submitting…",
+      "submitError": "Failed to submit report.",
+      "submitSuccess": "Report submitted. Thank you for helping keep the platform safe.",
+      "reasons": {
+        "Spam": "Spam",
+        "IllegalContent": "Illegal content",
+        "Fraud": "Fraud or scam",
+        "Harassment": "Harassment",
+        "Other": "Other"
+      }
     },
     "confirmDialog": {
       "keep": "Keep",
@@ -658,6 +686,16 @@
         "title": "Delete organization?",
         "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone.",
         "confirm": "Yes, delete"
+      },
+      "adminShadowDelete": {
+        "title": "Shadow-delete this content?",
+        "message": "Are you sure you want to hide \"{{name}}\" from everyone? This can be undone with Restore, and resolves all open reports against it.",
+        "confirm": "Yes, shadow-delete"
+      },
+      "adminRestore": {
+        "title": "Restore this content?",
+        "message": "Are you sure you want to restore \"{{name}}\"? It will become visible again.",
+        "confirm": "Yes, restore"
       }
     },
     "orgProfile": {
@@ -670,7 +708,9 @@
       "address": "Address:",
       "currentNeeds": "Current Opportunities",
       "noOpportunities": "No current opportunities available.",
-      "verified": "Verified Organization"
+      "verified": "Verified Organization",
+      "report": "Report",
+      "reportOrganization": "Report organization"
     },
     "profileOverview": {
       "invitationsHeading": "Open Invitations"
@@ -778,7 +818,8 @@
       "notFound": "User not found.",
       "engagementCount": "{{count}} confirmed engagement",
       "engagementCount_other": "{{count}} confirmed engagements",
-      "viewAllAchievements": "View all achievements"
+      "viewAllAchievements": "View all achievements",
+      "reportUser": "Report user"
     },
     "organizations": {
       "verified": "Verified organization",
@@ -790,6 +831,7 @@
       "title": "Administration",
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
+      "reportsHeading": "Reports",
       "loadingMore": "Loading more...",
       "organizations": {
         "loading": "Loading organizations...",
@@ -824,6 +866,48 @@
         "demoteSuccess": "Admin access removed.",
         "demoteError": "Failed to remove admin access.",
         "loadMore": "Load more"
+      },
+      "reports": {
+        "loading": "Loading reports...",
+        "error": "Failed to load reports.",
+        "noReports": "No flagged content. All caught up.",
+        "unknownTarget": "(deleted)",
+        "dismiss": "Dismiss",
+        "dismissSuccess": "Report dismissed.",
+        "dismissError": "Failed to dismiss report.",
+        "shadowDelete": "Shadow delete",
+        "deleteSuccess": "Content hidden and open reports resolved.",
+        "deleteError": "Failed to shadow-delete content.",
+        "restore": "Restore",
+        "restoreSuccess": "Content restored.",
+        "restoreError": "Failed to restore content.",
+        "loadMore": "Load more",
+        "viewHistory": "View history",
+        "historyTitle": "Report history",
+        "openFlags": "{{count}} open flag",
+        "openFlags_other": "{{count}} open flags",
+        "totalFlags": "{{count}} flag total",
+        "totalFlags_other": "{{count}} flags total",
+        "lastFlagged": "last flagged {{date}}",
+        "statusActive": "Active",
+        "statusDeleted": "Shadow-deleted",
+        "targetType": {
+          "VolunteerOpportunity": "Opportunity",
+          "Organization": "Organization",
+          "User": "User"
+        },
+        "status": {
+          "Open": "Open",
+          "Dismissed": "Dismissed",
+          "Actioned": "Actioned"
+        },
+        "reason": {
+          "Spam": "Spam",
+          "IllegalContent": "Illegal content",
+          "Fraud": "Fraud or scam",
+          "Harassment": "Harassment",
+          "Other": "Other"
+        }
       }
     },
     "organizationsPage": {
@@ -900,6 +984,9 @@
       "UserStreakId": {
         "Empty": "UserStreakId must not be empty."
       },
+      "ReportId": {
+        "Empty": "ReportId must not be empty."
+      },
       "User": {
         "InvalidId": "Invalid user."
       },
@@ -953,6 +1040,12 @@
         "ParticipationTypeLocked": "Participation type cannot be changed while active engagements exist.",
         "TimeSlotCapacityBelowActive": "Cannot reduce capacity below the current number of active sign-ups.",
         "TimeSlotHasActiveEngagements": "Cannot delete a time slot that has active sign-ups. Cancel the affected engagements first."
+      },
+      "Report": {
+        "NotFound": "Report not found.",
+        "AlreadyResolved": "This report has already been resolved.",
+        "AlreadyReported": "You have already reported this.",
+        "DetailsTooLong": "Details must not exceed 1000 characters."
       },
       "TimeSlot": {
         "StartMustBeFuture": "Start date must be in the future.",

@@ -8,6 +8,7 @@ using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
 using Domain.Primitives;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
@@ -37,6 +38,9 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		_dbContext
 			.GetActiveEngagementsForOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Engagement>());
+		_dbContext
+			.GetOpenReportsForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Report>());
 		_engagementReadRepository
 			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns([]);
@@ -175,6 +179,31 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldMarkOpenReportsActioned_WhenOpportunityDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var report = Report.Create(ReportTargetType.VolunteerOpportunity, opportunityId, UserId.New(), ReportReason.Spam, null).Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_dbContext
+			.GetOpenReportsForTargetAsync(ReportTargetType.VolunteerOpportunity, opportunityId, cancellationToken)
+			.Returns([report]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		report.Status.Should().Be(ReportStatus.Actioned);
+		report.ResolvedByUserId.Should().Be(DefaultRequestingUserId);
 	}
 
 	[Test]

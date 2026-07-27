@@ -2,6 +2,7 @@ using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
+using Domain.Reports;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
@@ -27,6 +28,8 @@ public interface IApplicationDbContext
 	IAggregateRepository<OrganizationMembership, OrganizationMembershipId> OrganizationMemberships { get; }
 
 	IAggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId> OrganizationDashboardLayouts { get; }
+
+	IAggregateRepository<Report, ReportId> Reports { get; }
 
 	Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,
@@ -134,6 +137,38 @@ public interface IApplicationDbContext
 
 	Task<List<VolunteerOpportunity>> GetBlockingOpportunitiesForOrganizationAsync(
 		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<VolunteerOpportunity>> GetOpportunitiesForOrganizationAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task<bool> HasOpenReportAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		UserId reporterId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<Report>> GetOpenReportsForTargetAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<Report>> GetReportHistoryForTargetAsync(
+		ReportTargetType targetType,
+		Guid targetId,
+		CancellationToken cancellationToken = default);
+
+	Task<Organization?> FindOrganizationIncludingDeletedAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
+	Task<VolunteerOpportunity?> FindVolunteerOpportunityIncludingDeletedAsync(
+		VolunteerOpportunityId opportunityId,
+		CancellationToken cancellationToken = default);
+
+	Task<User?> FindUserIncludingDeletedAsync(
+		UserId userId,
 		CancellationToken cancellationToken = default);
 
 	Task<Engagement?> GetTerminalEngagementAsync(

@@ -14,6 +14,9 @@ import {
 	formatPostedAgo,
 } from "../lib/format";
 import SignUpModal from "../components/SignUpModal";
+import ReportContentModal, {
+	type ReportReason,
+} from "../components/ReportContentModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Button from "../components/Button";
 import SingleMarkerMap from "../components/SingleMarkerMap";
@@ -48,6 +51,7 @@ export default function VolunteerOpportunityDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [showSignUp, setShowSignUp] = useState(false);
+	const [showReport, setShowReport] = useState(false);
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
@@ -127,6 +131,15 @@ export default function VolunteerOpportunityDetailPage() {
 		} catch {
 			// User dismissed the share sheet or clipboard access was denied - ignore.
 		}
+	}
+
+	async function handleReportSubmit(reason: ReportReason, details: string) {
+		if (!opportunity) return;
+		await api.reportVolunteerOpportunity(opportunity.id, {
+			reason,
+			details: details || undefined,
+		});
+		dispatchToast("success", t("report.submitSuccess"));
 	}
 
 	async function handleWithdrawConfirm() {
@@ -235,6 +248,32 @@ export default function VolunteerOpportunityDetailPage() {
 						</svg>
 						<span className="hidden sm:inline">{t("opportunities.share")}</span>
 					</button>
+					{isAuthenticated && !isOwner && (
+						<button
+							onClick={() => setShowReport(true)}
+							data-testid="report-opportunity"
+							aria-label={t("opportunities.reportOpportunity")}
+							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth="2"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M3 3v18M3 4.5h13.5l-2.25 3.75 2.25 3.75H3"
+								/>
+							</svg>
+							<span className="hidden sm:inline">
+								{t("opportunities.report")}
+							</span>
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -699,6 +738,14 @@ export default function VolunteerOpportunityDetailPage() {
 					}}
 					loading={withdrawing}
 					error={withdrawError}
+				/>
+			)}
+
+			{showReport && (
+				<ReportContentModal
+					targetLabel={opportunity.title}
+					onSubmit={handleReportSubmit}
+					onClose={() => setShowReport(false)}
 				/>
 			)}
 		</div>
