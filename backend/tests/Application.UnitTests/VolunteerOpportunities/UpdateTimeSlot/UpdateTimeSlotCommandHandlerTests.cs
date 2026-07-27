@@ -188,4 +188,34 @@ public class UpdateTimeSlotCommandHandlerTests
 			Arg.Is<Notification>(n => n!.RecipientId.Value == otherSlotVolunteer),
 			cancellationToken);
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: caller belongs to a different organization than the opportunity's.
+		var opportunity = CreateWaitlistOpportunity();
+		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, timeSlot.Id.Value, BaseStart.AddDays(1), BaseEnd.AddDays(1), 20, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
+		timeSlot.StartDateTime.Should().Be(BaseStart);
+		timeSlot.EndDateTime.Should().Be(BaseEnd);
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
 }

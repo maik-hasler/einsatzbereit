@@ -55,6 +55,18 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
+	Task RemoveMembershipsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task RemoveDashboardLayoutsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task DeleteInvitationsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
 	Task<List<Organization>> GetOrganizerOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
@@ -77,6 +89,10 @@ public interface IApplicationDbContext
 		string badgeName,
 		CancellationToken cancellationToken = default);
 
+	Task DeleteAchievementsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
 	Task<bool> HasEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,
@@ -88,6 +104,9 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	Task DeleteUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
 
 	ValueTask<List<Notification>> GetUnreadNotificationsForRecipientAsync(
 		UserId recipientId,

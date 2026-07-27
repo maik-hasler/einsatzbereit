@@ -352,6 +352,8 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM_ADDRESS: ${{ secrets.SMTP_FROM_ADDRESS }}
           SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
           umask 077
           # Wrap each value in double quotes and escape \ and " so secrets that
@@ -377,6 +379,8 @@ jobs:
             printf 'SMTP_PASSWORD="%s"\n' "$(escape "$SMTP_PASSWORD")"
             printf 'SMTP_FROM_ADDRESS="%s"\n' "$(escape "$SMTP_FROM_ADDRESS")"
             printf 'SMTP_FROM_NAME="%s"\n' "$(escape "$SMTP_FROM_NAME")"
+            printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
+            printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
           } > .env
 
       - name: Copy compose file and .env
@@ -476,7 +480,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set +e
             cd /opt/einsatzbereit
-            for svc in backend keycloak postgres; do
+            for svc in backend keycloak postgres prometheus node-exporter grafana loki alloy; do
               echo "::group::docker inspect ${svc} (state)"
               docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
               echo "::endgroup::"

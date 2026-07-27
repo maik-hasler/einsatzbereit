@@ -5,6 +5,7 @@ using Application.Organizations.GetOrganizationDetails.v1;
 using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
+using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
 
@@ -111,5 +112,27 @@ public class GetOrganizationDetailsQueryHandlerTests
 
 		// Assert
 		result!.Address.Should().BeNull();
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: caller is not an organizer of the target organization.
+		var orgId = DefaultOrgId;
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
+
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
+		_dbContext
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(new GetOrganizationDetailsQuery(orgId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
+		await _keycloakService.DidNotReceive().GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 	}
 }
