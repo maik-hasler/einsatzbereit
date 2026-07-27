@@ -82,6 +82,7 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<IBadgeCatalogService, BadgeCatalogService>();
 
 		services.ConfigureOptions<SmtpOptionsSetup>();
+		services.AddSingleton<EmailMetrics>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddHostedService<EngagementReminderJob>();
 		services.AddHostedService<OutboxProcessorJob>();
