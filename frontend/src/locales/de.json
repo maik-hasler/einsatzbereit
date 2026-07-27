@@ -865,6 +865,130 @@
       "eventFillState": "{{booked}} / {{max}} gebucht",
       "eventManageApplications": "Bewerbungen verwalten",
       "createOpportunity": "Einsatz erstellen"
+    },
+    "apiError": {
+      "AchievementId": {
+        "Empty": "AchievementId darf nicht leer sein."
+      },
+      "NotificationId": {
+        "Empty": "NotificationId darf nicht leer sein."
+      },
+      "EngagementId": {
+        "Empty": "EngagementId darf nicht leer sein."
+      },
+      "VolunteerOpportunityId": {
+        "Empty": "VolunteerOpportunityId darf nicht leer sein."
+      },
+      "OrganizationId": {
+        "Empty": "OrganizationId darf nicht leer sein."
+      },
+      "OrganizationInvitationId": {
+        "Empty": "OrganizationInvitationId darf nicht leer sein."
+      },
+      "OrganizationMembershipId": {
+        "Empty": "OrganizationMembershipId darf nicht leer sein."
+      },
+      "OrganizationDashboardLayoutId": {
+        "Empty": "OrganizationDashboardLayoutId darf nicht leer sein."
+      },
+      "TimeSlotId": {
+        "Empty": "TimeSlotId darf nicht leer sein."
+      },
+      "UserId": {
+        "Empty": "UserId darf nicht leer sein."
+      },
+      "UserStreakId": {
+        "Empty": "UserStreakId darf nicht leer sein."
+      },
+      "User": {
+        "InvalidId": "Ungültiger Benutzer."
+      },
+      "Users": {
+        "CannotModifyServiceAccount": "Das interne Service-Konto des Systems kann nicht geändert werden.",
+        "CannotDisableSelf": "Du kannst dein eigenes Konto nicht sperren.",
+        "CannotDemoteSelf": "Du kannst dir nicht selbst die Admin-Rechte entziehen."
+      },
+      "Address": {
+        "StreetRequired": "Straße darf nicht leer sein.",
+        "HouseNumberRequired": "Hausnummer darf nicht leer sein.",
+        "ZipCodeInvalid": "Die Postleitzahl muss genau 5 Zeichen lang sein.",
+        "CityRequired": "Stadt darf nicht leer sein.",
+        "LatitudeOutOfRange": "Der Breitengrad muss zwischen -90 und 90 liegen.",
+        "LongitudeOutOfRange": "Der Längengrad muss zwischen -180 und 180 liegen."
+      },
+      "Organization": {
+        "NameRequired": "Name darf nicht leer sein.",
+        "NameTooLong": "Der Name der Organisation darf 100 Zeichen nicht überschreiten.",
+        "AlreadyVerified": "Die Organisation ist bereits verifiziert.",
+        "NotVerified": "Die Organisation ist nicht verifiziert.",
+        "NotFound": "Organisation nicht gefunden.",
+        "MultipleMembers": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
+        "HasBlockingOpportunities": "Diese Organisation hat noch Bedarfe mit zukünftigen Zeitslots oder aktiven Engagements. Bitte löse das zuerst auf.",
+        "SoleOrganizer": "Du bist der einzige Organisator dieser Organisation. Lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
+        "NotOrganizer": "Du hast keine Berechtigung, diese Ressource zu ändern."
+      },
+      "OrganizationInvitation": {
+        "NotPending": "Die Einladung ist nicht mehr ausstehend.",
+        "NotFound": "Einladung nicht gefunden.",
+        "NotRecipient": "Du bist nicht der Empfänger dieser Einladung.",
+        "WrongOrganization": "Diese Einladung gehört nicht zu dieser Organisation.",
+        "NotDeclined": "Nur abgelehnte Einladungen können verworfen werden.",
+        "AlreadyMember": "Der Benutzer ist bereits Mitglied dieser Organisation.",
+        "AlreadyInvited": "Für diesen Benutzer besteht bereits eine ausstehende Einladung."
+      },
+      "VolunteerOpportunity": {
+        "InvalidCheckInPin": "Die Check-in-PIN muss 4 bis 6 Ziffern haben.",
+        "TitleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
+        "DescriptionTooLong": "Die Beschreibung darf 5000 Zeichen nicht überschreiten.",
+        "WaitlistMustStartAsDraft": "Ein Bedarf mit Warteliste muss zunächst als Entwurf angelegt werden und kann erst nach Hinzufügen mindestens eines Zeitslots veröffentlicht werden.",
+        "TitleRequired": "Titel darf nicht leer sein.",
+        "DescriptionRequired": "Beschreibung darf nicht leer sein.",
+        "AddressRequired": "Für Vor-Ort-Bedarfe ist eine Adresse erforderlich.",
+        "AlreadyPublished": "Der Bedarf ist bereits veröffentlicht.",
+        "WaitlistRequiresTimeSlot": "Ein Bedarf mit Warteliste benötigt mindestens einen Zeitslot, bevor er veröffentlicht werden kann.",
+        "BannerImageUrlRequired": "Die URL des Bannerbilds darf nicht leer sein.",
+        "TimeSlotNotAllowed": "Zeitslots können nur zu Bedarfen mit Teilnahmeart „Warteliste“ hinzugefügt werden.",
+        "TimeSlotNotFound": "Zeitslot nicht gefunden.",
+        "NotFound": "Bedarf nicht gefunden.",
+        "ParticipationTypeLocked": "Die Teilnahmeart kann nicht geändert werden, solange aktive Engagements bestehen.",
+        "TimeSlotCapacityBelowActive": "Die Kapazität kann nicht unter die Anzahl der aktuell aktiven Anmeldungen gesenkt werden.",
+        "TimeSlotHasActiveEngagements": "Ein Zeitslot mit aktiven Anmeldungen kann nicht gelöscht werden. Sage zuerst die betroffenen Anmeldungen ab."
+      },
+      "TimeSlot": {
+        "StartMustBeFuture": "Das Startdatum muss in der Zukunft liegen.",
+        "EndMustBeAfterStart": "Das Enddatum muss nach dem Startdatum liegen.",
+        "MaxParticipantsMustBePositive": "Die maximale Teilnehmerzahl muss größer als null sein."
+      },
+      "Engagement": {
+        "MessageRequired": "Bei einer Interessensbekundung per Einzelkontakt ist eine Nachricht erforderlich.",
+        "NotPending": "Nur ausstehende Engagements können bestätigt werden.",
+        "AlreadyTerminated": "Dieses Engagement wurde bereits beendet.",
+        "CheckedIn": "Ein bereits eingechecktes Engagement kann nicht mehr zurückgezogen werden.",
+        "NotTerminated": "Nur zurückgezogene oder abgesagte Engagements können reaktiviert werden.",
+        "NotConfirmed": "Nur bestätigte Engagements können eingecheckt werden.",
+        "NotCheckedIn": "Feedback kann nur für eingecheckte Engagements abgegeben werden.",
+        "FeedbackAlreadySubmitted": "Für dieses Engagement wurde bereits Feedback abgegeben.",
+        "RatingOutOfRange": "Die Bewertung muss zwischen 1 und 5 liegen.",
+        "CommentTooLong": "Der Kommentar darf 500 Zeichen nicht überschreiten.",
+        "NotFound": "Engagement nicht gefunden.",
+        "NotOwner": "Du kannst nur deine eigenen Engagements verwalten.",
+        "AlreadySignedUp": "Du bist für diesen Bedarf bereits angemeldet.",
+        "TimeSlotNotInOpportunity": "Der ausgewählte Zeitslot gehört nicht zu diesem Bedarf.",
+        "TimeSlotFull": "Dieser Zeitslot hat seine Kapazität erreicht und kann keine weiteren Anmeldungen annehmen.",
+        "InvalidPin": "Falsche PIN. Bitte erneut versuchen.",
+        "CheckInLocked": "Zu viele fehlgeschlagene PIN-Versuche. Bitte versuche es später erneut."
+      },
+      "DashboardLayout": {
+        "InvalidWidgetKey": "Unbekanntes Widget.",
+        "DuplicateWidget": "Ein Widget ist mehrfach platziert.",
+        "InvalidPlacement": "Ein Widget hat eine ungültige Position im Raster.",
+        "OverlappingPlacement": "Zwei Widgets überlappen sich im Raster."
+      },
+      "FileUpload": {
+        "Empty": "Das Bild darf nicht leer sein.",
+        "TooLarge": "Das Bild darf 2 MB nicht überschreiten.",
+        "InvalidContentType": "Das Bild muss im Format JPEG, PNG oder WebP vorliegen."
+      }
     }
   }
 }
