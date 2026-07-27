@@ -452,6 +452,7 @@ jobs:
           fi
 
       - name: Pull and restart
+        id: pull_and_restart
         run: |
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set -euo pipefail
@@ -511,7 +512,10 @@ jobs:
           exit 1
 
       - name: Rollback on unhealthy deploy
-        if: failure()
+        # Scoped to the actual deploy step so an earlier failure (env render,
+        # file copy, Keycloak mapper setup) - where no new images were ever
+        # deployed - doesn't re-tag staging-previous over a healthy stack.
+        if: failure() && steps.pull_and_restart.outcome == 'success'
         run: |
           echo "::warning::Health gate failed - rolling back to staging-previous images."
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
