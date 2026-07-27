@@ -323,8 +323,15 @@ services:
           cpus: "0.25"
     volumes:
       - loki_data:/loki
+    # Exec-form CMD (not CMD-SHELL) so this doesn't also depend on a shell
+    # existing in the image - only on wget, which is what actually mattered
+    # here (see the deploy failure this fixed: alloy's hard `service_healthy`
+    # dependency on this healthcheck took the whole app deploy down with it
+    # when the check itself turned out to be wrong, not Loki). Nothing gates
+    # on this anymore (see alloy's depends_on below), so a wrong guess here
+    # is now cosmetic (shows "unhealthy" in `docker ps`), not deploy-blocking.
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -349,9 +356,13 @@ services:
         limits:
           memory: 128m
           cpus: "0.15"
+    # Plain depends_on (wait for container start, not health): Alloy's Loki
+    # writer retries and buffers on its own, so it doesn't need Loki to be
+    # fully ready first. Deliberately not `condition: service_healthy` -
+    # observability's own startup issues should never be able to block or
+    # roll back the application deploy the way this one did.
     depends_on:
-      loki:
-        condition: service_healthy
+      - loki
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - alloy_data:/var/lib/alloy/data
