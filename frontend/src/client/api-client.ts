@@ -5561,6 +5561,8 @@ export interface VolunteerOpportunitySummary {
     category: string | undefined;
     tags: string[];
     createdOn: Date;
+    nextTimeSlotStart: Date | undefined;
+    nextTimeSlotEnd: Date | undefined;
     totalMaxParticipants: number;
     currentParticipantCount: number;
     status: string;

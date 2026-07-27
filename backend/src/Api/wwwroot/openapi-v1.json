@@ -8140,6 +8140,8 @@
           "category",
           "tags",
           "createdOn",
+          "nextTimeSlotStart",
+          "nextTimeSlotEnd",
           "totalMaxParticipants",
           "currentParticipantCount",
           "status",
@@ -8235,6 +8237,20 @@
           },
           "createdOn": {
             "type": "string",
+            "format": "date-time"
+          },
+          "nextTimeSlotStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "nextTimeSlotEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "totalMaxParticipants": {

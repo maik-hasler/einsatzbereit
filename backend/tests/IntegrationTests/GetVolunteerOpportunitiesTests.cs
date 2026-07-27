@@ -147,6 +147,124 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnNextTimeSlotStartAndEnd_WhenTimeSlotExists(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Opportunity with a slot",
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		var start = DateTimeOffset.UtcNow.AddDays(7);
+		var end = start.AddHours(2);
+		await authenticatedClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = start,
+				EndDateTime = end,
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await authenticatedClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
+
+		var item = result.Items.Single();
+		item.NextTimeSlotStart.Should().BeCloseTo(start, TimeSpan.FromSeconds(1));
+		item.NextTimeSlotEnd.Should().BeCloseTo(end, TimeSpan.FromSeconds(1));
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnEarliestUpcomingTimeSlot_WhenMultipleSlotsExist(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Opportunity with recurring slots",
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "Recurring",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		var earliestStart = DateTimeOffset.UtcNow.AddDays(3);
+		await authenticatedClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = earliestStart,
+				EndDateTime = earliestStart.AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "WEEKLY",
+				RecurrenceCount = 3,
+			},
+			cancellationToken);
+
+		await authenticatedClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
+
+		var item = result.Items.Single();
+		item.NextTimeSlotStart.Should().BeCloseTo(earliestStart, TimeSpan.FromSeconds(1));
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnNullNextTimeSlot_WhenNoTimeSlotsExist(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Opportunity without slots",
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+		}, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
+
+		var item = result.Items.Single();
+		item.NextTimeSlotStart.Should().BeNull();
+		item.NextTimeSlotEnd.Should().BeNull();
+	}
+
+	[Test]
 	public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{

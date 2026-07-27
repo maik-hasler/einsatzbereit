@@ -103,6 +103,16 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
+				NextTimeSlotStart = x.vo.TimeSlots
+					.Where(ts => ts.EndDateTime >= now)
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => (DateTimeOffset?)ts.StartDateTime)
+					.FirstOrDefault(),
+				NextTimeSlotEnd = x.vo.TimeSlots
+					.Where(ts => ts.EndDateTime >= now)
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => (DateTimeOffset?)ts.EndDateTime)
+					.FirstOrDefault(),
 				x.vo.Status,
 				x.vo.BannerImageUrl,
 			});
@@ -132,7 +142,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var summaries = page
 				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+					x.Status, x.BannerImageUrl,
 					maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0)))
 				.ToList();
 
@@ -154,7 +165,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var result = rows
 			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+				x.Status, x.BannerImageUrl,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
 
@@ -228,6 +240,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 		Category? category,
 		IReadOnlyList<string> tags,
 		DateTimeOffset createdOn,
+		DateTimeOffset? nextTimeSlotStart,
+		DateTimeOffset? nextTimeSlotEnd,
 		OpportunityStatus status,
 		string? bannerImageUrl,
 		int totalMaxParticipants,
@@ -251,6 +265,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 			category?.ToString(),
 			tags,
 			createdOn,
+			nextTimeSlotStart,
+			nextTimeSlotEnd,
 			totalMaxParticipants,
 			currentParticipantCount,
 			status.ToString(),
@@ -379,6 +395,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		CancellationToken cancellationToken = default)
 	{
 		var organizationId_ = OrganizationId.Create(organizationId).GetValueOrThrow();
+		var now = DateTimeOffset.UtcNow;
 
 		var orgQuery = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == organizationId_);
@@ -415,6 +432,16 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
+				NextTimeSlotStart = x.vo.TimeSlots
+					.Where(ts => ts.EndDateTime >= now)
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => (DateTimeOffset?)ts.StartDateTime)
+					.FirstOrDefault(),
+				NextTimeSlotEnd = x.vo.TimeSlots
+					.Where(ts => ts.EndDateTime >= now)
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => (DateTimeOffset?)ts.EndDateTime)
+					.FirstOrDefault(),
 				x.vo.Status,
 				x.vo.BannerImageUrl,
 			})
@@ -429,7 +456,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 		return rows
 			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.Status, x.BannerImageUrl,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+				x.Status, x.BannerImageUrl,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
 	}
