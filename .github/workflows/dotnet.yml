@@ -51,9 +51,15 @@ jobs:
         working-directory: backend
         run: dotnet format --verify-no-changes --no-restore
 
-  fast-tests:
+  # Single restore+build for the whole solution, shared by fast-tests/
+  # integration-tests/visual-tests below via upload-artifact/download-artifact
+  # instead of each of those three jobs redoing it. format-check is left out
+  # deliberately - it only needs a restore (no build output) and is already
+  # the fastest job in this workflow; gating it on this one would slow down
+  # its near-instant feedback for no benefit.
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -69,15 +75,79 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      # Building the whole solution here compiles tests/VisualTests.csproj,
+      # which downloads Chrome for Testing + Chrome Headless Shell (~290 MiB
+      # combined) from cdn.playwright.dev via its InstallPlaywrightBrowsers
+      # MSBuild target. Caching this means that download only happens when
+      # the pinned TUnit.Playwright version changes, not on every run.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+
+      - name: Restore backend
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build backend
+        working-directory: backend
+        run: dotnet build --no-restore
+
+      # visual-tests actually launches a browser on its own runner (a
+      # different machine from this job), so it needs its own Playwright
+      # browser cache restore below - this artifact only carries the .NET
+      # build output (bin/obj), not ~/.cache/ms-playwright.
+      - name: Upload build output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-build
+          path: |
+            backend/**/bin/**
+            backend/**/obj/**
+          retention-days: 1
+          if-no-files-found: error
+
+  fast-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: backend/global.json
+
+      # Restoring (not re-running `dotnet restore`) the same NuGet cache key
+      # the build job just populated - --no-restore/--no-build still need the
+      # actual package contents on disk (analyzers/build targets they
+      # contribute get imported during MSBuild evaluation), not just the
+      # bin/obj output below.
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: backend
+
       - name: Test - Application.UnitTests
         working-directory: backend
-        run: dotnet run --project tests/Application.UnitTests
+        run: dotnet run --project tests/Application.UnitTests --no-restore --no-build
 
       - name: Test - ArchitectureTests
         working-directory: backend
-        run: dotnet run --project tests/ArchitectureTests
+        run: dotnet run --project tests/ArchitectureTests --no-restore --no-build
 
   integration-tests:
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -95,6 +165,12 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: backend
+
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           package_json_file: frontend/package.json
@@ -109,14 +185,6 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Restore backend
-        working-directory: backend
-        run: dotnet restore tests/IntegrationTests
-
-      - name: Build backend
-        working-directory: backend
-        run: dotnet build tests/IntegrationTests --no-restore
-
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.0
@@ -125,9 +193,10 @@ jobs:
 
       - name: Test - IntegrationTests (Aspire + Docker)
         working-directory: backend
-        run: dotnet run --project tests/IntegrationTests --no-build
+        run: dotnet run --project tests/IntegrationTests --no-restore --no-build
 
   visual-tests:
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -145,6 +214,25 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: backend
+
+      # Restores the same Playwright browser cache the build job just
+      # populated - the build job's download happened on that job's own
+      # runner, a different machine from this one, so the browser binary
+      # itself (~/.cache/ms-playwright, not part of the artifact above) has
+      # to be fetched again here. `needs: build` guarantees this restore
+      # lands after that job's cache save, so this is a guaranteed hit rather
+      # than a fresh download.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           package_json_file: frontend/package.json
@@ -159,27 +247,6 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      # tests/VisualTests.csproj downloads Chrome for Testing + Chrome Headless
-      # Shell from cdn.playwright.dev (~290 MiB combined) via its
-      # InstallPlaywrightBrowsers MSBuild target (AfterTargets="Build"). Without
-      # this cache that download repeats on every single run - the actual
-      # source of "downloading images over and over" - since GitHub-hosted
-      # runners are ephemeral. `playwright install` itself is idempotent and
-      # skips the download when the target revision is already present here.
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
-
-      - name: Restore backend
-        working-directory: backend
-        run: dotnet restore tests/VisualTests
-
-      - name: Build backend
-        working-directory: backend
-        run: dotnet build tests/VisualTests --no-restore
-
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.0
@@ -188,4 +255,4 @@ jobs:
 
       - name: Test - VisualTests (Aspire + Docker + Playwright)
         working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-build
+        run: dotnet run --project tests/VisualTests --no-restore --no-build
