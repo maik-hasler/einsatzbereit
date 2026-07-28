@@ -19,9 +19,9 @@ export default function Footer() {
 
 					{/* Links */}
 					<div>
-						<h3 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
+						<h2 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
 							{t("footer.platform")}
-						</h3>
+						</h2>
 						<ul className="space-y-2 text-sm">
 							<li>
 								<Link to="/" className="hover:text-white transition-colors">
@@ -46,9 +46,9 @@ export default function Footer() {
 							</li>
 						</ul>
 
-						<h3 className="text-white font-semibold mb-4 mt-6 uppercase text-xs tracking-wider">
+						<h2 className="text-white font-semibold mb-4 mt-6 uppercase text-xs tracking-wider">
 							{t("footer.legal")}
-						</h3>
+						</h2>
 						<ul className="space-y-2 text-sm">
 							<li>
 								<Link
@@ -79,9 +79,9 @@ export default function Footer() {
 
 					{/* Social */}
 					<div>
-						<h3 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
+						<h2 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
 							{t("footer.followUs")}
-						</h3>
+						</h2>
 						<div className="flex space-x-4">
 							<a
 								href="https://github.com/maik-hasler/einsatzbereit"
