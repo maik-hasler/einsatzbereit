@@ -5,6 +5,4 @@ public interface IApplicationDbContextInitializer
 	ValueTask MigrateAsync(CancellationToken cancellationToken = default);
 
 	ValueTask SeedAsync(CancellationToken cancellationToken = default);
-
-	ValueTask BackfillOrganizationMembershipsAsync(CancellationToken cancellationToken = default);
 }

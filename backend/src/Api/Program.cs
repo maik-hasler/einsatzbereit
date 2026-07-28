@@ -143,7 +143,6 @@ if (app.Environment.IsDevelopment())
 
 	await initializer.MigrateAsync();
 	await initializer.SeedAsync();
-	await initializer.BackfillOrganizationMembershipsAsync();
 
 	app.MapOpenApi();
 }
@@ -157,8 +156,6 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 
 	if (app.Configuration.GetValue<bool>("Database:SeedOnStartup"))
 		await initializer.SeedAsync();
-
-	await initializer.BackfillOrganizationMembershipsAsync();
 }
 
 app.MapDefaultEndpoints();
