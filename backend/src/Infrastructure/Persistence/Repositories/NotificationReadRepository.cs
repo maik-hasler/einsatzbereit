@@ -22,12 +22,66 @@ internal sealed class NotificationReadRepository(
 
 	public async ValueTask<List<NotificationSummary>> GetByRecipientAsync(
 		UserId recipientId,
+		DateTimeOffset? before,
+		Guid? beforeId,
+		int limit,
 		CancellationToken cancellationToken = default)
 	{
-		var notifications = await dbContext.NotificationsQuery
-			.Where(n => n.RecipientId == recipientId)
+		var recipientQuery = dbContext.NotificationsQuery
+			.Where(n => n.RecipientId == recipientId);
+
+		// Notifications created in the same batch (e.g. several engagement
+		// events processed by the outbox job in one tick) can share an
+		// identical CreatedOn - AuditableEntityInterceptor stamps one UtcNow
+		// per SaveChanges call, not per entity. CreatedOn alone is therefore
+		// not a safe keyset cursor: paging strictly on "< before" would drop
+		// same-timestamp siblings that land on the far side of a page
+		// boundary. NotificationId's value converter only translates == (not
+		// < / >, which isn't defined on the value object at all, and
+		// EF.Property<Guid> on a converted property isn't a supported read
+		// of the raw column either - it 500'd against real Postgres despite
+		// compiling fine), so the tie is broken by Id (a UUIDv7, still
+		// roughly time-ordered) in memory instead: fetch the *complete*
+		// same-timestamp bucket via a plain equality query (cheap - ties are
+		// bounded by how many notifications one SaveChanges call creates for
+		// a single recipient, normally a handful) rather than risk an
+		// arbitrary SQL tie order silently truncating it via Take().
+		List<Notification> tiedWithCursor = [];
+		if (before is not null && beforeId is not null)
+		{
+			var cursorTiedBucket = await recipientQuery
+				.Where(n => n.CreatedOn == before.Value)
+				.ToListAsync(cancellationToken);
+
+			tiedWithCursor = cursorTiedBucket
+				.Where(n => n.Id.Value.CompareTo(beforeId.Value) < 0)
+				.OrderByDescending(n => n.Id.Value)
+				.ToList();
+		}
+
+		var olderQuery = before is not null
+			? recipientQuery.Where(n => n.CreatedOn < before.Value)
+			: recipientQuery;
+
+		var older = await olderQuery
 			.OrderByDescending(n => n.CreatedOn)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
+
+		// SQL only orders "older" by CreatedOn (see above - no safe way to add
+		// Id as a second ORDER BY key without the same translation risk), so
+		// same-timestamp siblings within it can come back in an arbitrary
+		// sub-order. Re-sort the combined, already-materialized batch in
+		// memory (CreatedOn desc, then Id desc) so the array this method
+		// returns always has a single, deterministic tie-break convention -
+		// the same one `tiedWithCursor` above already used - regardless of
+		// what order Postgres happened to hand ties back in.
+		var notifications = tiedWithCursor
+			.Concat(older)
+			.OrderByDescending(n => n.CreatedOn)
+			.ThenByDescending(n => n.Id.Value)
+			.Take(limit)
+			.ToList();
 
 		// Collect entity IDs by type
 		var engagementIds = notifications
@@ -106,4 +160,10 @@ internal sealed class NotificationReadRepository(
 				n.CreatedOn);
 		}).ToList();
 	}
+
+	public async ValueTask<int> CountUnreadByRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default) =>
+		await dbContext.NotificationsQuery
+			.CountAsync(n => n.RecipientId == recipientId && !n.IsRead, cancellationToken);
 }

@@ -610,6 +610,8 @@
       "bellLabel": "Notifications",
       "markAllRead": "Mark all as read",
       "empty": "No notifications.",
+      "loadMore": "Load more",
+      "loadingMore": "Loading...",
       "deletedOpportunityPlaceholder": "a deleted opportunity",
       "kinds": {
         "EngagementCreated": "New application received for {{title}}",
