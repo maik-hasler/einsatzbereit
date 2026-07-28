@@ -614,6 +614,7 @@
       "empty": "Keine Benachrichtigungen.",
       "loadMore": "Mehr laden",
       "loadingMore": "Lädt...",
+      "markReadError": "Benachrichtigung konnte nicht als gelesen markiert werden.",
       "deletedOpportunityPlaceholder": "einen gelöschten Bedarf",
       "kinds": {
         "EngagementCreated": "Neue Bewerbung eingegangen für {{title}}",

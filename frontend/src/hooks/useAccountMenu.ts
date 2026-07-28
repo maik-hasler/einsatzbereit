@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useAuth } from "react-oidc-context";
+import { useTranslation } from "react-i18next";
 import { useApiClient } from "./useApiClient";
 import { useDismissableOverlay } from "./useDismissableOverlay";
+import { getApiErrorMessage } from "../lib/apiError";
+import { dispatchToast } from "../lib/toastBus";
 import type { NotificationSummary } from "../client/api-client";
 
 export interface AccountMenuState {
@@ -34,6 +37,7 @@ export function useAccountMenu(
 ): AccountMenuState {
 	const auth = useAuth();
 	const api = useApiClient();
+	const { t } = useTranslation();
 	const isLoggedIn = auth.isAuthenticated;
 
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -159,17 +163,31 @@ export function useAccountMenu(
 	}
 
 	async function markAllRead() {
-		await api.markAllNotificationsRead();
-		setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-		setUnreadCount(0);
+		try {
+			await api.markAllNotificationsRead();
+			setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+			setUnreadCount(0);
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("notifications.markReadError")),
+			);
+		}
 	}
 
 	async function markOneRead(id: string) {
-		await api.markNotificationRead(id);
-		setNotifications((prev) =>
-			prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-		);
-		setUnreadCount((prev) => Math.max(0, prev - 1));
+		try {
+			await api.markNotificationRead(id);
+			setNotifications((prev) =>
+				prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+			);
+			setUnreadCount((prev) => Math.max(0, prev - 1));
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("notifications.markReadError")),
+			);
+		}
 	}
 
 	return {
