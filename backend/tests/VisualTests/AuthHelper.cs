@@ -120,20 +120,26 @@ public static class AuthHelper
 		// safe to call from elsewhere.
 		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new() { Timeout = 15_000 });
 
-		// 30s (the same allowance VolunteerOpportunityTests etc. use for other
-		// network-heavy waits) rather than the usual 15s: this CTA only renders
-		// once GET /v1/organizations resolves for the signed-in user (see
-		// resolveOrgAppPath in activeOrg.ts) - on a contended shared CI stack
-		// (~61+ VisualTests classes hitting one Aspire-hosted backend/DB per
-		// session, see AssemblyRetryPolicy.cs) that round trip can occasionally
-		// run long even though nothing is actually broken. 25s previously used
-		// here was not always enough - #794 added two more concurrent
-		// AccessibilityTests methods to the shared session and tipped
+		// 45s (bumped again from 30s) rather than the usual 15s: this CTA only
+		// renders once GET /v1/organizations resolves for the signed-in user
+		// (see resolveOrgAppPath in activeOrg.ts) - on a contended shared CI
+		// stack (~61+ VisualTests classes hitting one Aspire-hosted
+		// backend/DB per session, see AssemblyRetryPolicy.cs) that round trip
+		// can occasionally run long even though nothing is actually broken.
+		// 25s was previously not enough - #794 added two more concurrent
+		// AccessibilityTests methods and tipped
 		// CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations/
-		// OrgDashboardPage_AddWidgetModal_AsOlaf_HasNoSeriousA11yViolations over
-		// the edge in CI even with AssemblyRetryPolicy's retries.
+		// OrgDashboardPage_AddWidgetModal_AsOlaf_HasNoSeriousA11yViolations
+		// over the edge even with AssemblyRetryPolicy's retries; 30s then
+		// stopped being enough once AssemblyParallelLimit.cs's global
+		// ParallelLimiter<VisualTestsParallelLimit> (added alongside two more
+		// new test classes, AdminReportsTests and FocusVisibleRingTests) still
+		// leaves up to Environment.ProcessorCount CPU-heavy Chromium/axe-core
+		// scans running at once - this call's own three attempts (one plus
+		// AssemblyRetryPolicy's two retries) all timed out identically under
+		// that sustained load, not a one-off blip.
 		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
-		await cta.First.WaitForAsync(new() { Timeout = 30_000 });
+		await cta.First.WaitForAsync(new() { Timeout = 45_000 });
 		await cta.First.ClickAsync();
 
 		await page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });

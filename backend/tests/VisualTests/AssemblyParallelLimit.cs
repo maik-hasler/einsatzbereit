@@ -13,15 +13,25 @@ using TUnit.Core.Interfaces;
 // Aspire-hosted stack (SharedType.PerTestSession). A retry lands in the same
 // still-contended run and just as easily times out again.
 //
-// Cap concurrent tests to the machine's core count so CPU-bound work (axe-core
-// scans, React commits, Chromium rendering) doesn't oversubscribe the runner
-// and start missing the timing assertions scattered across this suite.
-// Environment.ProcessorCount rather than a hardcoded number so this scales
-// with whatever runner size CI happens to use, and with a larger local dev
-// machine.
+// Cap concurrent tests below the machine's core count so CPU-bound work
+// (axe-core scans, React commits, Chromium rendering) doesn't oversubscribe
+// the runner and start missing the timing assertions scattered across this
+// suite. A cap of exactly Environment.ProcessorCount still fully
+// oversubscribes CI - dotnet.yml's visual-tests job runs on ubuntu-latest
+// (4 vCPUs), and those same 4 cores also have to service the Aspire-hosted
+// stack itself (Postgres, Keycloak, backend API, frontend dev server) that
+// every one of the N concurrent Playwright sessions is calling into, not
+// just the N browser/axe processes. Reserving one core for that shared
+// stack (see e.g. AuthHelper.GoToOrgAppDashboardAsync's repeatedly-raised
+// wait timeout, most recently bumped once this project added two more
+// concurrent test classes on top of an already-contended run) leaves
+// CI genuinely under the core count instead of exactly at it.
+// Environment.ProcessorCount - 1 (floored at 1) rather than a hardcoded
+// number so this still scales with whatever runner size CI happens to use,
+// and with a larger local dev machine.
 [assembly: ParallelLimiter<VisualTestsParallelLimit>]
 
 public sealed class VisualTestsParallelLimit : IParallelLimit
 {
-	public int Limit => Environment.ProcessorCount;
+	public int Limit => Math.Max(1, Environment.ProcessorCount - 1);
 }
