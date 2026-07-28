@@ -379,6 +379,27 @@ overflow-y-auto already handles vertical scrolling. */
 	}
 }
 
+/* ── Global focus-visible ring (issue #992) ──────────────────────────────
+A single shared token instead of the browser's inconsistent default outline
+or ad-hoc per-component ring utilities. Dual-tone (brand outline + white
+halo) so it stays visible whether the focused element sits on a light
+surface or the dark hero section - no single flat color has enough
+contrast against both. Written outside any @layer so it takes priority
+over Tailwind's layered focus-visible:outline-none/ring-* utilities
+regardless of specificity (see .rbc-btn-group/.rbc-event above for the
+same unlayered-override pattern already used in this file). */
+:root {
+	--focus-ring-color: #226947;
+}
+
+:focus-visible {
+	outline-width: 2px;
+	outline-style: solid;
+	outline-color: var(--focus-ring-color);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9);
+}
+
 @theme {
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;
