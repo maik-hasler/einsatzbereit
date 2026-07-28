@@ -878,11 +878,23 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOrganizationOpportunities(organizationId: string, signal?: AbortSignal): Promise<VolunteerOpportunitySummary[]> {
-        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunities";
+    getOrganizationOpportunities(organizationId: string, status: string, pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunities?";
         if (organizationId === undefined || organizationId === null)
             throw new globalThis.Error("The parameter 'organizationId' must be defined.");
         url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (status === undefined || status === null)
+            throw new globalThis.Error("The parameter 'status' must be defined and cannot be null.");
+        else
+            url_ += "status=" + encodeURIComponent("" + status) + "&";
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -898,14 +910,20 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetOrganizationOpportunities(response: Response): Promise<VolunteerOpportunitySummary[]> {
+    protected processGetOrganizationOpportunities(response: Response): Promise<PagedListOfVolunteerOpportunitySummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VolunteerOpportunitySummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfVolunteerOpportunitySummary;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -930,7 +948,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<VolunteerOpportunitySummary[]>(null as any);
+        return Promise.resolve<PagedListOfVolunteerOpportunitySummary>(null as any);
     }
 
     /**
@@ -4215,11 +4233,19 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getEngagements(opportunityId: string, signal?: AbortSignal): Promise<EngagementSummary[]> {
-        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
+    getEngagements(opportunityId: string, pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfEngagementSummary> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements?";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
         url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -4235,14 +4261,20 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetEngagements(response: Response): Promise<EngagementSummary[]> {
+    protected processGetEngagements(response: Response): Promise<PagedListOfEngagementSummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementSummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfEngagementSummary;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -4273,7 +4305,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<EngagementSummary[]>(null as any);
+        return Promise.resolve<PagedListOfEngagementSummary>(null as any);
     }
 
     /**

@@ -330,7 +330,8 @@
       "publishedBadge": "Published",
       "manageApplications": "Manage applications",
       "participants": "{{booked}}/{{max}} participants",
-      "editLoading": "Opening…"
+      "editLoading": "Opening…",
+      "loadMore": "Load more"
     },
     "orgDashboard": {
       "title": "Organization Dashboard",
@@ -505,7 +506,6 @@
       "qrVideoLabel": "Camera view for QR code scanning",
       "qrNotSupported": "QR scanning is not supported in this browser. Please use Chrome or Edge, or switch to a manual check-in method.",
       "qrCameraError": "Camera access denied. Please allow camera access and try again.",
-      "qrNotFound": "QR code not recognised. The volunteer may not be confirmed yet.",
       "qrCheckInError": "Check-in failed. Please try again.",
       "qrSuccess": "Volunteer checked in successfully!",
       "loadError": "This opportunity is no longer available."
@@ -558,6 +558,7 @@
       "processing": "…",
       "confirmError": "Error confirming",
       "cancelError": "Error cancelling",
+      "loadMore": "Load more",
       "status": {
         "Pending": "Pending",
         "Confirmed": "Confirmed",

@@ -22,6 +22,13 @@ public interface IVolunteerOpportunityReadRepository
 		OpportunityStatus? status = null,
 		CancellationToken cancellationToken = default);
 
+	ValueTask<PagedList<VolunteerOpportunitySummary>> GetPagedSummariesByOrganizationAsync(
+		Guid organizationId,
+		OpportunityStatus status,
+		int pageNumber,
+		int pageSize,
+		CancellationToken cancellationToken = default);
+
 	ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default);

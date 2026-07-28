@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { EngagementSummary } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { getApiErrorMessage } from "../lib/apiError";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
 import Button from "./Button";
@@ -21,13 +21,11 @@ const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface QRScannerModalProps {
-	engagements: EngagementSummary[];
 	onCheckedIn: (engagementId: string) => void;
 	onClose: () => void;
 }
 
 export default function QRScannerModal({
-	engagements,
 	onCheckedIn,
 	onClose,
 }: QRScannerModalProps) {
@@ -35,16 +33,10 @@ export default function QRScannerModal({
 	const { t } = useTranslation();
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const streamRef = useRef<MediaStream | null>(null);
-	const engagementsRef = useRef(engagements);
 	const [supported, setSupported] = useState<boolean | null>(null);
 	const [cameraError, setCameraError] = useState<string | null>(null);
 	const [scanError, setScanError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
-
-	// Keep ref in sync so the scan loop always sees the latest engagements
-	useEffect(() => {
-		engagementsRef.current = engagements;
-	}, [engagements]);
 
 	// Check browser support
 	useEffect(() => {
@@ -92,33 +84,28 @@ export default function QRScannerModal({
 				try {
 					const detector = new BarcodeDetector({ formats: ["qr_code"] });
 					const barcodes = await detector.detect(video);
-					let sawNotFound = false;
 					for (const barcode of barcodes) {
 						const raw = barcode.rawValue.trim();
 						if (!UUID_RE.test(raw)) continue;
-						const match = engagementsRef.current.find(
-							(e) => e.id === raw && e.status === "Confirmed" && !e.isCheckedIn,
-						);
-						if (!match) {
-							sawNotFound = true;
-							continue;
-						}
+
+						// The backend is the sole source of truth on whether this id is
+						// a real, checkable-in engagement - there is no complete
+						// client-side list to match against once the organizer's
+						// engagement view is paginated (#1401).
 						alive = false;
 						try {
 							await api.checkInEngagement(raw);
 							setSuccess(true);
 							onCheckedIn(raw);
-						} catch {
-							setScanError(t("checkIn.qrCheckInError"));
+						} catch (err) {
+							setScanError(
+								getApiErrorMessage(err, t("checkIn.qrCheckInError")),
+							);
 							alive = true;
 						}
 						return;
 					}
-					// A single state update per iteration - setting then immediately
-					// clearing scanError in the same synchronous pass would just have
-					// React's automatic batching collapse both into the last write,
-					// so the "not found" message would never actually render.
-					setScanError(sawNotFound ? t("checkIn.qrNotFound") : null);
+					setScanError(null);
 				} catch {
 					// detection failure - retry on next tick
 				}

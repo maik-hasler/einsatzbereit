@@ -2,6 +2,7 @@ using Application.Common.Authorization;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
+using Application.Common.Pagination;
 using Application.Common.Persistence;
 using Domain.Primitives;
 
@@ -11,9 +12,11 @@ internal sealed class GetEngagementsQueryHandler(
 	IEngagementReadRepository readRepository,
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService)
-	: IQueryHandler<GetEngagementsQuery, List<EngagementSummary>>
+	: IQueryHandler<GetEngagementsQuery, PagedList<EngagementSummary>>
 {
-	public async ValueTask<List<EngagementSummary>> Handle(
+	private const int MaxPageSize = 100;
+
+	public async ValueTask<PagedList<EngagementSummary>> Handle(
 		GetEngagementsQuery request,
 		CancellationToken cancellationToken = default)
 	{
@@ -26,22 +29,23 @@ internal sealed class GetEngagementsQueryHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var engagements = await readRepository.GetByOpportunityAsync(request.OpportunityId, cancellationToken);
+		var pageNumber = Math.Max(1, request.PageNumber);
+		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-		var volunteerIds = engagements
+		var page = await readRepository.GetPagedByOpportunityAsync(request.OpportunityId, pageNumber, pageSize, cancellationToken);
+
+		var volunteerIds = page.Items
 			.Where(e => e.VolunteerId is not null)
 			.Select(e => e.VolunteerId!.Value)
 			.Distinct()
 			.ToList();
 		var nameMap = await keycloakUserService.GetDisplayNamesAsync(volunteerIds, cancellationToken);
 
-		return engagements
-			.Select(e => e with
-			{
-				VolunteerName = e.VolunteerId is Guid volunteerId
-					? nameMap.GetValueOrDefault(volunteerId)
-					: null,
-			})
-			.ToList();
+		return page.Map(e => e with
+		{
+			VolunteerName = e.VolunteerId is Guid volunteerId
+				? nameMap.GetValueOrDefault(volunteerId)
+				: null,
+		});
 	}
 }
