@@ -34,5 +34,9 @@ using TUnit.Core.Interfaces;
 
 public sealed class VisualTestsParallelLimit : IParallelLimit
 {
-	public int Limit => Math.Max(1, Environment.ProcessorCount - 1);
+	// Floor of 2 rather than 1: a standard 2-core GitHub runner would otherwise
+	// reduce to a single concurrent test, serialising a ~207-test browser suite
+	// for no reliability gain (the contention this guards against needs several
+	// concurrent Chromium instances to exist in the first place).
+	public int Limit => Math.Max(2, Environment.ProcessorCount - 1);
 }

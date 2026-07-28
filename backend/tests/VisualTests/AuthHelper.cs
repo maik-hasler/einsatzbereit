@@ -124,34 +124,51 @@ public static class AuthHelper
 	}
 
 	/// <summary>
-	/// Navigates a logged-in user (assumed to be on the home page, as they are
-	/// right after <see cref="LoginAsync"/> or <see cref="FastSignInAsync"/>) into
-	/// the org app shell by clicking the "Organization overview" hero CTA, which
-	/// resolves directly to /app/{organizationId}/dashboard - the /app intermediate
-	/// picker page no longer exists (#747).
+	/// Gets a logged-in user into the org app shell at
+	/// /app/{organizationId}/dashboard, as a *precondition* for tests that are
+	/// about the org app rather than about how you get there.
+	///
+	/// Navigates straight to the organization <see cref="FastSignInAsync"/>
+	/// pinned in the active-org cookie, rather than waiting on the home page's
+	/// "Organization overview" hero CTA. That CTA only renders once
+	/// GET /v1/organizations has resolved *and* produced a non-empty list (see
+	/// resolveOrgAppPath in activeOrg.ts), and HomePage discards the fetch's
+	/// error - so a single failed or slow org-list request leaves the hero
+	/// showing the fallback button with no retry, and every caller of this
+	/// helper then burns its full timeout waiting for a link that will never
+	/// appear. That was a recurring source of 30s timeouts here
+	/// (OrgDashboardPage_*_AsOlaf, EngagementManagementPage_AsOlaf, ...) which
+	/// successive timeout bumps (15s -> 25s -> 30s) never fixed, because the
+	/// wait was not actually short - the link was absent.
+	///
+	/// The CTA itself stays under real coverage in HomePageOrgCtaTests, which
+	/// is where that behaviour belongs; re-exercising it as an incidental
+	/// precondition in ~28 other tests only ever bought flakiness.
 	/// </summary>
 	public static async Task GoToOrgAppDashboardAsync(IPage page, Uri frontendUrl)
 	{
+		var origin = frontendUrl.GetLeftPart(UriPartial.Authority);
+
 		// Defensive: resolves instantly if the caller is already there (the
 		// common case, right after LoginAsync), but also makes this helper
 		// safe to call from elsewhere.
-		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new() { Timeout = 15_000 });
+		await page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
 
-		// 30s (the same allowance VolunteerOpportunityTests etc. use for other
-		// network-heavy waits) rather than the usual 15s: this CTA only renders
-		// once GET /v1/organizations resolves for the signed-in user (see
-		// resolveOrgAppPath in activeOrg.ts) - on a contended shared CI stack
-		// (~61+ VisualTests classes hitting one Aspire-hosted backend/DB per
-		// session, see AssemblyRetryPolicy.cs) that round trip can occasionally
-		// run long even though nothing is actually broken. 25s previously used
-		// here was not always enough - #794 added two more concurrent
-		// AccessibilityTests methods to the shared session and tipped
-		// CreateVolunteerOpportunityModal_HasNoSeriousA11yViolations/
-		// OrgDashboardPage_AddWidgetModal_AsOlaf_HasNoSeriousA11yViolations over
-		// the edge in CI even with AssemblyRetryPolicy's retries.
-		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
-		await cta.First.WaitForAsync(new() { Timeout = 30_000 });
-		await cta.First.ClickAsync();
+		var cookies = await page.Context.CookiesAsync();
+		var activeOrgId = cookies.FirstOrDefault(c => c.Name == "active-org")?.Value;
+
+		if (!string.IsNullOrEmpty(activeOrgId))
+		{
+			await page.GotoAsync($"{origin}/app/{Uri.UnescapeDataString(activeOrgId)}/dashboard");
+		}
+		else
+		{
+			// No pinned org (e.g. after a real LoginAsync, which doesn't seed
+			// the cookie) - fall back to the hero CTA.
+			var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
+			await cta.First.WaitForAsync(new() { Timeout = 30_000 });
+			await cta.First.ClickAsync();
+		}
 
 		await page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 	}
