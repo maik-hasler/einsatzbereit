@@ -6,6 +6,7 @@ import type {
 	VolunteerOpportunitySummary,
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useLoadMore } from "../../hooks/useLoadMore";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
@@ -18,16 +19,62 @@ import { PlusIcon } from "../../components/QuickActionIcons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
+const OPPORTUNITIES_PAGE_SIZE = 10;
+
 export default function OrgOpportunitiesPage() {
 	const { org } = useOutletContext<OrgAppContext>();
 	const { t } = useTranslation();
 	const api = useApiClient();
 	const organizationId = org.id;
 
-	const [items, setItems] = useState<VolunteerOpportunitySummary[] | null>(
-		null,
+	const {
+		items: drafts,
+		loading: draftsLoading,
+		loadingMore: draftsLoadingMore,
+		error: draftsError,
+		hasMore: hasMoreDrafts,
+		loadMore: loadMoreDrafts,
+		reset: resetDrafts,
+	} = useLoadMore<VolunteerOpportunitySummary>(
+		(page) =>
+			api.getOrganizationOpportunities(
+				organizationId,
+				"Draft",
+				page,
+				OPPORTUNITIES_PAGE_SIZE,
+			),
+		{
+			deps: [organizationId],
+			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
+		},
 	);
-	const [error, setError] = useState<string | null>(null);
+
+	const {
+		items: published,
+		loading: publishedLoading,
+		loadingMore: publishedLoadingMore,
+		error: publishedError,
+		hasMore: hasMorePublished,
+		loadMore: loadMorePublished,
+		reset: resetPublished,
+	} = useLoadMore<VolunteerOpportunitySummary>(
+		(page) =>
+			api.getOrganizationOpportunities(
+				organizationId,
+				"Published",
+				page,
+				OPPORTUNITIES_PAGE_SIZE,
+			),
+		{
+			deps: [organizationId],
+			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
+		},
+	);
+
+	function reloadAll() {
+		resetDrafts();
+		resetPublished();
+	}
 
 	const [showCreate, setShowCreate] = useState(false);
 	const [editDetails, setEditDetails] =
@@ -63,21 +110,6 @@ export default function OrgOpportunitiesPage() {
 	);
 	useQuickActions(quickActions);
 
-	function load() {
-		setError(null);
-		api
-			.getOrganizationOpportunities(organizationId)
-			.then(setItems)
-			.catch((e: unknown) =>
-				setError(e instanceof Error ? e.message : String(e)),
-			);
-	}
-
-	useEffect(() => {
-		load();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [organizationId]);
-
 	// A draft saved from the Calendar tab navigates in with ?highlight=<id>.
 	// Surface it once, then drop the param so a later refresh doesn't keep
 	// re-highlighting the same row.
@@ -104,7 +136,7 @@ export default function OrgOpportunitiesPage() {
 		});
 		const timer = setTimeout(() => setHighlightedId(null), 2500);
 		return () => clearTimeout(timer);
-	}, [highlightedId, items]);
+	}, [highlightedId, drafts, published]);
 
 	async function openEdit(id: string) {
 		setEditLoadingId(id);
@@ -123,7 +155,7 @@ export default function OrgOpportunitiesPage() {
 		try {
 			await api.publishVolunteerOpportunity(id);
 			dispatchToast("success", t("opportunities.publishSuccess"));
-			load();
+			reloadAll();
 		} catch (e) {
 			dispatchToast("error", getApiErrorMessage(e, t("error.serverError")));
 		} finally {
@@ -132,13 +164,13 @@ export default function OrgOpportunitiesPage() {
 	}
 
 	function handleCreated(createdDraftId?: string) {
-		load();
+		reloadAll();
 		if (createdDraftId) setHighlightedId(createdDraftId);
 	}
 
 	function handleEdited() {
 		setEditDetails(null);
-		load();
+		reloadAll();
 	}
 
 	async function handleDeleteConfirm() {
@@ -148,7 +180,7 @@ export default function OrgOpportunitiesPage() {
 		try {
 			await api.deleteVolunteerOpportunity(deleteTargetId);
 			setDeleteTargetId(null);
-			load();
+			reloadAll();
 		} catch (err) {
 			setDeleteError(
 				err instanceof Error ? err.message : t("opportunities.deleteError"),
@@ -269,37 +301,45 @@ export default function OrgOpportunitiesPage() {
 		);
 	}
 
-	const drafts = items?.filter((i) => i.status === "Draft") ?? [];
-	const published = items?.filter((i) => i.status === "Published") ?? [];
+	const initialLoading = draftsLoading || publishedLoading;
 
 	return (
 		<div>
-			{items === null && !error && (
+			{initialLoading && !draftsError && !publishedError && (
 				<div className="flex items-center justify-center py-16">
 					<Spinner label={t("orgOpportunities.loading")} />
 				</div>
 			)}
 
-			{error && (
+			{draftsError && (
 				<ErrorBanner
-					message={t("orgOpportunities.error", { message: error })}
+					message={t("orgOpportunities.error", { message: draftsError })}
+				/>
+			)}
+			{publishedError && (
+				<ErrorBanner
+					message={t("orgOpportunities.error", { message: publishedError })}
 				/>
 			)}
 
-			{items !== null && !error && items.length === 0 && (
-				<EmptyState
-					title={t("orgOpportunities.emptyTitle")}
-					message={t("orgOpportunities.emptyDesc")}
-					action={{
-						label: t("orgOverview.createOpportunity"),
-						onClick: () => setShowCreate(true),
-					}}
-				/>
-			)}
+			{!initialLoading &&
+				!draftsError &&
+				!publishedError &&
+				drafts.length === 0 &&
+				published.length === 0 && (
+					<EmptyState
+						title={t("orgOpportunities.emptyTitle")}
+						message={t("orgOpportunities.emptyDesc")}
+						action={{
+							label: t("orgOverview.createOpportunity"),
+							onClick: () => setShowCreate(true),
+						}}
+					/>
+				)}
 
-			{items !== null && !error && items.length > 0 && (
+			{(drafts.length > 0 || published.length > 0) && (
 				<div className="space-y-8">
-					{drafts.length > 0 && (
+					{!draftsLoading && !draftsError && drafts.length > 0 && (
 						<section data-testid="drafts-section">
 							<h2 className="text-lg font-semibold text-gray-900">
 								{t("orgOpportunities.draftsHeading")}
@@ -310,10 +350,23 @@ export default function OrgOpportunitiesPage() {
 							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								{drafts.map(renderRow)}
 							</ul>
+							{hasMoreDrafts && (
+								<div className="mt-4 flex justify-center">
+									<button
+										onClick={loadMoreDrafts}
+										disabled={draftsLoadingMore}
+										className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+									>
+										{draftsLoadingMore
+											? t("orgOpportunities.loading")
+											: t("orgOpportunities.loadMore")}
+									</button>
+								</div>
+							)}
 						</section>
 					)}
 
-					{published.length > 0 && (
+					{!publishedLoading && !publishedError && published.length > 0 && (
 						<section data-testid="published-section">
 							<h2 className="text-lg font-semibold text-gray-900">
 								{t("orgOpportunities.publishedHeading")}
@@ -324,6 +377,19 @@ export default function OrgOpportunitiesPage() {
 							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								{published.map(renderRow)}
 							</ul>
+							{hasMorePublished && (
+								<div className="mt-4 flex justify-center">
+									<button
+										onClick={loadMorePublished}
+										disabled={publishedLoadingMore}
+										className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+									>
+										{publishedLoadingMore
+											? t("orgOpportunities.loading")
+											: t("orgOpportunities.loadMore")}
+									</button>
+								</div>
+							)}
 						</section>
 					)}
 				</div>
