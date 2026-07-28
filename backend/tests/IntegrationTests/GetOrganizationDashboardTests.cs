@@ -122,9 +122,13 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		await olafClient.ConfirmEngagementAsync(engagement1.Id, cancellationToken);
 
 		// org2 (vera): its own opportunity with its own pending engagement, which
-		// must never leak into org1's counts.
+		// must never leak into org1's counts. CreateVolunteerOpportunity requires
+		// the "organisator" role claim, which Keycloak only grants vera once she
+		// creates an org - her existing veraClient token predates that, so a fresh
+		// token has to be minted to pick it up.
 		var org2Id = await CreateOrganizationAsync(veraClient, cancellationToken);
-		var opportunity2 = await CreateOpportunityAsync(veraClient, org2Id, cancellationToken);
+		var veraOrganizerClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var opportunity2 = await CreateOpportunityAsync(veraOrganizerClient, org2Id, cancellationToken);
 		await olafClient.CreateEngagementAsync(
 			opportunity2.Id,
 			new CreateEngagementRequest { Message = "Helping org2" },
