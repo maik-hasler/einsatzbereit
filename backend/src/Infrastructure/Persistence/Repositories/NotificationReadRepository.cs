@@ -68,7 +68,20 @@ internal sealed class NotificationReadRepository(
 			.Take(limit)
 			.ToListAsync(cancellationToken);
 
-		var notifications = tiedWithCursor.Concat(older).Take(limit).ToList();
+		// SQL only orders "older" by CreatedOn (see above - no safe way to add
+		// Id as a second ORDER BY key without the same translation risk), so
+		// same-timestamp siblings within it can come back in an arbitrary
+		// sub-order. Re-sort the combined, already-materialized batch in
+		// memory (CreatedOn desc, then Id desc) so the array this method
+		// returns always has a single, deterministic tie-break convention -
+		// the same one `tiedWithCursor` above already used - regardless of
+		// what order Postgres happened to hand ties back in.
+		var notifications = tiedWithCursor
+			.Concat(older)
+			.OrderByDescending(n => n.CreatedOn)
+			.ThenByDescending(n => n.Id.Value)
+			.Take(limit)
+			.ToList();
 
 		// Collect entity IDs by type
 		var engagementIds = notifications
