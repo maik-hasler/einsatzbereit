@@ -3,9 +3,16 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// #1316: needs vera to deterministically have zero organizations - opts into
+// fixture.ResetAsync() and a bare [NotInParallel] so no other VisualTest can
+// mutate her organization membership mid-test.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel]
 public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	[Before(Test)]
+	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
+
 	[Test]
 	public async Task Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint()
 	{
@@ -38,35 +45,12 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// vera is shared across this whole test session (no DB reset between
-		// tests), so another test (e.g. OrganizationTests inviting her as a
-		// member elsewhere) can give her an org at any point up to and
-		// including the moment we click. Wait for whichever of the two the
-		// org-count fetch actually resolves to, rather than asserting the
-		// button specifically - a separate, later Expect on just the button
-		// re-opens exactly this race, which is what actually broke this
-		// test previously (see git blame).
+		// fixture.ResetAsync() guarantees vera organizes nothing at this
+		// point, so the CTA is deterministically the "create" button, not
+		// the dashboard overview link.
 		var cta = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
-		var overviewLink = Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
-		await Expect(cta.Or(overviewLink).First).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		if (await overviewLink.CountAsync() > 0)
-			return; // vera already organizes an org - skip, nothing to exercise here
-
-		try
-		{
-			await cta.First.ClickAsync(new() { Timeout = 5_000 });
-		}
-		catch (TimeoutException)
-		{
-			// The org-count fetch can still resolve and swap the button out
-			// for the dashboard Link in the narrow window right as we click -
-			// if that happened, vera already has an org, so this is the same
-			// "skip" case as the check above, not a real failure.
-			if (await cta.CountAsync() == 0)
-				return;
-			throw;
-		}
+		await Expect(cta.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await cta.First.ClickAsync();
 
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync(new() { Timeout = 10_000 });

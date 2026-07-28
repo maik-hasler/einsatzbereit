@@ -98,7 +98,7 @@ public static class AuthHelper
 		}
 	}
 
-	private static JsonElement DecodeJwtPayload(string jwt)
+	internal static JsonElement DecodeJwtPayload(string jwt)
 	{
 		var payload = jwt.Split('.')[1].Replace('-', '+').Replace('_', '/');
 		payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');

@@ -4,9 +4,17 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// #1316: SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave below needs
+// vera's global Keycloak organisator role deterministically cleared - opts
+// the whole class into fixture.ResetAsync() and a bare [NotInParallel] so no
+// other VisualTest can grant her that role mid-test.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel]
 public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	[Before(Test)]
+	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
+
 	[Test]
 	public async Task Organisator_LoginAsOlaf_Succeeds()
 	{
@@ -88,20 +96,59 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).Not.ToBeVisibleAsync();
 	}
 
-	// A UI-level regression test mirroring #825's two-member scenario (organizer
-	// + accepted invitee) was tried here and removed: the frontend's "isLastOrganizer"
-	// check relies on KeycloakOrganizationMember.IsOrganisator, which is a
-	// *global* Keycloak role, not scoped to a specific org (see
-	// HomePageOrgCtaTests.cs and OrgAppRestructureTests.cs, which already work
-	// around the same thing - "vera already organizes an org, skip"). VisualTests
-	// share one Aspire session with no DB reset between tests, so by the time
-	// any given test runs, vera may already be a global organizer from an
-	// earlier, unrelated test - making an assertion on her org's organizer
-	// *count* nondeterministic here. The actual regression (the backend guard)
-	// is covered deterministically by
-	// IntegrationTests.OrganizationSettingsTests.RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains,
-	// which asserts the real per-organization guard and isn't affected by vera's
-	// global role elsewhere.
+	[Test]
+	public async Task SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave()
+	{
+		// Regression for #825 (UI level): OrgMembersPage.tsx's "last organizer"
+		// guard counts members whose isOrganisator is true, which
+		// KeycloakOrganizationService.GetMembersAsync derives from Keycloak's
+		// *global* "organisator" role, not a per-organization one. Before the
+		// fix, the guard instead looked at total member count, so an org with
+		// one Organizer plus one plain member (2 members, still only 1
+		// Organizer) let the Organizer leave/be removed and permanently orphan
+		// the org - there was no path left to promote the remaining member.
+		// Deterministic only because fixture.ResetAsync() (this class opts in
+		// above) clears vera's global organisator role first - otherwise a
+		// leftover role from an earlier, unrelated test would make her read as
+		// an Organizer here too, same as HomePageOrgCtaTests.cs and
+		// OrgAppRestructureTests.cs used to work around before #1316. The
+		// backend guard itself is covered deterministically by
+		// IntegrationTests.OrganizationSettingsTests.RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual825 TwoMember");
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		// Accepting an invitation now also grants Organizer (#826), so that
+		// flow can no longer produce a plain-member-only state - use the
+		// fixture's direct Keycloak escape hatch instead, same as
+		// IntegrationTestFixture.AddPlainMemberDirectlyAsync.
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change, so
+		// the dashboard we're still on would otherwise keep showing its
+		// pre-membership snapshot (olaf as sole member) - force a refetch.
+		await Page.ReloadAsync();
+
+		// The tab bar is gone (dashboard UX redesign) - reach Members via the
+		// Settings widget's member-count link, same as the sole-member test above.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
+		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(leaveButton).ToBeDisabledAsync();
+
+		// Unlike the sole-member case, a second member exists to remove -
+		// proving the guard is driven by organizer count, not member count.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync();
+	}
 
 	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()

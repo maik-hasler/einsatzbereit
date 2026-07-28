@@ -2,9 +2,17 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// #1316: needs vera's engagement set to deterministically be just her seed
+// engagements - opts into fixture.ResetAsync() and a bare [NotInParallel] so
+// no other VisualTest can add throwaway engagements/organizations for her
+// mid-test.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel]
 public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	[Before(Test)]
+	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
+
 	[Test]
 	public async Task MyEngagementsPage_ShowsOrganizationNameLinks_ForVerasEngagements()
 	{
@@ -25,20 +33,6 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var engagementCards = Page.Locator("li.rounded-xl");
 		var cardCount = await engagementCards.CountAsync();
 		if (cardCount == 0)
-		{
-			return;
-		}
-
-		// Other VisualTests classes sharing this Aspire session (e.g.
-		// OpportunityApplicationStateTests, EngagementReactivationTests) also
-		// sign up vera for their own throwaway opportunities/orgs, so a
-		// non-zero card count no longer guarantees the seed engagements are
-		// among them - only that seeding failing silently in CI produces the
-		// same symptom (no card links to either seed org) as it would if
-		// vera genuinely had zero engagements. Skip in both cases.
-		var seedOrgCard = Page.GetByText("Fairview Red Cross")
-			.Or(Page.GetByText("Fairview Animal Welfare Association"));
-		if (await seedOrgCard.CountAsync() == 0)
 		{
 			return;
 		}

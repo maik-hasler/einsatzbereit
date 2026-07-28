@@ -13,9 +13,17 @@ namespace VisualTests;
 /// the profile page, and (#747) the removal of the /app intermediate picker
 /// page in favor of the home page CTA resolving directly into the shell.
 /// </summary>
+// #1316: HomeCta_ZeroOrgs_CreatingOrgEntersItsDashboardDirectly below needs
+// vera to deterministically have zero organizations - opts the whole class
+// into fixture.ResetAsync() and a bare [NotInParallel] so no other
+// VisualTest can mutate her organization membership mid-test.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel]
 public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	[Before(Test)]
+	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
+
 	[Test]
 	public async Task GlobalHeader_NeverShowsOrgSwitcher_OutsideAppShell()
 	{
@@ -68,39 +76,15 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// The hero CTA renders the "Create an organisation" button until the
-		// async org-count fetch resolves, then swaps to a dashboard Link if the
-		// user turns out to have orgs after all - vera is shared across this
-		// whole test session (no DB reset between tests), so another test (e.g.
-		// OrganizationTests inviting her as a member elsewhere) can flip that
-		// fetch's result at any point up to and including the moment we click.
-		// Wait for whichever of the two the fetch actually resolves to, rather
-		// than asserting the button specifically - a separate, later Expect on
-		// just the button re-opens exactly this race, which is what actually
-		// broke this test previously (see git blame).
+		// fixture.ResetAsync() guarantees vera organizes nothing at this
+		// point, so the CTA is deterministically the "create" button, not
+		// the dashboard overview link.
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
-		var overviewLink = Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
-		await Expect(createBtn.Or(overviewLink).First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(createBtn.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await createBtn.First.ClickAsync();
 
-		if (await overviewLink.CountAsync() > 0)
-			return; // vera already organizes an org - skip, nothing to exercise here
-
-		try
-		{
-			await createBtn.First.ClickAsync(new() { Timeout = 5_000 });
-		}
-		catch (TimeoutException)
-		{
-			// The org-count fetch can still resolve and swap the button out for
-			// the dashboard Link in the narrow window right as we click - if
-			// that happened, vera already has an org, so this is the same
-			// "skip" case as the check above, not a real failure.
-			if (await createBtn.CountAsync() == 0)
-				return;
-			throw;
-		}
 		var createDialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(createDialog).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await createDialog.Locator("input[type='text']").FillAsync(orgName);
