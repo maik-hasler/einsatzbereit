@@ -13,15 +13,26 @@ using TUnit.Core.Interfaces;
 // Aspire-hosted stack (SharedType.PerTestSession). A retry lands in the same
 // still-contended run and just as easily times out again.
 //
-// Cap concurrent tests to the machine's core count so CPU-bound work (axe-core
-// scans, React commits, Chromium rendering) doesn't oversubscribe the runner
-// and start missing the timing assertions scattered across this suite.
-// Environment.ProcessorCount rather than a hardcoded number so this scales
-// with whatever runner size CI happens to use, and with a larger local dev
-// machine.
+// Cap concurrent tests below the machine's core count so CPU-bound work
+// (axe-core scans, React commits, Chromium rendering) doesn't oversubscribe
+// the runner and start missing the timing assertions scattered across this
+// suite. Capping at ProcessorCount (as this used to) still starves the
+// Aspire-hosted stack itself: every core is claimed by a test's own
+// Chromium/axe-core work, leaving none free for the backend/Postgres/
+// Keycloak/frontend processes those tests are actually driving - e.g.
+// AccessibilityTests.OrgDashboardPage_PlacingAWidget_AsOlaf and
+// EngagementManagementPage_AsOlaf both timed out waiting on the same
+// GET /v1/organizations round trip in the same CI run (2026-07-28), the
+// exact contention pattern AuthHelper.GoToOrgAppDashboardAsync's comment
+// already predicted as the suite grew. Reserving one core for the stack
+// itself is a structural fix for that class of flake, as opposed to the
+// timeout bumps this file's sibling comments already flag as running out of
+// headroom. Environment.ProcessorCount rather than a hardcoded number so
+// this scales with whatever runner size CI happens to use, and with a larger
+// local dev machine.
 [assembly: ParallelLimiter<VisualTestsParallelLimit>]
 
 public sealed class VisualTestsParallelLimit : IParallelLimit
 {
-	public int Limit => Environment.ProcessorCount;
+	public int Limit => Math.Max(1, Environment.ProcessorCount - 1);
 }

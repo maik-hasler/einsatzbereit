@@ -111,11 +111,11 @@ jobs:
 
       - name: Restore backend
         working-directory: backend
-        run: dotnet restore
+        run: dotnet restore tests/IntegrationTests
 
       - name: Build backend
         working-directory: backend
-        run: dotnet build --no-restore
+        run: dotnet build tests/IntegrationTests --no-restore
 
       - name: Pre-pull Docker images
         run: |
@@ -159,13 +159,26 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      # tests/VisualTests.csproj downloads Chrome for Testing + Chrome Headless
+      # Shell from cdn.playwright.dev (~290 MiB combined) via its
+      # InstallPlaywrightBrowsers MSBuild target (AfterTargets="Build"). Without
+      # this cache that download repeats on every single run - the actual
+      # source of "downloading images over and over" - since GitHub-hosted
+      # runners are ephemeral. `playwright install` itself is idempotent and
+      # skips the download when the target revision is already present here.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+
       - name: Restore backend
         working-directory: backend
-        run: dotnet restore
+        run: dotnet restore tests/VisualTests
 
       - name: Build backend
         working-directory: backend
-        run: dotnet build --no-restore
+        run: dotnet build tests/VisualTests --no-restore
 
       - name: Pre-pull Docker images
         run: |

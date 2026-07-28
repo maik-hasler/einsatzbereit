@@ -76,11 +76,11 @@ jobs:
 
       - name: Restore backend
         working-directory: backend
-        run: dotnet restore
+        run: dotnet restore tests/IntegrationTests
 
       - name: Build backend
         working-directory: backend
-        run: dotnet build --no-restore
+        run: dotnet build tests/IntegrationTests --no-restore
 
       - name: Pre-pull Docker images
         run: |
@@ -125,13 +125,22 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      # See the matching step in dotnet.yml's visual-tests job for why this
+      # cache exists - it eliminates the ~290 MiB cdn.playwright.dev download
+      # that would otherwise repeat on every release-candidate cut.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+
       - name: Restore backend
         working-directory: backend
-        run: dotnet restore
+        run: dotnet restore tests/VisualTests
 
       - name: Build backend
         working-directory: backend
-        run: dotnet build --no-restore
+        run: dotnet build tests/VisualTests --no-restore
 
       - name: Pre-pull Docker images
         run: |
