@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -98,5 +99,37 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await cta.First.ClickAsync();
 
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+	}
+
+	[Test]
+	public async Task Authenticated_WithOrgs_HeroOrgCta_SurvivesATransientOrganizationsFailure()
+	{
+		// useSharedOrgFetch fetches once per key on mount and never re-attempts,
+		// so a single dropped GET /v1/organizations used to leave HomePage's
+		// `orgs` empty for the life of the page - silently downgrading a signed-in
+		// organizer to the "no organizations" branch, which offers to create an
+		// organization they already have. Only a manual reload recovered it.
+		// withRetry (lib/retry.ts) now retries transport-level failures; this
+		// drops the first request to prove the CTA still arrives.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var aborted = 0;
+		await Page.RouteAsync("**/v1/organizations*", async route =>
+		{
+			// Only the first attempt fails; the retry must be allowed through to
+			// the base-class handler (VisualTestBase's context-level route).
+			if (Interlocked.Increment(ref aborted) == 1)
+				await route.AbortAsync("failed");
+			else
+				await route.FallbackAsync();
+		});
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+
+		var cta = Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
+		await Expect(cta.First).ToBeVisibleAsync(new() { Timeout = 30_000 });
+
+		aborted.Should().BeGreaterThan(1,
+			"the first organizations request should have been dropped and then retried");
 	}
 }

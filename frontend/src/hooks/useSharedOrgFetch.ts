@@ -1,4 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { withRetry } from "../lib/retry";
 
 // Module-level registry of in-flight requests, keyed by a caller-supplied
 // string (typically `${resource}:${organizationId}:${refreshKey}`, or just
@@ -28,7 +29,12 @@ export function useSharedOrgFetch<T>(
 
 		let promise = inFlight.get(key) as Promise<T> | undefined;
 		if (!promise) {
-			promise = fetcher();
+			// Retried rather than issued bare: this hook fetches once per key on
+			// mount and never re-attempts, so without this a single dropped
+			// request leaves the consumer's data null for the life of the page.
+			// See withRetry for the user-visible bug that caused on HomePage.
+			// Safe because every caller here is a GET.
+			promise = withRetry(fetcher);
 			inFlight.set(key, promise);
 			// Dropped once settled - the next mount/refresh under this key issues
 			// a fresh request rather than serving indefinitely stale data.
