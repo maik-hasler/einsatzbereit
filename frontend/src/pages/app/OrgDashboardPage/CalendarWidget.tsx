@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -65,6 +65,29 @@ function CalEventChip({ event }: { event: object }) {
 	);
 }
 
+// Neither depends on component state/props, so both are declared once at
+// module scope - passing fresh object/function literals as Calendar props
+// on every render defeats react-big-calendar's own internal memoization
+// (see #1397).
+const calendarComponents = { event: CalEventChip };
+
+function calendarEventPropGetter(event: object) {
+	const e = event as CalEvent;
+	const bg = e.color ?? DEFAULT_EVENT_COLOR;
+	return {
+		style: {
+			backgroundColor: bg,
+			borderColor: bg,
+			color: "#ffffff",
+		},
+	};
+}
+
+// The color picker's onChange fires continuously while the user drags across
+// the native picker UI; debouncing avoids re-rendering the whole widget (and
+// its Calendar subtree) on every pointer movement (#1397).
+const COLOR_INPUT_DEBOUNCE_MS = 100;
+
 interface Props {
 	organizationId: string;
 	refreshKey: number;
@@ -104,24 +127,59 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const [pickerColor, setPickerColor] = useState(DEFAULT_EVENT_COLOR);
 	const [savingColor, setSavingColor] = useState(false);
 	const [colorSaveError, setColorSaveError] = useState<string | null>(null);
+	const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const calEvents: CalEvent[] = (calData ?? []).flatMap((opp) =>
-		opp.timeSlots.map((slot) => ({
-			id: slot.timeSlotId,
-			title: opp.title,
-			start: new Date(slot.startDateTime),
-			end: new Date(slot.endDateTime),
-			opportunityId: opp.opportunityId,
-			color: opp.color,
-			bookedCount: slot.bookedCount,
-			maxParticipants: slot.maxParticipants,
-		})),
+	useEffect(() => {
+		return () => {
+			if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
+		};
+	}, []);
+
+	const calEvents: CalEvent[] = useMemo(
+		() =>
+			(calData ?? []).flatMap((opp) =>
+				opp.timeSlots.map((slot) => ({
+					id: slot.timeSlotId,
+					title: opp.title,
+					start: new Date(slot.startDateTime),
+					end: new Date(slot.endDateTime),
+					opportunityId: opp.opportunityId,
+					color: opp.color,
+					bookedCount: slot.bookedCount,
+					maxParticipants: slot.maxParticipants,
+				})),
+			),
+		[calData],
 	);
 
-	function handleSelectEvent(event: CalEvent) {
-		setSelectedEvent(event);
-		setPickerColor(event.color ?? DEFAULT_EVENT_COLOR);
+	const calendarMessages = useMemo(
+		() => ({
+			today: t("orgOverview.calendarToday"),
+			previous: t("orgOverview.calendarBack"),
+			next: t("orgOverview.calendarNext"),
+			month: t("orgOverview.calendarMonth"),
+			week: t("orgOverview.calendarWeek"),
+			work_week: t("orgOverview.calendarWorkWeek"),
+			day: t("orgOverview.calendarDay"),
+			agenda: t("orgOverview.calendarAgenda"),
+			noEventsInRange: t("orgOverview.calendarNoEvents"),
+		}),
+		[t],
+	);
+
+	const handleSelectEvent = useCallback((event: object) => {
+		const e = event as CalEvent;
+		if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
+		setSelectedEvent(e);
+		setPickerColor(e.color ?? DEFAULT_EVENT_COLOR);
 		setColorSaveError(null);
+	}, []);
+
+	function handleColorPickerChange(value: string) {
+		if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
+		colorDebounceRef.current = setTimeout(() => {
+			setPickerColor(value);
+		}, COLOR_INPUT_DEBOUNCE_MS);
 	}
 
 	async function handleColorSave() {
@@ -174,32 +232,10 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 						onNavigate={(d: Date) => setCalDate(d)}
 						views={["month", "week", "work_week", "day", "agenda"]}
 						style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
-						components={{ event: CalEventChip }}
-						eventPropGetter={(event: object) => {
-							const e = event as CalEvent;
-							const bg = e.color ?? DEFAULT_EVENT_COLOR;
-							return {
-								style: {
-									backgroundColor: bg,
-									borderColor: bg,
-									color: "#ffffff",
-								},
-							};
-						}}
-						onSelectEvent={(event: object) =>
-							handleSelectEvent(event as CalEvent)
-						}
-						messages={{
-							today: t("orgOverview.calendarToday"),
-							previous: t("orgOverview.calendarBack"),
-							next: t("orgOverview.calendarNext"),
-							month: t("orgOverview.calendarMonth"),
-							week: t("orgOverview.calendarWeek"),
-							work_week: t("orgOverview.calendarWorkWeek"),
-							day: t("orgOverview.calendarDay"),
-							agenda: t("orgOverview.calendarAgenda"),
-							noEventsInRange: t("orgOverview.calendarNoEvents"),
-						}}
+						components={calendarComponents}
+						eventPropGetter={calendarEventPropGetter}
+						onSelectEvent={handleSelectEvent}
+						messages={calendarMessages}
 					/>
 				</div>
 			)}
@@ -238,7 +274,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 									id="event-color-picker"
 									type="color"
 									value={pickerColor}
-									onChange={(e) => setPickerColor(e.target.value)}
+									onChange={(e) => handleColorPickerChange(e.target.value)}
 									className="h-9 w-16 cursor-pointer rounded border border-gray-300"
 								/>
 								<span className="text-sm text-gray-500">{pickerColor}</span>
