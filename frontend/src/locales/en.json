@@ -170,7 +170,7 @@
       "publish": "Publish",
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
-      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity.",
+      "loginPrompt": "Sign in to sign up for this opportunity.",
       "yourApplication": "Your application",
       "aboutOrganization": "About this organization",
       "moreFromOrganization": "More from this organization",
