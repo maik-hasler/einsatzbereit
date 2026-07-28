@@ -88,6 +88,45 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 			token.AccessToken, token.IdToken, token.RefreshToken, token.ExpiresIn, token.TokenType, authority);
 	}
 
+	// The organization a user's org-app entry points resolve to when no
+	// active-org cookie is set: alphabetically first, restricted to the
+	// seeded "Fairview ..." organizations (see ApplicationDbContextInitializer).
+	//
+	// That restriction is the whole point. resolveActiveOrg (activeOrg.ts)
+	// falls back to "first organization alphabetically by name", and ~10 tests
+	// in this suite create throwaway organizations under the *shared* olaf
+	// account with names that sort before "Fairview" ("A11yLogo ...",
+	// "CheckInPinEdit Org ...", etc). Every test gets a fresh browser context
+	// and therefore no active-org cookie, so without pinning, any test using
+	// AuthHelper.GoToOrgAppDashboardAsync silently lands on whichever
+	// throwaway org some concurrently-running test happened to create first -
+	// green or red purely by execution order. Anchoring to the seeded orgs
+	// here keeps that resolution deterministic no matter what else the suite
+	// has created, and matches what a clean database would resolve to anyway.
+	public async Task<Guid?> GetSeededOrganizerOrganizationIdAsync(string userId)
+	{
+		if (!Guid.TryParse(userId, out var userGuid))
+			return null;
+
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+		await using var cmd = new NpgsqlCommand(
+			"""
+			SELECT o.id
+			FROM organization AS o
+			JOIN organization_membership AS m ON m.organization_id = o.id
+			WHERE m.user_id = @userId
+			  AND m.role = 'Organizer'
+			  AND NOT o.is_deleted
+			  AND o.name LIKE 'Fairview%'
+			ORDER BY o.name
+			LIMIT 1
+			""", conn);
+		cmd.Parameters.AddWithValue("userId", userGuid);
+
+		return await cmd.ExecuteScalarAsync() as Guid?;
+	}
+
 	// Test-only escape hatch to simulate an opportunity row removed without
 	// going through the command handler that cancels its engagements first -
 	// e.g. data predating that cancellation safeguard (#703).

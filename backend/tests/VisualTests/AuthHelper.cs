@@ -74,12 +74,29 @@ public static class AuthHelper
 		});
 		var storageKey = $"oidc.user:{session.Authority}:{FrontendClientId}";
 
+		// Pin which organization the org-app entry points resolve to, rather
+		// than letting activeOrg.ts's "first alphabetically" fallback pick one
+		// out of whatever throwaway orgs other tests have created under this
+		// same shared account - see AspireFixture.GetSeededOrganizerOrganizationIdAsync
+		// for the full failure mode. Seeding the cookie here (rather than in
+		// GoToOrgAppDashboardAsync) is what makes it take effect: it has to be
+		// in place before the SPA resolves the CTA's href, which happens on
+		// the very first render after this method's GotoAsync below.
+		var activeOrgCookieScript = string.Empty;
+		if (profile.TryGetProperty("sub", out var sub)
+			&& sub.GetString() is { } userId
+			&& await fixture.GetSeededOrganizerOrganizationIdAsync(userId) is { } organizationId)
+		{
+			var cookie = $"active-org={organizationId}; path=/; SameSite=Lax";
+			activeOrgCookieScript = $"document.cookie = {JsonSerializer.Serialize(cookie)};";
+		}
+
 		// AddInitScriptAsync (not EvaluateAsync after navigation) so this runs
 		// before the SPA's own bundle - by the time React/oidc-client-ts mounts,
 		// the "user" is already in storage and no anonymous render happens first.
 		await page.AddInitScriptAsync(
 			$"window.localStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
-			+ $"{JsonSerializer.Serialize(storageValue)});");
+			+ $"{JsonSerializer.Serialize(storageValue)}); {activeOrgCookieScript}");
 
 		await page.GotoAsync(frontendUrl.ToString());
 
