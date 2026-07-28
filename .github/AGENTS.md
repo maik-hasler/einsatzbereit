@@ -25,8 +25,9 @@
 
 ### `frontend.yml`
 - **Trigger:** `frontend/**` path filter or manual
-- **Jobs (sequential):** lint → build
+- **Jobs (sequential):** lint → test → build
   - `lint`: `pnpm lint` + `pnpm check` (type check)
+  - `test`: `pnpm test` (Vitest, `src/**/*.test.ts` - currently the `lib/` pure-function suite)
   - `build`: `pnpm build`
 - **No E2E job** - E2E lives in backend `tests/VisualTests/` (run by `dotnet.yml`)
 
@@ -61,7 +62,7 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 **Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
 
 ### Publish flow (backend/frontend/keycloak)
-1. Run full test suite - three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend`, `publish-frontend`, and `publish-keycloak` all wait on via `needs:` before building anything, so a test failure blocks every image, not just the backend's. Frontend additionally runs its own lint/type-check/build inline; keycloak has no additional test gate beyond the shared backend suite
+1. Run full test suite - three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend`, `publish-frontend`, and `publish-keycloak` all wait on via `needs:` before building anything, so a test failure blocks every image, not just the backend's. Frontend additionally runs its own lint/type-check/unit-tests/build inline; keycloak has no additional test gate beyond the shared backend suite
 2. Login to GHCR
 3. Extract version from tag (strips leading `v`)
 4. Build and push Docker image
