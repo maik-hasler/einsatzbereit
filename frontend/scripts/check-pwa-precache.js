@@ -8,14 +8,30 @@
 // the stable vendor chunks, with route chunks served via a runtime
 // StaleWhileRevalidate cache instead. Purely static checks - no build
 // required.
-import { readFileSync } from "fs";
+//
+// Also guards against a second regression that lazy-loading routes caused:
+// a third-party stylesheet (react-big-calendar's) imported from a
+// lazy-loaded page component ended up in that route's own CSS chunk,
+// injected into <head> only when that chunk loads - i.e. *after* the main
+// stylesheet's global.css brand overrides for the same classes, which have
+// equal CSS specificity. Load order alone then decided the cascade winner,
+// and the library's unstyled defaults started beating our overrides
+// (color-contrast a11y failures on CreateVolunteerOpportunityModal/
+// CreateOrganizationModal, which render the dashboard's calendar widget
+// behind them). Fixed by keeping CSS out of per-route code splitting
+// entirely (cssCodeSplit: false) and importing react-big-calendar's
+// stylesheet eagerly from main.tsx, before global.css, so cascade order is
+// fixed at the entry point instead of depending on chunk load timing.
+import { readFileSync, readdirSync, statSync } from "fs";
 import { fileURLToPath } from "url";
-import { join, dirname } from "path";
+import { join, dirname, relative } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const frontendDir = join(__dirname, "..");
+const srcDir = join(frontendDir, "src");
 
 const viteConfig = readFileSync(join(frontendDir, "vite.config.ts"), "utf8");
+const mainTsx = readFileSync(join(srcDir, "main.tsx"), "utf8");
 const appTsx = readFileSync(join(frontendDir, "src/App.tsx"), "utf8");
 const appLayoutTsx = readFileSync(
 	join(frontendDir, "src/layouts/AppLayout.tsx"),
@@ -25,6 +41,19 @@ const orgAppLayoutTsx = readFileSync(
 	join(frontendDir, "src/layouts/OrgAppLayout.tsx"),
 	"utf8",
 );
+
+function listSourceFiles(dir) {
+	let files = [];
+	for (const entry of readdirSync(dir)) {
+		const full = join(dir, entry);
+		if (statSync(full).isDirectory()) {
+			files = files.concat(listSourceFiles(full));
+		} else if (/\.(ts|tsx)$/.test(entry)) {
+			files.push(full);
+		}
+	}
+	return files;
+}
 
 let ok = true;
 function fail(message) {
@@ -112,6 +141,58 @@ if (!/<Suspense\b/.test(orgAppLayoutTsx)) {
 	fail(
 		"src/layouts/OrgAppLayout.tsx renders lazy route elements via <Outlet /> but has no " +
 			"<Suspense> boundary around it - they will throw without a Suspense ancestor to catch them.",
+	);
+}
+
+// 5. CSS must not be split per route chunk - see the file header comment
+// for why a lazy-chunk-scoped third-party stylesheet import previously
+// broke cascade order for react-big-calendar's classes.
+if (!/cssCodeSplit\s*:\s*false/.test(viteConfig)) {
+	fail(
+		"vite.config.ts's build.cssCodeSplit is not explicitly \"false\" - without it, CSS gets " +
+			"split per route chunk again, which can silently flip the cascade order between a " +
+			"third-party stylesheet and global.css's overrides for the same classes depending on " +
+			"which chunk happens to load first.",
+	);
+}
+
+// 6. No component may import a third-party (bare-specifier) stylesheet -
+// only main.tsx may, since it's the one place guaranteed to load eagerly
+// and in a fixed order relative to global.css. A CSS import inside any
+// lazy-loaded page/component ties that stylesheet's cascade position to
+// when React happens to load that route's chunk.
+const thirdPartyCssImport = /import\s+["'](?!\.)[^"']+\.css["'];?/;
+for (const file of listSourceFiles(srcDir)) {
+	if (file === join(srcDir, "main.tsx")) continue;
+	const content = readFileSync(file, "utf8");
+	if (thirdPartyCssImport.test(content)) {
+		fail(
+			`${relative(frontendDir, file)} imports a third-party stylesheet directly - move it to ` +
+				"main.tsx (before the global.css import, if it needs to lose the cascade to a brand " +
+				"override there) instead, or it risks the same load-order-dependent cascade bug fixed " +
+				"for react-big-calendar's stylesheet.",
+		);
+	}
+}
+
+// 7. The one known case: react-big-calendar's stylesheet must be imported
+// in main.tsx, before global.css, so global.css's overrides for the same
+// classes keep winning the cascade regardless of chunk load timing.
+const rbcImportIndex = mainTsx.indexOf(
+	'"react-big-calendar/lib/css/react-big-calendar.css"',
+);
+const globalCssImportIndex = mainTsx.indexOf('"./styles/global.css"');
+if (rbcImportIndex === -1) {
+	fail(
+		"src/main.tsx no longer imports react-big-calendar's stylesheet - if CalendarWidget.tsx " +
+			"imports it directly again instead, the cascade-order bug from issue #1403 comes back.",
+	);
+} else if (globalCssImportIndex === -1) {
+	fail("src/main.tsx no longer imports ./styles/global.css.");
+} else if (rbcImportIndex > globalCssImportIndex) {
+	fail(
+		"src/main.tsx imports react-big-calendar's stylesheet after global.css - it must come " +
+			"before, so global.css's brand overrides for the same classes win the cascade.",
 	);
 }
 

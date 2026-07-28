@@ -5,7 +5,13 @@ import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import type { View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS, de } from "date-fns/locale";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+// react-big-calendar's own stylesheet is imported eagerly from main.tsx
+// (before global.css), not here - see the comment there for why: this
+// widget only exists on the lazy-loaded OrgDashboardPage chunk, and an
+// import here would tie the library's default (unstyled, low-contrast)
+// CSS to that chunk's load order relative to global.css's brand overrides
+// for the same react-big-calendar classes, rather than a fixed, predictable
+// order.
 import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Modal from "../../../components/Modal";
