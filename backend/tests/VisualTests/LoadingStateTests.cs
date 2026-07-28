@@ -29,8 +29,13 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 
 		// The skeleton's accessible name comes from a sr-only span; the
-		// pulsing placeholder blocks themselves are aria-hidden.
-		var loadingStatus = Page.Locator("[role='status']").First;
+		// pulsing placeholder blocks themselves are aria-hidden. Scoped to
+		// ":has(.animate-pulse)" rather than a bare "[role='status']" first
+		// match, since routes are lazy-loaded (#1403): the route's own
+		// Suspense fallback (a spinner, not a skeleton) is also role="status"
+		// and briefly present while the page's JS chunk downloads, racing
+		// this one for "first role='status' on the page".
+		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
 		await Expect(loadingStatus).ToContainTextAsync("Loading");
 		(await loadingStatus.Locator(".animate-pulse").CountAsync()).Should().BeGreaterThan(0);
@@ -58,7 +63,9 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync(detailUrl);
 
-		var loadingStatus = Page.Locator("[role='status']").First;
+		// See the comment in HomePage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
+		// above on why this is scoped to ":has(.animate-pulse)".
+		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
 		await Expect(loadingStatus).ToContainTextAsync("Loading");
 		(await loadingStatus.Locator(".animate-pulse").CountAsync()).Should().BeGreaterThan(0);

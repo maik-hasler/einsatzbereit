@@ -31,7 +31,7 @@ export default function NotificationItem({
 							defaultValue: n.kind,
 						})}
 						<br />
-						<span className="text-xs text-gray-400">
+						<span className="text-xs text-gray-500">
 							{formatDateTime(n.createdOn as unknown as string, i18n.language)}
 						</span>
 					</span>

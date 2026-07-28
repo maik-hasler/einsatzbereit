@@ -26,9 +26,9 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 
-		var notification = olafNotifications.Single(n => n.Kind == "EngagementCreated");
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
 		notification.RelatedTitle.Should().Be(opportunityTitle);
 		notification.ActionUrl.Should()
 			.Be($"/app/{orgId}/dashboard/opportunities/{opportunity.Id}/engagements");
@@ -52,11 +52,61 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
-		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken);
+		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 
-		var notification = veraNotifications.Single(n => n.Kind == "EngagementConfirmed");
+		var notification = veraNotifications.Items.Single(n => n.Kind == "EngagementConfirmed");
 		notification.RelatedTitle.Should().Be(opportunityTitle);
 		notification.ActionUrl.Should().Be("/my-engagements");
+	}
+
+	[Test]
+	public async Task GetMyNotifications_BeforeCursor_ReturnsOnlyOlderNotifications(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunityOne = await CreateOpportunityAsync(olafClient, orgId, "Cursor Test One", cancellationToken);
+		var opportunityTwo = await CreateOpportunityAsync(olafClient, orgId, "Cursor Test Two", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunityOne.Id, new CreateEngagementRequest { Message = "First" }, cancellationToken);
+		await veraClient.CreateEngagementAsync(
+			opportunityTwo.Id, new CreateEngagementRequest { Message = "Second" }, cancellationToken);
+
+		var firstPage = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var ordered = firstPage.Items
+			.Where(n => n.Kind == "EngagementCreated")
+			.OrderByDescending(n => n.CreatedOn)
+			.ToList();
+		ordered.Should().HaveCount(2);
+
+		var secondPage = await olafClient.GetMyNotificationsAsync(ordered[0].CreatedOn.ToUnixTimeMilliseconds(), ordered[0].Id, cancellationToken);
+
+		secondPage.Items.Should().ContainSingle(n => n.Id == ordered[1].Id);
+		secondPage.Items.Should().NotContain(n => n.Id == ordered[0].Id);
+		secondPage.HasMore.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task GetUnreadNotificationCount_ReflectsUnreadNotificationsAndMarkAllRead(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, "Unread Count Test", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
+
+		var countBeforeRead = await olafClient.GetUnreadNotificationCountAsync(cancellationToken);
+		countBeforeRead.Should().Be(1);
+
+		await olafClient.MarkAllNotificationsReadAsync(cancellationToken);
+
+		var countAfterRead = await olafClient.GetUnreadNotificationCountAsync(cancellationToken);
+		countAfterRead.Should().Be(0);
 	}
 
 	[Test]
@@ -75,13 +125,13 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
-		var notification = olafNotifications.Single(n => n.Kind == "EngagementCreated");
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
 
 		await olafClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
 
-		var updatedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
-		updatedNotifications.Single(n => n.Id == notification.Id).IsRead.Should().BeTrue();
+		var updatedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		updatedNotifications.Items.Single(n => n.Id == notification.Id).IsRead.Should().BeTrue();
 	}
 
 	[Test]
@@ -100,8 +150,8 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
-		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
-		var notification = olafNotifications.Single(n => n.Kind == "EngagementCreated");
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
 
 		// Direct ownership-check coverage for #829: vera is not the recipient of
 		// olaf's notification, so this must 404 (not 403, to avoid leaking
@@ -111,8 +161,8 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(404);
 
-		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken);
-		unchangedNotifications.Single(n => n.Id == notification.Id).IsRead.Should().BeFalse();
+		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		unchangedNotifications.Items.Single(n => n.Id == notification.Id).IsRead.Should().BeFalse();
 	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(

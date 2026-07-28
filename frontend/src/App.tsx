@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import {
 	Routes,
 	Route,
@@ -10,37 +10,47 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
 import ErrorBanner from "./components/ErrorBanner";
-import RouteLoadingFallback from "./components/RouteLoadingFallback";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
-import type { OrgAppContext } from "./layouts/OrgAppLayout";
+import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import ImprintPage from "./pages/ImprintPage";
-import ContactPage from "./pages/ContactPage";
-import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
-import ProfileOverviewPage from "./pages/ProfileOverviewPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import OrganizationProfilePage from "./pages/OrganizationProfilePage";
-import OrganizationsPage from "./pages/OrganizationsPage";
-import UserAchievementsPage from "./pages/UserAchievementsPage";
-import UserProfilePage from "./pages/UserProfilePage";
 
-// Lazy-loaded: the platform-admin panel and the organizer-only app shell
-// (widget dashboard, opportunity/member/settings management, QR check-in)
-// pull in a lot of code that anonymous and plain-volunteer visitors never
-// touch, so keep them out of the shared entry chunk - see #971.
-const OrgAppLayout = lazy(() => import("./layouts/OrgAppLayout"));
-const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
-const OrgOpportunitiesPage = lazy(
-	() => import("./pages/app/OrgOpportunitiesPage"),
+// Route pages are lazy-loaded so each one becomes its own build chunk instead
+// of all being bundled (and precached by the PWA service worker) as a single
+// monolithic entry chunk - see vite.config.ts's manualChunks/workbox comments
+// for the other half of this. AppLayout/OrgAppLayout stay eager since they
+// render on (almost) every route as the app chrome. HomePage ("/") also
+// stays eager (imported above, not lazy): it's the app's default landing
+// route anyway (small - not the precache-size problem #1403 targets), and
+// it shares an in-flight-request dedup with Header for GET /v1/organizations
+// (useSharedOrgFetch, #1396) that depends on both mounting in the same
+// synchronous commit - a lazy HomePage's chunk-load delay pushes its mount
+// past Header's request already having settled, so the "shared" fetch
+// fires twice instead of once.
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const ImprintPage = lazy(() => import("./pages/ImprintPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const VolunteerOpportunityDetailPage = lazy(
+	() => import("./pages/VolunteerOpportunityDetailPage"),
 );
 const EngagementManagementPage = lazy(
 	() => import("./pages/EngagementManagementPage"),
 );
+const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const OrganizationProfilePage = lazy(
+	() => import("./pages/OrganizationProfilePage"),
+);
+const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
+const UserAchievementsPage = lazy(() => import("./pages/UserAchievementsPage"));
+const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
+const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
+const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
+const OrgOpportunitiesPage = lazy(
+	() => import("./pages/app/OrgOpportunitiesPage"),
+);
 const OrgMembersPage = lazy(() => import("./pages/app/OrgMembersPage"));
 const OrgSettingsPage = lazy(() => import("./pages/app/OrgSettingsPage"));
-const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
 
 // A bare <Outlet /> element (no `context` prop) starts a brand new outlet
 // context of its own - it does NOT transparently forward whatever an
@@ -81,9 +91,7 @@ export default function App() {
 				path="/app/:organizationId"
 				element={
 					<ProtectedRoute>
-						<Suspense fallback={<RouteLoadingFallback />}>
-							<OrgAppLayout />
-						</Suspense>
+						<OrgAppLayout />
 					</ProtectedRoute>
 				}
 			>

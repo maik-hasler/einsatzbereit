@@ -247,7 +247,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		// Add exactly one widget so its placement lands at a known (x=1, y=1)
 		// - see placeNewWidget in widgetCatalog.ts - making the grid-cell
-		// index math below trivial (an 8-column-wide, 2-row-tall grid).
+		// index math below trivial (an 8-column-wide, 1-row-tall grid).
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-Settings").ClickAsync();
@@ -259,9 +259,9 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
 
-		// Settings starts at (x=1, y=1, width=8, height=2) - click column 2,
+		// Settings starts at (x=1, y=1, width=8, height=1) - click column 2,
 		// row 1 as the first corner, then column 5, row 2 as the second, to
-		// move+shrink it to (x=2, y=1, width=4, height=2).
+		// move+resize it to (x=2, y=1, width=4, height=2).
 		await ClickGridCellAsync(col: 2, row: 1);
 		await ClickGridCellAsync(col: 5, row: 2);
 
@@ -302,7 +302,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await RemoveAllWidgetsAsync();
 
 		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -345,7 +345,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await RemoveAllWidgetsAsync();
 
 		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -371,7 +371,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.UpAsync();
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -380,7 +380,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 5, y: 1, width: 4, height: 1);
 	}
 
 	[Test]
@@ -401,7 +401,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await RemoveAllWidgetsAsync();
 
 		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -429,7 +429,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.UpAsync();
 
 		await Expect(Page.GetByTestId("dashboard-placement-status")).Not.ToBeVisibleAsync();
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 1);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -438,7 +438,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 3, y: 1, width: 4, height: 1);
 	}
 
 	[Test]
@@ -465,7 +465,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await RemoveAllWidgetsAsync();
 
 		// Add exactly one widget so its placement lands at a known (x=1, y=1,
-		// width=4, height=2) - see placeNewWidget in widgetCatalog.ts.
+		// width=4, height=1) - see placeNewWidget in widgetCatalog.ts.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await dialog.GetByTestId("add-widget-option-ToDo").ClickAsync();
@@ -475,10 +475,10 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		var tileBox = await tile.BoundingBoxAsync();
 		tileBox.Should().NotBeNull();
 		var colPx = tileBox!.Width / 4;
-		var rowPx = tileBox.Height / 2;
+		var rowPx = tileBox.Height / 1;
 
 		// Drag the corner handle one column right and one row down: width
-		// 4 -> 5 and height 2 -> 3 together, from the same single drag.
+		// 4 -> 5 and height 1 -> 2 together, from the same single drag.
 		var cornerHandle = tile.GetByTestId("widget-resize-handle-corner");
 		var cornerHandleBox = await cornerHandle.BoundingBoxAsync();
 		cornerHandleBox.Should().NotBeNull();
@@ -490,7 +490,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.Mouse.MoveAsync(startX + colPx, startY + rowPx, new() { Steps = 5 });
 		await Page.Mouse.UpAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 3);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -499,7 +499,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 3);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 5, height: 2);
 	}
 
 	[Test]
@@ -571,7 +571,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 			.GetByRole(AriaRole.Button, new() { Name = "Remove Create Opportunity widget" })
 			.ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 1);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -580,7 +580,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 1, width: 4, height: 1);
 	}
 
 	[Test]
@@ -593,7 +593,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 
 		await CreateOrganizationAsync("Visual DashKeyboardPlace");
 
-		// ToDo starts at (x=5, y=1, width=4, height=2) in DEFAULT_LAYOUT.
+		// ToDo starts at (x=5, y=1, width=4, height=1) in DEFAULT_LAYOUT.
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		var moveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" });
@@ -604,8 +604,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// (cursor defaults to the widget's current top-left corner, x=5/y=1),
 		// second press locks that as the first corner, then ArrowRight and
 		// ArrowDown move the cursor to (col=6, row=2) before the third press
-		// commits the second corner there - shrinking the tile from
-		// (width=4, height=2) to (width=2, height=2) while keeping the same
+		// commits the second corner there - resizing the tile from
+		// (width=4, height=1) to (width=2, height=2) while keeping the same
 		// top-left corner.
 		await Page.Keyboard.PressAsync("Enter");
 		await Expect(Page.GetByTestId("dashboard-placement-status")).ToBeVisibleAsync();
@@ -671,8 +671,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await RemoveAllWidgetsAsync();
 
-		// Settings lands at (x=1, y=1, width=8, height=2); ToDo is added next
-		// and lands right below it at (x=1, y=3, width=4, height=2) - see
+		// Settings lands at (x=1, y=1, width=8, height=1); ToDo is added next
+		// and lands right below it at (x=1, y=2, width=4, height=1) - see
 		// placeNewWidget in widgetCatalog.ts.
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
 		var dialog = Page.GetByRole(AriaRole.Dialog);
@@ -683,8 +683,8 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Organization" }).ClickAsync();
 
 		// Grow Settings down into ToDo's row (x=1..4, y=1..4) - overlaps
-		// ToDo's (x=1..4, y=3..4). ToDo has nowhere else to go but straight
-		// down below the grown Settings tile, landing at (x=1..4, y=5..6).
+		// ToDo's (x=1..4, y=2..2). ToDo has nowhere else to go but straight
+		// down below the grown Settings tile, landing at (x=1..4, y=5..5).
 		await ClickGridCellAsync(col: 1, row: 1);
 		await ClickGridCellAsync(col: 4, row: 4);
 
@@ -692,7 +692,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		(await Page.GetByRole(AriaRole.Alert).CountAsync()).Should().Be(0,
 			"an overlapping placement is displaced, not rejected - no error toast should appear");
 		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 1);
 
 		await Page.GetByTestId("quick-action-save").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -702,7 +702,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 
 		await AssertWidgetOccupiesCellsAsync("Settings", x: 1, y: 1, width: 4, height: 4);
-		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 2);
+		await AssertWidgetOccupiesCellsAsync("ToDo", x: 1, y: 5, width: 4, height: 1);
 	}
 
 	[Test]
@@ -797,7 +797,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		// randomly, inconsistently sized. The grid row height is now fixed
 		// (see index.tsx), so an overflowing widget's own WidgetCard content
 		// area scrolls internally instead - this publishes enough
-		// opportunities to overflow UpcomingOpportunitiesWidget (height=3,
+		// opportunities to overflow UpcomingOpportunitiesWidget (height=2,
 		// MAX_ITEMS=5) and confirms every backdrop row still shares the
 		// same rendered height as an unaffected row.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -853,18 +853,18 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Expect(Page.GetByTestId("dashboard-grid-guide-cell").First).ToBeVisibleAsync();
 
-		// UpcomingOpportunities sits at y=3..5 in DEFAULT_LAYOUT - row 1 (host
+		// UpcomingOpportunities sits at y=2..3 in DEFAULT_LAYOUT - row 1 (host
 		// to CreateOpportunity/ToDo, neither of which grew) is the unaffected
-		// baseline; row 4 falls inside the now-overflowing widget's own rows.
+		// baseline; row 2 falls inside the now-overflowing widget's own rows.
 		const int gridColumns = 8;
 		var row1CellHeight = await Page.GetByTestId("dashboard-grid-guide-cell")
 			.Nth((1 - 1) * gridColumns).EvaluateAsync<double>("el => el.getBoundingClientRect().height");
-		var row4CellHeight = await Page.GetByTestId("dashboard-grid-guide-cell")
-			.Nth((4 - 1) * gridColumns).EvaluateAsync<double>("el => el.getBoundingClientRect().height");
+		var row2CellHeight = await Page.GetByTestId("dashboard-grid-guide-cell")
+			.Nth((2 - 1) * gridColumns).EvaluateAsync<double>("el => el.getBoundingClientRect().height");
 
-		Math.Abs(row1CellHeight - row4CellHeight).Should().BeLessThan(2,
+		Math.Abs(row1CellHeight - row2CellHeight).Should().BeLessThan(2,
 			"every grid row must share the same fixed height, even when a widget's own content "
-				+ "(here, 5 published opportunities in a height=3 widget) overflows its allotted rows - "
+				+ "(here, 5 published opportunities in a height=2 widget) overflows its allotted rows - "
 				+ "that overflow should scroll within the widget's own card, not stretch the shared row band");
 	}
 

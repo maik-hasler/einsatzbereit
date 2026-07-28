@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import { Outlet } from "react-router";
+import { useTranslation } from "react-i18next";
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer";
-import RouteLoadingFallback from "../components/RouteLoadingFallback";
+import Spinner from "../components/Spinner";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { ToolbarProvider, useToolbarConfig } from "../contexts/ToolbarContext";
 import {
@@ -12,6 +13,7 @@ import {
 
 function AppLayoutInner() {
 	useAchievementNotifier();
+	const { t } = useTranslation();
 	const toolbarConfig = useToolbarConfig();
 	const quickActions = useQuickActionsList();
 	const breadcrumb =
@@ -26,7 +28,13 @@ function AppLayoutInner() {
 		<div className="min-h-screen flex flex-col">
 			<Header breadcrumb={breadcrumb} />
 			<main className="mx-auto max-w-7xl px-4 pb-16 pt-6 flex-1 w-full sm:px-6 sm:pt-10 lg:px-8 lg:pt-12">
-				<Suspense fallback={<RouteLoadingFallback />}>
+				<Suspense
+					fallback={
+						<div className="flex justify-center py-16">
+							<Spinner label={t("common.pageLoading")} size="lg" />
+						</div>
+					}
+				>
 					<Outlet />
 				</Suspense>
 			</main>

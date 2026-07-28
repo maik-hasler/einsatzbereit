@@ -61,7 +61,21 @@ internal sealed class OutboxProcessorJob(
 
 		while (!ct.IsCancellationRequested && await _timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
 		{
-			await ProcessPendingMessagesAsync(ct).ConfigureAwait(false);
+			try
+			{
+				await ProcessPendingMessagesAsync(ct).ConfigureAwait(false);
+			}
+			catch (Exception ex) when (ex is not OperationCanceledException)
+			{
+				// A tick-level failure (e.g. a transient SaveChangesAsync error, or the
+				// batch query itself losing its connection) must not escape this loop:
+				// an unhandled exception here would stop the PeriodicTimer from ever
+				// being awaited again, permanently disabling outbox dispatch for the
+				// rest of the process's lifetime instead of just this one poll cycle.
+				// Log and retry on the next tick - any message left unprocessed is
+				// picked up again next time since it still has ProcessedOnUtc == null.
+				logger.LogError(ex, "Outbox processor tick failed; will retry on the next poll interval");
+			}
 		}
 	}
 

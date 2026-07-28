@@ -10,7 +10,8 @@
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "pageLoading": "Loading page…"
     },
     "nav": {
       "primaryLabel": "Main navigation",
@@ -171,7 +172,7 @@
       "publish": "Publish",
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
-      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity.",
+      "loginPrompt": "Sign in to sign up for this opportunity.",
       "yourApplication": "Your application",
       "aboutOrganization": "About this organization",
       "moreFromOrganization": "More from this organization",
@@ -611,6 +612,8 @@
       "bellLabel": "Notifications",
       "markAllRead": "Mark all as read",
       "empty": "No notifications.",
+      "loadMore": "Load more",
+      "loadingMore": "Loading...",
       "deletedOpportunityPlaceholder": "a deleted opportunity",
       "kinds": {
         "EngagementCreated": "New application received for {{title}}",

@@ -15,7 +15,6 @@ import {
 	useQuickActionsList,
 } from "../contexts/QuickActionsContext";
 import Header from "../components/Header/Header";
-import RouteLoadingFallback from "../components/RouteLoadingFallback";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 
@@ -85,7 +84,13 @@ function OrgAppShell({
 			/>
 
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-				<Suspense fallback={<RouteLoadingFallback />}>
+				<Suspense
+					fallback={
+						<div className="flex justify-center py-16">
+							<Spinner label={t("common.pageLoading")} size="lg" />
+						</div>
+					}
+				>
 					<Outlet
 						context={{ org, reloadOrg: load } satisfies OrgAppContext}
 						// Outlet re-mounts children on org identity change so per-tab state resets cleanly

@@ -3721,8 +3721,8 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getMyNotifications(signal?: AbortSignal): Promise<NotificationSummary[]> {
-        let url_ = this.baseUrl + "/v1/notifications";
+    getUnreadNotificationCount(signal?: AbortSignal): Promise<number> {
+        let url_ = this.baseUrl + "/v1/notifications/unread-count";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -3734,17 +3734,17 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetMyNotifications(_response);
+            return this.processGetUnreadNotificationCount(_response);
         });
     }
 
-    protected processGetMyNotifications(response: Response): Promise<NotificationSummary[]> {
+    protected processGetUnreadNotificationCount(response: Response): Promise<number> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as NotificationSummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
             return result200;
             });
         } else if (status === 401) {
@@ -3764,7 +3764,66 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<NotificationSummary[]>(null as any);
+        return Promise.resolve<number>(null as any);
+    }
+
+    /**
+     * @param beforeUnixMs (optional) 
+     * @param beforeId (optional) 
+     * @return OK
+     */
+    getMyNotifications(beforeUnixMs: number | undefined, beforeId: string | undefined, signal?: AbortSignal): Promise<NotificationsPage> {
+        let url_ = this.baseUrl + "/v1/notifications?";
+        if (beforeUnixMs === null)
+            throw new globalThis.Error("The parameter 'beforeUnixMs' cannot be null.");
+        else if (beforeUnixMs !== undefined)
+            url_ += "beforeUnixMs=" + encodeURIComponent("" + beforeUnixMs) + "&";
+        if (beforeId === null)
+            throw new globalThis.Error("The parameter 'beforeId' cannot be null.");
+        else if (beforeId !== undefined)
+            url_ += "beforeId=" + encodeURIComponent("" + beforeId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyNotifications(_response);
+        });
+    }
+
+    protected processGetMyNotifications(response: Response): Promise<NotificationsPage> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as NotificationsPage;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<NotificationsPage>(null as any);
     }
 
     /**
@@ -5158,6 +5217,13 @@ export interface MyProfileResponse {
     skills: string[];
     languages: string[];
     preferredContact: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface NotificationsPage {
+    items: NotificationSummary[];
+    hasMore: boolean;
 
     [key: string]: any;
 }
