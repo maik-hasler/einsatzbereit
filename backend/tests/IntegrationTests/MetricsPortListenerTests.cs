@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
 namespace IntegrationTests;
