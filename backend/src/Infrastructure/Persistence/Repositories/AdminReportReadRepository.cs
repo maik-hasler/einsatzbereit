@@ -1,9 +1,13 @@
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Pagination;
 using Application.Reports;
 using Application.Reports.GetReportHistoryForTarget.v1;
 using Application.Reports.ListFlaggedTargets.v1;
+using Domain.Organizations;
 using Domain.Reports;
+using Domain.Users;
+using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;
@@ -44,21 +48,26 @@ internal sealed class AdminReportReadRepository(
 		var organizationIds = page.Where(g => g.TargetType == ReportTargetType.Organization).Select(g => g.TargetId).ToList();
 		var userIds = page.Where(g => g.TargetType == ReportTargetType.User).Select(g => g.TargetId).ToList();
 
+		var opportunityIdVOs = opportunityIds.Select(id => VolunteerOpportunityId.Create(id).GetValueOrThrow()).ToList();
+		var organizationIdVOs = organizationIds.Select(id => OrganizationId.Create(id).GetValueOrThrow()).ToList();
+		var userIdVOs = userIds.Select(id => UserId.Create(id).GetValueOrThrow()).ToList();
+
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.IgnoreQueryFilters()
-			.Where(vo => opportunityIds.Contains(vo.Id.Value))
+			.Where(vo => opportunityIdVOs.Contains(vo.Id))
 			.ToDictionaryAsync(vo => vo.Id.Value, vo => new { vo.Title, vo.IsDeleted }, cancellationToken);
 
 		var organizations = await dbContext.OrganizationsQuery
 			.IgnoreQueryFilters()
-			.Where(o => organizationIds.Contains(o.Id.Value))
+			.Where(o => organizationIdVOs.Contains(o.Id))
 			.ToDictionaryAsync(o => o.Id.Value, o => new { o.Name, o.IsDeleted }, cancellationToken);
 
 		var deletedUserIds = await dbContext.UsersQuery
 			.IgnoreQueryFilters()
-			.Where(u => userIds.Contains(u.Id.Value) && u.IsDeleted)
-			.Select(u => u.Id.Value)
+			.Where(u => userIdVOs.Contains(u.Id) && u.IsDeleted)
+			.Select(u => u.Id)
 			.ToListAsync(cancellationToken);
+		var deletedUserIdSet = deletedUserIds.Select(id => id.Value).ToHashSet();
 		var userDisplayNames = userIds.Count > 0
 			? await keycloakUserService.GetDisplayNamesAsync(userIds, cancellationToken)
 			: new Dictionary<Guid, string>();
@@ -81,7 +90,7 @@ internal sealed class AdminReportReadRepository(
 				{
 					ReportTargetType.VolunteerOpportunity => opportunities.GetValueOrDefault(g.TargetId)?.IsDeleted ?? false,
 					ReportTargetType.Organization => organizations.GetValueOrDefault(g.TargetId)?.IsDeleted ?? false,
-					ReportTargetType.User => deletedUserIds.Contains(g.TargetId),
+					ReportTargetType.User => deletedUserIdSet.Contains(g.TargetId),
 					_ => false,
 				}))
 			.ToList();
