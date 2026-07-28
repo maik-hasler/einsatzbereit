@@ -36,21 +36,21 @@ export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
 	CreateOpportunity: {
 		titleKey: "orgDashboard.createOpportunityWidgetTitle",
 		defaultWidth: 4,
-		defaultHeight: 2,
+		defaultHeight: 1,
 		minWidth: 2,
-		minHeight: 2,
+		minHeight: 1,
 	},
 	ToDo: {
 		titleKey: "orgDashboard.todoWidgetTitle",
 		defaultWidth: 4,
-		defaultHeight: 2,
+		defaultHeight: 1,
 		minWidth: 2,
-		minHeight: 2,
+		minHeight: 1,
 	},
 	UpcomingOpportunities: {
 		titleKey: "orgDashboard.upcomingWidgetTitle",
 		defaultWidth: 4,
-		defaultHeight: 3,
+		defaultHeight: 2,
 		minWidth: 2,
 		minHeight: 2,
 	},
@@ -64,9 +64,9 @@ export const WIDGET_CATALOG: Record<WidgetKey, WidgetCatalogEntry> = {
 	Settings: {
 		titleKey: "orgDashboard.settingsWidgetTitle",
 		defaultWidth: 8,
-		defaultHeight: 2,
+		defaultHeight: 1,
 		minWidth: 3,
-		minHeight: 2,
+		minHeight: 1,
 	},
 	QuickCheckIn: {
 		titleKey: "orgDashboard.quickCheckInWidgetTitle",
@@ -114,13 +114,16 @@ export interface PlacedWidget {
 // matches the arrangement the former auto-fit packer used to produce for
 // this same widget order (ToDo+CreateOpportunity side by side, then Upcoming
 // Opportunities, Calendar and Settings each full-width below), now stored as
-// explicit coordinates instead of being recomputed at render time.
+// explicit coordinates instead of being recomputed at render time. Heights
+// match each widget's own defaultHeight above (#982 - these used to be taller
+// than any of these widgets actually render, leaving 110-170px of dead space
+// per card on a fresh dashboard).
 export const DEFAULT_LAYOUT: PlacedWidget[] = [
-	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 4, height: 2 },
-	{ widgetKey: "ToDo", x: 5, y: 1, width: 4, height: 2 },
-	{ widgetKey: "UpcomingOpportunities", x: 1, y: 3, width: 8, height: 3 },
-	{ widgetKey: "Calendar", x: 1, y: 6, width: 8, height: 6 },
-	{ widgetKey: "Settings", x: 1, y: 12, width: 8, height: 2 },
+	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 4, height: 1 },
+	{ widgetKey: "ToDo", x: 5, y: 1, width: 4, height: 1 },
+	{ widgetKey: "UpcomingOpportunities", x: 1, y: 2, width: 8, height: 2 },
+	{ widgetKey: "Calendar", x: 1, y: 4, width: 8, height: 6 },
+	{ widgetKey: "Settings", x: 1, y: 10, width: 8, height: 1 },
 ];
 
 export function classifyWidth(width: number): WidgetSizeClass {

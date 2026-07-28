@@ -878,11 +878,23 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOrganizationOpportunities(organizationId: string, signal?: AbortSignal): Promise<VolunteerOpportunitySummary[]> {
-        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunities";
+    getOrganizationOpportunities(organizationId: string, status: string, pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/opportunities?";
         if (organizationId === undefined || organizationId === null)
             throw new globalThis.Error("The parameter 'organizationId' must be defined.");
         url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (status === undefined || status === null)
+            throw new globalThis.Error("The parameter 'status' must be defined and cannot be null.");
+        else
+            url_ += "status=" + encodeURIComponent("" + status) + "&";
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -898,14 +910,20 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetOrganizationOpportunities(response: Response): Promise<VolunteerOpportunitySummary[]> {
+    protected processGetOrganizationOpportunities(response: Response): Promise<PagedListOfVolunteerOpportunitySummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VolunteerOpportunitySummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfVolunteerOpportunitySummary;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -930,7 +948,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<VolunteerOpportunitySummary[]>(null as any);
+        return Promise.resolve<PagedListOfVolunteerOpportunitySummary>(null as any);
     }
 
     /**
@@ -3703,8 +3721,8 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getMyNotifications(signal?: AbortSignal): Promise<NotificationSummary[]> {
-        let url_ = this.baseUrl + "/v1/notifications";
+    getUnreadNotificationCount(signal?: AbortSignal): Promise<number> {
+        let url_ = this.baseUrl + "/v1/notifications/unread-count";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -3716,17 +3734,17 @@ export class EinsatzbereitApi {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetMyNotifications(_response);
+            return this.processGetUnreadNotificationCount(_response);
         });
     }
 
-    protected processGetMyNotifications(response: Response): Promise<NotificationSummary[]> {
+    protected processGetUnreadNotificationCount(response: Response): Promise<number> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as NotificationSummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
             return result200;
             });
         } else if (status === 401) {
@@ -3746,7 +3764,66 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<NotificationSummary[]>(null as any);
+        return Promise.resolve<number>(null as any);
+    }
+
+    /**
+     * @param beforeUnixMs (optional) 
+     * @param beforeId (optional) 
+     * @return OK
+     */
+    getMyNotifications(beforeUnixMs: number | undefined, beforeId: string | undefined, signal?: AbortSignal): Promise<NotificationsPage> {
+        let url_ = this.baseUrl + "/v1/notifications?";
+        if (beforeUnixMs === null)
+            throw new globalThis.Error("The parameter 'beforeUnixMs' cannot be null.");
+        else if (beforeUnixMs !== undefined)
+            url_ += "beforeUnixMs=" + encodeURIComponent("" + beforeUnixMs) + "&";
+        if (beforeId === null)
+            throw new globalThis.Error("The parameter 'beforeId' cannot be null.");
+        else if (beforeId !== undefined)
+            url_ += "beforeId=" + encodeURIComponent("" + beforeId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyNotifications(_response);
+        });
+    }
+
+    protected processGetMyNotifications(response: Response): Promise<NotificationsPage> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as NotificationsPage;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<NotificationsPage>(null as any);
     }
 
     /**
@@ -4215,11 +4292,19 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getEngagements(opportunityId: string, signal?: AbortSignal): Promise<EngagementSummary[]> {
-        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements";
+    getEngagements(opportunityId: string, pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfEngagementSummary> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements?";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
         url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -4235,14 +4320,20 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processGetEngagements(response: Response): Promise<EngagementSummary[]> {
+    protected processGetEngagements(response: Response): Promise<PagedListOfEngagementSummary> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementSummary[];
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfEngagementSummary;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -4273,7 +4364,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<EngagementSummary[]>(null as any);
+        return Promise.resolve<PagedListOfEngagementSummary>(null as any);
     }
 
     /**
@@ -5126,6 +5217,13 @@ export interface MyProfileResponse {
     skills: string[];
     languages: string[];
     preferredContact: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface NotificationsPage {
+    items: NotificationSummary[];
+    hasMore: boolean;
 
     [key: string]: any;
 }

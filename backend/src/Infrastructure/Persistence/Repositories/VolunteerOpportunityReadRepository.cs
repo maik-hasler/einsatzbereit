@@ -462,6 +462,84 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.ToList();
 	}
 
+	public async ValueTask<PagedList<VolunteerOpportunitySummary>> GetPagedSummariesByOrganizationAsync(
+		Guid organizationId,
+		OpportunityStatus status,
+		int pageNumber,
+		int pageSize,
+		CancellationToken cancellationToken = default)
+	{
+		var organizationId_ = OrganizationId.Create(organizationId).GetValueOrThrow();
+		var now = DateTimeOffset.UtcNow;
+
+		var orgQuery = dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.OrganizationId == organizationId_ && vo.Status == status);
+
+		var totalCount = await orgQuery.CountAsync(cancellationToken);
+
+		var rows = await orgQuery
+			.Join(
+				dbContext.OrganizationsQuery,
+				vo => vo.OrganizationId,
+				org => org.Id,
+				(vo, org) => new { vo, org })
+			.OrderByDescending(x => x.vo.CreatedOn)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
+			.Select(x => new
+			{
+				Id = x.vo.Id.Value,
+				x.vo.Title,
+				x.vo.Description,
+				OrganizationId = x.vo.OrganizationId.Value,
+				OrgName = x.org.Name,
+				OrgIsVerified = x.org.IsVerified,
+				OrgLogoUrl = x.org.LogoUrl,
+				Street = x.vo.Address != null ? x.vo.Address.Street : null,
+				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
+				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
+				City = x.vo.Address != null ? x.vo.Address.City : null,
+				Latitude = x.vo.Address != null ? x.vo.Address.Latitude : null,
+				Longitude = x.vo.Address != null ? x.vo.Address.Longitude : null,
+				x.vo.IsRemote,
+				x.vo.Occurrence,
+				x.vo.ParticipationType,
+				x.vo.CheckInMethod,
+				x.vo.Category,
+				x.vo.Tags,
+				x.vo.CreatedOn,
+				NextTimeSlotStart = x.vo.TimeSlots
+					.Where(ts => ts.EndDateTime >= now)
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => (DateTimeOffset?)ts.StartDateTime)
+					.FirstOrDefault(),
+				NextTimeSlotEnd = x.vo.TimeSlots
+					.Where(ts => ts.EndDateTime >= now)
+					.OrderBy(ts => ts.StartDateTime)
+					.Select(ts => (DateTimeOffset?)ts.EndDateTime)
+					.FirstOrDefault(),
+				x.vo.Status,
+				x.vo.BannerImageUrl,
+			})
+			.ToListAsync(cancellationToken);
+
+		if (rows.Count == 0)
+			return new PagedList<VolunteerOpportunitySummary>([], totalCount, pageNumber, pageSize);
+
+		var guids = rows.Select(x => x.Id).ToList();
+		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+
+		var items = rows
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+				x.Status, x.BannerImageUrl,
+				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
+			.ToList();
+
+		return new PagedList<VolunteerOpportunitySummary>(items, totalCount, pageNumber, pageSize);
+	}
+
 	public async ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default)

@@ -1,12 +1,8 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-	EngagementSummary,
-	VolunteerOpportunitySummary,
-} from "../../../client/api-client";
+import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
-import { getApiErrorMessage } from "../../../lib/apiError";
 import QRScannerModal from "../../../components/QRScannerModal";
 import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
@@ -14,6 +10,8 @@ import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
+
+const OPPORTUNITY_PAGE_SIZE = 100;
 
 interface Props {
 	organizationId: string;
@@ -29,38 +27,30 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 	const api = useApiClient();
 
 	// Shared with UpcomingOpportunitiesWidget, which fetches the same
-	// organization-wide opportunities - see useSharedOrgFetch.
-	const [allOpportunities, , error] = useSharedOrgFetch<
+	// organization-wide published opportunities - see useSharedOrgFetch.
+	const [opportunities, , error] = useSharedOrgFetch<
 		VolunteerOpportunitySummary[]
 	>(`opportunities:${organizationId}:${refreshKey}`, () =>
-		api.getOrganizationOpportunities(organizationId),
-	);
-	const opportunities = useMemo(
-		() => allOpportunities?.filter((o) => o.status === "Published") ?? null,
-		[allOpportunities],
+		api
+			.getOrganizationOpportunities(
+				organizationId,
+				"Published",
+				1,
+				OPPORTUNITY_PAGE_SIZE,
+			)
+			.then((page) => page.items),
 	);
 	const [selectedId, setSelectedId] = useState("");
-	const [engagements, setEngagements] = useState<EngagementSummary[] | null>(
-		null,
-	);
-	const [loadingEngagements, setLoadingEngagements] = useState(false);
+	const [scannerOpen, setScannerOpen] = useState(false);
 
 	useEffect(() => {
 		if (opportunities === null) return;
 		setSelectedId((current) => current || (opportunities[0]?.id ?? ""));
 	}, [opportunities]);
 
-	async function startScanning() {
+	function startScanning() {
 		if (!selectedId) return;
-		setLoadingEngagements(true);
-		try {
-			const data = await api.getEngagements(selectedId);
-			setEngagements(data);
-		} catch (e) {
-			dispatchToast("error", getApiErrorMessage(e, t("error.serverError")));
-		} finally {
-			setLoadingEngagements(false);
-		}
+		setScannerOpen(true);
 	}
 
 	return (
@@ -108,25 +98,21 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 					</div>
 					<Button
 						type="button"
-						onClick={() => void startScanning()}
-						disabled={loadingEngagements}
+						onClick={startScanning}
 						data-testid="quick-checkin-scan-btn"
 						className={`shadow-sm ${size !== "compact" ? "shrink-0" : "w-full"}`}
 					>
-						{loadingEngagements
-							? t("orgDashboard.loading")
-							: t("orgDashboard.quickCheckInOpenScanner")}
+						{t("orgDashboard.quickCheckInOpenScanner")}
 					</Button>
 				</div>
 			)}
 
-			{engagements !== null && (
+			{scannerOpen && (
 				<QRScannerModal
-					engagements={engagements}
 					onCheckedIn={() => {
 						dispatchToast("success", t("checkIn.success"));
 					}}
-					onClose={() => setEngagements(null)}
+					onClose={() => setScannerOpen(false)}
 				/>
 			)}
 		</WidgetCard>

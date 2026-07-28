@@ -208,6 +208,40 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task DetailPage_AnonymousVisitor_SeesPrimarySignInButton()
+	{
+		// Regression for #979: the anonymous sign-up CTA used to be an
+		// underlined text link inside a grey notice, with less visual weight
+		// than the Share button beside the title. It must now use the shared
+		// primary Button component (solid brand background), matching the
+		// prominence of the signed-in sign-up CTA below it.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
+
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		if (await firstCard.CountAsync() == 0)
+			return; // no opportunities seeded, skip
+
+		var href = await firstCard.GetAttributeAsync("href");
+		if (href is null)
+			return;
+
+		await Page.GotoAsync($"{origin}{href}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var signInBtn = Page.GetByTestId("opportunity-signin");
+		await Expect(signInBtn).ToBeVisibleAsync();
+		await Expect(signInBtn).ToHaveTextAsync("Sign in");
+
+		var className = await signInBtn.GetAttributeAsync("class");
+		className.Should().Contain("bg-brand-700",
+			"the CTA must use the shared primary Button styling, not a bare underlined text link");
+	}
+
+	[Test]
 	public async Task DetailPage_ContentIsCenteredWithinMain()
 	{
 		// Regression for #694: the content wrapper (`max-w-2xl`) had no
