@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
@@ -85,11 +85,19 @@ function OrgAppShell({
 			/>
 
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-				<Outlet
-					context={{ org, reloadOrg: load } satisfies OrgAppContext}
-					// Outlet re-mounts children on org identity change so per-tab state resets cleanly
-					key={org.id}
-				/>
+				<Suspense
+					fallback={
+						<div className="flex justify-center py-16">
+							<Spinner label={t("common.pageLoading")} size="lg" />
+						</div>
+					}
+				>
+					<Outlet
+						context={{ org, reloadOrg: load } satisfies OrgAppContext}
+						// Outlet re-mounts children on org identity change so per-tab state resets cleanly
+						key={org.id}
+					/>
+				</Suspense>
 			</main>
 
 			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">

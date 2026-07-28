@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDateTime, formatOccurrence } from "../../lib/format";
+import { getOpportunityCategoryBannerClassName } from "../../lib/opportunityCategoryTheme";
 import { useApiClient } from "../../hooks/useApiClient";
 import ReportFlagButton from "../ReportFlagButton";
 import { CalendarIcon, CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
@@ -36,7 +37,9 @@ export default function OpportunityListItem({
 			/>
 			<div className="flex flex-col sm:flex-row">
 				{/* Banner image or category banner */}
-				<div className="relative flex h-24 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-brand-500 to-brand-800 sm:h-auto sm:w-36 lg:w-44">
+				<div
+					className={`relative flex h-24 shrink-0 items-center justify-center overflow-hidden sm:h-auto sm:w-36 lg:w-44 ${getOpportunityCategoryBannerClassName(item.category)}`}
+				>
 					{item.bannerImageUrl ? (
 						<img
 							src={item.bannerImageUrl}

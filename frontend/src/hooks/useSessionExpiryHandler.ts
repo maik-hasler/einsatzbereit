@@ -27,6 +27,8 @@ export function useSessionExpiryHandler() {
 	}, [auth.isAuthenticated]);
 
 	useEffect(() => {
+		let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+
 		function handleExpiry() {
 			// Several concurrent API calls (or a bus event racing a silent-renew
 			// failure) can all report expiry around the same time - only act once.
@@ -34,12 +36,19 @@ export function useSessionExpiryHandler() {
 			handledRef.current = true;
 
 			dispatchToast("error", t("error.sessionExpired"));
-			void auth.signinRedirect({
-				...signinLocaleArgs(),
-				state: {
-					returnTo: locationRef.current.pathname + locationRef.current.search,
-				},
-			});
+			// Give the toast a moment to actually render before the redirect tears
+			// the page down - firing signinRedirect immediately raced the toast's
+			// paint against Keycloak's top-level navigation, which occasionally
+			// won (the toast never becoming visible) even though the navigation
+			// itself was expected to land on a real page rather than commit.
+			redirectTimer = setTimeout(() => {
+				void auth.signinRedirect({
+					...signinLocaleArgs(),
+					state: {
+						returnTo: locationRef.current.pathname + locationRef.current.search,
+					},
+				});
+			}, 2000);
 		}
 
 		const unsubscribeBus = subscribeSessionExpired(handleExpiry);
@@ -49,6 +58,7 @@ export function useSessionExpiryHandler() {
 		return () => {
 			unsubscribeBus();
 			unsubscribeSilentRenewError();
+			if (redirectTimer !== null) clearTimeout(redirectTimer);
 		};
 	}, [auth, t]);
 }

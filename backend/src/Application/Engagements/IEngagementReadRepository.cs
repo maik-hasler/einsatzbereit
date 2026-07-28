@@ -11,6 +11,12 @@ public interface IEngagementReadRepository
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default);
 
+	ValueTask<PagedList<EngagementSummary>> GetPagedByOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		int pageNumber,
+		int pageSize,
+		CancellationToken cancellationToken = default);
+
 	ValueTask<PagedList<EngagementSummary>> GetByVolunteerAsync(
 		UserId volunteerId,
 		bool upcoming,

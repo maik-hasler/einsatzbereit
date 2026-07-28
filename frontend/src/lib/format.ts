@@ -13,11 +13,23 @@ export function formatParticipationType(type: string, t: TFunction): string {
 		: t("opportunities.individualContact");
 }
 
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getDateTimeFormatter(locale: string): Intl.DateTimeFormat {
+	const resolvedLocale = locale === "de" ? "de-DE" : "en-GB";
+	let formatter = dateTimeFormatters.get(resolvedLocale);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(resolvedLocale, {
+			dateStyle: "medium",
+			timeStyle: "short",
+		});
+		dateTimeFormatters.set(resolvedLocale, formatter);
+	}
+	return formatter;
+}
+
 export function formatDateTime(dt: string, locale: string = "en"): string {
-	return new Date(dt).toLocaleString(locale === "de" ? "de-DE" : "en-GB", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	});
+	return getDateTimeFormatter(locale).format(new Date(dt));
 }
 
 export function formatPostedAgo(dt: string, t: TFunction): string {

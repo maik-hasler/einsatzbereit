@@ -12,8 +12,11 @@ type Size = keyof typeof SIZE_CLASSES;
 // Shared shape/behavior every button/link in the app should share (see
 // issue #846: four different border-radius values across primary buttons
 // before this existed).
+// Focus-visible styling comes from the global :focus-visible ring in
+// global.css (issue #992) - not from a per-component outline-none/ring
+// pair, which had too little contrast on this shared component.
 const BASE_CLASSES =
-	"inline-flex items-center justify-center gap-1.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+	"inline-flex items-center justify-center gap-1.5 rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 // primary: solid brand-color CTA. secondary: borderless cancel/close action -
 // the single style every modal's cancel/close button should share (see

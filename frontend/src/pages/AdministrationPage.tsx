@@ -596,7 +596,7 @@ function ReportsSection() {
 											{row.targetTitle ||
 												t("administration.reports.unknownTarget")}
 										</Link>
-										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 											{t(`administration.reports.targetType.${row.targetType}`)}
 										</span>
 										<span
@@ -779,7 +779,7 @@ function ReportHistoryModal({
 								<span className="text-sm font-medium text-gray-900">
 									{t(`administration.reports.reason.${entry.reason}`)}
 								</span>
-								<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+								<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 									{t(`administration.reports.status.${entry.status}`)}
 								</span>
 							</div>

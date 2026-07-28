@@ -9,7 +9,8 @@
       "edit": "Bearbeiten",
       "save": "Speichern",
       "saving": "Wird gespeichert…",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "pageLoading": "Seite wird geladen…"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
@@ -170,7 +171,7 @@
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
-      "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden.",
+      "loginPrompt": "Melde dich an, um dich für diesen Einsatz anzumelden.",
       "yourApplication": "Deine Bewerbung",
       "aboutOrganization": "Über diese Organisation",
       "moreFromOrganization": "Weitere Angebote dieser Organisation",
@@ -330,7 +331,8 @@
       "publishedBadge": "Veröffentlicht",
       "manageApplications": "Bewerbungen verwalten",
       "participants": "{{booked}}/{{max}} Teilnehmende",
-      "editLoading": "Wird geöffnet…"
+      "editLoading": "Wird geöffnet…",
+      "loadMore": "Mehr laden"
     },
     "orgDashboard": {
       "title": "Organisations-Dashboard",
@@ -505,7 +507,6 @@
       "qrVideoLabel": "Kamerabild zum Scannen von QR-Codes",
       "qrNotSupported": "QR-Scanning wird in diesem Browser nicht unterstützt. Bitte Chrome oder Edge verwenden oder zur manuellen Eincheck-Methode wechseln.",
       "qrCameraError": "Kamerazugriff verweigert. Bitte Kamerazugriff erlauben und erneut versuchen.",
-      "qrNotFound": "QR-Code nicht erkannt. Der Freiwillige ist möglicherweise noch nicht bestätigt.",
       "qrCheckInError": "Einchecken fehlgeschlagen. Bitte erneut versuchen.",
       "qrSuccess": "Freiwilliger erfolgreich eingecheckt!",
       "loadError": "Dieser Einsatz ist nicht mehr verfügbar."
@@ -558,6 +559,7 @@
       "processing": "…",
       "confirmError": "Fehler beim Bestätigen",
       "cancelError": "Fehler beim Absagen",
+      "loadMore": "Mehr laden",
       "status": {
         "Pending": "Ausstehend",
         "Confirmed": "Bestätigt",
@@ -609,6 +611,8 @@
       "bellLabel": "Benachrichtigungen",
       "markAllRead": "Alle als gelesen markieren",
       "empty": "Keine Benachrichtigungen.",
+      "loadMore": "Mehr laden",
+      "loadingMore": "Lädt...",
       "deletedOpportunityPlaceholder": "einen gelöschten Bedarf",
       "kinds": {
         "EngagementCreated": "Neue Bewerbung eingegangen für {{title}}",

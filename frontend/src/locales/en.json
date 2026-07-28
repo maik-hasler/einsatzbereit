@@ -9,7 +9,8 @@
       "edit": "Edit",
       "save": "Save",
       "saving": "Saving…",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "pageLoading": "Loading page…"
     },
     "nav": {
       "primaryLabel": "Main navigation",
@@ -170,7 +171,7 @@
       "publish": "Publish",
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
-      "loginToApply": "Please <loginLink>sign in</loginLink> to sign up for this opportunity.",
+      "loginPrompt": "Sign in to sign up for this opportunity.",
       "yourApplication": "Your application",
       "aboutOrganization": "About this organization",
       "moreFromOrganization": "More from this organization",
@@ -330,7 +331,8 @@
       "publishedBadge": "Published",
       "manageApplications": "Manage applications",
       "participants": "{{booked}}/{{max}} participants",
-      "editLoading": "Opening…"
+      "editLoading": "Opening…",
+      "loadMore": "Load more"
     },
     "orgDashboard": {
       "title": "Organization Dashboard",
@@ -505,7 +507,6 @@
       "qrVideoLabel": "Camera view for QR code scanning",
       "qrNotSupported": "QR scanning is not supported in this browser. Please use Chrome or Edge, or switch to a manual check-in method.",
       "qrCameraError": "Camera access denied. Please allow camera access and try again.",
-      "qrNotFound": "QR code not recognised. The volunteer may not be confirmed yet.",
       "qrCheckInError": "Check-in failed. Please try again.",
       "qrSuccess": "Volunteer checked in successfully!",
       "loadError": "This opportunity is no longer available."
@@ -558,6 +559,7 @@
       "processing": "…",
       "confirmError": "Error confirming",
       "cancelError": "Error cancelling",
+      "loadMore": "Load more",
       "status": {
         "Pending": "Pending",
         "Confirmed": "Confirmed",
@@ -609,6 +611,8 @@
       "bellLabel": "Notifications",
       "markAllRead": "Mark all as read",
       "empty": "No notifications.",
+      "loadMore": "Load more",
+      "loadingMore": "Loading...",
       "deletedOpportunityPlaceholder": "a deleted opportunity",
       "kinds": {
         "EngagementCreated": "New application received for {{title}}",
