@@ -15,6 +15,12 @@ internal sealed class EngagementReminderJob(
 	ILogger<EngagementReminderJob> logger)
 	: IHostedService, IAsyncDisposable
 {
+	// Caps how many engagements one hourly tick processes. Anything left over
+	// still has ReminderSentAt == null and its TimeSlot still falls in the
+	// (now+23h, now+25h) window on the next tick (the window is 2h wide, the
+	// timer fires every 1h), so it is picked up then instead of being lost.
+	private const int MaxBatchSize = 500;
+
 	private Task _executeTask = Task.CompletedTask;
 	private CancellationTokenSource? _cts;
 	private PeriodicTimer? _timer;
@@ -85,13 +91,32 @@ internal sealed class EngagementReminderJob(
 				x => x.Engagement.OpportunityId,
 				vo => vo.Id,
 				(x, vo) => new { x.Engagement, x.TimeSlot, OpportunityTitle = vo.Title })
+			.OrderBy(x => x.TimeSlot.StartDateTime)
+			.Take(MaxBatchSize)
 			.ToListAsync(ct);
+
+		if (engagements.Count == 0)
+			return;
+
+		// One email per engagement, resolved sequentially: KeycloakUserService
+		// mutates a shared HttpClient auth header per call (see its
+		// SendAuthorizedAsync comment), so these lookups cannot run concurrently.
+		// Caching by volunteer avoids repeating the lookup for a volunteer
+		// confirmed for more than one slot inside this run's window.
+		var profileCache = new Dictionary<Guid, KeycloakUserProfile>();
+		var messages = new List<EmailMessage>(engagements.Count);
+		var recipients = new List<(Engagement Engagement, string Email)>(engagements.Count);
 
 		foreach (var item in engagements)
 		{
+			var volunteerId = item.Engagement.VolunteerId!.Value.Value;
 			try
 			{
-				var user = await keycloakUserService.GetUserAsync(item.Engagement.VolunteerId!.Value.Value, ct);
+				if (!profileCache.TryGetValue(volunteerId, out var user))
+				{
+					user = await keycloakUserService.GetUserAsync(volunteerId, ct);
+					profileCache[volunteerId] = user;
+				}
 
 				var displayName = $"{user.FirstName} {user.LastName}".Trim();
 				if (string.IsNullOrEmpty(displayName))
@@ -107,23 +132,59 @@ internal sealed class EngagementReminderJob(
 					$"We are looking forward to seeing you!\n\n" +
 					$"The Einsatzbereit Team";
 
-				await emailService.SendAsync(user.Email, subject, body, ct);
-
-				item.Engagement.MarkReminderSent(now);
-				await dbContext.SaveChangesAsync(ct);
-
-				logger.LogInformation(
-					"Sent 24h reminder to {Email} for engagement {EngagementId}",
-					user.Email,
-					item.Engagement.Id.Value);
+				messages.Add(new EmailMessage(user.Email, subject, body));
+				recipients.Add((item.Engagement, user.Email));
 			}
 			catch (Exception ex)
 			{
 				logger.LogError(
 					ex,
-					"Failed to send reminder for engagement {EngagementId}",
+					"Failed to resolve volunteer profile for engagement {EngagementId}",
 					item.Engagement.Id.Value);
 			}
+		}
+
+		if (messages.Count == 0)
+			return;
+
+		// A single SMTP connection for the whole batch instead of one per engagement.
+		var sendResults = await emailService.SendBatchAsync(messages, ct);
+
+		var sentIds = new List<EngagementId>(recipients.Count);
+		for (var i = 0; i < recipients.Count; i++)
+		{
+			if (!sendResults[i])
+				continue;
+
+			var (engagement, email) = recipients[i];
+			sentIds.Add(engagement.Id);
+
+			logger.LogInformation(
+				"Sent 24h reminder to {Email} for engagement {EngagementId}",
+				email,
+				engagement.Id.Value);
+		}
+
+		if (sentIds.Count == 0)
+			return;
+
+		try
+		{
+			// A single batched UPDATE instead of one SaveChangesAsync per engagement.
+			await dbContext.Set<Engagement>()
+				.Where(e => sentIds.Contains(e.Id))
+				.ExecuteUpdateAsync(
+					s => s
+						.SetProperty(e => e.ReminderSentAt, now)
+						.SetProperty(e => e.ModifiedOn, now),
+					ct);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(
+				ex,
+				"Failed to persist ReminderSentAt for {Count} engagements after sending reminders; they will be retried next run",
+				sentIds.Count);
 		}
 	}
 }
