@@ -107,15 +107,29 @@ Routes declared in `src/App.tsx`. Add new routes there.
 ## Scripts
 
 ```bash
-pnpm dev           # dev server on :4321
-pnpm build         # build to dist/ (static files)
-pnpm preview       # preview production build
-pnpm check         # tsc --noEmit
-pnpm lint          # eslint, zero warnings allowed
-pnpm format:write  # apply Prettier formatting - run before every commit
-pnpm format:check  # check Prettier formatting (used by CI)
-pnpm i18n:check    # verify en.json/de.json key parity - CI hard gate, run before committing locale changes
+pnpm dev             # dev server on :4321
+pnpm build           # build to dist/ (static files)
+pnpm preview         # preview production build
+pnpm check           # tsc --noEmit
+pnpm test            # vitest run - CI hard gate (frontend.yml's test job)
+pnpm test:watch      # vitest in watch mode, for local development
+pnpm test:coverage   # vitest run --coverage
+pnpm lint            # eslint, zero warnings allowed
+pnpm format:write    # apply Prettier formatting - run before every commit
+pnpm format:check    # check Prettier formatting (used by CI)
+pnpm i18n:check      # verify en.json/de.json key parity - CI hard gate, run before committing locale changes
 ```
+
+## Unit Tests
+
+Vitest (`vitest.config.ts`, jsdom environment) tests pure logic in `src/lib/`, colocated as `*.test.ts` next to the module under test (e.g. `src/lib/activeOrg.test.ts`). Component/page-level behavior is covered by the Playwright suite in `backend/tests/VisualTests/` instead - see root `AGENTS.md`.
+
+Conventions used across the existing suite:
+
+- Mock a module's own dependencies with `vi.mock(...)`, not the module under test itself. Values referenced inside a `vi.mock` factory must go through `vi.hoisted(...)` (mock factories are hoisted above imports, so a plain top-level `const` isn't initialized yet when the factory runs).
+- Prefer computing the expected value with the same underlying call (e.g. `new Date(iso).toLocaleString(...)`) over hardcoding a formatted string, when the result depends on the host timezone or locale data.
+- For module-level singletons/config computed at import time (e.g. `lib/runtimeConfig.ts`, `lib/keycloakRegistration.ts`), call `vi.resetModules()` in `beforeEach` and re-`import()` the module inside each test to get a fresh instance.
+- `vi.spyOn` on an already-spied method (e.g. `console.error` spied in a previous test) returns the *same* mock and keeps its call history - restore with `vi.restoreAllMocks()` in `afterEach` rather than only resetting the fake in `beforeEach`.
 
 ## Key Dependencies
 
