@@ -30,7 +30,15 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// A fresh org guarantees vera is neither already a member nor already
+		// invited - relying on olaf's shared seed org made this nondeterministic,
+		// since VisualTests classes share one Aspire session with no DB reset
+		// between tests and other tests can invite/add vera elsewhere (see
+		// OrganizationTests.cs:91-104 for the same caveat with vera's global
+		// organizer role).
+		await CreateOrganizationAsync("Visual579 Invite");
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
@@ -41,18 +49,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.Locator("#member-search").FillAsync("vera");
 
 		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
-		try
-		{
-			await Expect(inviteButton.Or(Page.GetByText("No users found."))).ToBeVisibleAsync(
-				new() { Timeout = 10_000 });
-		}
-		catch (TimeoutException)
-		{
-			return;
-		}
-
-		if (await inviteButton.CountAsync() == 0)
-			return; // vera already a member or already invited from a previous run - skip
+		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await inviteButton.First.ClickAsync();
 
@@ -275,14 +272,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Step 1: title/description.
 		await Page.Locator("#opportunity-title").FillAsync("Visual772 Opportunity");

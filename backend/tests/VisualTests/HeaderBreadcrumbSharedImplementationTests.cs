@@ -85,8 +85,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 			}
 			return null;
 		}");
-		if (userId is null)
-			return; // could not resolve the logged-in user's id, skip
+		userId.Should().NotBeNull("the oidc-client-ts localStorage entry must expose the logged-in user's id");
 
 		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

@@ -85,13 +85,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.GetByText(new Regex("lend a hand", RegexOptions.IgnoreCase)))
 			.ToBeVisibleAsync();
 
-		// If opportunities are seeded, each card carries the redesigned visuals:
-		// a clickable organisation link and the brand-gradient category banner.
+		// The seed unconditionally publishes opportunities, so each card always
+		// carries the redesigned visuals: a clickable organisation link and the
+		// brand-gradient category banner.
 		var firstCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip card-specific checks
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Expect(firstCard.Locator("a[href*='/organizations/']"))
 			.ToBeVisibleAsync();
@@ -111,16 +111,8 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await createBtn.First.ClickAsync();
 
-		// Guard: the dialog may not open in an unexpected state.
 		var dialog = Page.Locator("[role='dialog']");
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Step 1 content visible.
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
@@ -187,13 +179,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
+		// The seed unconditionally publishes opportunities, so a card is always
+		// present on a healthy stack.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		href.Should().NotBeNullOrEmpty("the first opportunity card must have an href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -221,13 +213,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
+		// The seed unconditionally publishes opportunities, so a card is always
+		// present on a healthy stack.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		href.Should().NotBeNullOrEmpty("the first opportunity card must have an href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -253,13 +245,13 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
+		// The seed unconditionally publishes opportunities, so a card is always
+		// present on a healthy stack.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		href.Should().NotBeNullOrEmpty("the first opportunity card must have an href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -435,14 +427,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return;
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Fill title (minimum required for draft save).
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
@@ -490,14 +475,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.GetByTestId("modal-save-draft").ClickAsync();
@@ -532,31 +510,19 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var uniqueTitle = $"Edit Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		// This used to look up a "Switch organization" button + "org-dashboard-link"
+		// testid directly on the home page - both from the pre-#747 /app picker
+		// flow. Neither exists anywhere in the frontend anymore (the switcher only
+		// renders inside the org app shell, see OrgAppLayout.tsx), so that guard
+		// always tripped and this test's actual assertions never ran. Reach the
+		// dashboard the same way every other test in this file does.
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Deliberately leave the draft incomplete - only a title, no address,
 		// no description - the exact situation "save as draft" exists for.
@@ -697,14 +663,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Step 1: title/description.
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);

@@ -87,10 +87,12 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
 
+		// Olaf always organizes "Fairview Animal Welfare Association" - a
+		// hardcoded, deterministic seed name (see
+		// ApplicationDbContextInitializer.SeedOrg2Async).
 		var animalWelfareRow = Page.GetByTestId("org-switch-row")
 			.Filter(new() { HasText = "Fairview Animal Welfare Association" });
-		if (await animalWelfareRow.CountAsync() == 0)
-			return; // seed data changed - nothing to compare against
+		await Expect(animalWelfareRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await animalWelfareRow.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });

@@ -27,14 +27,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		var uniqueTitle = $"CheckInPin Custom Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);

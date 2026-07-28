@@ -76,13 +76,13 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// The seed unconditionally publishes opportunities for both seed
+		// organizations, so an org link is always present on a healthy stack.
 		var orgLink = Page.Locator("a[href*='/organizations/']").First;
-		if (await orgLink.CountAsync() == 0)
-			return; // no opportunities/organizations seeded - skip
+		await Expect(orgLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await orgLink.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		href.Should().NotBeNullOrEmpty("the organization link must have an href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -134,13 +134,13 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		// The seed unconditionally publishes opportunities, so a card is always
+		// present on a healthy stack.
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		await Expect(firstCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		href.Should().NotBeNullOrEmpty("the first opportunity card must have an href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -182,8 +182,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// "Manage applications" only appears for published opportunities on the
 		// Opportunities hub.
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		if (await manageLink.CountAsync() == 0)
-			return; // organizer has no published opportunities in seed - skip
+		// The seed unconditionally publishes several of olaf's opportunities
+		// (see ApplicationDbContextInitializer), so this link is always present.
+		await Expect(manageLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var row = Page.Locator("li").Filter(new() { Has = manageLink });
 		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
@@ -217,8 +218,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		if (await manageLink.CountAsync() == 0)
-			return; // organizer has no published opportunities in seed - skip
+		// The seed unconditionally publishes several of olaf's opportunities
+		// (see ApplicationDbContextInitializer), so this link is always present.
+		await Expect(manageLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -256,9 +258,11 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
 
+		// Olaf organizes both seed organizations (see
+		// ApplicationDbContextInitializer), so the switcher always lists two.
 		var rowCount = await Page.GetByTestId("org-switch-row").CountAsync();
-		if (rowCount < 2)
-			return; // olaf needs at least two orgs in seed to prove navigation follows selection
+		rowCount.Should().BeGreaterThanOrEqualTo(2,
+			"olaf organizes both seed organizations, so the switcher must list at least two");
 
 		// The active org's row carries aria-current="page" - pick a different one.
 		var otherRow = Page.Locator("[data-testid='org-switch-row']:not([aria-current='page'])").First;
@@ -347,10 +351,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			}
 		}
 
-		if (hamburger is null)
-			return; // hamburger not found at this viewport - skip gracefully
+		// MobileHeader.tsx always renders the hamburger button unconditionally
+		// at this viewport width - a miss here means the lookup itself is
+		// broken, not that the button is legitimately absent.
+		hamburger.Should().NotBeNull("the mobile header always renders a hamburger button");
 
-		await hamburger.ClickAsync();
+		await hamburger!.ClickAsync();
 
 		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
@@ -440,10 +446,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			}
 		}
 
-		if (hamburger is null)
-			return; // hamburger not found at this viewport - skip gracefully
+		// MobileHeader.tsx always renders the hamburger button unconditionally
+		// at this viewport width - a miss here means the lookup itself is
+		// broken, not that the button is legitimately absent.
+		hamburger.Should().NotBeNull("the mobile header always renders a hamburger button");
 
-		await hamburger.ClickAsync();
+		await hamburger!.ClickAsync();
 
 		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
