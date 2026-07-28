@@ -27,7 +27,7 @@ internal sealed class NotificationReadRepository(
 		int limit,
 		CancellationToken cancellationToken = default)
 	{
-		var query = dbContext.NotificationsQuery
+		var recipientQuery = dbContext.NotificationsQuery
 			.Where(n => n.RecipientId == recipientId);
 
 		// Notifications created in the same batch (e.g. several engagement
@@ -36,26 +36,39 @@ internal sealed class NotificationReadRepository(
 		// per SaveChanges call, not per entity. CreatedOn alone is therefore
 		// not a safe keyset cursor: paging strictly on "< before" would drop
 		// same-timestamp siblings that land on the far side of a page
-		// boundary. Id (a UUIDv7, so still roughly time-ordered) breaks the
-		// tie deterministically; EF.Property<Guid> reads the raw provider
-		// column instead of going through NotificationId's value converter,
-		// which only has == translation support, not < / >.
+		// boundary. NotificationId's value converter only translates == (not
+		// < / >, which isn't defined on the value object at all, and
+		// EF.Property<Guid> on a converted property isn't a supported read
+		// of the raw column either - it 500'd against real Postgres despite
+		// compiling fine), so the tie is broken by Id (a UUIDv7, still
+		// roughly time-ordered) in memory instead: fetch the *complete*
+		// same-timestamp bucket via a plain equality query (cheap - ties are
+		// bounded by how many notifications one SaveChanges call creates for
+		// a single recipient, normally a handful) rather than risk an
+		// arbitrary SQL tie order silently truncating it via Take().
+		List<Notification> tiedWithCursor = [];
 		if (before is not null && beforeId is not null)
 		{
-			query = query.Where(n =>
-				n.CreatedOn < before.Value ||
-				(n.CreatedOn == before.Value && EF.Property<Guid>(n, nameof(Notification.Id)) < beforeId.Value));
-		}
-		else if (before is not null)
-		{
-			query = query.Where(n => n.CreatedOn < before.Value);
+			var cursorTiedBucket = await recipientQuery
+				.Where(n => n.CreatedOn == before.Value)
+				.ToListAsync(cancellationToken);
+
+			tiedWithCursor = cursorTiedBucket
+				.Where(n => n.Id.Value.CompareTo(beforeId.Value) < 0)
+				.OrderByDescending(n => n.Id.Value)
+				.ToList();
 		}
 
-		var notifications = await query
+		var olderQuery = before is not null
+			? recipientQuery.Where(n => n.CreatedOn < before.Value)
+			: recipientQuery;
+
+		var older = await olderQuery
 			.OrderByDescending(n => n.CreatedOn)
-			.ThenByDescending(n => EF.Property<Guid>(n, nameof(Notification.Id)))
 			.Take(limit)
 			.ToListAsync(cancellationToken);
+
+		var notifications = tiedWithCursor.Concat(older).Take(limit).ToList();
 
 		// Collect entity IDs by type
 		var engagementIds = notifications
