@@ -323,7 +323,7 @@ export default function HomePage() {
 									<div className="text-2xl font-bold text-white sm:text-3xl">
 										{value}
 									</div>
-									<div className="mt-1 text-sm text-brand-200">{label}</div>
+									<div className="mt-1 text-sm text-brand-100">{label}</div>
 								</div>
 							))}
 						</div>
