@@ -72,6 +72,12 @@ function OrgAppShell({
 		...(extra ? [{ label: extra }] : []),
 	];
 
+	// #973: OrgAppShell is the only place that knows the current tab/nested-page
+	// title (activeTabLabel/extra, same source as the breadcrumb's last item) -
+	// render it as a real h1 here rather than in each of the four tab pages, so
+	// axe's page-has-heading-one/heading-order rules pass on every org app page.
+	const pageTitle = extra ?? activeTabLabel;
+
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
 			<Header
@@ -84,6 +90,7 @@ function OrgAppShell({
 			/>
 
 			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+				<h1 className="mb-6 text-2xl font-bold text-gray-900">{pageTitle}</h1>
 				<Suspense
 					fallback={
 						<div className="flex justify-center py-16">

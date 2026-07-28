@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Microsoft.Playwright;
+using TUnit.Core;
 using TUnit.Playwright;
 
 namespace VisualTests;
@@ -23,6 +24,21 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	public AspireFixture Fixture => fixture;
 
 	private static int _testIpSequence;
+
+	// global.css's staggered .animate-fade-up-* entrance animations (opacity
+	// 0 -> 1 over ~0.5s, some with an extra ~0.5s delay first) run for real in
+	// the Playwright browser. On a busy/contended CI runner, an axe-core scan
+	// can land while a still-fading element is at partial opacity, and the
+	// alpha-blended colour axe reads at that instant can compute a lower
+	// contrast ratio than the fully-settled one - a spurious a11y failure
+	// with nothing wrong in the rendered UI (e.g.
+	// HomePage_HasNoSeriousA11yViolations flagging the stats row's
+	// text-brand-200 labels, which sit inside .animate-fade-up-d4). Disabling
+	// motion for the whole context removes the animation - and this race -
+	// entirely, the same way a real prefers-reduced-motion user would see the
+	// page, rather than trying to time scans around a transition.
+	public override BrowserNewContextOptions ContextOptions(TestContext testContext) =>
+		new() { ReducedMotion = ReducedMotion.Reduce };
 
 	[Before(Test)]
 	public async Task SetupVisualTest()
