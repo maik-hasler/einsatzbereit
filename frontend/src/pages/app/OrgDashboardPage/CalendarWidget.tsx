@@ -13,7 +13,7 @@ import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
-import { useSharedOrgFetch } from "./useSharedOrgFetch";
+import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
