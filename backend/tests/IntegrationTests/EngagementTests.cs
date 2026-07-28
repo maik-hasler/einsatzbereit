@@ -759,6 +759,11 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		// vera creates her own org up front - this grants her the organisator
+		// role, but not over org1, whose opportunity row will be deleted below.
+		await CreateOrganizationAsync(veraClient, cancellationToken);
+
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
@@ -772,9 +777,10 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		// Confirmed, which the normal delete flow never produces.
 		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
 
-		// vera creates her own org - this grants her the organisator role, but not
-		// over org1, whose opportunity row is now gone.
-		await CreateOrganizationAsync(veraClient, cancellationToken);
+		// There's no API to observe the opportunity row directly - confirm the
+		// precondition at the DB level so a failure below can't be confused with
+		// the delete itself silently not having taken effect.
+		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id)).Should().Be(0);
 
 		// vera (organisator of org2, NOT org1) tries to check in org1's engagement.
 		// With no opportunity row left to resolve an owning organization from, the
