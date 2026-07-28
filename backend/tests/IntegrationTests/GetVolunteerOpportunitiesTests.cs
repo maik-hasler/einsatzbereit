@@ -352,6 +352,92 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(400);
 	}
 
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnBadRequest_WhenOccurrenceIsInvalid(
+		CancellationToken cancellationToken)
+	{
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => sut.GetVolunteerOpportunitiesAsync(
+			1, 10, occurrence: "Bogus", cancellationToken: cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnBadRequest_WhenParticipationTypeIsInvalid(
+		CancellationToken cancellationToken)
+	{
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => sut.GetVolunteerOpportunitiesAsync(
+			1, 10, participationType: "Nonsense", cancellationToken: cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnBadRequest_WhenCategoryIsInvalid(
+		CancellationToken cancellationToken)
+	{
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => sut.GetVolunteerOpportunitiesAsync(
+			1, 10, categories: ["NotACategory"], cancellationToken: cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByOccurrenceAndParticipationTypeAndCategory_WhenValid(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Matching opportunity",
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			Category = "Environment",
+			IsDraft = true,
+		}, cancellationToken);
+
+		await authenticatedClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await authenticatedClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var matching = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10, occurrence: "onetime", participationType: "waitlist", categories: ["environment"], cancellationToken: cancellationToken);
+		var nonMatching = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10, occurrence: "Recurring", cancellationToken: cancellationToken);
+
+		matching.TotalItems.Should().Be(1);
+		nonMatching.TotalItems.Should().Be(0);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
 	{
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
