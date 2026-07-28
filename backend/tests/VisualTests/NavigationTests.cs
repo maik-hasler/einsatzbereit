@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -170,24 +172,47 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// opportunity being managed - Home > Opportunities > {title}, with
 		// "Opportunities" demoted to a link back to the hub - instead of a
 		// fixed "Opportunities" label plus a separate context line in the page.
+		// "Manage applications" only appears for a published opportunity - seed a
+		// dedicated one via API rather than relying on whichever org olaf's
+		// dashboard CTA happens to resolve to still having one. Across the full
+		// shared VisualTests session olaf accumulates dozens of throwaway orgs
+		// from other test classes (each briefly becomes the "active" org), so
+		// the CTA can land on any of them, including a fresh one with none.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
+		var opportunityTitle = $"NavBreadcrumbPersist Opportunity {suffix}";
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"NavBreadcrumbPersist Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = opportunityTitle,
+			description = "Created by NavigationTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
-
-		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// "Manage applications" only appears for published opportunities on the
-		// Opportunities hub.
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		// The seed unconditionally publishes several of olaf's opportunities
-		// (see ApplicationDbContextInitializer), so this link is always present.
 		await Expect(manageLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		var row = Page.Locator("li").Filter(new() { Has = manageLink });
-		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -209,17 +234,43 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// site header/footer. #771 removed the tab bar entirely (aria-current
 		// on a tab link no longer applies), so leaving back to the opportunities
 		// list now happens via the breadcrumb's "Opportunities" link instead.
+		// "Manage applications" only appears for a published opportunity - seed a
+		// dedicated one via API rather than relying on whichever org olaf's
+		// dashboard CTA happens to resolve to still having one (see the same
+		// caveat above).
 		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"NavChromeVisible Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"NavChromeVisible Opportunity {suffix}",
+			description = "Created by NavigationTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
-
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		// The seed unconditionally publishes several of olaf's opportunities
-		// (see ApplicationDbContextInitializer), so this link is always present.
 		await Expect(manageLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await manageLink.ClickAsync();

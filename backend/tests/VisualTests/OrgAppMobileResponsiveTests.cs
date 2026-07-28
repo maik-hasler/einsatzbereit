@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -71,15 +73,37 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 	[Test]
 	public async Task MobileHeader_OrgSwitcherName_StaysLegibleForOrgsSharingAnInitial()
 	{
-		// #809: olaf organizes "Fairview Red Cross" and "Fairview Animal Welfare
-		// Association" - two names sharing both a first letter and a "Fairview "
-		// prefix. The switcher's name span used to collapse to almost nothing on
-		// phone widths (the brand wordmark plus the mobile bell/hamburger left it
-		// no room), rendering as just "F.." for both - indistinguishable. Fixed by
+		// #809: two org names sharing both a first letter and a common prefix
+		// used to collapse the switcher's name span to almost nothing on phone
+		// widths (the brand wordmark plus the mobile bell/hamburger left it no
+		// room), rendering as just "F.." for both - indistinguishable. Fixed by
 		// cropping the header wordmark to its icon mark on mobile whenever the org
 		// switcher is present (frees the width the name needs) plus a min-width
 		// floor on the name span itself (OrganizationSwitcher.tsx).
+		//
+		// Seed two throwaway orgs sharing a prefix here instead of relying on
+		// olaf's original seed orgs ("Fairview Red Cross" / "Fairview Animal
+		// Welfare Association") still being present: across the full shared
+		// VisualTests session olaf accumulates dozens of throwaway orgs from
+		// other test classes, and the switcher's org list (unpaginated, sorted
+		// by name) is not guaranteed to still contain those two specific names
+		// by the time this test runs - only that whichever org this test itself
+		// creates will be there.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+		var secondOrgName = $"MobileSwitcherShared Beta {suffix}";
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		(await http.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"MobileSwitcherShared Alpha {suffix}" }))
+			.EnsureSuccessStatusCode();
+		(await http.PostAsJsonAsync("/v1/organizations", new { name = secondOrgName }))
+			.EnsureSuccessStatusCode();
+
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
@@ -87,14 +111,10 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
 		await switcherBtn.ClickAsync();
 
-		// Olaf always organizes "Fairview Animal Welfare Association" - a
-		// hardcoded, deterministic seed name (see
-		// ApplicationDbContextInitializer.SeedOrg2Async).
-		var animalWelfareRow = Page.GetByTestId("org-switch-row")
-			.Filter(new() { HasText = "Fairview Animal Welfare Association" });
-		await Expect(animalWelfareRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var targetRow = Page.GetByTestId("org-switch-row").Filter(new() { HasText = secondOrgName });
+		await Expect(targetRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		await animalWelfareRow.ClickAsync();
+		await targetRow.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
 
 		// The name span's rendered box, not its (untruncated-by-CSS) text content,
@@ -105,7 +125,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// name to actually be showing before measuring - otherwise BoundingBoxAsync
 		// races the skeleton and returns null.
 		var nameSpan = Page.GetByTestId("org-switcher-current-name");
-		await Expect(nameSpan).ToHaveTextAsync("Fairview Animal Welfare Association", new() { Timeout = 15_000 });
+		await Expect(nameSpan).ToHaveTextAsync(secondOrgName, new() { Timeout = 15_000 });
 		var box = await nameSpan.BoundingBoxAsync();
 		box.Should().NotBeNull();
 		box!.Width.Should().BeGreaterThan(60,

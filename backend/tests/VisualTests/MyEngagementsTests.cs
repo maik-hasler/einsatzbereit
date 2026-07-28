@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -10,37 +12,63 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// Regression: org name and org link were missing from engagement cards
 		// before PR #475 added OrganizationId/OrganizationName to EngagementSummary.
+		//
+		// The "Current & Upcoming" tab only shows the first page (10, newest
+		// signup first - see ActivitySection.tsx) - across the full shared
+		// VisualTests session vera accumulates far more engagements than that
+		// from other test classes, so the seed's own 3 engagements (the oldest
+		// signups of the whole session) get paginated out of view long before
+		// this test runs. Seed a dedicated, uniquely-named engagement instead
+		// of depending on the seed's specific org names still being on page 1.
 		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgName = $"MyEngagements Org {suffix}";
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = orgName });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"MyEngagements Opportunity {suffix}",
+			description = "Created by MyEngagementsTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var veraToken = (await Fixture.SignInAsync("vera", "vera123")).AccessToken;
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraToken}");
+		var engagementResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "Signing up for MyEngagementsTests coverage." });
+		engagementResponse.EnsureSuccessStatusCode();
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// Page heading must be visible regardless of whether vera has engagements.
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
 
-		// The seed unconditionally signs vera up for 3 engagements across both
-		// seed organizations (see ApplicationDbContextInitializer) - engagement
-		// cards, and links to both seed orgs among them, are always present on
-		// a healthy stack. Other VisualTests classes sharing this Aspire session
-		// also sign vera up for their own throwaway opportunities/orgs, but
-		// those are additive - they never remove the permanent seed engagements.
-		var engagementCards = Page.Locator("li.rounded-xl");
-		await Expect(engagementCards.First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var card = Page.Locator("li.rounded-xl", new() { HasText = orgName });
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var seedOrgCard = Page.GetByText("Fairview Red Cross")
-			.Or(Page.GetByText("Fairview Animal Welfare Association"));
-		await Expect(seedOrgCard.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		// Every card must expose an org link.
-		var orgLinks = Page.Locator("a[href^='/organizations/']");
-		await Expect(orgLinks.First).ToBeVisibleAsync();
-
-		// Both seed org names must appear somewhere on the page. .First avoids a
-		// Playwright strict-mode violation once Vera has more than one engagement
-		// with the same org (seed data grows release over release).
-		await Expect(Page.GetByText("Fairview Red Cross").First).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Fairview Animal Welfare Association").First).ToBeVisibleAsync();
+		var orgLink = card.Locator("a[href^='/organizations/']");
+		await Expect(orgLink).ToBeVisibleAsync();
+		await Expect(card.GetByText(orgName)).ToBeVisibleAsync();
 	}
 }

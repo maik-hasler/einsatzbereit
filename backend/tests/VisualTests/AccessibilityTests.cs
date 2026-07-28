@@ -163,9 +163,12 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 
 		// Wait for org links from opportunity cards - the seed unconditionally
-		// publishes opportunities for both seed organizations, so at least one
-		// org link is always present on a healthy stack.
-		var orgLinks = Page.Locator("ul > li .relative.z-10 a");
+		// publishes opportunities, so at least one org link is always present on
+		// a healthy stack. Match by href rather than the card's utility classes
+		// (OpportunityListItem's org Link is `relative z-20`, not `.relative.z-10`
+		// as this locator originally assumed - a stale selector that never
+		// matched anything, previously hidden by the try/catch this replaced).
+		var orgLinks = Page.Locator("a[href*='/organizations/']");
 		await Expect(orgLinks.First).ToBeVisibleAsync(new() { Timeout = 30_000 });
 
 		var href = await orgLinks.First.GetAttributeAsync("href");
@@ -584,15 +587,45 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Engagement management is nested in the org app (#751) - reachable
 		// from the Opportunities page's "Manage applications" link, not from
 		// the public opportunity detail page anymore.
+		//
+		// "Manage applications" only appears for a published opportunity - seed
+		// a dedicated one via API rather than relying on whichever org olaf's
+		// dashboard CTA happens to resolve to still having one. Across the full
+		// shared VisualTests session olaf accumulates dozens of throwaway orgs
+		// from other test classes (each briefly becomes the "active" org), so
+		// the CTA can land on any of them, including a fresh one with none.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
 
-		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"EngagementMgmtA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"EngagementMgmtA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests for the engagement management scan.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// The seed always publishes several of olaf's opportunities (see
-		// ApplicationDbContextInitializer), each of which shows this link.
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
 		await Expect(manageLink.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
