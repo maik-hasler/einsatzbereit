@@ -82,10 +82,10 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "Ready to help" },
 			cancellationToken);
 
-		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, cancellationToken);
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
 
-		engagements.Should().HaveCount(1);
-		engagements.Single().Status.Should().Be("Pending");
+		engagements.Items.Should().HaveCount(1);
+		engagements.Items.Single().Status.Should().Be("Pending");
 	}
 
 	[Test]
@@ -94,7 +94,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var anonClient = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var act = () => anonClient.GetEngagementsAsync(Guid.NewGuid(), cancellationToken);
+		var act = () => anonClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(401);
@@ -106,10 +106,77 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		var act = () => veraClient.GetEngagementsAsync(Guid.NewGuid(), cancellationToken);
+		var act = () => veraClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldReturnCorrectPageSize_WhenPaginationIsApplied(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 2, cancellationToken);
+
+		result.TotalItems.Should().Be(3);
+		result.Items.Should().HaveCount(2);
+		result.PageCount.Should().Be(2);
+		result.CurrentPage.Should().Be(1);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldReturnRemainingItems_WhenRequestingLastPage(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.GetEngagementsAsync(opportunity.Id, 2, 2, cancellationToken);
+
+		result.TotalItems.Should().Be(3);
+		result.Items.Should().HaveCount(1);
+		result.CurrentPage.Should().Be(2);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldReturn400_WhenPageNumberIsLessThanOne(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var act = () => olafClient.GetEngagementsAsync(opportunity.Id, 0, 10, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldReturn400_WhenPageSizeIsOutOfRange(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var act = () => olafClient.GetEngagementsAsync(opportunity.Id, 1, 101, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
 	}
 
 	// ── ConfirmEngagement ─────────────────────────────────────────────────────
@@ -602,7 +669,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		// vera (organisator, but NOT in org1) tries to access org1's engagements
-		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, cancellationToken);
+		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
@@ -880,6 +947,17 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var org = await client.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = uniqueName }, cancellationToken);
 		return org.Id.Value;
+	}
+
+	private async Task SignUpEphemeralVolunteerAsync(
+		Guid opportunityId, CancellationToken cancellationToken)
+	{
+		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
+		await volunteerClient.CreateEngagementAsync(
+			opportunityId,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
 	}
 
 	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(

@@ -8,6 +8,7 @@ import type {
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useLoadMore } from "../hooks/useLoadMore";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Spinner from "../components/Spinner";
@@ -23,6 +24,7 @@ import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
+const ENGAGEMENTS_PAGE_SIZE = 10;
 
 // Lazy-loaded: only needed once an organizer actually opens the scanner - #971.
 const QRScannerModal = lazy(() => import("../components/QRScannerModal"));
@@ -57,13 +59,10 @@ export default function EngagementManagementPage() {
 		return map;
 	}, [opportunity]);
 
-	const [engagements, setEngagements] = useState<EngagementSummary[]>([]);
 	const [feedback, setFeedback] = useState<OpportunityFeedbackSummary | null>(
 		null,
 	);
 	const [checkInPin, setCheckInPin] = useState<string | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
 	const [notFound, setNotFound] = useState(false);
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
@@ -72,28 +71,43 @@ export default function EngagementManagementPage() {
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
+	const {
+		items: engagements,
+		setItems: setEngagements,
+		loading,
+		loadingMore: engagementsLoadingMore,
+		error,
+		hasMore: hasMoreEngagements,
+		loadMore: loadMoreEngagements,
+	} = useLoadMore<EngagementSummary>(
+		async (page) => {
+			if (!opportunityId) return { items: [], pageCount: 0 };
+			try {
+				return await api.getEngagements(
+					opportunityId,
+					page,
+					ENGAGEMENTS_PAGE_SIZE,
+				);
+			} catch (err) {
+				if (isApiNotFoundError(err)) setNotFound(true);
+				throw err;
+			}
+		},
+		{
+			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
+		},
+	);
+
 	useEffect(() => {
 		if (!opportunityId) return;
-		Promise.all([
-			api.getEngagements(opportunityId),
-			api
-				.getVolunteerOpportunityDetails(opportunityId)
-				.then((d) => setOpportunity(d))
-				.catch(() => undefined),
-			api
-				.getOpportunityFeedback(opportunityId)
-				.then(setFeedback)
-				.catch(() => undefined),
-		])
-			.then(([e]) => setEngagements(e))
-			.catch((err) => {
-				if (isApiNotFoundError(err)) {
-					setNotFound(true);
-				} else {
-					setError(getApiErrorMessage(err, t("error.serverError")));
-				}
-			})
-			.finally(() => setLoading(false));
+		api
+			.getVolunteerOpportunityDetails(opportunityId)
+			.then(setOpportunity)
+			.catch(() => undefined);
+		api
+			.getOpportunityFeedback(opportunityId)
+			.then(setFeedback)
+			.catch(() => undefined);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
 
@@ -365,6 +379,20 @@ export default function EngagementManagementPage() {
 				</ul>
 			)}
 
+			{!loading && !error && engagements.length > 0 && hasMoreEngagements && (
+				<div className="mt-6 flex justify-center">
+					<button
+						onClick={loadMoreEngagements}
+						disabled={engagementsLoadingMore}
+						className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+					>
+						{engagementsLoadingMore
+							? t("engagementManagement.loading")
+							: t("engagementManagement.loadMore")}
+					</button>
+				</div>
+			)}
+
 			{qrScannerOpen && (
 				<Suspense
 					fallback={
@@ -372,7 +400,6 @@ export default function EngagementManagementPage() {
 					}
 				>
 					<QRScannerModal
-						engagements={engagements}
 						onCheckedIn={(engagementId) => {
 							setEngagements((prev) =>
 								prev.map((e) =>

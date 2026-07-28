@@ -74,6 +74,76 @@ internal sealed class EngagementReadRepository(
 			x.CreatedOn)).ToList();
 	}
 
+	public async ValueTask<PagedList<EngagementSummary>> GetPagedByOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		int pageNumber,
+		int pageSize,
+		CancellationToken cancellationToken = default)
+	{
+		var scopedQuery = dbContext.EngagementsQuery.Where(e => e.OpportunityId == opportunityId);
+
+		var totalCount = await scopedQuery.CountAsync(cancellationToken);
+
+		var raw = await scopedQuery
+			.Join(
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId }),
+				e => e.OpportunityId,
+				o => o.Id,
+				(e, o) => new
+				{
+					e.Id,
+					e.OpportunityId,
+					OpportunityTitle = o.Title,
+					o.OrganizationId,
+					e.VolunteerId,
+					e.TimeSlotId,
+					e.Message,
+					e.Status,
+					e.IsCheckedIn,
+					e.FeedbackSubmittedAt,
+					e.CreatedOn,
+				})
+			.Join(
+				dbContext.OrganizationsQuery.Select(org => new { org.Id, org.Name }),
+				x => x.OrganizationId,
+				org => org.Id,
+				(x, org) => new
+				{
+					x.Id,
+					x.OpportunityId,
+					x.OpportunityTitle,
+					OrganizationId = org.Id,
+					OrganizationName = org.Name,
+					x.VolunteerId,
+					x.TimeSlotId,
+					x.Message,
+					x.Status,
+					x.IsCheckedIn,
+					x.FeedbackSubmittedAt,
+					x.CreatedOn,
+				})
+			.OrderByDescending(x => x.CreatedOn)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
+			.ToListAsync(cancellationToken);
+
+		var items = raw.Select(x => new EngagementSummary(
+			x.Id.Value,
+			x.OpportunityId.Value,
+			x.OpportunityTitle,
+			x.OrganizationId.Value,
+			x.OrganizationName,
+			x.VolunteerId?.Value,
+			x.TimeSlotId?.Value,
+			x.Message,
+			x.Status.ToString(),
+			x.IsCheckedIn,
+			x.FeedbackSubmittedAt.HasValue,
+			x.CreatedOn)).ToList();
+
+		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
+	}
+
 	public async ValueTask<PagedList<EngagementSummary>> GetByVolunteerAsync(
 		UserId volunteerId,
 		bool upcoming,
