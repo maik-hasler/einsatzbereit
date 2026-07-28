@@ -1,17 +1,21 @@
-import { memo, useEffect, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
-import QRScannerModal from "../../../components/QRScannerModal";
 import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
+import ModalLoadingFallback from "../../../components/ModalLoadingFallback";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 const OPPORTUNITY_PAGE_SIZE = 100;
+
+// Lazy-loaded: the camera/barcode-scanning code is only needed once an
+// organizer actually opens the scanner, not on every dashboard visit - #971.
+const QRScannerModal = lazy(() => import("../../../components/QRScannerModal"));
 
 interface Props {
 	organizationId: string;
@@ -108,12 +112,18 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 			)}
 
 			{scannerOpen && (
-				<QRScannerModal
-					onCheckedIn={() => {
-						dispatchToast("success", t("checkIn.success"));
-					}}
-					onClose={() => setScannerOpen(false)}
-				/>
+				<Suspense
+					fallback={
+						<ModalLoadingFallback onClose={() => setScannerOpen(false)} />
+					}
+				>
+					<QRScannerModal
+						onCheckedIn={() => {
+							dispatchToast("success", t("checkIn.success"));
+						}}
+						onClose={() => setScannerOpen(false)}
+					/>
+				</Suspense>
 			)}
 		</WidgetCard>
 	);

@@ -101,10 +101,14 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// entirely - the org switcher in the header already shows the org
 		// name. #775/#777 brought the tab bar back (mobile burger submenu
 		// needed it too), so that part of #771's removal no longer holds -
-		// see OrgAppMobileResponsiveTests for tab-bar coverage. This test
-		// keeps proving the h1 removal and that the dashboard's own widgets
-		// are a second, independent way to reach every subsite (not just the
-		// tab bar).
+		// see OrgAppMobileResponsiveTests for tab-bar coverage. #973 then
+		// gave OrgAppShell a real h1 again (axe's page-has-heading-one gate
+		// had a blind spot that let every org app page ship with no h1 at
+		// all) - but it renders the tab/page title ("Dashboard"), not the
+		// org name, so #771's actual intent (no org-name duplication) still
+		// holds. This test now asserts exactly that single, correctly-titled
+		// h1, plus that the dashboard's own widgets are a second, independent
+		// way to reach every subsite (not just the tab bar).
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -114,7 +118,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await CreateOrganizationAsync("Visual771 Reachability");
 
 		(await Page.Locator("h1").CountAsync())
-			.Should().Be(0, "the dashboard no longer duplicates the org name as a heading");
+			.Should().Be(1, "OrgAppShell renders one page-title h1 (#973), but it must still not duplicate the org name the header's org switcher already shows");
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();

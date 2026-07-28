@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
@@ -11,10 +11,10 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
-import QRScannerModal from "../components/QRScannerModal";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -25,6 +25,9 @@ import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 const ENGAGEMENTS_PAGE_SIZE = 10;
+
+// Lazy-loaded: only needed once an organizer actually opens the scanner - #971.
+const QRScannerModal = lazy(() => import("../components/QRScannerModal"));
 
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -391,16 +394,22 @@ export default function EngagementManagementPage() {
 			)}
 
 			{qrScannerOpen && (
-				<QRScannerModal
-					onCheckedIn={(engagementId) => {
-						setEngagements((prev) =>
-							prev.map((e) =>
-								e.id === engagementId ? { ...e, isCheckedIn: true } : e,
-							),
-						);
-					}}
-					onClose={() => setQrScannerOpen(false)}
-				/>
+				<Suspense
+					fallback={
+						<ModalLoadingFallback onClose={() => setQrScannerOpen(false)} />
+					}
+				>
+					<QRScannerModal
+						onCheckedIn={(engagementId) => {
+							setEngagements((prev) =>
+								prev.map((e) =>
+									e.id === engagementId ? { ...e, isCheckedIn: true } : e,
+								),
+							);
+						}}
+						onClose={() => setQrScannerOpen(false)}
+					/>
+				</Suspense>
 			)}
 
 			{confirmCancelId && (
