@@ -8,7 +8,7 @@ import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
-import { useSharedOrgFetch } from "./useSharedOrgFetch";
+import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 const OPPORTUNITY_PAGE_SIZE = 100;

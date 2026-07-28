@@ -8,6 +8,7 @@ import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import Button from "../components/Button";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
@@ -86,28 +87,15 @@ export default function HomePage() {
 	const orgsTeaserTitleId = useId();
 
 	const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
-	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	useEffect(() => {
-		if (!auth.isAuthenticated) {
-			setOrgs([]);
-			return;
-		}
-		let cancelled = false;
-		api
-			.getOrganizations()
-			.then((data) => {
-				if (!cancelled) setOrgs(data);
-			})
-			.catch(() => {
-				if (!cancelled) setOrgs([]);
-			});
-		return () => {
-			cancelled = true;
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [auth.isAuthenticated]);
+	// Shared with Header, which independently needs the same top-level
+	// organization list on the same mount (#1396) - see useSharedOrgFetch.
+	const [orgsData] = useSharedOrgFetch<OrganizationSummaryDto[]>(
+		`organizations:${auth.isAuthenticated}`,
+		() => (auth.isAuthenticated ? api.getOrganizations() : Promise.resolve([])),
+	);
+	const orgs = auth.isAuthenticated ? (orgsData ?? []) : [];
 
 	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 

@@ -9,7 +9,7 @@ import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
-import { useSharedOrgFetch } from "./useSharedOrgFetch";
+import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 const MAX_ITEMS = 5;
