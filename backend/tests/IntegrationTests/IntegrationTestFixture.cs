@@ -175,7 +175,11 @@ public class IntegrationTestFixture
 		return false;
 	}
 
-	private ApplicationDbContext CreateApplicationDbContext()
+	// Test-only escape hatch for driving Infrastructure-internal logic (InternalsVisibleTo,
+	// see Infrastructure.csproj) directly against the real integration Postgres - e.g.
+	// OrganizationMembershipBackfillJob.BackfillAsync, which otherwise only ever runs once
+	// per app boot and can't be re-triggered through the API (#1393).
+	internal ApplicationDbContext CreateApplicationDbContext()
 	{
 		var options = new DbContextOptionsBuilder<ApplicationDbContext>()
 			.UseNpgsql(_connectionString)
