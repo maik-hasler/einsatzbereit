@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,6 @@ import ReportContentModal, {
 } from "../components/ReportContentModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Button from "../components/Button";
-import SingleMarkerMap from "../components/SingleMarkerMap";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -27,6 +26,11 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
+
+// Lazy-loaded: Leaflet only renders once an opportunity actually has
+// coordinates, so keep it out of this page's (and thus the shared home page
+// bundle's) initial chunk - #971.
+const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -414,11 +418,13 @@ export default function VolunteerOpportunityDetailPage() {
 				opportunity.latitude != null &&
 				opportunity.longitude != null && (
 					<div className="mb-6 overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
-						<SingleMarkerMap
-							latitude={opportunity.latitude}
-							longitude={opportunity.longitude}
-							label={`${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
-						/>
+						<Suspense fallback={<Skeleton className="h-64 w-full" />}>
+							<SingleMarkerMap
+								latitude={opportunity.latitude}
+								longitude={opportunity.longitude}
+								label={`${opportunity.street} ${opportunity.houseNumber}, ${opportunity.zipCode} ${opportunity.city}`}
+							/>
+						</Suspense>
 					</div>
 				)}
 
