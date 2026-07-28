@@ -7,6 +7,19 @@ export interface CitySuggestion {
 	lng: number;
 }
 
+// Module-level so it survives across hook re-mounts for the lifetime of the
+// page (cleared on reload) - repeated searches for the same city (e.g. the
+// user re-focuses the field, or backspaces and retypes) never need to hit the
+// backend again since city name-to-coordinates mappings are effectively
+// static. Never stores an empty result: an empty response is indistinguishable
+// here from a transient backend/upstream hiccup, and caching it would turn
+// that into a permanent false "no such city" for the rest of the page's life.
+const cityCache = new Map<string, CitySuggestion[]>();
+
+function cacheKeyFor(query: string) {
+	return query.trim().toLowerCase();
+}
+
 // Debounced city-name autocomplete for the location filter's "search by city"
 // input. Proxied through the backend's /v1/maps/cities endpoint (which in turn
 // queries the public Nominatim/OpenStreetMap geocoder) so the visitor's IP
@@ -24,6 +37,14 @@ export function useCitySuggestions(query: string) {
 			setShow(false);
 			return;
 		}
+
+		const cached = cityCache.get(cacheKeyFor(query));
+		if (cached) {
+			setSuggestions(cached);
+			setShow(cached.length > 0);
+			return;
+		}
+
 		abortRef.current?.abort();
 		const controller = new AbortController();
 		abortRef.current = controller;
@@ -35,6 +56,9 @@ export function useCitySuggestions(query: string) {
 					lat: place.latitude,
 					lng: place.longitude,
 				}));
+				if (results.length > 0) {
+					cityCache.set(cacheKeyFor(query), results);
+				}
 				setSuggestions(results);
 				setShow(results.length > 0);
 			} catch {

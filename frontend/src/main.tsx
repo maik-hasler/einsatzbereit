@@ -1,5 +1,5 @@
 import i18n from "./i18n";
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { AuthProvider } from "react-oidc-context";
 import { WebStorageStateStore, type User } from "oidc-client-ts";
@@ -40,13 +40,15 @@ const oidcConfig = {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
 		<ErrorBoundary>
-			<ToastProvider>
-				<AuthProvider {...oidcConfig}>
-					<BrowserRouter>
-						<App />
-					</BrowserRouter>
-				</AuthProvider>
-			</ToastProvider>
+			<Suspense fallback={null}>
+				<ToastProvider>
+					<AuthProvider {...oidcConfig}>
+						<BrowserRouter>
+							<App />
+						</BrowserRouter>
+					</AuthProvider>
+				</ToastProvider>
+			</Suspense>
 		</ErrorBoundary>
 	</React.StrictMode>,
 );

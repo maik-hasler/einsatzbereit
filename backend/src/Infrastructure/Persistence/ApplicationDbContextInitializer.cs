@@ -207,46 +207,6 @@ internal sealed class ApplicationDbContextInitializer(
 		}
 	}
 
-	public async ValueTask BackfillOrganizationMembershipsAsync(
-		CancellationToken cancellationToken = default)
-	{
-		try
-		{
-			var backfilledOrganizationIds = await dbContext.Set<Organization>()
-				.Where(o => !dbContext.Set<OrganizationMembership>().Any(m => m.OrganizationId == o.Id))
-				.Select(o => o.Id)
-				.ToListAsync(cancellationToken);
-
-			if (backfilledOrganizationIds.Count == 0)
-				return;
-
-			foreach (var organizationId in backfilledOrganizationIds)
-			{
-				var members = await keycloakOrganizationService.GetMembersAsync(
-					organizationId.Value, cancellationToken);
-
-				foreach (var member in members.Where(m => m.IsOrganisator).DistinctBy(m => m.UserId))
-				{
-					dbContext.Set<OrganizationMembership>().Add(
-						OrganizationMembership.Create(
-							organizationId, UserId.Create(member.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
-				}
-			}
-
-			await dbContext.SaveChangesAsync(cancellationToken);
-
-			logger.LogInformation(
-				"Backfilled organization_membership rows for {Count} pre-existing organization(s).",
-				backfilledOrganizationIds.Count);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(
-				ex,
-				"An exception occurred while backfilling organization memberships");
-		}
-	}
-
 	private async Task<OrganizationId> SeedOrg1Async(CancellationToken cancellationToken)
 	{
 		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(

@@ -305,6 +305,119 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(calendarWidget.Locator(".rbc-time-view")).ToBeVisibleAsync();
 	}
 
+	[Test]
+	public async Task CalendarWidget_SelectEventAndSaveColor_RecoloredEventSurvivesReload()
+	{
+		// #1397: calEvents, and the Calendar's components/eventPropGetter/messages
+		// props, were rebuilt from scratch on every render (including on every
+		// pointer movement while dragging the color picker below), fixed by
+		// memoizing calEvents off calData and hoisting the static props out of
+		// the component. This exercises the full select-event -> pick color ->
+		// save round trip end to end, so a broken useMemo dependency array or a
+		// debounced picker that never flushes its final value would show up as
+		// a failing assertion here rather than only as a missed re-render.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1397 {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"Visual1397 Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CalendarWidget color-save test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "Waitlist",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		// Close enough to "now" that it always falls in the current month, so
+		// the widget's default month view shows it without switching tabs.
+		var start = DateTimeOffset.UtcNow.AddHours(1);
+		var end = start.AddHours(2);
+		(await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 }))
+			.EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Calendar", Exact = true }),
+		});
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var calendarEvent = calendarWidget.Locator(".rbc-event").First;
+		await Expect(calendarEvent).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// No color set yet - eventPropGetter falls back to DEFAULT_EVENT_COLOR.
+		var defaultBg = await calendarEvent.EvaluateAsync<string>(
+			"el => getComputedStyle(el).backgroundColor");
+		defaultBg.Should().Be("rgb(34, 105, 71)");
+
+		await calendarEvent.ClickAsync();
+		var colorDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(colorDialog).ToBeVisibleAsync();
+		await Expect(colorDialog).ToContainTextAsync(oppTitle);
+
+		var colorInput = Page.Locator("#event-color-picker");
+		await Expect(colorInput).ToHaveValueAsync("#226947");
+
+		const string newColor = "#3366cc";
+		await colorInput.FillAsync(newColor);
+		await Expect(Page.GetByText(newColor)).ToBeVisibleAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
+		await Expect(colorDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var savedBg = await calendarEvent.EvaluateAsync<string>(
+			"el => getComputedStyle(el).backgroundColor");
+		savedBg.Should().Be("rgb(51, 102, 204)");
+
+		// Reload so calData (and the memoized calEvents derived from it) come
+		// back fresh from the server, proving the color actually persisted
+		// rather than only reflecting the modal's optimistic local update.
+		await Page.ReloadAsync();
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var reloadedEvent = calendarWidget.Locator(".rbc-event").First;
+		await Expect(reloadedEvent).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		var reloadedBg = await reloadedEvent.EvaluateAsync<string>(
+			"el => getComputedStyle(el).backgroundColor");
+		reloadedBg.Should().Be("rgb(51, 102, 204)");
+	}
+
 	private async Task CreateOrganizationAsync(string namePrefix)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry

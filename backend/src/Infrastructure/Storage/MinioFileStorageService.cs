@@ -7,6 +7,12 @@ namespace Infrastructure.Storage;
 
 internal sealed class MinioFileStorageService : IFileStorageService
 {
+	// Object keys are stable (e.g. "user-avatars/{UserId}{ext}"), so a long
+	// max-age would serve a stale image after re-upload. A moderate TTL plus
+	// the "?v=" cache-busting query param below (which changes on every
+	// upload) keeps caching effective without that staleness risk.
+	internal const string CacheControlHeaderValue = "public, max-age=3600";
+
 	private readonly IMinioClient _minio;
 	private readonly StorageSettings _settings;
 	private static readonly SemaphoreSlim _initLock = new(1, 1);
@@ -49,10 +55,14 @@ internal sealed class MinioFileStorageService : IFileStorageService
 				.WithObject(objectKey)
 				.WithStreamData(content)
 				.WithObjectSize(size)
-				.WithContentType(contentType),
+				.WithContentType(contentType)
+				.WithHeaders(new Dictionary<string, string>
+				{
+					["Cache-Control"] = CacheControlHeaderValue,
+				}),
 			cancellationToken);
 
-		return GetPublicUrl(objectKey);
+		return AppendVersionQuery(GetPublicUrl(objectKey), DateTimeOffset.UtcNow);
 	}
 
 	public async Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
@@ -71,6 +81,13 @@ internal sealed class MinioFileStorageService : IFileStorageService
 		var baseUrl = (_settings.PublicEndpoint ?? _settings.Endpoint).TrimEnd('/');
 		return $"{baseUrl}/{_settings.BucketName}/{objectKey}";
 	}
+
+	// Object keys don't change on re-upload, so the version query param is
+	// what invalidates a browser's cached copy once the underlying object
+	// changes - without it, CacheControlHeaderValue's max-age would let a
+	// stale image survive a re-upload until it happened to expire.
+	internal static string AppendVersionQuery(string url, DateTimeOffset uploadedOn) =>
+		$"{url}?v={uploadedOn.ToUnixTimeSeconds()}";
 
 	private async Task EnsureBucketReadyAsync(CancellationToken cancellationToken)
 	{

@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Application.Common.Email;
 using AwesomeAssertions;
 using Infrastructure.Email;
 using Microsoft.Extensions.Diagnostics.Metrics;
@@ -19,6 +20,14 @@ namespace IntegrationTests;
 // like EngagementReminderJob rely on this - see its MarkReminderSent right
 // after SendAsync) but still observable, now via a metric rather than only a
 // log line nothing was watching.
+//
+// [NotInParallel] with a key unique to this class (not the "IntegrationDb"
+// key other IntegrationTests classes share): EmailMetrics.MeterName is a
+// process-wide constant, so a MeterListener started in one test backfires
+// on every not-yet-disposed Meter of that name from a concurrently-running
+// test in this class too - it must not also serialize against the unrelated
+// Aspire/Testcontainers-backed suite this class deliberately avoids needing.
+[NotInParallel(nameof(SmtpEmailServiceTests))]
 public class SmtpEmailServiceTests
 {
 	[Test]
@@ -51,6 +60,95 @@ public class SmtpEmailServiceTests
 		await act.Should().NotThrowAsync();
 
 		recorded.Should().ContainSingle(m => m.Status == "failed" && m.Value == 1);
+	}
+
+	// Regression coverage for #1400: EngagementReminderJob used to open a fresh
+	// SMTP connection per volunteer. FakeSmtpServer only ever accepts one TCP
+	// connection (see AcceptAsync below), so if SendBatchAsync tried to reconnect
+	// for message 2 or 3 there would be nothing listening and those sends would
+	// fail - all three succeeding here is itself proof the batch shares one connection.
+	[Test]
+	public async Task SendBatchAsync_ServerAcceptsAllMessages_SendsEveryMessageOverOneConnection()
+	{
+		await using var server = await FakeSmtpServer.StartAsync();
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new EmailMetrics(meterFactory);
+		var recorded = RecordEmailSendMeasurements(meterFactory);
+
+		var sut = CreateService(server.Port, metrics);
+		var messages = new[]
+		{
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1"),
+			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2"),
+			new EmailMessage("admin@example.com", "Reminder 3", "Body 3"),
+		};
+
+		var results = await sut.SendBatchAsync(messages);
+
+		results.Should().Equal(true, true, true);
+		recorded.Count(m => m.Status == "succeeded").Should().Be(3);
+		recorded.Should().NotContain(m => m.Status == "failed");
+	}
+
+	[Test]
+	public async Task SendBatchAsync_ServerRejectsOneRecipient_ReportsThatMessageAsFailedAndKeepsSendingTheRest()
+	{
+		await using var server = await FakeSmtpServer.StartAsync(rejectRecipient: "olaf@example.com");
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new EmailMetrics(meterFactory);
+		var recorded = RecordEmailSendMeasurements(meterFactory);
+
+		var sut = CreateService(server.Port, metrics);
+		var messages = new[]
+		{
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1"),
+			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2"),
+			new EmailMessage("admin@example.com", "Reminder 3", "Body 3"),
+		};
+
+		var results = await sut.SendBatchAsync(messages);
+
+		results.Should().Equal(true, false, true);
+		recorded.Count(m => m.Status == "succeeded").Should().Be(2);
+		recorded.Count(m => m.Status == "failed").Should().Be(1);
+	}
+
+	[Test]
+	public async Task SendBatchAsync_ServerUnreachable_AllMessagesFailWithoutThrowing()
+	{
+		var unusedPort = GetUnusedLoopbackPort();
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new EmailMetrics(meterFactory);
+		var recorded = RecordEmailSendMeasurements(meterFactory);
+
+		var sut = CreateService(unusedPort, metrics);
+		var messages = new[]
+		{
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1"),
+			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2"),
+		};
+
+		var results = await sut.SendBatchAsync(messages);
+
+		results.Should().Equal(false, false);
+		recorded.Count(m => m.Status == "failed").Should().Be(2);
+	}
+
+	[Test]
+	public async Task SendBatchAsync_EmptyMessageList_ReturnsEmptyResultsWithoutConnecting()
+	{
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new EmailMetrics(meterFactory);
+		var recorded = RecordEmailSendMeasurements(meterFactory);
+
+		// Deliberately no FakeSmtpServer started: an empty batch must not attempt
+		// a connection at all, so an unused port never being listened on is fine.
+		var sut = CreateService(GetUnusedLoopbackPort(), metrics);
+
+		var results = await sut.SendBatchAsync([]);
+
+		results.Should().BeEmpty();
+		recorded.Should().BeEmpty();
 	}
 
 	private static SmtpEmailService CreateService(int port, EmailMetrics metrics) =>
@@ -136,22 +234,24 @@ public class SmtpEmailServiceTests
 	{
 		private readonly TcpListener _listener;
 		private readonly Task _acceptTask;
+		private readonly string? _rejectRecipient;
 
-		private FakeSmtpServer(TcpListener listener, int port)
+		private FakeSmtpServer(TcpListener listener, int port, string? rejectRecipient)
 		{
 			_listener = listener;
 			Port = port;
+			_rejectRecipient = rejectRecipient;
 			_acceptTask = AcceptAsync();
 		}
 
 		public int Port { get; }
 
-		public static Task<FakeSmtpServer> StartAsync()
+		public static Task<FakeSmtpServer> StartAsync(string? rejectRecipient = null)
 		{
 			var listener = new TcpListener(IPAddress.Loopback, 0);
 			listener.Start();
 			var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-			return Task.FromResult(new FakeSmtpServer(listener, port));
+			return Task.FromResult(new FakeSmtpServer(listener, port, rejectRecipient));
 		}
 
 		private async Task AcceptAsync()
@@ -170,10 +270,21 @@ public class SmtpEmailServiceTests
 				{
 					await writer.WriteLineAsync("250 fake.local");
 				}
-				else if (line.StartsWith("MAIL FROM", StringComparison.OrdinalIgnoreCase)
-					|| line.StartsWith("RCPT TO", StringComparison.OrdinalIgnoreCase))
+				else if (line.StartsWith("MAIL FROM", StringComparison.OrdinalIgnoreCase))
 				{
 					await writer.WriteLineAsync("250 OK");
+				}
+				else if (line.StartsWith("RCPT TO", StringComparison.OrdinalIgnoreCase))
+				{
+					if (_rejectRecipient is not null &&
+						line.Contains(_rejectRecipient, StringComparison.OrdinalIgnoreCase))
+					{
+						await writer.WriteLineAsync("550 Requested action not taken: mailbox unavailable");
+					}
+					else
+					{
+						await writer.WriteLineAsync("250 OK");
+					}
 				}
 				else if (line.Equals("DATA", StringComparison.OrdinalIgnoreCase))
 				{
@@ -183,6 +294,13 @@ public class SmtpEmailServiceTests
 					}
 
 					await writer.WriteLineAsync("250 OK queued");
+				}
+				else if (line.StartsWith("RSET", StringComparison.OrdinalIgnoreCase))
+				{
+					// MailKit issues RSET to clear the transaction after a rejected
+					// RCPT TO before starting the next message - without a reply
+					// here the client blocks reading a response that never comes.
+					await writer.WriteLineAsync("250 OK");
 				}
 				else if (line.StartsWith("QUIT", StringComparison.OrdinalIgnoreCase))
 				{

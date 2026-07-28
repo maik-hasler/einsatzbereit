@@ -19,14 +19,15 @@ internal sealed class OrganizationDashboardReadRepository(
 		var now = DateTimeOffset.UtcNow;
 		var sevenDaysLater = now.AddDays(7);
 
-		// Materialize the org's opportunity ids once instead of re-running the
-		// same subquery inside every count below.
-		var orgOpportunityIds = await dbContext.VolunteerOpportunitiesQuery
+		// Kept as an IQueryable (not materialized) so every use below compiles to a
+		// correlated "IN (SELECT ...)" subquery instead of shipping the id list to
+		// and from Postgres as a literal array.
+		var orgOpportunityIds = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == orgId)
-			.Select(vo => vo.Id)
-			.ToListAsync(cancellationToken);
+			.Select(vo => vo.Id);
 
-		var openOpportunities = orgOpportunityIds.Count;
+		var openOpportunities = await dbContext.VolunteerOpportunitiesQuery
+			.CountAsync(vo => vo.OrganizationId == orgId, cancellationToken);
 
 		// A single grouped query covers every status breakdown (pending, cancelled, ...).
 		var countsByStatus = await dbContext.EngagementsQuery
@@ -45,7 +46,7 @@ internal sealed class OrganizationDashboardReadRepository(
 			.FirstOrDefault(c => c.Status == EngagementStatus.Confirmed)?.Count ?? 0;
 
 		// The "next 7 days" metric needs a join to time slots plus a date filter,
-		// so it stays a dedicated query (still using the materialized id list).
+		// so it stays a dedicated query (still reusing the same subquery).
 		var confirmedEngagementsNext7Days = await dbContext.EngagementsQuery
 			.Where(e => orgOpportunityIds.Contains(e.OpportunityId) && e.Status == EngagementStatus.Confirmed && e.TimeSlotId != null)
 			.Join(
