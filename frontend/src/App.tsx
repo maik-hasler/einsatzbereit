@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
 	Routes,
 	Route,
@@ -9,26 +10,37 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
 import ErrorBanner from "./components/ErrorBanner";
+import RouteLoadingFallback from "./components/RouteLoadingFallback";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
-import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
+import type { OrgAppContext } from "./layouts/OrgAppLayout";
 import HomePage from "./pages/HomePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import ImprintPage from "./pages/ImprintPage";
 import ContactPage from "./pages/ContactPage";
 import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
-import EngagementManagementPage from "./pages/EngagementManagementPage";
 import ProfileOverviewPage from "./pages/ProfileOverviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrganizationProfilePage from "./pages/OrganizationProfilePage";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import UserAchievementsPage from "./pages/UserAchievementsPage";
-import AdministrationPage from "./pages/AdministrationPage";
 import UserProfilePage from "./pages/UserProfilePage";
-import OrgDashboardPage from "./pages/app/OrgDashboardPage";
-import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
-import OrgMembersPage from "./pages/app/OrgMembersPage";
-import OrgSettingsPage from "./pages/app/OrgSettingsPage";
+
+// Lazy-loaded: the platform-admin panel and the organizer-only app shell
+// (widget dashboard, opportunity/member/settings management, QR check-in)
+// pull in a lot of code that anonymous and plain-volunteer visitors never
+// touch, so keep them out of the shared entry chunk - see #971.
+const OrgAppLayout = lazy(() => import("./layouts/OrgAppLayout"));
+const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
+const OrgOpportunitiesPage = lazy(
+	() => import("./pages/app/OrgOpportunitiesPage"),
+);
+const EngagementManagementPage = lazy(
+	() => import("./pages/EngagementManagementPage"),
+);
+const OrgMembersPage = lazy(() => import("./pages/app/OrgMembersPage"));
+const OrgSettingsPage = lazy(() => import("./pages/app/OrgSettingsPage"));
+const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
 
 // A bare <Outlet /> element (no `context` prop) starts a brand new outlet
 // context of its own - it does NOT transparently forward whatever an
@@ -69,7 +81,9 @@ export default function App() {
 				path="/app/:organizationId"
 				element={
 					<ProtectedRoute>
-						<OrgAppLayout />
+						<Suspense fallback={<RouteLoadingFallback />}>
+							<OrgAppLayout />
+						</Suspense>
 					</ProtectedRoute>
 				}
 			>

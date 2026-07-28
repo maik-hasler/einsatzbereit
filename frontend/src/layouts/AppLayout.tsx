@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router";
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer";
+import RouteLoadingFallback from "../components/RouteLoadingFallback";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { ToolbarProvider, useToolbarConfig } from "../contexts/ToolbarContext";
 import {
@@ -24,7 +26,9 @@ function AppLayoutInner() {
 		<div className="min-h-screen flex flex-col">
 			<Header breadcrumb={breadcrumb} />
 			<main className="mx-auto max-w-7xl px-4 pb-16 pt-6 flex-1 w-full sm:px-6 sm:pt-10 lg:px-8 lg:pt-12">
-				<Outlet />
+				<Suspense fallback={<RouteLoadingFallback />}>
+					<Outlet />
+				</Suspense>
 			</main>
 			<Footer />
 		</div>
