@@ -138,6 +138,15 @@ jobs:
           name: backend-build
           path: backend
 
+      # actions/upload-artifact/download-artifact zip the artifact and don't
+      # preserve the Unix executable bit, so the native apphost binaries
+      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
+      # actually launches) come back non-executable and fail with
+      # "Permission denied" otherwise.
+      - name: Fix executable bit on downloaded build output
+        working-directory: backend
+        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+
       - name: Test - Application.UnitTests
         working-directory: backend
         run: dotnet run --project tests/Application.UnitTests --no-restore --no-build
@@ -170,6 +179,15 @@ jobs:
         with:
           name: backend-build
           path: backend
+
+      # actions/upload-artifact/download-artifact zip the artifact and don't
+      # preserve the Unix executable bit, so the native apphost binaries
+      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
+      # actually launches) come back non-executable and fail with
+      # "Permission denied" otherwise.
+      - name: Fix executable bit on downloaded build output
+        working-directory: backend
+        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
@@ -219,6 +237,15 @@ jobs:
         with:
           name: backend-build
           path: backend
+
+      # actions/upload-artifact/download-artifact zip the artifact and don't
+      # preserve the Unix executable bit, so the native apphost binaries
+      # (bin/.../<ProjectName>, no file extension - what `dotnet run`
+      # actually launches) come back non-executable and fail with
+      # "Permission denied" otherwise.
+      - name: Fix executable bit on downloaded build output
+        working-directory: backend
+        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
 
       # Restores the same Playwright browser cache the build job just
       # populated - the build job's download happened on that job's own
