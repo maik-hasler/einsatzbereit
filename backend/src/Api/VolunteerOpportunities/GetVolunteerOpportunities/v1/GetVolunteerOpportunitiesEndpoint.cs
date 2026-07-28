@@ -3,6 +3,7 @@ using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Common.Pagination;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
+using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.VolunteerOpportunities.GetVolunteerOpportunities.v1;
@@ -47,6 +48,30 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 
 		if (request.RadiusKm is <= 0)
 			return Results.Problem("RadiusKm must be greater than zero.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (!string.IsNullOrWhiteSpace(request.Occurrence)
+			&& (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence) || !Enum.IsDefined(occurrence)))
+		{
+			return Results.Problem(
+				"Invalid occurrence. Allowed values: OneTime, Recurring.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		if (!string.IsNullOrWhiteSpace(request.ParticipationType)
+			&& (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType) || !Enum.IsDefined(participationType)))
+		{
+			return Results.Problem(
+				"Invalid participation type. Allowed values: Waitlist, IndividualContact.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		if (request.Categories is { Length: > 0 }
+			&& request.Categories.Any(c => !Enum.TryParse<Category>(c, ignoreCase: true, out var category) || !Enum.IsDefined(category)))
+		{
+			return Results.Problem(
+				"Invalid category. Allowed values: Social, Environment, Sport, Education, DisasterRelief, Health, Animals, Culture, Technology, Other.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
 
 		var query = new GetVolunteerOpportunitiesQuery(
 			request.PageNumber,
