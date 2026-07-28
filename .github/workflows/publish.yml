@@ -14,8 +14,64 @@ permissions:
   packages: write
 
 jobs:
+  # Single restore+build for the whole solution, shared by the three test
+  # jobs below via upload-artifact/download-artifact instead of each of them
+  # redoing it - see the matching job in dotnet.yml for the full rationale.
+  backend-build:
+    name: Backend Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: backend/global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Building the whole solution here compiles tests/VisualTests.csproj,
+      # which downloads Chrome for Testing + Chrome Headless Shell (~290 MiB
+      # combined) from cdn.playwright.dev via its InstallPlaywrightBrowsers
+      # MSBuild target. Caching this means that download only happens when
+      # the pinned TUnit.Playwright version changes, not on every RC cut.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+
+      - name: Restore backend
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build backend
+        working-directory: backend
+        run: dotnet build --no-restore
+
+      - name: Upload build output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-build
+          path: |
+            backend/**/bin/**
+            backend/**/obj/**
+          # See the matching step in dotnet.yml - tests/VisualTests's
+          # Playwright driver lives under a dot-prefixed bin/.../.playwright/
+          # folder that upload-artifact excludes by default.
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
   backend-fast-tests:
     name: Backend Fast Tests
+    needs: backend-build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -33,16 +89,30 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: backend
+
+      # See the matching step in dotnet.yml - artifact zip/unzip drops the
+      # Unix executable bit on the native apphost binaries `dotnet run`
+      # launches directly.
+      - name: Fix executable bit on downloaded build output
+        working-directory: backend
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
+
       - name: Test - Application.UnitTests
         working-directory: backend
-        run: dotnet run --project tests/Application.UnitTests
+        run: dotnet run --project tests/Application.UnitTests --no-restore --no-build
 
       - name: Test - ArchitectureTests
         working-directory: backend
-        run: dotnet run --project tests/ArchitectureTests
+        run: dotnet run --project tests/ArchitectureTests --no-restore --no-build
 
   backend-integration-tests:
     name: Backend Integration Tests
+    needs: backend-build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -60,6 +130,19 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: backend
+
+      # See the matching step in dotnet.yml - artifact zip/unzip drops the
+      # Unix executable bit on the native apphost binaries `dotnet run`
+      # launches directly.
+      - name: Fix executable bit on downloaded build output
+        working-directory: backend
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
+
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           package_json_file: frontend/package.json
@@ -74,14 +157,6 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Restore backend
-        working-directory: backend
-        run: dotnet restore
-
-      - name: Build backend
-        working-directory: backend
-        run: dotnet build --no-restore
-
       - name: Pre-pull Docker images
         run: |
           docker pull quay.io/keycloak/keycloak:26.7.0
@@ -90,10 +165,11 @@ jobs:
 
       - name: Test - IntegrationTests (Aspire + Docker)
         working-directory: backend
-        run: dotnet run --project tests/IntegrationTests --no-build
+        run: dotnet run --project tests/IntegrationTests --no-restore --no-build
 
   backend-visual-tests:
     name: Backend Visual Tests
+    needs: backend-build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -111,6 +187,19 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: backend
+
+      # See the matching step in dotnet.yml - artifact zip/unzip drops the
+      # Unix executable bit on the native apphost binaries `dotnet run`
+      # launches directly.
+      - name: Fix executable bit on downloaded build output
+        working-directory: backend
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
+
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           package_json_file: frontend/package.json
@@ -125,13 +214,15 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Restore backend
-        working-directory: backend
-        run: dotnet restore
-
-      - name: Build backend
-        working-directory: backend
-        run: dotnet build --no-restore
+      # See the matching step in dotnet.yml's visual-tests job for why this
+      # cache exists, and this job's backend-build job for why it needs
+      # restoring again here (a different runner from the one that populated
+      # it - needs: backend-build guarantees this lands after that save).
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
 
       - name: Pre-pull Docker images
         run: |
@@ -141,7 +232,7 @@ jobs:
 
       - name: Test - VisualTests (Aspire + Docker + Playwright)
         working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-build
+        run: dotnet run --project tests/VisualTests --no-restore --no-build
 
   publish-backend:
     name: Publish Backend

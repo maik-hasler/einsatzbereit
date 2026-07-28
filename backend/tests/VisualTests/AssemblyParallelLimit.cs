@@ -13,22 +13,22 @@ using TUnit.Core.Interfaces;
 // Aspire-hosted stack (SharedType.PerTestSession). A retry lands in the same
 // still-contended run and just as easily times out again.
 //
-// Cap concurrent tests below the machine's core count so CPU-bound work
-// (axe-core scans, React commits, Chromium rendering) doesn't oversubscribe
-// the runner and start missing the timing assertions scattered across this
-// suite. A cap of exactly Environment.ProcessorCount still fully
-// oversubscribes CI - dotnet.yml's visual-tests job runs on ubuntu-latest
-// (4 vCPUs), and those same 4 cores also have to service the Aspire-hosted
-// stack itself (Postgres, Keycloak, backend API, frontend dev server) that
-// every one of the N concurrent Playwright sessions is calling into, not
-// just the N browser/axe processes. Reserving one core for that shared
-// stack (see e.g. AuthHelper.GoToOrgAppDashboardAsync's repeatedly-raised
-// wait timeout, most recently bumped once this project added two more
-// concurrent test classes on top of an already-contended run) leaves
-// CI genuinely under the core count instead of exactly at it.
-// Environment.ProcessorCount - 1 (floored at 1) rather than a hardcoded
-// number so this still scales with whatever runner size CI happens to use,
-// and with a larger local dev machine.
+// suite. Capping at exactly Environment.ProcessorCount (as this used to)
+// still starves the Aspire-hosted stack itself: dotnet.yml's visual-tests
+// job runs on ubuntu-latest (4 vCPUs), and those same cores also have to
+// service the stack (Postgres, Keycloak, backend API, frontend dev server)
+// that every one of the N concurrent Playwright sessions is calling into,
+// not just the N browser/axe-core processes - e.g.
+// AccessibilityTests.OrgDashboardPage_PlacingAWidget_AsOlaf and
+// EngagementManagementPage_AsOlaf both timed out waiting on the same
+// GET /v1/organizations round trip in the same CI run (2026-07-28), the
+// exact contention pattern AuthHelper.GoToOrgAppDashboardAsync's comment
+// already predicted as the suite grew. Reserving one core for the stack
+// itself is a structural fix for that class of flake, as opposed to the
+// timeout bumps this file's sibling comments already flag as running out
+// of headroom. Environment.ProcessorCount - 1 (floored at 1) rather than a
+// hardcoded number so this still scales with whatever runner size CI
+// happens to use, and with a larger local dev machine.
 [assembly: ParallelLimiter<VisualTestsParallelLimit>]
 
 public sealed class VisualTestsParallelLimit : IParallelLimit
