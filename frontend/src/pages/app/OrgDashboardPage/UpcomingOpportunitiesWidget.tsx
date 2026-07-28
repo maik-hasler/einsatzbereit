@@ -13,6 +13,7 @@ import { useSharedOrgFetch } from "./useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 const MAX_ITEMS = 5;
+const OPPORTUNITY_PAGE_SIZE = 100;
 
 interface UpcomingItem {
 	id: string;
@@ -40,11 +41,20 @@ function UpcomingOpportunitiesWidget({
 	// Both fetches are shared with sibling widgets that need the same
 	// organization-wide data on the same mount - opportunities with
 	// QuickCheckInWidget, calendar events with CalendarWidget - see
-	// useSharedOrgFetch.
+	// useSharedOrgFetch. Only one of the two "opportunities" fetcher closures
+	// actually runs per useSharedOrgFetch's dedup, so its args (status,
+	// pageNumber, pageSize) must stay identical to QuickCheckInWidget's.
 	const [opportunities, , opportunitiesError] = useSharedOrgFetch<
 		VolunteerOpportunitySummary[]
 	>(`opportunities:${organizationId}:${refreshKey}`, () =>
-		api.getOrganizationOpportunities(organizationId),
+		api
+			.getOrganizationOpportunities(
+				organizationId,
+				"Published",
+				1,
+				OPPORTUNITY_PAGE_SIZE,
+			)
+			.then((page) => page.items),
 	);
 	const [calendarEvents, , calendarEventsError] = useSharedOrgFetch<
 		OrganizationCalendarEventDto[]
@@ -60,7 +70,6 @@ function UpcomingOpportunitiesWidget({
 			calendarEvents.map((e) => [e.opportunityId, e]),
 		);
 		return opportunities
-			.filter((o) => o.status === "Published")
 			.map((o): UpcomingItem => {
 				const futureSlots = (eventsByOpportunity.get(o.id)?.timeSlots ?? [])
 					.map((s) => new Date(s.startDateTime))

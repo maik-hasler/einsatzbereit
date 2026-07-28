@@ -110,6 +110,17 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		await MockQrCameraSupportAsync(Page, grantCamera: true);
 
+		// A well-formed UUID that does not match any engagement at all - the
+		// scanner has no client-side list to pre-filter against (#1401), so
+		// this must reach the real check-in endpoint and surface its 404.
+		var unknownId = Guid.NewGuid().ToString();
+		var checkInStatuses = new List<int>();
+		Page.Response += (_, response) =>
+		{
+			if (response.Url.Contains($"/v1/engagements/{unknownId}/check-in", StringComparison.Ordinal))
+				checkInStatuses.Add(response.Status);
+		};
+
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -119,15 +130,14 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(dialog).ToBeVisibleAsync();
 		await Expect(dialog.Locator("video")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		// A well-formed UUID that does not match any engagement on this opportunity.
-		var unknownId = Guid.NewGuid().ToString();
 		await Page.EvaluateAsync(
 			"(id) => { window.__qrTestBarcodes = [{ rawValue: id, format: 'qr_code' }]; }",
 			unknownId);
 
-		await Expect(dialog.GetByText("QR code not recognised. The volunteer may not be confirmed yet."))
+		await Expect(dialog.GetByText("Engagement not found."))
 			.ToBeVisibleAsync(new() { Timeout = 15_000 });
 
+		checkInStatuses.Should().ContainSingle().Which.Should().Be(404);
 		await Expect(dialog.GetByText("Volunteer checked in successfully!")).Not.ToBeVisibleAsync();
 	}
 
@@ -222,10 +232,11 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 
 	/// <summary>
 	/// Creates a fresh organization + QRCode-check-in opportunity, has vera
-	/// apply, and has olaf confirm the application - the precondition for the
-	/// QR scanner to accept a scan of the resulting engagement id (the
-	/// component only matches engagements with status "Confirmed" and
-	/// isCheckedIn === false, see QRScannerModal.tsx's scan loop).
+	/// apply, and has olaf confirm the application - the precondition for a
+	/// scan of the resulting engagement id to be accepted by the real
+	/// check-in endpoint, which the scanner now calls directly for any
+	/// well-formed UUID rather than pre-matching against a client-side list
+	/// (#1401).
 	/// </summary>
 	private static async Task<(string OpportunityId, string OrganizationId, string EngagementId)>
 		CreateQrCheckInEngagementAsync(Uri keycloak, Uri backend, string label)
