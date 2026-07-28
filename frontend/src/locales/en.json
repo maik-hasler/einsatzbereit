@@ -9,7 +9,8 @@
       "edit": "Edit",
       "save": "Save",
       "saving": "Saving…",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "pageLoading": "Loading page…"
     },
     "nav": {
       "primaryLabel": "Main navigation",

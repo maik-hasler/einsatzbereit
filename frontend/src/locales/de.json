@@ -9,7 +9,8 @@
       "edit": "Bearbeiten",
       "save": "Speichern",
       "saving": "Wird gespeichert…",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "pageLoading": "Seite wird geladen…"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",

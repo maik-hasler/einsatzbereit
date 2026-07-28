@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import {
 	Routes,
 	Route,
@@ -12,23 +13,37 @@ import ErrorBanner from "./components/ErrorBanner";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
-import HomePage from "./pages/HomePage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import ImprintPage from "./pages/ImprintPage";
-import ContactPage from "./pages/ContactPage";
-import VolunteerOpportunityDetailPage from "./pages/VolunteerOpportunityDetailPage";
-import EngagementManagementPage from "./pages/EngagementManagementPage";
-import ProfileOverviewPage from "./pages/ProfileOverviewPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import OrganizationProfilePage from "./pages/OrganizationProfilePage";
-import OrganizationsPage from "./pages/OrganizationsPage";
-import UserAchievementsPage from "./pages/UserAchievementsPage";
-import AdministrationPage from "./pages/AdministrationPage";
-import UserProfilePage from "./pages/UserProfilePage";
-import OrgDashboardPage from "./pages/app/OrgDashboardPage";
-import OrgOpportunitiesPage from "./pages/app/OrgOpportunitiesPage";
-import OrgMembersPage from "./pages/app/OrgMembersPage";
-import OrgSettingsPage from "./pages/app/OrgSettingsPage";
+
+// Route pages are lazy-loaded so each one becomes its own build chunk instead
+// of all being bundled (and precached by the PWA service worker) as a single
+// monolithic entry chunk - see vite.config.ts's manualChunks/workbox comments
+// for the other half of this. AppLayout/OrgAppLayout stay eager since they
+// render on (almost) every route as the app chrome.
+const HomePage = lazy(() => import("./pages/HomePage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const ImprintPage = lazy(() => import("./pages/ImprintPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const VolunteerOpportunityDetailPage = lazy(
+	() => import("./pages/VolunteerOpportunityDetailPage"),
+);
+const EngagementManagementPage = lazy(
+	() => import("./pages/EngagementManagementPage"),
+);
+const ProfileOverviewPage = lazy(() => import("./pages/ProfileOverviewPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const OrganizationProfilePage = lazy(
+	() => import("./pages/OrganizationProfilePage"),
+);
+const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
+const UserAchievementsPage = lazy(() => import("./pages/UserAchievementsPage"));
+const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
+const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
+const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
+const OrgOpportunitiesPage = lazy(
+	() => import("./pages/app/OrgOpportunitiesPage"),
+);
+const OrgMembersPage = lazy(() => import("./pages/app/OrgMembersPage"));
+const OrgSettingsPage = lazy(() => import("./pages/app/OrgSettingsPage"));
 
 // A bare <Outlet /> element (no `context` prop) starts a brand new outlet
 // context of its own - it does NOT transparently forward whatever an
