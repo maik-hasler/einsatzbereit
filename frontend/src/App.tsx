@@ -13,13 +13,20 @@ import ErrorBanner from "./components/ErrorBanner";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
+import HomePage from "./pages/HomePage";
 
 // Route pages are lazy-loaded so each one becomes its own build chunk instead
 // of all being bundled (and precached by the PWA service worker) as a single
 // monolithic entry chunk - see vite.config.ts's manualChunks/workbox comments
 // for the other half of this. AppLayout/OrgAppLayout stay eager since they
-// render on (almost) every route as the app chrome.
-const HomePage = lazy(() => import("./pages/HomePage"));
+// render on (almost) every route as the app chrome. HomePage ("/") also
+// stays eager (imported above, not lazy): it's the app's default landing
+// route anyway (small - not the precache-size problem #1403 targets), and
+// it shares an in-flight-request dedup with Header for GET /v1/organizations
+// (useSharedOrgFetch, #1396) that depends on both mounting in the same
+// synchronous commit - a lazy HomePage's chunk-load delay pushes its mount
+// past Header's request already having settled, so the "shared" fetch
+// fires twice instead of once.
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ImprintPage = lazy(() => import("./pages/ImprintPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));

@@ -120,13 +120,34 @@ if (!buildMatch) {
 
 // 4. Route pages in App.tsx must actually be lazy-loaded, otherwise
 // manualChunks/globPatterns have nothing to split in the first place - all
-// page code would stay bundled into the single entry chunk.
+// page code would stay bundled into the single entry chunk. HomePage is a
+// deliberate exception - see check 4b.
 const lazyPageImports = appTsx.match(/lazy\(\s*\(\)\s*=>\s*import\(["']\.\/pages\//g) ?? [];
-if (lazyPageImports.length < 10) {
+if (lazyPageImports.length < 9) {
 	fail(
 		`Found only ${lazyPageImports.length} lazy-loaded page import(s) in src/App.tsx - route ` +
 			"pages must be lazy-loaded (React.lazy) for the build to code-split per route, or the " +
 			"whole-bundle precache regression from issue #1403 comes back.",
+	);
+}
+
+// 4b. HomePage specifically must stay a plain, eager import - Header (always
+// eager) and HomePage share a single in-flight GET /v1/organizations request
+// via useSharedOrgFetch (#1396), which only dedupes when both mount in the
+// same synchronous commit. A lazy HomePage mounts late (after its chunk
+// loads), missing Header's already-in-flight request and firing a second,
+// redundant one.
+if (!/^import HomePage from ["']\.\/pages\/HomePage["'];?$/m.test(appTsx)) {
+	fail(
+		"src/App.tsx no longer has a plain `import HomePage from \"./pages/HomePage\"` - if it's " +
+			"lazy-loaded again, it and Header's shared useSharedOrgFetch(\"organizations:...\") call " +
+			"will race and fire GET /v1/organizations twice per authenticated home page load (#1396).",
+	);
+}
+if (/lazy\(\s*\(\)\s*=>\s*import\(["']\.\/pages\/HomePage["']/.test(appTsx)) {
+	fail(
+		"src/App.tsx lazy-loads HomePage - see the comment above it for why this races Header's " +
+			"shared useSharedOrgFetch(\"organizations:...\") call and must stay a plain eager import.",
 	);
 }
 // Suspense boundaries live in the layouts (around each <Outlet />), not in
