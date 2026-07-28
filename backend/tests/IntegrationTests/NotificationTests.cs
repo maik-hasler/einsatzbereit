@@ -81,7 +81,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			.ToList();
 		ordered.Should().HaveCount(2);
 
-		var secondPage = await olafClient.GetMyNotificationsAsync(ordered[0].CreatedOn, cancellationToken);
+		var secondPage = await olafClient.GetMyNotificationsAsync(ordered[0].CreatedOn, ordered[0].Id, cancellationToken);
 
 		secondPage.Items.Should().ContainSingle(n => n.Id == ordered[1].Id);
 		secondPage.Items.Should().NotContain(n => n.Id == ordered[0].Id);

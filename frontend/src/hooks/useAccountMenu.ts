@@ -125,7 +125,7 @@ export function useAccountMenu(
 		let cancelled = false;
 		void (async () => {
 			try {
-				const result = await api.getMyNotifications(undefined);
+				const result = await api.getMyNotifications(undefined, undefined);
 				if (!cancelled) {
 					setNotifications(result.items);
 					setNotifHasMore(result.hasMore);
@@ -144,8 +144,8 @@ export function useAccountMenu(
 		if (notifications.length === 0 || notifLoadingMore) return;
 		setNotifLoadingMore(true);
 		try {
-			const cursor = notifications[notifications.length - 1].createdOn;
-			const result = await api.getMyNotifications(cursor);
+			const last = notifications[notifications.length - 1];
+			const result = await api.getMyNotifications(last.createdOn, last.id);
 			setNotifications((prev) => [...prev, ...result.items]);
 			setNotifHasMore(result.hasMore);
 		} catch {

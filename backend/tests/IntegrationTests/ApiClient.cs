@@ -330,7 +330,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(System.DateTimeOffset? before = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(System.DateTimeOffset? before = null, System.Guid? beforeId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -7110,7 +7110,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(System.DateTimeOffset? before = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(System.DateTimeOffset? before = null, System.Guid? beforeId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -7129,6 +7129,10 @@ namespace IntegrationTests
                     if (before != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("before")).Append('=').Append(System.Uri.EscapeDataString(before.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (beforeId != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("beforeId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(beforeId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 

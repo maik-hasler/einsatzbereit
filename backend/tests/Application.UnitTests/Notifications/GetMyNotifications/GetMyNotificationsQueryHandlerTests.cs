@@ -23,9 +23,9 @@ public class GetMyNotificationsQueryHandlerTests
 		// Arrange
 		var recipientId = UserId.New();
 		var notifications = CreateSummaries(10);
-		_readRepository.GetByRecipientAsync(recipientId, null, 51, cancellationToken)
+		_readRepository.GetByRecipientAsync(recipientId, null, null, 51, cancellationToken)
 			.Returns(notifications);
-		var query = new GetMyNotificationsQuery(recipientId, null);
+		var query = new GetMyNotificationsQuery(recipientId, null, null);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
@@ -42,9 +42,9 @@ public class GetMyNotificationsQueryHandlerTests
 		// Arrange
 		var recipientId = UserId.New();
 		var notifications = CreateSummaries(50);
-		_readRepository.GetByRecipientAsync(recipientId, null, 51, cancellationToken)
+		_readRepository.GetByRecipientAsync(recipientId, null, null, 51, cancellationToken)
 			.Returns(notifications);
-		var query = new GetMyNotificationsQuery(recipientId, null);
+		var query = new GetMyNotificationsQuery(recipientId, null, null);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
@@ -61,9 +61,9 @@ public class GetMyNotificationsQueryHandlerTests
 		// Arrange
 		var recipientId = UserId.New();
 		var notifications = CreateSummaries(51);
-		_readRepository.GetByRecipientAsync(recipientId, null, 51, cancellationToken)
+		_readRepository.GetByRecipientAsync(recipientId, null, null, 51, cancellationToken)
 			.Returns(notifications);
-		var query = new GetMyNotificationsQuery(recipientId, null);
+		var query = new GetMyNotificationsQuery(recipientId, null, null);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
@@ -81,15 +81,16 @@ public class GetMyNotificationsQueryHandlerTests
 		// Arrange
 		var recipientId = UserId.New();
 		var before = DateTimeOffset.UtcNow.AddDays(-1);
-		_readRepository.GetByRecipientAsync(recipientId, before, 51, cancellationToken)
+		var beforeId = Guid.NewGuid();
+		_readRepository.GetByRecipientAsync(recipientId, before, beforeId, 51, cancellationToken)
 			.Returns([]);
-		var query = new GetMyNotificationsQuery(recipientId, before);
+		var query = new GetMyNotificationsQuery(recipientId, before, beforeId);
 
 		// Act
 		await _sut.Handle(query, cancellationToken);
 
 		// Assert
-		await _readRepository.Received(1).GetByRecipientAsync(recipientId, before, 51, cancellationToken);
+		await _readRepository.Received(1).GetByRecipientAsync(recipientId, before, beforeId, 51, cancellationToken);
 	}
 
 	private static List<NotificationSummary> CreateSummaries(int count) =>

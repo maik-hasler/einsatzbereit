@@ -3751,14 +3751,19 @@ export class EinsatzbereitApi {
 
     /**
      * @param before (optional) 
+     * @param beforeId (optional) 
      * @return OK
      */
-    getMyNotifications(before: Date | undefined, signal?: AbortSignal): Promise<NotificationsPage> {
+    getMyNotifications(before: Date | undefined, beforeId: string | undefined, signal?: AbortSignal): Promise<NotificationsPage> {
         let url_ = this.baseUrl + "/v1/notifications?";
         if (before === null)
             throw new globalThis.Error("The parameter 'before' cannot be null.");
         else if (before !== undefined)
             url_ += "before=" + encodeURIComponent(before ? "" + before.toISOString() : "") + "&";
+        if (beforeId === null)
+            throw new globalThis.Error("The parameter 'beforeId' cannot be null.");
+        else if (beforeId !== undefined)
+            url_ += "beforeId=" + encodeURIComponent("" + beforeId) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

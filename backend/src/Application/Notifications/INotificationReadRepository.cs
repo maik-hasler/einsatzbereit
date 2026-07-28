@@ -7,6 +7,7 @@ public interface INotificationReadRepository
 	ValueTask<List<NotificationSummary>> GetByRecipientAsync(
 		UserId recipientId,
 		DateTimeOffset? before,
+		Guid? beforeId,
 		int limit,
 		CancellationToken cancellationToken = default);
 

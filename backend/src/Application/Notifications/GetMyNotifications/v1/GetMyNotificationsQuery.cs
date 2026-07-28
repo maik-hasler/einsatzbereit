@@ -3,5 +3,5 @@ using Domain.Users;
 
 namespace Application.Notifications.GetMyNotifications.v1;
 
-public sealed record GetMyNotificationsQuery(UserId RecipientId, DateTimeOffset? Before)
+public sealed record GetMyNotificationsQuery(UserId RecipientId, DateTimeOffset? Before, Guid? BeforeId)
 	: IQuery<NotificationsPage>;

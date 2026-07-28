@@ -13,7 +13,7 @@ internal sealed class GetMyNotificationsQueryHandler(
 		CancellationToken cancellationToken = default)
 	{
 		var notifications = await readRepository.GetByRecipientAsync(
-			request.RecipientId, request.Before, PageSize + 1, cancellationToken);
+			request.RecipientId, request.Before, request.BeforeId, PageSize + 1, cancellationToken);
 
 		var hasMore = notifications.Count > PageSize;
 		var items = hasMore ? notifications.Take(PageSize).ToList() : notifications;

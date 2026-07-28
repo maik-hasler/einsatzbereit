@@ -28,13 +28,14 @@ internal sealed class GetMyNotificationsEndpoint
 		[FromServices] ISender sender,
 		HttpContext httpContext,
 		[FromQuery] DateTimeOffset? before,
+		[FromQuery] Guid? beforeId,
 		CancellationToken cancellationToken)
 	{
 		var subClaim = httpContext.User.FindFirst("sub")?.Value;
 		if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
-		var query = new GetMyNotificationsQuery(UserId.Create(userId).GetValueOrThrow(), before);
+		var query = new GetMyNotificationsQuery(UserId.Create(userId).GetValueOrThrow(), before, beforeId);
 		var result = await sender.Send(query, cancellationToken);
 		return Results.Ok(result);
 	}

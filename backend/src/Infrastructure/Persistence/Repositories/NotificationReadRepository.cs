@@ -23,17 +23,37 @@ internal sealed class NotificationReadRepository(
 	public async ValueTask<List<NotificationSummary>> GetByRecipientAsync(
 		UserId recipientId,
 		DateTimeOffset? before,
+		Guid? beforeId,
 		int limit,
 		CancellationToken cancellationToken = default)
 	{
 		var query = dbContext.NotificationsQuery
 			.Where(n => n.RecipientId == recipientId);
 
-		if (before is not null)
+		// Notifications created in the same batch (e.g. several engagement
+		// events processed by the outbox job in one tick) can share an
+		// identical CreatedOn - AuditableEntityInterceptor stamps one UtcNow
+		// per SaveChanges call, not per entity. CreatedOn alone is therefore
+		// not a safe keyset cursor: paging strictly on "< before" would drop
+		// same-timestamp siblings that land on the far side of a page
+		// boundary. Id (a UUIDv7, so still roughly time-ordered) breaks the
+		// tie deterministically; EF.Property<Guid> reads the raw provider
+		// column instead of going through NotificationId's value converter,
+		// which only has == translation support, not < / >.
+		if (before is not null && beforeId is not null)
+		{
+			query = query.Where(n =>
+				n.CreatedOn < before.Value ||
+				(n.CreatedOn == before.Value && EF.Property<Guid>(n, nameof(Notification.Id)) < beforeId.Value));
+		}
+		else if (before is not null)
+		{
 			query = query.Where(n => n.CreatedOn < before.Value);
+		}
 
 		var notifications = await query
 			.OrderByDescending(n => n.CreatedOn)
+			.ThenByDescending(n => EF.Property<Guid>(n, nameof(Notification.Id)))
 			.Take(limit)
 			.ToListAsync(cancellationToken);
 

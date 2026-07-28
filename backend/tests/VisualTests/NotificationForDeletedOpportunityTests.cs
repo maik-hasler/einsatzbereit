@@ -81,8 +81,10 @@ public class NotificationForDeletedOpportunityTests(AspireFixture fixture) : Vis
 	{
 		var response = await http.GetAsync("/v1/notifications");
 		response.EnsureSuccessStatusCode();
-		var notifications = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return notifications.EnumerateArray()
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		// GetMyNotifications returns a NotificationsPage ({ items, hasMore }),
+		// not a bare array, since einsatzbereit#1384 added cursor pagination.
+		return page.GetProperty("items").EnumerateArray()
 			.First(n => n.GetProperty("kind").GetString() == "EngagementCreated");
 	}
 

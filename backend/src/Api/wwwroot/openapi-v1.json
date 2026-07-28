@@ -4161,6 +4161,14 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "beforeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
