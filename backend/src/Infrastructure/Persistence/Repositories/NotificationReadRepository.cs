@@ -22,11 +22,19 @@ internal sealed class NotificationReadRepository(
 
 	public async ValueTask<List<NotificationSummary>> GetByRecipientAsync(
 		UserId recipientId,
+		DateTimeOffset? before,
+		int limit,
 		CancellationToken cancellationToken = default)
 	{
-		var notifications = await dbContext.NotificationsQuery
-			.Where(n => n.RecipientId == recipientId)
+		var query = dbContext.NotificationsQuery
+			.Where(n => n.RecipientId == recipientId);
+
+		if (before is not null)
+			query = query.Where(n => n.CreatedOn < before.Value);
+
+		var notifications = await query
 			.OrderByDescending(n => n.CreatedOn)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 
 		// Collect entity IDs by type
@@ -106,4 +114,10 @@ internal sealed class NotificationReadRepository(
 				n.CreatedOn);
 		}).ToList();
 	}
+
+	public async ValueTask<int> CountUnreadByRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default) =>
+		await dbContext.NotificationsQuery
+			.CountAsync(n => n.RecipientId == recipientId && !n.IsRead, cancellationToken);
 }

@@ -9,6 +9,9 @@ export interface AccountMenuState {
 	avatarUrl: string | null;
 	notifications: NotificationSummary[];
 	unreadCount: number;
+	notifHasMore: boolean;
+	notifLoadingMore: boolean;
+	loadMoreNotifications: () => Promise<void>;
 	notifOpen: boolean;
 	setNotifOpen: Dispatch<SetStateAction<boolean>>;
 	notifRef: RefObject<HTMLDivElement | null>;
@@ -37,6 +40,9 @@ export function useAccountMenu(
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [notifOpen, setNotifOpen] = useState(false);
 	const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
+	const [notifHasMore, setNotifHasMore] = useState(false);
+	const [notifLoadingMore, setNotifLoadingMore] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
 	const dropdownRef = useDismissableOverlay<HTMLDivElement>(dropdownOpen, () =>
 		setDropdownOpen(false),
 	);
@@ -46,22 +52,52 @@ export function useAccountMenu(
 		extraNotifContainers,
 	);
 
+	// Only the unread count is polled (a single cheap indexed COUNT query) -
+	// the full notification list is fetched on-demand when the dropdown opens
+	// instead, see einsatzbereit#1384. Polling pauses while the tab is hidden
+	// and catches up with an immediate fetch when it becomes visible again.
 	useEffect(() => {
 		if (!isLoggedIn) return;
 		const controller = new AbortController();
-		const fetchCount = async () => {
+		let intervalId: ReturnType<typeof setInterval> | null = null;
+
+		const fetchUnreadCount = async () => {
 			try {
-				const result = await api.getMyNotifications(controller.signal);
-				setNotifications(result);
+				const count = await api.getUnreadNotificationCount(controller.signal);
+				setUnreadCount(count);
 			} catch {
 				// silently ignore (includes AbortError on cleanup)
 			}
 		};
-		void fetchCount();
-		const id = setInterval(() => void fetchCount(), 60_000);
+
+		const startPolling = () => {
+			if (intervalId !== null) return;
+			intervalId = setInterval(() => void fetchUnreadCount(), 60_000);
+		};
+
+		const stopPolling = () => {
+			if (intervalId === null) return;
+			clearInterval(intervalId);
+			intervalId = null;
+		};
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				void fetchUnreadCount();
+				startPolling();
+			} else {
+				stopPolling();
+			}
+		};
+
+		void fetchUnreadCount();
+		if (document.visibilityState === "visible") startPolling();
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+
 		return () => {
 			controller.abort();
-			clearInterval(id);
+			stopPolling();
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
@@ -89,8 +125,11 @@ export function useAccountMenu(
 		let cancelled = false;
 		void (async () => {
 			try {
-				const result = await api.getMyNotifications();
-				if (!cancelled) setNotifications(result);
+				const result = await api.getMyNotifications(undefined);
+				if (!cancelled) {
+					setNotifications(result.items);
+					setNotifHasMore(result.hasMore);
+				}
 			} catch {
 				// silently ignore fetch errors
 			}
@@ -101,11 +140,25 @@ export function useAccountMenu(
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [notifOpen, isLoggedIn]);
 
-	const unreadCount = notifications.filter((n) => !n.isRead).length;
+	async function loadMoreNotifications() {
+		if (notifications.length === 0 || notifLoadingMore) return;
+		setNotifLoadingMore(true);
+		try {
+			const cursor = notifications[notifications.length - 1].createdOn;
+			const result = await api.getMyNotifications(cursor);
+			setNotifications((prev) => [...prev, ...result.items]);
+			setNotifHasMore(result.hasMore);
+		} catch {
+			// silently ignore fetch errors
+		} finally {
+			setNotifLoadingMore(false);
+		}
+	}
 
 	async function markAllRead() {
 		await api.markAllNotificationsRead();
 		setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+		setUnreadCount(0);
 	}
 
 	async function markOneRead(id: string) {
@@ -113,12 +166,16 @@ export function useAccountMenu(
 		setNotifications((prev) =>
 			prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
 		);
+		setUnreadCount((prev) => Math.max(0, prev - 1));
 	}
 
 	return {
 		avatarUrl,
 		notifications,
 		unreadCount,
+		notifHasMore,
+		notifLoadingMore,
+		loadMoreNotifications,
 		notifOpen,
 		setNotifOpen,
 		notifRef,

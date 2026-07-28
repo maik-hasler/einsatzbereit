@@ -609,6 +609,8 @@
       "bellLabel": "Benachrichtigungen",
       "markAllRead": "Alle als gelesen markieren",
       "empty": "Keine Benachrichtigungen.",
+      "loadMore": "Mehr laden",
+      "loadingMore": "Lädt...",
       "deletedOpportunityPlaceholder": "einen gelöschten Bedarf",
       "kinds": {
         "EngagementCreated": "Neue Bewerbung eingegangen für {{title}}",

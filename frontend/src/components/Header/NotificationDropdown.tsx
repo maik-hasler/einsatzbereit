@@ -31,6 +31,9 @@ export default function NotificationDropdown({
 	const {
 		notifications,
 		unreadCount,
+		notifHasMore,
+		notifLoadingMore,
+		loadMoreNotifications,
 		notifOpen,
 		setNotifOpen,
 		markAllRead,
@@ -103,13 +106,34 @@ export default function NotificationDropdown({
 								{t("notifications.empty")}
 							</li>
 						) : (
-							notifications.map((n) => (
-								<NotificationItem
-									key={n.id}
-									notification={n}
-									onSelect={handleSelect}
-								/>
-							))
+							<>
+								{notifications.map((n) => (
+									<NotificationItem
+										key={n.id}
+										notification={n}
+										onSelect={handleSelect}
+									/>
+								))}
+								{notifHasMore && (
+									<li className="px-4 py-2 text-center">
+										<button
+											type="button"
+											data-testid={
+												mobile
+													? "notification-load-more-mobile"
+													: "notification-load-more"
+											}
+											disabled={notifLoadingMore}
+											onClick={() => void loadMoreNotifications()}
+											className="text-xs hover:underline cursor-pointer text-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											{notifLoadingMore
+												? t("notifications.loadingMore")
+												: t("notifications.loadMore")}
+										</button>
+									</li>
+								)}
+							</>
 						)}
 					</ul>
 				</div>
