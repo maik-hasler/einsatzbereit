@@ -66,7 +66,11 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 		});
 		response.EnsureSuccessStatusCode();
 		var created = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return created.GetProperty("id").GetProperty("value").GetString()!;
+		// Unlike CreateOrganization (returns the Organization aggregate, whose Id
+		// serializes as {"value": "guid"}), CreateVolunteerOpportunity returns a
+		// bespoke response DTO with a raw Guid id (opportunity.Id.Value) - already
+		// a plain string, no nested "value" property.
+		return created.GetProperty("id").GetString()!;
 	}
 
 	/// <summary>
