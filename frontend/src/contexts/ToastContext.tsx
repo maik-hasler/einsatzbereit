@@ -50,9 +50,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 			{children}
 			{/* Always-mounted empty live region so a screen reader has an aria-live */}
 			{/* region on page load, before the first toast's own role="alert" exists. */}
+			{/* No role="status" here - that role is already used app-wide for actual */}
+			{/* loading/status indicators, and several tests locate those by a bare */}
+			{/* [role='status'] query; a global always-present one would shadow them. */}
 			{/* Kept as a sibling (not a wrapper) of the toasts below - nesting a */}
 			{/* "polite" region around each toast's own "assertive" alert is unreliable. */}
-			<div role="status" aria-live="polite" className="sr-only" />
+			<div
+				aria-live="polite"
+				className="sr-only"
+				data-testid="toast-live-region"
+			/>
 			<ToastList />
 		</ToastContext.Provider>
 	);

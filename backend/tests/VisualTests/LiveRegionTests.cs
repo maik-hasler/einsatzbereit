@@ -9,11 +9,15 @@ namespace VisualTests;
 /// (ToastContext.tsx) and ErrorBanner only ever appear in the DOM once a toast or
 /// error already exists - a screen reader has no live region to pick up until
 /// content is already stale. The fix adds an always-mounted, empty, visually
-/// hidden role="status" aria-live="polite" sentinel alongside (not wrapping) the
-/// toast list, so a live region exists from initial page load without nesting it
-/// around each toast's own role="alert" (nesting live regions is unreliable
-/// across screen readers - see ToastContext.tsx), and adds an explicit
-/// aria-live="assertive" to ErrorBanner alongside its existing role="alert".
+/// hidden aria-live="polite" sentinel (data-testid="toast-live-region", no
+/// role="status" - that role is already used app-wide for real loading/status
+/// indicators that several tests locate via a bare [role='status'] query, and an
+/// always-present global match broke them - see LoadingStateTests.cs) alongside
+/// (not wrapping) the toast list, so a live region exists from initial page load
+/// without nesting it around each toast's own role="alert" (nesting live regions
+/// is unreliable across screen readers - see ToastContext.tsx), and adds an
+/// explicit aria-live="assertive" to ErrorBanner alongside its existing
+/// role="alert".
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
@@ -26,7 +30,7 @@ public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync(frontend.ToString());
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var liveRegion = Page.Locator("[role='status'][aria-live='polite']");
+		var liveRegion = Page.Locator("[data-testid='toast-live-region'][aria-live='polite']");
 		await Expect(liveRegion).ToBeAttachedAsync();
 	}
 
@@ -39,9 +43,14 @@ public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// downgraded to the sentinel's "polite" in some screen readers. Toasts
 		// must keep their own role="alert" so they're still announced
 		// immediately (and so existing toast-locating tests keep working).
+		//
+		// Uses FastSignInAsync rather than a real Keycloak login - this test
+		// doesn't exercise the login flow itself, and the shared Aspire session
+		// is already contended by ~50 other VisualTests classes (see the
+		// contention note on AuthHelper.GoToOrgAppDashboardAsync).
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		await Page.RouteAsync("**/v1/**", async route =>
 		{
@@ -67,7 +76,7 @@ public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.Filter(new() { HasTextString = "You do not have permission" });
 		await Expect(toast).ToBeVisibleAsync(new() { Timeout = 2_000 });
 
-		var sentinel = Page.Locator("[role='status'][aria-live='polite']");
+		var sentinel = Page.Locator("[data-testid='toast-live-region'][aria-live='polite']");
 		await Expect(sentinel).ToBeAttachedAsync();
 		(await sentinel.Locator("[role='alert']").CountAsync()).Should().Be(0,
 			"the toast must not be nested inside the polite sentinel region - " +
