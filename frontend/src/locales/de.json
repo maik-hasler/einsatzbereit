@@ -170,7 +170,7 @@
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
-      "loginToApply": "Bitte <loginLink>melde dich an</loginLink>, um dich für diesen Einsatz anzumelden.",
+      "loginPrompt": "Melde dich an, um dich für diesen Einsatz anzumelden.",
       "yourApplication": "Deine Bewerbung",
       "aboutOrganization": "Über diese Organisation",
       "moreFromOrganization": "Weitere Angebote dieser Organisation",
