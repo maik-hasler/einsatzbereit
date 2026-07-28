@@ -5,6 +5,7 @@ import { useNavigate, Link, useLocation } from "react-router";
 import OrganizationSwitcher from "./OrganizationSwitcher";
 import { useAccountMenu } from "../../hooks/useAccountMenu";
 import { useApiClient } from "../../hooks/useApiClient";
+import { useSharedOrgFetch } from "../../hooks/useSharedOrgFetch";
 import { signinRedirectForRegistration } from "../../lib/keycloakRegistration";
 import { signinLocaleArgs } from "../../lib/authLocale";
 import { getActiveOrgId, resolveActiveOrg } from "../../lib/activeOrg";
@@ -54,8 +55,14 @@ export default function Header({
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
 	const isAdmin = roles.includes("admin");
-	const [orgs, setOrgs] = useState<OrganizationSummaryDto[]>([]);
-	const [orgsLoading, setOrgsLoading] = useState(true);
+	// Shared with HomePage, which independently needs the same top-level
+	// organization list on the same mount (#1396) - see useSharedOrgFetch.
+	const [orgsData, , orgsError] = useSharedOrgFetch<OrganizationSummaryDto[]>(
+		`organizations:${isLoggedIn}`,
+		() => (isLoggedIn ? api.getOrganizations() : Promise.resolve([])),
+	);
+	const orgs = isLoggedIn ? (orgsData ?? []) : [];
+	const orgsLoading = isLoggedIn && orgsData === null && !orgsError;
 	const activeOrg = resolveActiveOrg(orgs, getActiveOrgId());
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [orgMenuOpen, setOrgMenuOpen] = useState(false);
@@ -74,29 +81,6 @@ export default function Header({
 	useEffect(() => {
 		if (!mobileOpen) setOrgMenuOpen(false);
 	}, [mobileOpen]);
-
-	useEffect(() => {
-		if (!isLoggedIn) {
-			setOrgs([]);
-			setOrgsLoading(false);
-			return;
-		}
-		const controller = new AbortController();
-		setOrgsLoading(true);
-		api
-			.getOrganizations(controller.signal)
-			.then((data) => {
-				if (!controller.signal.aborted) setOrgs(data);
-			})
-			.catch(() => {
-				if (!controller.signal.aborted) setOrgs([]);
-			})
-			.finally(() => {
-				if (!controller.signal.aborted) setOrgsLoading(false);
-			});
-		return () => controller.abort();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isLoggedIn]);
 
 	const isTransparent = location.pathname === "/" && !scrolled;
 
