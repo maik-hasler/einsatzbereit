@@ -92,4 +92,32 @@ public class CheckInEngagementCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		engagement.IsCheckedIn.Should().BeFalse();
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrowNotFound_WhenOpportunityIsGone(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: opportunity row is gone (e.g. hard-deleted) but its engagement
+		// survived as a non-terminal row. The ownership guard must not be silently
+		// skipped in this case - it must reject before ever reaching CheckIn.
+		var opportunityId = VolunteerOpportunityId.New();
+		var engagement = CreateConfirmedEngagement(opportunityId);
+		var engagementId = engagement.Id;
+
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
+
+		var command = new CheckInEngagementCommand(engagementId, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.NotFound);
+		engagement.IsCheckedIn.Should().BeFalse();
+		await _dbContext
+			.DidNotReceive()
+			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>());
+	}
 }
