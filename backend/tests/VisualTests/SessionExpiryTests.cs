@@ -56,7 +56,13 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var sessionExpiredToast = Page.GetByRole(AriaRole.Alert)
 			.Filter(new() { HasTextString = "session has expired" });
-		await Expect(sessionExpiredToast).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		// Same tolerant timeout as the redirect test above (30s, not the
+		// previous 10s): #1449 made i18n resource loading async (its own
+		// fetched chunk, gating the whole app behind a root Suspense
+		// boundary), so a cold Page.ReloadAsync() now has one more
+		// network-bound step before anything - including this toast - can
+		// render at all.
+		await Expect(sessionExpiredToast).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}
 
 	// Edge case: an anonymous visitor's public, tokenless requests (e.g. the

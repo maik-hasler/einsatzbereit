@@ -8,6 +8,14 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
+// Imported before global.css (not from CalendarWidget, which only lives on
+// the lazy-loaded OrgDashboardPage chunk) so react-big-calendar's default,
+// low-contrast stylesheet always ends up earlier than global.css's brand
+// overrides for the same classes (.rbc-active, .rbc-off-range, etc.) in the
+// final CSS output - same specificity, so cascade order alone decides which
+// wins, and a lazy-chunk-scoped import made that order load-timing-
+// dependent instead of fixed.
+import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./styles/global.css";
 
 const oidcConfig = {
