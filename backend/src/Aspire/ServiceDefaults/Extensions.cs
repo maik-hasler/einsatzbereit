@@ -93,7 +93,23 @@ public static class ServiceDefaultsExtensions
 	{
 		if (builder is WebApplicationBuilder webBuilder && TryGetMetricsPort(builder.Configuration, out var port))
 		{
-			webBuilder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(port));
+			// An explicit Kestrel Listen call replaces ASP.NET Core's default URL
+			// binding (ASPNETCORE_HTTP_PORTS, set to 8080 by the base container
+			// image) instead of adding to it - without re-adding it here, the app
+			// ends up listening only on the metrics port, unreachable to both
+			// Traefik and the docker-compose healthcheck even though the process
+			// itself is healthy. Caused a staging outage the first time this
+			// second listener shipped (Metrics:Port was previously never set, so
+			// this branch never ran outside staging).
+			var mainPort = int.TryParse(builder.Configuration["ASPNETCORE_HTTP_PORTS"], out var configuredPort)
+				? configuredPort
+				: 8080;
+
+			webBuilder.WebHost.ConfigureKestrel(options =>
+			{
+				options.ListenAnyIP(mainPort);
+				options.ListenAnyIP(port);
+			});
 		}
 
 		return builder;
