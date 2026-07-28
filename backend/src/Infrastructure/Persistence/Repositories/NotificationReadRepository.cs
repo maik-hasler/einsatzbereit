@@ -46,11 +46,25 @@ internal sealed class NotificationReadRepository(
 		// bounded by how many notifications one SaveChanges call creates for
 		// a single recipient, normally a handful) rather than risk an
 		// arbitrary SQL tie order silently truncating it via Take().
+		//
+		// "Same-timestamp" here has to mean the same *millisecond*, not the
+		// same tick: `before` always arrives via GetMyNotificationsEndpoint's
+		// beforeUnixMs -> DateTimeOffset.FromUnixTimeMilliseconds round trip,
+		// which floors to millisecond precision, while CreatedOn keeps
+		// Postgres's full microsecond precision. The cursor row's true
+		// CreatedOn can therefore land anywhere in [before, before + 1ms), not
+		// just exactly at `before` - an exact-equality match missed any
+		// sibling elsewhere in that bucket, silently dropping it from both the
+		// tied bucket and the "< before" older-query (its real timestamp is
+		// >= the floored `before`, so neither side caught it). Match the
+		// whole bucket instead and let the Id tiebreak below decide what's
+		// actually before/after the cursor row within it.
 		List<Notification> tiedWithCursor = [];
 		if (before is not null && beforeId is not null)
 		{
+			var cursorBucketEnd = before.Value.AddMilliseconds(1);
 			var cursorTiedBucket = await recipientQuery
-				.Where(n => n.CreatedOn == before.Value)
+				.Where(n => n.CreatedOn >= before.Value && n.CreatedOn < cursorBucketEnd)
 				.ToListAsync(cancellationToken);
 
 			tiedWithCursor = cursorTiedBucket

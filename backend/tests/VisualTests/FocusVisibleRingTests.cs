@@ -17,7 +17,16 @@ namespace VisualTests;
 public class FocusVisibleRingTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	// brand-700 (#226947), the shared --focus-ring-color token in global.css.
-	private const string ExpectedRingColor = "rgb(34, 105, 71)";
+	// Checked via the custom property's own computed value (a plain string
+	// substitution), not getComputedStyle(el).outlineColor: that reads back
+	// the browser's "used value" for outline-color specifically, which - on
+	// a headless/non-compositing Chromium (e.g. a GH Actions runner with no
+	// GPU compositor) - has been observed returning a color visibly blended
+	// toward white instead of the raw declared value, even though the
+	// compiled CSS and outline-style are both provably correct. Reading the
+	// token directly sidesteps that readback quirk instead of guessing at a
+	// tolerance for it.
+	private const string ExpectedRingColorToken = "#226947";
 
 	[Test]
 	public async Task HomePage_OrgDirectoryCta_ShowsVisibleFocusRingOnKeyboardFocus()
@@ -35,10 +44,11 @@ public class FocusVisibleRingTests(AspireFixture fixture) : VisualTestBase(fixtu
 		await TabToAsync(cta);
 
 		var outlineStyle = await cta.EvaluateAsync<string>("el => getComputedStyle(el).outlineStyle");
-		var outlineColor = await cta.EvaluateAsync<string>("el => getComputedStyle(el).outlineColor");
+		var ringColorToken = await cta.EvaluateAsync<string>(
+			"el => getComputedStyle(el).getPropertyValue('--focus-ring-color').trim()");
 
 		outlineStyle.Should().Be("solid", "the CTA must no longer suppress its focus outline entirely");
-		outlineColor.Should().Be(ExpectedRingColor);
+		ringColorToken.Should().Be(ExpectedRingColorToken);
 	}
 
 	[Test]
@@ -58,11 +68,12 @@ public class FocusVisibleRingTests(AspireFixture fixture) : VisualTestBase(fixtu
 		await TabToAsync(link);
 
 		var outlineStyle = await link.EvaluateAsync<string>("el => getComputedStyle(el).outlineStyle");
-		var outlineColor = await link.EvaluateAsync<string>("el => getComputedStyle(el).outlineColor");
+		var ringColorToken = await link.EvaluateAsync<string>(
+			"el => getComputedStyle(el).getPropertyValue('--focus-ring-color').trim()");
 		var boxShadow = await link.EvaluateAsync<string>("el => getComputedStyle(el).boxShadow");
 
 		outlineStyle.Should().Be("solid");
-		outlineColor.Should().Be(ExpectedRingColor);
+		ringColorToken.Should().Be(ExpectedRingColorToken);
 		// The white halo is what keeps the ring visible against this dark
 		// footer background (a flat brand-700 outline alone is too close in
 		// luminance to bg-brand-800 to clear 3:1 contrast).
