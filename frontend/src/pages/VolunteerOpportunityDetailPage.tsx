@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useAuth } from "react-oidc-context";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import type {
 	PublicOrganizationProfileResponse,
 	VolunteerOpportunityDetails,
@@ -521,19 +521,19 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Login prompt */}
 			{!isAuthenticated && !isDraft && (
-				<p className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-					<Trans
-						i18nKey="opportunities.loginToApply"
-						components={{
-							loginLink: (
-								<button
-									onClick={() => auth.signinRedirect(signinLocaleArgs())}
-									className="underline hover:text-gray-800"
-								/>
-							),
-						}}
-					/>
-				</p>
+				<div className="space-y-3">
+					<p className="text-sm text-gray-600">
+						{t("opportunities.loginPrompt")}
+					</p>
+					<Button
+						onClick={() => auth.signinRedirect(signinLocaleArgs())}
+						data-testid="opportunity-signin"
+						fullWidth
+						size="lg"
+					>
+						{t("nav.signIn")}
+					</Button>
+				</div>
 			)}
 
 			{/* About this organization */}
