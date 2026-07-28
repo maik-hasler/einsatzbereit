@@ -48,6 +48,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 	return (
 		<ToastContext.Provider value={{ toasts, dismiss }}>
 			{children}
+			{/* Always-mounted empty live region: without it, a screen reader has
+			    no aria-live region on the page until the first toast fires, since
+			    each toast's own role="alert" only exists once it's rendered. Kept
+			    as a sibling (not a wrapper) of the toasts below so it doesn't nest
+			    a "polite" live region around each toast's own "assertive" alert -
+			    nesting live regions is unreliable across screen readers. */}
+			<div role="status" aria-live="polite" className="sr-only" />
 			<ToastList />
 		</ToastContext.Provider>
 	);
@@ -56,8 +63,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 function ToastList() {
 	const { toasts, dismiss } = useContext(ToastContext);
 	const { t } = useTranslation();
-
-	if (toasts.length === 0) return null;
 
 	return (
 		<div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2">

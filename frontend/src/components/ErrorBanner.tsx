@@ -19,6 +19,7 @@ const ErrorBanner = forwardRef<HTMLParagraphElement, Props>(
 		<p
 			ref={ref}
 			role="alert"
+			aria-live="assertive"
 			className={[BASE_CLASSES, className].filter(Boolean).join(" ")}
 			{...rest}
 		>
