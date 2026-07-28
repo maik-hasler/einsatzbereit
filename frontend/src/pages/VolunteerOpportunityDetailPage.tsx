@@ -670,11 +670,11 @@ export default function VolunteerOpportunityDetailPage() {
 					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
 						{t("opportunities.moreFromOrganization")}
 					</h2>
-					<ul className="space-y-3">
+					<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						{otherOrgOpportunities.map((opp) => (
 							<li
 								key={opp.id}
-								className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+								className="relative flex h-full flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
 							>
 								<Link
 									to={`/volunteer-opportunities/${opp.id}`}

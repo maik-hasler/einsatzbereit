@@ -181,51 +181,43 @@ export default function ActivitySection() {
 					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
 						{t("profileOverview.invitationsHeading")}
 					</h2>
-					<ul className="space-y-3">
+					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 						{invitations.map((inv) => (
 							<li
 								key={inv.id}
-								className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+								className="flex h-full flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
 							>
-								<div className="flex items-start justify-between gap-3">
-									<div>
-										<p className="text-sm font-semibold text-gray-900">
-											{inv.organizationName}
-										</p>
-										<p className="mt-0.5 text-xs text-gray-500">
-											{t("invitations.invitedOn", {
-												date: new Date(inv.createdOn).toLocaleDateString(
-													locale,
-												),
-											})}
-										</p>
-									</div>
-									<div className="flex shrink-0 gap-2">
-										<Button
-											type="button"
-											onClick={() => handleAcceptInvitation(inv.id)}
-											disabled={
-												acceptingId === inv.id || decliningId === inv.id
-											}
-											size="sm"
-										>
-											{acceptingId === inv.id
-												? t("invitations.accepting")
-												: t("invitations.accept")}
-										</Button>
-										<button
-											type="button"
-											onClick={() => handleDeclineInvitation(inv.id)}
-											disabled={
-												acceptingId === inv.id || decliningId === inv.id
-											}
-											className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-										>
-											{decliningId === inv.id
-												? t("invitations.declining")
-												: t("invitations.decline")}
-										</button>
-									</div>
+								<div>
+									<p className="text-sm font-semibold text-gray-900">
+										{inv.organizationName}
+									</p>
+									<p className="mt-0.5 text-xs text-gray-500">
+										{t("invitations.invitedOn", {
+											date: new Date(inv.createdOn).toLocaleDateString(locale),
+										})}
+									</p>
+								</div>
+								<div className="mt-auto flex flex-wrap gap-2">
+									<Button
+										type="button"
+										onClick={() => handleAcceptInvitation(inv.id)}
+										disabled={acceptingId === inv.id || decliningId === inv.id}
+										size="sm"
+									>
+										{acceptingId === inv.id
+											? t("invitations.accepting")
+											: t("invitations.accept")}
+									</Button>
+									<button
+										type="button"
+										onClick={() => handleDeclineInvitation(inv.id)}
+										disabled={acceptingId === inv.id || decliningId === inv.id}
+										className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+									>
+										{decliningId === inv.id
+											? t("invitations.declining")
+											: t("invitations.decline")}
+									</button>
 								</div>
 							</li>
 						))}
@@ -269,7 +261,10 @@ export default function ActivitySection() {
 			</div>
 
 			{engagementsLoading && (
-				<div role="status" className="space-y-3">
+				<div
+					role="status"
+					className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+				>
 					<span className="sr-only">{t("myEngagements.loading")}</span>
 					{Array.from({ length: 3 }).map((_, i) => (
 						<div
@@ -312,11 +307,11 @@ export default function ActivitySection() {
 				))}
 
 			{!engagementsLoading && !engagementsError && engagements.length > 0 && (
-				<ul className="space-y-3">
+				<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					{engagements.map((e) => (
 						<li
 							key={e.id}
-							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm transition-shadow hover:shadow-md"
+							className="flex h-full flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm transition-shadow hover:shadow-md"
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0">
@@ -377,57 +372,57 @@ export default function ActivitySection() {
 										</span>
 									)}
 								</div>
-								<div className="flex shrink-0 flex-col items-end gap-2">
-									<span
-										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+								<span
+									className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+								>
+									{STATUS_LABELS[e.status] ?? e.status}
+								</span>
+							</div>
+							<div className="mt-auto flex flex-wrap items-center gap-2">
+								{e.status === "Confirmed" &&
+									!e.isCheckedIn &&
+									e.opportunityTitle && (
+										<Button onClick={() => setCheckInEngagement(e)} size="sm">
+											{t("checkIn.buttonLabel")}
+										</Button>
+									)}
+								{e.isCheckedIn && !e.hasFeedback && (
+									<button
+										onClick={() => setFeedbackEngagement(e)}
+										className="rounded-lg bg-yellow-500 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-yellow-600"
 									>
-										{STATUS_LABELS[e.status] ?? e.status}
+										{t("feedback.buttonLabel")}
+									</button>
+								)}
+								{e.isCheckedIn && e.hasFeedback && (
+									<span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs text-yellow-700">
+										{t("feedback.submitted")}
 									</span>
-									{e.status === "Confirmed" &&
-										!e.isCheckedIn &&
-										e.opportunityTitle && (
-											<Button onClick={() => setCheckInEngagement(e)} size="sm">
-												{t("checkIn.buttonLabel")}
-											</Button>
-										)}
-									{e.isCheckedIn && !e.hasFeedback && (
+								)}
+								{e.status === "Confirmed" &&
+									e.timeSlotId &&
+									e.timeSlotStartDateTime &&
+									e.timeSlotEndDateTime && (
+										<AddToCalendarMenu
+											engagementId={e.id}
+											title={
+												e.opportunityTitle ??
+												t("myEngagements.deletedOpportunityTitle")
+											}
+											location={e.location}
+											start={e.timeSlotStartDateTime}
+											end={e.timeSlotEndDateTime}
+										/>
+									)}
+								{(e.status === "Pending" || e.status === "Confirmed") &&
+									!e.isCheckedIn && (
 										<button
-											onClick={() => setFeedbackEngagement(e)}
-											className="rounded-lg bg-yellow-500 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-yellow-600"
+											onClick={() => setConfirmWithdrawId(e.id)}
+											className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
 										>
-											{t("feedback.buttonLabel")}
+											{t("myEngagements.withdraw")}
 										</button>
 									)}
-									{e.isCheckedIn && e.hasFeedback && (
-										<span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs text-yellow-700">
-											{t("feedback.submitted")}
-										</span>
-									)}
-									{e.status === "Confirmed" &&
-										e.timeSlotId &&
-										e.timeSlotStartDateTime &&
-										e.timeSlotEndDateTime && (
-											<AddToCalendarMenu
-												engagementId={e.id}
-												title={
-													e.opportunityTitle ??
-													t("myEngagements.deletedOpportunityTitle")
-												}
-												location={e.location}
-												start={e.timeSlotStartDateTime}
-												end={e.timeSlotEndDateTime}
-											/>
-										)}
-									{(e.status === "Pending" || e.status === "Confirmed") &&
-										!e.isCheckedIn && (
-											<button
-												onClick={() => setConfirmWithdrawId(e.id)}
-												className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
-											>
-												{t("myEngagements.withdraw")}
-											</button>
-										)}
-								</div>
 							</div>
 						</li>
 					))}

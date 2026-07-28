@@ -93,19 +93,24 @@ export default function OrganizationsPage() {
 
 			<div className="mt-6">
 				{loading ? (
-					<div role="status" className="space-y-3">
+					<div
+						role="status"
+						className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+					>
 						<span className="sr-only">{t("organizationsPage.loading")}</span>
 						{Array.from({ length: 3 }).map((_, i) => (
 							<div
 								key={i}
 								aria-hidden="true"
-								className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+								className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
 							>
-								<Skeleton className="h-12 w-12 shrink-0 rounded-full" />
-								<div className="flex-1 space-y-2">
-									<Skeleton className="h-4 w-1/3" />
-									<Skeleton className="h-3 w-1/2" />
+								<div className="flex items-center gap-3">
+									<Skeleton className="h-12 w-12 shrink-0 rounded-full" />
+									<div className="flex-1 space-y-2">
+										<Skeleton className="h-4 w-2/3" />
+									</div>
 								</div>
+								<Skeleton className="h-3 w-1/2" />
 							</div>
 						))}
 					</div>
@@ -131,30 +136,30 @@ export default function OrganizationsPage() {
 					/>
 				) : (
 					<>
-						<ul className="space-y-3">
+						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((org) => (
 								<li
 									key={org.id}
-									className="relative flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+									className="relative flex h-full flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
 								>
-									{org.logoUrl ? (
-										<img
-											src={org.logoUrl}
-											alt=""
-											className="h-12 w-12 shrink-0 rounded-full object-cover"
-										/>
-									) : (
-										<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-700">
-											{org.name.charAt(0).toUpperCase()}
-										</span>
-									)}
-									<div className="min-w-0 flex-1">
-										<Link
-											to={`/organizations/${org.id}`}
-											className="absolute inset-0 rounded-xl"
-											aria-label={org.name}
-										/>
-										<div className="flex items-center gap-2">
+									<Link
+										to={`/organizations/${org.id}`}
+										className="absolute inset-0 rounded-xl"
+										aria-label={org.name}
+									/>
+									<div className="flex items-center gap-3">
+										{org.logoUrl ? (
+											<img
+												src={org.logoUrl}
+												alt=""
+												className="h-12 w-12 shrink-0 rounded-full object-cover"
+											/>
+										) : (
+											<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-700">
+												{org.name.charAt(0).toUpperCase()}
+											</span>
+										)}
+										<div className="flex min-w-0 flex-1 items-center gap-2">
 											<strong className="block truncate text-sm font-semibold text-gray-900">
 												{org.name}
 											</strong>
@@ -174,8 +179,22 @@ export default function OrganizationsPage() {
 												</svg>
 											)}
 										</div>
+										{auth.isAuthenticated && (
+											<ReportFlagButton
+												targetLabel={org.name}
+												ariaLabel={t("orgProfile.reportOrganization")}
+												onReport={async (reason, details) => {
+													await api.reportOrganization(org.id, {
+														reason,
+														details: details || undefined,
+													});
+												}}
+											/>
+										)}
+									</div>
+									<div className="min-w-0 flex-1">
 										{org.description && (
-											<p className="mt-1 line-clamp-1 text-sm text-gray-500">
+											<p className="line-clamp-2 text-sm text-gray-500">
 												{org.description}
 											</p>
 										)}
@@ -190,18 +209,6 @@ export default function OrganizationsPage() {
 											</p>
 										)}
 									</div>
-									{auth.isAuthenticated && (
-										<ReportFlagButton
-											targetLabel={org.name}
-											ariaLabel={t("orgProfile.reportOrganization")}
-											onReport={async (reason, details) => {
-												await api.reportOrganization(org.id, {
-													reason,
-													details: details || undefined,
-												});
-											}}
-										/>
-									)}
 								</li>
 							))}
 						</ul>
