@@ -116,9 +116,9 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 			FROM organization AS o
 			JOIN organization_membership AS m ON m.organization_id = o.id
 			WHERE m.user_id = @userId
-			  AND m.role = 'Organizer'
-			  AND NOT o.is_deleted
-			  AND o.name LIKE 'Fairview%'
+			AND m.role = 'Organizer'
+			AND NOT o.is_deleted
+			AND o.name LIKE 'Fairview%'
 			ORDER BY o.name
 			LIMIT 1
 			""", conn);
