@@ -3750,16 +3750,16 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @param before (optional) 
+     * @param beforeUnixMs (optional) 
      * @param beforeId (optional) 
      * @return OK
      */
-    getMyNotifications(before: Date | undefined, beforeId: string | undefined, signal?: AbortSignal): Promise<NotificationsPage> {
+    getMyNotifications(beforeUnixMs: number | undefined, beforeId: string | undefined, signal?: AbortSignal): Promise<NotificationsPage> {
         let url_ = this.baseUrl + "/v1/notifications?";
-        if (before === null)
-            throw new globalThis.Error("The parameter 'before' cannot be null.");
-        else if (before !== undefined)
-            url_ += "before=" + encodeURIComponent(before ? "" + before.toISOString() : "") + "&";
+        if (beforeUnixMs === null)
+            throw new globalThis.Error("The parameter 'beforeUnixMs' cannot be null.");
+        else if (beforeUnixMs !== undefined)
+            url_ += "beforeUnixMs=" + encodeURIComponent("" + beforeUnixMs) + "&";
         if (beforeId === null)
             throw new globalThis.Error("The parameter 'beforeId' cannot be null.");
         else if (beforeId !== undefined)

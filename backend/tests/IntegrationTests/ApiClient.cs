@@ -330,7 +330,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(System.DateTimeOffset? before = null, System.Guid? beforeId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(long? beforeUnixMs = null, System.Guid? beforeId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
@@ -7110,7 +7110,7 @@ namespace IntegrationTests
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(System.DateTimeOffset? before = null, System.Guid? beforeId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<NotificationsPage> GetMyNotificationsAsync(long? beforeUnixMs = null, System.Guid? beforeId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -7126,9 +7126,9 @@ namespace IntegrationTests
                     // Operation Path: "v1/notifications"
                     urlBuilder_.Append("v1/notifications");
                     urlBuilder_.Append('?');
-                    if (before != null)
+                    if (beforeUnixMs != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("before")).Append('=').Append(System.Uri.EscapeDataString(before.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("beforeUnixMs")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(beforeUnixMs, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (beforeId != null)
                     {

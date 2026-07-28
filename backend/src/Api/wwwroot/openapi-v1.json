@@ -4155,11 +4155,15 @@
         "operationId": "GetMyNotifications",
         "parameters": [
           {
-            "name": "before",
+            "name": "beforeUnixMs",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
             }
           },
           {

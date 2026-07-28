@@ -145,7 +145,10 @@ export function useAccountMenu(
 		setNotifLoadingMore(true);
 		try {
 			const last = notifications[notifications.length - 1];
-			const result = await api.getMyNotifications(last.createdOn, last.id);
+			const result = await api.getMyNotifications(
+				last.createdOn.getTime(),
+				last.id,
+			);
 			setNotifications((prev) => [...prev, ...result.items]);
 			setNotifHasMore(result.hasMore);
 		} catch {

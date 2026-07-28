@@ -27,13 +27,22 @@ internal sealed class GetMyNotificationsEndpoint
 	private static async Task<IResult> GetMyNotificationsAsync(
 		[FromServices] ISender sender,
 		HttpContext httpContext,
-		[FromQuery] DateTimeOffset? before,
+		// A DateTimeOffset query param would round-trip through NSwag's
+		// generated clients as "s" format (second precision, no offset) -
+		// coarse enough to corrupt this cursor between two requests issued
+		// less than a second apart. Unix milliseconds, a plain long, avoids
+		// that lossy format string entirely.
+		[FromQuery] long? beforeUnixMs,
 		[FromQuery] Guid? beforeId,
 		CancellationToken cancellationToken)
 	{
 		var subClaim = httpContext.User.FindFirst("sub")?.Value;
 		if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
+
+		var before = beforeUnixMs is not null
+			? DateTimeOffset.FromUnixTimeMilliseconds(beforeUnixMs.Value)
+			: (DateTimeOffset?)null;
 
 		var query = new GetMyNotificationsQuery(UserId.Create(userId).GetValueOrThrow(), before, beforeId);
 		var result = await sender.Send(query, cancellationToken);
