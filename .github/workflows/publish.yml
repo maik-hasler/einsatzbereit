@@ -62,6 +62,10 @@ jobs:
           path: |
             backend/**/bin/**
             backend/**/obj/**
+          # See the matching step in dotnet.yml - tests/VisualTests's
+          # Playwright driver lives under a dot-prefixed bin/.../.playwright/
+          # folder that upload-artifact excludes by default.
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
 
@@ -96,7 +100,7 @@ jobs:
       # launches directly.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
-        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
       - name: Test - Application.UnitTests
         working-directory: backend
@@ -137,7 +141,7 @@ jobs:
       # launches directly.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
-        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
@@ -194,7 +198,7 @@ jobs:
       # launches directly.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
-        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:

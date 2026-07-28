@@ -105,6 +105,13 @@ jobs:
           path: |
             backend/**/bin/**
             backend/**/obj/**
+          # tests/VisualTests's Playwright driver lives under a dot-prefixed
+          # bin/.../.playwright/ folder (upload-artifact excludes dotfiles by
+          # default), which silently dropped it from the artifact on the
+          # first real run of this shape and failed visual-tests with
+          # "Driver not found" - no test build output here is actually
+          # sensitive, so including hidden files is safe.
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
 
@@ -145,7 +152,7 @@ jobs:
       # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
-        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
       - name: Test - Application.UnitTests
         working-directory: backend
@@ -187,7 +194,7 @@ jobs:
       # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
-        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
@@ -245,7 +252,7 @@ jobs:
       # "Permission denied" otherwise.
       - name: Fix executable bit on downloaded build output
         working-directory: backend
-        run: find . -path "*/bin/*" -type f ! -name "*.*" -exec chmod +x {} +
+        run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
       # Restores the same Playwright browser cache the build job just
       # populated - the build job's download happened on that job's own
