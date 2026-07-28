@@ -380,6 +380,41 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task HomePage_LanguageSelector_SwitchingLanguage_LazilyLoadsAndAppliesTranslations()
+	{
+		// #1395: both translation bundles used to be statically imported into the
+		// entry chunk. Each language's JSON is now fetched lazily on demand via a
+		// custom i18next backend - switching language must still dynamically load
+		// and apply the target locale's strings, and switching back must reuse the
+		// already-loaded English bundle without breaking.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		var heading = Page.Locator("h1").First;
+		await Expect(heading).ToHaveTextAsync(
+			"Volunteering doesn't have to be hard.", new() { Timeout = 15_000 });
+		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "en");
+
+		var langBtn = Page.Locator("header button[aria-haspopup='listbox']").First;
+		await langBtn.ClickAsync();
+		var dropdown = Page.Locator("header ul[role='listbox']").First;
+		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await dropdown.GetByRole(AriaRole.Button, new() { Name = "Deutsch" }).ClickAsync();
+
+		await Expect(heading).ToHaveTextAsync(
+			"Ehrenamt muss nicht schwer sein.", new() { Timeout = 10_000 });
+		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "de");
+
+		await langBtn.ClickAsync();
+		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await dropdown.GetByRole(AriaRole.Button, new() { Name = "English" }).ClickAsync();
+
+		await Expect(heading).ToHaveTextAsync(
+			"Volunteering doesn't have to be hard.", new() { Timeout = 10_000 });
+		await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "en");
+	}
+
+	[Test]
 	public async Task MobileMenu_ClosesOnEscape()
 	{
 		// #884: MobileMenu offered neither outside-click nor Escape dismissal

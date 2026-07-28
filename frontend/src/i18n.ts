@@ -1,18 +1,36 @@
-import i18next from "i18next";
+import i18next, { type BackendModule, type ReadCallback } from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-import de from "./locales/de.json";
-import en from "./locales/en.json";
+type LocaleModule = typeof import("./locales/en.json");
+
+// Dynamic imports so each language's translation JSON is its own chunk,
+// fetched only for the language actually in use instead of both upfront.
+const localeLoaders: Record<string, () => Promise<LocaleModule>> = {
+	de: () => import("./locales/de.json"),
+	en: () => import("./locales/en.json"),
+};
+
+const lazyBackend: BackendModule = {
+	type: "backend",
+	init: () => {},
+	read: (language, _namespace, callback: ReadCallback) => {
+		const loadLocale = localeLoaders[language];
+		if (!loadLocale) {
+			callback(new Error(`Unsupported language: ${language}`), null);
+			return;
+		}
+		loadLocale()
+			.then((module) => callback(null, module.translation))
+			.catch((error: unknown) => callback(error as Error, null));
+	},
+};
 
 void i18next
+	.use(lazyBackend)
 	.use(LanguageDetector)
 	.use(initReactI18next)
 	.init({
-		resources: {
-			de: { translation: de.translation },
-			en: { translation: en.translation },
-		},
 		fallbackLng: "en",
 		supportedLngs: ["de", "en"],
 		detection: {
