@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import PageEaten from "../assets/page-eaten.svg?react";
 import { usePageTitle } from "../hooks/usePageTitle";
 import Button from "../components/Button";
+import { statusTitleClass } from "../lib/headingClasses";
 
 export default function NotFoundPage() {
 	const { t } = useTranslation();
@@ -13,7 +14,9 @@ export default function NotFoundPage() {
 
 			{/* Content */}
 			<div className="relative z-10 max-w-md">
-				<h1 className="mb-4 text-4xl font-bold tracking-tight text-brand-700">
+				<h1
+					className={`mb-4 tracking-tight text-brand-700 ${statusTitleClass}`}
+				>
 					{t("notFound.title")}
 				</h1>
 

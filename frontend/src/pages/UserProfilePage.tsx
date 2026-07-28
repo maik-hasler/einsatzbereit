@@ -13,6 +13,7 @@ import Spinner from "../components/Spinner";
 import ErrorBanner from "../components/ErrorBanner";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { pageTitleClass } from "../lib/headingClasses";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 
@@ -69,7 +70,7 @@ export default function UserProfilePage() {
 					</div>
 				)}
 				<div>
-					<h1 className="text-2xl font-bold text-gray-900">
+					<h1 className={`text-gray-900 ${pageTitleClass}`}>
 						{profile.displayName}
 					</h1>
 					<p className="mt-0.5 text-sm text-gray-500">

@@ -9,6 +9,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { inputClass } from "../lib/formClasses";
+import { pageTitleClass } from "../lib/headingClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
@@ -70,7 +71,7 @@ export default function OrganizationsPage() {
 
 	return (
 		<div>
-			<h1 className="text-2xl font-bold text-gray-900">
+			<h1 className={`text-gray-900 ${pageTitleClass}`}>
 				{t("organizationsPage.title")}
 			</h1>
 			<p className="mt-1 text-sm text-gray-500">
@@ -99,7 +100,7 @@ export default function OrganizationsPage() {
 							<div
 								key={i}
 								aria-hidden="true"
-								className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+								className="flex items-center gap-4 rounded-card border border-gray-100 bg-white p-4 shadow-resting"
 							>
 								<Skeleton className="h-12 w-12 shrink-0 rounded-full" />
 								<div className="flex-1 space-y-2">
@@ -135,7 +136,7 @@ export default function OrganizationsPage() {
 							{items.map((org) => (
 								<li
 									key={org.id}
-									className="relative flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+									className="relative flex items-center gap-4 rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
 								>
 									{org.logoUrl ? (
 										<img
@@ -151,7 +152,7 @@ export default function OrganizationsPage() {
 									<div className="min-w-0 flex-1">
 										<Link
 											to={`/organizations/${org.id}`}
-											className="absolute inset-0 rounded-xl"
+											className="absolute inset-0 rounded-card"
 											aria-label={org.name}
 										/>
 										<div className="flex items-center gap-2">

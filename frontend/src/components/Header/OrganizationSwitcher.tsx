@@ -98,7 +98,7 @@ export default function OrganizationSwitcher({
 				</button>
 
 				{open && (
-					<div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
+					<div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-modal">
 						<ul className="max-h-60 overflow-y-auto py-1">
 							{orgs.map((org) => (
 								<li key={org.id}>

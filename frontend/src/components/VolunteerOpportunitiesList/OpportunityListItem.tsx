@@ -28,7 +28,7 @@ export default function OpportunityListItem({
 			: null;
 
 	return (
-		<li className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg">
+		<li className="group relative overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10"
@@ -57,7 +57,7 @@ export default function OpportunityListItem({
 								category={item.category}
 								className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
 							/>
-							<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-[10px] font-semibold uppercase tracking-wider text-white/80">
+							<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80">
 								{item.category
 									? t(`opportunities.category.${item.category}`)
 									: t("opportunities.category.Other")}
@@ -137,7 +137,7 @@ export default function OpportunityListItem({
 							) : (
 								<span
 									aria-hidden="true"
-									className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700"
+									className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700"
 								>
 									{orgInitials(item.organizationName)}
 								</span>

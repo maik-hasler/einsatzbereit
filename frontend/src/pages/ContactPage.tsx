@@ -2,6 +2,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import { pageTitleClass } from "../lib/headingClasses";
 
 export default function ContactPage() {
 	const { t } = useTranslation();
@@ -10,7 +11,7 @@ export default function ContactPage() {
 
 	return (
 		<>
-			<h1 className="mb-8 text-3xl font-bold">{t("contact.title")}</h1>
+			<h1 className={`mb-8 ${pageTitleClass}`}>{t("contact.title")}</h1>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">

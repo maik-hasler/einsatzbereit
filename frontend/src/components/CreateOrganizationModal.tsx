@@ -122,7 +122,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			onClose={onClose}
 			labelledBy="create-org-dialog-title"
 			maxWidth="max-w-md"
-			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-card bg-white shadow-modal"
 			initialFocusRef={nameFieldRef}
 		>
 			<h2
@@ -326,7 +326,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 						)}
 					</div>
 
-					<fieldset className="rounded-xl border border-gray-200 p-4">
+					<fieldset className="rounded-card border border-gray-200 p-4">
 						<legend className="px-1 text-sm font-medium text-gray-700">
 							{t("orgSettings.fieldAddress")}
 						</legend>

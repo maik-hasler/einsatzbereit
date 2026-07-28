@@ -183,7 +183,7 @@ export default function EngagementManagementPage() {
 	return (
 		<>
 			{checkInMethod === "PINCode" && checkInPin && (
-				<div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-4">
+				<div className="mb-6 rounded-card border border-brand-200 bg-brand-50 p-4">
 					<p className="text-sm font-medium text-brand-900">
 						{t("checkIn.organizerPin")}
 					</p>
@@ -246,7 +246,7 @@ export default function EngagementManagementPage() {
 					{engagements.map((e) => (
 						<li
 							key={e.id}
-							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
 						>
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
@@ -407,7 +407,7 @@ export default function EngagementManagementPage() {
 								{feedback.items.map((item, idx) => (
 									<li
 										key={idx}
-										className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+										className="rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting"
 									>
 										<div className="flex items-center gap-1">
 											{[1, 2, 3, 4, 5].map((s) => (

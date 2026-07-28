@@ -83,7 +83,7 @@ export default function OrganizationProfileView({
 				)}
 
 				{hasContactInfo && (
-					<div className="mb-6 space-y-2.5 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+					<div className="mb-6 space-y-2.5 rounded-card border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
 						{contactEmail && (
 							<div className="flex items-center gap-3">
 								<svg

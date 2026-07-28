@@ -18,7 +18,7 @@ export default function WidgetCard({
 	return (
 		<section
 			aria-labelledby={titleId}
-			className={`flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ${className ?? ""}`}
+			className={`flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting ${className ?? ""}`}
 		>
 			<div className="mb-4 flex shrink-0 items-center justify-between gap-3">
 				<h2 id={titleId} className="text-base font-semibold text-gray-900">

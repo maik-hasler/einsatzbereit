@@ -391,4 +391,15 @@ overflow-y-auto already handles vertical scrolling. */
 	--color-brand-800: #1a3c2b;
 	--color-brand-900: #0e251a;
 	--color-accent-400: #5ac48a;
+
+	/* Card/container radius - buttons and inputs keep their own rounded-xl (12px), see Button.tsx / lib/formClasses.ts */
+	--radius-card: 1rem;
+
+	/* Elevation scale: resting cards, raised/hover state, and true overlays (modals/popovers) */
+	--shadow-resting:
+		0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+	--shadow-raised:
+		0 8px 20px -4px rgb(0 0 0 / 0.15), 0 4px 8px -4px rgb(0 0 0 / 0.1);
+	--shadow-modal:
+		0 24px 48px -12px rgb(0 0 0 / 0.28), 0 8px 16px -8px rgb(0 0 0 / 0.16);
 }

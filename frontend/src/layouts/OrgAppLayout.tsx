@@ -6,6 +6,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
+import { statusTitleClass } from "../lib/headingClasses";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -164,7 +165,7 @@ export default function OrgAppLayout() {
 	if (forbidden || !org) {
 		return (
 			<div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
-				<h1 className="text-xl font-semibold text-gray-900">
+				<h1 className={`text-gray-900 ${statusTitleClass}`}>
 					{t("orgApp.notAuthorized")}
 				</h1>
 				<Button to="/">{t("orgApp.backToSite")}</Button>

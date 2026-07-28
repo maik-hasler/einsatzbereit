@@ -54,7 +54,7 @@ export default function LanguageSelector({
 				<ul
 					role="listbox"
 					aria-label={t("language.switchLanguage")}
-					className={`absolute left-0 top-full z-50 mt-1 w-36 rounded-lg border py-1 shadow-lg ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
+					className={`absolute left-0 top-full z-50 mt-1 w-36 rounded-lg border py-1 shadow-modal ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
 				>
 					{LANGUAGES.map((lang) => (
 						<li

@@ -217,7 +217,7 @@ export default function OrgSettingsPage() {
 						beforeContent={
 							<>
 								{successMessage && (
-									<div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
+									<div className="mb-4 rounded-card bg-green-50 px-4 py-3 text-sm text-green-700">
 										{successMessage}
 									</div>
 								)}
@@ -227,7 +227,7 @@ export default function OrgSettingsPage() {
 							</>
 						}
 					>
-						<div className="mt-8 rounded-2xl border border-red-100 bg-red-50 px-4 py-4">
+						<div className="mt-8 rounded-card border border-red-100 bg-red-50 px-4 py-4">
 							<h2 className="text-sm font-semibold text-red-800">
 								{t("orgSettings.dangerZone")}
 							</h2>
@@ -435,7 +435,7 @@ export default function OrgSettingsPage() {
 								)}
 							</Field>
 
-							<fieldset className="rounded-xl border border-gray-200 p-4">
+							<fieldset className="rounded-card border border-gray-200 p-4">
 								<legend className="px-1 text-sm font-medium text-gray-700">
 									{t("orgSettings.fieldAddress")}
 								</legend>
