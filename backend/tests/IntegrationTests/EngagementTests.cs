@@ -742,6 +742,12 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		// vera creates her own org - this grants her the organisator role
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
+		// the organisator role is a Keycloak realm role baked into the JWT at
+		// mint time, so vera's already-issued token doesn't carry it yet - get a
+		// fresh one, or the "organisator" policy itself rejects her before the
+		// request ever reaches the ownership guard this test means to exercise.
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
 		// vera (organisator of org2, NOT org1) tries to check in org1's engagement
 		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
 
@@ -763,6 +769,12 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		// vera creates her own org up front - this grants her the organisator
 		// role, but not over org1, whose opportunity row will be deleted below.
 		await CreateOrganizationAsync(veraClient, cancellationToken);
+
+		// the organisator role is a Keycloak realm role baked into the JWT at
+		// mint time, so vera's already-issued token doesn't carry it yet - get a
+		// fresh one, or the "organisator" policy itself rejects her before the
+		// request ever reaches the handler this test means to exercise.
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var engagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id,
