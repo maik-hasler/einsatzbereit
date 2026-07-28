@@ -10,10 +10,33 @@ namespace VisualTests;
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	// #973: axe reports the "page has no h1" defect (page-has-heading-one) and
+	// most landmark-structure defects at "moderate" impact, not "serious" or
+	// "critical" - the plain serious/critical filter below let all four org app
+	// pages ship with no h1 for months without CI ever seeing it. Escalate just
+	// these rule IDs to CI-blocking rather than every moderate violation, which
+	// would also flag things like color-contrast-enhanced noise unrelated to
+	// this gate's purpose.
+	private static readonly string[] EscalatedModerateRuleIds =
+	[
+		"page-has-heading-one",
+		"heading-order",
+		"landmark-one-main",
+		"landmark-banner-is-top-level",
+		"landmark-complementary-is-top-level",
+		"landmark-contentinfo-is-top-level",
+		"landmark-main-is-top-level",
+		"landmark-no-duplicate-banner",
+		"landmark-no-duplicate-contentinfo",
+		"landmark-no-duplicate-main",
+		"landmark-unique",
+	];
+
 	private static void AssertNoViolations(AxeResult result)
 	{
 		var violations = result.Violations
-			.Where(v => v.Impact is "serious" or "critical")
+			.Where(v => v.Impact is "serious" or "critical"
+				|| (v.Impact is "moderate" && EscalatedModerateRuleIds.Contains(v.Id)))
 			.ToList();
 
 		if (violations.Count == 0)
@@ -23,7 +46,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			$"[{v.Impact}] {v.Id}: {v.Description}\n" +
 			string.Join("\n", v.Nodes.Select(n => $"  - {n.Html}"))));
 
-		throw new Exception($"Axe found {violations.Count} serious/critical a11y violation(s):\n{summary}");
+		throw new Exception($"Axe found {violations.Count} a11y violation(s):\n{summary}");
 	}
 
 	[Test]
@@ -247,6 +270,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
+
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
@@ -292,6 +318,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Opportunities");
+
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
@@ -310,6 +339,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Members");
+
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
@@ -325,6 +357,9 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// "Edit settings" link instead.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// #973: OrgAppShell previously rendered no h1 on any org app page.
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Settings");
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -552,6 +587,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await manageLink.First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// #973: on a nested route, the h1 must track the breadcrumb's trailing
+		// "extra" segment (the opportunity title, set via
+		// useSetOrgBreadcrumbExtra) rather than staying on the parent tab's
+		// own label ("Opportunities") - the one place this pageTitle logic
+		// could regress silently.
+		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Opportunities");
+		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
