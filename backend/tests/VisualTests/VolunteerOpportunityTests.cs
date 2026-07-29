@@ -77,9 +77,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			.GetByRole(AriaRole.Heading, new() { Name = "Current Opportunities" })
 			.First;
 		await Expect(heading).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		var textAlign = await heading.EvaluateAsync<string>(
-			"el => getComputedStyle(el).textAlign");
-		textAlign.Should().Be("center");
+		await Expect(heading).ToHaveCSSAsync("text-align", "center");
 
 		// Subtitle line is present below the heading.
 		await Expect(Page.GetByText(new Regex("lend a hand", RegexOptions.IgnoreCase)))
@@ -90,37 +88,27 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var firstCard = Page
 			.Locator("ul li:has(a[href*='/volunteer-opportunities/'])")
 			.First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip card-specific checks
+		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded - skip card-specific checks");
 
 		await Expect(firstCard.Locator("a[href*='/organizations/']"))
 			.ToBeVisibleAsync();
-		(await firstCard.Locator("[class*='from-brand-500']").CountAsync())
-			.Should().BeGreaterThan(0);
+		await Expect(firstCard.Locator("[class*='from-brand-500']")).Not.ToHaveCountAsync(0);
 	}
 
 	[Test]
 	public async Task CreateWizard_HasStepperFreeNavigationAndDraftButton()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
-		// Guard: the dialog may not open in an unexpected state.
 		var dialog = Page.Locator("[role='dialog']");
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Step 1 content visible.
 		await Expect(Page.GetByTestId("wizard-step-1")).ToBeVisibleAsync();
@@ -188,12 +176,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded, skip");
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		Skip.When(href is null, "opportunity card link had no href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -222,12 +208,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded, skip");
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		Skip.When(href is null, "opportunity card link had no href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -236,9 +220,9 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(signInBtn).ToBeVisibleAsync();
 		await Expect(signInBtn).ToHaveTextAsync("Sign in");
 
-		var className = await signInBtn.GetAttributeAsync("class");
-		className.Should().Contain("bg-brand-700",
-			"the CTA must use the shared primary Button styling, not a bare underlined text link");
+		// The CTA must use the shared primary Button styling (bg-brand-700), not
+		// a bare underlined text link.
+		await Expect(signInBtn).ToContainClassAsync("bg-brand-700");
 	}
 
 	[Test]
@@ -254,12 +238,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded, skip");
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		Skip.When(href is null, "opportunity card link had no href");
 
 		await Page.GotoAsync($"{origin}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -427,22 +409,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return;
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Fill title (minimum required for draft save).
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
@@ -483,21 +458,14 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Draft Discoverability Test {Guid.NewGuid().ToString("N")[..8]}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.GetByTestId("modal-save-draft").ClickAsync();
@@ -531,32 +499,18 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Edit Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		if (await switcherBtn.CountAsync() == 0)
-			return; // no org membership in seed - skip
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		if (await dashboardLink.CountAsync() == 0)
-			return; // no org selected in seed - skip
-
-		await dashboardLink.First.ClickAsync();
+		// "Switch organization" only exists inside the org app shell
+		// (/app/{orgId}/...), never on the plain home page AuthHelper leaves
+		// you on - go straight to olaf's pinned org dashboard instead of
+		// looking for a control that can never render here.
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Deliberately leave the draft incomplete - only a title, no address,
 		// no description - the exact situation "save as draft" exists for.
@@ -689,22 +643,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Waitlist Publish Gap Test {Guid.NewGuid().ToString("N")[..8]}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Step 1: title/description.
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);

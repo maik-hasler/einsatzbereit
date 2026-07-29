@@ -6,6 +6,7 @@ import type { OrganizationSummaryDto } from "../client/api-client";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
 import Button from "../components/Button";
+import Skeleton from "../components/Skeleton";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
@@ -91,11 +92,24 @@ export default function HomePage() {
 
 	// Shared with Header, which independently needs the same top-level
 	// organization list on the same mount (#1396) - see useSharedOrgFetch.
-	const [orgsData] = useSharedOrgFetch<OrganizationSummaryDto[]>(
+	const [orgsData, , orgsError] = useSharedOrgFetch<OrganizationSummaryDto[]>(
 		`organizations:${auth.isAuthenticated}`,
 		() => (auth.isAuthenticated ? api.getOrganizations() : Promise.resolve([])),
 	);
 	const orgs = auth.isAuthenticated ? (orgsData ?? []) : [];
+	// useSharedOrgFetch leaves orgsData null both while the fetch is still in
+	// flight and after it rejects (see its error branch) - without checking
+	// for that, both looked identical to "this user genuinely organizes
+	// nothing", and a signed-in organizer could see the "create an
+	// organisation" CTA (and, if clicked, create a duplicate org) while their
+	// real org list was still loading or had failed to load. Split the two:
+	// a pulsing skeleton implies work in progress, which is only honest while
+	// still loading - once it's failed there's nothing further to wait for
+	// (no retry is wired up here, see HomePageOrgCtaTests.cs's regression
+	// test), so that slot renders nothing instead of a permanently animating
+	// placeholder.
+	const orgsLoading = auth.isAuthenticated && orgsData === null && !orgsError;
+	const orgsFailed = auth.isAuthenticated && orgsData === null && !!orgsError;
 
 	const orgAppPath = resolveOrgAppPath(orgs, getActiveOrgId());
 
@@ -307,7 +321,9 @@ export default function HomePage() {
 								>
 									{t("landing.heroCtaOrgOverview")}
 								</Link>
-							) : (
+							) : orgsLoading ? (
+								<Skeleton className="h-[52px] w-full rounded-xl sm:w-56" />
+							) : orgsFailed ? null : (
 								<button
 									type="button"
 									onClick={handleOrgCta}
@@ -491,8 +507,23 @@ export default function HomePage() {
 			{showCreateOrgModal && (
 				<CreateOrganizationModal
 					onClose={() => setShowCreateOrgModal(false)}
-					onSuccess={(org) => {
+					onSuccess={async (org) => {
 						setShowCreateOrgModal(false);
+						// CreateOrganization grants the "organisator" realm role
+						// server-side, but the access token already held by the
+						// browser was minted before that grant and doesn't carry
+						// it yet - EinsatzbereitOrganisatorPolicy checks that
+						// static claim, so the org app shell's very next request
+						// (OrgAppLayout's GetOrganizationDetails call) would 403
+						// against the stale token before it ever reaches the
+						// live per-organization membership check. Best-effort:
+						// if silent renewal fails, still navigate - the org app
+						// shell's own error state takes over from there.
+						try {
+							await auth.signinSilent();
+						} catch {
+							/* see comment above */
+						}
 						navigate(`/app/${org.id?.value}/dashboard`);
 					}}
 				/>

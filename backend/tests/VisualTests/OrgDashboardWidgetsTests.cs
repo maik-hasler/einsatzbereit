@@ -23,10 +23,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual762 Widgets");
+		await CreateOrganizationAsync("Visual762 Widgets", pinnedOrgId!.Value);
 
 		// All four fixed widgets render on the dashboard tab itself - no
 		// navigating to another tab needed.
@@ -112,13 +112,14 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual771 Reachability");
+		await CreateOrganizationAsync("Visual771 Reachability", pinnedOrgId!.Value);
 
-		(await Page.Locator("h1").CountAsync())
-			.Should().Be(1, "OrgAppShell renders one page-title h1 (#973), but it must still not duplicate the org name the header's org switcher already shows");
+		// OrgAppShell renders one page-title h1 (#973), but it must still not
+		// duplicate the org name the header's org switcher already shows.
+		await Expect(Page.Locator("h1")).ToHaveCountAsync(1);
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Dashboard");
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
@@ -168,8 +169,8 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// to run on, unlike asserting a specific localized month name.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		// Switch to German via the header's language selector rather than
 		// pre-seeding localStorage's i18nextLng before sign-in: aria-labels
@@ -285,12 +286,18 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		var eventHeader = calendarWidget.Locator(".rbc-agenda-table thead th", new() { HasText = "Event" });
 		await Expect(eventHeader).ToBeVisibleAsync(new() { Timeout = 10_000 });
-		var eventHeaderBox = await eventHeader.BoundingBoxAsync();
-		eventHeaderBox.Should().NotBeNull();
-		eventHeaderBox!.Width.Should().BeGreaterThan(80,
-			"the EVENT column should stay legibly wide (the Agenda table scrolls "
+		// Single EvaluateAsync per poll (not a bare BoundingBoxAsync read) so a
+		// late layout pass on the freshly-rendered Agenda table can't be
+		// sampled mid-reflow.
+		var eventHeaderWidth = 0d;
+		await PollUntilAsync(async () =>
+		{
+			eventHeaderWidth = await eventHeader.EvaluateAsync<double>(
+				"el => el.getBoundingClientRect().width");
+			return eventHeaderWidth > 80;
+		}, () => "the EVENT column should stay legibly wide (the Agenda table scrolls "
 			+ "horizontally instead) rather than being squeezed down to a couple "
-			+ "of characters to fit the narrow viewport");
+			+ $"of characters to fit the narrow viewport (last observed width: {eventHeaderWidth}px)");
 		await Expect(calendarWidget.GetByText(oppTitle)).ToBeVisibleAsync();
 
 		var toolbarLabel = calendarWidget.Locator(".rbc-toolbar-label");
@@ -388,9 +395,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(calendarEvent).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// No color set yet - eventPropGetter falls back to DEFAULT_EVENT_COLOR.
-		var defaultBg = await calendarEvent.EvaluateAsync<string>(
-			"el => getComputedStyle(el).backgroundColor");
-		defaultBg.Should().Be("rgb(34, 105, 71)");
+		await Expect(calendarEvent).ToHaveCSSAsync("background-color", "rgb(34, 105, 71)");
 
 		await calendarEvent.ClickAsync();
 		var colorDialog = Page.GetByRole(AriaRole.Dialog);
@@ -407,9 +412,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
 		await Expect(colorDialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
-		var savedBg = await calendarEvent.EvaluateAsync<string>(
-			"el => getComputedStyle(el).backgroundColor");
-		savedBg.Should().Be("rgb(51, 102, 204)");
+		await Expect(calendarEvent).ToHaveCSSAsync("background-color", "rgb(51, 102, 204)");
 
 		// Reload so calData (and the memoized calEvents derived from it) come
 		// back fresh from the server, proving the color actually persisted
@@ -418,12 +421,10 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		var reloadedEvent = calendarWidget.Locator(".rbc-event").First;
 		await Expect(reloadedEvent).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		var reloadedBg = await reloadedEvent.EvaluateAsync<string>(
-			"el => getComputedStyle(el).backgroundColor");
-		reloadedBg.Should().Be("rgb(51, 102, 204)");
+		await Expect(reloadedEvent).ToHaveCSSAsync("background-color", "rgb(51, 102, 204)");
 	}
 
-	private async Task CreateOrganizationAsync(string namePrefix)
+	private async Task CreateOrganizationAsync(string namePrefix, Guid organizationId)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry
 		// - reachable from within any org the caller already organizes (olaf's
@@ -432,7 +433,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, organizationId);
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
 

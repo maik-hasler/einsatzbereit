@@ -39,8 +39,16 @@ public class IntegrationTestFixture
 		// passing --environment explicitly is required for AppHost.cs's isTestEnv
 		// gate (skipping the Postgres data volume, pointing Geocoding__BaseUrl at
 		// an unroutable address for #975) to actually activate during test runs.
+		// AppHost.cs bumps RateLimiting__Read__AnonymousPermitLimit to 10000 by
+		// default so VisualTests' concurrent browser sessions don't 429 each
+		// other - but this fixture's own RateLimitingTests.cs deliberately
+		// exercises the real production default (60/60s) to prove it actually
+		// rejects excess anonymous requests, so restore that default here.
 		var appHost = await DistributedApplicationTestingBuilder
-			.CreateAsync<AppHost>(["--environment", "Testing"]);
+			.CreateAsync<AppHost>([
+				"--environment", "Testing",
+				"--RateLimiting:Read:AnonymousPermitLimit=60",
+			]);
 
 		_app = await appHost.BuildAsync();
 		await _app.StartAsync();

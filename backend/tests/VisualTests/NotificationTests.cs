@@ -102,4 +102,92 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" })).Not.ToBeVisibleAsync();
 		await Expect(Page.Locator("nav[aria-label='Breadcrumb']")).ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
+
+	/// <summary>
+	/// Regression for #1222: clicking a notification awaited markOneRead()
+	/// with no error handling, so a failed mark-as-read call left an
+	/// unhandled rejection that silently swallowed the subsequent
+	/// setNotifOpen/onNavigate calls - clicking a notification did nothing
+	/// at all. Navigation must proceed regardless of whether marking the
+	/// notification read succeeds, and the failure must surface as a toast.
+	/// </summary>
+	[Test]
+	public async Task ClickingNotification_StillNavigates_WhenMarkAsReadFails()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"NotifMarkReadFail Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"NotifMarkReadFail Opportunity {suffix}";
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by NotificationTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "Notify Olaf please." });
+		applyResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+
+		await Page.RouteAsync("**/v1/notifications/*/read", async route =>
+		{
+			// Cross-origin in this test environment - a fulfilled response still
+			// needs CORS headers or fetch() rejects before the app's own
+			// error-handling code (and thus the toast) ever runs, same as
+			// ToastDeduplicationTests.
+			await route.FulfillAsync(new()
+			{
+				Status = 500,
+				ContentType = "application/json",
+				Headers = new Dictionary<string, string> { ["Access-Control-Allow-Origin"] = "*" },
+				Body = "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.6.1\",\"status\":500}",
+			});
+		});
+
+		var bell = Page.GetByTestId("notification-bell");
+		await Expect(bell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await bell.ClickAsync();
+
+		var panel = Page.GetByTestId("notification-panel");
+		await Expect(panel).ToBeVisibleAsync(new() { Timeout = 5_000 });
+
+		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
+		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await notificationItem.GetByRole(AriaRole.Button).ClickAsync();
+
+		await Page.WaitForURLAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements",
+			new() { Timeout = 15_000 });
+
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found" })).Not.ToBeVisibleAsync();
+
+		var errorToast = Page.GetByRole(AriaRole.Alert)
+			.Filter(new() { HasTextString = "Failed to mark notification as read." });
+		await Expect(errorToast).ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
 }

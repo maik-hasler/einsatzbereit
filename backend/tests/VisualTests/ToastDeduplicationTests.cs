@@ -48,8 +48,10 @@ public class ToastDeduplicationTests(AspireFixture fixture) : VisualTestBase(fix
 		var forbiddenToasts = Page.GetByRole(AriaRole.Alert)
 			.Filter(new() { HasTextString = "You do not have permission" });
 
-		// Toasts auto-dismiss after 5s (see ToastContext.tsx) - assert well
-		// before that so this check can't race the production dismiss timer.
-		await Expect(forbiddenToasts).ToHaveCountAsync(1, new() { Timeout = 2_000 });
+		// Toasts auto-dismiss after 5s in production (see ToastContext.tsx),
+		// but AppHost sets VITE_TOAST_LIFETIME_MS=0 for test runs, so this no
+		// longer has to stay clear of that ceiling - 10s matches the render
+		// budget used elsewhere in this suite.
+		await Expect(forbiddenToasts).ToHaveCountAsync(1, new() { Timeout = 10_000 });
 	}
 }

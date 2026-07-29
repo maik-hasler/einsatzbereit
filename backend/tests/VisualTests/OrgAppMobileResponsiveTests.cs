@@ -36,8 +36,8 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// desktop nav (`hidden md:flex`); at mobile width it lives behind that
 		// header's own hamburger instead. Resize only after landing in the app.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		// The mobile bell and hamburger must stay visible and clickable - the
@@ -80,8 +80,8 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 		// switcher is present (frees the width the name needs) plus a min-width
 		// floor on the name span itself (OrganizationSwitcher.tsx).
 		var frontend = Fixture.GetEndpoint("frontend");
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
@@ -89,8 +89,7 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 
 		var animalWelfareRow = Page.GetByTestId("org-switch-row")
 			.Filter(new() { HasText = "Fairview Animal Welfare Association" });
-		if (await animalWelfareRow.CountAsync() == 0)
-			return; // seed data changed - nothing to compare against
+		Skip.When(await animalWelfareRow.CountAsync() == 0, "seed data changed - nothing to compare against");
 
 		await animalWelfareRow.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
