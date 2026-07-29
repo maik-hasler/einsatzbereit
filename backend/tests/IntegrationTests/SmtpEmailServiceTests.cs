@@ -16,10 +16,10 @@ namespace IntegrationTests;
 // so - unlike the rest of this project - it needs no Aspire/Testcontainers
 // fixture and runs as a plain fast unit test.
 //
-// Regression coverage for #1341: a send failure must be swallowed (callers
-// like EngagementReminderJob rely on this - see its MarkReminderSent right
-// after SendAsync) but still observable, now via a metric rather than only a
-// log line nothing was watching.
+// Regression coverage for #1341: a send failure must be swallowed - SendAsync
+// never throws, by design (see the comment on IEmailService.SendBatchAsync) -
+// but still observable, now via a metric rather than only a log line nothing
+// was watching.
 //
 // [NotInParallel] with a key unique to this class (not the "IntegrationDb"
 // key other IntegrationTests classes share): EmailMetrics.MeterName is a
@@ -62,11 +62,12 @@ public class SmtpEmailServiceTests
 		recorded.Should().ContainSingle(m => m.Status == "failed" && m.Value == 1);
 	}
 
-	// Regression coverage for #1400: EngagementReminderJob used to open a fresh
-	// SMTP connection per volunteer. FakeSmtpServer only ever accepts one TCP
-	// connection (see AcceptAsync below), so if SendBatchAsync tried to reconnect
-	// for message 2 or 3 there would be nothing listening and those sends would
-	// fail - all three succeeding here is itself proof the batch shares one connection.
+	// Regression coverage for #1400: SendBatchAsync must share one SMTP connection
+	// across every message in the batch, not reconnect per message. FakeSmtpServer
+	// only ever accepts one TCP connection (see AcceptAsync below), so if
+	// SendBatchAsync tried to reconnect for message 2 or 3 there would be nothing
+	// listening and those sends would fail - all three succeeding here is itself
+	// proof the batch shares one connection.
 	[Test]
 	public async Task SendBatchAsync_ServerAcceptsAllMessages_SendsEveryMessageOverOneConnection()
 	{

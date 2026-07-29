@@ -91,7 +91,9 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<SmtpOptionsSetup>();
 		services.AddSingleton<EmailMetrics>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
+		services.ConfigureOptions<EngagementReminderOptionsSetup>();
 		services.AddHostedService<EngagementReminderJob>();
+		services.ConfigureOptions<OutboxOptionsSetup>();
 		services.AddHostedService<OutboxProcessorJob>();
 		services.AddHostedService<GeocodingRetryJob>();
 		services.AddHostedService<OrganizationMembershipBackfillJob>();
