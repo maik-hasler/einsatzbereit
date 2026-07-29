@@ -572,19 +572,26 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var slotIds = rows
 			.SelectMany(r => r.TimeSlots)
-			.Select(ts => TimeSlotId.Create(ts.SlotId).GetValueOrThrow())
+			.Select(ts => (TimeSlotId?)TimeSlotId.Create(ts.SlotId).GetValueOrThrow())
 			.ToList();
 
-		// Grouped instead of a correlated Count(...) subquery per slot (#1389) -
-		// mirrors LoadParticipantStatsAsync's participantCounts query below.
-		var bookedCounts = await dbContext.EngagementsQuery
-			.Where(e => e.TimeSlotId.HasValue && slotIds.Contains(e.TimeSlotId.Value) &&
+		// Single query instead of a correlated Count(...) subquery per slot
+		// (#1389) - but grouped client-side rather than via GroupBy(...).Value in
+		// the query itself: EF Core can't reliably translate .Value/GroupBy on a
+		// Nullable<TimeSlotId> sitting behind TimeSlotId's HasConversion (unlike
+		// LoadParticipantStatsAsync's participantCounts query below, which groups
+		// by the non-nullable OpportunityId and works fine). Fetching the raw
+		// nullable values and counting them here keeps it to one round trip
+		// without hitting that translation gap.
+		var activeSlotIds = await dbContext.EngagementsQuery
+			.Where(e => slotIds.Contains(e.TimeSlotId) &&
 				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
-			.GroupBy(e => e.TimeSlotId!.Value)
-			.Select(g => new { SlotId = g.Key.Value, Count = g.Count() })
+			.Select(e => e.TimeSlotId)
 			.ToListAsync(cancellationToken);
 
-		var slotCounts = bookedCounts.ToDictionary(x => x.SlotId, x => x.Count);
+		var slotCounts = activeSlotIds
+			.GroupBy(id => id!.Value.Value)
+			.ToDictionary(g => g.Key, g => g.Count());
 
 		return rows
 			.Select(r => new OrganizationCalendarEventDto(
