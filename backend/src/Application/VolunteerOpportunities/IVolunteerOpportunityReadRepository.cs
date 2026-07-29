@@ -31,5 +31,7 @@ public interface IVolunteerOpportunityReadRepository
 
 	ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
+		DateTimeOffset from,
+		DateTimeOffset to,
 		CancellationToken cancellationToken = default);
 }

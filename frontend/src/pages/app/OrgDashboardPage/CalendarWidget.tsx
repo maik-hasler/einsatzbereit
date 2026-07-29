@@ -20,6 +20,7 @@ import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
+import { visibleCalendarRange } from "../../../lib/calendarRange";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -116,19 +117,29 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 
-	// Shared with UpcomingOpportunitiesWidget, which fetches the same
-	// organization-wide calendar events - see useSharedOrgFetch.
-	const [calData, setCalData, calError] = useSharedOrgFetch<
-		OrganizationCalendarEventDto[]
-	>(`calendarEvents:${organizationId}:${refreshKey}`, () =>
-		api.getOrganizationCalendarEvents(organizationId),
-	);
-	const calLoading = calData === null && !calError;
 	// Lazy initializer - only the INITIAL view depends on size; once mounted,
 	// the organizer's own view-button clicks take over and this doesn't
 	// re-run just because a drag elsewhere changed this widget's span.
 	const [calView, setCalView] = useState<View>(() => defaultViewForSize(size));
 	const [calDate, setCalDate] = useState(new Date());
+
+	// Bound to whatever's actually on screen (#1389) rather than fetching
+	// every calendar event the org has ever created - an org with years of
+	// weekly recurring shifts would otherwise pull thousands of slots on
+	// every dashboard load. Recomputed whenever the visible window changes
+	// (view switch or navigation), which naturally triggers a refetch since
+	// it's part of useSharedOrgFetch's key.
+	const { from: rangeFrom, to: rangeTo } = useMemo(
+		() => visibleCalendarRange(calDate, calView),
+		[calDate, calView],
+	);
+	const [calData, setCalData, calError] = useSharedOrgFetch<
+		OrganizationCalendarEventDto[]
+	>(
+		`calendarEvents:${organizationId}:${refreshKey}:${rangeFrom.toISOString()}:${rangeTo.toISOString()}`,
+		() => api.getOrganizationCalendarEvents(organizationId, rangeFrom, rangeTo),
+	);
+	const calLoading = calData === null && !calError;
 	const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
 	const [pickerColor, setPickerColor] = useState(DEFAULT_EVENT_COLOR);
 	const [savingColor, setSavingColor] = useState(false);

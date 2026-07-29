@@ -22,6 +22,8 @@ internal sealed class GetOrganizationCalendarEventsQueryHandler(
 
 		return await readRepository.GetCalendarEventsAsync(
 			request.OrganizationId,
+			request.From,
+			request.To,
 			cancellationToken);
 	}
 }

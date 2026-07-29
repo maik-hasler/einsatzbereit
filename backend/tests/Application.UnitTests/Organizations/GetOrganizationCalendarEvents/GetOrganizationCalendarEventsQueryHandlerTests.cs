@@ -18,6 +18,8 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 
 	private static readonly Guid DefaultOrgId = Guid.NewGuid();
 	private static readonly UserId DefaultRequestingUserId = UserId.New();
+	private static readonly DateTimeOffset DefaultFrom = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+	private static readonly DateTimeOffset DefaultTo = new(2026, 1, 31, 0, 0, 0, TimeSpan.Zero);
 
 	public GetOrganizationCalendarEventsQueryHandlerTests()
 	{
@@ -36,15 +38,40 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 		{
 			new(Guid.NewGuid(), "Title", "#ff0000", []),
 		};
-		_readRepository.GetCalendarEventsAsync(DefaultOrgId, cancellationToken).Returns(events);
+		_readRepository.GetCalendarEventsAsync(DefaultOrgId, DefaultFrom, DefaultTo, cancellationToken).Returns(events);
 
-		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId);
+		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);
 
 		// Act
 		var result = await _sut.Handle(query, cancellationToken);
 
 		// Assert
 		result.Should().BeEquivalentTo(events);
+	}
+
+	[Test]
+	public async Task Handle_ShouldPassThroughFromAndTo_Unchanged(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var capturedFrom = DateTimeOffset.MinValue;
+		var capturedTo = DateTimeOffset.MinValue;
+		_readRepository
+			.GetCalendarEventsAsync(
+				Arg.Any<Guid>(),
+				Arg.Do<DateTimeOffset>(f => capturedFrom = f),
+				Arg.Do<DateTimeOffset>(t => capturedTo = t),
+				Arg.Any<CancellationToken>())
+			.Returns([]);
+
+		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);
+
+		// Act
+		await _sut.Handle(query, cancellationToken);
+
+		// Assert
+		capturedFrom.Should().Be(DefaultFrom);
+		capturedTo.Should().Be(DefaultTo);
 	}
 
 	[Test]
@@ -56,7 +83,7 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
-		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId);
+		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(query, cancellationToken);
@@ -64,6 +91,7 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 		// Assert
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
-		await _readRepository.DidNotReceive().GetCalendarEventsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _readRepository.DidNotReceive().GetCalendarEventsAsync(
+			Arg.Any<Guid>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
 	}
 }

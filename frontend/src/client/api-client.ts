@@ -3364,11 +3364,19 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOrganizationCalendarEvents(organizationId: string, signal?: AbortSignal): Promise<OrganizationCalendarEventDto[]> {
-        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/calendar-events";
+    getOrganizationCalendarEvents(organizationId: string, from: Date, to: Date, signal?: AbortSignal): Promise<OrganizationCalendarEventDto[]> {
+        let url_ = this.baseUrl + "/v1/organizations/{organizationId}/calendar-events?";
         if (organizationId === undefined || organizationId === null)
             throw new globalThis.Error("The parameter 'organizationId' must be defined.");
         url_ = url_.replace("{organizationId}", encodeURIComponent("" + organizationId));
+        if (from === undefined || from === null)
+            throw new globalThis.Error("The parameter 'from' must be defined and cannot be null.");
+        else
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
+        if (to === undefined || to === null)
+            throw new globalThis.Error("The parameter 'to' must be defined and cannot be null.");
+        else
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -3392,6 +3400,12 @@ export class EinsatzbereitApi {
             let result200: any = null;
             result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OrganizationCalendarEventDto[];
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {

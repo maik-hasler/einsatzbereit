@@ -542,40 +542,49 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 	public async ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
+		DateTimeOffset from,
+		DateTimeOffset to,
 		CancellationToken cancellationToken = default)
 	{
 		var orgId = OrganizationId.Create(organizationId).GetValueOrThrow();
 
 		var rows = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == orgId)
-			.Where(vo => vo.TimeSlots.Any())
-			.OrderBy(vo => vo.TimeSlots.Min(ts => ts.StartDateTime))
+			.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime >= from && ts.StartDateTime <= to))
+			.OrderBy(vo => vo.TimeSlots
+				.Where(ts => ts.StartDateTime >= from && ts.StartDateTime <= to)
+				.Min(ts => ts.StartDateTime))
 			.Select(vo => new
 			{
 				Id = vo.Id.Value,
 				vo.Title,
 				vo.Color,
 				TimeSlots = vo.TimeSlots
+					.Where(ts => ts.StartDateTime >= from && ts.StartDateTime <= to)
 					.OrderBy(ts => ts.StartDateTime)
 					.Select(ts => new { SlotId = ts.Id.Value, ts.StartDateTime, ts.EndDateTime, ts.MaxParticipants })
 					.ToList(),
 			})
 			.ToListAsync(cancellationToken);
 
-		var opportunityIds = rows.Select(r => VolunteerOpportunityId.Create(r.Id).GetValueOrThrow()).ToList();
-		var slotCounts = opportunityIds.Count == 0
-			? new Dictionary<Guid, int>()
-			: await dbContext.VolunteerOpportunitiesQuery
-				.Where(vo => opportunityIds.Contains(vo.Id))
-				.SelectMany(vo => vo.TimeSlots)
-				.Select(ts => new
-				{
-					SlotId = ts.Id.Value,
-					BookedCount = dbContext.EngagementsQuery.Count(e =>
-						e.TimeSlotId == ts.Id &&
-						(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
-				})
-				.ToDictionaryAsync(x => x.SlotId, x => x.BookedCount, cancellationToken);
+		if (rows.Count == 0)
+			return [];
+
+		var slotIds = rows
+			.SelectMany(r => r.TimeSlots)
+			.Select(ts => TimeSlotId.Create(ts.SlotId).GetValueOrThrow())
+			.ToList();
+
+		// Grouped instead of a correlated Count(...) subquery per slot (#1389) -
+		// mirrors LoadParticipantStatsAsync's participantCounts query below.
+		var bookedCounts = await dbContext.EngagementsQuery
+			.Where(e => e.TimeSlotId.HasValue && slotIds.Contains(e.TimeSlotId.Value) &&
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.GroupBy(e => e.TimeSlotId!.Value)
+			.Select(g => new { SlotId = g.Key.Value, Count = g.Count() })
+			.ToListAsync(cancellationToken);
+
+		var slotCounts = bookedCounts.ToDictionary(x => x.SlotId, x => x.Count);
 
 		return rows
 			.Select(r => new OrganizationCalendarEventDto(
