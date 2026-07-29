@@ -153,8 +153,17 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("#opportunity-banner")).ToBeAttachedAsync();
 
 		// Step 2 hint card present. Selects on data-testid rather than the
-		// bg-brand-50 Tailwind utility class - see #1328.
+		// bg-brand-50 Tailwind utility class - see #1328. That class match
+		// was never actually anchored to the hint card: the remote-checkbox
+		// label a few lines above it in LocationStep.tsx also carries
+		// "bg-brand-50" (as part of hover:bg-brand-50/has-[:checked]:bg-brand-50)
+		// and always renders, so `[class*='bg-brand-50']` silently matched
+		// that label instead - passing regardless of remote state. The hint
+		// card itself only renders when not remote, so "remote" (checked
+		// above to skip step 2's address validation) must be unchecked
+		// again first for this to assert against the real element.
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
+		await Page.Locator("#opportunity-remote").UncheckAsync();
 		var hint = Page.GetByTestId("wizard-step-2").GetByTestId("location-hint");
 		await Expect(hint).ToBeVisibleAsync();
 
