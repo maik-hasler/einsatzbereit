@@ -115,6 +115,25 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	public Guid? GetPinnedOrganizerOrganizationId(Guid userId) =>
 		_pinnedOrganizerOrgByUserId.TryGetValue(userId, out var organizationId) ? organizationId : null;
 
+	// Live re-query of userId's alphabetically-first Organizer org, matching
+	// activeOrg.ts's resolveActiveOrg fallback - unlike GetPinnedOrganizerOrganizationId
+	// above (a one-time snapshot from fixture boot, valid only because no other
+	// test had created any orgs yet), this re-runs the same query against
+	// current state. OrganizationDashboardNavLinkTests's deliberately-unpinned
+	// resolution-order test needs this: AchievementsTests (see its own doc
+	// comment) permanently adds two more Organizer orgs for olaf with no
+	// cleanup, sorting ahead of the seeded one, the instant it runs anywhere
+	// in the same suite run - comparing against the frozen boot-time snapshot
+	// instead of current state made that test racy against test ordering, not
+	// concurrency.
+	public async Task<Guid?> GetCurrentFirstOrganizerOrganizationIdAsync(Guid userId)
+	{
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+		var current = await ReadPinnedOrganizerOrgsAsync(conn);
+		return current.TryGetValue(userId, out var organizationId) ? organizationId : null;
+	}
+
 	// Test-only escape hatch replicating what the now-removed admin-only
 	// AddMember endpoint did (#810): add a user to a Keycloak organization as a
 	// plain member, without granting the Organizer role. Accepting an
@@ -138,8 +157,11 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 	// Olaf's well-known seed user id (ApplicationDbContextInitializer.OlafId,
 	// an internal constant in a different assembly - duplicated here rather
-	// than exposed cross-assembly since it's just a fixed literal).
-	private static readonly Guid OlafId = new("00000000-0000-0000-0000-000000000001");
+	// than exposed cross-assembly since it's just a fixed literal). Exposed
+	// publicly (not just used internally) so callers needing his id directly -
+	// e.g. GetCurrentFirstOrganizerOrganizationIdAsync above - don't need a
+	// throwaway SignInAsync call just to decode it back off a token.
+	public static Guid OlafId { get; } = new("00000000-0000-0000-0000-000000000001");
 
 	private async Task CaptureBaselineSnapshotAsync()
 	{

@@ -94,10 +94,12 @@ public static class AuthHelper
 	/// this pin, a throwaway org created by some concurrently running test
 	/// could win by sorting ahead of the seeded ones. Pass false for the one
 	/// test whose actual subject is that fallback order
-	/// (OrganizationDashboardNavLinkTests) - the returned id is still the
-	/// value that fallback *should* resolve to, for that test to assert
-	/// against, but nothing is written to the cookie jar to force it there.
-	/// so it stays under real, unpinned coverage.
+	/// (OrganizationDashboardNavLinkTests) - it re-queries the alphabetically-
+	/// first org fresh (AspireFixture.GetCurrentFirstOrganizerOrganizationIdAsync)
+	/// right before asserting instead of trusting this method's own returned id
+	/// (a snapshot from fixture boot, stale the instant any other test creates
+	/// an org for this user), and nothing is written to the cookie jar to force
+	/// the pin, so the real, unpinned resolution stays under coverage.
 	/// </summary>
 	public static async Task<Guid?> FastSignInAsync(
 		IPage page, AspireFixture fixture, Uri frontendUrl, string username, string password,

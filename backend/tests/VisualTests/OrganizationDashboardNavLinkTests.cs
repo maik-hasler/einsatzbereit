@@ -42,12 +42,17 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		// -then-alphabetical resolution order (see this class's doc comment), so
 		// it deliberately stays on the unpinned path every other FastSignInAsync
 		// call site now skips, to keep that resolution order under real coverage.
-		// The returned id is still the org that fallback *should* resolve to -
-		// asserted below once the nav actually resolves one, so this test
-		// verifies the real resolution, not just a URL shape any org would match.
-		var expectedOrgId = await AuthHelper.FastSignInAsync(
+		await AuthHelper.FastSignInAsync(
 			Page, Fixture, frontend, "olaf", "olaf123", pinActiveOrg: false);
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Queried immediately after the app's own mount-time GET /v1/organizations
+		// has had time to resolve (main is visible), not at the end of the test -
+		// see the assertion below for why this needs to be a live query at all,
+		// and this placement keeps it as close as possible to the moment the
+		// frontend itself actually resolved, instead of racing several more UI
+		// interactions' worth of concurrently-running tests.
+		var expectedOrgId = await Fixture.GetCurrentFirstOrganizerOrganizationIdAsync(AspireFixture.OlafId);
 
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
@@ -81,11 +86,19 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities"), new() { Timeout = 15_000 });
 
 		// The whole point of leaving this sign-in unpinned: confirm the
-		// cookie-then-alphabetical fallback actually landed on the same org
-		// FastSignInAsync's own (unused-for-navigation) pinned id names -
-		// not just on *some* org that happens to satisfy the URL regex above.
+		// cookie-then-alphabetical fallback actually landed on whichever org was
+		// genuinely alphabetically first for olaf at sign-in time (queried above) -
+		// not just on *some* org that happens to satisfy the URL regex above, and
+		// not against a value pinned back at fixture boot
+		// (AspireFixture.GetPinnedOrganizerOrganizationId): that snapshot is only
+		// valid at the instant the fixture starts, before any other test has
+		// created a single org. AchievementsTests, for one, permanently adds two
+		// more Organizer orgs for olaf with no cleanup, sorting ahead of the
+		// seeded one alphabetically - so whether the boot-time snapshot still
+		// matched reality here depended on test scheduling, not on whether the
+		// resolution logic under test actually worked.
 		var resolvedOrgId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
-		expectedOrgId.Should().NotBeNull("olaf organizes a seeded org, so FastSignInAsync should always resolve one for him");
+		expectedOrgId.Should().NotBeNull("olaf organizes a seeded org, so the fallback should always resolve one for him");
 		resolvedOrgId.Should().Be(expectedOrgId!.Value);
 
 		// Re-open and confirm the remaining tabs are all reachable too.
