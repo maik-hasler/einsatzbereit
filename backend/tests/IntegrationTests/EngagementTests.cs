@@ -722,6 +722,89 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(403);
 	}
 
+	[Test]
+	public async Task CheckInEngagement_ShouldReturn403_WhenOrganisatorChecksInOtherOrgsEngagement(
+		CancellationToken cancellationToken)
+	{
+		// olaf creates org1 with an opportunity
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		// vera creates her own org - this grants her the organisator role
+		await CreateOrganizationAsync(veraClient, cancellationToken);
+
+		// the organisator role is a Keycloak realm role baked into the JWT at
+		// mint time, so vera's already-issued token doesn't carry it yet - get a
+		// fresh one, or the "organisator" policy itself rejects her before the
+		// request ever reaches the ownership guard this test means to exercise.
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		// vera (organisator of org2, NOT org1) tries to check in org1's engagement
+		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task CheckInEngagement_ShouldReturn404_WhenOpportunityIsDeleted(
+		CancellationToken cancellationToken)
+	{
+		// olaf creates org1 with an opportunity and confirms vera's engagement
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org1Id = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, org1Id, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		// vera creates her own org up front - this grants her the organisator
+		// role, but not over org1, whose opportunity row will be deleted below.
+		await CreateOrganizationAsync(veraClient, cancellationToken);
+
+		// the organisator role is a Keycloak realm role baked into the JWT at
+		// mint time, so vera's already-issued token doesn't carry it yet - get a
+		// fresh one, or the "organisator" policy itself rejects her before the
+		// request ever reaches the handler this test means to exercise.
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
+
+		// Simulate the opportunity's row being gone without its engagement having
+		// been cancelled first - e.g. data predating the cancellation safeguard in
+		// DeleteVolunteerOpportunityCommandHandler. The engagement itself is left
+		// Confirmed, which the normal delete flow never produces.
+		await fixture.DeleteOpportunityRowDirectlyAsync(opportunity.Id);
+
+		// There's no API to observe the opportunity row directly - confirm the
+		// precondition at the DB level so a failure below can't be confused with
+		// the delete itself silently not having taken effect.
+		(await fixture.CountRowsWhereAsync("volunteer_opportunity", "id", opportunity.Id)).Should().Be(0);
+
+		// vera (organisator of org2, NOT org1) tries to check in org1's engagement.
+		// With no opportunity row left to resolve an owning organization from, the
+		// ownership guard can no longer be evaluated at all - the handler must
+		// reject with NotFound rather than silently skipping the guard and letting
+		// any organizer, from any organization, check the engagement in.
+		var act = () => veraClient.CheckInEngagementAsync(engagement.Id, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(404);
+	}
+
 	// ── Re-apply after withdrawal (#522) ─────────────────────────────────────
 
 	[Test]

@@ -18,15 +18,14 @@ internal sealed class CheckInEngagementCommandHandler(
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
-		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken);
-		if (opportunity is not null)
-		{
-			await OwnershipGuard.EnsureIsOrganizerAsync(
-				dbContext,
-				opportunity.OrganizationId.Value,
-				request.RequestingUserId,
-				cancellationToken);
-		}
+		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(engagement.OpportunityId, cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{engagement.OpportunityId.Value}' not found."));
+
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
+			opportunity.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
 
 		engagement.CheckIn().ThrowIfFailure();
 
