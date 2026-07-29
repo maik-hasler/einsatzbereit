@@ -136,6 +136,11 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		await EnsureSuccessAsync(response);
 	}
 
+	// Olaf's well-known seed user id (ApplicationDbContextInitializer.OlafId,
+	// an internal constant in a different assembly - duplicated here rather
+	// than exposed cross-assembly since it's just a fixed literal).
+	private static readonly Guid OlafId = new("00000000-0000-0000-0000-000000000001");
+
 	private async Task CaptureBaselineSnapshotAsync()
 	{
 		// Resolve vera's Keycloak user id once - discard the token, this call
@@ -147,6 +152,23 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		await conn.OpenAsync();
 
 		_pinnedOrganizerOrgByUserId = await ReadPinnedOrganizerOrgsAsync(conn);
+
+		// ApplicationDbContextInitializer.SeedAsync wraps its Keycloak-dependent
+		// org/membership seeding in a catch-and-log-only block with no retry
+		// (a transient Keycloak hiccup during backend startup silently leaves
+		// olaf's Organizer memberships un-seeded, no exception surfaced anywhere)
+		// - if that happened, every downstream test that dereferences
+		// FastSignInAsync's pinned-org id for olaf would fail with a nullref
+		// deep into the run, minutes later, with no obvious connection back to
+		// this. Fail loudly here instead, at fixture boot, with a message that
+		// actually points at the cause.
+		if (!_pinnedOrganizerOrgByUserId.ContainsKey(OlafId))
+			throw new InvalidOperationException(
+				"Seed data has no Organizer-role organization membership for olaf "
+				+ $"(user id {OlafId}). ApplicationDbContextInitializer.SeedAsync likely "
+				+ "failed partway through (it swallows exceptions from its Keycloak-dependent "
+				+ "seed calls and logs rather than rethrowing) - check the backend resource's "
+				+ "startup logs for \"An exception occurred while seeding the database\".");
 	}
 
 	// Ordered by name so the first row seen per user is exactly the org
