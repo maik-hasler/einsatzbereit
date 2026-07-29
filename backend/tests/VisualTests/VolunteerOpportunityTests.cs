@@ -499,17 +499,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var uniqueTitle = $"Edit Draft Visual Test {Guid.NewGuid().ToString("N")[..8]}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
-
-		var switcherBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" });
-		Skip.When(await switcherBtn.CountAsync() == 0, "no org membership in seed - skip");
-
-		await switcherBtn.First.ClickAsync();
-		var dashboardLink = Page.GetByTestId("org-dashboard-link");
-		Skip.When(await dashboardLink.CountAsync() == 0, "no org selected in seed - skip");
-
-		await dashboardLink.First.ClickAsync();
+		// "Switch organization" only exists inside the org app shell
+		// (/app/{orgId}/...), never on the plain home page AuthHelper leaves
+		// you on - go straight to olaf's pinned org dashboard instead of
+		// looking for a control that can never render here.
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });

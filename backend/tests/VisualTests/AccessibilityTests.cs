@@ -652,6 +652,23 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
+
+		// "Select a slot" only exists on an opportunity's own detail page
+		// (VolunteerOpportunityDetailPage.tsx) - the home page's cards link
+		// there but never render the button themselves. Filter to Waitlist-type
+		// opportunities (seed data has two, both with open capacity) and follow
+		// the first card's link in, matching the navigation pattern
+		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above uses.
+		await Page.GotoAsync($"{frontend}?participationType=Waitlist");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
+		Skip.When(await firstCard.CountAsync() == 0, "no waitlist opportunity seeded");
+
+		var href = await firstCard.GetAttributeAsync("href");
+		Skip.When(href is null, "opportunity card had no href attribute");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
