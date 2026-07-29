@@ -1,18 +1,14 @@
 using Application.Common.Authorization;
 using Application.Common.Exceptions;
-using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 
 internal sealed class CreateVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
-	IGeocodingService geocodingService,
-	IPinGenerator pinGenerator,
-	ILogger<CreateVolunteerOpportunityCommandHandler> logger)
+	IPinGenerator pinGenerator)
 	: ICommandHandler<CreateVolunteerOpportunityCommand, VolunteerOpportunity>
 {
 	public async ValueTask<VolunteerOpportunity> Handle(
@@ -25,17 +21,17 @@ internal sealed class CreateVolunteerOpportunityCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		var address = request.Address;
-
-		if (!request.IsRemote && address is not null)
-			address = (await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken)).GetValueOrThrow();
-
+		// Geocoding (and the up-to-1.1s Nominatim throttle it can wait on, see
+		// NominatimGeocodingService) happens out of band after this command's
+		// transaction commits - VolunteerOpportunity.Create raises
+		// VolunteerOpportunityGeocodingRequestedDomainEvent for a non-remote
+		// address, picked up by GeocodeVolunteerOpportunityAddressHandler (#1388).
 		var opportunity = VolunteerOpportunity.Create(
 			request.OrganizationId,
 			request.Title,
 			request.Description,
 			request.IsRemote,
-			address,
+			request.Address,
 			request.Occurrence,
 			request.ParticipationType,
 			request.CheckInMethod,

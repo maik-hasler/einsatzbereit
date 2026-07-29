@@ -27,6 +27,12 @@ public sealed class VolunteerOpportunity
 
 	public Address? Address { get; private set; }
 
+	// True once a geocoding attempt has come back with a confirmed no-match for
+	// this Address (Nominatim NotFound) - stops GeocodingRetryJob and the
+	// event-driven handler from retrying an address that will never resolve.
+	// Reset to false whenever the address text actually changes (see Relocate).
+	public bool AddressGeocodingFailed { get; private set; }
+
 	public Occurrence Occurrence { get; private set; }
 
 	public ParticipationType ParticipationType { get; private set; }
@@ -161,7 +167,7 @@ public sealed class VolunteerOpportunity
 					"A Waitlist opportunity must be created as a draft and published after adding at least one time slot."));
 		}
 
-		return new VolunteerOpportunity(
+		var opportunity = new VolunteerOpportunity(
 			VolunteerOpportunityId.New(),
 			organizationId,
 			title,
@@ -176,6 +182,11 @@ public sealed class VolunteerOpportunity
 			status,
 			pinGenerator,
 			checkInPin);
+
+		if (!isRemote && address is not null)
+			opportunity.AddEvent(new VolunteerOpportunityGeocodingRequestedDomainEvent(opportunity.Id));
+
+		return opportunity;
 	}
 
 	private static Result EnsurePublishable(
@@ -277,10 +288,49 @@ public sealed class VolunteerOpportunity
 				return publishable;
 		}
 
+		var addressTextChanged = AddressTextChanged(Address, address);
+		var needsGeocoding = !isRemote && address is not null && addressTextChanged;
+
 		IsRemote = isRemote;
-		Address = address;
+
+		// Callers always supply a fresh, uncoordinated Address (built from raw
+		// street/house number/zip/city text - see CreateVolunteerOpportunityEndpoint
+		// / UpdateVolunteerOpportunityEndpoint), so only replace the current
+		// Address when the location actually changed; otherwise keep whatever
+		// coordinates and AddressGeocodingFailed state a previous geocoding
+		// attempt produced instead of wiping them out on every unrelated edit.
+		if (isRemote || address is null || addressTextChanged)
+		{
+			Address = address;
+			AddressGeocodingFailed = false;
+		}
+
+		if (needsGeocoding)
+			AddEvent(new VolunteerOpportunityGeocodingRequestedDomainEvent(Id));
+
 		return Result.Success();
 	}
+
+	// Applies the outcome of an out-of-band geocoding attempt (see
+	// GeocodeVolunteerOpportunityAddressHandler / GeocodingRetryJob) - distinct
+	// from Relocate, which is for organizer-driven address edits and
+	// deliberately skips re-resolving an unchanged address.
+	public void ApplyGeocodingResult(Address resolvedAddress)
+	{
+		Address = resolvedAddress;
+		AddressGeocodingFailed = false;
+	}
+
+	public void MarkAddressGeocodingFailed()
+	{
+		AddressGeocodingFailed = true;
+	}
+
+	private static bool AddressTextChanged(Address? prev, Address? next) =>
+		prev?.Street != next?.Street ||
+		prev?.HouseNumber != next?.HouseNumber ||
+		prev?.ZipCode != next?.ZipCode ||
+		prev?.City != next?.City;
 
 	public void Reschedule(Occurrence occurrence)
 	{

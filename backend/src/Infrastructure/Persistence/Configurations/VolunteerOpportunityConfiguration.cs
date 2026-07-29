@@ -47,6 +47,9 @@ internal sealed class VolunteerOpportunityConfiguration
 			address.Property(a => a.Longitude);
 		});
 
+		builder.Property(vo => vo.AddressGeocodingFailed)
+			.HasDefaultValue(false);
+
 		builder.Property(vo => vo.Occurrence)
 			.HasConversion<string>()
 			.IsRequired();
