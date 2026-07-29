@@ -33,6 +33,18 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
+		// Registered before FastSignInAsync's own navigation - Page.WaitForResponseAsync
+		// must start listening before the request fires, not after - matching the
+		// pattern already established in this suite (see CheckInPinOrganizerSetTests.cs).
+		// Anchors the live DB query below to the instant the frontend's own
+		// GET /v1/organizations actually resolves, instead of to <main> becoming
+		// visible: AppLayoutInner renders <main> unconditionally, uncorrelated
+		// with that fetch, so a query fired right after <main> is visible could
+		// still land before, during, or well after Header's own fetch actually
+		// completes.
+		var organizationsResponseTask = Page.WaitForResponseAsync(
+			r => r.Url.EndsWith("/v1/organizations") && r.Request.Method == "GET");
+
 		// Olaf organizes an org in seed data (see HomePageOrgCtaTests).
 		// FastSignInAsync verifies auth by waiting for the desktop "User menu"
 		// button, which is CSS-hidden below the md breakpoint - so sign in
@@ -46,12 +58,13 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 			Page, Fixture, frontend, "olaf", "olaf123", pinActiveOrg: false);
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// Queried immediately after the app's own mount-time GET /v1/organizations
-		// has had time to resolve (main is visible), not at the end of the test -
-		// see the assertion below for why this needs to be a live query at all,
-		// and this placement keeps it as close as possible to the moment the
-		// frontend itself actually resolved, instead of racing several more UI
-		// interactions' worth of concurrently-running tests.
+		// Queried immediately after the frontend's own GET /v1/organizations has
+		// actually resolved (not just after <main> is visible) - see the
+		// assertion below for why this needs to be a live query at all, and this
+		// placement keeps it anchored to the same instant the frontend itself
+		// resolved, instead of racing several more UI interactions' worth of
+		// concurrently-running tests.
+		await organizationsResponseTask;
 		var expectedOrgId = await Fixture.GetCurrentFirstOrganizerOrganizationIdAsync(AspireFixture.OlafId);
 
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
