@@ -118,7 +118,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var sharedPrefix = $"admintest1387-{Guid.NewGuid():N}";
+		const string sharedPrefix = "admintest1387";
 		var (plainUsername, plainUserId) = await CreateDisposableUserAsync(
 			keycloak, $"{sharedPrefix}-plain");
 		var (adminUsername, adminUserId) = await CreateDisposableUserAsync(
