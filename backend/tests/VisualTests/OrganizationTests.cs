@@ -51,15 +51,17 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
 
-		// fixture.ResetAsync() (this class opts in) clears
-		// organization_membership/organization_invitation back to baseline
-		// before every test, and FastSignInAsync(olaf) deterministically pins
-		// this test to the same seeded org ("Fairview Animal Welfare
-		// Association"), where vera is not a baseline member (she's only a
-		// baseline member of olaf's OTHER seeded org, Fairview Red Cross).
-		// So vera can never already be a member or already invited here -
-		// assert the invite button directly instead of tolerating "No users
-		// found." as an alternate outcome.
+		// Seed data never makes vera a member of "Fairview Animal Welfare
+		// Association" (she's only ever a baseline member of olaf's OTHER
+		// seeded org, Fairview Red Cross), and FastSignInAsync(olaf)
+		// deterministically pins this test to that org. fixture.ResetAsync()
+		// (this class opts in) only clears vera's own Organizer-role
+		// membership rows and her global Keycloak organisator role - it does
+		// NOT clear organization_invitation, so "vera is never already
+		// invited here" holds only because no other test in the suite
+		// invites her into this specific seeded org, not because of
+		// anything ResetAsync does. Assert the invite button directly
+		// instead of tolerating "No users found." as an alternate outcome.
 		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await inviteButton.First.ClickAsync();
