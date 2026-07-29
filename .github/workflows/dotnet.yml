@@ -160,11 +160,26 @@ jobs:
 
       - name: Test - Application.UnitTests
         working-directory: backend
-        run: dotnet run --project tests/Application.UnitTests --no-restore --no-build
+        run: dotnet run --project tests/Application.UnitTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output Application.UnitTests.cobertura.xml
 
       - name: Test - ArchitectureTests
         working-directory: backend
-        run: dotnet run --project tests/ArchitectureTests --no-restore --no-build
+        run: dotnet run --project tests/ArchitectureTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output ArchitectureTests.cobertura.xml
+
+      # Microsoft.Testing.Extensions.CodeCoverage ships bundled with the TUnit
+      # meta package (confirmed locally - no separate PackageReference needed).
+      # coverage-report (bottom of this file) merges these across all three
+      # test jobs into one PR comment.
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-fast-tests
+          path: |
+            backend/tests/Application.UnitTests/bin/**/TestResults/*.cobertura.xml
+            backend/tests/ArchitectureTests/bin/**/TestResults/*.cobertura.xml
+          retention-days: 7
+          if-no-files-found: ignore
 
   integration-tests:
     needs: build
@@ -222,7 +237,16 @@ jobs:
 
       - name: Test - IntegrationTests (Aspire + Docker)
         working-directory: backend
-        run: dotnet run --project tests/IntegrationTests --no-restore --no-build
+        run: dotnet run --project tests/IntegrationTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output IntegrationTests.cobertura.xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-integration-tests
+          path: backend/tests/IntegrationTests/bin/**/TestResults/*.cobertura.xml
+          retention-days: 7
+          if-no-files-found: ignore
 
   visual-tests:
     needs: build
@@ -293,7 +317,16 @@ jobs:
 
       - name: Test - VisualTests (Aspire + Docker + Playwright)
         working-directory: backend
-        run: dotnet run --project tests/VisualTests --no-restore --no-build
+        run: dotnet run --project tests/VisualTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output VisualTests.cobertura.xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-visual-tests
+          path: backend/tests/VisualTests/bin/**/TestResults/*.cobertura.xml
+          retention-days: 7
+          if-no-files-found: ignore
 
       # VisualTestBase only keeps a trace for tests that actually failed (see
       # TeardownTracingAsync) - upload whatever landed so a flake can be
@@ -307,3 +340,44 @@ jobs:
           path: backend/tests/VisualTests/bin/**/trace-artifacts/**
           if-no-files-found: ignore
           retention-days: 7
+
+  # Merges the per-job cobertura reports uploaded above into one summary and
+  # posts it as a sticky PR comment - without this, coverage gaps are only
+  # visible by hand-diffing handler lists against test-file lists (#1327).
+  coverage-report:
+    needs: [fast-tests, integration-tests, visual-tests]
+    # always() so one failing test job doesn't hide coverage from the ones
+    # that passed - but only if at least one of them actually produced a
+    # report, or download-artifact below has nothing to find and errors.
+    if: |
+      always() && github.event_name == 'pull_request' && (
+        needs.fast-tests.result == 'success' ||
+        needs.integration-tests.result == 'success' ||
+        needs.visual-tests.result == 'success'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download coverage reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: coverage-*
+          path: coverage
+          merge-multiple: true
+
+      - name: Build coverage summary
+        uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
+        with:
+          filename: 'coverage/*.cobertura.xml'
+          badge: true
+          format: markdown
+          output: both
+
+      - name: Comment coverage on PR
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          recreate: true
+          path: code-coverage-results.md
