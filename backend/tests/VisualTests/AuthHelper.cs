@@ -24,7 +24,9 @@ public static class AuthHelper
 		// races the frame's own navigation/detachment during the redirect and
 		// becomes intermittently flaky under CPU contention (see
 		// AuthGuardTests.MyEngagements_Anonymous_RedirectsToKeycloak, which hit
-		// the same redirect and already documents this exact fix).
+		// the same redirect and independently arrived at the same strategy -
+		// wait on the form element itself, not the URL - via
+		// Expect(...).ToBeVisibleAsync() rather than this raw WaitForAsync).
 		await page.Locator("#username").WaitForAsync(new() { Timeout = 30_000 });
 
 		await page.Locator("#username").FillAsync(username);

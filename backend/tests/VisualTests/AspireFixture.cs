@@ -97,7 +97,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	// whatever any other, concurrently running test (most of the suite is
 	// NOT keyed into "visualtests-db" and keeps running while this executes)
 	// had just created there, e.g. OrgDashboardCustomizeTests' saved
-	// dashboard layouts. None of the 4 classes that call this actually assert
+	// dashboard layouts. None of the 3 classes that call this actually assert
 	// anything about those tables' contents - AuthHelper's pinned-org
 	// navigation already makes which *org* every test lands on deterministic,
 	// independent of this reset. The only state that's genuinely global,

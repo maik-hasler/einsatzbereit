@@ -12,11 +12,15 @@ namespace VisualTests;
 /// fetches to fail silently.
 ///
 /// Also seeds a per-test unique <c>X-Forwarded-For</c> IP via <c>ExtraHTTPHeaders</c>
-/// on every request. Parallel VisualTests all originate from 127.0.0.1, which shares
-/// a single anonymous rate-limit bucket (60 req/min). React StrictMode double-invokes
-/// effects in dev mode, and ~17 tests navigate the home page concurrently, easily
-/// exhausting the shared quota and producing 429s. A unique IP per test gives each
-/// its own 60 req/min bucket so no individual test can exceed the limit.
+/// on every request. Parallel VisualTests all originate from 127.0.0.1, which would
+/// otherwise share a single anonymous rate-limit bucket - React StrictMode
+/// double-invokes effects in dev mode, and ~17 tests navigate the home page
+/// concurrently, easily exhausting a shared quota and producing 429s. AppHost.cs
+/// separately bumps that bucket to 10000 req/60s for VisualTests (see its own
+/// comment), which alone is enough headroom for this whole suite - the per-test
+/// IP partitioning here is kept as a second, independent layer on top of that
+/// bump: it predates it, costs nothing, and means this suite doesn't silently
+/// regress to 429s if that bump is ever narrowed or reverted.
 ///
 /// This header hits the exact same Keycloak CORS wall as <c>traceparent</c> above -
 /// Keycloak doesn't allow it in <c>Access-Control-Allow-Headers</c> either, so any
@@ -28,7 +32,7 @@ namespace VisualTests;
 ///
 /// Neither of the above uses a <c>Context.RouteAsync("**/*", ...)</c> handler like
 /// they used to - enabling routing disables the Vite dev server's HTTP cache for
-/// every request across all 207 tests, and a page-level <c>Page.RouteAsync</c> (10
+/// every request across all 209 tests, and a page-level <c>Page.RouteAsync</c> (10
 /// call sites in this suite) takes precedence over a context-level route and calls
 /// <c>ContinueAsync</c> straight to the network, silently bypassing whatever a
 /// context handler would have done. <c>ExtraHTTPHeaders</c>/<see cref="PropagateTraceContext"/>
