@@ -228,6 +228,37 @@ public class OrganizationSettingsTests(
 		stillThere.Name.Should().Be("Escalation Test Org");
 	}
 
+	[Test]
+	public async Task GetOrganizationDetails_ShouldNotFlagMemberAsOrganisator_WhenTheyOnlyOrganizeAnUnrelatedOrg(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1386: GetMembersAsync used to derive each member's
+		// IsOrganisator from Keycloak's platform-wide "organisator" role, so a
+		// plain member here who happens to organize a different org would
+		// incorrectly show as an organizer of this one too. It now answers
+		// per-organization from the local organization_membership table instead.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		// vera organizes her own, unrelated org - she holds the platform-wide
+		// Keycloak "organisator" role.
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 5" }, cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Cross-Org Organizer Display Test Org" }, cancellationToken);
+
+		// olaf's org gains vera as a plain member only, never promoted here.
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		var details = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+
+		details.Members.Should().Contain(m => m.UserId == olaf.Id && m.IsOrganisator);
+		details.Members.Should().Contain(m => m.UserId == vera.Id && !m.IsOrganisator);
+	}
+
 	// ── Invitations ─────────────────────────────────────────────────────────
 
 	[Test]

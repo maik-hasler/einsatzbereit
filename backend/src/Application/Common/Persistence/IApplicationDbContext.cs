@@ -40,6 +40,10 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
+	Task<HashSet<Guid>> GetOrganizerUserIdsAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default);
+
 	Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,

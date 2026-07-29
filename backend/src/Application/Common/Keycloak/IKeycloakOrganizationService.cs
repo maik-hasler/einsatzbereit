@@ -36,6 +36,14 @@ public interface IKeycloakOrganizationService
 		Guid organizationId,
 		CancellationToken cancellationToken = default);
 
+	// Realm-wide, not scoped to an organization - Keycloak has no per-organization
+	// organisator role to query. Reserved for one-shot reconciliation
+	// (OrganizationMembershipBackfillJob) against the local organization_membership
+	// table; GetMembersAsync answers IsOrganisator from that table instead, since
+	// calling this on every request is exactly the perf/correctness bug fixed by #1386.
+	Task<IReadOnlySet<Guid>> GetRealmOrganisatorUserIdsAsync(
+		CancellationToken cancellationToken = default);
+
 	Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
 		string search,
 		int max = 20,
