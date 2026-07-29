@@ -51,7 +51,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^(keycloak/)?CLAUDE\\.md$/",
+        "/^(keycloak/)?AGENTS\\.md$/",
         "/^docs/Architecture/src/.*\\.adoc$/",
         "/^docs/Architecture/images/.*\\.puml$/"
       ],
