@@ -120,6 +120,13 @@ public class IntegrationTestFixture
 		await using var conn = new NpgsqlConnection(_connectionString);
 		await conn.OpenAsync();
 		await _respawner.ResetAsync(conn);
+
+		// Respawn truncates tables with a raw SQL connection from this test process, which
+		// the backend's query cache (CachingPipelineBehavior) has no way to observe on its
+		// own - no command runs, so no domain event fires to invalidate it.
+		using var httpClient = CreateHttpClient();
+		using var response = await httpClient.PostAsync("/internal/testing/cache/clear", content: null);
+		await EnsureSuccessAsync(response);
 	}
 
 	// Test-only escape hatch to simulate an opportunity row removed without

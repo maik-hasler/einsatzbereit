@@ -6,6 +6,7 @@ using Api.Common.Health;
 using Api.Common.Middleware;
 using Api.Common.RateLimiting;
 using Application;
+using Application.Common.Caching;
 using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Persistence;
@@ -157,6 +158,15 @@ if (app.Environment.IsDevelopment())
 	await initializer.SeedAsync();
 
 	app.MapOpenApi();
+
+	// Dev-only escape hatch for IntegrationTests: Respawn resets the database with a raw
+	// SQL truncate from the test process, which never runs a command/domain event, so the
+	// query cache (CachingPipelineBehavior) has no way to learn about it on its own.
+	app.MapPost("/internal/testing/cache/clear", (ICacheInvalidator cacheInvalidator) =>
+	{
+		cacheInvalidator.InvalidateAll();
+		return Results.NoContent();
+	}).AllowAnonymous();
 }
 else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 {

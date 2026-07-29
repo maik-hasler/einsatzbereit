@@ -73,4 +73,48 @@ public class CacheCategoryTokenStoreTests
 		// Assert
 		token.HasChanged.Should().BeFalse();
 	}
+
+	[Test]
+	public void InvalidateAll_ShouldFireTokens_ForEveryCategoryEverRequested()
+	{
+		// Arrange
+		var store = new CacheCategoryTokenStore();
+		var tokenA = store.GetToken("CategoryA");
+		var tokenB = store.GetToken("CategoryB");
+
+		// Act
+		store.InvalidateAll();
+
+		// Assert
+		tokenA.HasChanged.Should().BeTrue();
+		tokenB.HasChanged.Should().BeTrue();
+	}
+
+	[Test]
+	public void InvalidateAll_ShouldNotThrow_WhenNoCategoryHasBeenRequestedYet()
+	{
+		// Arrange
+		var store = new CacheCategoryTokenStore();
+
+		// Act
+		var act = () => store.InvalidateAll();
+
+		// Assert
+		act.Should().NotThrow();
+	}
+
+	[Test]
+	public void GetToken_ShouldReturnFreshUnfiredToken_AfterInvalidateAll()
+	{
+		// Arrange
+		var store = new CacheCategoryTokenStore();
+		store.GetToken("Category");
+		store.InvalidateAll();
+
+		// Act
+		var token = store.GetToken("Category");
+
+		// Assert
+		token.HasChanged.Should().BeFalse();
+	}
 }

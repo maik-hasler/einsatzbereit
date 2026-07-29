@@ -26,4 +26,10 @@ internal sealed class CacheCategoryTokenStore : ICacheInvalidator, ICacheCategor
 			cts.Dispose();
 		}
 	}
+
+	public void InvalidateAll()
+	{
+		foreach (var category in _tokenSources.Keys.ToList())
+			Invalidate(category);
+	}
 }
