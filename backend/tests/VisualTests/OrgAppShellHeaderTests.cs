@@ -22,8 +22,8 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
@@ -45,8 +45,8 @@ public class OrgAppShellHeaderTests(AspireFixture fixture) : VisualTestBase(fixt
 		await Expect(breadcrumb.GetByRole(AriaRole.Link, new() { Name = "Home" }))
 			.ToBeVisibleAsync();
 		await Expect(breadcrumb).ToContainTextAsync("Settings");
-		(await Page.Locator("header nav[aria-label='Breadcrumb']").CountAsync())
-			.Should().Be(0, "the breadcrumb moved out of the header into the action bar");
+		// The breadcrumb moved out of the header into the action bar.
+		await Expect(Page.Locator("header nav[aria-label='Breadcrumb']")).ToHaveCountAsync(0);
 
 		// The org switcher remains present in the header as its own separate control.
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))

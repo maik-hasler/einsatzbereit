@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -36,7 +37,16 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 		// FastSignInAsync verifies auth by waiting for the desktop "User menu"
 		// button, which is CSS-hidden below the md breakpoint - so sign in
 		// before shrinking to a mobile viewport, not after.
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		//
+		// pinActiveOrg: false - this test's own subject is the active-org-cookie
+		// -then-alphabetical resolution order (see this class's doc comment), so
+		// it deliberately stays on the unpinned path every other FastSignInAsync
+		// call site now skips, to keep that resolution order under real coverage.
+		// The returned id is still the org that fallback *should* resolve to -
+		// asserted below once the nav actually resolves one, so this test
+		// verifies the real resolution, not just a URL shape any org would match.
+		var expectedOrgId = await AuthHelper.FastSignInAsync(
+			Page, Fixture, frontend, "olaf", "olaf123", pinActiveOrg: false);
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
@@ -69,6 +79,14 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await opportunitiesLink.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities"), new() { Timeout = 15_000 });
+
+		// The whole point of leaving this sign-in unpinned: confirm the
+		// cookie-then-alphabetical fallback actually landed on the same org
+		// FastSignInAsync's own (unused-for-navigation) pinned id names -
+		// not just on *some* org that happens to satisfy the URL regex above.
+		var resolvedOrgId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
+		expectedOrgId.Should().NotBeNull("olaf organizes a seeded org, so FastSignInAsync should always resolve one for him");
+		resolvedOrgId.Should().Be(expectedOrgId!.Value);
 
 		// Re-open and confirm the remaining tabs are all reachable too.
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First

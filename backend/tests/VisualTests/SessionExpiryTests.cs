@@ -61,7 +61,11 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// fetched chunk, gating the whole app behind a root Suspense
 		// boundary), so a cold Page.ReloadAsync() now has one more
 		// network-bound step before anything - including this toast - can
-		// render at all.
+		// render at all. This budget no longer races the toast's own 5s
+		// auto-dismiss (ToastContext.tsx) - AppHost sets
+		// VITE_TOAST_LIFETIME_MS=0 for test runs, so a render that lands late
+		// under CI contention can't have its toast disappear before this
+		// assertion's next poll catches it.
 		await Expect(sessionExpiredToast).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}
 

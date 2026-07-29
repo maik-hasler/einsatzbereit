@@ -62,6 +62,15 @@ if (localRealm["clients"] is JsonArray realmClients)
 
 localRealm["bruteForceProtected"] = false;
 
+// FastSignInAsync (VisualTests/AuthHelper.cs) mints via the frontend-test
+// client but seeds the token under the frontend client's storage key, so its
+// refresh token is invalid for the client oidc-client-ts believes it holds.
+// AuthHelper drops that refresh token rather than seed an unusable one, so a
+// long-running test would otherwise hit the realm's default 300s access
+// token lifetime with no way to renew - raise it well past this suite's
+// longest test instead of racing individual test durations against it.
+localRealm["accessTokenLifespan"] = 3600;
+
 // Local dev never has a real SMTP relay - point straight at the Mailpit
 // container by literal value instead of relying on Keycloak's "${VAR}"
 // realm-import substitution (which the committed realm now uses for
@@ -115,7 +124,14 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	.WithEnvironment("Storage__SecretKey", "minio123")
 	.WithEnvironment("Storage__BucketName", "einsatzbereit")
 	.WithEnvironment("RateLimiting__Write__PermitLimit", "10000")
-	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "10000");
+	.WithEnvironment("RateLimiting__Read__AuthenticatedPermitLimit", "10000")
+	// VisualTests' AllowAnonymous endpoints (home page, opportunity detail,
+	// Leaflet map tiles - none of which can carry a bearer token) otherwise
+	// share the production default of 60 anonymous reads per 60s with no
+	// queueing, across every concurrent test hitting the same shared backend.
+	// A 429 there renders as an empty list, which looks like an unrelated
+	// locator timeout in whatever test happened to exhaust the bucket.
+	.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", "10000");
 
 if (isTestEnv)
 {
@@ -139,6 +155,13 @@ if (isTestEnv)
 	backend.WithEnvironment("Geocoding__UseFakeService", "true");
 }
 
+// dev mode (not a production build) is deliberate here: Aspire's AddViteApp
+// gives HMR for local iteration, and a separate prod-build path just for
+// VisualTests would mean maintaining two different ways of running the same
+// frontend. React.StrictMode's double-invocation of effects (main.tsx) is
+// already accounted for rather than fought - useSharedOrgFetch dedupes
+// concurrent requests per key, and every effect it and OrgDashboardPage fire
+// twice under StrictMode is an idempotent GET.
 var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithPnpm()
 	.WithReference(backend)
@@ -146,7 +169,13 @@ var frontend = builder.AddViteApp("frontend", "../../../../frontend")
 	.WithEnvironment("VITE_API_URL", backend.GetEndpoint("http"))
 	.WithEnvironment("VITE_KEYCLOAK_AUTHORITY_URL",
 		ReferenceExpression.Create($"{keycloakEndpoint}/realms/einsatzbereit"))
-	.WithEnvironment("STORAGE_PUBLIC_URL", ReferenceExpression.Create($"{minioApiEndpoint}"));
+	.WithEnvironment("STORAGE_PUBLIC_URL", ReferenceExpression.Create($"{minioApiEndpoint}"))
+	// Toasts otherwise auto-dismiss after 5s (ToastContext.tsx) in every test
+	// env too, forcing assertion windows to race that timer instead of just
+	// waiting for render. 0 = never auto-dismiss for test builds; production
+	// keeps the runtimeConfig default (5000) via the VITE_TOAST_LIFETIME_MS
+	// fallback in runtimeConfig.ts.
+	.WithEnvironment("VITE_TOAST_LIFETIME_MS", isTestEnv ? "0" : "5000");
 
 backend.WithEnvironment("Cors__Origins__0", frontend.GetEndpoint("http"));
 

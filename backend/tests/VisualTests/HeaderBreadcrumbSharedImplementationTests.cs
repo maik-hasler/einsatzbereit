@@ -1,4 +1,3 @@
-using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -36,8 +35,8 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		var homeLink = actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" });
 		await Expect(homeLink).ToBeVisibleAsync();
 		await Expect(homeLink).ToHaveAttributeAsync("href", "/");
-		(await homeLink.InnerTextAsync()).Trim().Should().BeEmpty(
-			"the home crumb should be icon-only (aria-label='Home'), not a visible text link");
+		// the home crumb should be icon-only (aria-label='Home'), not a visible text link
+		await Expect(homeLink).ToHaveTextAsync("");
 		await Expect(homeLink.Locator("svg")).ToBeVisibleAsync();
 
 		await Expect(actionBar.GetByText("Profile", new() { Exact = true })).ToBeVisibleAsync();
@@ -53,7 +52,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await AuthHelper.GoToOrgAppDashboardViaCtaAsync(Page, frontend);
 
 		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
 		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
@@ -85,8 +84,7 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 			}
 			return null;
 		}");
-		if (userId is null)
-			return; // could not resolve the logged-in user's id, skip
+		Skip.When(userId is null, "could not resolve the logged-in user's id");
 
 		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

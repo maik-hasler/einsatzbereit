@@ -106,12 +106,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			return; // no opportunities seeded, skip
+			Skip.Test("no opportunities seeded");
 		}
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		Skip.When(href is null, "opportunity card had no href attribute");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}{href}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -175,11 +174,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			return; // home page did not load in time, skip
+			Skip.Test("home page did not load in time");
 		}
 
-		if (await orgLinks.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		Skip.When(await orgLinks.CountAsync() == 0, "no opportunities seeded");
 
 		var href = await orgLinks.First.GetAttributeAsync("href");
 
@@ -211,8 +209,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			}
 			return null;
 		}");
-		if (userId is null)
-			return; // could not resolve the logged-in user's id, skip
+		Skip.When(userId is null, "could not resolve the logged-in user's id");
 
 		await Page.GotoAsync($"{origin}/users/{userId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -242,8 +239,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			}
 			return null;
 		}");
-		if (userId is null)
-			return; // could not resolve the logged-in user's id, skip
+		Skip.When(userId is null, "could not resolve the logged-in user's id");
 
 		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -252,21 +248,19 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	// Olaf's seed data always organizes at least one org, so the home page's
-	// "Organization overview" CTA always resolves straight to a dashboard.
-	private async Task<bool> NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
+	// Olaf's seed data always organizes at least one org, so FastSignInAsync
+	// always resolves a pinned id for him to navigate straight to.
+	private async Task NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
 	{
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
-		return true;
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 	}
 
 	[Test]
 	public async Task OrgDashboardPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -284,8 +278,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// color-picker dialog only exists in the DOM while open, so the plain
 		// page-load scan above can't reach it.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -296,7 +289,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			return; // olaf's org has no calendar events seeded for the current month, skip
+			Skip.Test("olaf's org has no calendar events seeded for the current month");
 		}
 
 		await calendarEvent.ClickAsync();
@@ -310,8 +303,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrgOpportunitiesPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		// #771: the tab bar is gone - reach the page via the dashboard's own
 		// widget links instead.
@@ -329,8 +321,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrgMembersPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
@@ -350,8 +341,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrganizationSettingsPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		// #771: the tab bar is gone - reach the page via the Settings widget's
 		// "Edit settings" link instead.
@@ -372,8 +362,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// header's quick actions (#771 follow-up) - the read-only scan above
 		// never opens the edit form itself, so scan it separately here.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -393,8 +382,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// scan the new inline validation-error state, not just the clean
 		// edit-mode form covered above.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -484,8 +472,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Widget" modal and the corner-to-corner placement surface are their
 		// own DOM-only-while-open states, scanned separately below.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
@@ -502,8 +489,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// role="status" placement banner - that the plain edit-mode scan
 		// above never reaches, since it never clicks "Move or resize".
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Move or resize Needs Your Attention" }).ClickAsync();
@@ -520,8 +506,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// exists in the DOM while open - the edit-mode scan above never
 		// opens it.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
@@ -541,8 +526,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// their actual rendered content (the opportunity <select> + scan
 		// button, and the settings shortcut tile) gets its own axe pass.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByTestId("quick-action-edit").ClickAsync();
 		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
@@ -568,8 +552,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// from the Opportunities page's "Manage applications" link, not from
 		// the public opportunity detail page anymore.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
@@ -582,7 +565,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			return; // olaf has no published opportunity with the manage-applications action, skip
+			Skip.Test("olaf has no published opportunity with the manage-applications action");
 		}
 
 		await manageLink.First.ClickAsync();
@@ -678,15 +661,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			return; // no waitlist opportunity with open slots seeded, skip
+			Skip.Test("no waitlist opportunity with open slots seeded");
 		}
 
 		await signUpBtn.ClickAsync();
 		await Page.WaitForSelectorAsync("[role='dialog']");
 
 		var dropdown = Page.Locator("#sign-up-time-slot");
-		if (await dropdown.CountAsync() == 0)
-			return; // opportunity has no time slots to pick from, skip
+		Skip.When(await dropdown.CountAsync() == 0, "opportunity has no time slots to pick from");
 
 		await dropdown.ClickAsync();
 		await Expect(Page.Locator("[role='option']").First).ToBeVisibleAsync();
@@ -703,21 +685,13 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// nested unsaved-changes ConfirmDialog) that a plain page-load axe
 		// scan can't reach, since the modal only exists in the DOM while open.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -740,8 +714,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// previously had none) - scan both the clean state and the
 		// blank-submit validation-error state it can now render.
 		var frontend = Fixture.GetEndpoint("frontend");
-		if (!await NavigateToOrgAppDashboardAsOlafAsync(frontend))
-			return;
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();

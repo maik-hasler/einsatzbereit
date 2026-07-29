@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -174,8 +173,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		var pinDisplay = Page.Locator("p.font-mono");
 		await Expect(pinDisplay).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		(await pinDisplay.InnerTextAsync()).Trim().Should().Be(pin,
-			"the manage-applications page must show the organizer-set PIN exactly");
+		await Expect(pinDisplay).ToHaveTextAsync(pin);
 	}
 
 	[Test]
@@ -256,14 +254,23 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		var optionLocator = Page.Locator("[role='option']");
 		await Expect(optionLocator.First).ToBeVisibleAsync();
-		var options = await optionLocator.AllTextContentsAsync();
-		options.Should().NotBeEmpty("slot options must be rendered");
 
-		var hasAvailabilityInfo = options.Any(o =>
-			Regex.IsMatch(o, @"\(.*left\)|\(Full\)|\(noch \d+\)|\(Ausgebucht\)", RegexOptions.IgnoreCase));
-
-		hasAvailabilityInfo.Should().BeTrue(
-			$"each slot option should include booking count info like '(4 left)'. " +
-			$"Actual options: [{string.Join(", ", options)}]");
+		// No fixed expected string to hand a static Expect matcher - the check is
+		// "some option's text matches this regex" - so poll a single EvaluateAllAsync
+		// round trip (all options' textContent read together) rather than a raw,
+		// un-retried AllTextContentsAsync call right after the dropdown click.
+		var options = Array.Empty<string>();
+		var hasAvailabilityInfo = false;
+		await PollUntilAsync(async () =>
+		{
+			options = await optionLocator.EvaluateAllAsync<string[]>(
+				"els => els.map(el => el.textContent ?? '')");
+			hasAvailabilityInfo = options.Any(o =>
+				Regex.IsMatch(o, @"\(.*left\)|\(Full\)|\(noch \d+\)|\(Ausgebucht\)", RegexOptions.IgnoreCase));
+			return options.Length > 0 && hasAvailabilityInfo;
+		}, () => options.Length == 0
+			? "slot options must be rendered, but none were found"
+			: "each slot option should include booking count info like '(4 left)'. "
+				+ $"Actual options: [{string.Join(", ", options)}]");
 	}
 }

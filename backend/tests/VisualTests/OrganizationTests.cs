@@ -4,9 +4,18 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// #1316: SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave below
+// needs vera's global Keycloak organisator role deterministically cleared -
+// opts the whole class into fixture.ResetAsync() and a keyed [NotInParallel]
+// so only other classes sharing the "visualtests-db" key (not the whole
+// assembly) are excluded while this one resets that role.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("visualtests-db")]
 public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	[Before(Test)]
+	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
+
 	[Test]
 	public async Task Organisator_LoginAsOlaf_Succeeds()
 	{
@@ -29,8 +38,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// with no error banner.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
@@ -41,18 +50,17 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.Locator("#member-search").FillAsync("vera");
 
 		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
-		try
-		{
-			await Expect(inviteButton.Or(Page.GetByText("No users found."))).ToBeVisibleAsync(
-				new() { Timeout = 10_000 });
-		}
-		catch (TimeoutException)
-		{
-			return;
-		}
 
-		if (await inviteButton.CountAsync() == 0)
-			return; // vera already a member or already invited from a previous run - skip
+		// fixture.ResetAsync() (this class opts in) clears
+		// organization_membership/organization_invitation back to baseline
+		// before every test, and FastSignInAsync(olaf) deterministically pins
+		// this test to the same seeded org ("Fairview Animal Welfare
+		// Association"), where vera is not a baseline member (she's only a
+		// baseline member of olaf's OTHER seeded org, Fairview Red Cross).
+		// So vera can never already be a member or already invited here -
+		// assert the invite button directly instead of tolerating "No users
+		// found." as an alternate outcome.
+		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await inviteButton.First.ClickAsync();
 
@@ -70,10 +78,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// their own row, never "Remove" - removing them would orphan the org.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual580 Leave");
+		await CreateOrganizationAsync("Visual580 Leave", pinnedOrgId!.Value);
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
@@ -88,20 +96,58 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).Not.ToBeVisibleAsync();
 	}
 
-	// A UI-level regression test mirroring #825's two-member scenario (organizer
-	// + accepted invitee) was tried here and removed: the frontend's "isLastOrganizer"
-	// check relies on KeycloakOrganizationMember.IsOrganisator, which is a
-	// *global* Keycloak role, not scoped to a specific org (see
-	// HomePageOrgCtaTests.cs and OrgAppRestructureTests.cs, which already work
-	// around the same thing - "vera already organizes an org, skip"). VisualTests
-	// share one Aspire session with no DB reset between tests, so by the time
-	// any given test runs, vera may already be a global organizer from an
-	// earlier, unrelated test - making an assertion on her org's organizer
-	// *count* nondeterministic here. The actual regression (the backend guard)
-	// is covered deterministically by
-	// IntegrationTests.OrganizationSettingsTests.RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains,
-	// which asserts the real per-organization guard and isn't affected by vera's
-	// global role elsewhere.
+	[Test]
+	public async Task SoleOrganizer_TwoMemberOrg_MembersPage_StillDisablesLeave()
+	{
+		// Regression for #825 (UI level): OrgMembersPage.tsx's "last organizer"
+		// guard counts members whose isOrganisator is true, which
+		// KeycloakOrganizationService.GetMembersAsync derives from Keycloak's
+		// *global* "organisator" role, not a per-organization one. Before the
+		// fix, the guard instead looked at total member count, so an org with
+		// one Organizer plus one plain member (2 members, still only 1
+		// Organizer) let the Organizer leave/be removed and permanently orphan
+		// the org - there was no path left to promote the remaining member.
+		// Deterministic only because fixture.ResetAsync() (this class opts in
+		// above) clears vera's global organisator role first - otherwise a
+		// leftover role from an earlier, unrelated test would make her read as
+		// an Organizer here too. The backend guard itself is covered
+		// deterministically by
+		// IntegrationTests.OrganizationSettingsTests.RemoveMember_ShouldReturn409_WhenSoleOrganizerLeaves_EvenThoughAnotherMemberRemains.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual825 TwoMember", pinnedOrgId!.Value);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		// Accepting an invitation now also grants Organizer (#826), so that
+		// flow can no longer produce a plain-member-only state - use the
+		// fixture's direct Keycloak escape hatch instead, same as
+		// IntegrationTestFixture.AddPlainMemberDirectlyAsync.
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change, so
+		// the dashboard we're still on would otherwise keep showing its
+		// pre-membership snapshot (olaf as sole member) - force a refetch.
+		await Page.ReloadAsync();
+
+		// The tab bar is gone (dashboard UX redesign) - reach Members via the
+		// Settings widget's member-count link, same as the sole-member test above.
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		var leaveButton = Page.GetByRole(AriaRole.Button, new() { Name = "Leave" });
+		await Expect(leaveButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(leaveButton).ToBeDisabledAsync();
+
+		// Unlike the sole-member case, a second member exists to remove -
+		// proving the guard is driven by organizer count, not member count.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync();
+	}
 
 	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
@@ -111,10 +157,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var orgName = await CreateOrganizationAsync("Visual580 Delete");
+		var orgName = await CreateOrganizationAsync("Visual580 Delete", pinnedOrgId!.Value);
 
 		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
@@ -143,8 +189,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual712 FullDetails {Guid.NewGuid():N}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		// New orgs are created from the org switcher's "Create organization"
 		// entry now that it's the org app's only creation entry point.
@@ -197,8 +243,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// tooltip or a server error.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
@@ -231,8 +277,8 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual851 PartialAddress {Guid.NewGuid():N}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
@@ -266,23 +312,16 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var orgName = await CreateOrganizationAsync("Visual772 OpenCount");
+		var orgName = await CreateOrganizationAsync("Visual772 OpenCount", pinnedOrgId!.Value);
 
 		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create opportunity" });
 		await Expect(createBtn).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await createBtn.First.ClickAsync();
 
-		try
-		{
-			await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
-		}
-		catch
-		{
-			return; // modal did not open - skip remaining assertions
-		}
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 5000 });
 
 		// Step 1: title/description.
 		await Page.Locator("#opportunity-title").FillAsync("Visual772 Opportunity");
@@ -331,10 +370,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual766 LeftAlign");
+		await CreateOrganizationAsync("Visual766 LeftAlign", pinnedOrgId!.Value);
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
@@ -356,10 +395,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// repro steps.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual766 Settings");
+		await CreateOrganizationAsync("Visual766 Settings", pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger Zone" }))
@@ -375,10 +414,10 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// `mx-auto`, independently centering it against the whole page.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await CreateOrganizationAsync("Visual766 Members");
+		await CreateOrganizationAsync("Visual766 Members", pinnedOrgId!.Value);
 
 		// #834: the widget link's accessible name is "1 member" (singular) for
 		// a fresh single-member org, so match "member" rather than "members".
@@ -388,7 +427,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AssertMaxWidthContentLeftAlignedAsync("Organization members page");
 	}
 
-	private async Task<string> CreateOrganizationAsync(string namePrefix)
+	private async Task<string> CreateOrganizationAsync(string namePrefix, Guid pinnedOrgId)
 	{
 		// New orgs are created via the org switcher's "Create organization" entry
 		// - reachable from within any org the caller already organizes (olaf's
@@ -396,7 +435,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var orgName = $"{namePrefix} {Guid.NewGuid():N}";
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId);
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
 

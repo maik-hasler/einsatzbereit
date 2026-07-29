@@ -294,3 +294,16 @@ jobs:
       - name: Test - VisualTests (Aspire + Docker + Playwright)
         working-directory: backend
         run: dotnet run --project tests/VisualTests --no-restore --no-build
+
+      # VisualTestBase only keeps a trace for tests that actually failed (see
+      # TeardownTracingAsync) - upload whatever landed so a flake can be
+      # inspected (playwright.dev/dotnet/docs/trace-viewer) instead of
+      # re-guessed from a bare assertion message.
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-traces
+          path: backend/tests/VisualTests/bin/**/trace-artifacts/**
+          if-no-files-found: ignore
+          retention-days: 7

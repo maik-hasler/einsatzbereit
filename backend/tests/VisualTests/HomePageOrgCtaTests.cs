@@ -3,9 +3,17 @@ using Microsoft.Playwright;
 
 namespace VisualTests;
 
+// #1316: needs vera to deterministically have zero organizations - opts into
+// fixture.ResetAsync() and a keyed [NotInParallel] so only other classes
+// sharing the "visualtests-db" key (not the whole 207-test assembly) are
+// excluded while this one mutates her organization membership.
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("visualtests-db")]
 public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
+	[Before(Test)]
+	public Task ResetVisualTestStateAsync() => Fixture.ResetAsync();
+
 	[Test]
 	public async Task Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint()
 	{
@@ -38,35 +46,12 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		// vera is shared across this whole test session (no DB reset between
-		// tests), so another test (e.g. OrganizationTests inviting her as a
-		// member elsewhere) can give her an org at any point up to and
-		// including the moment we click. Wait for whichever of the two the
-		// org-count fetch actually resolves to, rather than asserting the
-		// button specifically - a separate, later Expect on just the button
-		// re-opens exactly this race, which is what actually broke this
-		// test previously (see git blame).
+		// fixture.ResetAsync() guarantees vera organizes nothing at this
+		// point, so the CTA is deterministically the "create" button, not
+		// the dashboard overview link.
 		var cta = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
-		var overviewLink = Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
-		await Expect(cta.Or(overviewLink).First).ToBeVisibleAsync(new() { Timeout = 10_000 });
-
-		if (await overviewLink.CountAsync() > 0)
-			return; // vera already organizes an org - skip, nothing to exercise here
-
-		try
-		{
-			await cta.First.ClickAsync(new() { Timeout = 5_000 });
-		}
-		catch (TimeoutException)
-		{
-			// The org-count fetch can still resolve and swap the button out
-			// for the dashboard Link in the narrow window right as we click -
-			// if that happened, vera already has an org, so this is the same
-			// "skip" case as the check above, not a real failure.
-			if (await cta.CountAsync() == 0)
-				return;
-			throw;
-		}
+		await Expect(cta.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await cta.First.ClickAsync();
 
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync(new() { Timeout = 10_000 });
@@ -98,5 +83,31 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await cta.First.ClickAsync();
 
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
+	}
+
+	[Test]
+	public async Task Authenticated_OrgsFetchFails_HeroCta_NeverShowsCreateBranch()
+	{
+		// HomePage used to destructure only useSharedOrgFetch's data slot, so
+		// "still loading" and "fetch failed" both collapsed into the same
+		// orgsData == null -> orgs == [] state as a genuine zero-orgs signed-in
+		// user. Olaf organizes orgs in seed data, so if his org-list fetch
+		// fails he must never see the "create an organisation" CTA - clicking
+		// it would have created a duplicate of an org he already had. Asserts
+		// the contract (the create-org branch must never appear while the
+		// fetch has failed), not any particular recovery mechanism - this
+		// stays valid whether or not a retry is ever added underneath.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.RouteAsync("**/v1/organizations", route => route.AbortAsync());
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" }))
+			.Not.ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" }))
+			.Not.ToBeVisibleAsync();
 	}
 }

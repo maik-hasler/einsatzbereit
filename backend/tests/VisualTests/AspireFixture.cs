@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Aspire.Hosting;
@@ -23,8 +24,33 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 	// the two clients' mappers don't drift apart.
 	private const string FrontendTestClientId = "frontend-test";
 
+	private const string BackendClientId = "backend";
+	private const string BackendClientSecret = "backend-secret";
+	private const string OrganisatorRole = "organisator";
+
 	private DistributedApplication _app = null!;
 	private string _connectionString = null!;
+	private HttpClient _keycloakClient = null!;
+
+	// Vera's Keycloak user id, resolved once at boot (see CaptureBaselineSnapshotAsync).
+	// ResetAsync scopes every mutation to this id specifically - see ResetAsync's
+	// own doc comment for why nothing here touches organization/opportunity/
+	// engagement/invitation/layout rows at large, only vera's own.
+	private Guid _veraUserId;
+
+	// Captured once, right after the backend's own startup
+	// (ASPNETCORE_ENVIRONMENT=Development, forced by AppHost.cs even under
+	// "Testing") has already run ApplicationDbContextInitializer.MigrateAsync +
+	// SeedAsync - i.e. before any test has created a throwaway org. Each
+	// organizer's alphabetically-first organized org, matching activeOrg.ts's
+	// resolveActiveOrg tie-break exactly. AuthHelper.FastSignInAsync uses this
+	// to pin the active-org cookie to a real, stable org id instead of letting
+	// the frontend's own alphabetical fallback pick whatever throwaway org some
+	// concurrently-running test happens to have created first under the same
+	// shared account. Capturing it here means no name-based filter is ever
+	// needed to tell a seed org apart from one a test created - there simply
+	// aren't any others yet.
+	private Dictionary<Guid, Guid> _pinnedOrganizerOrgByUserId = null!;
 
 	public async Task InitializeAsync()
 	{
@@ -52,6 +78,180 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 		_connectionString = await _app.GetConnectionStringAsync("einsatzbereit")
 			?? throw new InvalidOperationException("Connection string 'einsatzbereit' not found.");
+
+		_keycloakClient = _app.CreateHttpClient("keycloak");
+
+		await CaptureBaselineSnapshotAsync();
+	}
+
+	// Restores vera's own account state for tests that need it deterministic
+	// (#1316) - opt in via [Before(Test)] fixture.ResetAsync() plus a keyed
+	// [NotInParallel("visualtests-db")] on the class.
+	//
+	// An earlier version of this method also restored the organization/
+	// organization_invitation/organization_dashboard_layout tables to a
+	// baseline snapshot (delete every row outside a captured set of ids).
+	// That is unsafe at any scope wider than "vera's own rows": two of those
+	// three tables have zero seed rows, so "delete everything outside the
+	// baseline" degenerates into an unconditional DELETE FROM table - wiping
+	// whatever any other, concurrently running test (most of the suite is
+	// NOT keyed into "visualtests-db" and keeps running while this executes)
+	// had just created there, e.g. OrgDashboardCustomizeTests' saved
+	// dashboard layouts. None of the 4 classes that call this actually assert
+	// anything about those tables' contents - AuthHelper's pinned-org
+	// navigation already makes which *org* every test lands on deterministic,
+	// independent of this reset. The only state that's genuinely global,
+	// shared, and something these classes depend on is vera's own Organizer-
+	// role membership/Keycloak role (she must never appear to organize
+	// anything), so that's the only thing restored here - scoped to her user
+	// id specifically, never touching another user's rows or any shared
+	// table at large.
+	public async Task ResetAsync()
+	{
+		await ResetVeraOrganizerMembershipAsync();
+		await ResetVeraOrganisatorRoleAsync();
+	}
+
+	public Guid? GetPinnedOrganizerOrganizationId(Guid userId) =>
+		_pinnedOrganizerOrgByUserId.TryGetValue(userId, out var organizationId) ? organizationId : null;
+
+	// Test-only escape hatch replicating what the now-removed admin-only
+	// AddMember endpoint did (#810): add a user to a Keycloak organization as a
+	// plain member, without granting the Organizer role. Accepting an
+	// invitation grants Organizer too (#826), so it's the only way left to
+	// reconstruct a plain-member-only state for regression tests (#825).
+	public async Task AddPlainMemberDirectlyAsync(
+		Guid organizationId, Guid userId, CancellationToken cancellationToken = default)
+	{
+		var adminToken = await GetAdminTokenAsync(cancellationToken);
+
+		using var request = new HttpRequestMessage(
+			HttpMethod.Post, $"/admin/realms/{Realm}/organizations/{organizationId}/members")
+		{
+			Content = JsonContent.Create(userId.ToString()),
+		};
+		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var response = await _keycloakClient.SendAsync(request, cancellationToken);
+		await EnsureSuccessAsync(response);
+	}
+
+	private async Task CaptureBaselineSnapshotAsync()
+	{
+		// Resolve vera's Keycloak user id once - discard the token, this call
+		// exists only to decode "sub" off it (see SignInAsync).
+		var vera = await SignInAsync("vera", "vera123");
+		_veraUserId = vera.UserId;
+
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+
+		_pinnedOrganizerOrgByUserId = await ReadPinnedOrganizerOrgsAsync(conn);
+	}
+
+	// Ordered by name so the first row seen per user is exactly the org
+	// resolveActiveOrg (activeOrg.ts) would fall back to for that user on a
+	// clean database - no name filter needed since nothing but seed data
+	// exists at the point this runs.
+	private static async Task<Dictionary<Guid, Guid>> ReadPinnedOrganizerOrgsAsync(NpgsqlConnection conn)
+	{
+		var pinned = new Dictionary<Guid, Guid>();
+		await using var cmd = new NpgsqlCommand(
+			"""
+			SELECT m.user_id, o.id
+			FROM organization_membership AS m
+			JOIN organization AS o ON o.id = m.organization_id
+			WHERE m.role = 'Organizer' AND NOT o.is_deleted
+			ORDER BY m.user_id, o.name
+			""", conn);
+		await using var reader = await cmd.ExecuteReaderAsync();
+		while (await reader.ReadAsync())
+		{
+			var userId = reader.GetGuid(0);
+			if (!pinned.ContainsKey(userId))
+				pinned[userId] = reader.GetGuid(1);
+		}
+		return pinned;
+	}
+
+	// Vera never organizes anything in seed data (SeedOrg1Async/SeedOrg2Async
+	// only ever assign olaf as Organizer) - remove any Organizer-role
+	// membership row a test granted her, in any organization. Scoped to her
+	// user id only via the WHERE clause, so this can never touch another
+	// user's membership row or race a concurrently running test that isn't
+	// touching vera's own account.
+	private async Task ResetVeraOrganizerMembershipAsync()
+	{
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync();
+		await using var cmd = new NpgsqlCommand(
+			"""
+			DELETE FROM organization_membership
+			WHERE user_id = @userId AND role = 'Organizer'
+			""", conn);
+		cmd.Parameters.AddWithValue("userId", _veraUserId);
+		await cmd.ExecuteNonQueryAsync();
+	}
+
+	// Some tests grant vera the realm-level "organisator" role by having her
+	// create an organization (CreateOrganization assigns it to the creator).
+	// That role is global and outlives any per-organization cleanup, leaking
+	// into later tests in the shared session and breaking assumptions that
+	// vera is not an organizer. Revoking a role mapping a user doesn't
+	// currently hold is a no-op in Keycloak's admin API, so this is safe to
+	// call unconditionally rather than checking first.
+	private async Task ResetVeraOrganisatorRoleAsync()
+	{
+		var adminToken = await GetAdminTokenAsync();
+
+		using var roleRequest = new HttpRequestMessage(
+			HttpMethod.Get, $"/admin/realms/{Realm}/roles/{OrganisatorRole}");
+		roleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var roleResponse = await _keycloakClient.SendAsync(roleRequest);
+		await EnsureSuccessAsync(roleResponse);
+
+		var organisatorRole = await roleResponse.Content.ReadFromJsonAsync<KeycloakRole>()
+			?? throw new InvalidOperationException("Keycloak role 'organisator' not found.");
+
+		using var deleteRequest = new HttpRequestMessage(
+			HttpMethod.Delete, $"/admin/realms/{Realm}/users/{_veraUserId}/role-mappings/realm")
+		{
+			Content = JsonContent.Create(new[] { new { id = organisatorRole.Id, name = organisatorRole.Name } }),
+		};
+		deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+		var deleteResponse = await _keycloakClient.SendAsync(deleteRequest);
+		await EnsureSuccessAsync(deleteResponse);
+	}
+
+	private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default)
+	{
+		var content = new FormUrlEncodedContent([
+			new KeyValuePair<string, string>("grant_type", "client_credentials"),
+			new KeyValuePair<string, string>("client_id", BackendClientId),
+			new KeyValuePair<string, string>("client_secret", BackendClientSecret),
+		]);
+
+		var response = await _keycloakClient.PostAsync(
+			$"/realms/{Realm}/protocol/openid-connect/token", content, cancellationToken);
+
+		await EnsureSuccessAsync(response);
+
+		var token = await response.Content.ReadFromJsonAsync<AdminTokenResponse>(cancellationToken: cancellationToken)
+			?? throw new InvalidOperationException("Keycloak returned no admin token.");
+
+		return token.AccessToken;
+	}
+
+	private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+	{
+		if (response.IsSuccessStatusCode) return;
+
+		var body = await response.Content.ReadAsStringAsync();
+		throw new HttpRequestException(
+			$"Keycloak {(int)response.StatusCode} for {response.RequestMessage?.Method} "
+			+ $"{response.RequestMessage?.RequestUri}: {body}");
 	}
 
 	// Mints a real Keycloak token via direct grant (ROPC), bypassing the
@@ -84,8 +284,15 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		// or the concatenation produces a double slash and a key that never matches.
 		var authority = $"{GetEndpoint("keycloak").ToString().TrimEnd('/')}/realms/{Realm}";
 
+		// "sub" is the Keycloak user id - decoded here (rather than requiring
+		// callers to look it up separately) since both #825-style regression
+		// tests and AuthHelper.FastSignInAsync's active-org pin need the
+		// signed-in user's own Guid.
+		var userId = Guid.Parse(
+			AuthHelper.DecodeJwtPayload(token.IdToken).GetProperty("sub").GetString()!);
+
 		return new KeycloakSession(
-			token.AccessToken, token.IdToken, token.RefreshToken, token.ExpiresIn, token.TokenType, authority);
+			token.AccessToken, token.IdToken, token.RefreshToken, token.ExpiresIn, token.TokenType, authority, userId);
 	}
 
 	// Test-only escape hatch to simulate an opportunity row removed without
@@ -170,6 +377,11 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 		[property: JsonPropertyName("refresh_token")] string? RefreshToken,
 		[property: JsonPropertyName("expires_in")] int ExpiresIn,
 		[property: JsonPropertyName("token_type")] string TokenType);
+
+	private sealed record AdminTokenResponse(
+		[property: JsonPropertyName("access_token")] string AccessToken);
+
+	private sealed record KeycloakRole(string Id, string Name);
 }
 
 public sealed record KeycloakSession(
@@ -178,4 +390,5 @@ public sealed record KeycloakSession(
 	string? RefreshToken,
 	int ExpiresIn,
 	string TokenType,
-	string Authority);
+	string Authority,
+	Guid UserId);
