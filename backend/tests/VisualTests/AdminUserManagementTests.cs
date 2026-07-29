@@ -104,6 +104,49 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		}
 	}
 
+	/// <summary>
+	/// Regression for #1387: the admin user list used to fetch each row's
+	/// composite realm roles with one blocking, sequential Keycloak call per
+	/// user. The fetches now run concurrently - this pins down that
+	/// parallelizing them still attributes the right roles to the right row
+	/// (no cross-user mixup) when two users come back in the same search.
+	/// </summary>
+	[Test]
+	public async Task AdministrationPage_MultipleUsersInOneSearch_ShowsDistinctRolesPerRow()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var sharedPrefix = $"admintest1387-{Guid.NewGuid():N}";
+		var (plainUsername, plainUserId) = await CreateDisposableUserAsync(
+			keycloak, $"{sharedPrefix}-plain");
+		var (adminUsername, adminUserId) = await CreateDisposableUserAsync(
+			keycloak, $"{sharedPrefix}-admin", ["user", "admin"]);
+		try
+		{
+			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
+			await Page.GotoAsync($"{origin}/administration");
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+			await Page.Locator("#admin-user-search").FillAsync(sharedPrefix);
+			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
+
+			var plainRow = Page.Locator("tr").Filter(new() { HasTextString = plainUsername });
+			var adminRow = Page.Locator("tr").Filter(new() { HasTextString = adminUsername });
+			await Expect(plainRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
+			await Expect(adminRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+			await Expect(adminRow.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
+			await Expect(plainRow.GetByText("Admin", new() { Exact = true })).Not.ToBeVisibleAsync();
+		}
+		finally
+		{
+			await DeleteKeycloakUserAsync(keycloak, plainUserId);
+			await DeleteKeycloakUserAsync(keycloak, adminUserId);
+		}
+	}
+
 	[Test]
 	public async Task AdministrationPage_OwnRow_HasNoBlockOrDemoteButtons()
 	{
@@ -123,17 +166,21 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(ownRow.GetByRole(AriaRole.Button)).Not.ToBeVisibleAsync();
 	}
 
-	private static async Task<(string Username, string UserId)> CreateDisposableUserAsync(Uri keycloak)
+	private static async Task<(string Username, string UserId)> CreateDisposableUserAsync(
+		Uri keycloak,
+		string usernamePrefix = "tempuser760",
+		IReadOnlyList<string>? roleNames = null)
 	{
 		var adminToken = await GetAdminTokenAsync(keycloak);
-		// Not "admintest760-..." (deliberately doesn't contain "admin" as a
-		// substring): Keycloak's search= does infix matching, so a name
-		// containing "admin" would also match AdministrationPage_OwnRow_
-		// HasNoBlockOrDemoteButtons's search for "admin", surfacing this
-		// disposable user's row in that unrelated test's results - and if
-		// this test's own cleanup below deletes it mid-request, the other
-		// test's per-user Keycloak role lookup 404s on the now-gone id.
-		var username = $"tempuser760-{Guid.NewGuid():N}";
+
+		// Callers must not pass a prefix containing "admin" as a substring:
+		// Keycloak's search= does infix matching, so a name containing "admin"
+		// would also match AdministrationPage_OwnRow_HasNoBlockOrDemoteButtons's
+		// search for "admin", surfacing this disposable user's row in that
+		// unrelated test's results - and if this test's own cleanup below
+		// deletes it mid-request, the other test's per-user Keycloak role
+		// lookup 404s on the now-gone id.
+		var username = $"{usernamePrefix}-{Guid.NewGuid():N}";
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
@@ -149,14 +196,17 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		createResponse.EnsureSuccessStatusCode();
 		var userId = createResponse.Headers.Location!.Segments[^1];
 
-		var roleResponse = await adminHttp.GetAsync($"/admin/realms/{Realm}/roles/user");
-		roleResponse.EnsureSuccessStatusCode();
-		var role = await roleResponse.Content.ReadFromJsonAsync<JsonElement>();
+		foreach (var roleName in roleNames ?? ["user"])
+		{
+			var roleResponse = await adminHttp.GetAsync($"/admin/realms/{Realm}/roles/{roleName}");
+			roleResponse.EnsureSuccessStatusCode();
+			var role = await roleResponse.Content.ReadFromJsonAsync<JsonElement>();
 
-		var assignRoleResponse = await adminHttp.PostAsJsonAsync(
-			$"/admin/realms/{Realm}/users/{userId}/role-mappings/realm",
-			new[] { new { id = role.GetProperty("id").GetString(), name = role.GetProperty("name").GetString() } });
-		assignRoleResponse.EnsureSuccessStatusCode();
+			var assignRoleResponse = await adminHttp.PostAsJsonAsync(
+				$"/admin/realms/{Realm}/users/{userId}/role-mappings/realm",
+				new[] { new { id = role.GetProperty("id").GetString(), name = role.GetProperty("name").GetString() } });
+			assignRoleResponse.EnsureSuccessStatusCode();
+		}
 
 		return (username, userId);
 	}
