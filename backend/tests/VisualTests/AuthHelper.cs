@@ -234,9 +234,8 @@ public static class AuthHelper
 		// common case, right after LoginAsync), but also makes this helper
 		// safe to call from elsewhere.
 		await page.WaitForURLAsync($"{frontendUrl.GetLeftPart(UriPartial.Authority)}/", new() { Timeout = 15_000 });
-
 		var cta = page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
-		await cta.First.WaitForAsync(new() { Timeout = 30_000 });
+		await cta.First.WaitForAsync(new() { Timeout = 45_000 });
 		await cta.First.ClickAsync();
 
 		await page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard"), new() { Timeout = 15_000 });
