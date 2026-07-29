@@ -176,7 +176,14 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// "Manage applications" only appears for published opportunities on the
 		// Opportunities hub.
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		Skip.When(await manageLink.CountAsync() == 0, "organizer has no published opportunities in seed");
+		try
+		{
+			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("organizer has no published opportunities in seed");
+		}
 
 		var row = Page.Locator("li").Filter(new() { Has = manageLink });
 		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
@@ -210,7 +217,14 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		Skip.When(await manageLink.CountAsync() == 0, "organizer has no published opportunities in seed");
+		try
+		{
+			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("organizer has no published opportunities in seed");
+		}
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
