@@ -157,11 +157,6 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	public void MarkReminderSent(DateTimeOffset sentAt)
-	{
-		ReminderSentAt = sentAt;
-	}
-
 	public Result SubmitFeedback(int rating, string? comment, DateTimeOffset now)
 	{
 		if (!IsCheckedIn)
