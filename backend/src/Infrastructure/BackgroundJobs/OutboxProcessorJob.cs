@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure.BackgroundJobs;
 
@@ -16,11 +17,11 @@ namespace Infrastructure.BackgroundJobs;
 // backend/AGENTS.md for the timing problem this replaces).
 internal sealed class OutboxProcessorJob(
 	IServiceScopeFactory scopeFactory,
-	ILogger<OutboxProcessorJob> logger)
+	ILogger<OutboxProcessorJob> logger,
+	IOptions<OutboxOptions> options)
 	: IHostedService, IAsyncDisposable
 {
-	private const int BatchSize = 20;
-	private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
+	private readonly OutboxOptions _options = options.Value;
 
 	private Task _executeTask = Task.CompletedTask;
 	private CancellationTokenSource? _cts;
@@ -29,7 +30,7 @@ internal sealed class OutboxProcessorJob(
 	public Task StartAsync(CancellationToken cancellationToken)
 	{
 		_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-		_timer = new PeriodicTimer(PollInterval);
+		_timer = new PeriodicTimer(TimeSpan.FromSeconds(_options.PollIntervalSeconds));
 		_executeTask = RunLoopAsync(_cts.Token);
 		return Task.CompletedTask;
 	}
@@ -85,18 +86,50 @@ internal sealed class OutboxProcessorJob(
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 		var dispatcher = scope.ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
 
+		await ProcessBatchAsync(dbContext, dispatcher, logger, _options.BatchSize, ct);
+	}
+
+	// Exposed so IntegrationTests can exercise the row-claiming behavior directly
+	// against a real Postgres - e.g. two concurrent calls racing over the same pending
+	// batch - without waiting on the real 5s PollInterval from two replicas.
+	internal static async Task<int> ProcessBatchAsync(
+		ApplicationDbContext dbContext,
+		IDomainEventDispatcher dispatcher,
+		ILogger logger,
+		int batchSize,
+		CancellationToken cancellationToken = default)
+	{
+		// FOR UPDATE SKIP LOCKED (#1392): without this, two replicas' timers ticking
+		// concurrently would both SELECT the same unprocessed rows and both dispatch
+		// them, since nothing previously marked a row "claimed" before dispatch - it was
+		// only marked ProcessedOnUtc after dispatch succeeded. Holding the row locks for
+		// this whole transaction (not just the SELECT) is what makes a second replica's
+		// concurrent SKIP LOCKED query skip these rows entirely instead of blocking on
+		// them, so it picks a disjoint batch instead of waiting to double-process this one.
+		await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
 		var messages = await dbContext.Set<OutboxMessage>()
-			.Where(m => m.ProcessedOnUtc == null)
-			.OrderBy(m => m.OccurredOnUtc)
-			.Take(BatchSize)
-			.ToListAsync(ct);
+			.FromSqlInterpolated($@"
+				SELECT id, type, content, occurred_on_utc, processed_on_utc, error
+				FROM outbox_message
+				WHERE processed_on_utc IS NULL
+				ORDER BY occurred_on_utc
+				LIMIT {batchSize}
+				FOR UPDATE SKIP LOCKED")
+			.ToListAsync(cancellationToken);
+
+		if (messages.Count == 0)
+		{
+			await transaction.CommitAsync(cancellationToken);
+			return 0;
+		}
 
 		foreach (var message in messages)
 		{
 			try
 			{
 				var domainEvent = message.ToDomainEvent();
-				await dispatcher.DispatchAsync([domainEvent], ct);
+				await dispatcher.DispatchAsync([domainEvent], cancellationToken);
 
 				message.ProcessedOnUtc = DateTime.UtcNow;
 				message.Error = null;
@@ -111,8 +144,14 @@ internal sealed class OutboxProcessorJob(
 					message.Id,
 					message.Type);
 			}
-
-			await dbContext.SaveChangesAsync(ct);
 		}
+
+		// A single SaveChangesAsync for the whole batch instead of one per message - the
+		// row locks from FOR UPDATE above are held for this transaction regardless, so
+		// batching the writes costs nothing extra.
+		await dbContext.SaveChangesAsync(cancellationToken);
+		await transaction.CommitAsync(cancellationToken);
+
+		return messages.Count;
 	}
 }
