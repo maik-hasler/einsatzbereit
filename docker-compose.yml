@@ -155,7 +155,22 @@ services:
 
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:staging
-    container_name: backend
+    # No container_name (#1392): a fixed name forbids `docker compose up --scale
+    # backend=N`, since Compose can't give a second replica the same name. Traefik's
+    # Docker provider merges multiple containers sharing the same
+    # traefik.http.routers.backend.* labels into one load-balanced service
+    # automatically, and the prometheus-config target below resolves every replica via
+    # DNS instead of a single fixed hostname, so no other change is needed here to make
+    # scaling itself work.
+    #
+    # Not yet done: OutboxProcessorJob/EngagementReminderJob are now safe to run
+    # multiplied (#1392 fixed their claim races), but the Database__MigrateOnStartup
+    # env var below is not - two replicas booting together would both attempt to apply
+    # pending EF Core migrations concurrently with no lock between them. Actually
+    # running `--scale backend=2` on staging needs that solved first (e.g. a
+    # migration-only leader step, or a Postgres advisory lock around
+    # Database.MigrateAsync()); this change only removes the blocker that made scaling
+    # impossible to even attempt.
     restart: unless-stopped
     networks:
       - proxy
@@ -485,10 +500,18 @@ configs:
             - targets: ["node-exporter:9100"]
 
         # Port 8081, not the Traefik-routed 8080 - see backend's Metrics__Port
-        # and networks above (#1341).
+        # and networks above (#1341). dns_sd_configs (not static_configs) so a
+        # scaled `docker compose up --scale backend=N` gets every replica scraped:
+        # Docker's embedded DNS returns one A record per replica for the plain
+        # service name "backend" on a shared network, and Prometheus's DNS-SD
+        # re-resolves that on every refresh_interval instead of caching a single
+        # IP the way static_configs would (#1392).
         - job_name: backend
-          static_configs:
-            - targets: ["backend:8081"]
+          dns_sd_configs:
+            - names: ["backend"]
+              type: A
+              port: 8081
+              refresh_interval: 30s
   grafana-datasources:
     content: |
       apiVersion: 1
