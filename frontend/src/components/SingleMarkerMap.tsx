@@ -1,6 +1,10 @@
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { runtimeConfig } from "../lib/runtimeConfig";
+// Colocated with this component (not styles/global.css) - see #1383 and the
+// comment atop SingleMarkerMap.css for why the overrides moved here too, and
+// why this doesn't split into its own CSS chunk (cssCodeSplit is off).
+import "./SingleMarkerMap.css";
 
 // Proxied through the backend rather than tile.openstreetmap.org directly so
 // visitor IP addresses aren't disclosed to the OpenStreetMap Foundation - see
