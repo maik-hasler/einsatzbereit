@@ -74,7 +74,17 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		var frontend = Fixture.GetEndpoint("frontend");
 		var orgName = $"Visual OrgAppEntry Empty {Guid.NewGuid():N}";
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		// LoginAsync (real Keycloak login), not FastSignInAsync: creating an
+		// org grants the "organisator" realm role server-side, but the
+		// access token already in hand was minted before that grant, so the
+		// very next request (OrgAppLayout's GetOrganizationDetails call,
+		// gated by EinsatzbereitOrganisatorPolicy's static role claim) needs
+		// a real signinSilent() token renewal to pick it up - see HomePage.tsx's
+		// CreateOrganizationModal onSuccess handler. FastSignInAsync's seeded
+		// session has no valid refresh token and no real Keycloak SSO cookie
+		// for that renewal to succeed against (see its own doc comment), so
+		// it would make this test unable to exercise the fix it depends on.
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// fixture.ResetAsync() guarantees vera organizes nothing at this

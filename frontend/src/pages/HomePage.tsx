@@ -507,8 +507,23 @@ export default function HomePage() {
 			{showCreateOrgModal && (
 				<CreateOrganizationModal
 					onClose={() => setShowCreateOrgModal(false)}
-					onSuccess={(org) => {
+					onSuccess={async (org) => {
 						setShowCreateOrgModal(false);
+						// CreateOrganization grants the "organisator" realm role
+						// server-side, but the access token already held by the
+						// browser was minted before that grant and doesn't carry
+						// it yet - EinsatzbereitOrganisatorPolicy checks that
+						// static claim, so the org app shell's very next request
+						// (OrgAppLayout's GetOrganizationDetails call) would 403
+						// against the stale token before it ever reaches the
+						// live per-organization membership check. Best-effort:
+						// if silent renewal fails, still navigate - the org app
+						// shell's own error state takes over from there.
+						try {
+							await auth.signinSilent();
+						} catch {
+							/* see comment above */
+						}
 						navigate(`/app/${org.id?.value}/dashboard`);
 					}}
 				/>

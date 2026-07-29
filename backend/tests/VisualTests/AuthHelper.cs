@@ -19,7 +19,12 @@ public static class AuthHelper
 
 		await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First.ClickAsync();
 
-		await page.WaitForURLAsync("**/realms/einsatzbereit/**");
+		// Wait on Keycloak's login form element, not the URL - WaitForURLAsync
+		// races the frame's own navigation/detachment during the redirect and
+		// becomes intermittently flaky under CPU contention (see
+		// AuthGuardTests.MyEngagements_Anonymous_RedirectsToKeycloak, which hit
+		// the same redirect and already documents this exact fix).
+		await page.Locator("#username").WaitForAsync(new() { Timeout = 30_000 });
 
 		await page.Locator("#username").FillAsync(username);
 		await page.Locator("#password").FillAsync(password);

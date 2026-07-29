@@ -68,7 +68,11 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	public async Task SetupVisualTest()
 	{
 		await fixture.WaitForResourceAsync("frontend");
-		await Context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true, Sources = true });
+		// Sources omitted: the trace viewer's source-file pane is a nice-to-have
+		// over a repo any debugger already has checked out, not worth its CPU/
+		// disk cost across all 209 tests on top of Screenshots+Snapshots - this
+		// runs before every test, whether or not its trace ends up kept.
+		await Context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true });
 		_tracingStarted = true;
 	}
 

@@ -105,6 +105,11 @@ var keycloakEndpoint = keycloak.GetEndpoint("http");
 
 var mailpitSmtpEndpoint = mailpit.GetEndpoint("smtp");
 
+// Defaults to the VisualTests-safe bump (see the WithEnvironment call below) -
+// IntegrationTestFixture.cs passes "--RateLimiting:Read:AnonymousPermitLimit=60"
+// to restore the real production default for its own dedicated rate-limit test.
+var anonymousReadPermitLimit = builder.Configuration["RateLimiting:Read:AnonymousPermitLimit"] ?? "10000";
+
 var backend = builder.AddProject<Projects.Api>("backend")
 	.WithReference(database)
 	.WaitFor(database)
@@ -131,7 +136,12 @@ var backend = builder.AddProject<Projects.Api>("backend")
 	// queueing, across every concurrent test hitting the same shared backend.
 	// A 429 there renders as an empty list, which looks like an unrelated
 	// locator timeout in whatever test happened to exhaust the bucket.
-	.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", "10000");
+	// IntegrationTests boots this same AppHost (IntegrationTestFixture.cs) and
+	// overrides this back down to the real production default via the
+	// RateLimiting:Read:AnonymousPermitLimit command-line arg - its
+	// RateLimitingTests.cs deliberately exercises that default's 429 behavior,
+	// which this VisualTests-only bump would otherwise silently defeat.
+	.WithEnvironment("RateLimiting__Read__AnonymousPermitLimit", anonymousReadPermitLimit);
 
 if (isTestEnv)
 {
