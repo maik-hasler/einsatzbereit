@@ -29,15 +29,18 @@ export default function OpportunityResultsList({
 	return (
 		<>
 			{loading && items.length === 0 && (
-				<div role="status" className="space-y-3">
+				<div
+					role="status"
+					className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+				>
 					<span className="sr-only">{t("opportunities.loading")}</span>
 					{Array.from({ length: 3 }).map((_, i) => (
 						<div
 							key={i}
 							aria-hidden="true"
-							className="flex flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting sm:flex-row"
+							className="flex flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting"
 						>
-							<Skeleton className="h-24 w-full shrink-0 rounded-none sm:h-auto sm:w-36 lg:w-44" />
+							<Skeleton className="h-32 w-full shrink-0 rounded-none" />
 							<div className="flex-1 space-y-2 p-4">
 								<Skeleton className="h-4 w-2/3" />
 								<Skeleton className="h-3 w-1/2" />
@@ -72,7 +75,7 @@ export default function OpportunityResultsList({
 							}
 						/>
 					) : (
-						<ul className="space-y-3">
+						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{items.map((item: VolunteerOpportunitySummary) => (
 								<OpportunityListItem key={item.id} item={item} />
 							))}

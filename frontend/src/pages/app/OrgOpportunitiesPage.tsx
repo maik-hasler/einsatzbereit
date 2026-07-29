@@ -199,105 +199,103 @@ export default function OrgOpportunitiesPage() {
 				ref={isHighlighted ? highlightRef : null}
 				data-highlighted={isHighlighted ? "true" : undefined}
 				data-testid="opportunity-row"
-				className={`scroll-mt-24 rounded-card border bg-white p-4 shadow-resting transition ${
+				className={`flex h-full scroll-mt-24 flex-col gap-3 rounded-card border bg-white p-4 shadow-resting transition ${
 					isHighlighted
 						? "border-brand-400 ring-2 ring-brand-500 ring-offset-2"
 						: "border-gray-100"
 				}`}
 			>
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div className="min-w-0">
-						<div className="flex items-center gap-2">
-							<Link
-								to={`/volunteer-opportunities/${item.id}`}
-								className="truncate text-sm font-semibold text-gray-900 hover:text-brand-700 hover:underline"
-							>
-								{item.title || t("orgDashboard.unnamedDraft")}
-							</Link>
-							<span
-								className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-									isDraft
-										? "bg-amber-100 text-amber-800"
-										: "bg-green-100 text-green-800"
-								}`}
-							>
-								{isDraft
-									? t("opportunities.draftBadge")
-									: t("orgOpportunities.publishedBadge")}
-							</span>
-						</div>
-						{item.description && (
-							<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
-								{item.description}
-							</p>
-						)}
-						{item.totalMaxParticipants > 0 && (
-							<p className="mt-1 text-xs text-gray-500">
-								{t("orgOpportunities.participants", {
-									booked: item.currentParticipantCount,
-									max: item.totalMaxParticipants,
-								})}
-							</p>
-						)}
-					</div>
-					<div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
-						<button
-							type="button"
-							onClick={() => void openEdit(item.id)}
-							disabled={editLoadingId === item.id}
-							data-testid="opportunity-edit"
-							className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+				<div className="min-w-0">
+					<div className="flex items-center gap-2">
+						<Link
+							to={`/volunteer-opportunities/${item.id}`}
+							className="truncate text-sm font-semibold text-gray-900 hover:text-brand-700 hover:underline"
 						>
-							{editLoadingId === item.id
-								? t("orgOpportunities.editLoading")
-								: t("opportunities.edit")}
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setDeleteTargetId(item.id);
-								setDeleteError(null);
-							}}
-							data-testid="opportunity-delete"
-							className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
+							{item.title || t("orgDashboard.unnamedDraft")}
+						</Link>
+						<span
+							className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+								isDraft
+									? "bg-amber-100 text-amber-800"
+									: "bg-green-100 text-green-800"
+							}`}
 						>
-							{t("opportunities.delete")}
-						</button>
-						{isDraft ? (
-							<Button
-								type="button"
-								onClick={() => void publish(item.id)}
-								disabled={publishingId === item.id}
-								data-testid="opportunity-publish"
-								size="sm"
-							>
-								{publishingId === item.id
-									? t("opportunities.publishing")
-									: t("opportunities.publish")}
-							</Button>
-						) : (
-							<Link
-								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
-								className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
-							>
-								{t("orgOpportunities.manageApplications")}
-								<svg
-									className="h-3.5 w-3.5"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="2"
-									stroke="currentColor"
-									aria-hidden="true"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-									/>
-								</svg>
-							</Link>
-						)}
+							{isDraft
+								? t("opportunities.draftBadge")
+								: t("orgOpportunities.publishedBadge")}
+						</span>
 					</div>
+					{item.description && (
+						<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
+							{item.description}
+						</p>
+					)}
+					{item.totalMaxParticipants > 0 && (
+						<p className="mt-1 text-xs text-gray-500">
+							{t("orgOpportunities.participants", {
+								booked: item.currentParticipantCount,
+								max: item.totalMaxParticipants,
+							})}
+						</p>
+					)}
+				</div>
+				<div className="mt-auto flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						onClick={() => void openEdit(item.id)}
+						disabled={editLoadingId === item.id}
+						data-testid="opportunity-edit"
+						className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+					>
+						{editLoadingId === item.id
+							? t("orgOpportunities.editLoading")
+							: t("opportunities.edit")}
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							setDeleteTargetId(item.id);
+							setDeleteError(null);
+						}}
+						data-testid="opportunity-delete"
+						className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
+					>
+						{t("opportunities.delete")}
+					</button>
+					{isDraft ? (
+						<Button
+							type="button"
+							onClick={() => void publish(item.id)}
+							disabled={publishingId === item.id}
+							data-testid="opportunity-publish"
+							size="sm"
+						>
+							{publishingId === item.id
+								? t("opportunities.publishing")
+								: t("opportunities.publish")}
+						</Button>
+					) : (
+						<Link
+							to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
+							className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+						>
+							{t("orgOpportunities.manageApplications")}
+							<svg
+								className="h-3.5 w-3.5"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth="2"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+								/>
+							</svg>
+						</Link>
+					)}
 				</div>
 			</li>
 		);
@@ -349,7 +347,9 @@ export default function OrgOpportunitiesPage() {
 							<p className="mt-1 text-sm text-gray-500">
 								{t("orgOpportunities.draftsDesc")}
 							</p>
-							<ul className="mt-4 space-y-3">{drafts.map(renderRow)}</ul>
+							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								{drafts.map(renderRow)}
+							</ul>
 							{hasMoreDrafts && (
 								<div className="mt-4 flex justify-center">
 									<button
@@ -374,7 +374,9 @@ export default function OrgOpportunitiesPage() {
 							<p className="mt-1 text-sm text-gray-500">
 								{t("orgOpportunities.publishedDesc")}
 							</p>
-							<ul className="mt-4 space-y-3">{published.map(renderRow)}</ul>
+							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								{published.map(renderRow)}
+							</ul>
 							{hasMorePublished && (
 								<div className="mt-4 flex justify-center">
 									<button

@@ -29,16 +29,16 @@ export default function OpportunityListItem({
 			: null;
 
 	return (
-		<li className="group relative overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised">
+		<li className="group relative flex h-full flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10"
 				aria-label={item.title}
 			/>
-			<div className="flex flex-col sm:flex-row">
+			<div className="flex h-full flex-col">
 				{/* Banner image or category banner */}
 				<div
-					className={`relative flex h-24 shrink-0 items-center justify-center overflow-hidden sm:h-auto sm:w-36 lg:w-44 ${getOpportunityCategoryBannerClassName(item.category)}`}
+					className={`relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden ${getOpportunityCategoryBannerClassName(item.category)}`}
 				>
 					{item.bannerImageUrl ? (
 						<img
@@ -70,7 +70,7 @@ export default function OpportunityListItem({
 				</div>
 
 				{/* Content */}
-				<div className="min-w-0 flex-1 p-4 sm:p-5">
+				<div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
 					<div className="mb-2 flex items-center gap-2">
 						<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
 							{formatOccurrence(item.occurrence, t)}
@@ -126,7 +126,7 @@ export default function OpportunityListItem({
 							{item.description}
 						</p>
 					)}
-					<div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
+					<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
 						<Link
 							to={`/organizations/${item.organizationId}`}
 							className="group/org relative z-20 inline-flex items-center gap-2"
