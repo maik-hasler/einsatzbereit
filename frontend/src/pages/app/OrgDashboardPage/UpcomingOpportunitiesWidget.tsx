@@ -1,10 +1,7 @@
 import { memo, useMemo } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import type {
-	OrganizationCalendarEventDto,
-	VolunteerOpportunitySummary,
-} from "../../../client/api-client";
+import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import ErrorBanner from "../../../components/ErrorBanner";
@@ -38,12 +35,16 @@ function UpcomingOpportunitiesWidget({
 	const api = useApiClient();
 	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
 
-	// Both fetches are shared with sibling widgets that need the same
-	// organization-wide data on the same mount - opportunities with
-	// QuickCheckInWidget, calendar events with CalendarWidget - see
-	// useSharedOrgFetch. Only one of the two "opportunities" fetcher closures
-	// actually runs per useSharedOrgFetch's dedup, so its args (status,
-	// pageNumber, pageSize) must stay identical to QuickCheckInWidget's.
+	// Shared with QuickCheckInWidget, which fetches the same organization-wide
+	// opportunities on the same mount - see useSharedOrgFetch. Only one of the
+	// two fetcher closures actually runs per useSharedOrgFetch's dedup, so its
+	// args (status, pageNumber, pageSize) must stay identical to
+	// QuickCheckInWidget's. `nextTimeSlotStart` (already computed server-side
+	// per opportunity) covers this widget's whole need for "when's the next
+	// shift" - no separate getOrganizationCalendarEvents fetch required (#1389:
+	// that endpoint now requires a bounded date range, and this widget has no
+	// natural one to bind to since it wants the single soonest upcoming slot
+	// across every opportunity, however far out that is).
 	const [opportunities, , opportunitiesError] = useSharedOrgFetch<
 		VolunteerOpportunitySummary[]
 	>(`opportunities:${organizationId}:${refreshKey}`, () =>
@@ -56,33 +57,18 @@ function UpcomingOpportunitiesWidget({
 			)
 			.then((page) => page.items),
 	);
-	const [calendarEvents, , calendarEventsError] = useSharedOrgFetch<
-		OrganizationCalendarEventDto[]
-	>(`calendarEvents:${organizationId}:${refreshKey}`, () =>
-		api.getOrganizationCalendarEvents(organizationId),
-	);
-	const error = opportunitiesError ?? calendarEventsError;
+	const error = opportunitiesError;
 
 	const items = useMemo<UpcomingItem[] | null>(() => {
-		if (!opportunities || !calendarEvents) return null;
-		const now = new Date();
-		const eventsByOpportunity = new Map<string, OrganizationCalendarEventDto>(
-			calendarEvents.map((e) => [e.opportunityId, e]),
-		);
+		if (!opportunities) return null;
 		return opportunities
-			.map((o): UpcomingItem => {
-				const futureSlots = (eventsByOpportunity.get(o.id)?.timeSlots ?? [])
-					.map((s) => new Date(s.startDateTime))
-					.filter((d) => d >= now)
-					.sort((a, b) => a.getTime() - b.getTime());
-				return {
-					id: o.id,
-					title: o.title || t("orgDashboard.unnamedDraft"),
-					nextStart: futureSlots[0] ?? null,
-					bookedCount: o.currentParticipantCount,
-					maxParticipants: o.totalMaxParticipants,
-				};
-			})
+			.map((o): UpcomingItem => ({
+				id: o.id,
+				title: o.title || t("orgDashboard.unnamedDraft"),
+				nextStart: o.nextTimeSlotStart ? new Date(o.nextTimeSlotStart) : null,
+				bookedCount: o.currentParticipantCount,
+				maxParticipants: o.totalMaxParticipants,
+			}))
 			.sort((a, b) => {
 				if (a.nextStart && b.nextStart)
 					return a.nextStart.getTime() - b.nextStart.getTime();
@@ -91,7 +77,7 @@ function UpcomingOpportunitiesWidget({
 				return 0;
 			})
 			.slice(0, MAX_ITEMS);
-	}, [opportunities, calendarEvents, t]);
+	}, [opportunities, t]);
 
 	return (
 		<WidgetCard

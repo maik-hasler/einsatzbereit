@@ -542,40 +542,56 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 	public async ValueTask<IReadOnlyList<OrganizationCalendarEventDto>> GetCalendarEventsAsync(
 		Guid organizationId,
+		DateTimeOffset from,
+		DateTimeOffset to,
 		CancellationToken cancellationToken = default)
 	{
 		var orgId = OrganizationId.Create(organizationId).GetValueOrThrow();
 
 		var rows = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.OrganizationId == orgId)
-			.Where(vo => vo.TimeSlots.Any())
-			.OrderBy(vo => vo.TimeSlots.Min(ts => ts.StartDateTime))
+			.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime >= from && ts.StartDateTime <= to))
+			.OrderBy(vo => vo.TimeSlots
+				.Where(ts => ts.StartDateTime >= from && ts.StartDateTime <= to)
+				.Min(ts => ts.StartDateTime))
 			.Select(vo => new
 			{
 				Id = vo.Id.Value,
 				vo.Title,
 				vo.Color,
 				TimeSlots = vo.TimeSlots
+					.Where(ts => ts.StartDateTime >= from && ts.StartDateTime <= to)
 					.OrderBy(ts => ts.StartDateTime)
 					.Select(ts => new { SlotId = ts.Id.Value, ts.StartDateTime, ts.EndDateTime, ts.MaxParticipants })
 					.ToList(),
 			})
 			.ToListAsync(cancellationToken);
 
-		var opportunityIds = rows.Select(r => VolunteerOpportunityId.Create(r.Id).GetValueOrThrow()).ToList();
-		var slotCounts = opportunityIds.Count == 0
-			? new Dictionary<Guid, int>()
-			: await dbContext.VolunteerOpportunitiesQuery
-				.Where(vo => opportunityIds.Contains(vo.Id))
-				.SelectMany(vo => vo.TimeSlots)
-				.Select(ts => new
-				{
-					SlotId = ts.Id.Value,
-					BookedCount = dbContext.EngagementsQuery.Count(e =>
-						e.TimeSlotId == ts.Id &&
-						(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed)),
-				})
-				.ToDictionaryAsync(x => x.SlotId, x => x.BookedCount, cancellationToken);
+		if (rows.Count == 0)
+			return [];
+
+		var slotIds = rows
+			.SelectMany(r => r.TimeSlots)
+			.Select(ts => (TimeSlotId?)TimeSlotId.Create(ts.SlotId).GetValueOrThrow())
+			.ToList();
+
+		// Single query instead of a correlated Count(...) subquery per slot
+		// (#1389) - but grouped client-side rather than via GroupBy(...).Value in
+		// the query itself: EF Core can't reliably translate .Value/GroupBy on a
+		// Nullable<TimeSlotId> sitting behind TimeSlotId's HasConversion (unlike
+		// LoadParticipantStatsAsync's participantCounts query below, which groups
+		// by the non-nullable OpportunityId and works fine). Fetching the raw
+		// nullable values and counting them here keeps it to one round trip
+		// without hitting that translation gap.
+		var activeSlotIds = await dbContext.EngagementsQuery
+			.Where(e => slotIds.Contains(e.TimeSlotId) &&
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.Select(e => e.TimeSlotId)
+			.ToListAsync(cancellationToken);
+
+		var slotCounts = activeSlotIds
+			.GroupBy(id => id!.Value.Value)
+			.ToDictionary(g => g.Key, g => g.Count());
 
 		return rows
 			.Select(r => new OrganizationCalendarEventDto(
