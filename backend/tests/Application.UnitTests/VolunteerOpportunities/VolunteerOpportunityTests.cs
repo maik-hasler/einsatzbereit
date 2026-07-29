@@ -663,4 +663,126 @@ public class VolunteerOpportunityTests
 		opportunity.TimeSlots.Should().HaveCount(1);
 		opportunity.TimeSlots.Should().NotContain(ts => ts.Id == idToRemove);
 	}
+
+	[Test]
+	public void Create_ShouldRaiseCreatedDomainEvent()
+	{
+		// Act
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+
+		// Assert
+		var domainEvent = opportunity.Events.Should().ContainSingle().Which;
+		domainEvent.Should().BeOfType<VolunteerOpportunityCreatedDomainEvent>();
+		var created = (VolunteerOpportunityCreatedDomainEvent)domainEvent;
+		created.OpportunityId.Should().Be(opportunity.Id);
+		created.OrganizationId.Should().Be(TestOrganizationId);
+	}
+
+	[Test]
+	public void MarkDeleted_ShouldSetIsDeletedTrue()
+	{
+		// Arrange
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+		var deletedOn = DateTimeOffset.UtcNow;
+
+		// Act
+		var result = opportunity.MarkDeleted(deletedOn);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		opportunity.IsDeleted.Should().BeTrue();
+		opportunity.DeletedOn.Should().Be(deletedOn);
+	}
+
+	[Test]
+	public void MarkDeleted_ShouldRaiseDeletedDomainEvent()
+	{
+		// Arrange
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+
+		// Act
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Assert
+		var domainEvent = opportunity.Events.Should().ContainSingle(e => e is VolunteerOpportunityDeletedDomainEvent).Which;
+		var deleted = (VolunteerOpportunityDeletedDomainEvent)domainEvent;
+		deleted.OpportunityId.Should().Be(opportunity.Id);
+		deleted.OrganizationId.Should().Be(TestOrganizationId);
+	}
+
+	[Test]
+	public void MarkDeleted_ShouldFail_WhenAlreadyDeleted()
+	{
+		// Arrange
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Act
+		var result = opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Opportunity is already shadow-deleted.");
+	}
+
+	[Test]
+	public void Restore_ShouldClearDeletedState()
+	{
+		// Arrange
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Act
+		var result = opportunity.Restore();
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		opportunity.IsDeleted.Should().BeFalse();
+		opportunity.DeletedOn.Should().BeNull();
+	}
+
+	[Test]
+	public void Restore_ShouldRaiseRestoredDomainEvent()
+	{
+		// Arrange
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+		opportunity.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Act
+		opportunity.Restore();
+
+		// Assert
+		var domainEvent = opportunity.Events.Should().ContainSingle(e => e is VolunteerOpportunityRestoredDomainEvent).Which;
+		var restored = (VolunteerOpportunityRestoredDomainEvent)domainEvent;
+		restored.OpportunityId.Should().Be(opportunity.Id);
+		restored.OrganizationId.Should().Be(TestOrganizationId);
+	}
+
+	[Test]
+	public void Restore_ShouldFail_WhenNotDeleted()
+	{
+		// Arrange
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator).Value;
+
+		// Act
+		var result = opportunity.Restore();
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Opportunity is not shadow-deleted.");
+	}
 }

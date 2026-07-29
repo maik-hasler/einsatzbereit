@@ -90,9 +90,9 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		await _sut.Handle(new PublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
-		var domainEvent = opportunity.Events.Should().ContainSingle().Which;
-		domainEvent.Should().BeOfType<VolunteerOpportunityPublishedDomainEvent>();
-		var published = (VolunteerOpportunityPublishedDomainEvent)domainEvent;
+		// Create() itself now also raises a VolunteerOpportunityCreatedDomainEvent (#1391),
+		// so this asserts on the Published event specifically rather than Events as a whole.
+		var published = opportunity.Events.OfType<VolunteerOpportunityPublishedDomainEvent>().Should().ContainSingle().Which;
 		published.OpportunityId.Should().Be(opportunity.Id);
 		published.OrganizationId.Should().Be(DefaultOrgId);
 	}

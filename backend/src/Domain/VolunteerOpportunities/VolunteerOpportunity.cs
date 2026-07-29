@@ -161,7 +161,7 @@ public sealed class VolunteerOpportunity
 					"A Waitlist opportunity must be created as a draft and published after adding at least one time slot."));
 		}
 
-		return new VolunteerOpportunity(
+		var opportunity = new VolunteerOpportunity(
 			VolunteerOpportunityId.New(),
 			organizationId,
 			title,
@@ -176,6 +176,9 @@ public sealed class VolunteerOpportunity
 			status,
 			pinGenerator,
 			checkInPin);
+
+		opportunity.AddEvent(new VolunteerOpportunityCreatedDomainEvent(opportunity.Id, organizationId));
+		return opportunity;
 	}
 
 	private static Result EnsurePublishable(
@@ -371,6 +374,7 @@ public sealed class VolunteerOpportunity
 
 		IsDeleted = true;
 		DeletedOn = deletedOn;
+		AddEvent(new VolunteerOpportunityDeletedDomainEvent(Id, OrganizationId));
 		return Result.Success();
 	}
 
@@ -381,6 +385,7 @@ public sealed class VolunteerOpportunity
 
 		IsDeleted = false;
 		DeletedOn = null;
+		AddEvent(new VolunteerOpportunityRestoredDomainEvent(Id, OrganizationId));
 		return Result.Success();
 	}
 }

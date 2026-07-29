@@ -1,4 +1,5 @@
 using System.Reflection;
+using Application.Common.Caching;
 using Application.Common.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,10 @@ public static class ServiceCollectionExtensions
 	{
 		services.AddTransient<ISender, Sender>();
 		services.AddTransient<IPublisher, Publisher>();
+
+		services.AddSingleton<CacheCategoryTokenStore>();
+		services.AddSingleton<ICacheInvalidator>(sp => sp.GetRequiredService<CacheCategoryTokenStore>());
+		services.AddSingleton<ICacheCategoryTokenProvider>(sp => sp.GetRequiredService<CacheCategoryTokenStore>());
 
 		services.AddHandlersFromAssembly(Assembly.GetExecutingAssembly());
 		services.AddBehaviorsFromAssembly(Assembly.GetExecutingAssembly());

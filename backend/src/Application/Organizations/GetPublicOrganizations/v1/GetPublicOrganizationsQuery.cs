@@ -1,3 +1,4 @@
+using Application.Common.Caching;
 using Application.Common.Messaging;
 using Application.Common.Pagination;
 
@@ -7,4 +8,12 @@ public sealed record GetPublicOrganizationsQuery(
 	int PageNumber,
 	int PageSize,
 	string? Search)
-	: IQuery<PagedList<PublicOrganizationSummary>>;
+	: ICachedQuery<PagedList<PublicOrganizationSummary>>
+{
+	public string CacheKey =>
+		string.Join('|', "organizations:directory", PageNumber, PageSize, Search?.Trim().ToLowerInvariant() ?? string.Empty);
+
+	public IReadOnlyCollection<string> CacheCategories { get; } = [CacheCategory.Organizations, CacheCategory.VolunteerOpportunities];
+
+	public TimeSpan Expiration => CachingDefaults.Expiration;
+}

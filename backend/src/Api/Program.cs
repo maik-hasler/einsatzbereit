@@ -11,6 +11,7 @@ using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -66,6 +67,17 @@ builder.Services.AddCors(options =>
 		policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4321"])
 			.AllowAnyHeader()
 			.WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));
+
+builder.Services.AddResponseCompression(options =>
+{
+	// HTTPS compression is off by default (BREACH mitigation for pages that reflect a
+	// secret alongside attacker-controlled input, e.g. a CSRF token next to a search query).
+	// This API has no such reflection - it's JWT-bearer JSON endpoints, not cookie+HTML - so
+	// the tradeoff favors enabling it.
+	options.EnableForHttps = true;
+	options.Providers.Add<BrotliCompressionProvider>();
+	options.Providers.Add<GzipCompressionProvider>();
+});
 
 builder.Services.AddHttpClient(KeycloakHealthCheck.HttpClientName, client =>
 	client.Timeout = TimeSpan.FromSeconds(5));
@@ -161,6 +173,10 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 app.MapDefaultEndpoints();
 
 app.UseHttpLogging();
+
+// Must run before anything that writes the response body so it wraps the whole
+// downstream pipeline's output, not just endpoint results.
+app.UseResponseCompression();
 
 app.Use(async (context, next) =>
 {

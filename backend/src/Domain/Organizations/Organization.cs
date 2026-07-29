@@ -51,7 +51,9 @@ public sealed class Organization
 		if (string.IsNullOrWhiteSpace(name))
 			return Result.Failure<Organization>(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
-		return new Organization(id, name);
+		var organization = new Organization(id, name);
+		organization.AddEvent(new OrganizationCreatedDomainEvent(id));
+		return organization;
 	}
 
 	public void SetLogoUrl(string? url)
@@ -112,6 +114,7 @@ public sealed class Organization
 
 		IsDeleted = true;
 		DeletedOn = deletedOn;
+		AddEvent(new OrganizationDeletedDomainEvent(Id));
 		return Result.Success();
 	}
 
@@ -122,6 +125,7 @@ public sealed class Organization
 
 		IsDeleted = false;
 		DeletedOn = null;
+		AddEvent(new OrganizationRestoredDomainEvent(Id));
 		return Result.Success();
 	}
 }

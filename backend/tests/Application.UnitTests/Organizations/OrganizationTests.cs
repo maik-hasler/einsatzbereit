@@ -68,6 +68,113 @@ public class OrganizationTests
 	}
 
 	[Test]
+	public void Create_ShouldRaiseCreatedDomainEvent()
+	{
+		// Arrange
+		var id = OrganizationId.New();
+
+		// Act
+		var org = Organization.Create(id, "Org").Value;
+
+		// Assert
+		var domainEvent = org.Events.Should().ContainSingle().Which;
+		domainEvent.Should().BeOfType<OrganizationCreatedDomainEvent>();
+		((OrganizationCreatedDomainEvent)domainEvent).OrganizationId.Should().Be(id);
+	}
+
+	[Test]
+	public void MarkDeleted_ShouldSetIsDeletedTrue()
+	{
+		// Arrange
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+		var deletedOn = DateTimeOffset.UtcNow;
+
+		// Act
+		var result = org.MarkDeleted(deletedOn);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		org.IsDeleted.Should().BeTrue();
+		org.DeletedOn.Should().Be(deletedOn);
+	}
+
+	[Test]
+	public void MarkDeleted_ShouldRaiseDeletedDomainEvent()
+	{
+		// Arrange
+		var id = OrganizationId.New();
+		var org = Organization.Create(id, "Org").Value;
+
+		// Act
+		org.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Assert
+		var domainEvent = org.Events.Should().ContainSingle(e => e is OrganizationDeletedDomainEvent).Which;
+		((OrganizationDeletedDomainEvent)domainEvent).OrganizationId.Should().Be(id);
+	}
+
+	[Test]
+	public void MarkDeleted_ShouldFail_WhenAlreadyDeleted()
+	{
+		// Arrange
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+		org.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Act
+		var result = org.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Organization is already shadow-deleted.");
+	}
+
+	[Test]
+	public void Restore_ShouldClearDeletedState()
+	{
+		// Arrange
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+		org.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Act
+		var result = org.Restore();
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		org.IsDeleted.Should().BeFalse();
+		org.DeletedOn.Should().BeNull();
+	}
+
+	[Test]
+	public void Restore_ShouldRaiseRestoredDomainEvent()
+	{
+		// Arrange
+		var id = OrganizationId.New();
+		var org = Organization.Create(id, "Org").Value;
+		org.MarkDeleted(DateTimeOffset.UtcNow);
+
+		// Act
+		org.Restore();
+
+		// Assert
+		var domainEvent = org.Events.Should().ContainSingle(e => e is OrganizationRestoredDomainEvent).Which;
+		((OrganizationRestoredDomainEvent)domainEvent).OrganizationId.Should().Be(id);
+	}
+
+	[Test]
+	public void Restore_ShouldFail_WhenNotDeleted()
+	{
+		// Arrange
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+
+		// Act
+		var result = org.Restore();
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Organization is not shadow-deleted.");
+	}
+
+	[Test]
 	public void Verify_ShouldSetIsVerifiedTrue()
 	{
 		// Arrange
