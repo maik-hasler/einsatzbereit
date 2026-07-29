@@ -16,6 +16,13 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		var frontend = Fixture.GetEndpoint("frontend");
+
+		// This test can't go through AuthHelper.LoginAsync (needs the hamburger
+		// click first), so it needs LoginAsync's Keycloak-CORS fix duplicated
+		// here too - see AuthHelper.AllowKeycloakCrossOriginRequestsAsync's doc
+		// comment.
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
+
 		await Page.GotoAsync(frontend.ToString());
 
 		// On mobile the Sign in button lives inside the hamburger menu.
@@ -26,7 +33,11 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First
 			.ClickAsync(new() { Timeout = 10_000 });
 
-		await Page.WaitForURLAsync("**/realms/einsatzbereit/**", new() { Timeout = 15_000 });
+		// Wait on Keycloak's login form element, not the URL - WaitForURLAsync
+		// races the frame's own navigation/detachment during the redirect (see
+		// AuthHelper.LoginAsync, which hit the same flakiness and now uses this
+		// same fix).
+		await Page.Locator("#username").WaitForAsync(new() { Timeout = 15_000 });
 
 		// Local Keycloak: single-step login (username + password on the same form).
 		await Page.Locator("#username").FillAsync("vera");

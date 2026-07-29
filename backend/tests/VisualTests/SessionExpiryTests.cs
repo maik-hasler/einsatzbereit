@@ -20,6 +20,7 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
 
 		await MockAllV1GetRequestsAsUnauthorizedAsync();
 
@@ -40,6 +41,12 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		// Registered before the abort-specific route below, so that one (added
+		// later, matching the same origin) still wins for the /auth navigation
+		// itself - this only needs to unblock oidc-client-ts's earlier discovery
+		// fetch so signinRedirect() gets far enough to attempt that navigation
+		// at all.
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
 
 		await MockAllV1GetRequestsAsUnauthorizedAsync();
 
@@ -61,7 +68,11 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// fetched chunk, gating the whole app behind a root Suspense
 		// boundary), so a cold Page.ReloadAsync() now has one more
 		// network-bound step before anything - including this toast - can
-		// render at all.
+		// render at all. This budget no longer races the toast's own 5s
+		// auto-dismiss (ToastContext.tsx) - AppHost sets
+		// VITE_TOAST_LIFETIME_MS=0 for test runs, so a render that lands late
+		// under CI contention can't have its toast disappear before this
+		// assertion's next poll catches it.
 		await Expect(sessionExpiredToast).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}
 

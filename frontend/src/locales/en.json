@@ -614,6 +614,7 @@
       "empty": "No notifications.",
       "loadMore": "Load more",
       "loadingMore": "Loading...",
+      "markReadError": "Failed to mark notification as read.",
       "deletedOpportunityPlaceholder": "a deleted opportunity",
       "kinds": {
         "EngagementCreated": "New application received for {{title}}",

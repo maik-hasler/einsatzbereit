@@ -34,17 +34,15 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(langBtn).ToBeVisibleAsync();
 
 		// Button must carry transparent Tailwind classes (border-white/30, text-white).
-		var btnClass = await langBtn.GetAttributeAsync("class") ?? string.Empty;
-		btnClass.Should().MatchRegex(new Regex("border-white|text-white"));
+		await Expect(langBtn).ToHaveClassAsync(new Regex("border-white|text-white"));
 
 		// Open the dropdown and verify it uses the dark brand background.
 		await langBtn.ClickAsync();
 		var dropdown = Page.Locator("header ul[role='listbox']").First;
 		await Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
-		var dropdownClass = await dropdown.GetAttributeAsync("class") ?? string.Empty;
-		dropdownClass.Should().Contain("bg-brand-800");
-		dropdownClass.Should().Contain("left-0");
+		await Expect(dropdown).ToContainClassAsync("bg-brand-800");
+		await Expect(dropdown).ToContainClassAsync("left-0");
 
 		await Page.Keyboard.PressAsync("Escape");
 	}
@@ -77,14 +75,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgLink = Page.Locator("a[href*='/organizations/']").First;
-		if (await orgLink.CountAsync() == 0)
-			return; // no opportunities/organizations seeded - skip
+		Skip.When(await orgLink.CountAsync() == 0, "no opportunities/organizations seeded");
 
 		var href = await orgLink.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		Skip.When(href is null, "organization link had no href");
 
-		await Page.GotoAsync($"{origin}{href}");
+		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
@@ -135,14 +131,12 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		if (await firstCard.CountAsync() == 0)
-			return; // no opportunities seeded, skip
+		Skip.When(await firstCard.CountAsync() == 0, "no opportunities seeded");
 
 		var href = await firstCard.GetAttributeAsync("href");
-		if (href is null)
-			return;
+		Skip.When(href is null, "opportunity link had no href");
 
-		await Page.GotoAsync($"{origin}{href}");
+		await Page.GotoAsync($"{origin}{href!}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var breadcrumb = Page.Locator("nav[aria-label='Breadcrumb']");
@@ -172,8 +166,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// fixed "Opportunities" label plus a separate context line in the page.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
@@ -182,8 +176,14 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// "Manage applications" only appears for published opportunities on the
 		// Opportunities hub.
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		if (await manageLink.CountAsync() == 0)
-			return; // organizer has no published opportunities in seed - skip
+		try
+		{
+			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("organizer has no published opportunities in seed");
+		}
 
 		var row = Page.Locator("li").Filter(new() { Has = manageLink });
 		var opportunityTitle = (await row.Locator("a").First.InnerTextAsync()).Trim();
@@ -210,15 +210,21 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// list now happens via the breadcrumb's "Opportunities" link instead.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
-		if (await manageLink.CountAsync() == 0)
-			return; // organizer has no published opportunities in seed - skip
+		try
+		{
+			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("organizer has no published opportunities in seed");
+		}
 
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -243,8 +249,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// currently on rather than always resetting to the dashboard.
 		var frontend = Fixture.GetEndpoint("frontend");
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
 
 		// The tab bar is gone (dashboard UX redesign) - reach Members via the
 		// Settings widget's member-count link instead (its accessible name is
@@ -257,8 +263,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await switcherBtn.ClickAsync();
 
 		var rowCount = await Page.GetByTestId("org-switch-row").CountAsync();
-		if (rowCount < 2)
-			return; // olaf needs at least two orgs in seed to prove navigation follows selection
+		Skip.When(rowCount < 2, "olaf needs at least two orgs in seed to prove navigation follows selection");
 
 		// The active org's row carries aria-current="page" - pick a different one.
 		var otherRow = Page.Locator("[data-testid='org-switch-row']:not([aria-current='page'])").First;
@@ -286,8 +291,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend);
+		var homeOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, homeOrgId!.Value);
 
 		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
 		match.Success.Should().BeTrue();
@@ -307,8 +312,8 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			await Page.GotoAsync($"{origin}/app/{organizationId}/{path}");
 			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-			(await errorBoundaryHeading.CountAsync()).Should().Be(0,
-				$"/{path} should render real content, not the ErrorBoundary fallback");
+			// The path should render real content, not the ErrorBoundary fallback.
+			await Expect(errorBoundaryHeading).ToHaveCountAsync(0);
 
 			// A crash unmounts OrgAppLayout entirely (the ErrorBoundary sits
 			// above it, at the app root), taking the breadcrumb down with it -
@@ -347,16 +352,14 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			}
 		}
 
-		if (hamburger is null)
-			return; // hamburger not found at this viewport - skip gracefully
+		Skip.When(hamburger is null, "hamburger not found at this viewport");
 
-		await hamburger.ClickAsync();
+		await hamburger!.ClickAsync();
 
 		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
-		var mobileBtnClass = await mobileLangBtn.GetAttributeAsync("class") ?? string.Empty;
-		mobileBtnClass.Should().MatchRegex(new Regex("border-white|text-white"));
+		await Expect(mobileLangBtn).ToHaveClassAsync(new Regex("border-white|text-white"));
 	}
 
 	[Test]
@@ -440,10 +443,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			}
 		}
 
-		if (hamburger is null)
-			return; // hamburger not found at this viewport - skip gracefully
+		Skip.When(hamburger is null, "hamburger not found at this viewport");
 
-		await hamburger.ClickAsync();
+		await hamburger!.ClickAsync();
 
 		var mobileLangBtn = Page.Locator("button[aria-haspopup='listbox']").Last;
 		await Expect(mobileLangBtn).ToBeVisibleAsync(new() { Timeout = 5_000 });
