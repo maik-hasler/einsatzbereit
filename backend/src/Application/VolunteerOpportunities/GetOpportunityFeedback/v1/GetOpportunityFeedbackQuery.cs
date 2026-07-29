@@ -7,5 +7,7 @@ namespace Application.VolunteerOpportunities.GetOpportunityFeedback.v1;
 
 public sealed record GetOpportunityFeedbackQuery(
 	VolunteerOpportunityId OpportunityId,
-	UserId RequestingUserId)
+	UserId RequestingUserId,
+	int PageNumber,
+	int PageSize)
 	: IQuery<OpportunityFeedbackSummary>;

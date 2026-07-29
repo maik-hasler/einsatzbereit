@@ -22,7 +22,7 @@ export default function Modal({
 	onClose,
 	labelledBy,
 	maxWidth = "max-w-md",
-	className = "rounded-xl bg-white p-6 shadow-xl",
+	className = "rounded-card bg-white p-6 shadow-modal",
 	backdropClassName = "bg-black/50",
 	suspended = false,
 	initialFocusRef,

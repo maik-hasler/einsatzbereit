@@ -24,8 +24,21 @@ public interface IEngagementReadRepository
 		int pageSize,
 		CancellationToken cancellationToken = default);
 
+	/// <summary>
+	/// Distinct volunteer ids with an active (pending or confirmed) engagement on
+	/// the opportunity, filtered at the database level using the existing
+	/// (OpportunityId, Status) index - or, when <paramref name="timeSlotId"/> is
+	/// given, only those engaged on that specific time slot.
+	/// </summary>
+	ValueTask<List<Guid>> GetActiveVolunteerIdsByOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		TimeSlotId? timeSlotId,
+		CancellationToken cancellationToken = default);
+
 	ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
+		int pageNumber,
+		int pageSize,
 		CancellationToken cancellationToken = default);
 
 	ValueTask<EngagementCalendarInfo?> GetCalendarInfoAsync(

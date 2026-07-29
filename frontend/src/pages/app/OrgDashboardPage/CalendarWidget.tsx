@@ -251,7 +251,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 					onClose={() => setSelectedEvent(null)}
 					labelledBy="color-dialog-title"
 					maxWidth="max-w-xs"
-					className="rounded-xl bg-white p-6 shadow-xl"
+					className="rounded-card bg-white p-6 shadow-modal"
 				>
 					<h3
 						id="color-dialog-title"

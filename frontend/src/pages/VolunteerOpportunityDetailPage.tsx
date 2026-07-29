@@ -13,6 +13,7 @@ import {
 	formatParticipationType,
 	formatPostedAgo,
 } from "../lib/format";
+import { pageTitleClass } from "../lib/headingClasses";
 import SignUpModal from "../components/SignUpModal";
 import ReportContentModal, {
 	type ReportReason,
@@ -217,7 +218,7 @@ export default function VolunteerOpportunityDetailPage() {
 				<img
 					src={opportunity.bannerImageUrl}
 					alt=""
-					className="mb-6 h-56 w-full rounded-2xl object-cover shadow-sm sm:h-72"
+					className="mb-6 h-56 w-full rounded-card object-cover shadow-resting sm:h-72"
 				/>
 			)}
 
@@ -282,7 +283,7 @@ export default function VolunteerOpportunityDetailPage() {
 			</div>
 
 			{/* Title */}
-			<h1 className="mb-1 text-2xl font-bold text-gray-900 sm:text-3xl">
+			<h1 className={`mb-1 text-gray-900 ${pageTitleClass}`}>
 				{opportunity.title}
 			</h1>
 			<p className="mb-3 text-xs text-gray-600">
@@ -297,7 +298,7 @@ export default function VolunteerOpportunityDetailPage() {
 			)}
 
 			{/* Info card */}
-			<div className="mb-6 space-y-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4">
+			<div className="mb-6 space-y-3 rounded-card border border-gray-100 bg-gray-50 px-4 py-4">
 				<div className="flex items-center gap-3 text-sm text-gray-700">
 					<svg
 						className="h-4 w-4 shrink-0 text-gray-400"
@@ -417,7 +418,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{!opportunity.isRemote &&
 				opportunity.latitude != null &&
 				opportunity.longitude != null && (
-					<div className="mb-6 overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
+					<div className="mb-6 overflow-hidden rounded-card border border-gray-100 shadow-resting">
 						<Suspense fallback={<Skeleton className="h-64 w-full" />}>
 							<SingleMarkerMap
 								latitude={opportunity.latitude}
@@ -439,7 +440,7 @@ export default function VolunteerOpportunityDetailPage() {
 							{opportunity.timeSlots.map((ts) => (
 								<li
 									key={ts.id}
-									className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm"
+									className="flex items-center justify-between rounded-card border border-gray-100 bg-white px-4 py-3 text-sm text-gray-700 shadow-resting"
 								>
 									<span>
 										{formatDateTime(
@@ -465,7 +466,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Your application status */}
 			{isAuthenticated && !isOwner && cue && !isDraft && (
-				<div className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+				<div className="rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting">
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<p className="mb-1 text-xs text-gray-500">
@@ -562,7 +563,7 @@ export default function VolunteerOpportunityDetailPage() {
 							orgProfile.contactPhone ||
 							orgProfile.website ||
 							orgProfile.address) && (
-							<div className="space-y-2.5 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+							<div className="space-y-2.5 rounded-card border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
 								{orgProfile.contactEmail && (
 									<div className="flex items-center gap-3">
 										<svg
@@ -680,11 +681,11 @@ export default function VolunteerOpportunityDetailPage() {
 						{otherOrgOpportunities.map((opp) => (
 							<li
 								key={opp.id}
-								className="relative flex h-full flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+								className="relative flex h-full flex-col rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
 							>
 								<Link
 									to={`/volunteer-opportunities/${opp.id}`}
-									className="absolute inset-0 rounded-xl"
+									className="absolute inset-0 rounded-card"
 									aria-label={opp.title}
 								/>
 								<strong className="block text-sm font-semibold text-gray-900">

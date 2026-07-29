@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
-	OpportunityFeedbackSummary,
+	FeedbackItemDto,
 	TimeSlotDetail,
 	VolunteerOpportunityDetails,
 } from "../client/api-client";
@@ -25,6 +25,7 @@ import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 const ENGAGEMENTS_PAGE_SIZE = 10;
+const FEEDBACK_PAGE_SIZE = 10;
 
 // Lazy-loaded: only needed once an organizer actually opens the scanner - #971.
 const QRScannerModal = lazy(() => import("../components/QRScannerModal"));
@@ -59,9 +60,10 @@ export default function EngagementManagementPage() {
 		return map;
 	}, [opportunity]);
 
-	const [feedback, setFeedback] = useState<OpportunityFeedbackSummary | null>(
-		null,
-	);
+	const [feedbackStats, setFeedbackStats] = useState<{
+		averageRating: number | null;
+		feedbackCount: number;
+	} | null>(null);
 	const [checkInPin, setCheckInPin] = useState<string | null>(null);
 	const [notFound, setNotFound] = useState(false);
 	const [confirming, setConfirming] = useState<string | null>(null);
@@ -98,15 +100,32 @@ export default function EngagementManagementPage() {
 		},
 	);
 
+	const {
+		items: feedbackItems,
+		loading: feedbackLoading,
+		loadingMore: feedbackLoadingMore,
+		error: feedbackError,
+		hasMore: hasMoreFeedback,
+		loadMore: loadMoreFeedback,
+	} = useLoadMore<FeedbackItemDto>(async (page) => {
+		if (!opportunityId) return { items: [], pageCount: 0 };
+		const result = await api.getOpportunityFeedback(
+			opportunityId,
+			page,
+			FEEDBACK_PAGE_SIZE,
+		);
+		setFeedbackStats({
+			averageRating: result.averageRating ?? null,
+			feedbackCount: result.feedbackCount,
+		});
+		return { items: result.items.items, pageCount: result.items.pageCount };
+	});
+
 	useEffect(() => {
 		if (!opportunityId) return;
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
 			.then(setOpportunity)
-			.catch(() => undefined);
-		api
-			.getOpportunityFeedback(opportunityId)
-			.then(setFeedback)
 			.catch(() => undefined);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId]);
@@ -200,7 +219,7 @@ export default function EngagementManagementPage() {
 	return (
 		<>
 			{checkInMethod === "PINCode" && checkInPin && (
-				<div className="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-4">
+				<div className="mb-6 rounded-card border border-brand-200 bg-brand-50 p-4">
 					<p className="text-sm font-medium text-brand-900">
 						{t("checkIn.organizerPin")}
 					</p>
@@ -263,7 +282,7 @@ export default function EngagementManagementPage() {
 					{engagements.map((e) => (
 						<li
 							key={e.id}
-							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
 						>
 							<div className="flex items-start justify-between gap-2">
 								<div className="min-w-0">
@@ -337,7 +356,7 @@ export default function EngagementManagementPage() {
 											<button
 												onClick={() => handleConfirm(e.id)}
 												disabled={confirming === e.id}
-												className="rounded-xl bg-green-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+												className="rounded-xl bg-green-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50"
 											>
 												{confirming === e.id
 													? t("engagementManagement.processing")
@@ -424,26 +443,26 @@ export default function EngagementManagementPage() {
 				/>
 			)}
 
-			{feedback !== null && (
+			{feedbackStats !== null && (
 				<section className="mt-8">
 					<h2 className="mb-4 text-lg font-semibold text-gray-900">
 						{t("feedback.organizerTab")}
 					</h2>
-					{feedback.feedbackCount === 0 ? (
+					{feedbackStats.feedbackCount === 0 ? (
 						<p className="text-sm text-gray-500">{t("feedback.noFeedback")}</p>
 					) : (
 						<>
 							<p className="mb-4 text-sm text-gray-700">
 								{t("feedback.averageRating", {
-									rating: feedback.averageRating?.toFixed(1) ?? "-",
-									count: feedback.feedbackCount,
+									rating: feedbackStats.averageRating?.toFixed(1) ?? "-",
+									count: feedbackStats.feedbackCount,
 								})}
 							</p>
 							<ul className="space-y-3">
-								{feedback.items.map((item, idx) => (
+								{feedbackItems.map((item, idx) => (
 									<li
 										key={idx}
-										className="rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+										className="rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting"
 									>
 										<div className="flex items-center gap-1">
 											{[1, 2, 3, 4, 5].map((s) => (
@@ -469,6 +488,22 @@ export default function EngagementManagementPage() {
 									</li>
 								))}
 							</ul>
+							{!feedbackLoading &&
+								!feedbackError &&
+								feedbackItems.length > 0 &&
+								hasMoreFeedback && (
+									<div className="mt-6 flex justify-center">
+										<button
+											onClick={loadMoreFeedback}
+											disabled={feedbackLoadingMore}
+											className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+										>
+											{feedbackLoadingMore
+												? t("engagementManagement.loading")
+												: t("feedback.loadMore")}
+										</button>
+									</div>
+								)}
 						</>
 					)}
 				</section>

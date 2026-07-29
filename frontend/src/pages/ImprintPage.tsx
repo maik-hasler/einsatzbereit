@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import { pageTitleClass } from "../lib/headingClasses";
 
 export default function ImprintPage() {
 	const { t } = useTranslation();
@@ -9,7 +10,7 @@ export default function ImprintPage() {
 
 	return (
 		<>
-			<h1 className="mb-8 text-3xl font-bold">{t("imprint.title")}</h1>
+			<h1 className={`mb-8 ${pageTitleClass}`}>{t("imprint.title")}</h1>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">

@@ -9,8 +9,6 @@ namespace Application.Notifications;
 
 internal static class OpportunityNotificationHelper
 {
-	private static readonly string[] ActiveStatuses = ["Pending", "Confirmed"];
-
 	/// <summary>
 	/// Creates a notification of the given kind for every distinct volunteer who
 	/// has an active (pending or confirmed) engagement on the opportunity, or -
@@ -25,14 +23,8 @@ internal static class OpportunityNotificationHelper
 		CancellationToken cancellationToken,
 		TimeSlotId? timeSlotId = null)
 	{
-		var engagements = await engagementReadRepository.GetByOpportunityAsync(
-			opportunityId, cancellationToken);
-
-		var volunteerIds = engagements
-			.Where(e => ActiveStatuses.Contains(e.Status) && e.VolunteerId is not null)
-			.Where(e => timeSlotId is null || e.TimeSlotId == timeSlotId.Value.Value)
-			.Select(e => e.VolunteerId!.Value)
-			.Distinct();
+		var volunteerIds = await engagementReadRepository.GetActiveVolunteerIdsByOpportunityAsync(
+			opportunityId, timeSlotId, cancellationToken);
 
 		foreach (var volunteerId in volunteerIds)
 		{

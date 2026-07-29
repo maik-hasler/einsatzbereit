@@ -319,7 +319,7 @@ export default function VolunteerOpportunitiesList() {
 								{showLocationSuggestions && (
 									<ul
 										role="listbox"
-										className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+										className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-modal"
 									>
 										{locationSuggestions.map((s, i) => (
 											<li

@@ -22,6 +22,7 @@ internal sealed class GetOpportunityFeedbackEndpoint : IEndpoint
 			.WithName("GetOpportunityFeedback")
 			.WithTags("VolunteerOpportunities")
 			.Produces<OpportunityFeedbackSummary>()
+			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
@@ -30,16 +31,24 @@ internal sealed class GetOpportunityFeedbackEndpoint : IEndpoint
 
 	private static async Task<IResult> GetFeedbackAsync(
 		[FromRoute] Guid opportunityId,
+		[FromQuery] int pageNumber,
+		[FromQuery] int pageSize,
 		[FromServices] ISender sender,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
+		if (pageNumber < 1)
+			return Results.Problem("PageNumber must be at least 1.", statusCode: StatusCodes.Status400BadRequest);
+
+		if (pageSize < 1 || pageSize > 100)
+			return Results.Problem("PageSize must be between 1 and 100.", statusCode: StatusCodes.Status400BadRequest);
+
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid)
 			? UserId.Create(uid).GetValueOrThrow()
 			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
 		var result = await sender.Send(
-			new GetOpportunityFeedbackQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), userId),
+			new GetOpportunityFeedbackQuery(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), userId, pageNumber, pageSize),
 			cancellationToken);
 
 		return Results.Ok(result);

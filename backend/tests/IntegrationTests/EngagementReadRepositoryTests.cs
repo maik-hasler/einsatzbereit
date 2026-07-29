@@ -1,0 +1,102 @@
+using Application.Common.Exceptions;
+using AwesomeAssertions;
+using Domain.Engagements;
+using Domain.Users;
+using Domain.VolunteerOpportunities;
+using Infrastructure.Persistence.Repositories;
+using Infrastructure.VolunteerOpportunities;
+using TUnit.Core.Interfaces;
+// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
+// "Address"/"OrganizationId" DTO types, which would otherwise shadow the domain
+// types of the same name pulled in via the "Domain.Common"/"Domain.Organizations"
+// usings below (see the same workaround in OrganizationMembershipBackfillJobTests.cs).
+using DomainAddress = Domain.Common.Address;
+using DomainOrganizationId = Domain.Organizations.OrganizationId;
+
+namespace IntegrationTests;
+
+// Exercises Infrastructure.Persistence.Repositories.EngagementReadRepository directly
+// (InternalsVisibleTo, see Infrastructure.csproj) against the real integration Postgres.
+// GetActiveVolunteerIdsByOpportunityAsync's DB-level status/time-slot filtering and its
+// nullable-UserId Distinct() projection (einsatzbereit#1390) aren't exercised by the
+// NSubstitute-mocked Application.UnitTests handler tests (which only assert on the
+// interface's behavior, not that the EF query actually translates) - this is the only
+// place that would catch an EF query-translation failure against real Postgres.
+[ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
+public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
+{
+	private static readonly DomainAddress DefaultAddress = DomainAddress.Create("Teststrasse", "1", "12345", "Berlin").Value;
+
+	[Before(Test)]
+	public Task ResetAsync() => fixture.ResetAsync();
+
+	[Test]
+	public async Task GetActiveVolunteerIdsByOpportunityAsync_ShouldReturnOnlyPendingAndConfirmed_ExcludingTerminalAndAnonymized(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var opportunityId = VolunteerOpportunityId.New();
+
+		// No time slots involved here, so plain individual-contact engagements
+		// (TimeSlotId always null) avoid the TimeSlot foreign key entirely.
+		var pending = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Pending").GetValueOrThrow();
+		var confirmed = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Confirmed").GetValueOrThrow();
+		confirmed.Confirm().ThrowIfFailure();
+		var cancelled = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Cancelled").GetValueOrThrow();
+		cancelled.Cancel().ThrowIfFailure();
+		var withdrawn = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Withdrawn").GetValueOrThrow();
+		withdrawn.Withdraw().ThrowIfFailure();
+		// A pending engagement whose volunteer account was later deleted (#829) -
+		// VolunteerId is null even though Status is still Pending, so there is no
+		// one left to notify and it must not show up in the result.
+		var anonymizedPending = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Anonymized").GetValueOrThrow();
+		anonymizedPending.Anonymize();
+
+		foreach (var engagement in new[] { pending, confirmed, cancelled, withdrawn, anonymizedPending })
+			await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var volunteerIds = await repository.GetActiveVolunteerIdsByOpportunityAsync(
+			opportunityId, timeSlotId: null, cancellationToken);
+
+		volunteerIds.Should().BeEquivalentTo(
+		[
+			pending.VolunteerId!.Value.Value,
+			confirmed.VolunteerId!.Value.Value,
+		]);
+	}
+
+	[Test]
+	public async Task GetActiveVolunteerIdsByOpportunityAsync_ShouldScopeToTimeSlot_WhenGiven(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			ParticipationType.Waitlist, CheckInMethod.None, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slotA = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		var slotB = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(2), DateTimeOffset.UtcNow.AddDays(2).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var onSlotA = Engagement.CreateWaitlistSignUp(opportunity.Id, UserId.New(), slotA.Id);
+		var onSlotB = Engagement.CreateWaitlistSignUp(opportunity.Id, UserId.New(), slotB.Id);
+		await dbContext.Engagements.AddAsync(onSlotA, cancellationToken);
+		await dbContext.Engagements.AddAsync(onSlotB, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var volunteerIds = await repository.GetActiveVolunteerIdsByOpportunityAsync(
+			opportunity.Id, slotA.Id, cancellationToken);
+
+		volunteerIds.Should().BeEquivalentTo([onSlotA.VolunteerId!.Value.Value]);
+	}
+}

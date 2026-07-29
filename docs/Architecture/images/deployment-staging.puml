@@ -53,6 +53,10 @@ Deployment_Node(host, "Staging Host (VM)", "Docker Compose") {
 	Deployment_Node(al_node, "alloy", "grafana/alloy") {
 		Container(al, "Log shipper", "Grafana Alloy", "internal only")
 	}
+
+	Deployment_Node(tm_node, "tempo", "grafana/tempo") {
+		Container(tm, "Trace store", "Tempo", "internal only")
+	}
 }
 
 Rel(traefik, fe, "HTTPS")
@@ -67,7 +71,9 @@ Rel(kc, pg, "Realm data")
 Rel(bk, pg, "pg_dump")
 Rel(gf, pr, "PromQL queries")
 Rel(gf, lo, "LogQL queries")
+Rel(gf, tm, "TraceQL queries")
 Rel(pr, ne, "scrape /metrics")
 Rel(al, lo, "push logs")
+Rel(be, tm, "OTLP traces (gRPC)")
 
 @enduml

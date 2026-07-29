@@ -480,7 +480,8 @@
       "organizerTab": "Feedback",
       "noFeedback": "No feedback yet.",
       "feedbackCount_one": "{{count}} rating",
-      "feedbackCount_other": "{{count}} ratings"
+      "feedbackCount_other": "{{count}} ratings",
+      "loadMore": "Load more"
     },
     "checkIn": {
       "buttonLabel": "Check in",

@@ -170,7 +170,7 @@ export default function DetailsStep({
 			/>
 
 			{isWaitlist && (
-				<div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+				<div className="rounded-card border border-gray-200 bg-gray-50 p-4">
 					<p className="mb-3 text-sm font-semibold text-gray-800">
 						{t("timeSlots.sectionTitle")}
 					</p>

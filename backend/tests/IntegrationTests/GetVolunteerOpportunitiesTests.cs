@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
+using Application.Common.Exceptions;
 using AwesomeAssertions;
+using Domain.VolunteerOpportunities;
 using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
@@ -262,6 +264,111 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var item = result.Items.Single();
 		item.NextTimeSlotStart.Should().BeNull();
 		item.NextTimeSlotEnd.Should().BeNull();
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldExcludeOpportunitiesWhoseOnlyTimeSlotsHaveExpired(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var expired = await CreateOpportunityWithExpiredTimeSlotAsync(authenticatedClient, orgId, cancellationToken);
+
+		var future = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Future opportunity",
+			Description = "Has an upcoming slot",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+		await authenticatedClient.CreateTimeSlotAsync(
+			future.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		await authenticatedClient.PublishVolunteerOpportunityAsync(future.Id, cancellationToken);
+
+		var slotless = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Slotless opportunity",
+			Description = "Never has time slots",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+		}, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
+
+		var ids = result.Items.Select(i => i.Id).ToList();
+		result.TotalItems.Should().Be(2);
+		ids.Should().NotContain(expired.Id, "an opportunity whose only time slot has already ended must not surface publicly");
+		ids.Should().Contain(future.Id);
+		ids.Should().Contain(slotless.Id);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldStillAppear_WhenOnlySomeOfItsTimeSlotsHaveExpired(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Mixed expiry opportunity",
+			Description = "One slot already ended, one is still upcoming",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "Recurring",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		var futureStart = DateTimeOffset.UtcNow.AddDays(3);
+		await authenticatedClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = futureStart,
+				EndDateTime = futureStart.AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await AddExpiredTimeSlotDirectlyAsync(opportunity.Id, cancellationToken);
+
+		await authenticatedClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
+
+		var item = result.Items.Single(i => i.Id == opportunity.Id);
+		item.NextTimeSlotStart.Should().BeCloseTo(futureStart, TimeSpan.FromSeconds(1),
+			"the still-upcoming slot must win over the already-expired one");
 	}
 
 	[Test]
@@ -593,5 +700,49 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		return opportunity;
+	}
+
+	// CreateTimeSlotAsync's domain validation rejects a past StartDateTime (see
+	// TimeSlot.Validate's "TimeSlot.StartMustBeFuture" rule), so there is no API path to
+	// create an already-expired slot. Seeding one directly through the aggregate - with an
+	// artificially past "now" older than the slot itself - reproduces what happens for real
+	// once enough wall-clock time passes after a legitimately-created future slot; the read
+	// repository's expiry filter (VolunteerOpportunityReadRepository.GetPagedSummariesAsync)
+	// only cares about the stored dates, not how they got there.
+	private async Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithExpiredTimeSlotAsync(
+		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
+	{
+		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Expired opportunity",
+			Description = "Only has a time slot that already ended",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		await AddExpiredTimeSlotDirectlyAsync(opportunity.Id, cancellationToken);
+		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		return opportunity;
+	}
+
+	private async Task AddExpiredTimeSlotDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var opportunityId_ = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
+		var aggregate = await dbContext.VolunteerOpportunities.FindAsync(opportunityId_, cancellationToken)
+			?? throw new InvalidOperationException($"Seeded opportunity '{opportunityId}' not found.");
+
+		var start = DateTimeOffset.UtcNow.AddDays(-7);
+		aggregate.AddTimeSlot(start, start.AddHours(2), maxParticipants: 10, now: start.AddDays(-1)).GetValueOrThrow();
+
+		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 }

@@ -59,7 +59,7 @@ export default function MobileMenu({
 	return (
 		<div
 			ref={rootRef}
-			className={`absolute left-0 right-0 top-full border-t md:hidden shadow-lg ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
+			className={`absolute left-0 right-0 top-full border-t md:hidden shadow-modal ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
 		>
 			{isTransparent && (
 				<div

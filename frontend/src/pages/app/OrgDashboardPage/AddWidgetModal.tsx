@@ -113,7 +113,7 @@ export default function AddWidgetModal({
 			onClose={onClose}
 			labelledBy="add-widget-dialog-title"
 			maxWidth="max-w-2xl"
-			className="flex max-h-[min(85vh,640px)] flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+			className="flex max-h-[min(85vh,640px)] flex-col overflow-hidden rounded-card bg-white shadow-modal"
 		>
 			<div className="border-b border-gray-100 px-6 py-4">
 				<h2

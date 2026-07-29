@@ -126,7 +126,14 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 	private static async Task<(string Username, string UserId)> CreateDisposableUserAsync(Uri keycloak)
 	{
 		var adminToken = await GetAdminTokenAsync(keycloak);
-		var username = $"admintest760-{Guid.NewGuid():N}";
+		// Not "admintest760-..." (deliberately doesn't contain "admin" as a
+		// substring): Keycloak's search= does infix matching, so a name
+		// containing "admin" would also match AdministrationPage_OwnRow_
+		// HasNoBlockOrDemoteButtons's search for "admin", surfacing this
+		// disposable user's row in that unrelated test's results - and if
+		// this test's own cleanup below deletes it mid-request, the other
+		// test's per-user Keycloak role lookup 404s on the now-gone id.
+		var username = $"tempuser760-{Guid.NewGuid():N}";
 
 		using var adminHttp = new HttpClient { BaseAddress = keycloak };
 		adminHttp.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);

@@ -8,6 +8,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, textareaClass } from "../../lib/formClasses";
+import { pageTitleClass } from "../../lib/headingClasses";
 import Dropdown from "../../components/Dropdown";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
@@ -249,13 +250,13 @@ export default function ProfileOverviewPage() {
 
 	return (
 		<>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
 				{t("profile.title")}
 			</h1>
 
 			{profileLoading && (
 				<div
-					className="mb-6 flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+					className="mb-6 flex items-center gap-4 rounded-card border border-gray-100 bg-gray-50 px-4 py-4"
 					role="status"
 				>
 					<span className="sr-only">{t("profile.loading")}</span>
@@ -280,7 +281,7 @@ export default function ProfileOverviewPage() {
 
 					{/* Identity + momentum hero */}
 					{!editing && (
-						<div className="mb-6 flex flex-col gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="mb-6 flex flex-col gap-4 rounded-card border border-gray-100 bg-gray-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
 							<div className="flex items-center gap-4">
 								{avatarUrl ? (
 									<img
@@ -306,7 +307,7 @@ export default function ProfileOverviewPage() {
 
 							{streaks && (
 								<div className="flex flex-wrap gap-3">
-									<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3">
+									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
 										<span className="text-2xl" aria-hidden="true">
 											🔥
 										</span>
@@ -321,7 +322,7 @@ export default function ProfileOverviewPage() {
 											</p>
 										</div>
 									</div>
-									<div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3">
+									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
 										<span className="text-2xl" aria-hidden="true">
 											📅
 										</span>

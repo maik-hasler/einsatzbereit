@@ -198,7 +198,7 @@ export default function HomePage() {
 				<div className="relative mx-auto max-w-7xl px-4 pb-16 pt-[5.5rem] sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
 					{/* Left feature cards - xl+ only */}
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
-						<div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+						<div className="flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
 							<div
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
@@ -226,7 +226,7 @@ export default function HomePage() {
 								</p>
 							</div>
 						</div>
-						<div className="ml-4 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+						<div className="ml-4 flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
 							<div
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
@@ -259,7 +259,7 @@ export default function HomePage() {
 								</p>
 							</div>
 						</div>
-						<div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+						<div className="flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
 							<div
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
@@ -347,7 +347,7 @@ export default function HomePage() {
 
 					{/* Right org card - xl+ only */}
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
-						<div className="rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
+						<div className="rounded-card border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
 							<div className="mb-3 flex items-center gap-2">
 								<svg
 									aria-hidden="true"
@@ -385,7 +385,7 @@ export default function HomePage() {
 								))}
 							</ul>
 						</div>
-						<div className="mr-4 flex items-center gap-2.5 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
+						<div className="mr-4 flex items-center gap-2.5 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
 							<span
 								className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent-400"
 								aria-hidden="true"
@@ -453,7 +453,7 @@ export default function HomePage() {
 
 			{/* Mission */}
 			<section aria-labelledby={missionTitleId} className="mb-20">
-				<div className="animate-fade-up overflow-hidden rounded-2xl bg-brand-800 px-8 py-12 text-center sm:px-16">
+				<div className="animate-fade-up overflow-hidden rounded-card bg-brand-800 px-8 py-12 text-center sm:px-16">
 					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
 						{t("landing.missionLabel")}
 					</p>
@@ -477,7 +477,7 @@ export default function HomePage() {
 
 			{/* Organizations directory teaser */}
 			<section aria-labelledby={orgsTeaserTitleId} className="mb-20">
-				<div className="animate-fade-up flex flex-col items-center gap-6 rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-10 sm:text-left">
+				<div className="animate-fade-up flex flex-col items-center gap-6 rounded-card border border-gray-100 bg-white p-8 text-center shadow-resting sm:flex-row sm:items-center sm:justify-between sm:p-10 sm:text-left">
 					<div>
 						<h2
 							id={orgsTeaserTitleId}

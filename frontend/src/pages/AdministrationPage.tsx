@@ -11,6 +11,7 @@ import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
 import { inputClass } from "../lib/formClasses";
+import { pageTitleClass } from "../lib/headingClasses";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
@@ -36,7 +37,7 @@ export default function AdministrationPage() {
 
 	return (
 		<>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
 				{t("administration.title")}
 			</h1>
 			<section className="mb-10">
@@ -145,7 +146,7 @@ function OrganizationsSection() {
 
 	return (
 		<>
-			<div className="overflow-hidden rounded-2xl border border-gray-200">
+			<div className="overflow-hidden rounded-card border border-gray-200">
 				<table className="w-full text-sm">
 					<tbody className="divide-y divide-gray-100">
 						{rows.map((row) => (
@@ -337,7 +338,7 @@ function UsersSection() {
 				<EmptyState title={t("administration.users.noUsers")} />
 			) : (
 				<>
-					<div className="overflow-hidden rounded-2xl border border-gray-200">
+					<div className="overflow-hidden rounded-card border border-gray-200">
 						<table className="w-full text-sm">
 							<tbody className="divide-y divide-gray-100">
 								{rows.map((row) => {
@@ -578,7 +579,7 @@ function ReportsSection() {
 
 	return (
 		<>
-			<div className="overflow-hidden rounded-2xl border border-gray-200">
+			<div className="overflow-hidden rounded-card border border-gray-200">
 				<table className="w-full text-sm">
 					<tbody className="divide-y divide-gray-100">
 						{rows.map((row) => (
