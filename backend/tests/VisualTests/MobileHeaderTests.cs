@@ -16,6 +16,13 @@ public class MobileHeaderTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
 		var frontend = Fixture.GetEndpoint("frontend");
+
+		// This test can't go through AuthHelper.LoginAsync (needs the hamburger
+		// click first), so it needs LoginAsync's Keycloak-CORS fix duplicated
+		// here too - see AuthHelper.AllowKeycloakCrossOriginRequestsAsync's doc
+		// comment.
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
+
 		await Page.GotoAsync(frontend.ToString());
 
 		// On mobile the Sign in button lives inside the hamburger menu.
