@@ -4,7 +4,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Persistence;
+using Domain.Organizations;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Keycloak;
@@ -12,7 +15,8 @@ namespace Infrastructure.Keycloak;
 internal sealed class KeycloakOrganizationService(
 	HttpClient httpClient,
 	KeycloakAdminTokenProvider tokenProvider,
-	IOptions<KeycloakOptions> options)
+	IOptions<KeycloakOptions> options,
+	IApplicationDbContext dbContext)
 	: IKeycloakOrganizationService
 {
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -102,16 +106,13 @@ internal sealed class KeycloakOrganizationService(
 		var members = await membersResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
 			JsonOptions, cancellationToken) ?? [];
 
-		var organisatorsResponse = await httpClient.GetAsync(
-			$"/admin/realms/{_options.Realm}/roles/organisator/users",
-			cancellationToken);
-
-		await EnsureSuccessAsync(organisatorsResponse, cancellationToken);
-
-		var organisators = await organisatorsResponse.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
-			JsonOptions, cancellationToken) ?? [];
-
-		var organisatorIds = organisators.Select(u => u.Id).ToHashSet();
+		// Organizer status is answered from the local organization_membership table
+		// (scoped to this organization) instead of Keycloak's realm-wide organisator
+		// role - see #1386. That also makes it correctly per-organization, where the
+		// old Keycloak-role-based check was global across every organization a user
+		// ever organized.
+		var organizerIds = await dbContext.GetOrganizerUserIdsAsync(
+			OrganizationId.Create(organizationId).GetValueOrThrow(), cancellationToken);
 
 		return members
 			.Select(u => new KeycloakOrganizationMember(
@@ -120,8 +121,25 @@ internal sealed class KeycloakOrganizationService(
 				u.FirstName,
 				u.LastName,
 				u.Email ?? string.Empty,
-				organisatorIds.Contains(u.Id)))
+				organizerIds.Contains(Guid.Parse(u.Id))))
 			.ToList();
+	}
+
+	public async Task<IReadOnlySet<Guid>> GetRealmOrganisatorUserIdsAsync(
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var response = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/roles/organisator/users",
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
+			JsonOptions, cancellationToken) ?? [];
+
+		return users.Select(u => Guid.Parse(u.Id)).ToHashSet();
 	}
 
 	public async Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(

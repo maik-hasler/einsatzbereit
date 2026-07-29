@@ -69,6 +69,36 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 	}
 
 	[Test]
+	public async Task BackfillAsync_MultiplePreExistingOrganizations_FetchesRealmOrganizerSetOnlyOnce(
+		CancellationToken cancellationToken)
+	{
+		// #1386: the realm-wide organizer set must be fetched once per run, not
+		// once per organization - GetMembersAsync itself no longer makes that
+		// realm-wide call at all (it now reads local organization_membership rows),
+		// so this job is the only remaining caller and must not reintroduce an
+		// O(organizations) Keycloak round trip.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		await SeedOrganizationWithoutMembershipRowsAsync(dbContext, cancellationToken);
+		await SeedOrganizationWithoutMembershipRowsAsync(dbContext, cancellationToken);
+
+		var organizerId = Guid.NewGuid();
+		var keycloak = new FakeKeycloakOrganizationService
+		{
+			MembersToReturn =
+			[
+				new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "O.", "olaf@example.com", IsOrganisator: true),
+			],
+		};
+
+		await OrganizationMembershipBackfillJob.BackfillAsync(
+			dbContext, keycloak, NullLogger.Instance, cancellationToken);
+
+		keycloak.GetMembersCallCount.Should().Be(2, "each of the two pre-existing organizations still needs its own member list");
+		keycloak.GetRealmOrganisatorCallCount.Should().Be(
+			1, "the realm-wide organizer set is shared across every organization in the same run, not re-fetched per organization");
+	}
+
+	[Test]
 	public async Task BackfillAsync_OrganizationHasNoOrganizers_StillWritesCompletionMarkerAndNeverRetries(
 		CancellationToken cancellationToken)
 	{
@@ -166,6 +196,8 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 
 		public int GetMembersCallCount { get; private set; }
 
+		public int GetRealmOrganisatorCallCount { get; private set; }
+
 		public Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
 			Guid organizationId, CancellationToken cancellationToken = default)
 		{
@@ -175,6 +207,18 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 				throw new HttpRequestException("Keycloak unavailable (simulated).");
 
 			return Task.FromResult(MembersToReturn);
+		}
+
+		// Derived from MembersToReturn's IsOrganisator flags rather than tracked
+		// separately - BackfillAsync now sources the organizer set from here instead
+		// of from each member's IsOrganisator (see #1386), and every existing test in
+		// this class already expresses "who is an organizer" that way.
+		public Task<IReadOnlySet<Guid>> GetRealmOrganisatorUserIdsAsync(CancellationToken cancellationToken = default)
+		{
+			GetRealmOrganisatorCallCount++;
+
+			return Task.FromResult<IReadOnlySet<Guid>>(
+				MembersToReturn.Where(m => m.IsOrganisator).Select(m => m.UserId).ToHashSet());
 		}
 
 		public Task<Guid> CreateOrganizationAsync(string name, CancellationToken cancellationToken = default) =>

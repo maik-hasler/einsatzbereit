@@ -110,6 +110,19 @@ internal sealed class ApplicationDbContext(
 			.CountAsync(m => m.OrganizationId == organizationId
 				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
 
+	public async Task<HashSet<Guid>> GetOrganizerUserIdsAsync(
+		OrganizationId organizationId,
+		CancellationToken cancellationToken = default)
+	{
+		var userIds = await Set<OrganizationMembership>()
+			.AsNoTracking()
+			.Where(m => m.OrganizationId == organizationId && m.Role == OrganizationMemberRole.Organizer)
+			.Select(m => m.UserId)
+			.ToListAsync(cancellationToken);
+
+		return userIds.Select(id => id.Value).ToHashSet();
+	}
+
 	public async Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,

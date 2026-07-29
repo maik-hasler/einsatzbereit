@@ -90,16 +90,28 @@ internal sealed class OrganizationMembershipBackfillJob(
 				.Select(o => o.Id)
 				.ToListAsync(cancellationToken);
 
-			foreach (var organizationId in organizationIds)
+			if (organizationIds.Count > 0)
 			{
-				var members = await keycloakOrganizationService.GetMembersAsync(
-					organizationId.Value, cancellationToken);
+				// Realm-wide organizer set fetched once for the whole run, not per
+				// organization - GetMembersAsync's own IsOrganisator flag can't be used
+				// here since it now reads the very organization_membership rows this job
+				// exists to create (see #1386), which are empty for every organization in
+				// organizationIds by definition.
+				var realmOrganizerIds = await keycloakOrganizationService.GetRealmOrganisatorUserIdsAsync(cancellationToken);
 
-				foreach (var member in members.Where(m => m.IsOrganisator).DistinctBy(m => m.UserId))
+				foreach (var organizationId in organizationIds)
 				{
-					dbContext.Set<OrganizationMembership>().Add(
-						OrganizationMembership.Create(
-							organizationId, UserId.Create(member.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
+					var members = await keycloakOrganizationService.GetMembersAsync(
+						organizationId.Value, cancellationToken);
+
+					foreach (var member in members
+						.Where(m => realmOrganizerIds.Contains(m.UserId))
+						.DistinctBy(m => m.UserId))
+					{
+						dbContext.Set<OrganizationMembership>().Add(
+							OrganizationMembership.Create(
+								organizationId, UserId.Create(member.UserId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
+					}
 				}
 			}
 
