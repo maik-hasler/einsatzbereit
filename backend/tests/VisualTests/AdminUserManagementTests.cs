@@ -118,11 +118,13 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		var keycloak = Fixture.GetEndpoint("keycloak");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		const string sharedPrefix = "admintest1387";
+		// Neither branch of sharedPrefix may contain "admin" as a substring -
+		// see CreateDisposableUserAsync's own note on why.
+		const string sharedPrefix = "tempuser1387";
 		var (plainUsername, plainUserId) = await CreateDisposableUserAsync(
 			keycloak, $"{sharedPrefix}-plain");
-		var (adminUsername, adminUserId) = await CreateDisposableUserAsync(
-			keycloak, $"{sharedPrefix}-admin", ["user", "admin"]);
+		var (elevatedUsername, elevatedUserId) = await CreateDisposableUserAsync(
+			keycloak, $"{sharedPrefix}-elevated", ["user", "admin"]);
 		try
 		{
 			await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
@@ -133,17 +135,17 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
 
 			var plainRow = Page.Locator("tr").Filter(new() { HasTextString = plainUsername });
-			var adminRow = Page.Locator("tr").Filter(new() { HasTextString = adminUsername });
+			var elevatedRow = Page.Locator("tr").Filter(new() { HasTextString = elevatedUsername });
 			await Expect(plainRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
-			await Expect(adminRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
+			await Expect(elevatedRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-			await Expect(adminRow.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
+			await Expect(elevatedRow.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
 			await Expect(plainRow.GetByText("Admin", new() { Exact = true })).Not.ToBeVisibleAsync();
 		}
 		finally
 		{
 			await DeleteKeycloakUserAsync(keycloak, plainUserId);
-			await DeleteKeycloakUserAsync(keycloak, adminUserId);
+			await DeleteKeycloakUserAsync(keycloak, elevatedUserId);
 		}
 	}
 
