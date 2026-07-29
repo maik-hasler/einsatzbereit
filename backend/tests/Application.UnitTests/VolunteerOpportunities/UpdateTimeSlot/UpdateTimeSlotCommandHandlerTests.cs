@@ -41,7 +41,7 @@ public class UpdateTimeSlotCommandHandlerTests
 			.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
 			.Returns(0);
 		_engagementReadRepository
-			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
 		_sut = new UpdateTimeSlotCommandHandler(_dbContext, _engagementReadRepository);
 	}
@@ -167,12 +167,8 @@ public class UpdateTimeSlotCommandHandlerTests
 			.Returns(opportunity);
 
 		_engagementReadRepository
-			.GetByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
-			.Returns(
-			[
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", editedSlotVolunteer, editedSlot.Id.Value, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
-				new EngagementSummary(Guid.NewGuid(), opportunityId, "T", Guid.NewGuid(), "Org", otherSlotVolunteer, otherSlot.Id.Value, null, "Confirmed", false, false, DateTimeOffset.UtcNow),
-			]);
+			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), editedSlot.Id, cancellationToken)
+			.Returns([editedSlotVolunteer]);
 
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, editedSlot.Id.Value, BaseStart.AddHours(1), BaseEnd.AddHours(1), 10, DefaultRequestingUserId);

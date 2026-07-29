@@ -1153,6 +1153,32 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
           }
         ],
         "responses": {
@@ -1162,6 +1188,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OpportunityFeedbackSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -6726,10 +6762,7 @@
             "format": "int32"
           },
           "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FeedbackItemDto"
-            }
+            "$ref": "#/components/schemas/PagedListOfFeedbackItemDto"
           }
         }
       },
@@ -7198,6 +7231,45 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/EngagementSummary"
+            }
+          }
+        }
+      },
+      "PagedListOfFeedbackItemDto": {
+        "required": [
+          "currentPage",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "totalItems": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "currentPage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedbackItemDto"
             }
           }
         }

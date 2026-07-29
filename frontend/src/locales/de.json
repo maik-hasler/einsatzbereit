@@ -480,7 +480,8 @@
       "organizerTab": "Feedback",
       "noFeedback": "Noch kein Feedback.",
       "feedbackCount_one": "{{count}} Bewertung",
-      "feedbackCount_other": "{{count}} Bewertungen"
+      "feedbackCount_other": "{{count}} Bewertungen",
+      "loadMore": "Mehr laden"
     },
     "checkIn": {
       "buttonLabel": "Einchecken",

@@ -66,11 +66,11 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		var feedbackResponse = await http.GetAsync($"/v1/volunteer-opportunities/{opportunityId}/feedback");
+		var feedbackResponse = await http.GetAsync($"/v1/volunteer-opportunities/{opportunityId}/feedback?pageNumber=1&pageSize=10");
 		feedbackResponse.EnsureSuccessStatusCode();
 		var feedback = await feedbackResponse.Content.ReadFromJsonAsync<JsonElement>();
 		feedback.GetProperty("feedbackCount").GetInt32().Should().Be(0);
-		feedback.GetProperty("items").GetArrayLength().Should().Be(0);
+		feedback.GetProperty("items").GetProperty("items").GetArrayLength().Should().Be(0);
 
 		// The org "Engagements" tab became the unified "Opportunities" hub. A
 		// published opportunity is listed under the Published section with a

@@ -942,11 +942,11 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
-		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, cancellationToken);
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 10, cancellationToken);
 
 		summary.AverageRating.Should().BeNull();
 		summary.FeedbackCount.Should().Be(0);
-		summary.Items.Should().BeEmpty();
+		summary.Items.Items.Should().BeEmpty();
 	}
 
 	[Test]
@@ -970,11 +970,55 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new SubmitFeedbackRequest { Rating = 4, Comment = "Great experience" },
 			cancellationToken);
 
-		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, cancellationToken);
+		var summary = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 10, cancellationToken);
 
 		summary.AverageRating.Should().Be(4);
 		summary.FeedbackCount.Should().Be(1);
-		summary.Items.Should().ContainSingle(i => i.Rating == 4 && i.Comment == "Great experience");
+		summary.Items.Items.Should().ContainSingle(i => i.Rating == 4 && i.Comment == "Great experience");
+	}
+
+	[Test]
+	public async Task GetOpportunityFeedback_ShouldPaginate_AcrossMultiplePages(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		// Two distinct volunteers each submit feedback so the total spans more than
+		// one page at pageSize=1 - olaf both organizes the opportunity and, here,
+		// engages on it as a second volunteer (no domain rule forbids that).
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var veraEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "Vera helps" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(veraEngagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(veraEngagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			veraEngagement.Id, new SubmitFeedbackRequest { Rating = 5, Comment = "Vera's feedback" }, cancellationToken);
+
+		var olafEngagement = await olafClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "Olaf helps too" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(olafEngagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(olafEngagement.Id, cancellationToken);
+		await olafClient.SubmitFeedbackAsync(
+			olafEngagement.Id, new SubmitFeedbackRequest { Rating = 3, Comment = "Olaf's feedback" }, cancellationToken);
+
+		var firstPage = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 1, cancellationToken);
+		var secondPage = await olafClient.GetOpportunityFeedbackAsync(opportunity.Id, 2, 1, cancellationToken);
+
+		firstPage.FeedbackCount.Should().Be(2);
+		firstPage.AverageRating.Should().Be(4);
+		firstPage.Items.Items.Should().ContainSingle();
+		firstPage.Items.TotalItems.Should().Be(2);
+		firstPage.Items.PageCount.Should().Be(2);
+
+		secondPage.FeedbackCount.Should().Be(2);
+		secondPage.AverageRating.Should().Be(4);
+		secondPage.Items.Items.Should().ContainSingle();
+
+		var firstPageComments = firstPage.Items.Items.Select(i => i.Comment).ToList();
+		var secondPageComments = secondPage.Items.Items.Select(i => i.Comment).ToList();
+		firstPageComments.Should().NotBeEquivalentTo(secondPageComments);
 	}
 
 	// ── Cross-opportunity time slot validation (#524) ─────────────────────────
