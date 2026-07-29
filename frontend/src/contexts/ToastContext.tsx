@@ -81,7 +81,7 @@ function ToastList() {
 							: toast.level === "warning"
 								? "bg-yellow-500"
 								: toast.level === "success"
-									? "bg-green-600"
+									? "bg-green-700"
 									: "bg-gray-700"
 					}`}
 				>
