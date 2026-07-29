@@ -340,6 +340,73 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByCitySubstring_CaseInsensitively(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityInCityAsync(authenticatedClient, orgId, "Berlin", cancellationToken);
+		await CreateVolunteerOpportunityInCityAsync(authenticatedClient, orgId, "Munich", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var substringMatch = await sut.GetVolunteerOpportunitiesAsync(1, 10, city: "erli", cancellationToken: cancellationToken);
+		var caseInsensitiveMatch = await sut.GetVolunteerOpportunitiesAsync(1, 10, city: "BERLIN", cancellationToken: cancellationToken);
+		var noMatch = await sut.GetVolunteerOpportunitiesAsync(1, 10, city: "Hamburg", cancellationToken: cancellationToken);
+
+		substringMatch.TotalItems.Should().Be(1);
+		substringMatch.Items.Single().City.Should().Be("Berlin");
+		caseInsensitiveMatch.TotalItems.Should().Be(1);
+		noMatch.TotalItems.Should().Be(0);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByTag(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var opportunity = await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Tagged opportunity",
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			Tags = ["cleanup", "outdoors"],
+			IsDraft = true,
+		}, cancellationToken);
+
+		await authenticatedClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await authenticatedClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var matching = await sut.GetVolunteerOpportunitiesAsync(1, 10, tag: "cleanup", cancellationToken: cancellationToken);
+		var nonMatching = await sut.GetVolunteerOpportunitiesAsync(1, 10, tag: "unrelated", cancellationToken: cancellationToken);
+
+		matching.TotalItems.Should().Be(1);
+		nonMatching.TotalItems.Should().Be(0);
+	}
+
+	[Test]
 	public async Task GetVolunteerOpportunities_ShouldReturnBadRequest_WhenRadiusIsNotPositive(
 		CancellationToken cancellationToken)
 	{
@@ -471,6 +538,41 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			HouseNumber = "1",
 			ZipCode = "12345",
 			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		await client.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		return opportunity;
+	}
+
+	private static async Task<CreateVolunteerOpportunityResponse> CreateVolunteerOpportunityInCityAsync(
+		EinsatzbereitApi client, Guid orgId, string city,
+		CancellationToken cancellationToken)
+	{
+		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = $"Opportunity in {city}",
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = city,
 			Occurrence = "OneTime",
 			ParticipationType = "Waitlist",
 			CheckInMethod = "None",

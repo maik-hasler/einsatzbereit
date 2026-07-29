@@ -45,6 +45,19 @@ internal sealed class VolunteerOpportunityConfiguration
 			address.Property(a => a.City).IsRequired();
 			address.Property(a => a.Latitude);
 			address.Property(a => a.Longitude);
+
+			address.HasIndex(a => new { a.Latitude, a.Longitude });
+
+			// Stored generated column mirroring LOWER(address_city) so the GIN trigram index
+			// below can accelerate the case-insensitive substring search in
+			// VolunteerOpportunityReadRepository.GetPagedSummariesAsync (city.ToLower().Contains(...)).
+			address.Property<string>("CityNormalized")
+				.HasComputedColumnSql("lower(address_city)", stored: true);
+
+			address.HasIndex("CityNormalized")
+				.HasDatabaseName("ix_volunteer_opportunity_city_normalized_trgm")
+				.HasMethod("gin")
+				.HasOperators("gin_trgm_ops");
 		});
 
 		builder.Property(vo => vo.Occurrence)
@@ -93,6 +106,11 @@ internal sealed class VolunteerOpportunityConfiguration
 			.IsRequired();
 
 		builder.HasIndex(vo => vo.OrganizationId);
+
+		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
+
+		builder.HasIndex(vo => vo.Tags)
+			.HasMethod("gin");
 
 		builder.Ignore(vo => vo.Events);
 	}

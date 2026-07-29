@@ -388,9 +388,13 @@ internal sealed class ApplicationDbContext(
 		Database.CanConnectAsync(cancellationToken);
 
 	protected override void OnModelCreating(
-		ModelBuilder modelBuilder) =>
-			modelBuilder.ApplyConfigurationsFromAssembly(
-				Assembly.GetExecutingAssembly());
+		ModelBuilder modelBuilder)
+	{
+		modelBuilder.HasPostgresExtension("pg_trgm");
+
+		modelBuilder.ApplyConfigurationsFromAssembly(
+			Assembly.GetExecutingAssembly());
+	}
 
 	public bool HasActiveTransaction =>
 		Database.CurrentTransaction != null;
