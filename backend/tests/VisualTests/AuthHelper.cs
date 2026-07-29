@@ -15,6 +15,7 @@ public static class AuthHelper
 
 	public static async Task LoginAsync(IPage page, Uri frontendUrl, string username, string password)
 	{
+		await AllowKeycloakCrossOriginRequestsAsync(page);
 		await page.GotoAsync(frontendUrl.ToString());
 
 		await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).First.ClickAsync();
@@ -35,6 +36,32 @@ public static class AuthHelper
 			Timeout = 30_000,
 		});
 	}
+
+	/// <summary>
+	/// Strips the <c>X-Forwarded-For</c> header (seeded context-wide by
+	/// <see cref="VisualTestBase.ContextOptions"/> for rate-limit isolation) from
+	/// any request that crosses into Keycloak. Keycloak's CORS preflight does not
+	/// list it in <c>Access-Control-Allow-Headers</c>, so oidc-client-ts's
+	/// discovery/authorization fetch fails silently and <c>signinRedirect()</c>
+	/// never navigates - the "Sign in"/"Register" click (or ProtectedRoute's
+	/// auto-redirect for an anonymous visitor) just sits on the current page
+	/// until the caller's own wait for a Keycloak-only locator times out.
+	///
+	/// Scoped to a page-level route matching only <c>/realms/</c> paths (Keycloak's
+	/// own), not a context-level <c>"**/*"</c> handler - see
+	/// <see cref="VisualTestBase.ContextOptions"/>'s doc comment for why a
+	/// context-wide route is reserved for every one of this suite's 209 tests, not
+	/// just the ones that actually cross into Keycloak from the browser (this one,
+	/// plus the anonymous-redirect tests in AuthGuardTests/HomePageOrgCtaTests that
+	/// call this directly instead of going through LoginAsync).
+	/// </summary>
+	public static Task AllowKeycloakCrossOriginRequestsAsync(IPage page) =>
+		page.RouteAsync("**/realms/**", async route =>
+		{
+			var headers = new Dictionary<string, string>(route.Request.Headers, StringComparer.OrdinalIgnoreCase);
+			headers.Remove("X-Forwarded-For");
+			await route.ContinueAsync(new() { Headers = headers });
+		});
 
 	/// <summary>
 	/// Signs in without touching Keycloak's login UI: mints a real token via

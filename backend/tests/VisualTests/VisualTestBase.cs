@@ -18,6 +18,14 @@ namespace VisualTests;
 /// exhausting the shared quota and producing 429s. A unique IP per test gives each
 /// its own 60 req/min bucket so no individual test can exceed the limit.
 ///
+/// This header hits the exact same Keycloak CORS wall as <c>traceparent</c> above -
+/// Keycloak doesn't allow it in <c>Access-Control-Allow-Headers</c> either, so any
+/// test whose browser crosses into Keycloak (a real login, or an anonymous
+/// registration/auth redirect) must call
+/// <see cref="AuthHelper.AllowKeycloakCrossOriginRequestsAsync"/> first to strip it
+/// from just those requests - see that method's doc comment for why this is a
+/// page-level route rather than widening this disabled-cache trade-off to every test.
+///
 /// Neither of the above uses a <c>Context.RouteAsync("**/*", ...)</c> handler like
 /// they used to - enabling routing disables the Vite dev server's HTTP cache for
 /// every request across all 207 tests, and a page-level <c>Page.RouteAsync</c> (10

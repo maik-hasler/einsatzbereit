@@ -20,6 +20,7 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
 
 		await MockAllV1GetRequestsAsUnauthorizedAsync();
 
@@ -40,6 +41,12 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		// Registered before the abort-specific route below, so that one (added
+		// later, matching the same origin) still wins for the /auth navigation
+		// itself - this only needs to unblock oidc-client-ts's earlier discovery
+		// fetch so signinRedirect() gets far enough to attempt that navigation
+		// at all.
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
 
 		await MockAllV1GetRequestsAsUnauthorizedAsync();
 

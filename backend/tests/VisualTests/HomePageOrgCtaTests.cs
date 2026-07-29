@@ -22,6 +22,8 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		// and it must stay visible for anonymous visitors (this is the case here).
 		var frontend = Fixture.GetEndpoint("frontend");
 
+		await AuthHelper.AllowKeycloakCrossOriginRequestsAsync(Page);
+
 		await Page.GotoAsync(frontend.ToString());
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
