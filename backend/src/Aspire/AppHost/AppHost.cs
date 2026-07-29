@@ -99,7 +99,20 @@ var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "26
 	.WithBindMount(keycloakRealmImportPath, "/opt/keycloak/data/import", isReadOnly: true)
 	.WithBindMount(keycloakThemePath, "/opt/keycloak/themes/einsatzbereit", isReadOnly: true)
 	.WithArgs("start-dev", "--import-realm")
-	.WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false);
+	.WithHttpEndpoint(port: 8080, targetPort: 8080, isProxied: false)
+	// Without a health check, Aspire's WaitFor(keycloak) below only waits for the
+	// container process to reach "Running" - not for --import-realm to actually
+	// finish inside it. backend's own startup (Program.cs) races Keycloak's admin
+	// API right after that with its Keycloak-dependent seed calls
+	// (ApplicationDbContextInitializer.SeedOrg1Async/SeedOrg2Async), which fail if
+	// the realm isn't servable yet - silently, since SeedAsync only logs the
+	// exception rather than rethrowing. On a slower CI runner, realm import can
+	// plausibly take longer than the gap between "container started" and
+	// backend's first admin API call, losing this race deterministically
+	// rather than intermittently. Wait for the same endpoint
+	// AspireFixture.WaitForRealmReadyAsync already polls from the test side, so
+	// backend is gated on real readiness, not just process liveness.
+	.WithHttpHealthCheck("/realms/einsatzbereit/.well-known/openid-configuration");
 
 var keycloakEndpoint = keycloak.GetEndpoint("http");
 
