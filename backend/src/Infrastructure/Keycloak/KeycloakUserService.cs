@@ -142,7 +142,22 @@ internal sealed class KeycloakUserService(
 			if (user.ServiceAccountClientId is not null)
 				continue;
 
-			var roles = await GetCompositeRealmRoleNamesAsync(user.Id, cancellationToken);
+			IReadOnlyList<string> roles;
+			try
+			{
+				roles = await GetCompositeRealmRoleNamesAsync(user.Id, cancellationToken);
+			}
+			catch
+			{
+				// This user just came back from the list call above, but Keycloak
+				// can still 404 the follow-up per-user role lookup if they're
+				// deleted between the two calls (observed in CI: a short-lived
+				// test-created user removed by its own cleanup mid-request) -
+				// same "ignore individual lookup failures" tolerance as
+				// GetDisplayNamesAsync above, so one stale/racy id doesn't sink
+				// the whole admin Users table.
+				roles = [];
+			}
 
 			items.Add(new AdminUserListItem(
 				Guid.Parse(user.Id),

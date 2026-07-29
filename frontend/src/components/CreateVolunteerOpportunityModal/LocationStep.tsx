@@ -58,7 +58,7 @@ export default function LocationStep({
 
 			{!isRemote && (
 				<>
-					<div className="rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
+					<div className="rounded-card border border-brand-100 bg-brand-50 px-4 py-3">
 						<div className="flex items-start justify-between gap-3">
 							<p className="text-sm leading-relaxed text-brand-800">
 								{t("createOpportunity.locationHint")}

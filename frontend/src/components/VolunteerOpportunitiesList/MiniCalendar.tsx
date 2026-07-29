@@ -131,7 +131,7 @@ export default function MiniCalendar({
 				{dayLabels.map((dl, i) => (
 					<div
 						key={i}
-						className="py-1 text-center text-[11px] font-medium text-gray-400"
+						className="py-1 text-center text-xs font-medium text-gray-400"
 					>
 						{dl}
 					</div>

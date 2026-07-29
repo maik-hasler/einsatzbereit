@@ -185,7 +185,7 @@ export default function ActivitySection() {
 						{invitations.map((inv) => (
 							<li
 								key={inv.id}
-								className="flex h-full flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+								className="flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
 							>
 								<div>
 									<p className="text-sm font-semibold text-gray-900">
@@ -270,7 +270,7 @@ export default function ActivitySection() {
 						<div
 							key={i}
 							aria-hidden="true"
-							className="rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
+							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0 flex-1 space-y-2">
@@ -311,7 +311,7 @@ export default function ActivitySection() {
 					{engagements.map((e) => (
 						<li
 							key={e.id}
-							className="flex h-full flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm transition-shadow hover:shadow-md"
+							className="flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting transition-shadow hover:shadow-raised"
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0">

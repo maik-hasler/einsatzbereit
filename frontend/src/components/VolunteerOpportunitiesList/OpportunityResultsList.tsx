@@ -38,7 +38,7 @@ export default function OpportunityResultsList({
 						<div
 							key={i}
 							aria-hidden="true"
-							className="flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+							className="flex flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting"
 						>
 							<Skeleton className="h-32 w-full shrink-0 rounded-none" />
 							<div className="flex-1 space-y-2 p-4">

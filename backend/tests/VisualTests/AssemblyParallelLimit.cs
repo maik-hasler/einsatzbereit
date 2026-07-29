@@ -11,13 +11,12 @@ using TUnit.Core.Interfaces;
 // intermittently time out waiting on UI state - a problem retrying a failed
 // test can't fix, since a retry lands in the same still-contended run.
 //
-// Cap concurrent tests below the machine's core count so CPU-bound work
-// (axe-core scans, React commits, Chromium rendering) doesn't oversubscribe
-// the runner and start missing the timing assertions scattered across this
-// suite. Capping at ProcessorCount (as this used to) still starves the
-// Aspire-hosted stack itself: every core is claimed by a test's own
-// Chromium/axe-core work, leaving none free for the backend/Postgres/
-// Keycloak/frontend processes those tests are actually driving - e.g.
+// suite. Capping at exactly Environment.ProcessorCount (as this used to)
+// still starves the Aspire-hosted stack itself: dotnet.yml's visual-tests
+// job runs on ubuntu-latest (4 vCPUs), and those same cores also have to
+// service the stack (Postgres, Keycloak, backend API, frontend dev server)
+// that every one of the N concurrent Playwright sessions is calling into,
+// not just the N browser/axe-core processes - e.g.
 // AccessibilityTests.OrgDashboardPage_PlacingAWidget_AsOlaf and
 // EngagementManagementPage_AsOlaf both timed out waiting on the same
 // GET /v1/organizations round trip in the same CI run (2026-07-28). Reserving

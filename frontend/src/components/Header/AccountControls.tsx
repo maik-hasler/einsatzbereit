@@ -83,7 +83,7 @@ export default function AccountControls({
 				</button>
 
 				{dropdownOpen && (
-					<div className="absolute right-0 top-full mt-2 w-56 rounded-lg border shadow-lg z-50 bg-white border-gray-200">
+					<div className="absolute right-0 top-full mt-2 w-56 rounded-lg border shadow-modal z-50 bg-white border-gray-200">
 						<div className="px-4 py-3 border-b border-gray-100">
 							<p className="text-sm font-medium text-gray-900">{displayName}</p>
 						</div>
@@ -177,7 +177,7 @@ export default function AccountControls({
 										</svg>
 									</button>
 									{orgMenuOpen && (
-										<div className="absolute right-full top-0 mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+										<div className="absolute right-full top-0 mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-modal">
 											{ORG_TABS.map((tab) => (
 												<Link
 													key={tab.key}

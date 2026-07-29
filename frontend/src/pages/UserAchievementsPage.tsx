@@ -12,6 +12,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { runtimeConfig } from "../lib/runtimeConfig";
 import { getApiErrorMessage } from "../lib/apiError";
+import { pageTitleClass } from "../lib/headingClasses";
 
 export default function UserAchievementsPage() {
 	const { userId } = useParams<{ userId: string }>();
@@ -63,7 +64,7 @@ export default function UserAchievementsPage() {
 
 	return (
 		<>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
 				{t("achievements.publicTitle")}
 			</h1>
 

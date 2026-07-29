@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import i18next from "i18next";
+import { statusTitleClass } from "../lib/headingClasses";
 
 interface Props {
 	children: ReactNode;
@@ -38,7 +39,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 			const t = i18next.t.bind(i18next);
 			return (
 				<div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
-					<h1 className="text-3xl font-bold text-gray-900">
+					<h1 className={`text-gray-900 ${statusTitleClass}`}>
 						{t("error.boundaryTitle")}
 					</h1>
 					<p className="max-w-md text-gray-500">{t("error.boundaryMessage")}</p>

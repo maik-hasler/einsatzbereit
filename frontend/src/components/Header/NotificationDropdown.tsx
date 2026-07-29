@@ -77,7 +77,7 @@ export default function NotificationDropdown({
 					/>
 				</svg>
 				{unreadCount > 0 && (
-					<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+					<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
 						{unreadCount > 9 ? "9+" : unreadCount}
 					</span>
 				)}
@@ -87,7 +87,7 @@ export default function NotificationDropdown({
 					data-testid={
 						mobile ? "notification-panel-mobile" : "notification-panel"
 					}
-					className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-lg z-50 bg-white border-gray-200"
+					className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-modal z-50 bg-white border-gray-200"
 				>
 					<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
 						<p className="text-sm font-medium text-gray-900">

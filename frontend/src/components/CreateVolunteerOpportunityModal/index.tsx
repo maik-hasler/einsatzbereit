@@ -656,7 +656,7 @@ export default function CreateVolunteerOpportunityModal({
 				onClose={requestClose}
 				labelledBy="create-opportunity-dialog-title"
 				maxWidth="max-w-xl"
-				className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				className="flex min-w-0 flex-col overflow-hidden rounded-card bg-white shadow-modal"
 				backdropClassName="bg-black/60 backdrop-blur-sm"
 				suspended={showDiscardConfirm || pendingSlotEdit !== null}
 				initialFocusRef={bodyRef}

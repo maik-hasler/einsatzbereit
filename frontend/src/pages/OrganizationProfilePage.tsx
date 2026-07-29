@@ -130,11 +130,11 @@ export default function OrganizationProfilePage() {
 						{profile.openOpportunities.map((opp) => (
 							<li
 								key={opp.id}
-								className="relative rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+								className="relative rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
 							>
 								<Link
 									to={`/volunteer-opportunities/${opp.id}`}
-									className="absolute inset-0 rounded-xl"
+									className="absolute inset-0 rounded-card"
 									aria-label={opp.title}
 								/>
 								<strong className="block text-sm font-semibold text-gray-900">

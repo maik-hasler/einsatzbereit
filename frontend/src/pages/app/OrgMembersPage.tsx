@@ -137,7 +137,7 @@ export default function OrgMembersPage() {
 		<div>
 			<div className="max-w-2xl">
 				{successMessage && (
-					<div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
+					<div className="mb-4 rounded-card bg-green-50 px-4 py-3 text-sm text-green-700">
 						{successMessage}
 					</div>
 				)}
@@ -166,7 +166,7 @@ export default function OrgMembersPage() {
 						</p>
 					)}
 					{memberCandidates.length > 0 && (
-						<ul className="mt-1 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
+						<ul className="mt-1 divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 							{memberCandidates.map((candidate) => (
 								<li
 									key={candidate.userId}
@@ -208,7 +208,7 @@ export default function OrgMembersPage() {
 						<h2 className="mb-2 text-sm font-medium text-gray-700">
 							{t("orgSettings.pendingInvitations")}
 						</h2>
-						<ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
+						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 							{invitations
 								.filter((i) => i.status === "Pending")
 								.map((invitation) => (
@@ -243,7 +243,7 @@ export default function OrgMembersPage() {
 						<h2 className="mb-2 text-sm font-medium text-gray-700">
 							{t("orgSettings.declinedInvitations")}
 						</h2>
-						<ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm">
+						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
 							{invitations
 								.filter((i) => i.status === "Declined")
 								.map((invitation) => (
