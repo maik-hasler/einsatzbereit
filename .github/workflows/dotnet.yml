@@ -166,6 +166,21 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/ArchitectureTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output ArchitectureTests.cobertura.xml
 
+      # TEMPORARY (#1327 diagnosis): the coverage summary job reported "No
+      # files found matching glob pattern" - surface via ::warning:: since
+      # this repo's job logs aren't readable without auth, but annotations
+      # are. Remove once the cobertura files are confirmed landing here.
+      - name: "Debug (#1327): locate cobertura output"
+        if: always()
+        working-directory: backend
+        run: |
+          for p in Application.UnitTests ArchitectureTests; do
+            echo "::warning::[$p] bin exists: $(test -d tests/$p/bin && echo yes || echo no)"
+            find "tests/$p/bin" -maxdepth 2 -mindepth 1 -type d 2>/dev/null | sed "s#^#::warning::[$p] dir: #"
+            find "tests/$p" -iname '*.cobertura.xml' 2>/dev/null | sed "s#^#::warning::[$p] cobertura: #"
+            find "tests/$p" -iname '*testresults*' -maxdepth 5 2>/dev/null | sed "s#^#::warning::[$p] testresults-path: #"
+          done
+
       # Microsoft.Testing.Extensions.CodeCoverage ships bundled with the TUnit
       # meta package (confirmed locally - no separate PackageReference needed).
       # coverage-report (bottom of this file) merges these across all three
@@ -238,6 +253,17 @@ jobs:
       - name: Test - IntegrationTests (Aspire + Docker)
         working-directory: backend
         run: dotnet run --project tests/IntegrationTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output IntegrationTests.cobertura.xml
+
+      # TEMPORARY (#1327 diagnosis): see fast-tests' matching step.
+      - name: "Debug (#1327): locate cobertura output"
+        if: always()
+        working-directory: backend
+        run: |
+          p=IntegrationTests
+          echo "::warning::[$p] bin exists: $(test -d tests/$p/bin && echo yes || echo no)"
+          find "tests/$p/bin" -maxdepth 2 -mindepth 1 -type d 2>/dev/null | sed "s#^#::warning::[$p] dir: #"
+          find "tests/$p" -iname '*.cobertura.xml' 2>/dev/null | sed "s#^#::warning::[$p] cobertura: #"
+          find "tests/$p" -iname '*testresults*' -maxdepth 5 2>/dev/null | sed "s#^#::warning::[$p] testresults-path: #"
 
       - name: Upload coverage report
         if: always()
@@ -319,6 +345,17 @@ jobs:
         working-directory: backend
         run: dotnet run --project tests/VisualTests --no-restore --no-build -- --coverage --coverage-output-format cobertura --coverage-output VisualTests.cobertura.xml
 
+      # TEMPORARY (#1327 diagnosis): see fast-tests' matching step.
+      - name: "Debug (#1327): locate cobertura output"
+        if: always()
+        working-directory: backend
+        run: |
+          p=VisualTests
+          echo "::warning::[$p] bin exists: $(test -d tests/$p/bin && echo yes || echo no)"
+          find "tests/$p/bin" -maxdepth 2 -mindepth 1 -type d 2>/dev/null | sed "s#^#::warning::[$p] dir: #"
+          find "tests/$p" -iname '*.cobertura.xml' 2>/dev/null | sed "s#^#::warning::[$p] cobertura: #"
+          find "tests/$p" -iname '*testresults*' -maxdepth 5 2>/dev/null | sed "s#^#::warning::[$p] testresults-path: #"
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -367,6 +404,13 @@ jobs:
           pattern: coverage-*
           path: coverage
           merge-multiple: true
+
+      # TEMPORARY (#1327 diagnosis): see fast-tests' matching step for why.
+      - name: "Debug (#1327): list downloaded coverage artifacts"
+        if: always()
+        run: |
+          echo "::warning::coverage dir exists: $(test -d coverage && echo yes || echo no)"
+          find coverage -maxdepth 4 2>/dev/null | sed "s#^#::warning::found: #"
 
       - name: Build coverage summary
         uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
