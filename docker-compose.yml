@@ -217,6 +217,13 @@ services:
       # reachable) comes from Traefik's backend router below only ever
       # pointing at port 8080, never 8081 (#1341).
       Metrics__Port: "8081"
+      # Read by ServiceDefaults/Extensions.cs's AddOpenTelemetryExporters -
+      # enables the OTLP trace exporter, which is otherwise a no-op. Plain
+      # http (no TLS) is fine: this traffic never leaves the internal
+      # "monitoring" network above. gRPC is the exporter's default protocol,
+      # so no separate OTEL_EXPORTER_OTLP_PROTOCOL is needed for tempo's
+      # matching gRPC receiver on 4317 (#1352).
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
@@ -408,6 +415,36 @@ services:
       - --storage.path=/var/lib/alloy/data
       - /etc/alloy/config.alloy
 
+  # Trace store. Receives OTLP push directly from the backend (see backend's
+  # OTEL_EXPORTER_OTLP_ENDPOINT above) rather than being discovered/scraped -
+  # unlike Loki, there is no separate shipper here since the backend already
+  # speaks OTLP natively via ServiceDefaults. Single-binary mode (no separate
+  # ingester/querier/compactor processes), mirrors Loki's monolithic setup
+  # above - proportionate to this stack's own trace volume.
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    restart: unless-stopped
+    networks:
+      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 160m
+          cpus: "0.25"
+    volumes:
+      - tempo_data:/var/tempo
+    configs:
+      - source: tempo-config
+        target: /etc/tempo/tempo.yaml
+    command:
+      - -config.file=/etc/tempo/tempo.yaml
+    # No Docker healthcheck: unlike Loki (confirmed lacking wget/shell on
+    # staging, see loki's comment above), this hasn't been verified either
+    # way for the Tempo image - left out rather than guessed at. Nothing
+    # depends on this container via `condition: service_healthy`, so a
+    # missing healthcheck doesn't block or gate anything else.
+
 networks:
   proxy:
     name: proxy
@@ -425,6 +462,7 @@ volumes:
   grafana_data:
   loki_data:
   alloy_data:
+  tempo_data:
 
 configs:
   postgres-init:
@@ -466,6 +504,11 @@ configs:
           type: loki
           access: proxy
           url: http://loki:3100
+          editable: false
+        - name: Tempo
+          type: tempo
+          access: proxy
+          url: http://tempo:3200
           editable: false
   alloy-config:
     content: |
@@ -511,3 +554,29 @@ configs:
           url = "http://loki:3100/loki/api/v1/push"
         }
       }
+  tempo-config:
+    content: |
+      server:
+        http_listen_port: 3200
+
+      distributor:
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+              http:
+
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /var/tempo/traces
+          wal:
+            path: /var/tempo/wal
+
+      # Bounds disk usage on a memory/disk-constrained staging VM - traces
+      # older than this are dropped, unlike Prometheus/Loki which currently
+      # have no equivalent explicit retention cap.
+      compactor:
+        compaction:
+          block_retention: 48h

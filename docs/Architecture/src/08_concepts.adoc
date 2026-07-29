@@ -111,12 +111,12 @@ Opportunity addresses are geocoded at write time, and spatial search uses a boun
 
 The backend uses the .NET built-in `ILogger<T>` abstraction. Every request runs inside a logging scope that enriches its entries with the OpenTelemetry trace ID and the authenticated user ID.
 
-Observability is built on OpenTelemetry (via the Aspire service defaults): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP - collected by the Aspire dashboard in development, and by any OTLP-compatible backend in production when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
+Observability is built on OpenTelemetry (via the Aspire service defaults): logs, metrics (ASP.NET Core, HTTP client, runtime), and distributed traces are exported over OTLP - collected by the Aspire dashboard in development, and by Grafana Tempo in staging/production, where `docker-compose.yml` points `OTEL_EXPORTER_OTLP_ENDPOINT` at it (ADR 6).
 
 Key logged events:
 
-* HTTP request logs (method, path, status, duration)
+* HTTP request logs (method, path, status, duration) - the `Microsoft.AspNetCore.HttpLogging` category has its own `LogLevel` override so these survive the broader `Microsoft.AspNetCore: Warning` filter (#1352)
 * Unhandled exceptions (with trace ID)
 * Slow requests (flagged by the performance pipeline behavior)
 
-No third-party observability SaaS (Datadog, Grafana Cloud, etc.) is wired in by default - a deliberate trade-off to keep operational complexity minimal; any OTLP backend can be pointed at the exporter.
+No third-party observability SaaS (Datadog, Grafana Cloud, etc.) is wired in by default - a deliberate trade-off to keep operational complexity minimal; any OTLP backend can be pointed at the exporter, and the self-hosted Grafana stack (Prometheus, Loki, Tempo) already deployed alongside the app is what it points at in staging/production.
