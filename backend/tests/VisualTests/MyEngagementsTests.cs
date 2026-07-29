@@ -24,26 +24,13 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// cards the empty state is valid and we skip the org-link assertions.
 		var engagementCards = Page.Locator("li.rounded-xl");
 		var cardCount = await engagementCards.CountAsync();
-		if (cardCount == 0)
-		{
-			return;
-		}
+		Skip.When(cardCount == 0, "Keycloak seeding can fail silently in CI - if vera has no engagement cards the empty state is valid and there is nothing to assert.");
 
-		// Other VisualTests classes sharing this Aspire session (e.g.
-		// OpportunityApplicationStateTests, EngagementReactivationTests) also
-		// sign up vera for their own throwaway opportunities/orgs, so a
-		// non-zero card count no longer guarantees the seed engagements are
-		// among them - only that seeding failing silently in CI produces the
-		// same symptom (no card links to either seed org) as it would if
-		// vera genuinely had zero engagements. Skip in both cases.
-		var seedOrgCard = Page.GetByText("Fairview Red Cross")
-			.Or(Page.GetByText("Fairview Animal Welfare Association"));
-		if (await seedOrgCard.CountAsync() == 0)
-		{
-			return;
-		}
-
-		// Vera has engagement cards - every card must expose an org link.
+		// Vera has engagement cards - other, unrelated tests sharing this
+		// session can add throwaway engagements for her too, so this doesn't
+		// assert the set is *exactly* her seed engagements, only that every
+		// visible card (seed or not) exposes an org link, and that the two
+		// seed org names are present somewhere among them.
 		var orgLinks = Page.Locator("a[href^='/organizations/']");
 		await Expect(orgLinks.First).ToBeVisibleAsync();
 

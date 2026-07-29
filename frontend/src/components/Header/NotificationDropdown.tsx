@@ -41,8 +41,11 @@ export default function NotificationDropdown({
 	} = menu;
 
 	async function handleSelect(n: NotificationSummary) {
+		// Marking as read is a side effect, not a prerequisite for navigation -
+		// fire it and move on so a failed mark-as-read (network error, etc.)
+		// can never block opening the notification's target (einsatzbereit#1222).
 		if (!n.isRead) {
-			await markOneRead(n.id);
+			void markOneRead(n.id);
 		}
 		setNotifOpen(false);
 		onClose?.();

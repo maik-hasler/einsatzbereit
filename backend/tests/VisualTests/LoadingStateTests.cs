@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -38,7 +37,7 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
 		await Expect(loadingStatus).ToContainTextAsync("Loading");
-		(await loadingStatus.Locator(".animate-pulse").CountAsync()).Should().BeGreaterThan(0);
+		await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(loadingStatus).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
@@ -68,7 +67,7 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
 		await Expect(loadingStatus).ToContainTextAsync("Loading");
-		(await loadingStatus.Locator(".animate-pulse").CountAsync()).Should().BeGreaterThan(0);
+		await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(loadingStatus).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
