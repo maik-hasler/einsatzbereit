@@ -954,11 +954,19 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
-    getOpportunityFeedback(opportunityId: string, signal?: AbortSignal): Promise<OpportunityFeedbackSummary> {
-        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/feedback";
+    getOpportunityFeedback(opportunityId: string, pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<OpportunityFeedbackSummary> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/feedback?";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
         url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -982,6 +990,12 @@ export class EinsatzbereitApi {
             let result200: any = null;
             result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OpportunityFeedbackSummary;
             return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -5243,7 +5257,7 @@ export interface NotificationSummary {
 export interface OpportunityFeedbackSummary {
     averageRating: number | undefined;
     feedbackCount: number;
-    items: FeedbackItemDto[];
+    items: PagedListOfFeedbackItemDto;
 
     [key: string]: any;
 }
@@ -5361,6 +5375,15 @@ export interface PagedListOfEngagementSummary {
     currentPage: number;
     pageCount?: number;
     items: EngagementSummary[];
+
+    [key: string]: any;
+}
+
+export interface PagedListOfFeedbackItemDto {
+    totalItems?: number;
+    currentPage: number;
+    pageCount?: number;
+    items: FeedbackItemDto[];
 
     [key: string]: any;
 }

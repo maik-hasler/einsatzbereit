@@ -312,20 +312,52 @@ internal sealed class EngagementReadRepository(
 			timeSlot.EndDateTime);
 	}
 
-	public async ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(
+	public async ValueTask<List<Guid>> GetActiveVolunteerIdsByOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
+		TimeSlotId? timeSlotId,
 		CancellationToken cancellationToken = default)
 	{
-		var items = await dbContext.EngagementsQuery
-			.Where(e => e.OpportunityId == opportunityId && e.FeedbackSubmittedAt != null)
+		var query = dbContext.EngagementsQuery
+			.Where(e => e.OpportunityId == opportunityId
+				&& e.VolunteerId != null
+				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed));
+
+		if (timeSlotId is not null)
+			query = query.Where(e => e.TimeSlotId == timeSlotId);
+
+		var volunteerIds = await query
+			.Select(e => e.VolunteerId)
+			.Distinct()
+			.ToListAsync(cancellationToken);
+
+		return volunteerIds.Select(id => id!.Value.Value).ToList();
+	}
+
+	public async ValueTask<OpportunityFeedbackSummary> GetFeedbackByOpportunityAsync(
+		VolunteerOpportunityId opportunityId,
+		int pageNumber,
+		int pageSize,
+		CancellationToken cancellationToken = default)
+	{
+		var scopedQuery = dbContext.EngagementsQuery
+			.Where(e => e.OpportunityId == opportunityId && e.FeedbackSubmittedAt != null);
+
+		var totalCount = await scopedQuery.CountAsync(cancellationToken);
+
+		var avg = totalCount > 0
+			? (double?)await scopedQuery.AverageAsync(e => e.FeedbackRating!.Value, cancellationToken)
+			: null;
+
+		var items = await scopedQuery
 			.OrderByDescending(e => e.FeedbackSubmittedAt)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
 			.Select(e => new FeedbackItemDto(
 				e.FeedbackRating!.Value,
 				e.FeedbackComment,
 				e.FeedbackSubmittedAt!.Value))
 			.ToListAsync(cancellationToken);
 
-		var avg = items.Count > 0 ? (double?)items.Average(f => f.Rating) : null;
-		return new OpportunityFeedbackSummary(avg, items.Count, items);
+		return new OpportunityFeedbackSummary(avg, totalCount, new PagedList<FeedbackItemDto>(items, totalCount, pageNumber, pageSize));
 	}
 }

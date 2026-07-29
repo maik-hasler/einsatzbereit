@@ -12,6 +12,8 @@ internal sealed class GetOpportunityFeedbackQueryHandler(
 	IEngagementReadRepository engagementReadRepository)
 	: IQueryHandler<GetOpportunityFeedbackQuery, OpportunityFeedbackSummary>
 {
+	private const int MaxPageSize = 100;
+
 	public async ValueTask<OpportunityFeedbackSummary> Handle(
 		GetOpportunityFeedbackQuery request,
 		CancellationToken cancellationToken = default)
@@ -27,8 +29,13 @@ internal sealed class GetOpportunityFeedbackQueryHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
+		var pageNumber = Math.Max(1, request.PageNumber);
+		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
+
 		return await engagementReadRepository.GetFeedbackByOpportunityAsync(
 			request.OpportunityId,
+			pageNumber,
+			pageSize,
 			cancellationToken);
 	}
 }

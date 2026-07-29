@@ -45,7 +45,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 			.GetOpenReportsForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Report>());
 		_engagementReadRepository
-			.GetByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
 		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
 	}

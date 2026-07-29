@@ -1,9 +1,11 @@
+using Application.Common.Pagination;
+
 namespace Application.Engagements;
 
 public sealed record OpportunityFeedbackSummary(
 	double? AverageRating,
 	int FeedbackCount,
-	IReadOnlyList<FeedbackItemDto> Items);
+	PagedList<FeedbackItemDto> Items);
 
 public sealed record FeedbackItemDto(
 	int Rating,
