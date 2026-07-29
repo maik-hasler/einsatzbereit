@@ -139,17 +139,23 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
-				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
-					if (entry?.access_token) return entry.access_token;
+		// Read inside PollUntilAsync (rather than a single raw EvaluateAsync)
+		// so a slow post-mount localStorage write can't race this check.
+		string? token = null;
+		await PollUntilAsync(async () =>
+		{
+			token = await Page.EvaluateAsync<string?>(@"() => {
+				for (let i = 0; i < localStorage.length; i++) {
+					const key = localStorage.key(i);
+					if (key && key.includes('oidc.user')) {
+						const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+						if (entry?.access_token) return entry.access_token;
+					}
 				}
-			}
-			return null;
-		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+				return null;
+			}");
+			return token is not null;
+		}, () => "OIDC access token must be available in localStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
@@ -167,9 +173,13 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// unlocked" toast appeared for an already-earned badge.
 		await Page.WaitForTimeoutAsync(3000);
 
+		// Auto-waiting for an absent element only proves anything for the
+		// life of this context because AppHost sets VITE_TOAST_LIFETIME_MS=0
+		// for test runs (see runtimeConfig.ts/ToastContext.tsx) - toasts never
+		// self-dismiss here, so "count is 0" means "never appeared", not
+		// "appeared and already vanished before this check ran".
 		var badgeToast = Page.Locator("[role='alert']", new() { HasText = "New badge unlocked" });
-		(await badgeToast.CountAsync()).Should().Be(0,
-			"an already-earned achievement must not re-announce itself as newly unlocked on a fresh browser context");
+		await Expect(badgeToast).ToHaveCountAsync(0);
 	}
 
 	private static async Task<string> GetTokenAsync(Uri keycloak, string username, string password)

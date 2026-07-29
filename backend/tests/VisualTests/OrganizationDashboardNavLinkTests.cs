@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AwesomeAssertions;
 using Microsoft.Playwright;
 
 namespace VisualTests;
@@ -32,12 +33,39 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
+		// Registered before FastSignInAsync's own navigation - Page.WaitForResponseAsync
+		// must start listening before the request fires, not after - matching the
+		// pattern already established in this suite (see CheckInPinOrganizerSetTests.cs).
+		// Anchors the live DB query below to the instant the frontend's own
+		// GET /v1/organizations actually resolves, instead of to <main> becoming
+		// visible: AppLayoutInner renders <main> unconditionally, uncorrelated
+		// with that fetch, so a query fired right after <main> is visible could
+		// still land before, during, or well after Header's own fetch actually
+		// completes.
+		var organizationsResponseTask = Page.WaitForResponseAsync(
+			r => r.Url.EndsWith("/v1/organizations") && r.Request.Method == "GET");
+
 		// Olaf organizes an org in seed data (see HomePageOrgCtaTests).
 		// FastSignInAsync verifies auth by waiting for the desktop "User menu"
 		// button, which is CSS-hidden below the md breakpoint - so sign in
 		// before shrinking to a mobile viewport, not after.
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		//
+		// pinActiveOrg: false - this test's own subject is the active-org-cookie
+		// -then-alphabetical resolution order (see this class's doc comment), so
+		// it deliberately stays on the unpinned path every other FastSignInAsync
+		// call site now skips, to keep that resolution order under real coverage.
+		await AuthHelper.FastSignInAsync(
+			Page, Fixture, frontend, "olaf", "olaf123", pinActiveOrg: false);
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Queried immediately after the frontend's own GET /v1/organizations has
+		// actually resolved (not just after <main> is visible) - see the
+		// assertion below for why this needs to be a live query at all, and this
+		// placement keeps it anchored to the same instant the frontend itself
+		// resolved, instead of racing several more UI interactions' worth of
+		// concurrently-running tests.
+		await organizationsResponseTask;
+		var expectedOrgId = await Fixture.GetCurrentFirstOrganizerOrganizationIdAsync(AspireFixture.OlafId);
 
 		await Page.SetViewportSizeAsync(MobileWidth, MobileHeight);
 
@@ -69,6 +97,22 @@ public class OrganizationDashboardNavLinkTests(AspireFixture fixture) : VisualTe
 
 		await opportunitiesLink.ClickAsync();
 		await Page.WaitForURLAsync(new Regex(@"/app/[^/]+/dashboard/opportunities"), new() { Timeout = 15_000 });
+
+		// The whole point of leaving this sign-in unpinned: confirm the
+		// cookie-then-alphabetical fallback actually landed on whichever org was
+		// genuinely alphabetically first for olaf at sign-in time (queried above) -
+		// not just on *some* org that happens to satisfy the URL regex above, and
+		// not against a value pinned back at fixture boot
+		// (AspireFixture.GetPinnedOrganizerOrganizationId): that snapshot is only
+		// valid at the instant the fixture starts, before any other test has
+		// created a single org. AchievementsTests, for one, permanently adds two
+		// more Organizer orgs for olaf with no cleanup, sorting ahead of the
+		// seeded one alphabetically - so whether the boot-time snapshot still
+		// matched reality here depended on test scheduling, not on whether the
+		// resolution logic under test actually worked.
+		var resolvedOrgId = Guid.Parse(Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value);
+		expectedOrgId.Should().NotBeNull("olaf organizes a seeded org, so the fallback should always resolve one for him");
+		resolvedOrgId.Should().Be(expectedOrgId!.Value);
 
 		// Re-open and confirm the remaining tabs are all reachable too.
 		await banner.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).First

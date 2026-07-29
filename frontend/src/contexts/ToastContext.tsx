@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { type ToastEvent, subscribeToasts } from "../lib/toastBus";
+import { runtimeConfig } from "../lib/runtimeConfig";
 
 interface ToastContextValue {
 	toasts: ToastEvent[];
@@ -29,9 +30,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 				);
 				return isDuplicate ? prev : [...prev, event];
 			});
-			setTimeout(() => {
-				setToasts((prev) => prev.filter((t) => t.id !== event.id));
-			}, 5000);
+			// 0 (test builds only - see runtimeConfig.ts) disables auto-dismiss
+			// entirely, leaving the toast up until manually closed.
+			if (runtimeConfig.toastLifetimeMs > 0) {
+				setTimeout(() => {
+					setToasts((prev) => prev.filter((t) => t.id !== event.id));
+				}, runtimeConfig.toastLifetimeMs);
+			}
 		});
 		return unsub;
 	}, []);

@@ -43,4 +43,22 @@ describe("runtimeConfig", () => {
 		expect(runtimeConfig.keycloakClientId).toBe("frontend");
 		expect(runtimeConfig.apiUrl).toBe("https://runtime.example");
 	});
+
+	it("defaults toastLifetimeMs to 5000 when neither the build-time env var nor runtime config is set", async () => {
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.toastLifetimeMs).toBe(5000);
+	});
+
+	it("resolves toastLifetimeMs from the build-time env var, as a number", async () => {
+		vi.stubEnv("VITE_TOAST_LIFETIME_MS", "0");
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.toastLifetimeMs).toBe(0);
+	});
+
+	it("prefers window.__APP_CONFIG__'s TOAST_LIFETIME_MS once it has been substituted by the container", async () => {
+		vi.stubEnv("VITE_TOAST_LIFETIME_MS", "5000");
+		window.__APP_CONFIG__ = { TOAST_LIFETIME_MS: "0" };
+		const { runtimeConfig } = await import("./runtimeConfig");
+		expect(runtimeConfig.toastLifetimeMs).toBe(0);
+	});
 });
