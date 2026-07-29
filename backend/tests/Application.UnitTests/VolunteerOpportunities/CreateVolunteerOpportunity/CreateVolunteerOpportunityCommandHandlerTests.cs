@@ -1,5 +1,4 @@
 using Application.Common.Exceptions;
-using Application.Common.Geocoding;
 using Application.Common.Persistence;
 using Application.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
 using AwesomeAssertions;
@@ -8,7 +7,6 @@ using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.VolunteerOpportunities.CreateVolunteerOpportunity;
@@ -20,7 +18,6 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	private static readonly UserId DefaultRequestingUserId = UserId.New();
 
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CreateVolunteerOpportunityCommandHandler _sut;
 
@@ -31,9 +28,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(true);
 		_sut = new CreateVolunteerOpportunityCommandHandler(
 			_dbContext,
-			_geocodingService,
-			_pinGenerator,
-			NullLogger<CreateVolunteerOpportunityCommandHandler>.Instance);
+			_pinGenerator);
 	}
 
 	[Test]
@@ -271,58 +266,12 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldPersistCoordinates_WhenGeocodingSucceeds(
+	public async Task Handle_ShouldSaveWithNullCoordinates_AndRaiseGeocodingRequestedEvent_ForNonRemoteAddress(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
-
-		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
-
-		// Act
-		var result = await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		result.Address!.Latitude.Should().Be(52.52);
-		result.Address!.Longitude.Should().Be(13.405);
-	}
-
-	[Test]
-	public async Task Handle_ShouldThrowValidationError_WhenGeocodingReturnsNotFound(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.NotFound);
-
-		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
-
-		// Act
-		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		(await act.Should().ThrowAsync<ResultFailureException>())
-			.Which.Error.Code.Should().Be("Address.NotFound");
-		await _dbContext
-			.VolunteerOpportunities
-			.DidNotReceive()
-			.AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
-	}
-
-	[Test]
-	public async Task Handle_ShouldSaveWithoutCoordinates_WhenGeocodingIsATransientFailure(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.TransientFailure);
-
+		// Arrange: geocoding itself now happens out of band (see
+		// GeocodeVolunteerOpportunityAddressHandler) - Create only needs to
+		// persist with null coordinates and raise the event that triggers it.
 		var command = new CreateVolunteerOpportunityCommand(
 			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
@@ -332,29 +281,13 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		result.Address!.Latitude.Should().BeNull();
 		result.Address!.Longitude.Should().BeNull();
+		result.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>()
+			.Should().ContainSingle()
+			.Which.OpportunityId.Should().Be(result.Id);
 	}
 
 	[Test]
-	public async Task Handle_ShouldSaveWithoutCoordinates_WhenGeocodingThrows(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(Task.FromException<GeocodingResult>(new HttpRequestException("boom")));
-
-		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
-
-		// Act
-		var result = await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		result.Address!.Latitude.Should().BeNull();
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotGeocode_WhenRemote(
+	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_WhenRemote(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -362,12 +295,10 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			"Title", "Description", TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
-		await _sut.Handle(command, cancellationToken);
+		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _geocodingService
-			.DidNotReceive()
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		result.Events.Should().NotContain(e => e is VolunteerOpportunityGeocodingRequestedDomainEvent);
 	}
 
 	[Test]
