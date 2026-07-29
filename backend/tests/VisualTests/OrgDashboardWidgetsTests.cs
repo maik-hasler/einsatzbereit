@@ -56,9 +56,11 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		// volunteers yet - both KPI stats read 0.
 		await Expect(todoWidget).ToContainTextAsync("Pending Applications");
 		await Expect(todoWidget).ToContainTextAsync("Signed-up Volunteers");
-		var statValues = todoWidget.Locator("p.text-3xl");
-		await Expect(statValues.Nth(0)).ToHaveTextAsync("0");
-		await Expect(statValues.Nth(1)).ToHaveTextAsync("0");
+		// Selects on data-testid rather than the text-3xl Tailwind utility
+		// class - see #1328, a purely cosmetic restyle of that class would
+		// otherwise silently make these locators match nothing.
+		await Expect(todoWidget.GetByTestId("todo-widget-stat-pending")).ToHaveTextAsync("0");
+		await Expect(todoWidget.GetByTestId("todo-widget-stat-confirmed")).ToHaveTextAsync("0");
 
 		// No opportunities yet, so the Upcoming Opportunities widget shows its
 		// empty state instead of a stale/placeholder list.

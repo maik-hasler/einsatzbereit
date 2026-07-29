@@ -152,9 +152,10 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Banner upload affordance present on step 1.
 		await Expect(Page.Locator("#opportunity-banner")).ToBeAttachedAsync();
 
-		// Step 2 hint card present.
+		// Step 2 hint card present. Selects on data-testid rather than the
+		// bg-brand-50 Tailwind utility class - see #1328.
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
-		var hint = Page.GetByTestId("wizard-step-2").Locator("[class*='bg-brand-50']").First;
+		var hint = Page.GetByTestId("wizard-step-2").GetByTestId("location-hint");
 		await Expect(hint).ToBeVisibleAsync();
 
 		// The form is dirty (title/description filled in) - Escape must ask
@@ -431,9 +432,12 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(draftsSection).ToBeVisibleAsync();
 		await Expect(draftsSection.GetByText(uniqueTitle)).ToBeVisibleAsync();
 
-		// Amber badge present (bg-amber-100 class applied to the draft status pill).
-		var amberBadge = draftsSection.Locator("[class*='bg-amber-100']").First;
-		await Expect(amberBadge).ToBeVisibleAsync();
+		// Draft status pill present - selects on data-testid and asserts the
+		// draft-specific label rather than matching the bg-amber-100 Tailwind
+		// utility class directly, which a cosmetic restyle would otherwise
+		// silently break (see #1328).
+		var statusBadge = draftsSection.GetByTestId("opportunity-status-badge").First;
+		await Expect(statusBadge).ToHaveTextAsync("Draft");
 
 		// The public home page must NOT show the draft.
 		await Page.GotoAsync(frontend.ToString());

@@ -193,7 +193,7 @@ export default function OrgSettingsPage() {
 
 	return (
 		<div>
-			<div className="max-w-2xl">
+			<div data-content-wrapper className="max-w-2xl">
 				{!editing && (
 					<OrganizationProfileView
 						name={org.name}

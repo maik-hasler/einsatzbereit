@@ -311,6 +311,8 @@ export default function ActivitySection() {
 					{engagements.map((e) => (
 						<li
 							key={e.id}
+							data-testid="engagement-card"
+							data-engagement-id={e.id}
 							className="flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting transition-shadow hover:shadow-raised"
 						>
 							<div className="flex items-start justify-between gap-3">

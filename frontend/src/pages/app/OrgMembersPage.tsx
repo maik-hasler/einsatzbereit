@@ -135,7 +135,7 @@ export default function OrgMembersPage() {
 
 	return (
 		<div>
-			<div className="max-w-2xl">
+			<div data-content-wrapper className="max-w-2xl">
 				{successMessage && (
 					<div className="mb-4 rounded-card bg-green-50 px-4 py-3 text-sm text-green-700">
 						{successMessage}

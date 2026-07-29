@@ -214,6 +214,7 @@ export default function OrgOpportunitiesPage() {
 							{item.title || t("orgDashboard.unnamedDraft")}
 						</Link>
 						<span
+							data-testid="opportunity-status-badge"
 							className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
 								isDraft
 									? "bg-amber-100 text-amber-800"
