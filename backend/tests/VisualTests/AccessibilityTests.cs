@@ -663,7 +663,14 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
-		Skip.When(await firstCard.CountAsync() == 0, "no waitlist opportunity seeded");
+		try
+		{
+			await firstCard.WaitForAsync(new() { Timeout = 15_000 });
+		}
+		catch (TimeoutException)
+		{
+			Skip.Test("no waitlist opportunity seeded");
+		}
 
 		var href = await firstCard.GetAttributeAsync("href");
 		Skip.When(href is null, "opportunity card had no href attribute");
