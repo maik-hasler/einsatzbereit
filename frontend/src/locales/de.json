@@ -11,7 +11,9 @@
       "saving": "Wird gespeichert…",
       "cancel": "Abbrechen",
       "loading": "Wird geladen…",
-      "pageLoading": "Seite wird geladen…"
+      "pageLoading": "Seite wird geladen…",
+      "tryAgain": "Erneut versuchen",
+      "retrying": "Wird erneut versucht…"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",

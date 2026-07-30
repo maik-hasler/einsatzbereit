@@ -13,6 +13,7 @@ import { pageTitleClass } from "../lib/headingClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import ReportFlagButton from "../components/ReportFlagButton";
 
 const PAGE_SIZE = 10;
@@ -28,16 +29,23 @@ export default function OrganizationsPage() {
 	const [searchInput, setSearchInput] = useState(search);
 	const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const { items, loading, loadingMore, error, hasMore, loadMore } =
-		useLoadMore<PublicOrganizationSummary>(
-			(pageNumber) =>
-				api.getPublicOrganizations(pageNumber, PAGE_SIZE, search || undefined),
-			{
-				deps: [search],
-				getErrorMessage: (err) =>
-					getApiErrorMessage(err, t("error.serverError")),
-			},
-		);
+	const {
+		items,
+		loading,
+		loadingMore,
+		error,
+		hasMore,
+		loadMore,
+		loadMoreError,
+		retryLoadMore,
+	} = useLoadMore<PublicOrganizationSummary>(
+		(pageNumber) =>
+			api.getPublicOrganizations(pageNumber, PAGE_SIZE, search || undefined),
+		{
+			deps: [search],
+			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
+		},
+	);
 
 	usePageTitle(t("organizationsPage.title"));
 	usePageToolbar([{ label: t("breadcrumb.organizations") }]);
@@ -214,19 +222,28 @@ export default function OrganizationsPage() {
 							))}
 						</ul>
 
-						{hasMore && (
-							<div className="mt-8 flex justify-center">
-								<button
-									onClick={loadMore}
-									disabled={loadingMore}
-									className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-								>
-									{loadingMore
-										? t("organizationsPage.loading")
-										: t("organizationsPage.loadMore")}
-								</button>
-							</div>
-						)}
+						{hasMore &&
+							(loadMoreError ? (
+								<LoadMoreError
+									message={t("organizationsPage.error", {
+										message: loadMoreError,
+									})}
+									retrying={loadingMore}
+									onRetry={retryLoadMore}
+								/>
+							) : (
+								<div className="mt-8 flex justify-center">
+									<button
+										onClick={loadMore}
+										disabled={loadingMore}
+										className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+									>
+										{loadingMore
+											? t("organizationsPage.loading")
+											: t("organizationsPage.loadMore")}
+									</button>
+								</div>
+							))}
 					</>
 				)}
 			</div>

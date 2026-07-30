@@ -26,9 +26,18 @@ export interface UseLoadMoreResult<T> {
 	pageCount: number;
 	loading: boolean;
 	loadingMore: boolean;
+	/** Set only when the page-1 (initial) fetch fails - items is empty whenever this is set. */
 	error: string | null;
+	/**
+	 * Set only when a page>1 (load-more) fetch fails - items keeps whatever was
+	 * already loaded (einsatzbereit#1226: a failed load-more used to wipe the
+	 * already-loaded rows because both cases shared a single `error`).
+	 */
+	loadMoreError: string | null;
 	hasMore: boolean;
 	loadMore: () => void;
+	/** Re-attempts the page that produced `loadMoreError`, without advancing further. */
+	retryLoadMore: () => void;
 	reset: () => void;
 }
 
@@ -41,7 +50,12 @@ function defaultGetErrorMessage(error: unknown): string {
 /**
  * Shared load-more pagination: items/page/pageCount/loading/loadingMore/error
  * plus the fetch-on-page-change effect, extracted from four independent copies
- * of this exact state (see einsatzbereit#868).
+ * of this exact state (see einsatzbereit#868). `error` and `loadMoreError` are
+ * deliberately separate state so a load-more failure never has to hide items
+ * that already rendered successfully (see einsatzbereit#1226); `retryLoadMore`
+ * re-runs the fetch effect for the current `page` (already advanced past the
+ * last success by `loadMore` before the failing attempt), rather than
+ * advancing again.
  *
  * `fetchPage` is read via a ref updated on every render rather than listed as
  * an effect dep, so a caller passing a fresh inline closure each render (the
@@ -71,7 +85,9 @@ export function useLoadMore<T>(
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
 	const [resetToken, setResetToken] = useState(0);
+	const [retryToken, setRetryToken] = useState(0);
 
 	const fetchPageRef = useRef(fetchPage);
 	fetchPageRef.current = fetchPage;
@@ -90,22 +106,28 @@ export function useLoadMore<T>(
 
 	useEffect(() => {
 		let cancelled = false;
-		if (page > 1) setLoadingMore(true);
-		else setLoading(true);
-		setError(null);
+		const isInitialLoad = page === 1;
+		if (isInitialLoad) {
+			setLoading(true);
+			setError(null);
+		} else {
+			setLoadingMore(true);
+		}
+		setLoadMoreError(null);
 
 		fetchPageRef
 			.current(page)
 			.then((result) => {
 				if (cancelled) return;
 				setItems((prev) =>
-					page === 1 ? result.items : [...prev, ...result.items],
+					isInitialLoad ? result.items : [...prev, ...result.items],
 				);
 				setPageCount(result.pageCount ?? 1);
 			})
 			.catch((err) => {
 				if (cancelled) return;
-				setError(getErrorMessage(err));
+				if (isInitialLoad) setError(getErrorMessage(err));
+				else setLoadMoreError(getErrorMessage(err));
 			})
 			.finally(() => {
 				if (cancelled) return;
@@ -117,15 +139,20 @@ export function useLoadMore<T>(
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [page, resetToken]);
+	}, [page, resetToken, retryToken]);
 
 	const loadMore = useCallback(() => {
 		setPage((p) => p + 1);
 	}, []);
 
+	const retryLoadMore = useCallback(() => {
+		setRetryToken((n) => n + 1);
+	}, []);
+
 	const reset = useCallback(() => {
 		setItems([]);
 		setError(null);
+		setLoadMoreError(null);
 		setPage(1);
 		setResetToken((n) => n + 1);
 	}, []);
@@ -138,8 +165,10 @@ export function useLoadMore<T>(
 		loading,
 		loadingMore,
 		error,
+		loadMoreError,
 		hasMore: page < pageCount,
 		loadMore,
+		retryLoadMore,
 		reset,
 	};
 }

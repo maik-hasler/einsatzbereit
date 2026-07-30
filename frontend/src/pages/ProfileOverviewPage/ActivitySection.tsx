@@ -18,6 +18,7 @@ import SubmitFeedbackModal from "../../components/SubmitFeedbackModal";
 import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
+import LoadMoreError from "../../components/LoadMoreError";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -47,8 +48,10 @@ export default function ActivitySection() {
 		loading: engagementsLoading,
 		loadingMore: engagementsLoadingMore,
 		error: engagementsError,
+		loadMoreError: engagementsLoadMoreError,
 		hasMore: hasMoreEngagements,
 		loadMore: loadMoreEngagements,
+		retryLoadMore: retryLoadMoreEngagements,
 		reset: resetEngagements,
 	} = useLoadMore<EngagementSummary>(
 		(pageNumber) =>
@@ -434,7 +437,16 @@ export default function ActivitySection() {
 			{!engagementsLoading &&
 				!engagementsError &&
 				engagements.length > 0 &&
-				hasMoreEngagements && (
+				hasMoreEngagements &&
+				(engagementsLoadMoreError ? (
+					<LoadMoreError
+						message={t("myEngagements.error", {
+							message: engagementsLoadMoreError,
+						})}
+						retrying={engagementsLoadingMore}
+						onRetry={retryLoadMoreEngagements}
+					/>
+				) : (
 					<div className="mt-6 flex justify-center">
 						<button
 							onClick={loadMoreEngagements}
@@ -446,7 +458,7 @@ export default function ActivitySection() {
 								: t("myEngagements.loadMore")}
 						</button>
 					</div>
-				)}
+				))}
 
 			{confirmWithdrawId && (
 				<ConfirmDialog

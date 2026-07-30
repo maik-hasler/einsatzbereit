@@ -11,7 +11,9 @@
       "saving": "Saving…",
       "cancel": "Cancel",
       "loading": "Loading…",
-      "pageLoading": "Loading page…"
+      "pageLoading": "Loading page…",
+      "tryAgain": "Try again",
+      "retrying": "Retrying…"
     },
     "nav": {
       "primaryLabel": "Main navigation",
