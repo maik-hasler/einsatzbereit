@@ -182,19 +182,27 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 
-		var removeButton = Page.GetByRole(AriaRole.Button, new() { Name = "Remove" });
-		await Expect(removeButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		// Scope to vera's row by her stable seed email rather than her display
+		// name: other tests in this shared session (e.g. ProfileOverviewTests)
+		// rename her last name to "Sample", and that mutation isn't reset
+		// between tests, so asserting a specific full name here is order-
+		// dependent flakiness waiting to happen.
+		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
+		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var veraName = await veraRow.Locator("p").First.TextContentAsync();
+		veraName.Should().NotBeNullOrEmpty();
+
+		var removeButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Remove" });
 		await removeButton.ClickAsync();
 
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync();
-		await Expect(dialog.GetByText("Vera Volunteer")).ToBeVisibleAsync();
+		await Expect(dialog.GetByText(veraName!)).ToBeVisibleAsync();
 
 		// "Keep" must close the dialog without removing the member.
 		await dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
 		await Expect(dialog).Not.ToBeVisibleAsync();
-		await Expect(removeButton).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Vera Volunteer")).ToBeVisibleAsync();
+		await Expect(veraRow).ToBeVisibleAsync();
 
 		// "Yes, remove" on a second attempt actually removes them.
 		await removeButton.ClickAsync();
@@ -202,7 +210,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, remove" }).ClickAsync();
 
 		await Expect(dialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
-		await Expect(Page.GetByText("Vera Volunteer")).Not.ToBeVisibleAsync();
+		await Expect(veraRow).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
