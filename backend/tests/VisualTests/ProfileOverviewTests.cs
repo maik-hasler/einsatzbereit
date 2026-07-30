@@ -89,9 +89,19 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var badgesHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" });
 		await Expect(badgesHeading).ToBeVisibleAsync(new() { Timeout = 20_000 });
 
-		var badgesBox = await badgesHeading.BoundingBoxAsync();
-		badgesBox.Should().NotBeNull();
-		badgesBox!.Y.Should().BeLessThan(300, "the page should have scrolled the Badges section near the top of the viewport");
+		// The deep-link effect scrolls via scrollIntoView({ behavior: "smooth" })
+		// (unless the OS/browser prefers reduced motion), so the heading can still
+		// be mid-animation the instant it becomes visible - poll instead of reading
+		// the bounding box once, the same pattern used above for other
+		// layout-settling assertions in this file.
+		float? badgesY = null;
+		await PollUntilAsync(async () =>
+		{
+			var badgesBox = await badgesHeading.BoundingBoxAsync();
+			badgesY = badgesBox?.Y;
+			return badgesBox is not null && badgesBox.Y < 300;
+		}, () => "the page should have scrolled the Badges section near the top of the viewport "
+			+ $"(last observed Y = {badgesY?.ToString() ?? "null"})");
 	}
 
 	[Test]
