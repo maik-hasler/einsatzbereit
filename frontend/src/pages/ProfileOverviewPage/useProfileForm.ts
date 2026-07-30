@@ -7,6 +7,7 @@ interface FormState {
 	firstName: string;
 	lastName: string;
 	bio: string;
+	phone: string;
 	skills: string[];
 	languages: string[];
 	preferredContact: ContactPref;
@@ -19,6 +20,7 @@ type FormAction =
 	| { type: "setFirstName"; value: string }
 	| { type: "setLastName"; value: string }
 	| { type: "setBio"; value: string }
+	| { type: "setPhone"; value: string }
 	| { type: "setPreferredContact"; value: ContactPref }
 	| { type: "setSkillInput"; value: string }
 	| { type: "setLangInput"; value: string }
@@ -32,6 +34,7 @@ function emptyState(): FormState {
 		firstName: "",
 		lastName: "",
 		bio: "",
+		phone: "",
 		skills: [],
 		languages: [],
 		preferredContact: "",
@@ -47,6 +50,7 @@ function fromProfile(profile: MyProfileResponse | null): FormState {
 		firstName: profile.firstName ?? "",
 		lastName: profile.lastName ?? "",
 		bio: profile.bio ?? "",
+		phone: profile.phone ?? "",
 		skills: profile.skills ?? [],
 		languages: profile.languages ?? [],
 		preferredContact: pref === "Email" || pref === "Phone" ? pref : "",
@@ -71,6 +75,8 @@ function reducer(state: FormState, action: FormAction): FormState {
 			return { ...state, lastName: action.value };
 		case "setBio":
 			return { ...state, bio: action.value };
+		case "setPhone":
+			return { ...state, phone: action.value };
 		case "setPreferredContact":
 			return { ...state, preferredContact: action.value };
 		case "setSkillInput":
@@ -121,6 +127,7 @@ export function useProfileForm(profile: MyProfileResponse | null) {
 		setFirstName: (value: string) => dispatch({ type: "setFirstName", value }),
 		setLastName: (value: string) => dispatch({ type: "setLastName", value }),
 		setBio: (value: string) => dispatch({ type: "setBio", value }),
+		setPhone: (value: string) => dispatch({ type: "setPhone", value }),
 		setPreferredContact: (value: ContactPref) =>
 			dispatch({ type: "setPreferredContact", value }),
 		setSkillInput: (value: string) =>

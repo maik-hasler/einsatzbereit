@@ -30,6 +30,7 @@ internal sealed class UpdateUserProfileCommandHandler(
 		}
 
 		user.ChangeBio(request.Bio);
+		user.SetPhone(request.Phone);
 		user.UpdateSkills(request.Skills);
 		user.UpdateLanguages(request.Languages);
 		user.SetPreferredContact(request.PreferredContactValue);

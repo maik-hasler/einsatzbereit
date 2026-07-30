@@ -774,6 +774,8 @@
       "skillsPlaceholder": "Fähigkeit eingeben und Enter drücken",
       "fieldLanguages": "Sprachen",
       "languagesPlaceholder": "Sprache eingeben und Enter drücken",
+      "fieldPhone": "Telefon",
+      "phonePlaceholder": "Telefonnummer hinzufügen, unter der dich Organisatoren erreichen können",
       "fieldPreferredContact": "Bevorzugter Kontaktweg",
       "preferredContactEmail": "E-Mail",
       "preferredContactPhone": "Telefon",

@@ -222,6 +222,7 @@ export default function ProfileOverviewPage() {
 				firstName: form.state.firstName || undefined,
 				lastName: form.state.lastName || undefined,
 				bio: form.state.bio || undefined,
+				phone: form.state.phone || undefined,
 				skills: form.state.skills,
 				languages: form.state.languages,
 				preferredContact: form.state.preferredContact || undefined,
@@ -358,6 +359,7 @@ export default function ProfileOverviewPage() {
 								skills={form.state.skills}
 								languages={form.state.languages}
 								preferredContact={form.state.preferredContact || null}
+								phone={form.state.phone || null}
 							/>
 						)}
 
@@ -500,6 +502,17 @@ export default function ProfileOverviewPage() {
 											onAdd={form.addLanguage}
 											onRemove={form.removeLanguage}
 											removeLabel={t("profile.removeChip")}
+										/>
+									</Field>
+
+									<Field label={t("profile.fieldPhone")} id="phone">
+										<input
+											id="phone"
+											type="tel"
+											value={form.state.phone}
+											placeholder={t("profile.phonePlaceholder")}
+											onChange={(e) => form.setPhone(e.target.value)}
+											className={inputClass}
 										/>
 									</Field>
 

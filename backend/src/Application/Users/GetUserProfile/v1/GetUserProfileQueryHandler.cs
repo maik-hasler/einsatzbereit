@@ -36,6 +36,7 @@ internal sealed class GetUserProfileQueryHandler(
 			keycloakUser.Email,
 			user.AvatarUrl,
 			user.Bio,
+			user.Phone,
 			user.Skills,
 			user.Languages,
 			user.PreferredContact?.ToString());

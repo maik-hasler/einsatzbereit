@@ -5223,6 +5223,8 @@ export interface EngagementSummary {
     timeSlotStartDateTime?: Date | undefined;
     timeSlotEndDateTime?: Date | undefined;
     location?: string | undefined;
+    volunteerEmail?: string | undefined;
+    volunteerPhone?: string | undefined;
 
     [key: string]: any;
 }
@@ -5274,6 +5276,7 @@ export interface MyProfileResponse {
     email: string;
     avatarUrl: string | undefined;
     bio: string | undefined;
+    phone: string | undefined;
     skills: string[];
     languages: string[];
     preferredContact: string | undefined;
@@ -5661,6 +5664,7 @@ export interface UpdateUserProfileRequest {
     firstName?: string | undefined;
     lastName?: string | undefined;
     bio?: string | undefined;
+    phone?: string | undefined;
     skills?: string[] | undefined;
     languages?: string[] | undefined;
     preferredContact?: string | undefined;

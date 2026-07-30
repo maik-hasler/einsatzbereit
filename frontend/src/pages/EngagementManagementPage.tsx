@@ -309,6 +309,26 @@ export default function EngagementManagementPage() {
 											</span>
 										)}
 									</p>
+									{(e.volunteerEmail || e.volunteerPhone) && (
+										<p className="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500">
+											{e.volunteerEmail && (
+												<a
+													href={`mailto:${e.volunteerEmail}`}
+													className="hover:underline"
+												>
+													{e.volunteerEmail}
+												</a>
+											)}
+											{e.volunteerPhone && (
+												<a
+													href={`tel:${e.volunteerPhone}`}
+													className="hover:underline"
+												>
+													{e.volunteerPhone}
+												</a>
+											)}
+										</p>
+									)}
 									{e.message && (
 										<p className="mt-1 text-sm italic text-gray-700">
 											&ldquo;{e.message}&rdquo;

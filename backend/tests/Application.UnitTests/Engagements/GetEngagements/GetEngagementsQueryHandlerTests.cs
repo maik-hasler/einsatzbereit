@@ -41,8 +41,8 @@ public class GetEngagementsQueryHandlerTests
 			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([], 0, 1, 10));
 		_keycloakUserService
-			.GetDisplayNamesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-			.Returns(new Dictionary<Guid, string>());
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>());
 		_sut = new GetEngagementsQueryHandler(_readRepository, _dbContext, _keycloakUserService);
 	}
 
@@ -124,7 +124,47 @@ public class GetEngagementsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldEnrichVolunteerName_FromDisplayNameMap(
+	public async Task Handle_ShouldEnrichVolunteerNameAndEmail_FromKeycloakProfile(
+		CancellationToken cancellationToken)
+	{
+		var volunteerId = Guid.NewGuid();
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			volunteerId,
+			null,
+			"Ready to help",
+			"Pending",
+			IsCheckedIn: false,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow,
+			VolunteerPhone: "+49 30 1234567");
+
+		_readRepository
+			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
+		_keycloakUserService
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>
+			{
+				[volunteerId] = new KeycloakUserProfile(volunteerId, "vera", "Vera", "Volunteer", "vera@example.com"),
+			});
+
+		var query = new GetEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId, 1, 10);
+
+		var result = await _sut.Handle(query, cancellationToken);
+
+		result.Items.Should().ContainSingle(e =>
+			e.VolunteerName == "Vera Volunteer"
+			&& e.VolunteerEmail == "vera@example.com"
+			&& e.VolunteerPhone == "+49 30 1234567");
+	}
+
+	[Test]
+	public async Task Handle_ShouldFallBackToUsername_WhenKeycloakProfileHasNoName(
 		CancellationToken cancellationToken)
 	{
 		var volunteerId = Guid.NewGuid();
@@ -146,14 +186,58 @@ public class GetEngagementsQueryHandlerTests
 			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
 		_keycloakUserService
-			.GetDisplayNamesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
-			.Returns(new Dictionary<Guid, string> { [volunteerId] = "Vera Volunteer" });
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>
+			{
+				[volunteerId] = new KeycloakUserProfile(volunteerId, "vera", null, null, "vera@example.com"),
+			});
 
 		var query = new GetEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId, 1, 10);
 
 		var result = await _sut.Handle(query, cancellationToken);
 
-		result.Items.Should().ContainSingle(e => e.VolunteerName == "Vera Volunteer");
+		result.Items.Should().ContainSingle(e => e.VolunteerName == "vera");
+	}
+
+	[Test]
+	public async Task Handle_ShouldLeaveVolunteerNameAndEmailNull_WhenKeycloakLookupFailsForVolunteer(
+		CancellationToken cancellationToken)
+	{
+		var volunteerId = Guid.NewGuid();
+		var engagement = new EngagementSummary(
+			Guid.NewGuid(),
+			DefaultOpportunityId.Value,
+			"Test Opportunity",
+			DefaultOrgId.Value,
+			"Test Org",
+			volunteerId,
+			null,
+			"Ready to help",
+			"Pending",
+			IsCheckedIn: false,
+			HasFeedback: false,
+			DateTimeOffset.UtcNow,
+			VolunteerPhone: "+49 30 1234567");
+
+		_readRepository
+			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
+		// GetUserProfilesAsync swallows individual Keycloak lookup failures (deleted user,
+		// transient error) and simply omits that id from the map - this volunteer's entry
+		// must fall back to whatever the repository already returned (VolunteerPhone stays
+		// intact; VolunteerName/VolunteerEmail stay null) rather than throwing.
+		_keycloakUserService
+			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, KeycloakUserProfile>());
+
+		var query = new GetEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId, 1, 10);
+
+		var result = await _sut.Handle(query, cancellationToken);
+
+		result.Items.Should().ContainSingle(e =>
+			e.VolunteerName == null
+			&& e.VolunteerEmail == null
+			&& e.VolunteerPhone == "+49 30 1234567");
 	}
 
 	[Test]

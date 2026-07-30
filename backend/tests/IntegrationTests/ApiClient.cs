@@ -10308,6 +10308,12 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("location")]
         public string? Location { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("volunteerEmail")]
+        public string? VolunteerEmail { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("volunteerPhone")]
+        public string? VolunteerPhone { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -10481,6 +10487,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("bio")]
         public string? Bio { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("phone")]
+        public string? Phone { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("skills")]
         [System.ComponentModel.DataAnnotations.Required]
@@ -11771,6 +11780,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("bio")]
         public string? Bio { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("phone")]
+        public string? Phone { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("skills")]
         public System.Collections.Generic.ICollection<string>? Skills { get; set; } = default!;
