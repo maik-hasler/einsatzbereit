@@ -15,6 +15,7 @@ import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
 import { PlusIcon } from "../../../components/QuickActionIcons";
 import EmptyState from "../../../components/EmptyState";
+import ErrorBanner from "../../../components/ErrorBanner";
 import AddWidgetModal from "./AddWidgetModal";
 import CalendarWidget from "./CalendarWidget";
 import UpcomingOpportunitiesWidget from "./UpcomingOpportunitiesWidget";
@@ -81,11 +82,21 @@ export default function OrgDashboardPage() {
 	const [draftLayout, setDraftLayout] = useState<PlacedWidget[] | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
+	// Distinguishes "no custom layout exists" (the optimistic DEFAULT_LAYOUT
+	// render above is genuinely accurate) from "the fetch to confirm that
+	// failed" (#1234: it used to collapse both into the same silent
+	// DEFAULT_LAYOUT fallback - indistinguishable from a real empty
+	// customization, so a returning organizer hitting a transient backend
+	// outage could edit and save over their actual saved layout without ever
+	// being told theirs failed to load). Blocks entering edit mode (see
+	// startEditing below) until a load actually succeeds.
+	const [layoutLoadFailed, setLayoutLoadFailed] = useState(false);
+	const [retryingLayoutLoad, setRetryingLayoutLoad] = useState(false);
 
 	const placement = useWidgetPlacement({ draftLayout, setDraftLayout });
 
-	useEffect(() => {
-		api
+	const loadLayout = useCallback(() => {
+		return api
 			.getDashboardLayout(organizationId)
 			.then((response) => {
 				const sanitized = response.widgets
@@ -110,10 +121,20 @@ export default function OrgDashboardPage() {
 				// default, is the #771 follow-up fix for "remove all widgets,
 				// it resets back to the default set on refresh".
 				setSavedLayout(response.hasCustomLayout ? sanitized : DEFAULT_LAYOUT);
+				setLayoutLoadFailed(false);
 			})
-			.catch(() => setSavedLayout(DEFAULT_LAYOUT));
+			.catch(() => setLayoutLoadFailed(true));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
+
+	useEffect(() => {
+		void loadLayout();
+	}, [loadLayout]);
+
+	function retryLoadLayout() {
+		setRetryingLayoutLoad(true);
+		void loadLayout().finally(() => setRetryingLayoutLoad(false));
+	}
 
 	const layout = editing ? (draftLayout ?? []) : savedLayout;
 	const availableToAdd = WIDGET_KEYS.filter(
@@ -172,6 +193,11 @@ export default function OrgDashboardPage() {
 	}
 
 	function startEditing() {
+		// Blocked while the true saved layout is unconfirmed (see
+		// layoutLoadFailed above) - the "Edit" quick action is already
+		// disabled for this, but the empty-state CTA below calls this
+		// directly too.
+		if (layoutLoadFailed) return;
 		setDraftLayout(savedLayout);
 		setEditing(true);
 	}
@@ -206,6 +232,8 @@ export default function OrgDashboardPage() {
 	useEditModeQuickActions({
 		editing,
 		saving,
+		editDisabled: layoutLoadFailed,
+		editDisabledTitle: t("orgDashboard.layoutLoadError"),
 		onEdit: startEditing,
 		onSave: () => void handleSave(),
 		onCancel: handleCancel,
@@ -540,6 +568,31 @@ export default function OrgDashboardPage() {
 						className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-brand-800 hover:bg-brand-100"
 					>
 						{t("common.cancel")}
+					</button>
+				</div>
+			)}
+
+			{layoutLoadFailed && (
+				<div className="mb-3 flex items-center gap-3">
+					<ErrorBanner
+						id="dashboard-layout-load-error"
+						className="flex-1"
+						message={t("orgDashboard.layoutLoadError")}
+					/>
+					{/* aria-describedby ties this to the error text above - its own
+					accessible name ("Retry") says nothing about what it's retrying,
+					and a screen-reader user tabbing to it after the banner's one-time
+					aria-live announcement has already passed would otherwise hear
+					just "Retry, button" with no context. */}
+					<button
+						type="button"
+						onClick={retryLoadLayout}
+						disabled={retryingLayoutLoad}
+						aria-describedby="dashboard-layout-load-error"
+						data-testid="dashboard-layout-retry"
+						className="shrink-0 rounded-card bg-red-50 px-3 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+					>
+						{retryingLayoutLoad ? t("common.retrying") : t("common.retry")}
 					</button>
 				</div>
 			)}

@@ -10,6 +10,8 @@
       "save": "Speichern",
       "saving": "Wird gespeichert…",
       "cancel": "Abbrechen",
+      "retry": "Erneut versuchen",
+      "retrying": "Wird erneut versucht…",
       "loading": "Wird geladen…",
       "pageLoading": "Seite wird geladen…"
     },
@@ -339,6 +341,7 @@
       "title": "Organisations-Dashboard",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
+      "layoutLoadError": "Dein gespeichertes Dashboard-Layout konnte nicht bestätigt werden. Die Ansicht unten stimmt damit möglicherweise nicht überein - Bearbeiten ist deaktiviert, bis dies erfolgreich geladen wurde.",
       "notFound": "Organisation nicht gefunden.",
       "openOpportunities": "Offene Einsätze",
       "openOpportunitiesDesc": "Veröffentlichte Einsatzmöglichkeiten",

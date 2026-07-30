@@ -10,6 +10,8 @@
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",
+      "retry": "Retry",
+      "retrying": "Retrying…",
       "loading": "Loading…",
       "pageLoading": "Loading page…"
     },
@@ -339,6 +341,7 @@
       "title": "Organization Dashboard",
       "loading": "Loading…",
       "error": "Error: {{message}}",
+      "layoutLoadError": "Couldn't confirm your saved dashboard layout. What's shown below may not match it, and editing is disabled until this loads successfully.",
       "notFound": "Organization not found.",
       "openOpportunities": "Open Opportunities",
       "openOpportunitiesDesc": "Published volunteer opportunities",
