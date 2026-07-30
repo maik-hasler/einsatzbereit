@@ -9,7 +9,7 @@ namespace VisualTests;
 public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task PublishWaitlist_TimeSlotFailureMidPublish_RetryUpdatesSameDraftInsteadOfDuplicating()
+	public async Task PublishScheduledSlots_TimeSlotFailureMidPublish_RetryUpdatesSameDraftInsteadOfDuplicating()
 	{
 		// Regression for #1227: the create-then-publish flow is create draft ->
 		// upload banner -> create N time slots -> publish. If a time slot
@@ -41,10 +41,10 @@ public class CreateOpportunityRetryTests(AspireFixture fixture) : VisualTestBase
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
-		// Step 3: Waitlist, so publishing requires time slots and goes through
-		// the create-draft-then-publish path this bug lives in.
+		// Step 3: Scheduled slots, so publishing requires time slots and goes
+		// through the create-draft-then-publish path this bug lives in.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("label:has(input[name='participationType'][value='Waitlist'])").ClickAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='ScheduledSlots'])").ClickAsync();
 
 		// Step 4: add two time slots up front - the first CreateTimeSlot call
 		// is made to fail below, and the second must still end up created

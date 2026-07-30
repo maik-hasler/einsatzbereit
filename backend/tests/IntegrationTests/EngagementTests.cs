@@ -1058,7 +1058,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	// ── Multiple time slots per opportunity (#1067) ───────────────────────────
 
 	[Test]
-	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerSignsUpForASecondTimeSlot_OnSameWaitlistOpportunity(
+	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerSignsUpForASecondTimeSlot_OnSameScheduledSlotsOpportunity(
 		CancellationToken cancellationToken)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");

@@ -418,7 +418,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetVolunteerOpportunities_ShouldFilterWaitlistOpportunitiesByRange_WhileStillIncludingSlotlessOnes(
+	public async Task GetVolunteerOpportunities_ShouldFilterScheduledSlotsOpportunitiesByRange_WhileStillIncludingSlotlessOnes(
 		CancellationToken cancellationToken)
 	{
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
@@ -698,14 +698,14 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			Title = title,
-			Description = "Waitlist opportunity with a single time slot",
+			Description = "Scheduled slots opportunity with a single time slot",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
