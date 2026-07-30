@@ -113,7 +113,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), UserId.New(), timeSlotId);
 		engagement.Confirm();
 

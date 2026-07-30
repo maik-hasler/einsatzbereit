@@ -164,7 +164,7 @@ public class CancelEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = CreatePendingWaitlistEngagement();
+		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_keycloakUserService
 			.GetUserAsync(engagement.VolunteerId!.Value.Value, Arg.Any<CancellationToken>())
