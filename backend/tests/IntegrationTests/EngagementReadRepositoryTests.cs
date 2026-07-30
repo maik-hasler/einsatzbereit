@@ -218,7 +218,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var repository = new EngagementReadRepository(dbContext);
 
-		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken);
+		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken: cancellationToken);
 
 		page.Items.Should().ContainSingle()
 			.Which.CancellationReason.Should().Be("Position filled");
