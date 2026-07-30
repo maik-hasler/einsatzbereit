@@ -14,6 +14,10 @@ export type QuickAction = {
 	onClick: () => void;
 	variant?: "primary" | "default";
 	disabled?: boolean;
+	// Surfaced as the button's `title` - mainly for a disabled action, where
+	// the native `disabled` attribute alone gives no indication why (see
+	// useEditModeQuickActions's editDisabledTitle).
+	title?: string;
 };
 
 type QuickActionsContextValue = {

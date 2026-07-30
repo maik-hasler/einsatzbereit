@@ -9,6 +9,16 @@ import { CancelIcon, EditIcon, SaveIcon } from "../components/QuickActionIcons";
 interface Options {
 	editing: boolean;
 	saving?: boolean;
+	// Disables just the "Edit" action (e.g. OrgDashboardPage while its saved
+	// layout fetch has failed - entering edit mode on an unconfirmed layout
+	// risks a Save that overwrites the organizer's real one, see #1234).
+	editDisabled?: boolean;
+	// Native `disabled` alone drops the button from the tab order with no way
+	// for a keyboard/screen-reader user to discover why it's gone - surfaced
+	// as a `title` on the button instead (see OrgMembersPage's
+	// leaveOrganizationLastOrganizerHint for the same disabled+title pairing).
+	// Only meaningful while editDisabled is true.
+	editDisabledTitle?: string;
 	onEdit: () => void;
 	onSave: () => void;
 	onCancel: () => void;
@@ -24,6 +34,8 @@ interface Options {
 export function useEditModeQuickActions({
 	editing,
 	saving,
+	editDisabled,
+	editDisabledTitle,
 	onEdit,
 	onSave,
 	onCancel,
@@ -103,9 +115,11 @@ export function useEditModeQuickActions({
 							label: t("common.edit"),
 							icon: <EditIcon />,
 							onClick: () => onEditRef.current(),
+							disabled: editDisabled,
+							title: editDisabled ? editDisabledTitle : undefined,
 						},
 					],
-		[editing, saving, t, extraEditingActions],
+		[editing, saving, editDisabled, editDisabledTitle, t, extraEditingActions],
 	);
 
 	useQuickActions(actions);
