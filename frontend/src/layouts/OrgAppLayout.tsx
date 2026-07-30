@@ -200,19 +200,26 @@ export default function OrgAppLayout() {
 
 	if (status === "loading") {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-gray-50">
+			<main className="flex min-h-screen items-center justify-center bg-gray-50">
 				<Spinner label={t("orgDashboard.loading")} size="lg" />
-			</div>
+			</main>
 		);
 	}
 
 	if (status === "notFound") {
-		return <NotFoundPage />;
+		// NotFoundPage has no <main> of its own - it relies on AppLayout to
+		// supply one on its usual wildcard route. OrgAppLayout bypasses
+		// AppLayout entirely, so it must supply the landmark here instead.
+		return (
+			<main>
+				<NotFoundPage />
+			</main>
+		);
 	}
 
 	if (status === "error") {
 		return (
-			<div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
+			<main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
 				<h1 className={`text-gray-900 ${statusTitleClass}`}>
 					{t("error.boundaryTitle")}
 				</h1>
@@ -229,18 +236,18 @@ export default function OrgAppLayout() {
 						{t("orgApp.backToSite")}
 					</Button>
 				</div>
-			</div>
+			</main>
 		);
 	}
 
 	if (status === "forbidden" || !org) {
 		return (
-			<div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
+			<main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
 				<h1 className={`text-gray-900 ${statusTitleClass}`}>
 					{t("orgApp.notAuthorized")}
 				</h1>
 				<Button to="/">{t("orgApp.backToSite")}</Button>
-			</div>
+			</main>
 		);
 	}
 
