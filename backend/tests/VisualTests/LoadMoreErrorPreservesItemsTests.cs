@@ -97,8 +97,8 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		await Expect(loadMoreButton).ToBeVisibleAsync();
 		await loadMoreButton.ClickAsync();
 
-		var tryAgainButton = opportunitiesSection.GetByRole(AriaRole.Button, new() { Name = "Try again" });
-		await Expect(tryAgainButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var retryButton = opportunitiesSection.GetByRole(AriaRole.Button, new() { Name = "Retry" });
+		await Expect(retryButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(opportunitiesSection.GetByRole(AriaRole.Alert)).ToBeVisibleAsync();
 
 		// The whole point of #1226: the already-rendered first page must still
@@ -106,10 +106,10 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 		await Expect(items).ToHaveCountAsync(PageSize);
 
 		shouldFail = false;
-		await tryAgainButton.ClickAsync();
+		await retryButton.ClickAsync();
 
 		await Expect(items).ToHaveCountAsync(SeedCount, new() { Timeout = 10_000 });
-		await Expect(tryAgainButton).Not.ToBeVisibleAsync();
+		await Expect(retryButton).Not.ToBeVisibleAsync();
 		await Expect(loadMoreButton).Not.ToBeVisibleAsync();
 	}
 }

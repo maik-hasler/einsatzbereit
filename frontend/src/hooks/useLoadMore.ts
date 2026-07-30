@@ -82,6 +82,7 @@ export function useLoadMore<T>(
 	const [items, setItems] = useState<T[]>([]);
 	const [page, setPage] = useState(1);
 	const [pageCount, setPageCount] = useState(1);
+	const [hasMore, setHasMore] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -122,7 +123,14 @@ export function useLoadMore<T>(
 				setItems((prev) =>
 					isInitialLoad ? result.items : [...prev, ...result.items],
 				);
-				setPageCount(result.pageCount ?? 1);
+				const newPageCount = result.pageCount ?? 1;
+				setPageCount(newPageCount);
+				// Set only on success, not derived live from `page < pageCount`:
+				// `loadMore` optimistically advances `page` before its fetch
+				// resolves, so a live derivation goes false the instant the last
+				// page is requested - even if that request then fails - hiding the
+				// load-more/retry affordance a moment too early (einsatzbereit#1226).
+				setHasMore(page < newPageCount);
 			})
 			.catch((err) => {
 				if (cancelled) return;
@@ -154,6 +162,7 @@ export function useLoadMore<T>(
 		setError(null);
 		setLoadMoreError(null);
 		setPage(1);
+		setHasMore(false);
 		setResetToken((n) => n + 1);
 	}, []);
 
@@ -166,7 +175,7 @@ export function useLoadMore<T>(
 		loadingMore,
 		error,
 		loadMoreError,
-		hasMore: page < pageCount,
+		hasMore,
 		loadMore,
 		retryLoadMore,
 		reset,

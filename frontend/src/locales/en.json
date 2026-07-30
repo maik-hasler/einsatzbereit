@@ -13,9 +13,7 @@
       "retry": "Retry",
       "retrying": "Retrying…",
       "loading": "Loading…",
-      "pageLoading": "Loading page…",
-      "tryAgain": "Try again",
-      "retrying": "Retrying…"
+      "pageLoading": "Loading page…"
     },
     "nav": {
       "primaryLabel": "Main navigation",

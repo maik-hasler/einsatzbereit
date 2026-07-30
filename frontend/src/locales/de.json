@@ -13,9 +13,7 @@
       "retry": "Erneut versuchen",
       "retrying": "Wird erneut versucht…",
       "loading": "Wird geladen…",
-      "pageLoading": "Seite wird geladen…",
-      "tryAgain": "Erneut versuchen",
-      "retrying": "Wird erneut versucht…"
+      "pageLoading": "Seite wird geladen…"
     },
     "nav": {
       "primaryLabel": "Hauptnavigation",
