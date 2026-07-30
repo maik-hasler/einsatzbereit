@@ -25,6 +25,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		IEngagementReadRepository engagementReadRepository,
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
+		IEmailTemplateRenderer emailTemplateRenderer,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -32,7 +33,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, keycloakUserService, emailService,
+			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer,
 			opportunity, opportunityId, actingUserId, now, cancellationToken);
 
 		dbContext.VolunteerOpportunities.Delete(opportunity);
@@ -50,6 +51,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		IEngagementReadRepository engagementReadRepository,
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
+		IEmailTemplateRenderer emailTemplateRenderer,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -57,7 +59,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, keycloakUserService, emailService,
+			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer,
 			opportunity, opportunityId, actingUserId, now, cancellationToken);
 
 		opportunity.MarkDeleted(now).ThrowIfFailure();
@@ -68,6 +70,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		IEngagementReadRepository engagementReadRepository,
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
+		IEmailTemplateRenderer emailTemplateRenderer,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -92,6 +95,7 @@ internal static class VolunteerOpportunityDeletionHelper
 				dbContext,
 				keycloakUserService,
 				emailService,
+				emailTemplateRenderer,
 				engagement,
 				opportunity.Title,
 				"Opportunity was deleted.",

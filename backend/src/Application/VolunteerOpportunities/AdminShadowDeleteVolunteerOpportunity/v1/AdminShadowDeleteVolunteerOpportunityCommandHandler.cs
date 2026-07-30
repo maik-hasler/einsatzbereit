@@ -21,7 +21,8 @@ internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<AdminShadowDeleteVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -39,6 +40,7 @@ internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 			engagementReadRepository,
 			keycloakUserService,
 			emailService,
+			emailTemplateRenderer,
 			opportunity,
 			opportunityId,
 			request.AdminUserId,

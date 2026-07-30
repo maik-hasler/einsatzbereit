@@ -321,7 +321,7 @@ public class ConfirmEngagementCommandHandlerTests
 		// Arrange
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());

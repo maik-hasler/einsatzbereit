@@ -56,7 +56,7 @@ public class WithdrawEngagementCommandHandlerTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			OrganizationId.New(), "Test", "Test", false, DefaultAddress,
-			Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None,
+			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None,
 			_pinGenerator, status: OpportunityStatus.Draft).Value;
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>()).Returns(opportunity);
 
