@@ -1,4 +1,6 @@
+using Application.Common.Email;
 using Application.Common.Exceptions;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Organizations.AdminShadowDeleteOrganization.v1;
@@ -28,6 +30,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		Substitute.For<IAggregateRepository<Report, ReportId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly AdminShadowDeleteOrganizationCommandHandler _sut;
 
@@ -52,7 +56,10 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
+		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService);
 	}
 
 	private static Organization CreateOrganization(Guid id) =>
@@ -139,6 +146,46 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		// Assert
 		orgReport.Status.Should().Be(ReportStatus.Actioned);
 		opportunityReport.Status.Should().Be(ReportStatus.Actioned);
+	}
+
+	[Test]
+	public async Task Handle_ShouldEmailEngagedVolunteers_AcrossAllCascadedOpportunities(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the cascade must email affected volunteers on every one of the
+		// org's opportunities (#1057), not just the first.
+		var orgId = Guid.NewGuid();
+		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(organizationId, cancellationToken).Returns(organization);
+
+		var timeSlotId = TimeSlotId.New();
+		var opportunityA = CreateOpportunity(organizationId);
+		var engagementA = Engagement.CreateWaitlistSignUp(opportunityA.Id, UserId.New(), timeSlotId);
+		engagementA.Confirm();
+		var opportunityB = CreateOpportunity(organizationId);
+		var engagementB = Engagement.CreateWaitlistSignUp(opportunityB.Id, UserId.New(), timeSlotId);
+		engagementB.Confirm();
+
+		_dbContext
+			.GetOpportunitiesForOrganizationAsync(organizationId, cancellationToken)
+			.Returns([opportunityA, opportunityB]);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(opportunityA.Id, cancellationToken)
+			.Returns([engagementA]);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(opportunityB.Id, cancellationToken)
+			.Returns([engagementB]);
+
+		// Act
+		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _emailService.Received(2).SendAsync(
+			"user@example.com",
+			"Your engagement has been cancelled",
+			Arg.Is<string>(body => body!.Contains("Reason: Opportunity was deleted.")),
+			cancellationToken);
 	}
 
 	[Test]

@@ -1,4 +1,6 @@
+using Application.Common.Email;
 using Application.Common.Exceptions;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
@@ -24,6 +26,8 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly DeleteVolunteerOpportunityCommandHandler _sut;
 
@@ -47,7 +51,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
+		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
@@ -148,6 +155,50 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		pendingEngagement.CancellationReason.Should().Be("Opportunity was deleted.");
 		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
 		confirmedEngagement.CancellationReason.Should().Be("Opportunity was deleted.");
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotifyAndEmailEachVolunteer_WhenActiveEngagementsAutoCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - a deletion must notify+email the volunteer the same way an
+		// organizer-triggered single-engagement cancel does (einsatzbereit#1057),
+		// not just via the opportunity-level "was removed" notification.
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var timeSlotId = TimeSlotId.New();
+		var pendingEngagement = Engagement.CreateWaitlistSignUp(
+			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), UserId.New(), timeSlotId);
+		var confirmedEngagement = Engagement.CreateWaitlistSignUp(
+			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), UserId.New(), timeSlotId);
+		confirmedEngagement.Confirm();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns([pendingEngagement, confirmedEngagement]);
+
+		// Act
+		await _sut.Handle(new DeleteVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.RecipientId == pendingEngagement.VolunteerId!.Value
+				&& n.Kind == NotificationKind.EngagementCancelled
+				&& n.RelatedEntityId == pendingEngagement.Id.Value),
+			cancellationToken);
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.RecipientId == confirmedEngagement.VolunteerId!.Value
+				&& n.Kind == NotificationKind.EngagementCancelled
+				&& n.RelatedEntityId == confirmedEngagement.Id.Value),
+			cancellationToken);
+		await _emailService.Received(2).SendAsync(
+			"user@example.com",
+			"Your engagement has been cancelled",
+			Arg.Is<string>(body => body!.Contains("Reason: Opportunity was deleted.")),
+			cancellationToken);
 	}
 
 	[Test]
