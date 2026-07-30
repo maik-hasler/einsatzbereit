@@ -77,7 +77,7 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 		await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
 		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 

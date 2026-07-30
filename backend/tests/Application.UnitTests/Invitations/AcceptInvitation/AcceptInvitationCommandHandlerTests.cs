@@ -32,8 +32,9 @@ public class AcceptInvitationCommandHandlerTests
 		_sut = new AcceptInvitationCommandHandler(_dbContext, _unitOfWork, _keycloakService);
 	}
 
-	private static OrganizationInvitation CreatePendingInvitation() =>
-		OrganizationInvitation.Create(OrgId, "Test Org", InviteeId, "Invitee Name", InviterId, DateTimeOffset.UtcNow);
+	private static OrganizationInvitation CreatePendingInvitation(
+		OrganizationMemberRole intendedRole = OrganizationMemberRole.Organizer) =>
+		OrganizationInvitation.Create(OrgId, "Test Org", InviteeId, "Invitee Name", InviterId, intendedRole, DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldGrantOrganizerCapability_OnAccept(
@@ -47,16 +48,39 @@ public class AcceptInvitationCommandHandlerTests
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
-		// Assert - accepting must grant real, functional capability, not just
-		// Keycloak org membership with nothing behind it (#826): the invitee
-		// becomes a full Organizer, the only membership tier this app
-		// currently gives any real access.
+		// Assert - accepting an Organizer-intended invitation must grant real,
+		// functional capability, not just Keycloak org membership with nothing
+		// behind it (#826): the invitee becomes a full Organizer.
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).AddMemberAsync(OrgId.Value, InviteeId.Value, cancellationToken);
 		await _keycloakService.Received(1).AssignOrganizerRoleAsync(InviteeId.Value, cancellationToken);
 		await _membershipRepo.Received(1).AddAsync(
 			Arg.Is<OrganizationMembership>(m =>
 				m != null && m.OrganizationId == OrgId && m.UserId == InviteeId && m.Role == OrganizationMemberRole.Organizer),
+			cancellationToken);
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldGrantMemberCapabilityOnly_WhenInvitationIntendedRoleIsMember(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitation = CreatePendingInvitation(OrganizationMemberRole.Member);
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert - a Member-intended invitation must not grant the realm-wide
+		// organizer role, only local org membership.
+		result.Should().BeTrue();
+		await _keycloakService.Received(1).AddMemberAsync(OrgId.Value, InviteeId.Value, cancellationToken);
+		await _keycloakService.DidNotReceive().AssignOrganizerRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _membershipRepo.Received(1).AddAsync(
+			Arg.Is<OrganizationMembership>(m =>
+				m != null && m.OrganizationId == OrgId && m.UserId == InviteeId && m.Role == OrganizationMemberRole.Member),
 			cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}

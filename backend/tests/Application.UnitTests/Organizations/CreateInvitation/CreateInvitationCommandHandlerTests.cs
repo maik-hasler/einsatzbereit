@@ -56,7 +56,7 @@ public class CreateInvitationCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, cancellationToken)
 			.Returns(false);
-		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, DefaultInvitedById);
+		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Organizer, DefaultInvitedById);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -73,14 +73,16 @@ public class CreateInvitationCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, DefaultInvitedById);
+		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
 		result.Should().NotBeNull();
-		await _invitationRepo.Received(1).AddAsync(Arg.Any<OrganizationInvitation>(), cancellationToken);
+		await _invitationRepo.Received(1).AddAsync(
+			Arg.Is<OrganizationInvitation>(i => i != null && i.IntendedRole == OrganizationMemberRole.Member),
+			cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 		await _emailService.Received(1).SendAsync(
 			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), cancellationToken);

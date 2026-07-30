@@ -26,4 +26,5 @@ public sealed record OrganizationMemberDto(
 	string? FirstName,
 	string? LastName,
 	string Email,
-	bool IsOrganisator);
+	bool IsOrganisator,
+	string Role);

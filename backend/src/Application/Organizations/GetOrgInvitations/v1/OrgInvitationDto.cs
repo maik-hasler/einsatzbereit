@@ -4,5 +4,6 @@ public sealed record OrgInvitationDto(
 	Guid Id,
 	Guid InviteeId,
 	string InviteeName,
+	string IntendedRole,
 	string Status,
 	DateTimeOffset CreatedOn);

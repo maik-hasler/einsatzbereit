@@ -125,6 +125,13 @@ internal sealed class ApplicationDbContext(
 		return userIds.Select(id => id.Value).ToHashSet();
 	}
 
+	public async Task<OrganizationMembership?> GetMembershipAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.FirstOrDefaultAsync(m => m.OrganizationId == organizationId && m.UserId == userId, cancellationToken);
+
 	public async Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,

@@ -214,6 +214,109 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task Organizer_CanPromoteAndDemoteMember_ViaMembersPage()
+	{
+		// #1050: OrganizationMembership.Role was create-only, so every member
+		// was forcibly an Organizer with no promote/demote path. Verifies the
+		// new "Promote to Organizer"/"Demote to Member" actions round-trip
+		// through the API and persist (survive a reload), not just update
+		// local state optimistically.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1050 PromoteDemote", pinnedOrgId!.Value);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change, so
+		// the dashboard we're still on would otherwise keep showing its
+		// pre-membership snapshot - force a refetch, same as other tests above.
+		await Page.ReloadAsync();
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		// Scope to vera's row by her stable seed email rather than her display
+		// name - see RemoveMember_ShowsConfirmationDialog_AndOnlyRemovesAfterConfirm
+		// above for why.
+		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
+		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Plain member: no Organizer badge, a "Promote" action, no "Demote".
+		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync();
+		var promoteButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Promote to Organizer" });
+		await Expect(promoteButton).ToBeVisibleAsync();
+
+		await promoteButton.ClickAsync();
+
+		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var demoteButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Demote to Member" });
+		await Expect(demoteButton).ToBeVisibleAsync();
+
+		// Reload to prove the promotion was actually persisted server-side,
+		// not just an optimistic local-state update. Already on the members
+		// page (navigated here via the dashboard's member-count link earlier)
+		// - the "member" link lives only on the dashboard's SettingsWidget, not
+		// on this page, so reloading this page directly is all that's needed;
+		// re-clicking that link here would look for an element that doesn't
+		// exist on /dashboard/members and hang until timeout.
+		await Page.ReloadAsync();
+		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync();
+
+		// Demote back to Member - olaf remains an organizer, so this is allowed.
+		await veraRow.GetByRole(AriaRole.Button, new() { Name = "Demote to Member" }).ClickAsync();
+
+		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(veraRow.GetByRole(AriaRole.Button, new() { Name = "Promote to Organizer" })).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task Organizer_CanInviteMemberWithOrganizerRole_ViaRoleSelector()
+	{
+		// #1050: CreateInvitation now carries an intended role, defaulting to
+		// Member (the previous behavior always granted Organizer regardless of
+		// intent). Verifies the role selector lets an organizer explicitly
+		// invite someone as an Organizer instead, shown on the pending
+		// invitation.
+		//
+		// Uses a throwaway org (not olaf's pinned/seeded one) because
+		// Organisator_InviteMemberFromDashboard_SendsInvitationInsteadOf403
+		// above already invites vera into that shared org, and
+		// organization_invitation rows aren't cleared between tests -
+		// inviting her there a second time would 409 with
+		// OrganizationInvitation.AlreadyInvited depending on run order.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1050 InviteRole", pinnedOrgId!.Value);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		await Page.Locator("#member-search").FillAsync("vera");
+
+		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
+		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.Locator("#invite-role").SelectOptionAsync("Organizer");
+		await inviteButton.First.ClickAsync();
+
+		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
+
+		var pendingSection = Page.Locator("li", new() { HasTextString = "vera" }).First;
+		await Expect(pendingSection.GetByText("Organizer", new() { Exact = true }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+	}
+
+	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{
 		// #580: the new "Delete Organization" action, enabled only for the

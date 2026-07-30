@@ -42,4 +42,13 @@ public sealed class OrganizationMembership
 			organizationId,
 			userId,
 			role);
+
+	public Result ChangeRole(OrganizationMemberRole role)
+	{
+		if (Role == role)
+			return Result.Failure(Error.Conflict("OrganizationMembership.RoleUnchanged", "Member already has this role."));
+
+		Role = role;
+		return Result.Success();
+	}
 }

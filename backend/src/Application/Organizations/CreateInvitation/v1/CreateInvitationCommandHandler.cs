@@ -54,6 +54,7 @@ internal sealed class CreateInvitationCommandHandler(
 			request.InviteeId,
 			inviteeName,
 			request.InvitedById,
+			request.Role,
 			now);
 
 		await dbContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);

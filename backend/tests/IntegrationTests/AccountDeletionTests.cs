@@ -67,7 +67,7 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 			new CreateOrganizationRequest { Name = "Shared Membership Test Org" }, cancellationToken);
 		var invitation = await olafClient.CreateInvitationAsync(
 			sharedOrg.Id.Value,
-			new CreateInvitationRequest { InviteeId = ephemeralUserId },
+			new CreateInvitationRequest { InviteeId = ephemeralUserId, Role = "Organizer" },
 			cancellationToken);
 		await ephemeralClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
@@ -95,7 +95,7 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		// user - an organization_invitation row on the inviter (invited_by_id) side.
 		await ephemeralClient.CreateInvitationAsync(
 			sharedOrg.Id.Value,
-			new CreateInvitationRequest { InviteeId = thirdPartyUserId },
+			new CreateInvitationRequest { InviteeId = thirdPartyUserId, Role = "Member" },
 			cancellationToken);
 
 		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);

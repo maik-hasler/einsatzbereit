@@ -58,7 +58,8 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 					m.FirstName,
 					m.LastName,
 					m.Email,
-					m.IsOrganisator))
+					m.IsOrganisator,
+					(m.IsOrganisator ? OrganizationMemberRole.Organizer : OrganizationMemberRole.Member).ToString()))
 				.ToList());
 	}
 }

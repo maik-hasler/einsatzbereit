@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using Application.Common.Exceptions;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
@@ -279,6 +280,10 @@ public class IntegrationTestFixture
 	// plain member, without granting the Organizer role. Accepting an
 	// invitation grants Organizer too (#826), so it's the only way left to
 	// reconstruct a plain-member-only state for regression tests (#691, #825).
+	// Also seeds the matching local organization_membership row (Role: Member)
+	// - ChangeMemberRoleCommandHandler (#1050) resolves membership from that
+	// local table, not Keycloak, so callers exercising promote/demote need it
+	// to exist alongside the Keycloak-side membership.
 	public async Task AddPlainMemberDirectlyAsync(
 		Guid organizationId, Guid userId, CancellationToken cancellationToken = default)
 	{
@@ -293,6 +298,14 @@ public class IntegrationTestFixture
 
 		var response = await _keycloakClient.SendAsync(request, cancellationToken);
 		await EnsureSuccessAsync(response);
+
+		await using var dbContext = CreateApplicationDbContext();
+		var membership = Domain.Organizations.OrganizationMembership.Create(
+			Domain.Organizations.OrganizationId.Create(organizationId).GetValueOrThrow(),
+			Domain.Users.UserId.Create(userId).GetValueOrThrow(),
+			Domain.Organizations.OrganizationMemberRole.Member);
+		dbContext.Set<Domain.Organizations.OrganizationMembership>().Add(membership);
+		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
 	// Creates a brand-new, disposable Keycloak user with the realm's baseline

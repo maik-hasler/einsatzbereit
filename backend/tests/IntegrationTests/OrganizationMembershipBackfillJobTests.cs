@@ -236,6 +236,9 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 		public Task AssignOrganizerRoleAsync(Guid userId, CancellationToken cancellationToken = default) =>
 			throw new NotSupportedException();
 
+		public Task RevokeOrganizerRoleAsync(Guid userId, CancellationToken cancellationToken = default) =>
+			throw new NotSupportedException();
+
 		public Task<IReadOnlyList<KeycloakOrganizationMember>> SearchUsersAsync(
 			string search, int max = 20, CancellationToken cancellationToken = default) =>
 			throw new NotSupportedException();

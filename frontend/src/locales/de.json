@@ -453,6 +453,11 @@
       "noMembers": "Noch keine Mitglieder.",
       "noMembersHint": "Mitglieder, die dieser Organisation beitreten, erscheinen hier.",
       "organisator": "Organisator",
+      "roleMember": "Mitglied",
+      "promoteToOrganizer": "Zum Organisator befördern",
+      "demoteToMember": "Zum Mitglied zurückstufen",
+      "changeRoleError": "Rolle konnte nicht geändert werden.",
+      "changeRoleLastOrganizerHint": "Dies ist der einzige Organisator dieser Organisation - befördere zuerst ein anderes Mitglied.",
       "removeMember": "Entfernen",
       "removeMemberError": "Mitglied konnte nicht entfernt werden.",
       "leaveOrganization": "Verlassen",
@@ -463,6 +468,7 @@
       "loading": "Wird geladen…",
       "inviteLabel": "Mitglied einladen",
       "invitePlaceholder": "Nach Benutzername oder E-Mail suchen…",
+      "inviteRoleLabel": "Einladen als",
       "invite": "Einladen",
       "inviteError": "Einladung konnte nicht gesendet werden.",
       "inviteSent": "Einladung gesendet.",
@@ -1075,6 +1081,7 @@
         "MultipleMembers": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
         "HasBlockingOpportunities": "Diese Organisation hat noch Bedarfe mit zukünftigen Zeitslots oder aktiven Engagements. Bitte löse das zuerst auf.",
         "SoleOrganizer": "Du bist der einzige Organisator dieser Organisation. Lösche stattdessen die Organisation, wenn du sie schließen möchtest.",
+        "SoleOrganizerDemote": "Du kannst den einzigen Organisator dieser Organisation nicht zurückstufen. Befördere zuerst ein anderes Mitglied oder lösche die Organisation.",
         "NotOrganizer": "Du hast keine Berechtigung, diese Ressource zu ändern."
       },
       "OrganizationInvitation": {
@@ -1085,7 +1092,13 @@
         "NotDeclined": "Nur abgelehnte oder abgelaufene Einladungen können verworfen werden.",
         "NotExpired": "Nur abgelaufene Einladungen können erneut gesendet werden.",
         "AlreadyMember": "Der Benutzer ist bereits Mitglied dieser Organisation.",
-        "AlreadyInvited": "Für diesen Benutzer besteht bereits eine ausstehende Einladung."
+        "AlreadyInvited": "Für diesen Benutzer besteht bereits eine ausstehende Einladung.",
+        "InvalidRole": "Ungültige Rolle."
+      },
+      "OrganizationMembership": {
+        "NotFound": "Mitgliedschaft nicht gefunden.",
+        "RoleUnchanged": "Das Mitglied hat bereits diese Rolle.",
+        "InvalidRole": "Ungültige Rolle."
       },
       "VolunteerOpportunity": {
         "InvalidCheckInPin": "Die Check-in-PIN muss 4 bis 6 Ziffern haben.",

@@ -91,6 +91,33 @@ internal sealed class KeycloakOrganizationService(
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
+	public async Task RevokeOrganizerRoleAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var rolesResponse = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/roles/organisator",
+			cancellationToken);
+
+		await EnsureSuccessAsync(rolesResponse, cancellationToken);
+
+		var role = await rolesResponse.Content.ReadFromJsonAsync<KeycloakRole>(
+			JsonOptions, cancellationToken);
+
+		using var request = new HttpRequestMessage(
+			HttpMethod.Delete,
+			$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm")
+		{
+			Content = JsonContent.Create(new[] { role }, options: JsonOptions)
+		};
+
+		var response = await httpClient.SendAsync(request, cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+	}
+
 	public async Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default)
