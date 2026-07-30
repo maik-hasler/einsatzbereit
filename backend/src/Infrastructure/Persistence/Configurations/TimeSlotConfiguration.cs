@@ -24,5 +24,13 @@ internal sealed class TimeSlotConfiguration
 		builder.Property(ts => ts.EndDateTime).IsRequired();
 
 		builder.Property(ts => ts.MaxParticipants).IsRequired(false);
+
+		builder.Property(ts => ts.SeriesId);
+
+		builder.Property(ts => ts.RecurrenceFrequency).HasMaxLength(20);
+
+		builder.Property(ts => ts.RecurrenceCount);
+
+		builder.HasIndex(ts => ts.SeriesId);
 	}
 }

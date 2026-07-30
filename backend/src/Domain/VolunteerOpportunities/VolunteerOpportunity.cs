@@ -330,14 +330,17 @@ public sealed class VolunteerOpportunity
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
 		int? maxParticipants,
-		DateTimeOffset now)
+		DateTimeOffset now,
+		Guid? seriesId = null,
+		string? recurrenceFrequency = null,
+		int? recurrenceCount = null)
 	{
 		if (ParticipationType != ParticipationType.ScheduledSlots)
 			return Result.Failure<TimeSlot>(Error.Validation(
 				"VolunteerOpportunity.TimeSlotNotAllowed",
 				"Time slots can only be added to opportunities with Scheduled slots participation type."));
 
-		var timeSlotResult = TimeSlot.Create(startDateTime, endDateTime, maxParticipants, now);
+		var timeSlotResult = TimeSlot.Create(startDateTime, endDateTime, maxParticipants, now, seriesId, recurrenceFrequency, recurrenceCount);
 		if (timeSlotResult.IsFailure)
 			return timeSlotResult;
 
@@ -352,6 +355,15 @@ public sealed class VolunteerOpportunity
 			return Result.Failure(Error.NotFound("VolunteerOpportunity.TimeSlotNotFound", $"Time slot with id '{timeSlotId.Value}' not found."));
 
 		return timeSlot.Update(startDateTime, endDateTime, maxParticipants, now);
+	}
+
+	public Result UpdateTimeSlotCapacity(TimeSlotId timeSlotId, int? maxParticipants)
+	{
+		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId);
+		if (timeSlot is null)
+			return Result.Failure(Error.NotFound("VolunteerOpportunity.TimeSlotNotFound", $"Time slot with id '{timeSlotId.Value}' not found."));
+
+		return timeSlot.UpdateCapacity(maxParticipants);
 	}
 
 	public Result RemoveTimeSlot(TimeSlotId timeSlotId)

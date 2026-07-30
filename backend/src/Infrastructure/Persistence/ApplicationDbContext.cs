@@ -277,6 +277,22 @@ internal sealed class ApplicationDbContext(
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 			.ToListAsync(cancellationToken);
 
+	public async Task<List<Engagement>> GetActiveEngagementsForTimeSlotsAsync(
+		IReadOnlyCollection<TimeSlotId> timeSlotIds,
+		CancellationToken cancellationToken = default)
+	{
+		// Contains against a List<TimeSlotId?> (nullable-wrapped) translates
+		// fine - unwrapping the nullable value object inside the query (e.g.
+		// e.TimeSlotId!.Value) does not, see the GroupBy/.Value gotcha this
+		// mirrors elsewhere in this class.
+		var nullableIds = timeSlotIds.Select(id => (TimeSlotId?)id).ToList();
+
+		return await Set<Engagement>()
+			.Where(e => nullableIds.Contains(e.TimeSlotId)
+				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
+			.ToListAsync(cancellationToken);
+	}
+
 	public async Task<List<VolunteerOpportunity>> GetBlockingOpportunitiesForOrganizationAsync(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default)

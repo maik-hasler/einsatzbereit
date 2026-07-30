@@ -291,7 +291,25 @@
       "recurrenceFrequency": "Wiederholungsrhythmus",
       "recurrenceWeekly": "Wöchentlich",
       "recurrenceMonthly": "Monatlich",
-      "recurrenceCount": "Anzahl Termine"
+      "recurrenceCount": "Anzahl Termine",
+      "seriesBadge": "{{frequency}} · {{position}}/{{count}}",
+      "editPartialSkip": "{{count}} Termin(e) wurden nicht geändert, da die aktuellen Anmeldungen die neue Kapazität bereits übersteigen.",
+      "editScope": {
+        "legend": "Änderung anwenden auf",
+        "Only": "Nur diesen Termin",
+        "ThisAndFollowing": "Diesen und folgende Termine",
+        "EntireSeries": "Gesamte Serie"
+      },
+      "deleteSeries": {
+        "title": "Wiederkehrenden Zeitslot entfernen",
+        "message": "Dieser Zeitslot ist Teil einer wiederkehrenden Serie. Wähle aus, wie viel der Serie entfernt werden soll.",
+        "scopeLegend": "Entfernen",
+        "scopeOnly": "Nur diesen Termin",
+        "scopeThisAndFollowing": "Diesen und folgende Termine",
+        "scopeEntireSeries": "Gesamte Serie",
+        "cancelsEngagementsWarning": "Freiwillige, die für die betroffenen Termine angemeldet sind, werden abgemeldet und benachrichtigt.",
+        "confirm": "Entfernen"
+      }
     },
     "signUp": {
       "titleWaitlist": "Zeitslot auswählen",

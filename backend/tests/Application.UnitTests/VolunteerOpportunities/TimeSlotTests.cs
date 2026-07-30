@@ -101,6 +101,28 @@ public class TimeSlotTests
 	}
 
 	[Test]
+	public void Create_ShouldLeaveSeriesFieldsNull_WhenNotProvided()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		timeSlot.SeriesId.Should().BeNull();
+		timeSlot.RecurrenceFrequency.Should().BeNull();
+		timeSlot.RecurrenceCount.Should().BeNull();
+	}
+
+	[Test]
+	public void Create_ShouldStoreSeriesFields_WhenProvided()
+	{
+		var seriesId = Guid.CreateVersion7();
+
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now, seriesId, "Weekly", 8).Value;
+
+		timeSlot.SeriesId.Should().Be(seriesId);
+		timeSlot.RecurrenceFrequency.Should().Be("Weekly");
+		timeSlot.RecurrenceCount.Should().Be(8);
+	}
+
+	[Test]
 	public void Update_ShouldAllowChangingToUnlimitedCapacity()
 	{
 		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
@@ -119,6 +141,51 @@ public class TimeSlotTests
 		var result = timeSlot.Update(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now);
 
 		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
+
+	[Test]
+	public void UpdateCapacity_ShouldChangeMaxParticipants_WhenPositive()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.UpdateCapacity(20);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().Be(20);
+	}
+
+	[Test]
+	public void UpdateCapacity_ShouldAllowSettingToUnlimited()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.UpdateCapacity(null);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
+	public void UpdateCapacity_ShouldNotChangeDates()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		timeSlot.UpdateCapacity(20);
+
+		timeSlot.StartDateTime.Should().Be(Tomorrow);
+		timeSlot.EndDateTime.Should().Be(DayAfterTomorrow);
+	}
+
+	[Test]
+	public void UpdateCapacity_ShouldFail_WhenMaxParticipantsIsZeroOrNegative()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.UpdateCapacity(0);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Max participants must be greater than zero*");
 		timeSlot.MaxParticipants.Should().Be(10);
 	}
 }

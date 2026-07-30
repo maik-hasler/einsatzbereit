@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260730062240_AddTimeSlotSeries")]
+	partial class AddTimeSlotSeries
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -158,15 +161,10 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.HasIndex("VolunteerId", "OpportunityId")
 						.IsUnique()
-						.HasDatabaseName("ix_engagement_volunteer_id_opportunity_id")
-						.HasFilter("time_slot_id IS NULL");
+						.HasDatabaseName("ix_engagement_volunteer_id_opportunity_id");
 
 					b.HasIndex("VolunteerId", "Status")
 						.HasDatabaseName("ix_engagement_volunteer_id_status");
-
-					b.HasIndex("VolunteerId", "TimeSlotId")
-						.IsUnique()
-						.HasDatabaseName("ix_engagement_volunteer_id_time_slot_id");
 
 					b.ToTable("engagement", (string)null);
 				});
@@ -579,7 +577,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("end_date_time");
 
-					b.Property<int?>("MaxParticipants")
+					b.Property<int>("MaxParticipants")
 						.HasColumnType("integer")
 						.HasColumnName("max_participants");
 

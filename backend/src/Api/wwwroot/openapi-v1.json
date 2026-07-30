@@ -383,8 +383,15 @@
           "required": true
         },
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTimeSlotResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -461,11 +468,35 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteTimeSlotResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
             "description": "Unauthorized",
@@ -489,6 +520,16 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5987,7 +6028,10 @@
           "id",
           "startDateTime",
           "endDateTime",
-          "maxParticipants"
+          "maxParticipants",
+          "seriesId",
+          "recurrenceFrequency",
+          "recurrenceCount"
         ],
         "type": "object",
         "properties": {
@@ -6004,6 +6048,28 @@
             "format": "date-time"
           },
           "maxParticipants": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "seriesId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "recurrenceFrequency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recurrenceCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -6360,6 +6426,21 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "DeleteTimeSlotResponse": {
+        "required": [
+          "deletedTimeSlotIds"
+        ],
+        "type": "object",
+        "properties": {
+          "deletedTimeSlotIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -7947,7 +8028,10 @@
           "startDateTime",
           "endDateTime",
           "maxParticipants",
-          "bookedCount"
+          "bookedCount",
+          "seriesId",
+          "recurrenceFrequency",
+          "recurrenceCount"
         ],
         "type": "object",
         "properties": {
@@ -7975,6 +8059,28 @@
           "bookedCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "seriesId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "recurrenceFrequency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recurrenceCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
               "integer",
               "string"
             ],
@@ -8059,16 +8165,23 @@
         "required": [
           "startDateTime",
           "endDateTime",
-          "maxParticipants"
+          "maxParticipants",
+          "scope"
         ],
         "type": "object",
         "properties": {
           "startDateTime": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "endDateTime": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "maxParticipants": {
@@ -8079,6 +8192,36 @@
               "string"
             ],
             "format": "int32"
+          },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "UpdateTimeSlotResponse": {
+        "required": [
+          "updatedCount",
+          "skippedTimeSlotIds"
+        ],
+        "type": "object",
+        "properties": {
+          "updatedCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "skippedTimeSlotIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },

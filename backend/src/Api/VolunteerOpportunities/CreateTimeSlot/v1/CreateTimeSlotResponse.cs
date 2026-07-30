@@ -4,4 +4,7 @@ public sealed record CreateTimeSlotResponse(
 	Guid Id,
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
-	int? MaxParticipants);
+	int? MaxParticipants,
+	Guid? SeriesId,
+	string? RecurrenceFrequency,
+	int? RecurrenceCount);
