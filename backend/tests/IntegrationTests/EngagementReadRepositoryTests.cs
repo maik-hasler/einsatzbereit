@@ -198,8 +198,14 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
+		// GetPagedByOpportunityAsync inner-joins through to OrganizationsQuery, so
+		// a random unsaved OrganizationId would silently drop the row - a real
+		// Organization must exist for the opportunity to be returned at all.
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"CancellationReasonOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
