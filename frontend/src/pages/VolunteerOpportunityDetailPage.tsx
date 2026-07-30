@@ -212,7 +212,7 @@ export default function VolunteerOpportunityDetailPage() {
 			.slice(0, 3) ?? [];
 
 	return (
-		<div className="mx-auto max-w-2xl">
+		<div data-content-wrapper className="mx-auto max-w-2xl">
 			{/* Banner image */}
 			{opportunity.bannerImageUrl && (
 				<img

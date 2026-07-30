@@ -136,6 +136,16 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 				.EnsureSuccessStatusCode();
 		}
 
+		// Registered before FastSignInAsync's own navigation - Page.WaitForResponseAsync
+		// must start listening before the request fires, not after, matching the
+		// pattern already established in this suite (see
+		// OrganizationDashboardNavLinkTests.cs/CheckInPinOrganizerSetTests.cs).
+		// This is useAchievementNotifier's own on-mount GET /v1/me/achievements -
+		// awaiting it below anchors the badge-toast assertion to that check
+		// having actually run, instead of a fixed sleep (#1322).
+		var notifierCheckResponseTask = Page.WaitForResponseAsync(
+			r => r.Url.Contains("/v1/me/achievements") && r.Request.Method == "GET");
+
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
@@ -168,10 +178,13 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// Each VisualTests test gets a fresh, isolated browser context (see
 		// VisualTestBase) - no einsatzbereit:seen-achievements localStorage entry
-		// yet, simulating a new device/browser/profile. The notifier's first
-		// check fires on mount; give it a moment, then assert no "New badge
-		// unlocked" toast appeared for an already-earned badge.
-		await Page.WaitForTimeoutAsync(3000);
+		// yet, simulating a new device/browser/profile. Wait for the notifier's
+		// own first, on-mount check to actually resolve (armed above, before
+		// FastSignInAsync's navigation) rather than a fixed sleep - a sleep-then-
+		// assert-absence passes whenever the app is merely slow enough that the
+		// check hasn't run yet, which gets *more* likely to happen, and mask the
+		// bug this test guards, the slower/more contended the runner is (#1322).
+		await notifierCheckResponseTask;
 
 		// Auto-waiting for an absent element only proves anything for the
 		// life of this context because AppHost sets VITE_TOAST_LIFETIME_MS=0

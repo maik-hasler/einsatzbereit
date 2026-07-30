@@ -58,7 +58,10 @@ function ToDoWidget({ organizationId, size }: Props) {
 					}
 				>
 					<div>
-						<p className="text-3xl font-bold text-gray-900">
+						<p
+							data-testid="todo-widget-stat-pending"
+							className="text-3xl font-bold text-gray-900"
+						>
 							{kpis.pendingEngagements}
 						</p>
 						<p className="text-sm text-gray-500">
@@ -66,7 +69,10 @@ function ToDoWidget({ organizationId, size }: Props) {
 						</p>
 					</div>
 					<div>
-						<p className="text-3xl font-bold text-gray-900">
+						<p
+							data-testid="todo-widget-stat-confirmed"
+							className="text-3xl font-bold text-gray-900"
+						>
 							{kpis.confirmedEngagementsTotal}
 						</p>
 						<p className="text-sm text-gray-500">

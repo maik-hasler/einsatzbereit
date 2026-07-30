@@ -147,15 +147,18 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 	}
 
 	/// <summary>
-	/// Asserts the page's `.max-w-2xl` content wrapper inside `&lt;main&gt;` has equal
-	/// left/right whitespace, i.e. it is horizontally centered via `mx-auto`
-	/// rather than left-aligned. See #694.
+	/// Asserts the page's content wrapper inside `&lt;main&gt;` (marked with the
+	/// `data-content-wrapper` attribute - see #1328, this used to select on the
+	/// `.max-w-2xl` Tailwind utility class directly, which a purely cosmetic
+	/// class rename would silently break) has equal left/right whitespace,
+	/// i.e. it is horizontally centered via `mx-auto` rather than left-aligned.
+	/// See #694.
 	/// </summary>
 	protected async Task AssertMaxWidthContentCenteredAsync(string label)
 	{
 		var main = Page.Locator("main");
 		await Expect(main).ToBeVisibleAsync();
-		var container = main.Locator(".max-w-2xl").First;
+		var container = main.Locator("[data-content-wrapper]").First;
 		await Expect(container).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Both boxes read in a single EvaluateAsync call rather than two
@@ -175,20 +178,21 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				}
 				""");
 			return gapDelta < 2;
-		}, () => $"{label}: .max-w-2xl content should be horizontally centered within <main> "
+		}, () => $"{label}: content wrapper should be horizontally centered within <main> "
 			+ $"(last observed |leftGap - rightGap| = {gapDelta}px, must be <2px)");
 	}
 
 	/// <summary>
-	/// Asserts the page's `.max-w-2xl` content wrapper inside `&lt;main&gt;` sits
-	/// flush against the left edge, i.e. it is left-aligned rather than centered
-	/// via `mx-auto`. See #766.
+	/// Asserts the page's content wrapper inside `&lt;main&gt;` (marked with the
+	/// `data-content-wrapper` attribute - see #1328) sits flush against the
+	/// left edge, i.e. it is left-aligned rather than centered via `mx-auto`.
+	/// See #766.
 	/// </summary>
 	protected async Task AssertMaxWidthContentLeftAlignedAsync(string label)
 	{
 		var main = Page.Locator("main");
 		await Expect(main).ToBeVisibleAsync();
-		var container = main.Locator(".max-w-2xl").First;
+		var container = main.Locator("[data-content-wrapper]").First;
 		await Expect(container).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		// Single EvaluateAsync call - see AssertMaxWidthContentCenteredAsync.
@@ -208,7 +212,7 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 				}
 				""");
 			return Math.Abs(leftGap) < 2;
-		}, () => $"{label}: .max-w-2xl content should sit flush against <main>'s left padding edge, "
+		}, () => $"{label}: content wrapper should sit flush against <main>'s left padding edge, "
 			+ $"not be centered (last observed gap = {leftGap}px, must be <2px)");
 	}
 }
