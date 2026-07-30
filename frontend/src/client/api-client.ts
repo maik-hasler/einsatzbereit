@@ -332,9 +332,9 @@ export class EinsatzbereitApi {
     }
 
     /**
-     * @return No Content
+     * @return OK
      */
-    updateTimeSlot(opportunityId: string, timeSlotId: string, body: UpdateTimeSlotRequest, signal?: AbortSignal): Promise<void> {
+    updateTimeSlot(opportunityId: string, timeSlotId: string, body: UpdateTimeSlotRequest, signal?: AbortSignal): Promise<UpdateTimeSlotResponse> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
@@ -352,6 +352,7 @@ export class EinsatzbereitApi {
             signal,
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             }
         };
 
@@ -360,12 +361,14 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processUpdateTimeSlot(response: Response): Promise<void> {
+    protected processUpdateTimeSlot(response: Response): Promise<UpdateTimeSlotResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
+        if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as UpdateTimeSlotResponse;
+            return result200;
             });
         } else if (status === 400) {
             return response.text().then((_responseText) => {
@@ -402,26 +405,32 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<UpdateTimeSlotResponse>(null as any);
     }
 
     /**
-     * @return No Content
+     * @param scope (optional) 
+     * @return OK
      */
-    deleteTimeSlot(opportunityId: string, timeSlotId: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}";
+    deleteTimeSlot(opportunityId: string, timeSlotId: string, scope: string | undefined, signal?: AbortSignal): Promise<DeleteTimeSlotResponse> {
+        let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/time-slots/{timeSlotId}?";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
         url_ = url_.replace("{opportunityId}", encodeURIComponent("" + opportunityId));
         if (timeSlotId === undefined || timeSlotId === null)
             throw new globalThis.Error("The parameter 'timeSlotId' must be defined.");
         url_ = url_.replace("{timeSlotId}", encodeURIComponent("" + timeSlotId));
+        if (scope === null)
+            throw new globalThis.Error("The parameter 'scope' cannot be null.");
+        else if (scope !== undefined)
+            url_ += "scope=" + encodeURIComponent("" + scope) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
             method: "DELETE",
             signal,
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -430,12 +439,20 @@ export class EinsatzbereitApi {
         });
     }
 
-    protected processDeleteTimeSlot(response: Response): Promise<void> {
+    protected processDeleteTimeSlot(response: Response): Promise<DeleteTimeSlotResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
+        if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DeleteTimeSlotResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
             return response.text().then((_responseText) => {
@@ -455,6 +472,12 @@ export class EinsatzbereitApi {
             result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("Not Found", status, _responseText, _headers, result404);
             });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Conflict", status, _responseText, _headers, result409);
+            });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
             let result500: any = null;
@@ -466,7 +489,7 @@ export class EinsatzbereitApi {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<DeleteTimeSlotResponse>(null as any);
     }
 
     /**
@@ -5078,6 +5101,9 @@ export interface CreateTimeSlotResponse {
     startDateTime: Date;
     endDateTime: Date;
     maxParticipants: number;
+    seriesId: string | undefined;
+    recurrenceFrequency: string | undefined;
+    recurrenceCount: number | undefined;
 
     [key: string]: any;
 }
@@ -5156,6 +5182,12 @@ export interface DashboardWidgetPlacementResponse {
     y: number;
     width: number;
     height: number;
+
+    [key: string]: any;
+}
+
+export interface DeleteTimeSlotResponse {
+    deletedTimeSlotIds: string[];
 
     [key: string]: any;
 }
@@ -5582,6 +5614,9 @@ export interface TimeSlotDetail {
     endDateTime: Date;
     maxParticipants: number;
     bookedCount: number;
+    seriesId: string | undefined;
+    recurrenceFrequency: string | undefined;
+    recurrenceCount: number | undefined;
 
     [key: string]: any;
 }
@@ -5607,9 +5642,17 @@ export interface UpdateOrganizationRequest {
 }
 
 export interface UpdateTimeSlotRequest {
-    startDateTime: Date;
-    endDateTime: Date;
+    startDateTime: Date | undefined;
+    endDateTime: Date | undefined;
     maxParticipants: number;
+    scope: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface UpdateTimeSlotResponse {
+    updatedCount: number;
+    skippedTimeSlotIds: string[];
 
     [key: string]: any;
 }

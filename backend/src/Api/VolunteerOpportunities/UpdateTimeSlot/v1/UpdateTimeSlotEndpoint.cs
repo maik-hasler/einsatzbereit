@@ -6,6 +6,7 @@ using Application.Common.Messaging;
 using Application.VolunteerOpportunities.UpdateTimeSlot.v1;
 using Domain.Primitives;
 using Domain.Users;
+using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -16,7 +17,7 @@ internal sealed class UpdateTimeSlotEndpoint : IEndpoint
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
 		app.MapPut("/volunteer-opportunities/{opportunityId:guid}/time-slots/{timeSlotId:guid}", UpdateTimeSlotAsync)
 			.WithName("UpdateTimeSlot")
-			.Produces(StatusCodes.Status204NoContent)
+			.Produces<UpdateTimeSlotResponse>(StatusCodes.Status200OK)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
@@ -35,8 +36,18 @@ internal sealed class UpdateTimeSlotEndpoint : IEndpoint
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
-		var command = new UpdateTimeSlotCommand(opportunityId, timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId);
-		await sender.Send(command, cancellationToken);
-		return Results.NoContent();
+
+		var scope = SeriesEditScope.Only;
+		if (!string.IsNullOrEmpty(request.Scope) && !Enum.TryParse(request.Scope, ignoreCase: true, out scope))
+		{
+			return Results.Problem(
+				"Invalid Scope. Allowed values: Only, ThisAndFollowing, EntireSeries.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId, scope);
+		var result = await sender.Send(command, cancellationToken);
+		return Results.Ok(new UpdateTimeSlotResponse(result.UpdatedCount, result.SkippedTimeSlotIds));
 	}
 }

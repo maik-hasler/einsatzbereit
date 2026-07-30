@@ -289,7 +289,25 @@
       "recurrenceFrequency": "Frequency",
       "recurrenceWeekly": "Weekly",
       "recurrenceMonthly": "Monthly",
-      "recurrenceCount": "Number of sessions"
+      "recurrenceCount": "Number of sessions",
+      "seriesBadge": "{{frequency}} · {{position}}/{{count}}",
+      "editPartialSkip": "{{count}} occurrence(s) were left unchanged because their current sign-ups already exceed the new capacity.",
+      "editScope": {
+        "legend": "Apply this change to",
+        "Only": "Only this occurrence",
+        "ThisAndFollowing": "This and following occurrences",
+        "EntireSeries": "Entire series"
+      },
+      "deleteSeries": {
+        "title": "Remove recurring time slot",
+        "message": "This time slot is part of a recurring series. Choose how much of the series to remove.",
+        "scopeLegend": "Remove",
+        "scopeOnly": "Only this occurrence",
+        "scopeThisAndFollowing": "This and following occurrences",
+        "scopeEntireSeries": "Entire series",
+        "cancelsEngagementsWarning": "Volunteers signed up for the affected occurrences will have their sign-up cancelled and be notified.",
+        "confirm": "Remove"
+      }
     },
     "signUp": {
       "titleWaitlist": "Select a slot",

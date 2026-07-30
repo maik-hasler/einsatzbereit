@@ -74,7 +74,8 @@ public class UpdateTimeSlotCommandHandlerTests
 		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.Should().BeTrue();
+		result.UpdatedCount.Should().Be(1);
+		result.SkippedTimeSlotIds.Should().BeEmpty();
 		timeSlot.StartDateTime.Should().Be(newStart);
 		timeSlot.EndDateTime.Should().Be(newEnd);
 		timeSlot.MaxParticipants.Should().Be(20);
@@ -212,6 +213,177 @@ public class UpdateTimeSlotCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Forbidden);
 		timeSlot.StartDateTime.Should().Be(BaseStart);
 		timeSlot.EndDateTime.Should().Be(BaseEnd);
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
+
+	[Test]
+	public async Task Handle_ShouldUpdateCapacityOnTargetAndFollowingSlots_WhenScopeIsThisAndFollowing(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: a 3-occurrence weekly series.
+		var opportunity = CreateWaitlistOpportunity();
+		var seriesId = Guid.CreateVersion7();
+		var slot1 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
+		var slot2 = opportunity.AddTimeSlot(BaseStart.AddDays(7), BaseEnd.AddDays(7), 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
+		var slot3 = opportunity.AddTimeSlot(BaseStart.AddDays(14), BaseEnd.AddDays(14), 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, slot2.Id.Value, null, null, 20, DefaultRequestingUserId, SeriesEditScope.ThisAndFollowing);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.UpdatedCount.Should().Be(2);
+		result.SkippedTimeSlotIds.Should().BeEmpty();
+		slot1.MaxParticipants.Should().Be(10);
+		slot2.MaxParticipants.Should().Be(20);
+		slot3.MaxParticipants.Should().Be(20);
+	}
+
+	[Test]
+	public async Task Handle_ShouldUpdateCapacityOnEveryOccurrence_WhenScopeIsEntireSeries(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: a 3-occurrence weekly series.
+		var opportunity = CreateWaitlistOpportunity();
+		var seriesId = Guid.CreateVersion7();
+		var slot1 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
+		var slot2 = opportunity.AddTimeSlot(BaseStart.AddDays(7), BaseEnd.AddDays(7), 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
+		var slot3 = opportunity.AddTimeSlot(BaseStart.AddDays(14), BaseEnd.AddDays(14), 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 3).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		// Target the last occurrence - EntireSeries must still reach back to the earlier ones.
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, slot3.Id.Value, null, null, 25, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.UpdatedCount.Should().Be(3);
+		slot1.MaxParticipants.Should().Be(25);
+		slot2.MaxParticipants.Should().Be(25);
+		slot3.MaxParticipants.Should().Be(25);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotChangeDates_ForBulkScope(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateWaitlistOpportunity();
+		var seriesId = Guid.CreateVersion7();
+		var slot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 1).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, slot.Id.Value, null, null, 20, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert: only capacity moves, dates are untouched by bulk scope.
+		slot.StartDateTime.Should().Be(BaseStart);
+		slot.EndDateTime.Should().Be(BaseEnd);
+		slot.MaxParticipants.Should().Be(20);
+	}
+
+	[Test]
+	public async Task Handle_ShouldSkipSlot_WhenCapacityBelowActiveEngagementsInBulkScope(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: slot2 already has more active sign-ups than the requested capacity.
+		var opportunity = CreateWaitlistOpportunity();
+		var seriesId = Guid.CreateVersion7();
+		var slot1 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 2).Value;
+		var slot2 = opportunity.AddTimeSlot(BaseStart.AddDays(7), BaseEnd.AddDays(7), 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 2).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.CountActiveEngagementsForTimeSlotAsync(slot2.Id, Arg.Any<CancellationToken>())
+			.Returns(8);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, slot1.Id.Value, null, null, 3, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.UpdatedCount.Should().Be(1);
+		result.SkippedTimeSlotIds.Should().ContainSingle().Which.Should().Be(slot2.Id.Value);
+		slot1.MaxParticipants.Should().Be(3);
+		slot2.MaxParticipants.Should().Be(10);
+	}
+
+	[Test]
+	public async Task Handle_ShouldExcludePastOccurrences_FromBulkScope(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: slot1 is a past occurrence (created as valid-at-the-time via an
+		// artificially-past `now`), slot2 is still upcoming.
+		var opportunity = CreateWaitlistOpportunity();
+		var seriesId = Guid.CreateVersion7();
+		var pastStart = DateTimeOffset.UtcNow.AddDays(-9);
+		var pastEnd = pastStart.AddHours(2);
+		var slot1 = opportunity.AddTimeSlot(pastStart, pastEnd, 10, pastStart.AddDays(-1), seriesId, "Weekly", 2).Value;
+		var slot2 = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow, seriesId, "Weekly", 2).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, slot2.Id.Value, null, null, 30, DefaultRequestingUserId, SeriesEditScope.EntireSeries);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.UpdatedCount.Should().Be(1);
+		slot1.MaxParticipants.Should().Be(10);
+		slot2.MaxParticipants.Should().Be(30);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenBulkScopeAndTimeSlotNotPartOfSeries(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: a standalone slot with no SeriesId.
+		var opportunity = CreateWaitlistOpportunity();
+		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, timeSlot.Id.Value, null, null, 20, DefaultRequestingUserId, SeriesEditScope.ThisAndFollowing);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not part of a recurring series*");
 		timeSlot.MaxParticipants.Should().Be(10);
 	}
 }

@@ -35,11 +35,18 @@ internal sealed class CreateTimeSlotCommandHandler(
 		var slots = new List<TimeSlot>(count);
 		var now = DateTimeOffset.UtcNow;
 
+		// A SeriesId links the generated occurrences so they can later be
+		// edited/cancelled together (einsatzbereit#1058) - only meaningful once
+		// there's more than one occurrence to link.
+		Guid? seriesId = count > 1 ? Guid.CreateVersion7() : null;
+
 		for (var i = 0; i < count; i++)
 		{
 			var start = Advance(request.StartDateTime, request.RecurrenceFrequency, i);
 			var end = start + duration;
-			slots.Add(opportunity.AddTimeSlot(start, end, request.MaxParticipants, now).GetValueOrThrow());
+			slots.Add(opportunity.AddTimeSlot(
+				start, end, request.MaxParticipants, now,
+				seriesId, request.RecurrenceFrequency, count).GetValueOrThrow());
 		}
 
 		return slots;

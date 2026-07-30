@@ -30,7 +30,10 @@ public sealed record TimeSlotDetail(
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
 	int MaxParticipants,
-	int BookedCount);
+	int BookedCount,
+	Guid? SeriesId,
+	string? RecurrenceFrequency,
+	int? RecurrenceCount);
 
 public sealed record CurrentUserEngagementInfo(
 	Guid Id,

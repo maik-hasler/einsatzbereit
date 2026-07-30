@@ -61,6 +61,45 @@ public class CreateTimeSlotCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldLeaveSeriesIdNull_WhenNoRecurrence(
+		CancellationToken cancellationToken)
+	{
+		var opportunity = CreateOpportunity();
+		var opportunityId = Guid.CreateVersion7();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new CreateTimeSlotCommand(
+			opportunityId, BaseStart, BaseEnd, 10, DefaultRequestingUserId);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().ContainSingle().Which.SeriesId.Should().BeNull();
+	}
+
+	[Test]
+	public async Task Handle_ShouldStampSameSeriesId_AcrossAllRecurringSlots(
+		CancellationToken cancellationToken)
+	{
+		var opportunity = CreateOpportunity();
+		var opportunityId = Guid.CreateVersion7();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new CreateTimeSlotCommand(
+			opportunityId, BaseStart, BaseEnd, 5, DefaultRequestingUserId,
+			RecurrenceFrequency: "Weekly", RecurrenceCount: 8);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().OnlyContain(ts => ts.SeriesId != null);
+		result.Select(ts => ts.SeriesId).Distinct().Should().ContainSingle();
+		result.Should().OnlyContain(ts => ts.RecurrenceFrequency == "Weekly" && ts.RecurrenceCount == 8);
+	}
+
+	[Test]
 	public async Task Handle_ShouldCreate8WeeklySlots_WithWeeklyFrequency(
 		CancellationToken cancellationToken)
 	{
