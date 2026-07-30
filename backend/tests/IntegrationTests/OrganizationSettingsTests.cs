@@ -572,7 +572,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Resend 409 Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
 		var act = () => olafClient.ResendInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
 
@@ -592,7 +592,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Resend Success Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 		await ExpireAllDueInvitationsAsync(cancellationToken);
 
 		var invitationsBeforeResend = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
@@ -621,7 +621,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Resend 403 Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 		await ExpireAllDueInvitationsAsync(cancellationToken);
 
 		await veraClient.CreateOrganizationAsync(
@@ -659,7 +659,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Dismiss Expired Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 		await ExpireAllDueInvitationsAsync(cancellationToken);
 
 		await olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
