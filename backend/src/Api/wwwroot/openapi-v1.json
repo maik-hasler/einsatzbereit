@@ -6856,7 +6856,8 @@
           "phone",
           "skills",
           "languages",
-          "preferredContact"
+          "preferredContact",
+          "preferredLanguage"
         ],
         "type": "object",
         "properties": {
@@ -6917,6 +6918,9 @@
               "null",
               "string"
             ]
+          },
+          "preferredLanguage": {
+            "type": "string"
           }
         }
       },
@@ -8405,6 +8409,12 @@
             }
           },
           "preferredContact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "preferredLanguage": {
             "type": [
               "null",
               "string"

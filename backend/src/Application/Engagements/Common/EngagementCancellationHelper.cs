@@ -1,6 +1,7 @@
 using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Persistence;
 using Domain.Engagements;
 using Domain.Notifications;
@@ -20,6 +21,7 @@ internal static class EngagementCancellationHelper
 		IApplicationDbContext dbContext,
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
+		IEmailTemplateRenderer emailTemplateRenderer,
 		Engagement engagement,
 		string opportunityTitle,
 		string? reason,
@@ -34,17 +36,26 @@ internal static class EngagementCancellationHelper
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId!.Value.Value, cancellationToken);
+		var volunteerUser = await dbContext.Users.FindAsync(engagement.VolunteerId!.Value, cancellationToken);
+		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
 
-		var reasonText = string.IsNullOrWhiteSpace(reason)
+		var reasonBlock = string.IsNullOrWhiteSpace(reason)
 			? string.Empty
-			: $"\n\nReason: {reason}";
+			: emailTemplateRenderer.Render(
+				EmailTemplateKind.EngagementCancelledReasonSuffix,
+				volunteerLanguage,
+				new Dictionary<string, string> { ["Reason"] = reason }).Body;
 
-		await emailService.SendAsync(
-			volunteer.Email,
-			"Your engagement has been cancelled",
-			$"Hello {volunteer.FirstName ?? volunteer.Username},\n\n" +
-			$"Unfortunately your application for \"{opportunityTitle}\" has been cancelled.{reasonText}\n\n" +
-			$"We hope to see you at another opportunity.\n\nEinsatzbereit",
-			cancellationToken);
+		var content = emailTemplateRenderer.Render(
+			EmailTemplateKind.EngagementCancelled,
+			volunteerLanguage,
+			new Dictionary<string, string>
+			{
+				["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
+				["OpportunityTitle"] = opportunityTitle,
+				["ReasonBlock"] = reasonBlock,
+			});
+
+		await emailService.SendAsync(volunteer.Email, content.Subject, content.Body, cancellationToken);
 	}
 }

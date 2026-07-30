@@ -49,6 +49,9 @@ internal sealed class UserConfiguration
 		builder.Property(u => u.PreferredContact)
 			.HasConversion<string>();
 
+		builder.Property(u => u.PreferredLanguage)
+			.HasMaxLength(5);
+
 		builder.Property(u => u.IsDeleted)
 			.HasDefaultValue(false);
 

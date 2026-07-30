@@ -1,6 +1,7 @@
 using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -15,7 +16,8 @@ internal sealed class CreateEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<CreateEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -82,25 +84,41 @@ internal sealed class CreateEngagementCommandHandler(
 		var volunteerName = volunteer.FirstName ?? volunteer.Username;
 		var isSlotSignUp = request.TimeSlotId is not null;
 
-		var volunteerSubject = isSlotSignUp
-			? $"You've signed up for \"{opportunity.Title}\""
-			: $"Your request for \"{opportunity.Title}\" has been received";
+		var volunteerUser = await dbContext.Users.FindAsync(request.VolunteerId, cancellationToken);
+		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
 
-		var volunteerBody = isSlotSignUp
-			? $"Hi {volunteerName},\n\nYou've signed up for \"{opportunity.Title}\". " +
-				$"An organizer will review your sign-up and confirm it soon.\n\nEinsatzbereit"
-			: $"Hi {volunteerName},\n\nYour request to participate in \"{opportunity.Title}\" has been received. " +
-				$"The organizer will be in touch.\n\nEinsatzbereit";
+		var volunteerContent = emailTemplateRenderer.Render(
+			isSlotSignUp ? EmailTemplateKind.EngagementWaitlisted : EmailTemplateKind.EngagementRequestReceived,
+			volunteerLanguage,
+			new Dictionary<string, string>
+			{
+				["VolunteerName"] = volunteerName,
+				["OpportunityTitle"] = opportunity.Title,
+			});
 
-		await emailService.SendAsync(volunteer.Email, volunteerSubject, volunteerBody, cancellationToken);
+		await emailService.SendAsync(volunteer.Email, volunteerContent.Subject, volunteerContent.Body, cancellationToken);
 
 		foreach (var organizer in members.Where(m => m.IsOrganisator))
 		{
 			var organizerName = organizer.FirstName ?? organizer.Username;
+			var organizerUser = await dbContext.Users.FindAsync(
+				UserId.Create(organizer.UserId).GetValueOrThrow(), cancellationToken);
+			var organizerLanguage = SupportedLanguages.Resolve(organizerUser?.PreferredLanguage);
+
+			var organizerContent = emailTemplateRenderer.Render(
+				EmailTemplateKind.EngagementSignupNotifyOrganizer,
+				organizerLanguage,
+				new Dictionary<string, string>
+				{
+					["OrganizerName"] = organizerName,
+					["VolunteerName"] = volunteerName,
+					["OpportunityTitle"] = opportunity.Title,
+				});
+
 			await emailService.SendAsync(
 				organizer.Email,
-				$"New sign-up: {volunteerName} joined \"{opportunity.Title}\"",
-				$"Hi {organizerName},\n\n{volunteerName} has signed up for \"{opportunity.Title}\".\n\nEinsatzbereit",
+				organizerContent.Subject,
+				organizerContent.Body,
 				cancellationToken);
 		}
 

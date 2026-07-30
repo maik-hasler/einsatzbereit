@@ -19,6 +19,9 @@ public class EngagementReminderDueHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
+	private readonly IAggregateRepository<User, UserId> _userRepo =
+		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly EngagementReminderDueHandler _sut;
 
@@ -27,8 +30,12 @@ public class EngagementReminderDueHandlerTests
 	public EngagementReminderDueHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_dbContext.Users.Returns(_userRepo);
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
 		_sut = new EngagementReminderDueHandler(
-			_dbContext, _keycloakUserService, _emailService, NullLogger<EngagementReminderDueHandler>.Instance);
+			_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer, NullLogger<EngagementReminderDueHandler>.Instance);
 	}
 
 	private VolunteerOpportunity CreateOpportunityWithTimeSlot(out TimeSlotId timeSlotId)
@@ -133,5 +140,36 @@ public class EngagementReminderDueHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>();
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderReminderEmail_InVolunteersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - this handler runs from a background job with no HTTP request
+		// to read a language header from, so the recipient's persisted
+		// preference is the only source of truth here.
+		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlotId);
+		var volunteerId = UserId.New();
+		var domainEvent = new EngagementReminderDueDomainEvent(
+			EngagementId.New(), volunteerId, opportunity.Id, timeSlotId);
+
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		_keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken)
+			.Returns(new KeycloakUserProfile(volunteerId.Value, "vera", "Vera", "Volunteer", "vera@example.com"));
+		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
+			.Returns([true]);
+		var volunteer = User.Create(volunteerId);
+		volunteer.SetPreferredLanguage("en");
+		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
+
+		// Act
+		await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementReminder,
+			"en",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 }

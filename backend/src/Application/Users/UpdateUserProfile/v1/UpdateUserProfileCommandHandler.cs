@@ -34,6 +34,7 @@ internal sealed class UpdateUserProfileCommandHandler(
 		user.UpdateSkills(request.Skills);
 		user.UpdateLanguages(request.Languages);
 		user.SetPreferredContact(request.PreferredContactValue);
+		user.SetPreferredLanguage(request.PreferredLanguage);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 

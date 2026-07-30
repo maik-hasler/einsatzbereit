@@ -20,6 +20,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Include="Email\Templates\*.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<InternalsVisibleTo Include="IntegrationTests" />
 	</ItemGroup>
 

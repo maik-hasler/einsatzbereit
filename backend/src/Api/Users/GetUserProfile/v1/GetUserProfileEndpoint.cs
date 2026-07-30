@@ -34,7 +34,8 @@ internal sealed class GetUserProfileEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		var result = await sender.Send(new GetUserProfileQuery(UserId.Create(userId).GetValueOrThrow()), cancellationToken);
+		var requestLanguage = httpContext.Request.Headers["X-Language"].FirstOrDefault();
+		var result = await sender.Send(new GetUserProfileQuery(UserId.Create(userId).GetValueOrThrow(), requestLanguage), cancellationToken);
 		return Results.Ok(result);
 	}
 }

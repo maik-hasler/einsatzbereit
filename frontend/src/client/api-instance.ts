@@ -49,6 +49,7 @@ export function createApiClient(accessToken?: string): EinsatzbereitApi {
 					...init?.headers,
 					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 					"X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+					"X-Language": i18next.language.split("-")[0],
 				},
 			});
 			await handleErrorResponse(response, Boolean(accessToken));

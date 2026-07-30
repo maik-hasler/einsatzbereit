@@ -16,7 +16,11 @@ import ErrorBanner from "../../components/ErrorBanner";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
 import DangerZoneCard from "./DangerZoneCard";
-import { useProfileForm, type ContactPref } from "./useProfileForm";
+import {
+	useProfileForm,
+	type ContactPref,
+	type PreferredLanguage,
+} from "./useProfileForm";
 import { useAvatarUpload } from "./useAvatarUpload";
 
 // Legacy ?tab= values - from the pre-#794 two-tab scheme (profile/activity)
@@ -226,6 +230,7 @@ export default function ProfileOverviewPage() {
 				skills: form.state.skills,
 				languages: form.state.languages,
 				preferredContact: form.state.preferredContact || undefined,
+				preferredLanguage: form.state.preferredLanguage,
 			});
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
@@ -360,6 +365,7 @@ export default function ProfileOverviewPage() {
 								languages={form.state.languages}
 								preferredContact={form.state.preferredContact || null}
 								phone={form.state.phone || null}
+								preferredLanguage={form.state.preferredLanguage}
 							/>
 						)}
 
@@ -539,6 +545,30 @@ export default function ProfileOverviewPage() {
 												{
 													value: "Phone",
 													label: t("profile.preferredContactPhone"),
+												},
+											]}
+										/>
+									</Field>
+
+									<Field
+										label={t("profile.fieldPreferredLanguage")}
+										id="preferred-language"
+									>
+										<Dropdown
+											id="preferred-language"
+											value={form.state.preferredLanguage}
+											onChange={(v) =>
+												form.setPreferredLanguage(v as PreferredLanguage)
+											}
+											className={inputClass}
+											options={[
+												{
+													value: "de",
+													label: t("profile.preferredLanguageDe"),
+												},
+												{
+													value: "en",
+													label: t("profile.preferredLanguageEn"),
 												},
 											]}
 										/>

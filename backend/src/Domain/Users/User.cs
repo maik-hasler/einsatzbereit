@@ -22,6 +22,8 @@ public sealed class User
 
 	public PreferredContact? PreferredContact { get; private set; }
 
+	public string? PreferredLanguage { get; private set; }
+
 	public bool IsDeleted { get; private set; }
 
 	public DateTimeOffset? DeletedOn { get; private set; }
@@ -62,6 +64,11 @@ public sealed class User
 	public void SetPreferredContact(PreferredContact? preferredContact)
 	{
 		PreferredContact = preferredContact;
+	}
+
+	public void SetPreferredLanguage(string? preferredLanguage)
+	{
+		PreferredLanguage = preferredLanguage;
 	}
 
 	public Result MarkDeleted(DateTimeOffset deletedOn)

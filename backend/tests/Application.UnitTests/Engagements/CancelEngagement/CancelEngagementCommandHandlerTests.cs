@@ -24,8 +24,11 @@ public class CancelEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<User, UserId> _userRepo =
+		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CancelEngagementCommandHandler _sut;
 
@@ -38,6 +41,7 @@ public class CancelEngagementCommandHandlerTests
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_dbContext.Users.Returns(_userRepo);
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(CreateDefaultOpportunity());
@@ -47,7 +51,10 @@ public class CancelEngagementCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService);
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
+		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>
@@ -181,8 +188,71 @@ public class CancelEngagementCommandHandlerTests
 			cancellationToken);
 		await _emailService.Received(1).SendAsync(
 			"vera@example.com",
-			"Your engagement has been cancelled",
-			Arg.Is<string>(body => body!.Contains("Reason: No longer needed.")),
+			"Test Subject",
+			"Test Body",
 			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderCancellationEmail_InVolunteersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		var volunteer = User.Create(volunteerId);
+		volunteer.SetPreferredLanguage("en");
+		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementCancelled,
+			"en",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderReasonSuffix_WhenReasonIsGiven(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId, "Not enough sign-ups"), cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementCancelledReasonSuffix,
+			Arg.Any<string>(),
+			Arg.Is<IReadOnlyDictionary<string, string>>(p => p!["Reason"] == "Not enough sign-ups"));
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotRenderReasonSuffix_WhenNoReasonIsGiven(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.DidNotReceive().Render(
+			EmailTemplateKind.EngagementCancelledReasonSuffix,
+			Arg.Any<string>(),
+			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 }
