@@ -1,5 +1,7 @@
+using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Geocoding;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
@@ -25,6 +27,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -44,11 +48,19 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
+		_emailService
+			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_engagementReadRepository,
 			_geocodingService,
 			_pinGenerator,
+			_keycloakUserService,
+			_emailService,
 			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
@@ -355,6 +367,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		await _notifRepo.Received(1).AddAsync(
 			Arg.Is<Notification>(n => n!.Kind == NotificationKind.OpportunityUpdated && n.RecipientId.Value == activeVolunteer),
 			cancellationToken);
+		await _emailService.Received(1).SendBatchAsync(
+			Arg.Is<IReadOnlyList<EmailMessage>>(messages =>
+				messages!.Count == 1 && messages[0].To == "user@example.com" && messages[0].Body.Contains("Neues Thema")),
+			cancellationToken);
 	}
 
 	[Test]
@@ -381,10 +397,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - no notification should be added
+		// Assert - no notification and no email should be sent
 		await _notifRepo.DidNotReceive().AddAsync(
 			Arg.Any<Notification>(),
 			cancellationToken);
+		await _emailService.DidNotReceive().SendBatchAsync(
+			Arg.Any<IReadOnlyList<EmailMessage>>(),
+			Arg.Any<CancellationToken>());
 	}
 
 	[Test]

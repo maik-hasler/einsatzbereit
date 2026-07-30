@@ -1,4 +1,6 @@
+using Application.Common.Email;
 using Application.Common.Exceptions;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.AdminShadowDeleteVolunteerOpportunity.v1;
@@ -26,6 +28,8 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Report, ReportId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly AdminShadowDeleteVolunteerOpportunityCommandHandler _sut;
 
@@ -47,7 +51,10 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
+		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
@@ -95,6 +102,42 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		// Assert
 		report.Status.Should().Be(ReportStatus.Actioned);
 		report.ResolvedByUserId.Should().Be(DefaultAdminUserId);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotifyAndEmailEachVolunteer_WhenActiveEngagementsAutoCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - same guarantee as the organizer-triggered delete (#1057): a
+		// shadow-delete's auto-cancelled engagements must notify+email too.
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var timeSlotId = TimeSlotId.New();
+		var engagement = Engagement.CreateWaitlistSignUp(
+			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), UserId.New(), timeSlotId);
+		engagement.Confirm();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns([engagement]);
+
+		// Act
+		await _sut.Handle(new AdminShadowDeleteVolunteerOpportunityCommand(opportunityId, DefaultAdminUserId), cancellationToken);
+
+		// Assert
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
+				&& n.Kind == NotificationKind.EngagementCancelled
+				&& n.RelatedEntityId == engagement.Id.Value),
+			cancellationToken);
+		await _emailService.Received(1).SendAsync(
+			"user@example.com",
+			"Your engagement has been cancelled",
+			Arg.Is<string>(body => body!.Contains("Reason: Opportunity was deleted.")),
+			cancellationToken);
 	}
 
 	[Test]

@@ -157,4 +157,32 @@ public class CancelEngagementCommandHandlerTests
 		// Assert
 		result.Should().BeSameAs(engagement);
 	}
+
+	[Test]
+	public async Task Handle_ShouldNotifyAndEmailVolunteer_WhenEngagementCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var engagement = CreatePendingWaitlistEngagement();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_keycloakUserService
+			.GetUserAsync(engagement.VolunteerId!.Value.Value, Arg.Any<CancellationToken>())
+			.Returns(new KeycloakUserProfile(engagement.VolunteerId!.Value.Value, "vera", "Vera", null, "vera@example.com"));
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId, "No longer needed."), cancellationToken);
+
+		// Assert
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
+				&& n.Kind == NotificationKind.EngagementCancelled
+				&& n.RelatedEntityId == engagement.Id.Value),
+			cancellationToken);
+		await _emailService.Received(1).SendAsync(
+			"vera@example.com",
+			"Your engagement has been cancelled",
+			Arg.Is<string>(body => body!.Contains("Reason: No longer needed.")),
+			cancellationToken);
+	}
 }

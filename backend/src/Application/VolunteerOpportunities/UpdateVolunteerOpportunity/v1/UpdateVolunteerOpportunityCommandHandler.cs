@@ -1,6 +1,8 @@
 using Application.Common.Authorization;
+using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Geocoding;
+using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -18,6 +20,8 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IEngagementReadRepository engagementReadRepository,
 	IGeocodingService geocodingService,
 	IPinGenerator pinGenerator,
+	IKeycloakUserService keycloakUserService,
+	IEmailService emailService,
 	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
@@ -90,7 +94,10 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 				engagementReadRepository,
 				opportunityId,
 				NotificationKind.OpportunityUpdated,
-				cancellationToken);
+				cancellationToken,
+				keycloakUserService: keycloakUserService,
+				emailService: emailService,
+				opportunityTitle: opportunity.Title);
 
 		return true;
 	}

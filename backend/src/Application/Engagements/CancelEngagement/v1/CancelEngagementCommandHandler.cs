@@ -4,8 +4,8 @@ using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Engagements.Common;
 using Domain.Engagements;
-using Domain.Notifications;
 using Domain.Primitives;
 
 namespace Application.Engagements.CancelEngagement.v1;
@@ -32,26 +32,13 @@ internal sealed class CancelEngagementCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		engagement.Cancel(request.Reason).ThrowIfFailure();
-
-		var notification = Notification.Create(
-			engagement.VolunteerId!.Value,
-			NotificationKind.EngagementCancelled,
-			engagement.Id.Value);
-
-		await dbContext.Notifications.AddAsync(notification, cancellationToken);
-		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId!.Value.Value, cancellationToken);
-
-		var reasonText = string.IsNullOrWhiteSpace(request.Reason)
-			? string.Empty
-			: $"\n\nReason: {request.Reason}";
-
-		await emailService.SendAsync(
-			volunteer.Email,
-			"Your engagement has been cancelled",
-			$"Hello {volunteer.FirstName ?? volunteer.Username},\n\n" +
-			$"Unfortunately your application for \"{opportunity.Title}\" has been cancelled.{reasonText}\n\n" +
-			$"We hope to see you at another opportunity.\n\nEinsatzbereit",
+		await EngagementCancellationHelper.CancelAndNotifyAsync(
+			dbContext,
+			keycloakUserService,
+			emailService,
+			engagement,
+			opportunity.Title,
+			request.Reason,
 			cancellationToken);
 
 		return engagement;
