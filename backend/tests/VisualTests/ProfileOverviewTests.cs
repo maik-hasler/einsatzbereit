@@ -164,7 +164,9 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.Locator("#preferred-contact").ClickAsync();
 		await Page.GetByRole(AriaRole.Option, new() { Name = "Email" }).ClickAsync();
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
+		// Exact: true - substring matching would also hit NotificationPreferencesSection's
+		// "Save preferences" button, elsewhere on this same page.
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await Page.GotoAsync($"{origin}/users/{userId}");
@@ -172,9 +174,10 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		// This page's data comes from a fresh fetch that fans out to Keycloak (user
 		// lookup) plus several DB queries (engagement count, badges, profile), so it
-		// is slower than a typical page load - give it the same headroom already
-		// used elsewhere in this file for API-heavy pages rather than the default.
-		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		// is slower than a typical page load - give it extra headroom (30s, up from
+		// 20s) beyond what's used elsewhere in this file for API-heavy pages, since
+		// this specific fetch fans out further than most.
+		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 30_000 });
 		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Preferred contact channel")).ToBeVisibleAsync();
 
@@ -202,7 +205,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await Expect(Page.GetByLabel("Username")).ToBeVisibleAsync(new() { Timeout = 5_000 });
 		await Expect(Page.GetByLabel("Email address")).ToBeVisibleAsync(new() { Timeout = 5_000 });
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync(new() { Timeout = 5_000 });
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true })).ToBeVisibleAsync(new() { Timeout = 5_000 });
 	}
 
 	[Test]
@@ -240,7 +243,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GetByLabel("First name").FillAsync("Vera", new() { Timeout = 10_000 });
 		await Page.GetByLabel("Last name").FillAsync("Sample");
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Save" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
 
 		await Expect(Page.GetByText("Profile saved.")).ToBeVisibleAsync();
 	}
@@ -328,6 +331,6 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 			timeoutMs: 40_000);
 
 		await Expect(Page.Locator("#bio")).ToHaveValueAsync(draftBio);
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true })).ToBeVisibleAsync();
 	}
 }

@@ -18,6 +18,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
 	IEmailTemplateRenderer emailTemplateRenderer,
+	IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 	ISender sender)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
 {
@@ -58,19 +59,29 @@ internal sealed class ConfirmEngagementCommandHandler(
 		await EvaluateMilestoneAchievementsAsync(volunteerId, totalConfirmedEngagements, cancellationToken);
 
 		var volunteer = await keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken);
-		var volunteerUser = await dbContext.Users.FindAsync(volunteerId, cancellationToken);
-		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
+		var volunteerUser = (await dbContext.GetOrCreateUsersAsync([volunteerId], cancellationToken))[0];
+		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser.PreferredLanguage);
 
-		var content = emailTemplateRenderer.Render(
-			EmailTemplateKind.EngagementConfirmed,
-			volunteerLanguage,
-			new Dictionary<string, string>
-			{
-				["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
-				["OpportunityTitle"] = opportunity.Title,
-			});
+		if (volunteerUser.IsSubscribedTo(EmailNotificationType.EngagementConfirmed))
+		{
+			var content = emailTemplateRenderer.Render(
+				EmailTemplateKind.EngagementConfirmed,
+				volunteerLanguage,
+				new Dictionary<string, string>
+				{
+					["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
+					["OpportunityTitle"] = opportunity.Title,
+				});
 
-		await emailService.SendAsync(volunteer.Email, content.Subject, content.Body, cancellationToken);
+			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
+				volunteerId, volunteerUser.UnsubscribeToken, EmailNotificationType.EngagementConfirmed);
+
+			await emailService.SendAsync(
+				volunteer.Email,
+				content.Subject,
+				EmailFooter.Append(content.Body, unsubscribeUrl),
+				cancellationToken);
+		}
 
 		return engagement;
 	}

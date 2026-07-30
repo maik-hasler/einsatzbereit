@@ -32,6 +32,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
+	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly AdminShadowDeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -58,7 +59,9 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		_emailTemplateRenderer
 			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
 			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
@@ -140,7 +143,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		await _emailService.Received(1).SendAsync(
 			"user@example.com",
 			"Test Subject",
-			"Test Body",
+			Arg.Is<string>(body => body!.StartsWith("Test Body")),
 			cancellationToken);
 	}
 

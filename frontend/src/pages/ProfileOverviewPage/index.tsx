@@ -15,6 +15,7 @@ import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
+import NotificationPreferencesSection from "./NotificationPreferencesSection";
 import DangerZoneCard from "./DangerZoneCard";
 import {
 	useProfileForm,
@@ -586,6 +587,8 @@ export default function ProfileOverviewPage() {
 			effect above regardless of how long the profile fetch takes. */}
 			<AchievementsSection />
 			<ActivitySection />
+
+			<NotificationPreferencesSection />
 
 			<DangerZoneCard />
 		</>

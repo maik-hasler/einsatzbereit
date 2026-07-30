@@ -26,6 +26,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
 		IEmailTemplateRenderer emailTemplateRenderer,
+		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -33,7 +34,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer,
+			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer, unsubscribeLinkBuilder,
 			opportunity, opportunityId, actingUserId, now, cancellationToken);
 
 		dbContext.VolunteerOpportunities.Delete(opportunity);
@@ -52,6 +53,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
 		IEmailTemplateRenderer emailTemplateRenderer,
+		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -59,7 +61,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer,
+			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer, unsubscribeLinkBuilder,
 			opportunity, opportunityId, actingUserId, now, cancellationToken);
 
 		opportunity.MarkDeleted(now).ThrowIfFailure();
@@ -71,6 +73,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
 		IEmailTemplateRenderer emailTemplateRenderer,
+		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -96,6 +99,7 @@ internal static class VolunteerOpportunityDeletionHelper
 				keycloakUserService,
 				emailService,
 				emailTemplateRenderer,
+				unsubscribeLinkBuilder,
 				engagement,
 				opportunity.Title,
 				"Opportunity was deleted.",

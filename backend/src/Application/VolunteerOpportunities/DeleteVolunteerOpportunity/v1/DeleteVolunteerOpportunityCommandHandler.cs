@@ -16,7 +16,8 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 	IEngagementReadRepository engagementReadRepository,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer)
+	IEmailTemplateRenderer emailTemplateRenderer,
+	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
 	: ICommandHandler<DeleteVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -43,6 +44,7 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 			keycloakUserService,
 			emailService,
 			emailTemplateRenderer,
+			unsubscribeLinkBuilder,
 			opportunity,
 			opportunityId,
 			request.RequestingUserId,

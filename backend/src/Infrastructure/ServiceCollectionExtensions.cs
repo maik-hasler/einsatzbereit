@@ -15,6 +15,7 @@ using Application.Reports;
 using Application.VolunteerOpportunities;
 using Infrastructure.Achievements;
 using Infrastructure.BackgroundJobs;
+using Infrastructure.Common;
 using Infrastructure.Email;
 using Infrastructure.Geocoding;
 using Infrastructure.Keycloak;
@@ -92,6 +93,8 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<EmailMetrics>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
+		services.ConfigureOptions<ApiOptionsSetup>();
+		services.AddSingleton<IUnsubscribeLinkBuilder, UnsubscribeLinkBuilder>();
 		services.ConfigureOptions<EngagementReminderOptionsSetup>();
 		services.AddHostedService<EngagementReminderJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();

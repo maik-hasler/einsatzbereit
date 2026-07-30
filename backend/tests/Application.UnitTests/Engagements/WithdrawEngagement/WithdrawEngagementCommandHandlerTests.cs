@@ -30,26 +30,29 @@ public class WithdrawEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
-	private readonly IAggregateRepository<User, UserId> _userRepo =
-		Substitute.For<IAggregateRepository<User, UserId>>();
+	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly WithdrawEngagementCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Teststraße", "1", "12345", "Berlin").Value;
+	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
 
 	public WithdrawEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
-		_dbContext.Users.Returns(_userRepo);
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
 		_emailTemplateRenderer
 			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
 			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_sut = new WithdrawEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer);
+		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([]);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_sut = new WithdrawEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
 	}
 
 	private VolunteerOpportunity CreateOpportunityForOrganizerNotification(VolunteerOpportunityId opportunityId, out Guid organizerUserId)
@@ -75,6 +78,12 @@ public class WithdrawEngagementCommandHandlerTests
 			TimeSlotId.New());
 		return (engagement, volunteerId);
 	}
+
+	private VolunteerOpportunity CreateOpportunity() =>
+		VolunteerOpportunity.Create(
+			OrganizationId.New(), "Test Opportunity", "Description", false, TestAddress,
+			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldWithdrawEngagement_WhenCalledByOwner(
@@ -221,7 +230,8 @@ public class WithdrawEngagementCommandHandlerTests
 		var organizerId = UserId.Create(organizerUserId).GetValueOrThrow();
 		var organizer = User.Create(organizerId);
 		organizer.SetPreferredLanguage("en");
-		_userRepo.FindAsync(organizerId, Arg.Any<CancellationToken>()).Returns(organizer);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([organizer]);
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
@@ -234,5 +244,71 @@ public class WithdrawEngagementCommandHandlerTests
 			EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
 			"en",
 			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	// --- Organizer email notification preferences (#1055) ---
+
+	[Test]
+	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToWithdrawal(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateOpportunity();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, TimeSlotId.New());
+		var engagementId = EngagementId.New();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunity.Id, Arg.Any<CancellationToken>()).Returns(opportunity);
+		var organizerId = Guid.NewGuid();
+		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
+		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
+			.Returns("https://example.com/unsubscribe");
+
+		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _emailService.Received(1).SendAsync(
+			"olaf@example.com",
+			Arg.Any<string>(),
+			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfWithdrawal(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateOpportunity();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, TimeSlotId.New());
+		var engagementId = EngagementId.New();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_opportunityRepo.FindAsync(opportunity.Id, Arg.Any<CancellationToken>()).Returns(opportunity);
+		var organizerId = Guid.NewGuid();
+		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
+		var optedOutOrganizer = User.Create(UserId.Create(organizerId).GetValueOrThrow());
+		optedOutOrganizer.UpdateNotificationPreferences(
+			notifyOnNewSignUp: true,
+			notifyOnWithdrawal: false,
+			notifyOnEngagementConfirmed: true,
+			notifyOnEngagementCancelled: true,
+			notifyOnEngagementReminder: true);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([optedOutOrganizer]);
+
+		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _emailService.DidNotReceive().SendAsync(
+			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }
