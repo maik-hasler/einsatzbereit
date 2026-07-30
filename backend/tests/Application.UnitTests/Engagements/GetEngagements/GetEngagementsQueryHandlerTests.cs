@@ -6,6 +6,7 @@ using Application.Engagements;
 using Application.Engagements.GetEngagements.v1;
 using AwesomeAssertions;
 using Domain.Common;
+using Domain.Engagements;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
@@ -21,6 +22,7 @@ public class GetEngagementsQueryHandlerTests
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IEngagementReadRepository _readRepository = Substitute.For<IEngagementReadRepository>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IKeycloakOrganizationService _keycloakOrganizationService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly GetEngagementsQueryHandler _sut;
 
 	private static readonly UserId DefaultRequestingUserId = UserId.New();
@@ -38,12 +40,19 @@ public class GetEngagementsQueryHandlerTests
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_readRepository
-			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([], 0, 1, 10));
 		_keycloakUserService
 			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
 			.Returns(new Dictionary<Guid, KeycloakUserProfile>());
-		_sut = new GetEngagementsQueryHandler(_readRepository, _dbContext, _keycloakUserService);
+		_sut = new GetEngagementsQueryHandler(_readRepository, _dbContext, _keycloakUserService, _keycloakOrganizationService);
 	}
 
 	private async Task<(int PageNumber, int PageSize)> CapturedArgsAsync(int pageNumber, int pageSize)
@@ -55,6 +64,9 @@ public class GetEngagementsQueryHandlerTests
 				Arg.Any<VolunteerOpportunityId>(),
 				Arg.Do<int>(p => capturedPageNumber = p),
 				Arg.Do<int>(s => capturedPageSize = s),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
 				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([], 0, 1, 10));
 
@@ -144,7 +156,14 @@ public class GetEngagementsQueryHandlerTests
 			VolunteerPhone: "+49 30 1234567");
 
 		_readRepository
-			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
 		_keycloakUserService
 			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
@@ -183,7 +202,14 @@ public class GetEngagementsQueryHandlerTests
 			DateTimeOffset.UtcNow);
 
 		_readRepository
-			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
 		_keycloakUserService
 			.GetUserProfilesAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
@@ -220,7 +246,14 @@ public class GetEngagementsQueryHandlerTests
 			VolunteerPhone: "+49 30 1234567");
 
 		_readRepository
-			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([engagement], 1, 1, 10));
 		// GetUserProfilesAsync swallows individual Keycloak lookup failures (deleted user,
 		// transient error) and simply omits that id from the map - this volunteer's entry
@@ -245,7 +278,14 @@ public class GetEngagementsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		_readRepository
-			.GetPagedByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<EngagementSummary>([], 25, 2, 10));
 
 		var query = new GetEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId, 2, 10);
@@ -255,6 +295,103 @@ public class GetEngagementsQueryHandlerTests
 		result.TotalItems.Should().Be(25);
 		result.CurrentPage.Should().Be(2);
 		result.PageCount.Should().Be(3);
+	}
+
+	[Test]
+	public async Task Handle_ShouldPassStatusAndTimeSlotFilters_ToRepository(
+		CancellationToken cancellationToken)
+	{
+		var timeSlotId = TimeSlotId.New();
+		EngagementStatus? capturedStatus = null;
+		TimeSlotId? capturedTimeSlotId = null;
+		_readRepository
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Do<EngagementStatus?>(s => capturedStatus = s),
+				Arg.Do<TimeSlotId?>(t => capturedTimeSlotId = t),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>())
+			.Returns(new PagedList<EngagementSummary>([], 0, 1, 10));
+
+		var query = new GetEngagementsQuery(
+			DefaultOpportunityId, DefaultRequestingUserId, 1, 10, EngagementStatus.Confirmed, timeSlotId);
+
+		await _sut.Handle(query, cancellationToken);
+
+		capturedStatus.Should().Be(EngagementStatus.Confirmed);
+		capturedTimeSlotId.Should().Be(timeSlotId);
+	}
+
+	[Test]
+	public async Task Handle_ShouldResolveSearch_ToMatchingVolunteerIds_ViaKeycloak(
+		CancellationToken cancellationToken)
+	{
+		var matchedUserId = Guid.NewGuid();
+		_keycloakOrganizationService
+			.SearchUsersAsync("Vera", Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganizationMember(matchedUserId, "vera", "Vera", "Volunteer", "vera@example.com", false)]);
+
+		IReadOnlyList<Guid>? capturedVolunteerIds = null;
+		_readRepository
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Do<IReadOnlyList<Guid>?>(ids => capturedVolunteerIds = ids),
+				Arg.Any<CancellationToken>())
+			.Returns(new PagedList<EngagementSummary>([], 0, 1, 10));
+
+		var query = new GetEngagementsQuery(
+			DefaultOpportunityId, DefaultRequestingUserId, 1, 10, Search: "Vera");
+
+		await _sut.Handle(query, cancellationToken);
+
+		capturedVolunteerIds.Should().ContainSingle(id => id == matchedUserId);
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnEmptyPage_WithoutQueryingRepository_WhenSearchMatchesNoVolunteer(
+		CancellationToken cancellationToken)
+	{
+		_keycloakOrganizationService
+			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns([]);
+
+		var query = new GetEngagementsQuery(
+			DefaultOpportunityId, DefaultRequestingUserId, 1, 10, Search: "nobody-matches-this");
+
+		var result = await _sut.Handle(query, cancellationToken);
+
+		result.Items.Should().BeEmpty();
+		result.TotalItems.Should().Be(0);
+		await _readRepository
+			.DidNotReceive()
+			.GetPagedByOpportunityAsync(
+				Arg.Any<VolunteerOpportunityId>(),
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<EngagementStatus?>(),
+				Arg.Any<TimeSlotId?>(),
+				Arg.Any<IReadOnlyList<Guid>?>(),
+				Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotCallKeycloakSearch_WhenSearchIsNullOrWhitespace(
+		CancellationToken cancellationToken)
+	{
+		var query = new GetEngagementsQuery(
+			DefaultOpportunityId, DefaultRequestingUserId, 1, 10, Search: "   ");
+
+		await _sut.Handle(query, cancellationToken);
+
+		await _keycloakOrganizationService
+			.DidNotReceive()
+			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
 	}
 
 	private static VolunteerOpportunity CreateDefaultOpportunity() =>

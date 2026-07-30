@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Pagination;
 using Application.Engagements;
 using Domain.Common;
@@ -78,9 +79,33 @@ internal sealed class EngagementReadRepository(
 		VolunteerOpportunityId opportunityId,
 		int pageNumber,
 		int pageSize,
+		EngagementStatus? status = null,
+		TimeSlotId? timeSlotId = null,
+		IReadOnlyList<Guid>? volunteerIds = null,
 		CancellationToken cancellationToken = default)
 	{
 		var scopedQuery = dbContext.EngagementsQuery.Where(e => e.OpportunityId == opportunityId);
+
+		if (status is not null)
+			scopedQuery = scopedQuery.Where(e => e.Status == status.Value);
+
+		// Nullable-to-nullable equality (no .Value unwrap on the nullable value-object
+		// column) - the same shape already proven safe by
+		// GetActiveVolunteerIdsByOpportunityAsync below.
+		if (timeSlotId is not null)
+			scopedQuery = scopedQuery.Where(e => e.TimeSlotId == timeSlotId);
+
+		if (volunteerIds is not null)
+		{
+			// Candidate ids as List<UserId?> (not .Value-unwrapped) so Contains stays
+			// translatable against the nullable value-object VolunteerId column - see
+			// the EF Core nullable-value-object gotcha this repository already has to
+			// work around for TimeSlotId.
+			var candidateIds = volunteerIds
+				.Select(id => (UserId?)UserId.Create(id).GetValueOrThrow())
+				.ToList();
+			scopedQuery = scopedQuery.Where(e => candidateIds.Contains(e.VolunteerId));
+		}
 
 		var totalCount = await scopedQuery.CountAsync(cancellationToken);
 

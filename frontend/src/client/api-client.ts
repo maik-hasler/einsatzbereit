@@ -4417,9 +4417,12 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param status (optional) 
+     * @param timeSlotId (optional) 
+     * @param search (optional) 
      * @return OK
      */
-    getEngagements(opportunityId: string, pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfEngagementSummary> {
+    getEngagements(opportunityId: string, pageNumber: number, pageSize: number, status: string | undefined, timeSlotId: string | undefined, search: string | undefined, signal?: AbortSignal): Promise<PagedListOfEngagementSummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities/{opportunityId}/engagements?";
         if (opportunityId === undefined || opportunityId === null)
             throw new globalThis.Error("The parameter 'opportunityId' must be defined.");
@@ -4432,6 +4435,18 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
         else
             url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (status === null)
+            throw new globalThis.Error("The parameter 'status' cannot be null.");
+        else if (status !== undefined)
+            url_ += "status=" + encodeURIComponent("" + status) + "&";
+        if (timeSlotId === null)
+            throw new globalThis.Error("The parameter 'timeSlotId' cannot be null.");
+        else if (timeSlotId !== undefined)
+            url_ += "timeSlotId=" + encodeURIComponent("" + timeSlotId) + "&";
+        if (search === null)
+            throw new globalThis.Error("The parameter 'search' cannot be null.");
+        else if (search !== undefined)
+            url_ += "search=" + encodeURIComponent("" + search) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

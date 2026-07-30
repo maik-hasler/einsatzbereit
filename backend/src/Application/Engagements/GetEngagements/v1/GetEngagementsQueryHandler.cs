@@ -11,10 +11,17 @@ namespace Application.Engagements.GetEngagements.v1;
 internal sealed class GetEngagementsQueryHandler(
 	IEngagementReadRepository readRepository,
 	IApplicationDbContext dbContext,
-	IKeycloakUserService keycloakUserService)
+	IKeycloakUserService keycloakUserService,
+	IKeycloakOrganizationService keycloakOrganizationService)
 	: IQueryHandler<GetEngagementsQuery, PagedList<EngagementSummary>>
 {
 	private const int MaxPageSize = 100;
+
+	// Realm-wide search, not scoped to this opportunity's organization - Keycloak
+	// has no per-opportunity user index. A generous max keeps a common first/last
+	// name from silently missing volunteers signed up for this opportunity; the
+	// repository still scopes the actual engagement rows down to this opportunity.
+	private const int SearchMaxResults = 200;
 
 	public async ValueTask<PagedList<EngagementSummary>> Handle(
 		GetEngagementsQuery request,
@@ -32,7 +39,27 @@ internal sealed class GetEngagementsQueryHandler(
 		var pageNumber = Math.Max(1, request.PageNumber);
 		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-		var page = await readRepository.GetPagedByOpportunityAsync(request.OpportunityId, pageNumber, pageSize, cancellationToken);
+		List<Guid>? matchedVolunteerIds = null;
+		if (!string.IsNullOrWhiteSpace(request.Search))
+		{
+			var matches = await keycloakOrganizationService.SearchUsersAsync(
+				request.Search.Trim(),
+				SearchMaxResults,
+				cancellationToken);
+			matchedVolunteerIds = matches.Select(m => m.UserId).ToList();
+
+			if (matchedVolunteerIds.Count == 0)
+				return new PagedList<EngagementSummary>([], 0, pageNumber, pageSize);
+		}
+
+		var page = await readRepository.GetPagedByOpportunityAsync(
+			request.OpportunityId,
+			pageNumber,
+			pageSize,
+			request.Status,
+			request.TimeSlotId,
+			matchedVolunteerIds,
+			cancellationToken);
 
 		var volunteerIds = page.Items
 			.Where(e => e.VolunteerId is not null)

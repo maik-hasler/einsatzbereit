@@ -1,5 +1,6 @@
 using Application.Common.Messaging;
 using Application.Common.Pagination;
+using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 
@@ -9,5 +10,8 @@ public sealed record GetEngagementsQuery(
 	VolunteerOpportunityId OpportunityId,
 	UserId RequestingUserId,
 	int PageNumber,
-	int PageSize)
+	int PageSize,
+	EngagementStatus? Status = null,
+	TimeSlotId? TimeSlotId = null,
+	string? Search = null)
 	: IQuery<PagedList<EngagementSummary>>;

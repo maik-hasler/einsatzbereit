@@ -134,7 +134,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var repository = new EngagementReadRepository(dbContext);
 
-		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken);
+		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken: cancellationToken);
 
 		page.Items.Should().ContainSingle(e => e.VolunteerId == volunteerWithPhone.Value && e.VolunteerPhone == "+49 30 1234567");
 		page.Items.Should().ContainSingle(e => e.VolunteerId == volunteerWithoutProfile.Value && e.VolunteerPhone == null);

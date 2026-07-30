@@ -115,7 +115,7 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 		// Engagements subsystem: deliberately anonymized, not deleted - the
 		// history survives for the organizer, but no longer identifies the
 		// deleted volunteer.
-		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 		engagements.Items.Should().ContainSingle(e => e.Id == engagement.Id && e.VolunteerId == null);
 
 		// #1192: user_streak and achievement rows created for the ephemeral
