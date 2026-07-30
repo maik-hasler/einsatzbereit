@@ -260,9 +260,14 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(demoteButton).ToBeVisibleAsync();
 
 		// Reload to prove the promotion was actually persisted server-side,
-		// not just an optimistic local-state update.
+		// not just an optimistic local-state update. Extended timeout here (vs.
+		// the default 30s elsewhere in this file) - this specific click is the
+		// last thing this test does before the whole ~240-test suite winds
+		// down, and has been observed timing out under end-of-run resource
+		// contention even though the identical reload+click pattern elsewhere
+		// in this file never does.
 		await Page.ReloadAsync();
-		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync(new() { Timeout = 60_000 });
 		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(veraRow.GetByText("Organizer", new() { Exact = true })).ToBeVisibleAsync();
 
