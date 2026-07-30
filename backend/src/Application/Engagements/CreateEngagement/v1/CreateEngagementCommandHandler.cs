@@ -29,7 +29,7 @@ internal sealed class CreateEngagementCommandHandler(
 			throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found."));
 
 		var alreadySignedUp = await dbContext.HasEngagementAsync(
-			request.VolunteerId, request.OpportunityId, cancellationToken);
+			request.VolunteerId, request.OpportunityId, request.TimeSlotId, cancellationToken);
 
 		if (alreadySignedUp)
 			throw new ResultFailureException(Error.Conflict("Engagement.AlreadySignedUp", "Conflict: you are already signed up for this opportunity."));
@@ -47,7 +47,7 @@ internal sealed class CreateEngagementCommandHandler(
 		}
 
 		var existingTerminal = await dbContext.GetTerminalEngagementAsync(
-			request.VolunteerId, request.OpportunityId, cancellationToken);
+			request.VolunteerId, request.OpportunityId, request.TimeSlotId, cancellationToken);
 
 		Engagement engagement;
 		if (existingTerminal is not null)
