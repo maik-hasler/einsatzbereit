@@ -32,6 +32,15 @@ public interface IKeycloakOrganizationService
 		Guid userId,
 		CancellationToken cancellationToken = default);
 
+	// Symmetric counterpart to AssignOrganizerRoleAsync, for demoting a member
+	// away from the Organizer tier. Callers must only invoke this once the
+	// user holds no remaining Organizer membership in any organization - the
+	// role is realm-wide, not per-organization, so revoking it while the user
+	// still organizes a different org would lock them out of that org too.
+	Task RevokeOrganizerRoleAsync(
+		Guid userId,
+		CancellationToken cancellationToken = default);
+
 	Task<IReadOnlyList<KeycloakOrganizationMember>> GetMembersAsync(
 		Guid organizationId,
 		CancellationToken cancellationToken = default);

@@ -453,6 +453,11 @@
       "noMembers": "No members yet.",
       "noMembersHint": "Members who join this organization will appear here.",
       "organisator": "Organizer",
+      "roleMember": "Member",
+      "promoteToOrganizer": "Promote to Organizer",
+      "demoteToMember": "Demote to Member",
+      "changeRoleError": "Could not change role.",
+      "changeRoleLastOrganizerHint": "This is the only organizer of this organization - promote another member first.",
       "removeMember": "Remove",
       "removeMemberError": "Could not remove member.",
       "leaveOrganization": "Leave",
@@ -463,6 +468,7 @@
       "loading": "Loading…",
       "inviteLabel": "Invite member",
       "invitePlaceholder": "Search by username or email…",
+      "inviteRoleLabel": "Invite as",
       "invite": "Invite",
       "inviteError": "Could not send invitation.",
       "inviteSent": "Invitation sent.",
@@ -1069,6 +1075,7 @@
         "MultipleMembers": "Only the organization's sole remaining member can delete it. Remove the other members first.",
         "HasBlockingOpportunities": "This organization has opportunities with future time slots or active engagements. Resolve or cancel these first.",
         "SoleOrganizer": "You are the only organizer of this organization. Delete the organization instead of leaving it.",
+        "SoleOrganizerDemote": "You cannot demote the only organizer of this organization. Promote another member first, or delete the organization.",
         "NotOrganizer": "You do not have permission to modify this resource."
       },
       "OrganizationInvitation": {
@@ -1079,7 +1086,13 @@
         "NotDeclined": "Only declined or expired invitations can be dismissed.",
         "NotExpired": "Only expired invitations can be resent.",
         "AlreadyMember": "User is already a member of this organization.",
-        "AlreadyInvited": "A pending invitation already exists for this user."
+        "AlreadyInvited": "A pending invitation already exists for this user.",
+        "InvalidRole": "Invalid role."
+      },
+      "OrganizationMembership": {
+        "NotFound": "Membership not found.",
+        "RoleUnchanged": "Member already has this role.",
+        "InvalidRole": "Invalid role."
       },
       "VolunteerOpportunity": {
         "InvalidCheckInPin": "Check-in PIN must be 4 to 6 digits.",

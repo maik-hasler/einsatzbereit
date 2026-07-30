@@ -5,6 +5,7 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Organizations.CreateInvitation.v1;
 using Domain.Organizations;
+using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,9 +40,13 @@ internal sealed class CreateInvitationEndpoint : IEndpoint
 		if (subClaim is null || !Guid.TryParse(subClaim, out var invitedById))
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 
+		if (!Enum.TryParse<OrganizationMemberRole>(request.Role, ignoreCase: true, out var role) || !Enum.IsDefined(role))
+			throw new ResultFailureException(Error.Validation("OrganizationInvitation.InvalidRole", "Invalid role."));
+
 		var command = new CreateInvitationCommand(
 			OrganizationId.Create(organizationId).GetValueOrThrow(),
 			UserId.Create(request.InviteeId).GetValueOrThrow(),
+			role,
 			UserId.Create(invitedById).GetValueOrThrow());
 
 		var invitationId = await sender.Send(command, cancellationToken);

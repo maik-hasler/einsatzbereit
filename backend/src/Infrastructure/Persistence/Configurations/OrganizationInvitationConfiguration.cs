@@ -40,6 +40,10 @@ internal sealed class OrganizationInvitationConfiguration : IEntityTypeConfigura
 				guid => UserId.Create(guid).GetValueOrThrow())
 			.IsRequired();
 
+		builder.Property(i => i.IntendedRole)
+			.HasConversion<string>()
+			.IsRequired();
+
 		builder.Property(i => i.Status)
 			.HasConversion<string>()
 			.IsRequired();

@@ -1,0 +1,67 @@
+using Application.Common.Authorization;
+using Application.Common.Exceptions;
+using Application.Common.Keycloak;
+using Application.Common.Messaging;
+using Application.Common.Persistence;
+using Domain.Organizations;
+using Domain.Primitives;
+
+namespace Application.Organizations.ChangeMemberRole.v1;
+
+internal sealed class ChangeMemberRoleCommandHandler(
+	IApplicationDbContext dbContext,
+	IKeycloakOrganizationService keycloakOrganizationService)
+	: ICommandHandler<ChangeMemberRoleCommand, bool>
+{
+	public async ValueTask<bool> Handle(
+		ChangeMemberRoleCommand request,
+		CancellationToken cancellationToken = default)
+	{
+		await OwnershipGuard.EnsureIsOrganizerAsync(
+			dbContext,
+			request.OrganizationId.Value,
+			request.RequestingUserId,
+			cancellationToken);
+
+		var membership = await dbContext.GetMembershipAsync(
+			request.OrganizationId, request.TargetUserId, cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound(
+				"OrganizationMembership.NotFound", "Membership not found."));
+
+		var wasOrganizer = membership.Role == OrganizationMemberRole.Organizer;
+		var demoting = wasOrganizer && request.Role != OrganizationMemberRole.Organizer;
+
+		if (demoting)
+		{
+			var organizerCount = await dbContext.CountOrganizersAsync(request.OrganizationId, cancellationToken);
+
+			if (organizerCount <= 1)
+				throw new ResultFailureException(Error.Conflict(
+					"Organization.SoleOrganizerDemote",
+					"Conflict: you cannot demote the only organizer of this organization. Promote another member first, or delete the organization."));
+		}
+
+		membership.ChangeRole(request.Role).ThrowIfFailure();
+
+		if (request.Role == OrganizationMemberRole.Organizer && !wasOrganizer)
+		{
+			await keycloakOrganizationService.AssignOrganizerRoleAsync(
+				request.TargetUserId.Value, cancellationToken);
+		}
+		else if (demoting)
+		{
+			// The role is realm-wide, not per-organization (see #1386), so it can
+			// only be revoked once the user organizes no other organization -
+			// otherwise this demotion would also lock them out of that other org.
+			var remainingOrganizerOrgs = await dbContext.GetOrganizerOrganizationsAsync(
+				request.TargetUserId, cancellationToken);
+			var stillOrganizerElsewhere = remainingOrganizerOrgs.Any(o => o.Id != request.OrganizationId);
+
+			if (!stillOrganizerElsewhere)
+				await keycloakOrganizationService.RevokeOrganizerRoleAsync(
+					request.TargetUserId.Value, cancellationToken);
+		}
+
+		return true;
+	}
+}

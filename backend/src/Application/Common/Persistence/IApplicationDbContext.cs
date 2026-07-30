@@ -44,6 +44,11 @@ public interface IApplicationDbContext
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
 
+	Task<OrganizationMembership?> GetMembershipAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
 	Task<OrganizationDashboardLayout?> GetDashboardLayoutAsync(
 		OrganizationId organizationId,
 		UserId userId,

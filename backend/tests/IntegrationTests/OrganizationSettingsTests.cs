@@ -280,7 +280,7 @@ public class OrganizationSettingsTests(
 		// The ownership check runs before any invitee lookup, so a fabricated
 		// invitee id is enough to prove the 403 fires first.
 		var act = () => veraClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = Guid.NewGuid() }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = Guid.NewGuid(), Role = "Organizer" }, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);
@@ -298,12 +298,45 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Invite Success Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
 		invitation.InvitationId.Should().NotBeEmpty();
 
 		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
 		invitations.Should().ContainSingle(i => i.Id == invitation.InvitationId && i.Status == "Pending");
+	}
+
+	[Test]
+	public async Task CreateInvitation_ThenAccept_ShouldPersistMemberRole_NotSilentlyCoerceToOrganizer(
+		CancellationToken cancellationToken)
+	{
+		// #1050: OrganizationInvitationConfiguration.IntendedRole originally had
+		// HasDefaultValue(Organizer) alongside HasConversion<string>() - since
+		// OrganizationMemberRole.Member is the enum's CLR default (0), EF Core
+		// treats any explicitly-set Member value as "unset" and silently
+		// substitutes the database default instead. That bug is invisible to
+		// mocked handler tests (no real SaveChanges/round trip) - only a real
+		// Postgres save-and-reread, as this integration test does, would have
+		// caught it: an invitation created with Role=Member would come back
+		// as Organizer, and the invitee would wrongly become an organizer on
+		// accept. Fixed by dropping the HasDefaultValue from the model.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Member Role Round-Trip Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+
+		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitations.Should().ContainSingle(i => i.Id == invitation.InvitationId && i.IntendedRole == "Member");
+
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var details = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		details.Members.Should().Contain(m => m.UserId == vera.Id && !m.IsOrganisator && m.Role == "Member");
 	}
 
 	[Test]
@@ -324,7 +357,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Accept Grants Capability Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Organizer" }, cancellationToken);
 		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		var veraOrganizations = await veraClient.GetOrganizationsAsync(cancellationToken);
@@ -354,7 +387,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Decline Success Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
 		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
 
@@ -374,7 +407,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Decline 403 Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
 		// admin is neither the inviter nor the invitee - guaranteed not to be vera.
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
@@ -412,7 +445,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Decline 409 Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Organizer" }, cancellationToken);
 		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		var act = () => veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
@@ -433,7 +466,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Accept 403 Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 
 		// admin is neither the inviter nor the invitee - guaranteed not to be vera.
 		var adminClient = await CreateAuthenticatedClientAsync("admin", "admin123");
@@ -490,7 +523,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Dismiss 403 Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		await veraClient.CreateOrganizationAsync(
@@ -516,7 +549,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Dismiss Success Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
 		await veraClient.DeclineInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		await olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
@@ -644,6 +677,83 @@ public class OrganizationSettingsTests(
 		await InvitationExpiryJob.ExpireDueInvitationsAsync(dbContext, future, cancellationToken);
 	}
 
+	// ── ChangeMemberRole (promote/demote, #1050) ──────────────────────────────
+
+	[Test]
+	public async Task ChangeMemberRole_ShouldReturn204AndPromoteThenDemote_WhenRequestingUserIsOrganizer(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "ChangeMemberRole Success Test Org" }, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		await olafClient.ChangeMemberRoleAsync(
+			org.Id.Value, vera.Id, new ChangeMemberRoleRequest { Role = "Organizer" }, cancellationToken);
+
+		var afterPromote = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		afterPromote.Members.Should().Contain(m => m.UserId == vera.Id && m.IsOrganisator && m.Role == "Organizer");
+
+		// olaf remains an organizer, so demoting vera back is allowed.
+		await olafClient.ChangeMemberRoleAsync(
+			org.Id.Value, vera.Id, new ChangeMemberRoleRequest { Role = "Member" }, cancellationToken);
+
+		var afterDemote = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		afterDemote.Members.Should().Contain(m => m.UserId == vera.Id && !m.IsOrganisator && m.Role == "Member");
+	}
+
+	[Test]
+	public async Task ChangeMemberRole_ShouldReturn409_WhenDemotingTheOnlyOrganizer(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "ChangeMemberRole SoleOrganizer Test Org" }, cancellationToken);
+		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
+
+		var act = () => olafClient.ChangeMemberRoleAsync(
+			org.Id.Value, olaf.Id, new ChangeMemberRoleRequest { Role = "Member" }, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id && m.IsOrganisator);
+	}
+
+	[Test]
+	public async Task ChangeMemberRole_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "ChangeMemberRole 403 Test Org" }, cancellationToken);
+
+		// vera creates her own, unrelated organization, which grants her the
+		// platform-wide organisator role without making her a member of org.
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 6" }, cancellationToken);
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
+
+		var act = () => veraClient.ChangeMemberRoleAsync(
+			org.Id.Value, olaf.Id, new ChangeMemberRoleRequest { Role = "Member" }, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id && m.IsOrganisator);
+	}
+
 	// ── RemoveMember (last-member protection, #580) ──────────────────────────
 
 	[Test]
@@ -738,7 +848,7 @@ public class OrganizationSettingsTests(
 			new CreateOrganizationRequest { Name = "Delete 409 Members Test Org" }, cancellationToken);
 
 		var invitation = await olafClient.CreateInvitationAsync(
-			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Organizer" }, cancellationToken);
 		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
 
 		var act = () => olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);

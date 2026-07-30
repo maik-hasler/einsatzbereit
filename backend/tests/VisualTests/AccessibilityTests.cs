@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
@@ -357,6 +358,49 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// #973: OrgAppShell previously rendered no h1 on any org app page.
 		await Expect(Page.Locator("h1")).ToHaveTextAsync("Members");
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task OrgMembersPage_MemberRowWithPromoteDemoteButtons_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1050: the new "Promote to Organizer"/"Demote to Member" button pair
+		// only renders for a non-self member row - NavigateToOrgAppDashboardAsOlafAsync
+		// pins an org where Olaf is the only member, so the scan above never
+		// reaches it. Create a fresh org rather than adding a second member to
+		// one of the shared seeded orgs, which other tests may rely on staying
+		// single-member.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create organization" }).ClickAsync();
+
+		var createDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(createDialog).ToBeVisibleAsync();
+		var orgName = $"Visual1050 A11y {Guid.NewGuid():N}";
+		await createDialog.Locator("input[type='text']").FillAsync(orgName);
+		await Page.GetByTestId("modal-submit").ClickAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Switch organization" }))
+			.ToContainTextAsync(orgName, new() { Timeout = 15_000 });
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change -
+		// force a refetch, same as OrganizationTests.cs's equivalent setup.
+		await Page.ReloadAsync();
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Promote to Organizer" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

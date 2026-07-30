@@ -51,6 +51,12 @@ export default function OrgMembersPage() {
 	>([]);
 	const [memberSearchLoading, setMemberSearchLoading] = useState(false);
 	const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
+	const [inviteRole, setInviteRole] = useState<"Member" | "Organizer">(
+		"Member",
+	);
+	const [changingRoleUserId, setChangingRoleUserId] = useState<string | null>(
+		null,
+	);
 	const memberSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	function handleMemberSearchChange(value: string) {
@@ -91,6 +97,7 @@ export default function OrgMembersPage() {
 		try {
 			const response = await api.createInvitation(org.id, {
 				inviteeId: userId,
+				role: inviteRole,
 			});
 			const invited = memberCandidates.find((c) => c.userId === userId);
 			setInvitations((prev) => [
@@ -102,6 +109,7 @@ export default function OrgMembersPage() {
 						invited?.firstName && invited?.lastName
 							? `${invited.firstName} ${invited.lastName}`
 							: (invited?.username ?? ""),
+					intendedRole: inviteRole,
 					status: "Pending",
 					createdOn: new Date(),
 				},
@@ -115,6 +123,31 @@ export default function OrgMembersPage() {
 			setSettingsError(t("orgSettings.inviteError"));
 		} finally {
 			setInvitingUserId(null);
+		}
+	}
+
+	async function handleChangeMemberRole(
+		userId: string,
+		role: "Member" | "Organizer",
+	) {
+		setChangingRoleUserId(userId);
+		try {
+			await api.changeMemberRole(org.id, userId, { role });
+			setMembers((prev) =>
+				prev.map((m) =>
+					m.userId === userId
+						? { ...m, role, isOrganisator: role === "Organizer" }
+						: m,
+				),
+			);
+			setSettingsError(null);
+		} catch (err) {
+			setSuccessMessage(null);
+			setSettingsError(
+				getApiErrorMessage(err, t("orgSettings.changeRoleError")),
+			);
+		} finally {
+			setChangingRoleUserId(null);
 		}
 	}
 
@@ -210,6 +243,23 @@ export default function OrgMembersPage() {
 						placeholder={t("orgSettings.invitePlaceholder")}
 						className={inputClass}
 					/>
+					<label
+						htmlFor="invite-role"
+						className="mt-2 block text-xs font-medium text-gray-700"
+					>
+						{t("orgSettings.inviteRoleLabel")}
+					</label>
+					<select
+						id="invite-role"
+						value={inviteRole}
+						onChange={(e) =>
+							setInviteRole(e.target.value as "Member" | "Organizer")
+						}
+						className={inputClass}
+					>
+						<option value="Member">{t("orgSettings.roleMember")}</option>
+						<option value="Organizer">{t("orgSettings.organisator")}</option>
+					</select>
 					{memberSearchLoading && (
 						<p className="mt-1 text-xs text-gray-500">
 							{t("orgSettings.searching")}
@@ -270,6 +320,11 @@ export default function OrgMembersPage() {
 										<div className="min-w-0">
 											<p className="truncate text-sm font-medium text-gray-900">
 												{invitation.inviteeName}
+												{invitation.intendedRole === "Organizer" && (
+													<span className="ml-2 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+														{t("orgSettings.organisator")}
+													</span>
+												)}
 											</p>
 											<p className="truncate text-xs text-gray-500">
 												{t("orgSettings.invitationSentOn", {
@@ -411,21 +466,46 @@ export default function OrgMembersPage() {
 										{t("orgSettings.leaveOrganization")}
 									</button>
 								) : (
-									<button
-										type="button"
-										onClick={() =>
-											setRemoveTarget({
-												userId: member.userId,
-												name:
-													member.firstName && member.lastName
-														? `${member.firstName} ${member.lastName}`
-														: member.username,
-											})
-										}
-										className="text-xs text-red-700 hover:text-red-800"
-									>
-										{t("orgSettings.removeMember")}
-									</button>
+									<div className="flex shrink-0 items-center gap-3">
+										<button
+											type="button"
+											onClick={() =>
+												void handleChangeMemberRole(
+													member.userId,
+													member.isOrganisator ? "Member" : "Organizer",
+												)
+											}
+											disabled={
+												changingRoleUserId === member.userId ||
+												(member.isOrganisator && organizerCount <= 1)
+											}
+											title={
+												member.isOrganisator && organizerCount <= 1
+													? t("orgSettings.changeRoleLastOrganizerHint")
+													: undefined
+											}
+											className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+										>
+											{member.isOrganisator
+												? t("orgSettings.demoteToMember")
+												: t("orgSettings.promoteToOrganizer")}
+										</button>
+										<button
+											type="button"
+											onClick={() =>
+												setRemoveTarget({
+													userId: member.userId,
+													name:
+														member.firstName && member.lastName
+															? `${member.firstName} ${member.lastName}`
+															: member.username,
+												})
+											}
+											className="text-xs text-red-700 hover:text-red-800"
+										>
+											{t("orgSettings.removeMember")}
+										</button>
+									</div>
 								)}
 							</li>
 						))}

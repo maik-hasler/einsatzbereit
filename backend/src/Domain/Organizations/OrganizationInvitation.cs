@@ -17,6 +17,8 @@ public sealed class OrganizationInvitation
 
 	public UserId InvitedById { get; private set; }
 
+	public OrganizationMemberRole IntendedRole { get; private set; }
+
 	public InvitationStatus Status { get; private set; }
 
 	public DateTimeOffset ExpiresOn { get; private set; }
@@ -41,6 +43,7 @@ public sealed class OrganizationInvitation
 		UserId inviteeId,
 		string inviteeName,
 		UserId invitedById,
+		OrganizationMemberRole intendedRole,
 		DateTimeOffset now)
 		: base(id)
 	{
@@ -49,6 +52,7 @@ public sealed class OrganizationInvitation
 		InviteeId = inviteeId;
 		InviteeName = inviteeName;
 		InvitedById = invitedById;
+		IntendedRole = intendedRole;
 		Status = InvitationStatus.Pending;
 		ExpiresOn = now.AddDays(ExpiryWindowDays);
 	}
@@ -59,6 +63,7 @@ public sealed class OrganizationInvitation
 		UserId inviteeId,
 		string inviteeName,
 		UserId invitedById,
+		OrganizationMemberRole intendedRole,
 		DateTimeOffset now) =>
 		new(
 			OrganizationInvitationId.New(),
@@ -67,6 +72,7 @@ public sealed class OrganizationInvitation
 			inviteeId,
 			inviteeName,
 			invitedById,
+			intendedRole,
 			now);
 
 	private Result EnsurePending() =>

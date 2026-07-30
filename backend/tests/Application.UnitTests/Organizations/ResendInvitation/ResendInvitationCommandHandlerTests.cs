@@ -43,14 +43,14 @@ public class ResendInvitationCommandHandlerTests
 	{
 		var now = DateTimeOffset.UtcNow;
 		var invitation = OrganizationInvitation.Create(
-			orgId, "Test Org", DefaultInviteeId, "Vera", UserId.New(), now);
+			orgId, "Test Org", DefaultInviteeId, "Vera", UserId.New(), OrganizationMemberRole.Organizer, now);
 		invitation.Expire(now.AddDays(OrganizationInvitation.ExpiryWindowDays)).ThrowIfFailure();
 		return invitation;
 	}
 
 	private static OrganizationInvitation CreatePendingInvitation(OrganizationId orgId) =>
 		OrganizationInvitation.Create(
-			orgId, "Test Org", DefaultInviteeId, "Vera", UserId.New(), DateTimeOffset.UtcNow);
+			orgId, "Test Org", DefaultInviteeId, "Vera", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(

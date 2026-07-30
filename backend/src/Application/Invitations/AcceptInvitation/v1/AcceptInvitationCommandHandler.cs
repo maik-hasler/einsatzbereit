@@ -25,27 +25,26 @@ internal sealed class AcceptInvitationCommandHandler(
 
 		invitation.Accept().ThrowIfFailure();
 
-		// Accepting grants full Organizer capability, the only membership tier
-		// this app currently gives any real access - matching how
-		// CreateOrganizationCommandHandler seats the org's creator. Without this,
-		// an accepted invitee is a Keycloak org member with no local
-		// OrganizationMembership row and no "organisator" realm role, so every
-		// org-scoped endpoint (all gated by that role and/or a per-org Organizer
-		// check) stays unreachable for them and they never appear in their own
-		// org switcher - accepting would grant no functional capability at all.
 		await keycloakOrganizationService.AddMemberAsync(
 			invitation.OrganizationId.Value,
 			invitation.InviteeId.Value,
 			cancellationToken);
 
-		await keycloakOrganizationService.AssignOrganizerRoleAsync(
-			invitation.InviteeId.Value,
-			cancellationToken);
+		// The realm "organisator" role is only needed for the Organizer tier -
+		// it gates org-management endpoints as a coarse precondition on top of
+		// the real per-org OrganizationMembership.Role check. A plain Member
+		// never needs it.
+		if (invitation.IntendedRole == OrganizationMemberRole.Organizer)
+		{
+			await keycloakOrganizationService.AssignOrganizerRoleAsync(
+				invitation.InviteeId.Value,
+				cancellationToken);
+		}
 
 		var membership = OrganizationMembership.Create(
 			invitation.OrganizationId,
 			invitation.InviteeId,
-			OrganizationMemberRole.Organizer);
+			invitation.IntendedRole);
 
 		await dbContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 

@@ -51,7 +51,7 @@ public class GetOrgInvitationsQueryHandlerTests
 	{
 		// Arrange
 		var invitation = OrganizationInvitation.Create(
-			DefaultOrgId, "Test Org", UserId.New(), "Vera", UserId.New(), DateTimeOffset.UtcNow);
+			DefaultOrgId, "Test Org", UserId.New(), "Vera", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 		_dbContext.GetInvitationsForOrganizationAsync(DefaultOrgId, cancellationToken)
 			.Returns([invitation]);
 		var query = new GetOrgInvitationsQuery(DefaultOrgId, DefaultRequestingUserId);
@@ -63,6 +63,7 @@ public class GetOrgInvitationsQueryHandlerTests
 		result.Should().HaveCount(1);
 		result[0].Id.Should().Be(invitation.Id.Value);
 		result[0].InviteeName.Should().Be("Vera");
+		result[0].IntendedRole.Should().Be("Organizer");
 		result[0].Status.Should().Be("Pending");
 	}
 }
