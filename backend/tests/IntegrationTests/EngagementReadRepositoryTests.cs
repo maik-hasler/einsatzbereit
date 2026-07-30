@@ -144,4 +144,77 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	{
 		public string GeneratePin() => "0000";
 	}
+
+	// Regression for #1051: EngagementSummary never carried CancellationReason,
+	// so a reason set via Engagement.Cancel(reason) never reached the
+	// volunteer's own "My Profile -> Engagements" list (GetByVolunteerAsync)
+	// nor the organizer's "Manage applications" list (GetPagedByOpportunityAsync),
+	// even though the domain model, command, and email already supported it.
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldIncludeCancellationReason_WhenEngagementCancelledWithReason(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+		var opportunityId = VolunteerOpportunityId.New();
+
+		var engagement = Engagement.CreateIndividualContact(opportunityId, volunteerId, "Please let me help.").GetValueOrThrow();
+		engagement.Cancel("No longer needed").ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var page = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		page.Items.Should().ContainSingle()
+			.Which.CancellationReason.Should().Be("No longer needed");
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldReturnNullReason_WhenEngagementCancelledWithoutReason(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+		var opportunityId = VolunteerOpportunityId.New();
+
+		var engagement = Engagement.CreateIndividualContact(opportunityId, volunteerId, "Please let me help.").GetValueOrThrow();
+		engagement.Cancel().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var page = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		page.Items.Should().ContainSingle()
+			.Which.CancellationReason.Should().BeNull();
+	}
+
+	[Test]
+	public async Task GetPagedByOpportunityAsync_ShouldIncludeCancellationReason_WhenEngagementCancelledWithReason(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateIndividualContact(opportunity.Id, UserId.New(), "Please let me help.").GetValueOrThrow();
+		engagement.Cancel("Position filled").ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		page.Items.Should().ContainSingle()
+			.Which.CancellationReason.Should().Be("Position filled");
+	}
 }

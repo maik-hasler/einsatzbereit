@@ -18,4 +18,5 @@ public sealed record EngagementSummary(
 	DateTimeOffset? TimeSlotEndDateTime = null,
 	string? Location = null,
 	string? VolunteerEmail = null,
-	string? VolunteerPhone = null);
+	string? VolunteerPhone = null,
+	string? CancellationReason = null);

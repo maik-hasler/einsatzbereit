@@ -560,6 +560,7 @@
       "scheduledFor": "Scheduled: {{range}}",
       "registeredOn": "Signed up: {{date}}",
       "deletedOpportunityTitle": "This opportunity has been removed",
+      "cancellationReason": "Reason: {{reason}}",
       "checkIn": "Check in",
       "withdraw": "Withdraw",
       "withdrawing": "…",
@@ -716,7 +717,9 @@
       "cancel": {
         "title": "Cancel engagement?",
         "message": "Are you sure you want to cancel this engagement? The volunteer will be informed.",
-        "confirm": "Yes, cancel"
+        "confirm": "Yes, cancel",
+        "reasonLabel": "Reason (optional)",
+        "reasonPlaceholder": "Let the volunteer know why…"
       },
       "editTimeSlot": {
         "title": "Edit time slot?",

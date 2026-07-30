@@ -347,6 +347,13 @@ export default function ActivitySection() {
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
+									{e.status === "Cancelled" && e.cancellationReason && (
+										<p className="mt-1 text-xs text-gray-500">
+											{t("myEngagements.cancellationReason", {
+												reason: e.cancellationReason,
+											})}
+										</p>
+									)}
 									{e.timeSlotStartDateTime && e.timeSlotEndDateTime && (
 										<p className="mt-1 text-xs font-medium text-gray-700">
 											{t("myEngagements.scheduledFor", {

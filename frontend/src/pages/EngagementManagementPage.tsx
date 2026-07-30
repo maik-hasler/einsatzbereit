@@ -70,6 +70,7 @@ export default function EngagementManagementPage() {
 	const [notFound, setNotFound] = useState(false);
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+	const [cancelReason, setCancelReason] = useState("");
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
@@ -204,13 +205,17 @@ export default function EngagementManagementPage() {
 		setCancelling(true);
 		setCancelError(null);
 		try {
-			const updated = await api.cancelEngagement(confirmCancelId, null);
+			const trimmedReason = cancelReason.trim();
+			const updated = await api.cancelEngagement(confirmCancelId, {
+				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			});
 			setEngagements((prev) =>
 				prev.map((e) =>
 					e.id === confirmCancelId ? { ...e, status: updated.status } : e,
 				),
 			);
 			setConfirmCancelId(null);
+			setCancelReason("");
 		} catch (err) {
 			setCancelError(
 				err instanceof Error
@@ -225,6 +230,7 @@ export default function EngagementManagementPage() {
 	function handleCancelClose() {
 		if (cancelling) return;
 		setConfirmCancelId(null);
+		setCancelReason("");
 		setCancelError(null);
 	}
 
@@ -570,7 +576,27 @@ export default function EngagementManagementPage() {
 					onClose={handleCancelClose}
 					loading={cancelling}
 					error={cancelError}
-				/>
+				>
+					<label
+						htmlFor="cancel-reason"
+						className="block text-xs font-medium text-gray-700"
+					>
+						{t("confirmDialog.cancel.reasonLabel")}
+					</label>
+					<textarea
+						id="cancel-reason"
+						rows={3}
+						maxLength={500}
+						value={cancelReason}
+						onChange={(e) => setCancelReason(e.target.value)}
+						placeholder={t("confirmDialog.cancel.reasonPlaceholder")}
+						disabled={cancelling}
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+					/>
+					<p className="mt-1 text-right text-xs text-gray-400">
+						{cancelReason.length}/500
+					</p>
+				</ConfirmDialog>
 			)}
 
 			{feedbackStats !== null && (
