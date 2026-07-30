@@ -11,7 +11,7 @@ import type {
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
-import { getApiErrorMessage } from "../../lib/apiError";
+import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
@@ -232,6 +232,22 @@ export default function CreateVolunteerOpportunityModal({
 	);
 	const [recurrenceFrequency, setRecurrenceFrequency] = useState("Weekly");
 	const [recurrenceCount, setRecurrenceCount] = useState(1);
+
+	// Create mode only: once the draft opportunity is persisted, its id is
+	// kept here (not in state) for the lifetime of this modal instance. If a
+	// later step (banner, a time slot, publish) throws and the user retries
+	// via the same button, `submit` reuses this id instead of calling
+	// `createVolunteerOpportunity` again - which would otherwise create a
+	// second, duplicate draft (#1227). `createdSlotIdsRef` mirrors this for
+	// individually-submitted time slots (a batch a user partially removed
+	// rows from, see PendingTimeSlot) so a retry only creates the ones still
+	// missing; `createdBatchIdsRef` does the same at batch granularity for a
+	// still-intact recurring batch submitted as one atomic bulk-create call
+	// (einsatzbereit#1058) - that call either fully succeeds or fully fails,
+	// so per-batch tracking is the correct (and only meaningful) grain there.
+	const createdOpportunityIdRef = useRef<string | null>(null);
+	const createdSlotIdsRef = useRef<Set<string>>(new Set());
+	const createdBatchIdsRef = useRef<Set<string>>(new Set());
 
 	const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -631,25 +647,52 @@ export default function CreateVolunteerOpportunityModal({
 				// publish - this also keeps it invisible in listings if any step
 				// in between fails, instead of leaving a published dead-end.
 				const publishWaitlistAfterCreate = !asDraft && isWaitlist;
-				const opportunity = await api.createVolunteerOpportunity({
-					title: values.title,
-					description: values.description,
-					organizationId,
-					isRemote: values.isRemote,
-					street: values.isRemote ? undefined : values.street,
-					houseNumber: values.isRemote ? undefined : values.houseNumber,
-					zipCode: values.isRemote ? undefined : values.zipCode,
-					city: values.isRemote ? undefined : values.city,
-					occurrence: values.occurrence,
-					participationType: values.participationType,
-					checkInMethod: values.checkInMethod,
-					checkInPin: resolveCheckInPin(values),
-					category: values.category,
-					tags: values.tags,
-					isDraft: asDraft || publishWaitlistAfterCreate,
-				});
+
+				// If a previous attempt already created the draft but failed on a
+				// later step, reuse that id and update it instead of creating a
+				// second opportunity - createVolunteerOpportunity/createTimeSlot
+				// have no dedup on the backend, so calling either twice for the
+				// same logical attempt produces duplicates (#1227).
+				let opportunityId = createdOpportunityIdRef.current;
+				if (opportunityId) {
+					await api.updateVolunteerOpportunity(opportunityId, {
+						title: values.title,
+						description: values.description,
+						isRemote: values.isRemote,
+						street: values.isRemote ? undefined : values.street,
+						houseNumber: values.isRemote ? undefined : values.houseNumber,
+						zipCode: values.isRemote ? undefined : values.zipCode,
+						city: values.isRemote ? undefined : values.city,
+						occurrence: values.occurrence,
+						participationType: values.participationType,
+						checkInMethod: values.checkInMethod,
+						checkInPin: resolveCheckInPin(values),
+						category: values.category || undefined,
+						tags: values.tags,
+					});
+				} else {
+					const opportunity = await api.createVolunteerOpportunity({
+						title: values.title,
+						description: values.description,
+						organizationId,
+						isRemote: values.isRemote,
+						street: values.isRemote ? undefined : values.street,
+						houseNumber: values.isRemote ? undefined : values.houseNumber,
+						zipCode: values.isRemote ? undefined : values.zipCode,
+						city: values.isRemote ? undefined : values.city,
+						occurrence: values.occurrence,
+						participationType: values.participationType,
+						checkInMethod: values.checkInMethod,
+						checkInPin: resolveCheckInPin(values),
+						category: values.category,
+						tags: values.tags,
+						isDraft: asDraft || publishWaitlistAfterCreate,
+					});
+					opportunityId = opportunity.id;
+					createdOpportunityIdRef.current = opportunityId;
+				}
 				if (bannerFile) {
-					await uploadBanner(api, opportunity.id, bannerFile, () =>
+					await uploadBanner(api, opportunityId, bannerFile, () =>
 						dispatchToast("error", t("createOpportunity.bannerUploadFailed")),
 					);
 				}
@@ -657,14 +700,16 @@ export default function CreateVolunteerOpportunityModal({
 				// PendingTimeSlot) so the backend can stamp a shared SeriesId
 				// (einsatzbereit#1058) - a batch a user has partially removed rows
 				// from no longer forms a clean recurrence, so those fall back to
-				// one independent create per remaining occurrence.
+				// one independent create per remaining occurrence. Already-created
+				// batches/slots from a prior failed attempt are skipped on retry
+				// rather than recreated (#1227).
 				const batches = new Map<string, PendingTimeSlot[]>();
 				for (const slot of pendingSlots) {
 					const list = batches.get(slot.batchId) ?? [];
 					list.push(slot);
 					batches.set(slot.batchId, list);
 				}
-				for (const batchSlots of batches.values()) {
+				for (const [batchId, batchSlots] of batches) {
 					const sorted = [...batchSlots].sort((a, b) =>
 						a.startDateTime.localeCompare(b.startDateTime),
 					);
@@ -672,30 +717,49 @@ export default function CreateVolunteerOpportunityModal({
 					const isIntactRecurringBatch =
 						first.batchCount > 1 && sorted.length === first.batchCount;
 					if (isIntactRecurringBatch) {
-						await api.createTimeSlot(opportunity.id, {
+						if (createdBatchIdsRef.current.has(batchId)) continue;
+						await api.createTimeSlot(opportunityId, {
 							startDateTime: new Date(first.startDateTime),
 							endDateTime: new Date(first.endDateTime),
 							maxParticipants: first.maxParticipants,
 							recurrenceFrequency: first.batchFrequency,
 							recurrenceCount: first.batchCount,
 						});
+						createdBatchIdsRef.current.add(batchId);
 					} else {
 						for (const slot of sorted) {
-							await api.createTimeSlot(opportunity.id, {
+							if (createdSlotIdsRef.current.has(slot.id)) continue;
+							await api.createTimeSlot(opportunityId, {
 								startDateTime: new Date(slot.startDateTime),
 								endDateTime: new Date(slot.endDateTime),
 								maxParticipants: slot.maxParticipants,
 								recurrenceFrequency: undefined,
 								recurrenceCount: 1,
 							});
+							createdSlotIdsRef.current.add(slot.id);
 						}
 					}
 				}
 				if (publishWaitlistAfterCreate) {
-					await api.publishVolunteerOpportunity(opportunity.id);
+					try {
+						await api.publishVolunteerOpportunity(opportunityId);
+					} catch (publishErr) {
+						// Publish isn't idempotent on the backend (a second call 409s
+						// with AlreadyPublished) - if a retry lands here after a prior
+						// attempt's publish call actually succeeded, treat that as the
+						// success it already is instead of surfacing a confusing error.
+						if (
+							!isApiErrorCode(
+								publishErr,
+								"VolunteerOpportunity.AlreadyPublished",
+							)
+						) {
+							throw publishErr;
+						}
+					}
 				}
 				if (asDraft) {
-					createdDraftId = opportunity.id;
+					createdDraftId = opportunityId;
 					dispatchToast("success", t("createOpportunity.draftSavedToast"));
 				}
 			}

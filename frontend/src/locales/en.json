@@ -10,6 +10,8 @@
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",
+      "retry": "Retry",
+      "retrying": "Retrying…",
       "loading": "Loading…",
       "pageLoading": "Loading page…"
     },
@@ -160,6 +162,7 @@
       "notFound": "Not found.",
       "back": "← Back",
       "filterToggle": "Filter",
+      "flexibleDate": "Flexible date",
       "full": "Full",
       "spotsLeft": "{{count}} spots left",
       "spotsLeft_one": "{{count}} spot left",
@@ -357,6 +360,7 @@
       "title": "Organization Dashboard",
       "loading": "Loading…",
       "error": "Error: {{message}}",
+      "layoutLoadError": "Couldn't confirm your saved dashboard layout. What's shown below may not match it, and editing is disabled until this loads successfully.",
       "notFound": "Organization not found.",
       "openOpportunities": "Open Opportunities",
       "openOpportunitiesDesc": "Published volunteer opportunities",
@@ -706,6 +710,11 @@
         "title": "Leave organization?",
         "message": "Are you sure you want to leave \"{{name}}\"? You will lose organizer access to it.",
         "confirm": "Yes, leave"
+      },
+      "removeMember": {
+        "title": "Remove member?",
+        "message": "Are you sure you want to remove {{name}} from this organization?",
+        "confirm": "Yes, remove"
       },
       "deleteOrganization": {
         "title": "Delete organization?",

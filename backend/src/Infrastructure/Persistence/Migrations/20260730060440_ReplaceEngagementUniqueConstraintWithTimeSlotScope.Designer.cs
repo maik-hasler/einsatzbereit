@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260730060440_ReplaceEngagementUniqueConstraintWithTimeSlotScope")]
+	partial class ReplaceEngagementUniqueConstraintWithTimeSlotScope
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -583,19 +586,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("integer")
 						.HasColumnName("max_participants");
 
-					b.Property<int?>("RecurrenceCount")
-						.HasColumnType("integer")
-						.HasColumnName("recurrence_count");
-
-					b.Property<string>("RecurrenceFrequency")
-						.HasMaxLength(20)
-						.HasColumnType("character varying(20)")
-						.HasColumnName("recurrence_frequency");
-
-					b.Property<Guid?>("SeriesId")
-						.HasColumnType("uuid")
-						.HasColumnName("series_id");
-
 					b.Property<DateTimeOffset>("StartDateTime")
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("start_date_time");
@@ -606,9 +596,6 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.HasKey("Id")
 						.HasName("pk_time_slot");
-
-					b.HasIndex("SeriesId")
-						.HasDatabaseName("ix_time_slot_series_id");
 
 					b.HasIndex("volunteer_opportunity_id")
 						.HasDatabaseName("ix_time_slot_volunteer_opportunity_id");

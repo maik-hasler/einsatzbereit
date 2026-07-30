@@ -204,10 +204,12 @@ internal sealed class ApplicationDbContext(
 	public async Task<bool> HasEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,
+		TimeSlotId? timeSlotId,
 		CancellationToken cancellationToken = default) =>
 		await Set<Engagement>()
 			.AnyAsync(e => e.VolunteerId == volunteerId
 				&& e.OpportunityId == opportunityId
+				&& e.TimeSlotId == timeSlotId
 				&& e.Status != EngagementStatus.Withdrawn
 				&& e.Status != EngagementStatus.Cancelled, cancellationToken);
 
@@ -382,10 +384,12 @@ internal sealed class ApplicationDbContext(
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,
+		TimeSlotId? timeSlotId,
 		CancellationToken cancellationToken = default) =>
 		await Set<Engagement>()
 			.FirstOrDefaultAsync(e => e.VolunteerId == volunteerId
 				&& e.OpportunityId == opportunityId
+				&& e.TimeSlotId == timeSlotId
 				&& (e.Status == EngagementStatus.Withdrawn || e.Status == EngagementStatus.Cancelled),
 				cancellationToken);
 

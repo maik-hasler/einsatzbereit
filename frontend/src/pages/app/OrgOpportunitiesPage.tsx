@@ -15,6 +15,7 @@ import EmptyState from "../../components/EmptyState";
 import Spinner from "../../components/Spinner";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
+import LoadMoreError from "../../components/LoadMoreError";
 import { PlusIcon } from "../../components/QuickActionIcons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
@@ -32,8 +33,10 @@ export default function OrgOpportunitiesPage() {
 		loading: draftsLoading,
 		loadingMore: draftsLoadingMore,
 		error: draftsError,
+		loadMoreError: draftsLoadMoreError,
 		hasMore: hasMoreDrafts,
 		loadMore: loadMoreDrafts,
+		retryLoadMore: retryLoadMoreDrafts,
 		reset: resetDrafts,
 	} = useLoadMore<VolunteerOpportunitySummary>(
 		(page) =>
@@ -54,8 +57,10 @@ export default function OrgOpportunitiesPage() {
 		loading: publishedLoading,
 		loadingMore: publishedLoadingMore,
 		error: publishedError,
+		loadMoreError: publishedLoadMoreError,
 		hasMore: hasMorePublished,
 		loadMore: loadMorePublished,
+		retryLoadMore: retryLoadMorePublished,
 		reset: resetPublished,
 	} = useLoadMore<VolunteerOpportunitySummary>(
 		(page) =>
@@ -351,19 +356,28 @@ export default function OrgOpportunitiesPage() {
 							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								{drafts.map(renderRow)}
 							</ul>
-							{hasMoreDrafts && (
-								<div className="mt-4 flex justify-center">
-									<button
-										onClick={loadMoreDrafts}
-										disabled={draftsLoadingMore}
-										className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-									>
-										{draftsLoadingMore
-											? t("orgOpportunities.loading")
-											: t("orgOpportunities.loadMore")}
-									</button>
-								</div>
-							)}
+							{hasMoreDrafts &&
+								(draftsLoadMoreError ? (
+									<LoadMoreError
+										message={t("orgOpportunities.error", {
+											message: draftsLoadMoreError,
+										})}
+										retrying={draftsLoadingMore}
+										onRetry={retryLoadMoreDrafts}
+									/>
+								) : (
+									<div className="mt-4 flex justify-center">
+										<button
+											onClick={loadMoreDrafts}
+											disabled={draftsLoadingMore}
+											className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+										>
+											{draftsLoadingMore
+												? t("orgOpportunities.loading")
+												: t("orgOpportunities.loadMore")}
+										</button>
+									</div>
+								))}
 						</section>
 					)}
 
@@ -378,19 +392,28 @@ export default function OrgOpportunitiesPage() {
 							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								{published.map(renderRow)}
 							</ul>
-							{hasMorePublished && (
-								<div className="mt-4 flex justify-center">
-									<button
-										onClick={loadMorePublished}
-										disabled={publishedLoadingMore}
-										className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-									>
-										{publishedLoadingMore
-											? t("orgOpportunities.loading")
-											: t("orgOpportunities.loadMore")}
-									</button>
-								</div>
-							)}
+							{hasMorePublished &&
+								(publishedLoadMoreError ? (
+									<LoadMoreError
+										message={t("orgOpportunities.error", {
+											message: publishedLoadMoreError,
+										})}
+										retrying={publishedLoadingMore}
+										onRetry={retryLoadMorePublished}
+									/>
+								) : (
+									<div className="mt-4 flex justify-center">
+										<button
+											onClick={loadMorePublished}
+											disabled={publishedLoadingMore}
+											className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+										>
+											{publishedLoadingMore
+												? t("orgOpportunities.loading")
+												: t("orgOpportunities.loadMore")}
+										</button>
+									</div>
+								))}
 						</section>
 					)}
 				</div>
