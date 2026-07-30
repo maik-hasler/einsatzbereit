@@ -6495,6 +6495,18 @@
               "null",
               "string"
             ]
+          },
+          "volunteerEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "volunteerPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -6642,6 +6654,7 @@
           "email",
           "avatarUrl",
           "bio",
+          "phone",
           "skills",
           "languages",
           "preferredContact"
@@ -6677,6 +6690,12 @@
             ]
           },
           "bio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
             "type": [
               "null",
               "string"
@@ -8093,6 +8112,12 @@
             ]
           },
           "bio": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
             "type": [
               "null",
               "string"

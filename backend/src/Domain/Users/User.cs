@@ -14,6 +14,8 @@ public sealed class User
 
 	public string? Bio { get; private set; }
 
+	public string? Phone { get; private set; }
+
 	public IReadOnlyList<string> Skills => _skills.AsReadOnly();
 
 	public IReadOnlyList<string> Languages => _languages.AsReadOnly();
@@ -40,6 +42,11 @@ public sealed class User
 	public void ChangeBio(string? bio)
 	{
 		Bio = bio;
+	}
+
+	public void SetPhone(string? phone)
+	{
+		Phone = phone;
 	}
 
 	public void UpdateSkills(IReadOnlyCollection<string> skills)

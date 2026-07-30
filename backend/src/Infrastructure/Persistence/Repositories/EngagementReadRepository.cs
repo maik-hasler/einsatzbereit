@@ -127,6 +127,20 @@ internal sealed class EngagementReadRepository(
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
 
+		var pageVolunteerIds = raw
+			.Where(x => x.VolunteerId is not null)
+			.Select(x => x.VolunteerId!.Value)
+			.Distinct()
+			.ToList();
+
+		Dictionary<Guid, string?> phonesByVolunteerId = [];
+		if (pageVolunteerIds.Count > 0)
+		{
+			phonesByVolunteerId = await dbContext.UsersQuery
+				.Where(u => pageVolunteerIds.Contains(u.Id))
+				.ToDictionaryAsync(u => u.Id.Value, u => u.Phone, cancellationToken);
+		}
+
 		var items = raw.Select(x => new EngagementSummary(
 			x.Id.Value,
 			x.OpportunityId.Value,
@@ -139,7 +153,10 @@ internal sealed class EngagementReadRepository(
 			x.Status.ToString(),
 			x.IsCheckedIn,
 			x.FeedbackSubmittedAt.HasValue,
-			x.CreatedOn)).ToList();
+			x.CreatedOn,
+			VolunteerPhone: x.VolunteerId is not null
+				? phonesByVolunteerId.GetValueOrDefault(x.VolunteerId.Value.Value)
+				: null)).ToList();
 
 		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
 	}

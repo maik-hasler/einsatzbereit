@@ -44,6 +44,9 @@ internal sealed class UpdateUserProfileEndpoint
 		if (request.Bio is { Length: > 1000 })
 			return Results.Problem("Bio must not exceed 1000 characters.", statusCode: StatusCodes.Status400BadRequest);
 
+		if (request.Phone is { Length: > 30 })
+			return Results.Problem("Phone must not exceed 30 characters.", statusCode: StatusCodes.Status400BadRequest);
+
 		Domain.Users.PreferredContact? preferredContact = null;
 		if (request.PreferredContact is not null &&
 			Enum.TryParse<Domain.Users.PreferredContact>(request.PreferredContact, out var parsed))
@@ -56,6 +59,7 @@ internal sealed class UpdateUserProfileEndpoint
 			request.FirstName,
 			request.LastName,
 			request.Bio,
+			request.Phone,
 			request.Skills ?? [],
 			request.Languages ?? [],
 			preferredContact);

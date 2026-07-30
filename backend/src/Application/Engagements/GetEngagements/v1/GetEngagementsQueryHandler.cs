@@ -39,13 +39,18 @@ internal sealed class GetEngagementsQueryHandler(
 			.Select(e => e.VolunteerId!.Value)
 			.Distinct()
 			.ToList();
-		var nameMap = await keycloakUserService.GetDisplayNamesAsync(volunteerIds, cancellationToken);
+		var profileMap = await keycloakUserService.GetUserProfilesAsync(volunteerIds, cancellationToken);
 
-		return page.Map(e => e with
+		return page.Map(e =>
 		{
-			VolunteerName = e.VolunteerId is Guid volunteerId
-				? nameMap.GetValueOrDefault(volunteerId)
-				: null,
+			if (e.VolunteerId is not Guid volunteerId || !profileMap.TryGetValue(volunteerId, out var profile))
+				return e;
+
+			var name = profile.FirstName is not null || profile.LastName is not null
+				? $"{profile.FirstName} {profile.LastName}".Trim()
+				: profile.Username;
+
+			return e with { VolunteerName = name, VolunteerEmail = profile.Email };
 		});
 	}
 }

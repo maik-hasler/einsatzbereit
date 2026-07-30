@@ -14,6 +14,7 @@ public sealed record MyProfileResponse(
 	string Email,
 	string? AvatarUrl,
 	string? Bio,
+	string? Phone,
 	IReadOnlyList<string> Skills,
 	IReadOnlyList<string> Languages,
 	string? PreferredContact);

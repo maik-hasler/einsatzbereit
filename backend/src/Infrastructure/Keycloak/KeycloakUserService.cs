@@ -68,6 +68,25 @@ internal sealed class KeycloakUserService(
 		return result;
 	}
 
+	public async Task<IReadOnlyDictionary<Guid, KeycloakUserProfile>> GetUserProfilesAsync(
+		IReadOnlyList<Guid> userIds,
+		CancellationToken cancellationToken = default)
+	{
+		var result = new Dictionary<Guid, KeycloakUserProfile>(userIds.Count);
+		foreach (var userId in userIds.Distinct())
+		{
+			try
+			{
+				result[userId] = await GetUserAsync(userId, cancellationToken);
+			}
+			catch
+			{
+				// ignore individual lookup failures - same tolerance as GetDisplayNamesAsync above
+			}
+		}
+		return result;
+	}
+
 	public async Task UpdateUserAsync(
 		Guid userId,
 		string? firstName,

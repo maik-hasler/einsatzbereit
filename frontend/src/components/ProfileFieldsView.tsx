@@ -5,6 +5,7 @@ interface ProfileFieldsViewProps {
 	skills: string[];
 	languages: string[];
 	preferredContact?: string | null;
+	phone?: string | null;
 }
 
 export default function ProfileFieldsView({
@@ -12,6 +13,7 @@ export default function ProfileFieldsView({
 	skills,
 	languages,
 	preferredContact,
+	phone,
 }: ProfileFieldsViewProps) {
 	const { t } = useTranslation();
 
@@ -72,6 +74,15 @@ export default function ProfileFieldsView({
 							? t("profile.preferredContactEmail")
 							: t("profile.preferredContactPhone")}
 					</p>
+				</div>
+			)}
+
+			{phone && (
+				<div>
+					<p className="mb-1 text-sm font-medium text-gray-700">
+						{t("profile.fieldPhone")}
+					</p>
+					<p className="text-sm text-gray-600">{phone}</p>
 				</div>
 			)}
 		</>

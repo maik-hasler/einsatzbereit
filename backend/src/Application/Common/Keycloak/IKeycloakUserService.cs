@@ -28,6 +28,10 @@ public interface IKeycloakUserService
 		IReadOnlyList<Guid> userIds,
 		CancellationToken cancellationToken = default);
 
+	Task<IReadOnlyDictionary<Guid, KeycloakUserProfile>> GetUserProfilesAsync(
+		IReadOnlyList<Guid> userIds,
+		CancellationToken cancellationToken = default);
+
 	Task UpdateUserAsync(
 		Guid userId,
 		string? firstName,

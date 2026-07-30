@@ -11,6 +11,7 @@ using TUnit.Core.Interfaces;
 // types of the same name pulled in via the "Domain.Common"/"Domain.Organizations"
 // usings below (see the same workaround in OrganizationMembershipBackfillJobTests.cs).
 using DomainAddress = Domain.Common.Address;
+using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
@@ -98,5 +99,49 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			opportunity.Id, slotA.Id, cancellationToken);
 
 		volunteerIds.Should().BeEquivalentTo([onSlotA.VolunteerId!.Value.Value]);
+	}
+
+	[Test]
+	public async Task GetPagedByOpportunityAsync_ShouldEnrichVolunteerPhone_FromLocalUserRow(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"PhoneTestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		dbContext.Set<VolunteerOpportunity>().Add(opportunity);
+
+		var volunteerWithPhone = UserId.New();
+		var volunteerWithoutProfile = UserId.New();
+
+		var user = User.Create(volunteerWithPhone);
+		user.SetPhone("+49 30 1234567");
+		await dbContext.Users.AddAsync(user, cancellationToken);
+
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagementWithPhone = Engagement.CreateIndividualContact(opportunity.Id, volunteerWithPhone, "Call me").GetValueOrThrow();
+		var engagementWithoutProfile = Engagement.CreateIndividualContact(opportunity.Id, volunteerWithoutProfile, "No profile row").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagementWithPhone, cancellationToken);
+		await dbContext.Engagements.AddAsync(engagementWithoutProfile, cancellationToken);
+
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		page.Items.Should().ContainSingle(e => e.VolunteerId == volunteerWithPhone.Value && e.VolunteerPhone == "+49 30 1234567");
+		page.Items.Should().ContainSingle(e => e.VolunteerId == volunteerWithoutProfile.Value && e.VolunteerPhone == null);
+	}
+
+	private sealed class NoOpPinGenerator : IPinGenerator
+	{
+		public string GeneratePin() => "0000";
 	}
 }

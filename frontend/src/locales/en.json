@@ -755,6 +755,8 @@
       "skillsPlaceholder": "Add a skill and press Enter",
       "fieldLanguages": "Languages",
       "languagesPlaceholder": "Add a language and press Enter",
+      "fieldPhone": "Phone",
+      "phonePlaceholder": "Add a phone number organizers can reach you on",
       "fieldPreferredContact": "Preferred contact channel",
       "preferredContactEmail": "Email",
       "preferredContactPhone": "Phone",

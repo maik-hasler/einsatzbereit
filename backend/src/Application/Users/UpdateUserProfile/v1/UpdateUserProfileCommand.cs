@@ -8,6 +8,7 @@ public sealed record UpdateUserProfileCommand(
 	string? FirstName,
 	string? LastName,
 	string? Bio,
+	string? Phone,
 	IReadOnlyList<string> Skills,
 	IReadOnlyList<string> Languages,
 	PreferredContact? PreferredContactValue)

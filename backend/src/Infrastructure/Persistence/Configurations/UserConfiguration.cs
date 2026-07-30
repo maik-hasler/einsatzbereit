@@ -25,6 +25,8 @@ internal sealed class UserConfiguration
 
 		builder.Property(u => u.Bio);
 
+		builder.Property(u => u.Phone);
+
 		var listComparer = new ValueComparer<IReadOnlyList<string>>(
 			(a, b) => a != null && b != null && a.SequenceEqual(b),
 			v => v.Aggregate(0, (h, s) => HashCode.Combine(h, s.GetHashCode())),
