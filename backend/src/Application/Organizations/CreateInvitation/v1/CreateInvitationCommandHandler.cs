@@ -1,4 +1,5 @@
 using Application.Common.Authorization;
+using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
@@ -14,7 +15,8 @@ internal sealed class CreateInvitationCommandHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,
 	IKeycloakOrganizationService keycloakOrganizationService,
-	IKeycloakUserService keycloakUserService)
+	IKeycloakUserService keycloakUserService,
+	IEmailService emailService)
 	: ICommandHandler<CreateInvitationCommand, OrganizationInvitationId>
 {
 	public async ValueTask<OrganizationInvitationId> Handle(
@@ -45,12 +47,14 @@ internal sealed class CreateInvitationCommandHandler(
 			? $"{inviteeProfile.FirstName} {inviteeProfile.LastName}"
 			: inviteeProfile.Username;
 
+		var now = DateTimeOffset.UtcNow;
 		var invitation = OrganizationInvitation.Create(
 			request.OrganizationId,
 			org.Name,
 			request.InviteeId,
 			inviteeName,
-			request.InvitedById);
+			request.InvitedById,
+			now);
 
 		await dbContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
 
@@ -61,6 +65,15 @@ internal sealed class CreateInvitationCommandHandler(
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
+
+		await emailService.SendAsync(
+			inviteeProfile.Email,
+			"You've been invited to join an organization",
+			$"Hello {inviteeProfile.FirstName ?? inviteeProfile.Username},\n\n" +
+			$"You've been invited to join \"{org.Name}\" on Einsatzbereit.\n\n" +
+			$"Log in to your account to accept or decline the invitation.\n\n" +
+			$"Einsatzbereit",
+			cancellationToken);
 
 		return invitation.Id;
 	}

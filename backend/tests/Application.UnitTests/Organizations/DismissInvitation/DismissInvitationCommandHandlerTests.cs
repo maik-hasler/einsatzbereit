@@ -33,10 +33,23 @@ public class DismissInvitationCommandHandlerTests
 	private static OrganizationInvitation CreateDeclinedInvitation(OrganizationId orgId)
 	{
 		var invitation = OrganizationInvitation.Create(
-			orgId, "Test Org", UserId.New(), "Vera", UserId.New());
+			orgId, "Test Org", UserId.New(), "Vera", UserId.New(), DateTimeOffset.UtcNow);
 		invitation.Decline();
 		return invitation;
 	}
+
+	private static OrganizationInvitation CreateExpiredInvitation(OrganizationId orgId)
+	{
+		var now = DateTimeOffset.UtcNow;
+		var invitation = OrganizationInvitation.Create(
+			orgId, "Test Org", UserId.New(), "Vera", UserId.New(), now);
+		invitation.Expire(now.AddDays(OrganizationInvitation.ExpiryWindowDays));
+		return invitation;
+	}
+
+	private static OrganizationInvitation CreatePendingInvitation(OrganizationId orgId) =>
+		OrganizationInvitation.Create(
+			orgId, "Test Org", UserId.New(), "Vera", UserId.New(), DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(
@@ -74,5 +87,42 @@ public class DismissInvitationCommandHandlerTests
 		result.Should().BeTrue();
 		_invitationRepo.Received(1).Delete(invitation);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteInvitation_WhenRequestingUserIsOrgMemberAndInvitationIsExpired(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitation = CreateExpiredInvitation(DefaultOrgId);
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new DismissInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		_invitationRepo.Received(1).Delete(invitation);
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowConflict_WhenInvitationIsStillPending(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitation = CreatePendingInvitation(DefaultOrgId);
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new DismissInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*declined or expired*");
+		_invitationRepo.DidNotReceive().Delete(Arg.Any<OrganizationInvitation>());
+		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 }

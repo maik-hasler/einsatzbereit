@@ -2,6 +2,7 @@ using Application.Common.Exceptions;
 using Application.Notifications;
 using Domain.Engagements;
 using Domain.Notifications;
+using Domain.Organizations;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
@@ -104,9 +105,30 @@ internal sealed class NotificationReadRepository(
 			.ToHashSet();
 
 		var directOpportunityIds = notifications
-			.Where(n => !EngagementKinds.Contains(n.Kind))
+			.Where(n => !EngagementKinds.Contains(n.Kind) && n.Kind != NotificationKind.InvitationReceived)
 			.Select(n => n.RelatedEntityId)
 			.ToHashSet();
+
+		// An InvitationReceived notification's RelatedEntityId is the
+		// invitation's own id, not an opportunity id (there is no opportunity
+		// involved at all) - looking it up in opportunityTitles below always
+		// missed, silently falling back to the frontend's "deleted opportunity"
+		// placeholder for something that was never an opportunity to begin
+		// with. Resolve it against the invitation itself instead.
+		var invitationIds = notifications
+			.Where(n => n.Kind == NotificationKind.InvitationReceived)
+			.Select(n => n.RelatedEntityId)
+			.ToHashSet();
+
+		Dictionary<Guid, string> invitationOrganizationNames = [];
+		if (invitationIds.Count > 0)
+		{
+			var invitationIdVOs = invitationIds.Select(id => OrganizationInvitationId.Create(id).GetValueOrThrow()).ToList();
+			invitationOrganizationNames = await dbContext.OrganizationInvitationsQuery
+				.Where(i => invitationIdVOs.Contains(i.Id))
+				.Select(i => new { i.Id, i.OrganizationName })
+				.ToDictionaryAsync(x => x.Id.Value, x => x.OrganizationName, cancellationToken);
+		}
 
 		// Batch-fetch engagements and compute opportunity IDs from them
 		Dictionary<Guid, Guid> engagementToOpportunity = [];
@@ -154,6 +176,11 @@ internal sealed class NotificationReadRepository(
 						? $"/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements"
 						: null)
 					: "/my-engagements";
+			}
+			else if (n.Kind == NotificationKind.InvitationReceived)
+			{
+				invitationOrganizationNames.TryGetValue(n.RelatedEntityId, out relatedTitle);
+				actionUrl = "/profile?tab=invitations";
 			}
 			else if (!EngagementKinds.Contains(n.Kind))
 			{

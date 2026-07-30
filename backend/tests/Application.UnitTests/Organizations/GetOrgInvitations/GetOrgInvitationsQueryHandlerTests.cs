@@ -51,7 +51,7 @@ public class GetOrgInvitationsQueryHandlerTests
 	{
 		// Arrange
 		var invitation = OrganizationInvitation.Create(
-			DefaultOrgId, "Test Org", UserId.New(), "Vera", UserId.New());
+			DefaultOrgId, "Test Org", UserId.New(), "Vera", UserId.New(), DateTimeOffset.UtcNow);
 		_dbContext.GetInvitationsForOrganizationAsync(DefaultOrgId, cancellationToken)
 			.Returns([invitation]);
 		var query = new GetOrgInvitationsQuery(DefaultOrgId, DefaultRequestingUserId);

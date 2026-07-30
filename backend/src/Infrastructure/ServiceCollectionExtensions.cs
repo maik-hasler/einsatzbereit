@@ -97,6 +97,8 @@ public static class ServiceCollectionExtensions
 		services.AddHostedService<OutboxProcessorJob>();
 		services.AddHostedService<GeocodingRetryJob>();
 		services.AddHostedService<OrganizationMembershipBackfillJob>();
+		services.ConfigureOptions<InvitationExpiryOptionsSetup>();
+		services.AddHostedService<InvitationExpiryJob>();
 
 
 		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see

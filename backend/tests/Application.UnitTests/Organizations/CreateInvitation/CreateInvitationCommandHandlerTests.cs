@@ -1,3 +1,4 @@
+using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
@@ -17,6 +18,7 @@ public class CreateInvitationCommandHandlerTests
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
 	private readonly IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> _invitationRepo =
@@ -43,7 +45,7 @@ public class CreateInvitationCommandHandlerTests
 			.GetUserAsync(DefaultInviteeId.Value, Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(DefaultInviteeId.Value, "vera", "Vera", "Miller", "vera@test.de"));
 		_sut = new CreateInvitationCommandHandler(
-			_dbContext, _unitOfWork, _keycloakOrgService, _keycloakUserService);
+			_dbContext, _unitOfWork, _keycloakOrgService, _keycloakUserService, _emailService);
 	}
 
 	[Test]
@@ -80,5 +82,7 @@ public class CreateInvitationCommandHandlerTests
 		result.Should().NotBeNull();
 		await _invitationRepo.Received(1).AddAsync(Arg.Any<OrganizationInvitation>(), cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+		await _emailService.Received(1).SendAsync(
+			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
 	}
 }

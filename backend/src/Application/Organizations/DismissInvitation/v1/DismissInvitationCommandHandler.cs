@@ -28,8 +28,8 @@ internal sealed class DismissInvitationCommandHandler(
 		if (invitation.OrganizationId != request.OrganizationId)
 			throw new ResultFailureException(Error.Validation("OrganizationInvitation.WrongOrganization", "Invitation does not belong to this organization."));
 
-		if (invitation.Status != InvitationStatus.Declined)
-			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.NotDeclined", "Only declined invitations can be dismissed."));
+		if (invitation.Status != InvitationStatus.Declined && invitation.Status != InvitationStatus.Expired)
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.NotDeclined", "Only declined or expired invitations can be dismissed."));
 
 		dbContext.OrganizationInvitations.Delete(invitation);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
