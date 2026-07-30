@@ -855,4 +855,78 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
+
+	// #1224: OrgAppLayout's "not authorized" screen (a non-organizer hitting
+	// a 403) had zero axe coverage before this, despite predating the fix -
+	// pinning down its own unique markup while touching this file for the
+	// new "error" state right below.
+	[Test]
+	public async Task OrgAppLayout_Forbidden_AsVera_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var organizationId = await CreateOrganizationAsOlafAsync("A11yForbidden");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard");
+
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("You don't have access to this organization.");
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	// #1224: the new recoverable "something went wrong, try again" state (a
+	// 500/network failure, as opposed to the permanent 403 above) - its own
+	// unique markup, otherwise never scanned. OrgAppLayoutErrorStatesTests.cs
+	// covers this state's functional behavior (branching + retry); this is
+	// its axe-core pass.
+	[Test]
+	public async Task OrgAppLayout_ServerError_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var organizationId = await CreateOrganizationAsOlafAsync("A11yServerError");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+
+		await Page.RouteAsync($"**/v1/organizations/{organizationId}", async route =>
+		{
+			if (route.Request.Method != "GET")
+			{
+				await route.ContinueAsync();
+				return;
+			}
+
+			await route.FulfillAsync(new()
+			{
+				Status = 500,
+				ContentType = "application/json",
+				Headers = new Dictionary<string, string> { ["Access-Control-Allow-Origin"] = "*" },
+				Body = "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.6.1\",\"status\":500}",
+			});
+		});
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard");
+
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Something went wrong");
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Try again" })).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	private async Task<string> CreateOrganizationAsOlafAsync(string label)
+	{
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var response = await http.PostAsJsonAsync("/v1/organizations", new { name = $"{label} {suffix}" });
+		response.EnsureSuccessStatusCode();
+		var org = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return org.GetProperty("id").GetProperty("value").GetString()
+			?? throw new InvalidOperationException("Created organization had no id.");
+	}
 }

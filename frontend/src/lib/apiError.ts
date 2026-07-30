@@ -55,3 +55,15 @@ export function isApiErrorCode(err: unknown, code: string): boolean {
 		(err as { errorCode?: unknown }).errorCode === code
 	);
 }
+
+/**
+ * Detects a 403 from a rejected API call - see isApiNotFoundError above for
+ * why `.status` works across both shapes the NSwag client can throw.
+ */
+export function isApiForbiddenError(err: unknown): boolean {
+	return (
+		!!err &&
+		typeof err === "object" &&
+		(err as { status?: unknown }).status === 403
+	);
+}
