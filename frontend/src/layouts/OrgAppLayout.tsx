@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
@@ -7,6 +7,11 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import { statusTitleClass } from "../lib/headingClasses";
+import {
+	getApiErrorMessage,
+	isApiForbiddenError,
+	isApiNotFoundError,
+} from "../lib/apiError";
 import {
 	OrgBreadcrumbProvider,
 	useOrgBreadcrumbExtra,
@@ -18,6 +23,8 @@ import {
 import Header from "../components/Header/Header";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
+import ErrorBanner from "../components/ErrorBanner";
+import NotFoundPage from "../pages/NotFoundPage";
 
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
@@ -120,6 +127,8 @@ function OrgAppShell({
 	);
 }
 
+type LoadStatus = "loading" | "ok" | "forbidden" | "notFound" | "error";
+
 export default function OrgAppLayout() {
 	const { organizationId } = useParams<{ organizationId: string }>();
 	const api = useApiClient();
@@ -127,21 +136,41 @@ export default function OrgAppLayout() {
 	const location = useLocation();
 
 	const [org, setOrg] = useState<OrganizationDetailsResponse | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [forbidden, setForbidden] = useState(false);
+	const [status, setStatus] = useState<LoadStatus>("loading");
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	// Guards against a fast org switch (or a manual retry) racing its own
+	// previous request: only the response for the most recently issued
+	// request is allowed to update state, same pattern as
+	// VolunteerOpportunityDetailPage's latestRequestRef.
+	const latestRequestRef = useRef(0);
 
 	function load() {
 		if (!organizationId) return;
-		setLoading(true);
-		setForbidden(false);
+		const requestId = ++latestRequestRef.current;
+		setStatus("loading");
 		api
 			.getOrganizationDetails(organizationId)
 			.then((data) => {
+				if (requestId !== latestRequestRef.current) return;
 				setOrg(data);
 				setActiveOrgId(organizationId);
+				setStatus("ok");
 			})
-			.catch(() => setForbidden(true))
-			.finally(() => setLoading(false));
+			.catch((err) => {
+				if (requestId !== latestRequestRef.current) return;
+				if (isApiForbiddenError(err)) {
+					setStatus("forbidden");
+				} else if (isApiNotFoundError(err)) {
+					setStatus("notFound");
+				} else {
+					// Covers everything that isn't a permanent 403/404 - a dropped
+					// connection, a 500, an unexpected exception - so it gets a
+					// recoverable "try again" state instead of being mislabeled as
+					// "not authorized" (#1224).
+					setErrorMessage(getApiErrorMessage(err, t("error.serverError")));
+					setStatus("error");
+				}
+			});
 	}
 
 	useEffect(() => {
@@ -169,22 +198,56 @@ export default function OrgAppLayout() {
 		ORG_TABS.find((tab) => tab.key === activeTabKey) ?? ORG_TABS[0];
 	const activeTabLabel = t(activeTab.labelKey);
 
-	if (loading) {
+	if (status === "loading") {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-gray-50">
+			<main className="flex min-h-screen items-center justify-center bg-gray-50">
 				<Spinner label={t("orgDashboard.loading")} size="lg" />
-			</div>
+			</main>
 		);
 	}
 
-	if (forbidden || !org) {
+	if (status === "notFound") {
+		// NotFoundPage has no <main> of its own - it relies on AppLayout to
+		// supply one on its usual wildcard route. OrgAppLayout bypasses
+		// AppLayout entirely, so it must supply the landmark here instead.
 		return (
-			<div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
+			<main>
+				<NotFoundPage />
+			</main>
+		);
+	}
+
+	if (status === "error") {
+		return (
+			<main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
+				<h1 className={`text-gray-900 ${statusTitleClass}`}>
+					{t("error.boundaryTitle")}
+				</h1>
+				{/* role="alert"/aria-live (via ErrorBanner) so a retry that fails again
+				- re-rendering this same branch, no navigation - is still announced to
+				screen reader users, not just sighted ones. */}
+				<ErrorBanner
+					message={errorMessage ?? t("error.serverError")}
+					className="max-w-md"
+				/>
+				<div className="flex gap-3">
+					<Button onClick={load}>{t("orgApp.retry")}</Button>
+					<Button to="/" variant="secondary">
+						{t("orgApp.backToSite")}
+					</Button>
+				</div>
+			</main>
+		);
+	}
+
+	if (status === "forbidden" || !org) {
+		return (
+			<main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
 				<h1 className={`text-gray-900 ${statusTitleClass}`}>
 					{t("orgApp.notAuthorized")}
 				</h1>
 				<Button to="/">{t("orgApp.backToSite")}</Button>
-			</div>
+			</main>
 		);
 	}
 

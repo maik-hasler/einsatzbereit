@@ -79,24 +79,36 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 			var nameCell = row.Locator("p").First;
-			var nameBox = await nameCell.BoundingBoxAsync();
-			nameBox.Should().NotBeNull("Could not get bounding box for the user name");
-
 			var blockButton = row.GetByRole(AriaRole.Button, new() { Name = "Block" });
 			await Expect(blockButton).ToBeVisibleAsync();
-			var blockBox = await blockButton.BoundingBoxAsync();
-			blockBox.Should().NotBeNull("Could not get bounding box for the Block button");
 
 			// Regression #813: on narrow viewports the name/email cell used to shrink
 			// to a sliver next to the still-full-width status badge and action
-			// buttons instead of wrapping onto its own line above them.
-			nameBox!.Width.Should().BeGreaterThan(
-				200f,
-				$"Name cell width ({nameBox.Width:F0}px) should span most of the {MobileWidth}px viewport, not be compressed next to the action buttons");
+			// buttons instead of wrapping onto its own line above them. Poll rather
+			// than read both boxes once: the row's flex-col layout can still be
+			// mid-reflow the instant it first becomes visible (trailing the search
+			// re-render), and a single read can catch that transient frame under
+			// CI resource contention - same rationale as VisualTestBase's own
+			// PollUntilAsync-based geometry assertions.
+			var nameWidth = 0f;
+			var nameBottom = 0f;
+			var blockY = 0f;
+			await PollUntilAsync(async () =>
+			{
+				var nameBox = await nameCell.BoundingBoxAsync();
+				var blockBox = await blockButton.BoundingBoxAsync();
+				if (nameBox is null || blockBox is null)
+					return false;
 
-			blockBox!.Y.Should().BeGreaterThanOrEqualTo(
-				nameBox.Y + nameBox.Height,
-				"Block button should stack below the name/email text on narrow viewports, not sit beside it");
+				nameWidth = nameBox.Width;
+				nameBottom = nameBox.Y + nameBox.Height;
+				blockY = blockBox.Y;
+				return nameWidth > 200f && blockY >= nameBottom;
+			}, () => $"Name cell width ({nameWidth:F0}px, want >200px - should span most of the "
+				+ $"{MobileWidth}px viewport, not be compressed next to the action buttons) / "
+				+ $"Block button Y ({blockY:F0}px, want >= name-cell-bottom {nameBottom:F0}px - "
+				+ "should stack below the name/email text on narrow viewports, not sit beside it)",
+				timeoutMs: 10_000);
 		}
 		finally
 		{

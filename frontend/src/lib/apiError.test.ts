@@ -15,6 +15,7 @@ vi.mock("../i18n", () => ({
 import {
 	getApiErrorMessage,
 	isApiErrorCode,
+	isApiForbiddenError,
 	isApiNotFoundError,
 } from "./apiError";
 
@@ -148,5 +149,27 @@ describe("isApiErrorCode", () => {
 				"VolunteerOpportunity.AlreadyPublished",
 			),
 		).toBe(false);
+	});
+});
+
+describe("isApiForbiddenError", () => {
+	it("returns true when status is 403", () => {
+		expect(isApiForbiddenError({ status: 403 })).toBe(true);
+	});
+
+	it("returns false when status is a different code", () => {
+		expect(isApiForbiddenError({ status: 500 })).toBe(false);
+	});
+
+	it("returns false when status is missing", () => {
+		expect(isApiForbiddenError({})).toBe(false);
+	});
+
+	it("returns false for null", () => {
+		expect(isApiForbiddenError(null)).toBe(false);
+	});
+
+	it("returns false for a non-object value", () => {
+		expect(isApiForbiddenError("403")).toBe(false);
 	});
 });
