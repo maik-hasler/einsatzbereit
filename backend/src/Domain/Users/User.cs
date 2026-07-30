@@ -28,11 +28,30 @@ public sealed class User
 
 	public DateTimeOffset? DeletedOn { get; private set; }
 
+	// Opaque, unguessable key embedded in one-click unsubscribe links (#1055) so
+	// an email recipient can opt out without authenticating first. Generated
+	// once at creation and never rotated - rotating it would silently break
+	// unsubscribe links already sitting in a recipient's inbox.
+	public Guid UnsubscribeToken { get; private set; }
+
+	public bool NotifyOnNewSignUp { get; private set; } = true;
+
+	public bool NotifyOnWithdrawal { get; private set; } = true;
+
+	public bool NotifyOnEngagementConfirmed { get; private set; } = true;
+
+	public bool NotifyOnEngagementCancelled { get; private set; } = true;
+
+	public bool NotifyOnEngagementReminder { get; private set; } = true;
+
 #pragma warning disable CS8618
 	private User() : base(default) { }
 #pragma warning restore CS8618
 
-	private User(UserId id) : base(id) { }
+	private User(UserId id) : base(id)
+	{
+		UnsubscribeToken = Guid.NewGuid();
+	}
 
 	public static User Create(UserId id) => new(id);
 
@@ -69,6 +88,57 @@ public sealed class User
 	public void SetPreferredLanguage(string? preferredLanguage)
 	{
 		PreferredLanguage = preferredLanguage;
+	}
+
+	public void UpdateNotificationPreferences(
+		bool notifyOnNewSignUp,
+		bool notifyOnWithdrawal,
+		bool notifyOnEngagementConfirmed,
+		bool notifyOnEngagementCancelled,
+		bool notifyOnEngagementReminder)
+	{
+		NotifyOnNewSignUp = notifyOnNewSignUp;
+		NotifyOnWithdrawal = notifyOnWithdrawal;
+		NotifyOnEngagementConfirmed = notifyOnEngagementConfirmed;
+		NotifyOnEngagementCancelled = notifyOnEngagementCancelled;
+		NotifyOnEngagementReminder = notifyOnEngagementReminder;
+	}
+
+	public bool IsSubscribedTo(EmailNotificationType type) => type switch
+	{
+		EmailNotificationType.NewSignUp => NotifyOnNewSignUp,
+		EmailNotificationType.Withdrawal => NotifyOnWithdrawal,
+		EmailNotificationType.EngagementConfirmed => NotifyOnEngagementConfirmed,
+		EmailNotificationType.EngagementCancelled => NotifyOnEngagementCancelled,
+		EmailNotificationType.EngagementReminder => NotifyOnEngagementReminder,
+		_ => true,
+	};
+
+	public Result Unsubscribe(EmailNotificationType type, Guid token)
+	{
+		if (token != UnsubscribeToken)
+			return Result.Failure(Error.Forbidden("User.InvalidUnsubscribeToken", "The unsubscribe link is invalid or has already been used with a different token."));
+
+		switch (type)
+		{
+			case EmailNotificationType.NewSignUp:
+				NotifyOnNewSignUp = false;
+				break;
+			case EmailNotificationType.Withdrawal:
+				NotifyOnWithdrawal = false;
+				break;
+			case EmailNotificationType.EngagementConfirmed:
+				NotifyOnEngagementConfirmed = false;
+				break;
+			case EmailNotificationType.EngagementCancelled:
+				NotifyOnEngagementCancelled = false;
+				break;
+			case EmailNotificationType.EngagementReminder:
+				NotifyOnEngagementReminder = false;
+				break;
+		}
+
+		return Result.Success();
 	}
 
 	public Result MarkDeleted(DateTimeOffset deletedOn)

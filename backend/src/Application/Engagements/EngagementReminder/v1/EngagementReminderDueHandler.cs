@@ -5,6 +5,7 @@ using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
+using Domain.Users;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.EngagementReminder.v1;
@@ -19,6 +20,7 @@ internal sealed class EngagementReminderDueHandler(
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
 	IEmailTemplateRenderer emailTemplateRenderer,
+	IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 	ILogger<EngagementReminderDueHandler> logger)
 	: INotificationHandler<EngagementReminderDueDomainEvent>
 {
@@ -43,14 +45,23 @@ internal sealed class EngagementReminderDueHandler(
 			return;
 		}
 
+		var volunteerUser = (await dbContext.GetOrCreateUsersAsync([notification.VolunteerId], cancellationToken))[0];
+
+		if (!volunteerUser.IsSubscribedTo(EmailNotificationType.EngagementReminder))
+		{
+			logger.LogInformation(
+				"Skipping 24h reminder for engagement {EngagementId}: volunteer opted out of reminder emails",
+				notification.EngagementId.Value);
+			return;
+		}
+
 		var user = await keycloakUserService.GetUserAsync(notification.VolunteerId.Value, cancellationToken);
 
 		var displayName = $"{user.FirstName} {user.LastName}".Trim();
 		if (string.IsNullOrEmpty(displayName))
 			displayName = user.Username;
 
-		var volunteerUser = await dbContext.Users.FindAsync(notification.VolunteerId, cancellationToken);
-		var language = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
+		var language = SupportedLanguages.Resolve(volunteerUser.PreferredLanguage);
 
 		var startFormatted = FormatStart(timeSlot.StartDateTime, language);
 
@@ -64,10 +75,16 @@ internal sealed class EngagementReminderDueHandler(
 				["StartFormatted"] = startFormatted,
 			});
 
+		var unsubscribeUrl = unsubscribeLinkBuilder.Build(
+			notification.VolunteerId, volunteerUser.UnsubscribeToken, EmailNotificationType.EngagementReminder);
+
+		var subject = content.Subject;
+		var body = EmailFooter.Append(content.Body, unsubscribeUrl);
+
 		// SendBatchAsync with a single message (rather than SendAsync) so a failed send
 		// is observable as a bool - SendAsync never throws and never reports outcome,
 		// which would make it impossible to know whether to let the outbox retry.
-		var results = await emailService.SendBatchAsync([new EmailMessage(user.Email, content.Subject, content.Body)], cancellationToken);
+		var results = await emailService.SendBatchAsync([new EmailMessage(user.Email, subject, body)], cancellationToken);
 		if (!results[0])
 			throw new InvalidOperationException(
 				$"Failed to send 24h reminder email for engagement {notification.EngagementId.Value}");

@@ -20,9 +20,8 @@ public class EngagementReminderDueHandlerTests
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IAggregateRepository<User, UserId> _userRepo =
-		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
+	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly EngagementReminderDueHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
@@ -30,12 +29,13 @@ public class EngagementReminderDueHandlerTests
 	public EngagementReminderDueHandlerTests()
 	{
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_dbContext.Users.Returns(_userRepo);
 		_emailTemplateRenderer
 			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
 			.Returns(new EmailContent("Test Subject", "Test Body"));
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
 		_sut = new EngagementReminderDueHandler(
-			_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer, NullLogger<EngagementReminderDueHandler>.Instance);
+			_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder, NullLogger<EngagementReminderDueHandler>.Instance);
 	}
 
 	private VolunteerOpportunity CreateOpportunityWithTimeSlot(out TimeSlotId timeSlotId)
@@ -161,7 +161,8 @@ public class EngagementReminderDueHandlerTests
 			.Returns([true]);
 		var volunteer = User.Create(volunteerId);
 		volunteer.SetPreferredLanguage("en");
-		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([volunteer]);
 
 		// Act
 		await _sut.Handle(domainEvent, cancellationToken);
@@ -171,5 +172,36 @@ public class EngagementReminderDueHandlerTests
 			EmailTemplateKind.EngagementReminder,
 			"en",
 			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	// --- Volunteer email notification preferences (#1055) ---
+
+	[Test]
+	public async Task Handle_ShouldNotSendReminderEmail_WhenVolunteerOptedOutOfReminders(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateOpportunityWithTimeSlot(out var timeSlotId);
+		var volunteerId = UserId.New();
+		var domainEvent = new EngagementReminderDueDomainEvent(
+			EngagementId.New(), volunteerId, opportunity.Id, timeSlotId);
+
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		var optedOutVolunteer = User.Create(volunteerId);
+		optedOutVolunteer.UpdateNotificationPreferences(
+			notifyOnNewSignUp: true,
+			notifyOnWithdrawal: true,
+			notifyOnEngagementConfirmed: true,
+			notifyOnEngagementCancelled: true,
+			notifyOnEngagementReminder: false);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([optedOutVolunteer]);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
+		await _emailService.DidNotReceive().SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>());
 	}
 }

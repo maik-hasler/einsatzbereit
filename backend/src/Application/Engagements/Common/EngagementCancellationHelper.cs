@@ -5,6 +5,7 @@ using Application.Common.Localization;
 using Application.Common.Persistence;
 using Domain.Engagements;
 using Domain.Notifications;
+using Domain.Users;
 
 namespace Application.Engagements.Common;
 
@@ -22,6 +23,7 @@ internal static class EngagementCancellationHelper
 		IKeycloakUserService keycloakUserService,
 		IEmailService emailService,
 		IEmailTemplateRenderer emailTemplateRenderer,
+		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		Engagement engagement,
 		string opportunityTitle,
 		string? reason,
@@ -36,26 +38,36 @@ internal static class EngagementCancellationHelper
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
 		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId!.Value.Value, cancellationToken);
-		var volunteerUser = await dbContext.Users.FindAsync(engagement.VolunteerId!.Value, cancellationToken);
-		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
+		var volunteerUser = (await dbContext.GetOrCreateUsersAsync([engagement.VolunteerId!.Value], cancellationToken))[0];
+		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser.PreferredLanguage);
 
-		var reasonBlock = string.IsNullOrWhiteSpace(reason)
-			? string.Empty
-			: emailTemplateRenderer.Render(
-				EmailTemplateKind.EngagementCancelledReasonSuffix,
+		if (volunteerUser.IsSubscribedTo(EmailNotificationType.EngagementCancelled))
+		{
+			var reasonBlock = string.IsNullOrWhiteSpace(reason)
+				? string.Empty
+				: emailTemplateRenderer.Render(
+					EmailTemplateKind.EngagementCancelledReasonSuffix,
+					volunteerLanguage,
+					new Dictionary<string, string> { ["Reason"] = reason }).Body;
+
+			var content = emailTemplateRenderer.Render(
+				EmailTemplateKind.EngagementCancelled,
 				volunteerLanguage,
-				new Dictionary<string, string> { ["Reason"] = reason }).Body;
+				new Dictionary<string, string>
+				{
+					["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
+					["OpportunityTitle"] = opportunityTitle,
+					["ReasonBlock"] = reasonBlock,
+				});
 
-		var content = emailTemplateRenderer.Render(
-			EmailTemplateKind.EngagementCancelled,
-			volunteerLanguage,
-			new Dictionary<string, string>
-			{
-				["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
-				["OpportunityTitle"] = opportunityTitle,
-				["ReasonBlock"] = reasonBlock,
-			});
+			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
+				engagement.VolunteerId!.Value, volunteerUser.UnsubscribeToken, EmailNotificationType.EngagementCancelled);
 
-		await emailService.SendAsync(volunteer.Email, content.Subject, content.Body, cancellationToken);
+			await emailService.SendAsync(
+				volunteer.Email,
+				content.Subject,
+				EmailFooter.Append(content.Body, unsubscribeUrl),
+				cancellationToken);
+		}
 	}
 }

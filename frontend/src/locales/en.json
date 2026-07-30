@@ -810,6 +810,20 @@
       "loading": "Loading…",
       "removeChip": "Remove"
     },
+    "notificationPreferences": {
+      "title": "Email notifications",
+      "description": "Choose which transactional emails you want to receive. Every email also includes an unsubscribe link for the type it belongs to.",
+      "newSignUp": "New sign-ups for opportunities you organize",
+      "withdrawal": "Volunteer withdrawals from opportunities you organize",
+      "engagementConfirmed": "Your engagement is confirmed",
+      "engagementCancelled": "Your engagement is cancelled",
+      "engagementReminder": "Reminder before your engagement starts",
+      "save": "Save preferences",
+      "saving": "Saving…",
+      "savedSuccess": "Notification preferences saved.",
+      "saveError": "Failed to save notification preferences.",
+      "loadError": "Could not load notification preferences."
+    },
     "achievements": {
       "title": "My Achievements",
       "publicTitle": "Achievements",

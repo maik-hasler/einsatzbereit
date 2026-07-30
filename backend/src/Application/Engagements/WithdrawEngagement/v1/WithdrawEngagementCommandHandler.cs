@@ -16,7 +16,8 @@ internal sealed class WithdrawEngagementCommandHandler(
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer)
+	IEmailTemplateRenderer emailTemplateRenderer,
+	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
 	: ICommandHandler<WithdrawEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -42,6 +43,13 @@ internal sealed class WithdrawEngagementCommandHandler(
 			var members = await keycloakOrganizationService
 				.GetMembersAsync(opportunity.OrganizationId.Value, cancellationToken);
 
+			var organizerIds = members
+				.Where(m => m.IsOrganisator)
+				.Select(m => UserId.Create(m.UserId).GetValueOrThrow())
+				.ToList();
+			var organizerUsersById = (await dbContext.GetOrCreateUsersAsync(organizerIds, cancellationToken))
+				.ToDictionary(u => u.Id);
+
 			foreach (var organizer in members.Where(m => m.IsOrganisator))
 			{
 				var organizerId = UserId.Create(organizer.UserId).GetValueOrThrow();
@@ -52,9 +60,12 @@ internal sealed class WithdrawEngagementCommandHandler(
 
 				await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
+				var organizerUser = organizerUsersById[organizerId];
+				if (!organizerUser.IsSubscribedTo(EmailNotificationType.Withdrawal))
+					continue;
+
 				var organizerName = organizer.FirstName ?? organizer.Username;
-				var organizerUser = await dbContext.Users.FindAsync(organizerId, cancellationToken);
-				var organizerLanguage = SupportedLanguages.Resolve(organizerUser?.PreferredLanguage);
+				var organizerLanguage = SupportedLanguages.Resolve(organizerUser.PreferredLanguage);
 
 				var content = emailTemplateRenderer.Render(
 					EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
@@ -66,7 +77,14 @@ internal sealed class WithdrawEngagementCommandHandler(
 						["OpportunityTitle"] = opportunity.Title,
 					});
 
-				await emailService.SendAsync(organizer.Email, content.Subject, content.Body, cancellationToken);
+				var unsubscribeUrl = unsubscribeLinkBuilder.Build(
+					organizerId, organizerUser.UnsubscribeToken, EmailNotificationType.Withdrawal);
+
+				await emailService.SendAsync(
+					organizer.Email,
+					content.Subject,
+					EmailFooter.Append(content.Body, unsubscribeUrl),
+					cancellationToken);
 			}
 		}
 

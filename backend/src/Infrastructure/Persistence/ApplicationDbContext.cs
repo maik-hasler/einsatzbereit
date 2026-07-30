@@ -383,6 +383,23 @@ internal sealed class ApplicationDbContext(
 			.IgnoreQueryFilters()
 			.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
+	public async Task<List<User>> GetOrCreateUsersAsync(
+		IReadOnlyCollection<UserId> userIds,
+		CancellationToken cancellationToken = default)
+	{
+		var existing = await Set<User>()
+			.Where(u => userIds.Contains(u.Id))
+			.ToListAsync(cancellationToken);
+
+		var missingIds = userIds.Except(existing.Select(u => u.Id));
+		var created = missingIds.Select(User.Create).ToList();
+
+		if (created.Count > 0)
+			await Set<User>().AddRangeAsync(created, cancellationToken);
+
+		return [.. existing, .. created];
+	}
+
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

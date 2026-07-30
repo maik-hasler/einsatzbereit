@@ -180,6 +180,15 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	// Notification-preference/unsubscribe-token lookups (#1055) need a durable
+	// User row for every email recipient, even one who has never opened their
+	// profile page and so has no row yet - creates (but does not save) one for
+	// each id missing from the table, mirroring the same lazy-create already
+	// done inline in GetUserProfileQueryHandler/UpdateUserProfileCommandHandler.
+	Task<List<User>> GetOrCreateUsersAsync(
+		IReadOnlyCollection<UserId> userIds,
+		CancellationToken cancellationToken = default);
+
 	Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

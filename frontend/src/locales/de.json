@@ -810,6 +810,20 @@
       "loading": "Wird geladen…",
       "removeChip": "Entfernen"
     },
+    "notificationPreferences": {
+      "title": "E-Mail-Benachrichtigungen",
+      "description": "Wähle aus, welche transaktionalen E-Mails du erhalten möchtest. Jede E-Mail enthält außerdem einen Abmeldelink für den jeweiligen Typ.",
+      "newSignUp": "Neue Anmeldungen für Angebote, die du organisierst",
+      "withdrawal": "Rückzüge von Freiwilligen bei Angeboten, die du organisierst",
+      "engagementConfirmed": "Dein Engagement wird bestätigt",
+      "engagementCancelled": "Dein Engagement wird abgesagt",
+      "engagementReminder": "Erinnerung vor Beginn deines Engagements",
+      "save": "Einstellungen speichern",
+      "saving": "Wird gespeichert…",
+      "savedSuccess": "Benachrichtigungseinstellungen gespeichert.",
+      "saveError": "Benachrichtigungseinstellungen konnten nicht gespeichert werden.",
+      "loadError": "Benachrichtigungseinstellungen konnten nicht geladen werden."
+    },
     "achievements": {
       "title": "Meine Errungenschaften",
       "publicTitle": "Errungenschaften",

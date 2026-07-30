@@ -33,6 +33,7 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IAggregateRepository<User, UserId> _userRepo =
 		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
+	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly CreateEngagementCommandHandler _sut;
 
 	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
@@ -68,7 +69,9 @@ public class CreateEngagementCommandHandlerTests
 		_emailTemplateRenderer
 			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
 			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
 	}
 
 	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
@@ -399,5 +402,62 @@ public class CreateEngagementCommandHandlerTests
 			EmailTemplateKind.EngagementRequestReceived,
 			"de",
 			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	// --- Organizer email notification preferences (#1055) ---
+
+	[Test]
+	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToNewSignUp(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var organizerId = Guid.NewGuid();
+		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
+		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
+			.Returns("https://example.com/unsubscribe");
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _emailService.Received(1).SendAsync(
+			"olaf@example.com",
+			Arg.Any<string>(),
+			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var organizerId = Guid.NewGuid();
+		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
+		var organizerUserId = UserId.Create(organizerId).GetValueOrThrow();
+		var optedOutOrganizer = User.Create(organizerUserId);
+		optedOutOrganizer.UpdateNotificationPreferences(
+			notifyOnNewSignUp: false,
+			notifyOnWithdrawal: true,
+			notifyOnEngagementConfirmed: true,
+			notifyOnEngagementCancelled: true,
+			notifyOnEngagementReminder: true);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([optedOutOrganizer]);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _emailService.DidNotReceive().SendAsync(
+			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }

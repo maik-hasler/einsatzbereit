@@ -213,6 +213,11 @@ services:
       Keycloak__BaseUrl: http://keycloak:8080
       Keycloak__ClientSecret: ${KEYCLOAK_BACKEND_SECRET:?set KEYCLOAK_BACKEND_SECRET in .env}
       Cors__Origins__0: https://einsatzbereit.maik-hasler.de
+      # Backend's own public origin (#1055) - embedded in one-click unsubscribe
+      # links sent in transactional emails, which must resolve from outside the
+      # docker network. Distinct from Cors__Origins__0 above, which is the
+      # frontend's origin.
+      Api__PublicBaseUrl: https://api.maik-hasler.de
       Storage__Endpoint: http://minio:9000
       Storage__AccessKey: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
       Storage__SecretKey: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}

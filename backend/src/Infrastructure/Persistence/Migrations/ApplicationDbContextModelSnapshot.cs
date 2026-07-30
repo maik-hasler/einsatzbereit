@@ -500,6 +500,36 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("text")
 						.HasColumnName("languages");
 
+					b.Property<bool>("NotifyOnEngagementCancelled")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(true)
+						.HasColumnName("notify_on_engagement_cancelled");
+
+					b.Property<bool>("NotifyOnEngagementConfirmed")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(true)
+						.HasColumnName("notify_on_engagement_confirmed");
+
+					b.Property<bool>("NotifyOnEngagementReminder")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(true)
+						.HasColumnName("notify_on_engagement_reminder");
+
+					b.Property<bool>("NotifyOnNewSignUp")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(true)
+						.HasColumnName("notify_on_new_sign_up");
+
+					b.Property<bool>("NotifyOnWithdrawal")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("boolean")
+						.HasDefaultValue(true)
+						.HasColumnName("notify_on_withdrawal");
+
 					b.Property<string>("Phone")
 						.HasColumnType("text")
 						.HasColumnName("phone");
@@ -517,6 +547,12 @@ namespace Infrastructure.Persistence.Migrations
 						.IsRequired()
 						.HasColumnType("text")
 						.HasColumnName("skills");
+
+					b.Property<Guid>("UnsubscribeToken")
+						.ValueGeneratedOnAdd()
+						.HasColumnType("uuid")
+						.HasColumnName("unsubscribe_token")
+						.HasDefaultValueSql("gen_random_uuid()");
 
 					b.HasKey("Id")
 						.HasName("pk_user");

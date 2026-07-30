@@ -30,6 +30,7 @@ public class CancelEngagementCommandHandlerTests
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
+	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly CancelEngagementCommandHandler _sut;
 
 	private static readonly UserId DefaultRequestingUserId = UserId.New();
@@ -54,7 +55,9 @@ public class CancelEngagementCommandHandlerTests
 		_emailTemplateRenderer
 			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
 			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_sut = new CancelEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>
@@ -189,7 +192,7 @@ public class CancelEngagementCommandHandlerTests
 		await _emailService.Received(1).SendAsync(
 			"vera@example.com",
 			"Test Subject",
-			"Test Body",
+			Arg.Is<string>(body => body!.StartsWith("Test Body")),
 			cancellationToken);
 	}
 
@@ -204,7 +207,8 @@ public class CancelEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		var volunteer = User.Create(volunteerId);
 		volunteer.SetPreferredLanguage("en");
-		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([volunteer]);
 
 		// Act
 		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
@@ -214,6 +218,31 @@ public class CancelEngagementCommandHandlerTests
 			EmailTemplateKind.EngagementCancelled,
 			"en",
 			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	// --- Volunteer email notification preferences (#1055) ---
+
+	[Test]
+	public async Task Handle_ShouldEmailVolunteer_WhenSubscribedToEngagementCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
+			.Returns("https://example.com/unsubscribe");
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		await _emailService.Received(1).SendAsync(
+			"user@example.com",
+			Arg.Any<string>(),
+			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			cancellationToken);
 	}
 
 	[Test]
@@ -254,5 +283,32 @@ public class CancelEngagementCommandHandlerTests
 			EmailTemplateKind.EngagementCancelledReasonSuffix,
 			Arg.Any<string>(),
 			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotEmailVolunteer_WhenOptedOutOfEngagementCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		var optedOutVolunteer = User.Create(volunteerId);
+		optedOutVolunteer.UpdateNotificationPreferences(
+			notifyOnNewSignUp: true,
+			notifyOnWithdrawal: true,
+			notifyOnEngagementConfirmed: true,
+			notifyOnEngagementCancelled: false,
+			notifyOnEngagementReminder: true);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([optedOutVolunteer]);
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		await _emailService.DidNotReceive().SendAsync(
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }
