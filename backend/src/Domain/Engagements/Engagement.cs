@@ -58,7 +58,7 @@ public sealed class Engagement
 		Status = status;
 	}
 
-	public static Engagement CreateWaitlistSignUp(
+	public static Engagement CreateSlotSignUp(
 		VolunteerOpportunityId opportunityId,
 		UserId volunteerId,
 		TimeSlotId timeSlotId)

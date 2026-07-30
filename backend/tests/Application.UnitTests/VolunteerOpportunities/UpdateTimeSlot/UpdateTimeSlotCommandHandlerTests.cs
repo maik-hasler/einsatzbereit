@@ -46,10 +46,10 @@ public class UpdateTimeSlotCommandHandlerTests
 		_sut = new UpdateTimeSlotCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
-	private VolunteerOpportunity CreateWaitlistOpportunity() =>
+	private VolunteerOpportunity CreateScheduledSlotsOpportunity() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
 	[Test]
@@ -57,7 +57,7 @@ public class UpdateTimeSlotCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunity = CreateWaitlistOpportunity();
+		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
 
@@ -105,7 +105,7 @@ public class UpdateTimeSlotCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunity = CreateWaitlistOpportunity();
+		var opportunity = CreateScheduledSlotsOpportunity();
 		var opportunityId = opportunity.Id.Value;
 
 		_opportunityRepo
@@ -127,7 +127,7 @@ public class UpdateTimeSlotCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunity = CreateWaitlistOpportunity();
+		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
 
@@ -151,11 +151,67 @@ public class UpdateTimeSlotCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldAllowChangingToUnlimitedCapacity_RegardlessOfActiveEngagementCount(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateScheduledSlotsOpportunity();
+		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_dbContext
+			.CountActiveEngagementsForTimeSlotAsync(timeSlot.Id, cancellationToken)
+			.Returns(10);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, timeSlot.Id.Value, BaseStart, BaseEnd, MaxParticipants: null, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenReducingFromUnlimitedToFixedCapacityBelowActiveEngagements(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunity = CreateScheduledSlotsOpportunity();
+		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, null, DateTimeOffset.UtcNow).Value;
+		var opportunityId = opportunity.Id.Value;
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_dbContext
+			.CountActiveEngagementsForTimeSlotAsync(timeSlot.Id, cancellationToken)
+			.Returns(5);
+
+		var command = new UpdateTimeSlotCommand(
+			opportunityId, timeSlot.Id.Value, BaseStart, BaseEnd, MaxParticipants: 3, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*5*");
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotifyOnlyVolunteersOnTheEditedSlot(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunity = CreateWaitlistOpportunity();
+		var opportunity = CreateScheduledSlotsOpportunity();
 		var editedSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var otherSlot = opportunity.AddTimeSlot(BaseStart.AddDays(2), BaseEnd.AddDays(2), 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
@@ -190,7 +246,7 @@ public class UpdateTimeSlotCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange: caller belongs to a different organization than the opportunity's.
-		var opportunity = CreateWaitlistOpportunity();
+		var opportunity = CreateScheduledSlotsOpportunity();
 		var timeSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
 

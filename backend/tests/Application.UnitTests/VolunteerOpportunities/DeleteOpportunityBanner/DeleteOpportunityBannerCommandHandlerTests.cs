@@ -36,7 +36,7 @@ public class DeleteOpportunityBannerCommandHandlerTests
 	private VolunteerOpportunity CreateOpportunityWithBanner()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		opportunity.SetBannerImageUrl("https://example.com/banner.png");
 		return opportunity;

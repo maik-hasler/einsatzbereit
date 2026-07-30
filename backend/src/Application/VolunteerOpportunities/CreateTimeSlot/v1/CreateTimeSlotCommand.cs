@@ -8,7 +8,7 @@ public sealed record CreateTimeSlotCommand(
 	Guid OpportunityId,
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
-	int MaxParticipants,
+	int? MaxParticipants,
 	UserId RequestingUserId,
 	string? RecurrenceFrequency = null,
 	int RecurrenceCount = 1)

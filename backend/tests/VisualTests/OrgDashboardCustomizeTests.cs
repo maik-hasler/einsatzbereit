@@ -859,7 +859,7 @@ public class OrgDashboardCustomizeTests(AspireFixture fixture) : VisualTestBase(
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
-				participationType = "Waitlist",
+				participationType = "ScheduledSlots",
 				checkInMethod = "None",
 				isDraft = true,
 				tags = new[] { $"visual-row-height-{suffix}" },

@@ -48,7 +48,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			null,
 			[],
@@ -66,7 +66,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 		result.Address.Should().NotBeNull();
 		result.Address!.Street.Should().Be(TestAddress.Street);
 		result.Occurrence.Should().Be(Occurrence.OneTime);
-		result.ParticipationType.Should().Be(ParticipationType.Waitlist);
+		result.ParticipationType.Should().Be(ParticipationType.ScheduledSlots);
 	}
 
 	[Test]
@@ -81,7 +81,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			null,
 			[],
@@ -107,7 +107,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.PINCode,
 			null,
 			[],
@@ -152,7 +152,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenPublishingWaitlistDirectlyWithNoTimeSlots(
+	public async Task Handle_ShouldThrow_WhenPublishingScheduledSlotsDirectlyWithNoTimeSlots(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -163,7 +163,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			null,
 			[],
@@ -175,7 +175,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
-			.WithMessage("*Waitlist opportunity*");
+			.WithMessage("*Scheduled slots opportunity*");
 		await _dbContext
 			.VolunteerOpportunities
 			.DidNotReceive()
@@ -192,7 +192,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -212,7 +212,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(GeocodingResult.NotFound);
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -236,7 +236,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(GeocodingResult.TransientFailure);
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -256,7 +256,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.Returns(Task.FromException<GeocodingResult>(new HttpRequestException("boom")));
 
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", "Description", TestOrganizationId, false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -271,7 +271,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var command = new CreateVolunteerOpportunityCommand(
-			"Title", "Description", TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
+			"Title", "Description", TestOrganizationId, true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], OpportunityStatus.Draft, DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -298,7 +298,7 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			null,
 			[],

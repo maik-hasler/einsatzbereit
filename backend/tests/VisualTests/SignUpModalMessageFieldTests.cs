@@ -7,7 +7,7 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #679: the "Message" textarea on a non-waitlist (Express
+/// Regression for #679: the "Message" textarea on a non-ScheduledSlots (Express
 /// interest) sign-up was silently HTML-required with no visible/accessible
 /// indication, so its markup had never been exercised by AccessibilityTests.
 /// </summary>

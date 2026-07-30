@@ -51,7 +51,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		VolunteerOpportunity.Create(DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldReturnTrue_WhenOpportunityExists(
@@ -126,9 +126,9 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
-		var pendingEngagement = Engagement.CreateWaitlistSignUp(
+		var pendingEngagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), UserId.New(), timeSlotId);
-		var confirmedEngagement = Engagement.CreateWaitlistSignUp(
+		var confirmedEngagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), UserId.New(), timeSlotId);
 		confirmedEngagement.Confirm();
 

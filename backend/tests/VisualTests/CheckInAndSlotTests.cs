@@ -177,12 +177,12 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 	}
 
 	[Test]
-	public async Task WaitlistSignUpModal_ShowsPerSlotBookingCounts()
+	public async Task ScheduledSlotsSignUpModal_ShowsPerSlotBookingCounts()
 	{
 		// #533: Slot options in the sign-up modal must include availability info,
 		// e.g. "(4 left)" when a slot has 4 remaining spots, or "(Full)" when full.
 		//
-		// Create the Waitlist opportunity (draft -> add slots -> publish) via the
+		// Create the ScheduledSlots opportunity (draft -> add slots -> publish) via the
 		// API rather than hunting for a seed card in the paginated public list.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
@@ -206,7 +206,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
-			participationType = "Waitlist",
+			participationType = "ScheduledSlots",
 			checkInMethod = "None",
 			isDraft = true,
 		});
@@ -214,7 +214,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		// A Waitlist opportunity needs at least one time slot before it can be
+		// A ScheduledSlots opportunity needs at least one time slot before it can be
 		// published; two slots with spare capacity give the picker options that
 		// each render a "(N left)" availability count.
 		var start = DateTimeOffset.UtcNow.AddDays(7);
@@ -240,7 +240,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// "Select a slot" is the English label for the Waitlist sign-up button.
+		// "Select a slot" is the English label for the ScheduledSlots sign-up button.
 		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
 		await Expect(signUpBtn).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await signUpBtn.ClickAsync();
@@ -272,5 +272,79 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			? "slot options must be rendered, but none were found"
 			: "each slot option should include booking count info like '(4 left)'. "
 				+ $"Actual options: [{string.Join(", ", options)}]");
+	}
+
+	/// <summary>
+	/// Regression for #1066: a time slot with no capacity cap must never read as
+	/// "full" or block sign-up, regardless of how many volunteers have joined -
+	/// covers both the public detail page's badge and the sign-up modal's slot
+	/// picker.
+	/// </summary>
+	[Test]
+	public async Task ScheduledSlotsWithUnlimitedCapacity_NeverReadsAsFull()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetTokenAsync(keycloak, "olaf", "olaf123")}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Unlimited Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppTitle = $"Unlimited Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CheckInAndSlotTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(7);
+		(await http.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
+		{
+			startDateTime = start,
+			endDateTime = start.AddHours(3),
+			maxParticipants = (int?)null,
+			recurrenceCount = 1,
+		})).EnsureSuccessStatusCode();
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		// admin is not an organizer and has no engagement, so the sign-up CTA is shown.
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// The badge must read "Unlimited spots", never a full/near-capacity warning.
+		await Expect(Page.GetByText("Unlimited spots")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var signUpBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Select a slot" });
+		await Expect(signUpBtn).ToBeVisibleAsync();
+		await Expect(signUpBtn).ToBeEnabledAsync();
+		await signUpBtn.ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']");
+
+		var slotDropdown = Page.Locator("#sign-up-time-slot");
+		await Expect(slotDropdown).ToBeVisibleAsync();
+		await slotDropdown.ClickAsync();
+
+		var optionLocator = Page.Locator("[role='option']");
+		await Expect(optionLocator.First).ToBeVisibleAsync();
+		await Expect(optionLocator.First).ToContainTextAsync("(Unlimited)");
+		await Expect(optionLocator.First).Not.ToHaveAttributeAsync("aria-disabled", "true");
 	}
 }

@@ -36,12 +36,12 @@ public class CheckInEngagementCommandHandlerTests
 
 	private VolunteerOpportunity CreateOpportunity() =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
 	private static Engagement CreateConfirmedEngagement(VolunteerOpportunityId opportunityId)
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(opportunityId, UserId.New(), TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, UserId.New(), TimeSlotId.New());
 		engagement.Confirm();
 		return engagement;
 	}

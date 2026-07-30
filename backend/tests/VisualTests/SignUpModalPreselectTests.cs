@@ -7,7 +7,7 @@ namespace VisualTests;
 
 /// <summary>
 /// Regression for #657: SignUpModal always initialized the time-slot dropdown
-/// to empty, even when a Waitlist opportunity had exactly one (non-full) time
+/// to empty, even when a ScheduledSlots opportunity had exactly one (non-full) time
 /// slot and there was nothing else to pick - forcing an avoidable extra click
 /// before "Sign up" was enabled.
 /// </summary>
@@ -27,7 +27,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var opportunityId = await CreateWaitlistOpportunityAsync("SingleSlot", slotCount: 1);
+		var opportunityId = await CreateScheduledSlotsOpportunityAsync("SingleSlot", slotCount: 1);
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
@@ -51,7 +51,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var opportunityId = await CreateWaitlistOpportunityAsync("MultiSlot", slotCount: 2);
+		var opportunityId = await CreateScheduledSlotsOpportunityAsync("MultiSlot", slotCount: 2);
 		var detailUrl = $"{origin}/volunteer-opportunities/{opportunityId}";
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
@@ -75,7 +75,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("[role='dialog']")).ToBeVisibleAsync();
 	}
 
-	private async Task<string> CreateWaitlistOpportunityAsync(string label, int slotCount)
+	private async Task<string> CreateScheduledSlotsOpportunityAsync(string label, int slotCount)
 	{
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
@@ -111,7 +111,7 @@ public class SignUpModalPreselectTests(AspireFixture fixture) : VisualTestBase(f
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
-			participationType = "Waitlist",
+			participationType = "ScheduledSlots",
 			checkInMethod = "None",
 			isDraft = true,
 		});

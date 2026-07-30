@@ -91,4 +91,34 @@ public class TimeSlotTests
 
 		slot1.Id.Should().NotBe(slot2.Id);
 	}
+
+	[Test]
+	public void Create_ShouldAllowNullMaxParticipants_ForUnlimitedCapacity()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: null, Now).Value;
+
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
+	public void Update_ShouldAllowChangingToUnlimitedCapacity()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.Update(Tomorrow, DayAfterTomorrow, maxParticipants: null, Now);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
+	public void Update_ShouldAllowChangingFromUnlimitedToFixedCapacity()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: null, Now).Value;
+
+		var result = timeSlot.Update(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
 }

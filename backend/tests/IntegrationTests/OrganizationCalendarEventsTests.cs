@@ -22,7 +22,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistDraftOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var inRangeStart = DateTimeOffset.UtcNow.AddDays(10);
 		var inRangeSlot = (await olafClient.CreateTimeSlotAsync(
@@ -66,7 +66,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistDraftOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsDraftOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var slotStart = DateTimeOffset.UtcNow.AddDays(5);
 		var slotId = (await olafClient.CreateTimeSlotAsync(
@@ -201,11 +201,11 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 		return org.Id.Value;
 	}
 
-	private static async Task<CreateVolunteerOpportunityResponse> CreateWaitlistDraftOpportunityAsync(
+	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsDraftOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Time slots can only be added to Waitlist opportunities (see
-		// VolunteerOpportunity.AddTimeSlot). Created as a draft since a Waitlist
+		// Time slots can only be added to ScheduledSlots opportunities (see
+		// VolunteerOpportunity.AddTimeSlot). Created as a draft since a ScheduledSlots
 		// opportunity can't be published until it has at least one time slot.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
@@ -218,7 +218,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 				ZipCode = "12345",
 				City = "Berlin",
 				Occurrence = "Recurring",
-				ParticipationType = "Waitlist",
+				ParticipationType = "ScheduledSlots",
 				CheckInMethod = "None",
 				IsDraft = true,
 			},

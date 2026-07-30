@@ -136,19 +136,19 @@ public class EngagementReminderJobTests(IntegrationTestFixture fixture)
 		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"ReminderTestOrg_{Guid.NewGuid()}").GetValueOrThrow();
 		dbContext.Set<DomainOrganization>().Add(organization);
 
-		// Waitlist opportunities can't be created directly as Published (they must have
+		// ScheduledSlots opportunities can't be created directly as Published (they must have
 		// at least one time slot first - see VolunteerOpportunity.Create) - Draft is fine
 		// here since nothing in this test path depends on the opportunity being published.
 		var opportunity = VolunteerOpportunity.Create(
 			organization.Id, "Beach Cleanup", "Help clean the beach", true, null,
-			Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, new NoOpPinGenerator(),
+			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).Value;
 
 		var timeSlot = opportunity.AddTimeSlot(
 			timeSlotStart, timeSlotStart.AddHours(2), 10, DateTimeOffset.UtcNow).Value;
 		dbContext.Set<VolunteerOpportunity>().Add(opportunity);
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, UserId.New(), timeSlot.Id);
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), timeSlot.Id);
 		engagement.Confirm();
 		dbContext.Set<Engagement>().Add(engagement);
 

@@ -42,7 +42,7 @@ public class CreateEngagementCommandHandlerTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			_pinGenerator,
 			status: OpportunityStatus.Draft).Value;
@@ -71,13 +71,13 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(opportunity);
 	}
 
-	private TimeSlotId SetupOpportunityExistsWithTimeSlot(VolunteerOpportunityId opportunityId)
+	private TimeSlotId SetupOpportunityExistsWithTimeSlot(VolunteerOpportunityId opportunityId, int? maxParticipants = 10)
 	{
 		var opportunity = CreateTestOpportunity(opportunityId);
 		var timeSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
-			10,
+			maxParticipants,
 			DateTimeOffset.UtcNow).Value;
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns(opportunity);
@@ -103,7 +103,7 @@ public class CreateEngagementCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldCreateWaitlistEngagement_WhenTimeSlotIdIsProvided(
+	public async Task Handle_ShouldCreateScheduledSlotsEngagement_WhenTimeSlotIdIsProvided(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -219,5 +219,45 @@ public class CreateEngagementCommandHandlerTests
 
 		// Assert
 		result.VolunteerId.Should().Be(volunteerId);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenTimeSlotIsFull(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId, maxParticipants: 3);
+		_dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, Arg.Any<CancellationToken>())
+			.Returns(3);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldSucceed_WhenTimeSlotHasUnlimitedCapacity_RegardlessOfActiveEngagementCount(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId, maxParticipants: null);
+		_dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, Arg.Any<CancellationToken>())
+			.Returns(1000);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.TimeSlotId.Should().Be(timeSlotId);
+		result.Status.Should().Be(EngagementStatus.Pending);
 	}
 }

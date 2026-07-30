@@ -152,13 +152,13 @@ public sealed class VolunteerOpportunity
 				return Result.Failure<VolunteerOpportunity>(publishable.Error);
 
 			// Time slots can only be added after the aggregate is created (see
-			// AddTimeSlot), so a Waitlist opportunity can never satisfy the
+			// AddTimeSlot), so a ScheduledSlots opportunity can never satisfy the
 			// "at least one time slot" rule at construction time. Callers must
 			// create it as a Draft, add slots, then call Publish().
-			if (participationType == ParticipationType.Waitlist)
+			if (participationType == ParticipationType.ScheduledSlots)
 				return Result.Failure<VolunteerOpportunity>(Error.Validation(
-					"VolunteerOpportunity.WaitlistMustStartAsDraft",
-					"A Waitlist opportunity must be created as a draft and published after adding at least one time slot."));
+					"VolunteerOpportunity.ScheduledSlotsMustStartAsDraft",
+					"A Scheduled slots opportunity must be created as a draft and published after adding at least one time slot."));
 		}
 
 		return new VolunteerOpportunity(
@@ -205,10 +205,10 @@ public sealed class VolunteerOpportunity
 		if (publishable.IsFailure)
 			return publishable;
 
-		if (ParticipationType == ParticipationType.Waitlist && _timeSlots.Count == 0)
+		if (ParticipationType == ParticipationType.ScheduledSlots && _timeSlots.Count == 0)
 			return Result.Failure(Error.Validation(
-				"VolunteerOpportunity.WaitlistRequiresTimeSlot",
-				"A Waitlist opportunity must have at least one time slot before it can be published."));
+				"VolunteerOpportunity.ScheduledSlotsRequiresTimeSlot",
+				"A Scheduled slots opportunity must have at least one time slot before it can be published."));
 
 		Status = OpportunityStatus.Published;
 		AddEvent(new VolunteerOpportunityPublishedDomainEvent(Id, OrganizationId));
@@ -316,11 +316,11 @@ public sealed class VolunteerOpportunity
 
 	public void SwitchParticipationType(ParticipationType participationType)
 	{
-		// Time slots are only meaningful for Waitlist opportunities (see AddTimeSlot).
+		// Time slots are only meaningful for ScheduledSlots opportunities (see AddTimeSlot).
 		// Clearing them when switching away prevents orphaned slots from lingering
 		// once the opportunity no longer surfaces them. Callers must ensure no
 		// active engagements reference these slots before switching away.
-		if (participationType != ParticipationType.Waitlist && ParticipationType == ParticipationType.Waitlist)
+		if (ParticipationType == ParticipationType.ScheduledSlots && participationType != ParticipationType.ScheduledSlots)
 			_timeSlots.Clear();
 
 		ParticipationType = participationType;
@@ -329,13 +329,13 @@ public sealed class VolunteerOpportunity
 	public Result<TimeSlot> AddTimeSlot(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
-		int maxParticipants,
+		int? maxParticipants,
 		DateTimeOffset now)
 	{
-		if (ParticipationType != ParticipationType.Waitlist)
+		if (ParticipationType != ParticipationType.ScheduledSlots)
 			return Result.Failure<TimeSlot>(Error.Validation(
 				"VolunteerOpportunity.TimeSlotNotAllowed",
-				"Time slots can only be added to opportunities with Waitlist participation type."));
+				"Time slots can only be added to opportunities with Scheduled slots participation type."));
 
 		var timeSlotResult = TimeSlot.Create(startDateTime, endDateTime, maxParticipants, now);
 		if (timeSlotResult.IsFailure)
@@ -345,7 +345,7 @@ public sealed class VolunteerOpportunity
 		return timeSlotResult;
 	}
 
-	public Result UpdateTimeSlot(TimeSlotId timeSlotId, DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants, DateTimeOffset now)
+	public Result UpdateTimeSlot(TimeSlotId timeSlotId, DateTimeOffset startDateTime, DateTimeOffset endDateTime, int? maxParticipants, DateTimeOffset now)
 	{
 		var timeSlot = _timeSlots.Find(ts => ts.Id == timeSlotId);
 		if (timeSlot is null)

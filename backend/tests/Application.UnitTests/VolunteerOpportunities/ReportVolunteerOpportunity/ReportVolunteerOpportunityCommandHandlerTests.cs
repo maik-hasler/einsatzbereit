@@ -36,7 +36,7 @@ public class ReportVolunteerOpportunityCommandHandlerTests
 
 	private VolunteerOpportunity CreateOpportunity() =>
 		Domain.VolunteerOpportunities.VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldAddReport_WhenOpportunityExists(

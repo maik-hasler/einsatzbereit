@@ -21,7 +21,7 @@ public sealed record VolunteerOpportunitySummary(
 	DateTimeOffset CreatedOn,
 	DateTimeOffset? NextTimeSlotStart,
 	DateTimeOffset? NextTimeSlotEnd,
-	int TotalMaxParticipants,
+	int? TotalMaxParticipants,
 	int CurrentParticipantCount,
 	string Status,
 	string? BannerImageUrl,

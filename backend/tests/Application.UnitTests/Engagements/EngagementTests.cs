@@ -15,30 +15,30 @@ public class EngagementTests
 	private static TimeSlotId AnyTimeSlotId() =>
 		TimeSlotId.New();
 
-	// --- CreateWaitlistSignUp ---
+	// --- CreateSlotSignUp ---
 
 	[Test]
-	public void CreateWaitlistSignUp_ShouldCreateEngagement_WithPendingStatus()
+	public void CreateSlotSignUp_ShouldCreateEngagement_WithPendingStatus()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
 		engagement.Status.Should().Be(EngagementStatus.Pending);
 	}
 
 	[Test]
-	public void CreateWaitlistSignUp_ShouldSetTimeSlotId()
+	public void CreateSlotSignUp_ShouldSetTimeSlotId()
 	{
 		var timeSlotId = AnyTimeSlotId();
 
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), timeSlotId);
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), timeSlotId);
 
 		engagement.TimeSlotId.Should().Be(timeSlotId);
 	}
 
 	[Test]
-	public void CreateWaitlistSignUp_ShouldNotSetMessage()
+	public void CreateSlotSignUp_ShouldNotSetMessage()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
 		engagement.Message.Should().BeNull();
 	}
@@ -91,7 +91,7 @@ public class EngagementTests
 	[Test]
 	public void Confirm_ShouldSetStatus_ToConfirmed()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
 		engagement.Confirm();
 
@@ -101,7 +101,7 @@ public class EngagementTests
 	[Test]
 	public void Confirm_ShouldFail_WhenAlreadyConfirmed()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 
 		var result = engagement.Confirm();
@@ -113,7 +113,7 @@ public class EngagementTests
 	[Test]
 	public void Confirm_ShouldFail_WhenCancelled()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Cancel();
 
 		var result = engagement.Confirm();
@@ -125,7 +125,7 @@ public class EngagementTests
 	[Test]
 	public void Confirm_ShouldFail_WhenWithdrawn()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
 		var result = engagement.Confirm();
@@ -139,7 +139,7 @@ public class EngagementTests
 	[Test]
 	public void Cancel_ShouldSetStatus_ToCancelled_WhenPending()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
 		engagement.Cancel();
 
@@ -149,7 +149,7 @@ public class EngagementTests
 	[Test]
 	public void Cancel_ShouldSetStatus_ToCancelled_WhenConfirmed()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 
 		engagement.Cancel();
@@ -160,7 +160,7 @@ public class EngagementTests
 	[Test]
 	public void Cancel_ShouldFail_WhenAlreadyCancelled()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Cancel();
 
 		var result = engagement.Cancel();
@@ -172,7 +172,7 @@ public class EngagementTests
 	[Test]
 	public void Cancel_ShouldFail_WhenWithdrawn()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
 		var result = engagement.Cancel();
@@ -186,7 +186,7 @@ public class EngagementTests
 	[Test]
 	public void Withdraw_ShouldSetStatus_ToWithdrawn_WhenPending()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
 		engagement.Withdraw();
 
@@ -196,7 +196,7 @@ public class EngagementTests
 	[Test]
 	public void Withdraw_ShouldSetStatus_ToWithdrawn_WhenConfirmed()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 
 		engagement.Withdraw();
@@ -207,7 +207,7 @@ public class EngagementTests
 	[Test]
 	public void Withdraw_ShouldFail_WhenAlreadyWithdrawn()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
 		var result = engagement.Withdraw();
@@ -219,7 +219,7 @@ public class EngagementTests
 	[Test]
 	public void Withdraw_ShouldFail_WhenCancelled()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Cancel();
 
 		var result = engagement.Withdraw();
@@ -231,7 +231,7 @@ public class EngagementTests
 	[Test]
 	public void Withdraw_ShouldFail_WhenCheckedIn()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Confirm();
 		engagement.CheckIn();
 
@@ -246,7 +246,7 @@ public class EngagementTests
 	[Test]
 	public void Reactivate_ShouldSetStatus_ToPending()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
 		engagement.Reactivate(AnyTimeSlotId(), message: null);
@@ -257,7 +257,7 @@ public class EngagementTests
 	[Test]
 	public void Reactivate_ShouldRefreshCreatedOn_ToTheReactivationTime()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
 
 		var before = DateTimeOffset.UtcNow;
@@ -270,7 +270,7 @@ public class EngagementTests
 	[Test]
 	public void Reactivate_ShouldFail_WhenPending()
 	{
-		var engagement = Engagement.CreateWaitlistSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 
 		var result = engagement.Reactivate(AnyTimeSlotId(), message: null);
 

@@ -38,7 +38,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		timeSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10, DateTimeOffset.UtcNow).Value;

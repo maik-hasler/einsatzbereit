@@ -193,18 +193,27 @@ export default function VolunteerOpportunityDetailPage() {
 
 	const cue = opportunity.currentUserEngagement;
 
-	const totalMax = opportunity.timeSlots.reduce(
-		(sum, ts) => sum + ts.maxParticipants,
-		0,
+	const hasUnlimitedSlot = opportunity.timeSlots.some(
+		(ts) => ts.maxParticipants == null,
 	);
+	const totalMax = hasUnlimitedSlot
+		? null
+		: opportunity.timeSlots.reduce(
+				(sum, ts) => sum + (ts.maxParticipants ?? 0),
+				0,
+			);
 	const totalBooked = opportunity.timeSlots.reduce(
 		(sum, ts) => sum + ts.bookedCount,
 		0,
 	);
-	const spotsLeft = totalMax > 0 ? totalMax - totalBooked : Infinity;
+	const spotsLeft =
+		totalMax === null ? null : totalMax > 0 ? totalMax - totalBooked : Infinity;
 	const isFull =
+		!hasUnlimitedSlot &&
 		opportunity.timeSlots.length > 0 &&
-		opportunity.timeSlots.every((ts) => ts.bookedCount >= ts.maxParticipants);
+		opportunity.timeSlots.every(
+			(ts) => ts.bookedCount >= (ts.maxParticipants ?? 0),
+		);
 
 	const otherOrgOpportunities =
 		orgProfile?.openOpportunities
@@ -430,7 +439,7 @@ export default function VolunteerOpportunityDetailPage() {
 				)}
 
 			{/* Time slots */}
-			{opportunity.participationType === "Waitlist" &&
+			{opportunity.participationType === "ScheduledSlots" &&
 				opportunity.timeSlots.length > 0 && (
 					<div className="mb-6">
 						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
@@ -454,9 +463,11 @@ export default function VolunteerOpportunityDetailPage() {
 										)}
 									</span>
 									<span className="ml-3 shrink-0 text-xs text-gray-600">
-										{t("opportunities.maxParticipants", {
-											count: ts.maxParticipants,
-										})}
+										{ts.maxParticipants == null
+											? t("opportunities.unlimitedSpots")
+											: t("opportunities.maxParticipants", {
+													count: ts.maxParticipants,
+												})}
 									</span>
 								</li>
 							))}
@@ -496,22 +507,30 @@ export default function VolunteerOpportunityDetailPage() {
 			{/* Sign-up CTA */}
 			{isAuthenticated && !isOwner && !cue && !isDraft && (
 				<div className="space-y-3">
-					{totalMax > 0 && (
-						<p
-							className={`text-sm font-medium ${
-								isFull
-									? "text-red-600"
-									: spotsLeft <= 3
-										? "text-orange-600"
-										: "text-gray-600"
-							}`}
-						>
-							{isFull
-								? t("opportunities.noSpotsLeft")
-								: spotsLeft <= 5
-									? t("opportunities.fewSpotsLeft", { count: spotsLeft })
-									: t("opportunities.spotsLeft", { count: spotsLeft })}
+					{hasUnlimitedSlot ? (
+						<p className="text-sm font-medium text-teal-700">
+							{t("opportunities.unlimitedSpots")}
 						</p>
+					) : (
+						totalMax !== null &&
+						totalMax > 0 &&
+						spotsLeft !== null && (
+							<p
+								className={`text-sm font-medium ${
+									isFull
+										? "text-red-600"
+										: spotsLeft <= 3
+											? "text-orange-600"
+											: "text-gray-600"
+								}`}
+							>
+								{isFull
+									? t("opportunities.noSpotsLeft")
+									: spotsLeft <= 5
+										? t("opportunities.fewSpotsLeft", { count: spotsLeft })
+										: t("opportunities.spotsLeft", { count: spotsLeft })}
+							</p>
+						)
 					)}
 					<Button
 						onClick={() => setShowSignUp(true)}
@@ -519,7 +538,7 @@ export default function VolunteerOpportunityDetailPage() {
 						fullWidth
 						size="lg"
 					>
-						{opportunity.participationType === "Waitlist"
+						{opportunity.participationType === "ScheduledSlots"
 							? t("opportunities.joinWaitlist")
 							: t("opportunities.expressInterest")}
 					</Button>

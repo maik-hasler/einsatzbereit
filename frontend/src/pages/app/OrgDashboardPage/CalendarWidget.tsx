@@ -55,18 +55,25 @@ interface CalEvent {
 	opportunityId: string;
 	color: string | undefined;
 	bookedCount: number;
-	maxParticipants: number;
+	maxParticipants: number | null;
 }
 
 function CalEventChip({ event }: { event: object }) {
+	const { t } = useTranslation();
 	const e = event as CalEvent;
 	return (
 		<span className="flex items-center justify-between gap-1 overflow-hidden">
 			<span className="truncate">{e.title}</span>
-			{e.maxParticipants > 0 && (
+			{e.maxParticipants === null ? (
 				<span className="shrink-0 text-xs opacity-80">
-					{e.bookedCount}/{e.maxParticipants}
+					{t("orgOverview.eventChipUnlimited", { booked: e.bookedCount })}
 				</span>
+			) : (
+				e.maxParticipants > 0 && (
+					<span className="shrink-0 text-xs opacity-80">
+						{e.bookedCount}/{e.maxParticipants}
+					</span>
+				)
 			)}
 		</span>
 	);
@@ -163,7 +170,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 					opportunityId: opp.opportunityId,
 					color: opp.color,
 					bookedCount: slot.bookedCount,
-					maxParticipants: slot.maxParticipants,
+					maxParticipants: slot.maxParticipants ?? null,
 				})),
 			),
 		[calData],
@@ -271,13 +278,21 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 						{selectedEvent.title}
 					</h3>
 					<div className="space-y-4">
-						{selectedEvent.maxParticipants > 0 && (
+						{selectedEvent.maxParticipants === null ? (
 							<p className="text-sm text-gray-600">
-								{t("orgOverview.eventFillState", {
+								{t("orgOverview.eventFillStateUnlimited", {
 									booked: selectedEvent.bookedCount,
-									max: selectedEvent.maxParticipants,
 								})}
 							</p>
+						) : (
+							selectedEvent.maxParticipants > 0 && (
+								<p className="text-sm text-gray-600">
+									{t("orgOverview.eventFillState", {
+										booked: selectedEvent.bookedCount,
+										max: selectedEvent.maxParticipants,
+									})}
+								</p>
+							)
 						)}
 						<div>
 							<label

@@ -64,7 +64,7 @@ internal sealed class ApplicationDbContextInitializer(
 				isRemote: false,
 				Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.OneTime,
-				ParticipationType.Waitlist,
+				ParticipationType.ScheduledSlots,
 				CheckInMethod.Manual,
 				pinGenerator,
 				category: Category.Health,
@@ -127,13 +127,14 @@ internal sealed class ApplicationDbContextInitializer(
 				isRemote: false,
 				Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
 				Occurrence.Recurring,
-				ParticipationType.Waitlist,
+				ParticipationType.ScheduledSlots,
 				CheckInMethod.QRCode,
 				pinGenerator,
 				category: Category.Animals,
 				status: OpportunityStatus.Draft).GetValueOrThrow();
 			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5, now).GetValueOrThrow();
-			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), 5, now).GetValueOrThrow();
+			// Unlimited capacity - demonstrates the "no cap" option locally (#1066).
+			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), null, now).GetValueOrThrow();
 			opp3.Publish().ThrowIfFailure();
 
 			var opp4 = VolunteerOpportunity.Create(
@@ -190,12 +191,12 @@ internal sealed class ApplicationDbContextInitializer(
 			var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
 			dbContext.Set<Engagement>().AddRange(
-				Engagement.CreateWaitlistSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
+				Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
 				Engagement.CreateIndividualContact(
 					opp2.Id,
 					veraUserId,
 					"I would love to help out as a volunteer at the next blood donation drive.").GetValueOrThrow(),
-				Engagement.CreateWaitlistSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
+				Engagement.CreateSlotSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
 
 			await dbContext.SaveChangesAsync(cancellationToken);
 		}

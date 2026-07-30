@@ -42,7 +42,7 @@ public class GetOpportunityFeedbackQueryHandlerTests
 
 	private static VolunteerOpportunity CreateOpportunity() =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, Substitute.For<IPinGenerator>(),
+			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, Substitute.For<IPinGenerator>(),
 			status: OpportunityStatus.Draft).Value;
 
 	private async Task<(int PageNumber, int PageSize)> CapturedArgsAsync(int pageNumber, int pageSize)

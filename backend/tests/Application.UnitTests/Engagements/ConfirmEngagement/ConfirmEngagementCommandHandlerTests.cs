@@ -63,7 +63,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			UserId.New(),
 			TimeSlotId.New());
@@ -85,7 +85,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			UserId.New(),
 			TimeSlotId.New());
@@ -125,7 +125,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			UserId.New(),
 			TimeSlotId.New());
@@ -148,7 +148,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			UserId.New(),
 			TimeSlotId.New());
@@ -171,7 +171,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -195,7 +195,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -219,7 +219,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -244,7 +244,7 @@ public class ConfirmEngagementCommandHandlerTests
 		// volunteer's UserStreak, not that live count.
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -267,7 +267,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -290,7 +290,7 @@ public class ConfirmEngagementCommandHandlerTests
 	{
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -308,7 +308,7 @@ public class ConfirmEngagementCommandHandlerTests
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	private static UserStreak BuildStreakWithTotalConfirmedEngagementsOf(UserId userId, int count)
 	{

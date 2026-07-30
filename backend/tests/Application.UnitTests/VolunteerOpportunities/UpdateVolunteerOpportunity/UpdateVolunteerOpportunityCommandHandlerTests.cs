@@ -58,10 +58,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private VolunteerOpportunity CreateDraftOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
 		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
-	private VolunteerOpportunity CreatePublishedWaitlistOpportunity()
+	private VolunteerOpportunity CreatePublishedScheduledSlotsOpportunity()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10, DateTimeOffset.UtcNow);
 		opportunity.Publish();
@@ -109,7 +109,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(GeocodingResult.TransientFailure);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
 
 		// Act
 		var result = await _sut.Handle(command, cancellationToken);
@@ -150,7 +150,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreatePublishedWaitlistOpportunity();
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
@@ -180,7 +180,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	{
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreatePublishedWaitlistOpportunity();
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
@@ -221,7 +221,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(GeocodingResult.Found(new GeoCoordinates(53.55, 9.99)));
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, Address.Create("Neue Straße", "99", "20095", "Hamburg").Value, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, Address.Create("Neue Straße", "99", "20095", "Hamburg").Value, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -244,7 +244,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Remote", "Desc", true, Address: null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Remote", "Desc", true, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -266,7 +266,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns((VolunteerOpportunity?)null);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -289,7 +289,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "   ", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "   ", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
@@ -400,7 +400,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.Returns(opportunity);
 
 		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Titel", "Beschreibung", false, Address: null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, null, [], DefaultRequestingUserId);
+			opportunityId, "Titel", "Beschreibung", false, Address: null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
 		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);

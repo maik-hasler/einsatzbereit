@@ -4988,7 +4988,7 @@ export interface CalendarTimeSlotDto {
     timeSlotId: string;
     startDateTime: Date;
     endDateTime: Date;
-    maxParticipants: number;
+    maxParticipants: number | undefined;
     bookedCount: number;
 
     [key: string]: any;
@@ -5066,7 +5066,7 @@ export interface CreateOrganizationRequest {
 export interface CreateTimeSlotRequest {
     startDateTime: Date;
     endDateTime: Date;
-    maxParticipants: number;
+    maxParticipants: number | undefined;
     recurrenceFrequency: string | undefined;
     recurrenceCount: number;
 
@@ -5077,7 +5077,7 @@ export interface CreateTimeSlotResponse {
     id: string;
     startDateTime: Date;
     endDateTime: Date;
-    maxParticipants: number;
+    maxParticipants: number | undefined;
 
     [key: string]: any;
 }
@@ -5580,7 +5580,7 @@ export interface TimeSlotDetail {
     id: string;
     startDateTime: Date;
     endDateTime: Date;
-    maxParticipants: number;
+    maxParticipants: number | undefined;
     bookedCount: number;
 
     [key: string]: any;
@@ -5609,7 +5609,7 @@ export interface UpdateOrganizationRequest {
 export interface UpdateTimeSlotRequest {
     startDateTime: Date;
     endDateTime: Date;
-    maxParticipants: number;
+    maxParticipants: number | undefined;
 
     [key: string]: any;
 }
@@ -5698,7 +5698,7 @@ export interface VolunteerOpportunitySummary {
     createdOn: Date;
     nextTimeSlotStart: Date | undefined;
     nextTimeSlotEnd: Date | undefined;
-    totalMaxParticipants: number;
+    totalMaxParticipants: number | undefined;
     currentParticipantCount: number;
     status: string;
     bannerImageUrl: string | undefined;

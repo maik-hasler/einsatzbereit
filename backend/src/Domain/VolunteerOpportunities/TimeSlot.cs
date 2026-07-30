@@ -8,7 +8,8 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 
 	public DateTimeOffset EndDateTime { get; private set; }
 
-	public int MaxParticipants { get; private set; }
+	/// <summary>Null means unlimited capacity - no cap on active sign-ups for this slot.</summary>
+	public int? MaxParticipants { get; private set; }
 
 #pragma warning disable CS8618
 	private TimeSlot() : base(default) { }
@@ -18,7 +19,7 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 		TimeSlotId id,
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
-		int maxParticipants)
+		int? maxParticipants)
 		: base(id)
 	{
 		StartDateTime = startDateTime;
@@ -29,7 +30,7 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 	public static Result<TimeSlot> Create(
 		DateTimeOffset startDateTime,
 		DateTimeOffset endDateTime,
-		int maxParticipants,
+		int? maxParticipants,
 		DateTimeOffset now)
 	{
 		var validation = Validate(startDateTime, endDateTime, maxParticipants, now);
@@ -43,7 +44,7 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 			maxParticipants);
 	}
 
-	public Result Update(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants, DateTimeOffset now)
+	public Result Update(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int? maxParticipants, DateTimeOffset now)
 	{
 		var validation = Validate(startDateTime, endDateTime, maxParticipants, now);
 		if (validation.IsFailure)
@@ -55,7 +56,7 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 		return Result.Success();
 	}
 
-	private static Result Validate(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int maxParticipants, DateTimeOffset now)
+	private static Result Validate(DateTimeOffset startDateTime, DateTimeOffset endDateTime, int? maxParticipants, DateTimeOffset now)
 	{
 		if (startDateTime <= now)
 			return Result.Failure(Error.Validation("TimeSlot.StartMustBeFuture", "Start date must be in the future."));
@@ -63,7 +64,7 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 		if (endDateTime <= startDateTime)
 			return Result.Failure(Error.Validation("TimeSlot.EndMustBeAfterStart", "End date must be after start date."));
 
-		if (maxParticipants <= 0)
+		if (maxParticipants is <= 0)
 			return Result.Failure(Error.Validation("TimeSlot.MaxParticipantsMustBePositive", "Max participants must be greater than zero."));
 
 		return Result.Success();

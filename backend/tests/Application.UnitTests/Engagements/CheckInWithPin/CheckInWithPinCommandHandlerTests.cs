@@ -48,7 +48,7 @@ public class CheckInWithPinCommandHandlerTests
 		var owner = UserId.New();
 		var attacker = UserId.New();
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunityId, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -69,7 +69,7 @@ public class CheckInWithPinCommandHandlerTests
 		var engagementId = EngagementId.New();
 		var owner = UserId.New();
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunityId, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_attemptLimiter.IsLockedOutAsync(engagementId, cancellationToken).Returns(true);
@@ -90,7 +90,7 @@ public class CheckInWithPinCommandHandlerTests
 		var owner = UserId.New();
 		var opportunity = CreatePinOpportunity();
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -111,7 +111,7 @@ public class CheckInWithPinCommandHandlerTests
 		var owner = UserId.New();
 		var opportunity = CreatePinOpportunity();
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -155,7 +155,7 @@ public class CheckInWithPinCommandHandlerTests
 		var owner = UserId.New();
 		var opportunity = CreateNonPinOpportunity(CheckInMethod.None);
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -179,7 +179,7 @@ public class CheckInWithPinCommandHandlerTests
 		var owner = UserId.New();
 		var opportunity = CreateNonPinOpportunity(checkInMethod);
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -199,7 +199,7 @@ public class CheckInWithPinCommandHandlerTests
 		var owner = UserId.New();
 		var opportunity = CreatePinOpportunity();
 
-		var engagement = Engagement.CreateWaitlistSignUp(opportunity.Id, owner, TimeSlotId.New());
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, owner, TimeSlotId.New());
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
@@ -220,7 +220,7 @@ public class CheckInWithPinCommandHandlerTests
 			false,
 			DefaultAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			checkInMethod,
 			_pinGenerator,
 			status: OpportunityStatus.Draft).Value;
@@ -233,7 +233,7 @@ public class CheckInWithPinCommandHandlerTests
 			false,
 			DefaultAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.PINCode,
 			_pinGenerator,
 			status: OpportunityStatus.Draft,

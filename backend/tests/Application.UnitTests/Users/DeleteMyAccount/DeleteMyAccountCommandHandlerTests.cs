@@ -37,7 +37,7 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	private static Engagement CreateEngagementFor(UserId volunteerId) =>
-		Engagement.CreateWaitlistSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
 
 	private static Organization CreateOrganization(string name) =>
 		Organization.Create(OrganizationId.New(), name).Value;

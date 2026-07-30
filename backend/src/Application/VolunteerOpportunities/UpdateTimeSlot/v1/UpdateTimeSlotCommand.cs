@@ -8,6 +8,6 @@ public sealed record UpdateTimeSlotCommand(
 	Guid TimeSlotId,
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
-	int MaxParticipants,
+	int? MaxParticipants,
 	UserId RequestingUserId)
 	: ICommand<bool>;

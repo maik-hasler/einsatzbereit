@@ -334,7 +334,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
-		// Step 3: IndividualContact (Express interest) - unlike Waitlist, this
+		// Step 3: IndividualContact (Express interest) - unlike ScheduledSlots, this
 		// type can publish with no time slots, keeping this test focused on
 		// the directory count rather than the slot-creation flow.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();

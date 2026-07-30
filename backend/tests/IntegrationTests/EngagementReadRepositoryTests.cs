@@ -77,7 +77,7 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var opportunity = VolunteerOpportunity.Create(
 			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
-			ParticipationType.Waitlist, CheckInMethod.None, new RandomPinGenerator(),
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slotA = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
@@ -86,8 +86,8 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
-		var onSlotA = Engagement.CreateWaitlistSignUp(opportunity.Id, UserId.New(), slotA.Id);
-		var onSlotB = Engagement.CreateWaitlistSignUp(opportunity.Id, UserId.New(), slotB.Id);
+		var onSlotA = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slotA.Id);
+		var onSlotB = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slotB.Id);
 		await dbContext.Engagements.AddAsync(onSlotA, cancellationToken);
 		await dbContext.Engagements.AddAsync(onSlotB, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);

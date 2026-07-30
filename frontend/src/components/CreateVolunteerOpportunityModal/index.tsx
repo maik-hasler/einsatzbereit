@@ -86,14 +86,14 @@ interface PendingTimeSlot {
 	id: string;
 	startDateTime: string;
 	endDateTime: string;
-	maxParticipants: number;
+	maxParticipants: number | null;
 }
 
 interface EditingSlot {
 	id: string;
 	startDateTime: string;
 	endDateTime: string;
-	maxParticipants: number;
+	maxParticipants: number | null;
 }
 
 /** Converts a Date (or ISO string) to the `YYYY-MM-DDTHH:mm` value a
@@ -114,7 +114,7 @@ const DEFAULT_VALUES: OpportunityFormValues = {
 	zipCode: "",
 	city: "",
 	occurrence: "OneTime",
-	participationType: "Waitlist",
+	participationType: "ScheduledSlots",
 	checkInMethod: "None",
 	checkInPin: "",
 	category: undefined,
@@ -200,7 +200,11 @@ export default function CreateVolunteerOpportunityModal({
 	const [existingSlots, setExistingSlots] = useState<TimeSlotDetail[]>(
 		initialOpportunity?.timeSlots ?? [],
 	);
-	const [newSlot, setNewSlot] = useState({
+	const [newSlot, setNewSlot] = useState<{
+		startDateTime: string;
+		endDateTime: string;
+		maxParticipants: number | null;
+	}>({
 		startDateTime: "",
 		endDateTime: "",
 		maxParticipants: 1,
@@ -220,7 +224,7 @@ export default function CreateVolunteerOpportunityModal({
 
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
-	const isWaitlist = participationType === "Waitlist";
+	const isScheduledSlots = participationType === "ScheduledSlots";
 
 	useEffect(() => {
 		if (isEditMode) return;
@@ -362,7 +366,7 @@ export default function CreateVolunteerOpportunityModal({
 				const responses = await api.createTimeSlot(initialOpportunity.id, {
 					startDateTime: start,
 					endDateTime: end,
-					maxParticipants: newSlot.maxParticipants,
+					maxParticipants: newSlot.maxParticipants ?? undefined,
 					recurrenceFrequency: isRecurring ? recurrenceFrequency : undefined,
 					recurrenceCount: isRecurring ? recurrenceCount : 1,
 				});
@@ -427,7 +431,7 @@ export default function CreateVolunteerOpportunityModal({
 		id: string;
 		startDateTime: string;
 		endDateTime: string;
-		maxParticipants: number;
+		maxParticipants: number | null;
 	}) {
 		setSlotError(null);
 		setEditingSlot({
@@ -446,7 +450,7 @@ export default function CreateVolunteerOpportunityModal({
 			await api.updateTimeSlot(initialOpportunity.id, edit.id, {
 				startDateTime: new Date(edit.startDateTime),
 				endDateTime: new Date(edit.endDateTime),
-				maxParticipants: edit.maxParticipants,
+				maxParticipants: edit.maxParticipants ?? undefined,
 			});
 			setExistingSlots((prev) =>
 				prev.map((s) =>
@@ -455,7 +459,7 @@ export default function CreateVolunteerOpportunityModal({
 								...s,
 								startDateTime: new Date(edit.startDateTime),
 								endDateTime: new Date(edit.endDateTime),
-								maxParticipants: edit.maxParticipants,
+								maxParticipants: edit.maxParticipants ?? undefined,
 							}
 						: s,
 				),
@@ -504,7 +508,7 @@ export default function CreateVolunteerOpportunityModal({
 		}
 
 		const values = getValues();
-		if (!asDraft && values.participationType === "Waitlist") {
+		if (!asDraft && values.participationType === "ScheduledSlots") {
 			const totalSlots = pendingSlots.length + existingSlots.length;
 			if (totalSlots === 0) {
 				setError(t("timeSlots.requiredForPublish"));
@@ -547,12 +551,13 @@ export default function CreateVolunteerOpportunityModal({
 					}
 				}
 			} else {
-				// A Waitlist opportunity can't be published until it has at least
-				// one time slot, and slots can only be added after the opportunity
-				// exists. Always create it as a draft, add slots and banner, then
-				// publish - this also keeps it invisible in listings if any step
-				// in between fails, instead of leaving a published dead-end.
-				const publishWaitlistAfterCreate = !asDraft && isWaitlist;
+				// A ScheduledSlots opportunity can't be published until it has at
+				// least one time slot, and slots can only be added after the
+				// opportunity exists. Always create it as a draft, add slots and
+				// banner, then publish - this also keeps it invisible in listings
+				// if any step in between fails, instead of leaving a published
+				// dead-end.
+				const publishScheduledSlotsAfterCreate = !asDraft && isScheduledSlots;
 				const opportunity = await api.createVolunteerOpportunity({
 					title: values.title,
 					description: values.description,
@@ -568,7 +573,7 @@ export default function CreateVolunteerOpportunityModal({
 					checkInPin: resolveCheckInPin(values),
 					category: values.category,
 					tags: values.tags,
-					isDraft: asDraft || publishWaitlistAfterCreate,
+					isDraft: asDraft || publishScheduledSlotsAfterCreate,
 				});
 				if (bannerFile) {
 					await uploadBanner(api, opportunity.id, bannerFile, () =>
@@ -579,12 +584,12 @@ export default function CreateVolunteerOpportunityModal({
 					await api.createTimeSlot(opportunity.id, {
 						startDateTime: new Date(slot.startDateTime),
 						endDateTime: new Date(slot.endDateTime),
-						maxParticipants: slot.maxParticipants,
+						maxParticipants: slot.maxParticipants ?? undefined,
 						recurrenceFrequency: undefined,
 						recurrenceCount: 1,
 					});
 				}
-				if (publishWaitlistAfterCreate) {
+				if (publishScheduledSlotsAfterCreate) {
 					await api.publishVolunteerOpportunity(opportunity.id);
 				}
 				if (asDraft) {
@@ -624,7 +629,7 @@ export default function CreateVolunteerOpportunityModal({
 		t("createOpportunity.step1Subtitle"),
 		t("createOpportunity.step2Subtitle"),
 		t("createOpportunity.step3Subtitle"),
-		isWaitlist
+		isScheduledSlots
 			? t("createOpportunity.step4SubtitleWaitlist")
 			: t("createOpportunity.step4Subtitle"),
 	];
@@ -640,7 +645,7 @@ export default function CreateVolunteerOpportunityModal({
 					s.endDateTime instanceof Date
 						? s.endDateTime.toISOString()
 						: String(s.endDateTime),
-				maxParticipants: s.maxParticipants,
+				maxParticipants: s.maxParticipants ?? null,
 				bookedCount: s.bookedCount,
 				persisted: true as const,
 			}))
@@ -769,7 +774,7 @@ export default function CreateVolunteerOpportunityModal({
 					{step === 4 && (
 						<DetailsStep
 							control={control}
-							isWaitlist={isWaitlist}
+							isScheduledSlots={isScheduledSlots}
 							occurrence={occurrence}
 							isEditMode={isEditMode}
 							allTimeSlots={allTimeSlots}

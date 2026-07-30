@@ -32,7 +32,7 @@ public class GetOpportunityCheckInPinQueryHandlerTests
 
 	private VolunteerOpportunity CreateOpportunityWithPin() =>
 		VolunteerOpportunity.Create(
-			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.PINCode, _pinGenerator,
+			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.PINCode, _pinGenerator,
 			status: OpportunityStatus.Draft, checkInPin: "12345").Value;
 
 	[Test]

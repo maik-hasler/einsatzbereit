@@ -23,8 +23,9 @@ export default function OpportunityListItem({
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const auth = useAuth();
+	const isUnlimited = item.totalMaxParticipants == null;
 	const spotsLeft =
-		item.totalMaxParticipants > 0
+		item.totalMaxParticipants != null && item.totalMaxParticipants > 0
 			? item.totalMaxParticipants - item.currentParticipantCount
 			: null;
 
@@ -75,7 +76,12 @@ export default function OpportunityListItem({
 						<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
 							{formatOccurrence(item.occurrence, t)}
 						</span>
-						{spotsLeft !== null &&
+						{isUnlimited ? (
+							<span className="ml-auto shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">
+								{t("opportunities.unlimitedSpots")}
+							</span>
+						) : (
+							spotsLeft !== null &&
 							(spotsLeft <= 0 ? (
 								<span className="ml-auto shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
 									{t("opportunities.full")}
@@ -92,7 +98,8 @@ export default function OpportunityListItem({
 										count: spotsLeft,
 									})}
 								</span>
-							))}
+							))
+						)}
 						{auth.isAuthenticated && (
 							<ReportFlagButton
 								targetLabel={item.title}
@@ -103,7 +110,7 @@ export default function OpportunityListItem({
 										details: details || undefined,
 									});
 								}}
-								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null ? " ml-auto" : ""}`}
+								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null && !isUnlimited ? " ml-auto" : ""}`}
 							/>
 						)}
 					</div>

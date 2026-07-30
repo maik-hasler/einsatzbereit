@@ -17,7 +17,7 @@ interface UpcomingItem {
 	title: string;
 	nextStart: Date | null;
 	bookedCount: number;
-	maxParticipants: number;
+	maxParticipants: number | null;
 }
 
 interface Props {
@@ -67,7 +67,7 @@ function UpcomingOpportunitiesWidget({
 				title: o.title || t("orgDashboard.unnamedDraft"),
 				nextStart: o.nextTimeSlotStart ? new Date(o.nextTimeSlotStart) : null,
 				bookedCount: o.currentParticipantCount,
-				maxParticipants: o.totalMaxParticipants,
+				maxParticipants: o.totalMaxParticipants ?? null,
 			}))
 			.sort((a, b) => {
 				if (a.nextStart && b.nextStart)
@@ -117,21 +117,29 @@ function UpcomingOpportunitiesWidget({
 								{item.title}
 							</p>
 							{size !== "compact" &&
-								(item.nextStart || item.maxParticipants > 0) && (
+								(item.nextStart ||
+									item.maxParticipants === null ||
+									item.maxParticipants > 0) && (
 									<p className="mt-0.5 text-xs text-gray-500">
 										{item.nextStart &&
 											item.nextStart.toLocaleString(locale, {
 												dateStyle: "medium",
 												timeStyle: "short",
 											})}
-										{item.nextStart && item.maxParticipants > 0 && (
-											<span className="mx-1.5">&middot;</span>
-										)}
-										{item.maxParticipants > 0 &&
-											t("orgOpportunities.participants", {
-												booked: item.bookedCount,
-												max: item.maxParticipants,
-											})}
+										{item.nextStart &&
+											(item.maxParticipants === null ||
+												item.maxParticipants > 0) && (
+												<span className="mx-1.5">&middot;</span>
+											)}
+										{item.maxParticipants === null
+											? t("orgOpportunities.participantsUnlimited", {
+													booked: item.bookedCount,
+												})
+											: item.maxParticipants > 0 &&
+												t("orgOpportunities.participants", {
+													booked: item.bookedCount,
+													max: item.maxParticipants,
+												})}
 									</p>
 								)}
 						</li>
