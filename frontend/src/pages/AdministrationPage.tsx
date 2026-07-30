@@ -19,6 +19,7 @@ import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
 
@@ -98,8 +99,10 @@ function OrganizationsSection() {
 		loading,
 		loadingMore,
 		error,
+		loadMoreError,
 		hasMore,
 		loadMore,
+		retryLoadMore,
 	} = useLoadMore<OrgRow>(
 		(pageNumber) =>
 			api.listOrganizations(pageNumber, PAGE_SIZE).then((result) => ({
@@ -195,13 +198,20 @@ function OrganizationsSection() {
 					</tbody>
 				</table>
 			</div>
-			{hasMore && (
-				<LoadMoreButton
-					loading={loadingMore}
-					label={t("administration.organizations.loadMore")}
-					onClick={loadMore}
-				/>
-			)}
+			{hasMore &&
+				(loadMoreError ? (
+					<LoadMoreError
+						message={loadMoreError}
+						retrying={loadingMore}
+						onRetry={retryLoadMore}
+					/>
+				) : (
+					<LoadMoreButton
+						loading={loadingMore}
+						label={t("administration.organizations.loadMore")}
+						onClick={loadMore}
+					/>
+				))}
 		</>
 	);
 }
@@ -222,8 +232,10 @@ function UsersSection() {
 		loading,
 		loadingMore,
 		error,
+		loadMoreError,
 		hasMore,
 		loadMore,
+		retryLoadMore,
 		reset,
 	} = useLoadMore<AdminUserListItem>(
 		(pageNumber) =>
@@ -426,13 +438,20 @@ function UsersSection() {
 							</tbody>
 						</table>
 					</div>
-					{hasMore && (
-						<LoadMoreButton
-							loading={loadingMore}
-							label={t("administration.users.loadMore")}
-							onClick={loadMore}
-						/>
-					)}
+					{hasMore &&
+						(loadMoreError ? (
+							<LoadMoreError
+								message={loadMoreError}
+								retrying={loadingMore}
+								onRetry={retryLoadMore}
+							/>
+						) : (
+							<LoadMoreButton
+								loading={loadingMore}
+								label={t("administration.users.loadMore")}
+								onClick={loadMore}
+							/>
+						))}
 				</>
 			)}
 		</>
@@ -512,8 +531,10 @@ function ReportsSection() {
 		loading,
 		loadingMore,
 		error,
+		loadMoreError,
 		hasMore,
 		loadMore,
+		retryLoadMore,
 	} = useLoadMore<FlaggedTargetRow>(
 		(pageNumber) =>
 			api.listFlaggedTargets(pageNumber, PAGE_SIZE).then((result) => ({
@@ -656,13 +677,20 @@ function ReportsSection() {
 					</tbody>
 				</table>
 			</div>
-			{hasMore && (
-				<LoadMoreButton
-					loading={loadingMore}
-					label={t("administration.reports.loadMore")}
-					onClick={loadMore}
-				/>
-			)}
+			{hasMore &&
+				(loadMoreError ? (
+					<LoadMoreError
+						message={loadMoreError}
+						retrying={loadingMore}
+						onRetry={retryLoadMore}
+					/>
+				) : (
+					<LoadMoreButton
+						loading={loadingMore}
+						label={t("administration.reports.loadMore")}
+						onClick={loadMore}
+					/>
+				))}
 			{historyTarget && (
 				<ReportHistoryModal
 					target={historyTarget}

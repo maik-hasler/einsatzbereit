@@ -14,6 +14,7 @@ import EmptyState from "../components/EmptyState";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
 import { formatDateTime } from "../lib/format";
@@ -79,8 +80,10 @@ export default function EngagementManagementPage() {
 		loading,
 		loadingMore: engagementsLoadingMore,
 		error,
+		loadMoreError: engagementsLoadMoreError,
 		hasMore: hasMoreEngagements,
 		loadMore: loadMoreEngagements,
+		retryLoadMore: retryLoadMoreEngagements,
 	} = useLoadMore<EngagementSummary>(
 		async (page) => {
 			if (!opportunityId) return { items: [], pageCount: 0 };
@@ -398,19 +401,31 @@ export default function EngagementManagementPage() {
 				</ul>
 			)}
 
-			{!loading && !error && engagements.length > 0 && hasMoreEngagements && (
-				<div className="mt-6 flex justify-center">
-					<button
-						onClick={loadMoreEngagements}
-						disabled={engagementsLoadingMore}
-						className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-					>
-						{engagementsLoadingMore
-							? t("engagementManagement.loading")
-							: t("engagementManagement.loadMore")}
-					</button>
-				</div>
-			)}
+			{!loading &&
+				!error &&
+				engagements.length > 0 &&
+				hasMoreEngagements &&
+				(engagementsLoadMoreError ? (
+					<LoadMoreError
+						message={t("engagementManagement.error", {
+							message: engagementsLoadMoreError,
+						})}
+						retrying={engagementsLoadingMore}
+						onRetry={retryLoadMoreEngagements}
+					/>
+				) : (
+					<div className="mt-6 flex justify-center">
+						<button
+							onClick={loadMoreEngagements}
+							disabled={engagementsLoadingMore}
+							className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+						>
+							{engagementsLoadingMore
+								? t("engagementManagement.loading")
+								: t("engagementManagement.loadMore")}
+						</button>
+					</div>
+				))}
 
 			{qrScannerOpen && (
 				<Suspense
