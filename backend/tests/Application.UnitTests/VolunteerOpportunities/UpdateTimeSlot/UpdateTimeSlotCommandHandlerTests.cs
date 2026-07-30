@@ -260,7 +260,7 @@ public class UpdateTimeSlotCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var opportunity = CreateWaitlistOpportunity();
+		var opportunity = CreateScheduledSlotsOpportunity();
 		var editedSlot = opportunity.AddTimeSlot(BaseStart, BaseEnd, 10, DateTimeOffset.UtcNow).Value;
 		var opportunityId = opportunity.Id.Value;
 
