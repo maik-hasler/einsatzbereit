@@ -160,6 +160,7 @@
       "notFound": "Not found.",
       "back": "← Back",
       "filterToggle": "Filter",
+      "flexibleDate": "Flexible date",
       "full": "Full",
       "spotsLeft": "{{count}} spots left",
       "spotsLeft_one": "{{count}} spot left",

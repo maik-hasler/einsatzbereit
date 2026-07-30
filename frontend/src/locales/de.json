@@ -160,6 +160,7 @@
       "notFound": "Nicht gefunden.",
       "back": "← Zurück",
       "filterToggle": "Filter",
+      "flexibleDate": "Flexibler Termin",
       "full": "Ausgebucht",
       "spotsLeft": "{{count}} Plätze frei",
       "spotsLeft_one": "{{count}} Platz frei",
