@@ -105,6 +105,7 @@ export default function VolunteerOpportunityDetailPage() {
 		if (!opportunityId) return;
 		const requestId = ++latestRequestRef.current;
 		setLoading(true);
+		setError(null);
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
 			.then((details) => {
