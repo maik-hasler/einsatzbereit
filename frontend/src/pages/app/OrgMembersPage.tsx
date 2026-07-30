@@ -36,11 +36,21 @@ export default function OrgMembersPage() {
 	const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 	const [leaving, setLeaving] = useState(false);
 
+	const [removeTarget, setRemoveTarget] = useState<{
+		userId: string;
+		name: string;
+	} | null>(null);
+	const [removingMember, setRemovingMember] = useState(false);
+	const [removeMemberError, setRemoveMemberError] = useState<string | null>(
+		null,
+	);
+
 	const [memberSearch, setMemberSearch] = useState("");
 	const [memberCandidates, setMemberCandidates] = useState<
 		MemberCandidateDto[]
 	>([]);
 	const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+	const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
 	const memberSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	function handleMemberSearchChange(value: string) {
@@ -61,6 +71,9 @@ export default function OrgMembersPage() {
 	}
 
 	const [invitations, setInvitations] = useState<OrgInvitationDto[]>([]);
+	const [dismissingInvitationId, setDismissingInvitationId] = useState<
+		string | null
+	>(null);
 
 	useEffect(() => {
 		api
@@ -71,6 +84,7 @@ export default function OrgMembersPage() {
 	}, [org.id]);
 
 	async function handleInviteMember(userId: string) {
+		setInvitingUserId(userId);
 		try {
 			const response = await api.createInvitation(org.id, {
 				inviteeId: userId,
@@ -96,24 +110,38 @@ export default function OrgMembersPage() {
 		} catch {
 			setSuccessMessage(null);
 			setSettingsError(t("orgSettings.inviteError"));
+		} finally {
+			setInvitingUserId(null);
 		}
 	}
 
 	async function handleDismissInvitation(invitationId: string) {
+		setDismissingInvitationId(invitationId);
 		try {
 			await api.dismissInvitation(org.id, invitationId);
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 		} catch {
 			setSettingsError(t("orgSettings.dismissError"));
+		} finally {
+			setDismissingInvitationId(null);
 		}
 	}
 
-	async function handleRemoveMember(userId: string) {
+	async function handleConfirmRemoveMember() {
+		if (!removeTarget) return;
+		const { userId } = removeTarget;
+		setRemovingMember(true);
+		setRemoveMemberError(null);
 		try {
 			await api.removeMember(org.id, userId);
 			setMembers((prev) => prev.filter((m) => m.userId !== userId));
-		} catch {
-			setSettingsError(t("orgSettings.removeMemberError"));
+			setRemoveTarget(null);
+		} catch (err) {
+			setRemoveMemberError(
+				getApiErrorMessage(err, t("orgSettings.removeMemberError")),
+			);
+		} finally {
+			setRemovingMember(false);
 		}
 	}
 
@@ -185,6 +213,7 @@ export default function OrgMembersPage() {
 									<Button
 										type="button"
 										onClick={() => handleInviteMember(candidate.userId)}
+										disabled={invitingUserId === candidate.userId}
 										size="sm"
 										className="ml-3 shrink-0"
 									>
@@ -259,7 +288,8 @@ export default function OrgMembersPage() {
 										<button
 											type="button"
 											onClick={() => handleDismissInvitation(invitation.id)}
-											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800"
+											disabled={dismissingInvitationId === invitation.id}
+											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 										>
 											{t("orgSettings.dismissInvitation")}
 										</button>
@@ -311,7 +341,15 @@ export default function OrgMembersPage() {
 								) : (
 									<button
 										type="button"
-										onClick={() => handleRemoveMember(member.userId)}
+										onClick={() =>
+											setRemoveTarget({
+												userId: member.userId,
+												name:
+													member.firstName && member.lastName
+														? `${member.firstName} ${member.lastName}`
+														: member.username,
+											})
+										}
 										className="text-xs text-red-700 hover:text-red-800"
 									>
 										{t("orgSettings.removeMember")}
@@ -338,6 +376,24 @@ export default function OrgMembersPage() {
 					onConfirm={handleLeaveOrganization}
 					onClose={() => setShowLeaveConfirm(false)}
 					loading={leaving}
+				/>
+			)}
+
+			{removeTarget && (
+				<ConfirmDialog
+					title={t("confirmDialog.removeMember.title")}
+					message={t("confirmDialog.removeMember.message", {
+						name: removeTarget.name,
+					})}
+					confirmLabel={t("confirmDialog.removeMember.confirm")}
+					onConfirm={() => void handleConfirmRemoveMember()}
+					onClose={() => {
+						if (removingMember) return;
+						setRemoveTarget(null);
+						setRemoveMemberError(null);
+					}}
+					loading={removingMember}
+					error={removeMemberError}
 				/>
 			)}
 		</div>

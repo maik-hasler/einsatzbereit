@@ -689,6 +689,11 @@
         "message": "Are you sure you want to leave \"{{name}}\"? You will lose organizer access to it.",
         "confirm": "Yes, leave"
       },
+      "removeMember": {
+        "title": "Remove member?",
+        "message": "Are you sure you want to remove {{name}} from this organization?",
+        "confirm": "Yes, remove"
+      },
       "deleteOrganization": {
         "title": "Delete organization?",
         "message": "Are you sure you want to permanently delete \"{{name}}\"? This cannot be undone.",
