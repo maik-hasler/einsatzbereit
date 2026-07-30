@@ -23,12 +23,15 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IKeycloakUserService _keycloakUserService =
 		Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
+	private readonly IAggregateRepository<User, UserId> _userRepo =
+		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CreateEngagementCommandHandler _sut;
 
@@ -52,6 +55,7 @@ public class CreateEngagementCommandHandlerTests
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
+		_dbContext.Users.Returns(_userRepo);
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
 		_keycloakUserService
@@ -61,7 +65,10 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(0);
 		_dbContext.GetTerminalEngagementAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns((Engagement?)null);
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService);
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
@@ -344,5 +351,53 @@ public class CreateEngagementCommandHandlerTests
 		result.TimeSlotId.Should().Be(timeSlotId);
 		result.Status.Should().Be(EngagementStatus.Pending);
 		await _engagementRepo.Received(1).AddAsync(Arg.Any<Engagement>(), cancellationToken);
+	}
+
+	// --- Localized emails (#1052) ---
+
+	[Test]
+	public async Task Handle_ShouldRenderVolunteerEmail_InVolunteersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		SetupOpportunityExists(opportunityId);
+		var volunteer = User.Create(volunteerId);
+		volunteer.SetPreferredLanguage("en");
+		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Hi!");
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementRequestReceived,
+			"en",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDefaultVolunteerEmailToGerman_WhenNoProfileExistsYet(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - a volunteer who signs up without ever having loaded their
+		// profile page has no User row yet, so PreferredLanguage can't have
+		// been seeded; the recipient's language must still resolve, never NRE.
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		SetupOpportunityExists(opportunityId);
+		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns((User?)null);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Hi!");
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementRequestReceived,
+			"de",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 }

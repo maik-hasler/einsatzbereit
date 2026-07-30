@@ -29,8 +29,11 @@ public class ConfirmEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<UserStreak, UserStreakId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<User, UserId> _userRepo =
+		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly ISender _sender = Substitute.For<ISender>();
 	private readonly ConfirmEngagementCommandHandler _sut;
@@ -45,6 +48,7 @@ public class ConfirmEngagementCommandHandlerTests
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.UserStreaks.Returns(_streakRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_dbContext.Users.Returns(_userRepo);
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(CreateDefaultOpportunity());
@@ -54,7 +58,10 @@ public class ConfirmEngagementCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new ConfirmEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _sender);
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
+		_sut = new ConfirmEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer, _sender);
 	}
 
 	[Test]
@@ -305,6 +312,32 @@ public class ConfirmEngagementCommandHandlerTests
 		await _sender.Received(1).Send(
 			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "centurion-100" && c.UserId == volunteerId),
 			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderConfirmationEmail_InVolunteersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateSlotSignUp(
+			VolunteerOpportunityId.New(),
+			volunteerId,
+			TimeSlotId.New());
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+		var volunteer = User.Create(volunteerId);
+		volunteer.SetPreferredLanguage("en");
+		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
+
+		// Act
+		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementConfirmed,
+			"en",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>

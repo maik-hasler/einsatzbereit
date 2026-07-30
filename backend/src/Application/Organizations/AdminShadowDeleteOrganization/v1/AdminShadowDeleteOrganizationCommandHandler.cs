@@ -28,7 +28,8 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<AdminShadowDeleteOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -49,6 +50,7 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 				engagementReadRepository,
 				keycloakUserService,
 				emailService,
+				emailTemplateRenderer,
 				opportunity,
 				opportunity.Id,
 				request.AdminUserId,

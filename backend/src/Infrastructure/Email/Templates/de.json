@@ -1,0 +1,34 @@
+{
+  "EngagementRequestReceived": {
+    "subject": "Deine Anfrage für \"{OpportunityTitle}\" ist eingegangen",
+    "body": "Hallo {VolunteerName},\n\ndeine Anfrage zur Teilnahme an \"{OpportunityTitle}\" ist eingegangen. Der Organisator wird sich bei dir melden.\n\nEinsatzbereit"
+  },
+  "EngagementWaitlisted": {
+    "subject": "Du stehst auf der Warteliste für \"{OpportunityTitle}\"",
+    "body": "Hallo {VolunteerName},\n\ndu stehst jetzt auf der Warteliste für \"{OpportunityTitle}\". Ein Organisator wird deine Anmeldung prüfen und bald bestätigen.\n\nEinsatzbereit"
+  },
+  "EngagementSignupNotifyOrganizer": {
+    "subject": "Neue Anmeldung: {VolunteerName} für \"{OpportunityTitle}\"",
+    "body": "Hallo {OrganizerName},\n\n{VolunteerName} hat sich für \"{OpportunityTitle}\" angemeldet.\n\nEinsatzbereit"
+  },
+  "EngagementConfirmed": {
+    "subject": "Deine Teilnahme wurde bestätigt",
+    "body": "Hallo {VolunteerName},\n\ndeine Bewerbung für \"{OpportunityTitle}\" wurde bestätigt.\n\nWir freuen uns auf dich!\n\nEinsatzbereit"
+  },
+  "EngagementCancelled": {
+    "subject": "Deine Teilnahme wurde storniert",
+    "body": "Hallo {VolunteerName},\n\nleider wurde deine Bewerbung für \"{OpportunityTitle}\" storniert.{ReasonBlock}\n\nWir hoffen, dich bei einer anderen Gelegenheit zu sehen.\n\nEinsatzbereit"
+  },
+  "EngagementCancelledReasonSuffix": {
+    "subject": "",
+    "body": "\n\nGrund: {Reason}"
+  },
+  "EngagementWithdrawnNotifyOrganizer": {
+    "subject": "{VolunteerName} hat sich von \"{OpportunityTitle}\" zurückgezogen",
+    "body": "Hallo {OrganizerName},\n\n{VolunteerName} hat sich von \"{OpportunityTitle}\" zurückgezogen.\n\nEinsatzbereit"
+  },
+  "EngagementReminder": {
+    "subject": "Erinnerung: {OpportunityTitle} startet morgen",
+    "body": "Hallo {DisplayName},\n\ndies ist eine Erinnerung, dass du für \"{OpportunityTitle}\" angemeldet bist, das am {StartFormatted} beginnt.\n\nWir freuen uns auf dich!\n\nDein Einsatzbereit-Team"
+  }
+}

@@ -10655,6 +10655,10 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("preferredContact")]
         public string? PreferredContact { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("preferredLanguage")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string PreferredLanguage { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -11943,6 +11947,9 @@ namespace IntegrationTests
 
         [System.Text.Json.Serialization.JsonPropertyName("preferredContact")]
         public string? PreferredContact { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("preferredLanguage")]
+        public string? PreferredLanguage { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

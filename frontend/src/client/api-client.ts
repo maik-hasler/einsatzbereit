@@ -5372,6 +5372,7 @@ export interface MyProfileResponse {
     skills: string[];
     languages: string[];
     preferredContact: string | undefined;
+    preferredLanguage: string;
 
     [key: string]: any;
 }
@@ -5760,6 +5761,7 @@ export interface UpdateUserProfileRequest {
     skills?: string[] | undefined;
     languages?: string[] | undefined;
     preferredContact?: string | undefined;
+    preferredLanguage?: string | undefined;
 
     [key: string]: any;
 }

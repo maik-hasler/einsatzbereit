@@ -3,6 +3,7 @@ using Application.Common.Authorization;
 using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -16,6 +17,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer,
 	ISender sender)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
 {
@@ -56,14 +58,19 @@ internal sealed class ConfirmEngagementCommandHandler(
 		await EvaluateMilestoneAchievementsAsync(volunteerId, totalConfirmedEngagements, cancellationToken);
 
 		var volunteer = await keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken);
+		var volunteerUser = await dbContext.Users.FindAsync(volunteerId, cancellationToken);
+		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
 
-		await emailService.SendAsync(
-			volunteer.Email,
-			"Your engagement has been confirmed",
-			$"Hello {volunteer.FirstName ?? volunteer.Username},\n\n" +
-			$"Your application for \"{opportunity.Title}\" has been confirmed.\n\n" +
-			$"We look forward to seeing you!\n\nEinsatzbereit",
-			cancellationToken);
+		var content = emailTemplateRenderer.Render(
+			EmailTemplateKind.EngagementConfirmed,
+			volunteerLanguage,
+			new Dictionary<string, string>
+			{
+				["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
+				["OpportunityTitle"] = opportunity.Title,
+			});
+
+		await emailService.SendAsync(volunteer.Email, content.Subject, content.Body, cancellationToken);
 
 		return engagement;
 	}

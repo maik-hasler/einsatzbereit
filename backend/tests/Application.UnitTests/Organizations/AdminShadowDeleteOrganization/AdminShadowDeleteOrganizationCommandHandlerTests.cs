@@ -33,6 +33,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly AdminShadowDeleteOrganizationCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -59,7 +60,10 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		_keycloakUserService
 			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService);
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
+		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	private static Organization CreateOrganization(Guid id) =>
@@ -183,8 +187,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		// Assert
 		await _emailService.Received(2).SendAsync(
 			"user@example.com",
-			"Your engagement has been cancelled",
-			Arg.Is<string>(body => body!.Contains("Reason: Opportunity was deleted.")),
+			"Test Subject",
+			"Test Body",
 			cancellationToken);
 	}
 

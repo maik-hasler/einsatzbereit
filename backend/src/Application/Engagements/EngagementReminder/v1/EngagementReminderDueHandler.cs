@@ -1,5 +1,7 @@
+using System.Globalization;
 using Application.Common.Email;
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -16,6 +18,7 @@ internal sealed class EngagementReminderDueHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer,
 	ILogger<EngagementReminderDueHandler> logger)
 	: INotificationHandler<EngagementReminderDueDomainEvent>
 {
@@ -46,20 +49,25 @@ internal sealed class EngagementReminderDueHandler(
 		if (string.IsNullOrEmpty(displayName))
 			displayName = user.Username;
 
-		var startFormatted = timeSlot.StartDateTime.ToLocalTime().ToString("dddd, d. MMMM yyyy 'at' HH:mm");
+		var volunteerUser = await dbContext.Users.FindAsync(notification.VolunteerId, cancellationToken);
+		var language = SupportedLanguages.Resolve(volunteerUser?.PreferredLanguage);
 
-		var subject = $"Reminder: {opportunity.Title} starts tomorrow";
-		var body =
-			$"Hi {displayName},\n\n" +
-			$"This is a reminder that you are signed up for \"{opportunity.Title}\" " +
-			$"which starts on {startFormatted}.\n\n" +
-			$"We are looking forward to seeing you!\n\n" +
-			$"The Einsatzbereit Team";
+		var startFormatted = FormatStart(timeSlot.StartDateTime, language);
+
+		var content = emailTemplateRenderer.Render(
+			EmailTemplateKind.EngagementReminder,
+			language,
+			new Dictionary<string, string>
+			{
+				["DisplayName"] = displayName,
+				["OpportunityTitle"] = opportunity.Title,
+				["StartFormatted"] = startFormatted,
+			});
 
 		// SendBatchAsync with a single message (rather than SendAsync) so a failed send
 		// is observable as a bool - SendAsync never throws and never reports outcome,
 		// which would make it impossible to know whether to let the outbox retry.
-		var results = await emailService.SendBatchAsync([new EmailMessage(user.Email, subject, body)], cancellationToken);
+		var results = await emailService.SendBatchAsync([new EmailMessage(user.Email, content.Subject, content.Body)], cancellationToken);
 		if (!results[0])
 			throw new InvalidOperationException(
 				$"Failed to send 24h reminder email for engagement {notification.EngagementId.Value}");
@@ -68,5 +76,15 @@ internal sealed class EngagementReminderDueHandler(
 			"Sent 24h reminder to {Email} for engagement {EngagementId}",
 			user.Email,
 			notification.EngagementId.Value);
+	}
+
+	// Mirrors the frontend's own locale mapping (frontend/src/lib/format.ts:
+	// "de" -> "de-DE", else "en-GB") so reminder emails read naturally in
+	// either language instead of leaking an English day/month name.
+	private static string FormatStart(DateTimeOffset startDateTime, string language)
+	{
+		var culture = CultureInfo.GetCultureInfo(language == "de" ? "de-DE" : "en-GB");
+		var pattern = language == "de" ? "dddd, d. MMMM yyyy 'um' HH:mm" : "dddd, d. MMMM yyyy 'at' HH:mm";
+		return startDateTime.ToLocalTime().ToString(pattern, culture);
 	}
 }

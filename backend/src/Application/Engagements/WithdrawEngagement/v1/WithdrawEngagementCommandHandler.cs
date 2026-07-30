@@ -1,6 +1,7 @@
 using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -14,7 +15,8 @@ internal sealed class WithdrawEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<WithdrawEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -42,19 +44,29 @@ internal sealed class WithdrawEngagementCommandHandler(
 
 			foreach (var organizer in members.Where(m => m.IsOrganisator))
 			{
+				var organizerId = UserId.Create(organizer.UserId).GetValueOrThrow();
 				var notification = Notification.Create(
-					UserId.Create(organizer.UserId).GetValueOrThrow(),
+					organizerId,
 					NotificationKind.EngagementWithdrawn,
 					engagement.Id.Value);
 
 				await dbContext.Notifications.AddAsync(notification, cancellationToken);
 
 				var organizerName = organizer.FirstName ?? organizer.Username;
-				await emailService.SendAsync(
-					organizer.Email,
-					$"{volunteerName} has withdrawn from \"{opportunity.Title}\"",
-					$"Hi {organizerName},\n\n{volunteerName} has withdrawn from \"{opportunity.Title}\".\n\nEinsatzbereit",
-					cancellationToken);
+				var organizerUser = await dbContext.Users.FindAsync(organizerId, cancellationToken);
+				var organizerLanguage = SupportedLanguages.Resolve(organizerUser?.PreferredLanguage);
+
+				var content = emailTemplateRenderer.Render(
+					EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
+					organizerLanguage,
+					new Dictionary<string, string>
+					{
+						["OrganizerName"] = organizerName,
+						["VolunteerName"] = volunteerName,
+						["OpportunityTitle"] = opportunity.Title,
+					});
+
+				await emailService.SendAsync(organizer.Email, content.Subject, content.Body, cancellationToken);
 			}
 		}
 

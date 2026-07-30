@@ -13,7 +13,8 @@ namespace Application.Engagements.CancelEngagement.v1;
 internal sealed class CancelEngagementCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<CancelEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -36,6 +37,7 @@ internal sealed class CancelEngagementCommandHandler(
 			dbContext,
 			keycloakUserService,
 			emailService,
+			emailTemplateRenderer,
 			engagement,
 			opportunity.Title,
 			request.Reason,

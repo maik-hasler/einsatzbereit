@@ -1,4 +1,5 @@
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Users;
@@ -24,6 +25,7 @@ internal sealed class GetUserProfileQueryHandler(
 		if (user is null)
 		{
 			user = User.Create(request.UserId);
+			user.SetPreferredLanguage(SupportedLanguages.Resolve(request.RequestLanguage));
 			await dbContext.Users.AddAsync(user, cancellationToken);
 			await unitOfWork.SaveChangesAsync(cancellationToken);
 		}
@@ -39,6 +41,7 @@ internal sealed class GetUserProfileQueryHandler(
 			user.Phone,
 			user.Skills,
 			user.Languages,
-			user.PreferredContact?.ToString());
+			user.PreferredContact?.ToString(),
+			SupportedLanguages.Resolve(user.PreferredLanguage));
 	}
 }
