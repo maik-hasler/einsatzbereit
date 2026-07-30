@@ -125,7 +125,7 @@ public class VolunteerOpportunityOwnershipTests(IntegrationTestFixture fixture)
 				ZipCode = "12345",
 				City = "Berlin",
 				Occurrence = "Recurring",
-				ParticipationType = "Waitlist",
+				ParticipationType = "ScheduledSlots",
 				CheckInMethod = checkInPin is null ? "None" : "PINCode",
 				CheckInPin = checkInPin,
 				IsDraft = true,

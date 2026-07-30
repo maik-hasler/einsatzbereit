@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { formatDateTime } from "../lib/format";
+import { computeSpotsLeft, formatDateTime, isSlotFull } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
 import { textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
@@ -29,7 +29,7 @@ export default function SignUpModal({
 	const { t, i18n } = useTranslation();
 	const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>(() => {
 		const availableSlots = timeSlots.filter(
-			(ts) => ts.maxParticipants - ts.bookedCount > 0,
+			(ts) => !isSlotFull(ts.maxParticipants, ts.bookedCount),
 		);
 		return availableSlots.length === 1 ? availableSlots[0].id : "";
 	});
@@ -37,11 +37,11 @@ export default function SignUpModal({
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const isWaitlist = participationType === "Waitlist";
+	const isScheduledSlots = participationType === "ScheduledSlots";
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (isWaitlist && timeSlots.length > 0 && !selectedTimeSlotId) {
+		if (isScheduledSlots && timeSlots.length > 0 && !selectedTimeSlotId) {
 			setError(t("signUp.selectTimeSlotRequired"));
 			return;
 		}
@@ -50,10 +50,12 @@ export default function SignUpModal({
 
 		try {
 			await api.createEngagement(opportunityId, {
-				type: isWaitlist ? "Waitlist" : "IndividualContact",
+				type: isScheduledSlots ? "ScheduledSlots" : "IndividualContact",
 				timeSlotId:
-					isWaitlist && selectedTimeSlotId ? selectedTimeSlotId : undefined,
-				message: !isWaitlist ? message : undefined,
+					isScheduledSlots && selectedTimeSlotId
+						? selectedTimeSlotId
+						: undefined,
+				message: !isScheduledSlots ? message : undefined,
 			});
 			onSuccess();
 			onClose();
@@ -71,11 +73,13 @@ export default function SignUpModal({
 			maxWidth="max-w-md"
 		>
 			<h2 id="sign-up-dialog-title" className="mb-4 text-lg font-semibold">
-				{isWaitlist ? t("signUp.titleWaitlist") : t("signUp.titleInterest")}
+				{isScheduledSlots
+					? t("signUp.titleWaitlist")
+					: t("signUp.titleInterest")}
 			</h2>
 
 			<form onSubmit={handleSubmit} className="space-y-4">
-				{isWaitlist && (
+				{isScheduledSlots && (
 					<div>
 						<label
 							htmlFor="sign-up-time-slot"
@@ -93,8 +97,14 @@ export default function SignUpModal({
 								placeholder={t("signUp.selectPlaceholder")}
 								className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
 								options={timeSlots.map((ts) => {
-									const spotsLeft = ts.maxParticipants - ts.bookedCount;
-									const slotFull = spotsLeft <= 0;
+									const spotsLeft = computeSpotsLeft(
+										ts.maxParticipants,
+										ts.bookedCount,
+									);
+									const slotFull = isSlotFull(
+										ts.maxParticipants,
+										ts.bookedCount,
+									);
 									return {
 										value: ts.id,
 										disabled: slotFull,
@@ -105,9 +115,11 @@ export default function SignUpModal({
 											ts.endDateTime as unknown as string,
 											i18n.language,
 										)} ${
-											slotFull
-												? t("signUp.slotFull")
-												: t("signUp.spotsLeft", { count: spotsLeft })
+											spotsLeft === null
+												? t("signUp.unlimitedSpots")
+												: slotFull
+													? t("signUp.slotFull")
+													: t("signUp.spotsLeft", { count: spotsLeft })
 										}`,
 									};
 								})}
@@ -116,7 +128,7 @@ export default function SignUpModal({
 					</div>
 				)}
 
-				{!isWaitlist && (
+				{!isScheduledSlots && (
 					<div>
 						<label
 							htmlFor="sign-up-message"
@@ -144,7 +156,9 @@ export default function SignUpModal({
 					</Button>
 					<Button
 						type="submit"
-						disabled={submitting || (isWaitlist && timeSlots.length === 0)}
+						disabled={
+							submitting || (isScheduledSlots && timeSlots.length === 0)
+						}
 					>
 						{submitting ? t("signUp.submitting") : t("signUp.submit")}
 					</Button>

@@ -187,7 +187,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		return null;
 	}
 
-	private async Task<(Dictionary<Guid, int> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>
+	private async Task<(Dictionary<Guid, int?> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>
 		LoadParticipantStatsAsync(
 			List<Guid> opportunityGuids,
 			CancellationToken cancellationToken)
@@ -196,12 +196,16 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.Select(g => VolunteerOpportunityId.Create(g).GetValueOrThrow())
 			.ToList();
 
+		// Null means "at least one time slot on this opportunity is uncapped" -
+		// distinct from 0, which means no time slots at all (e.g. IndividualContact).
 		var maxParticipants = await dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => opportunityIds.Contains(vo.Id))
 			.Select(vo => new
 			{
 				OpportunityId = vo.Id.Value,
-				MaxParticipants = vo.TimeSlots.Sum(ts => (int?)ts.MaxParticipants) ?? 0,
+				MaxParticipants = vo.TimeSlots.Any(ts => ts.MaxParticipants == null)
+					? (int?)null
+					: vo.TimeSlots.Sum(ts => ts.MaxParticipants) ?? 0,
 			})
 			.ToListAsync(cancellationToken);
 
@@ -247,7 +251,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		DateTimeOffset? nextTimeSlotEnd,
 		OpportunityStatus status,
 		string? bannerImageUrl,
-		int totalMaxParticipants,
+		int? totalMaxParticipants,
 		int currentParticipantCount) =>
 		new(
 			id,

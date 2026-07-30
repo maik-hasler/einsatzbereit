@@ -23,7 +23,7 @@ internal sealed class TimeSlotConfiguration
 
 		builder.Property(ts => ts.EndDateTime).IsRequired();
 
-		builder.Property(ts => ts.MaxParticipants).IsRequired();
+		builder.Property(ts => ts.MaxParticipants).IsRequired(false);
 
 		builder.Property(ts => ts.SeriesId);
 

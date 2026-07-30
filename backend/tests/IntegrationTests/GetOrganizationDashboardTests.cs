@@ -42,7 +42,7 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		// Two open opportunities.
 		var opportunityA = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
-		var opportunityB = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunityB = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var slotNear = (await olafClient.CreateTimeSlotAsync(
 			opportunityB.Id,
@@ -182,23 +182,23 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 			cancellationToken);
 	}
 
-	private static async Task<CreateVolunteerOpportunityResponse> CreateWaitlistOpportunityAsync(
+	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Created as a draft: a Waitlist opportunity can't be published until it has
+		// Created as a draft: a ScheduledSlots opportunity can't be published until it has
 		// at least one time slot, and callers add slots separately after this returns.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Waitlist Opportunity",
-				Description = "Integration test waitlist opportunity",
+				Title = "ScheduledSlots Opportunity",
+				Description = "Integration test ScheduledSlots opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",
 				ZipCode = "12345",
 				City = "Berlin",
 				Occurrence = "OneTime",
-				ParticipationType = "Waitlist",
+				ParticipationType = "ScheduledSlots",
 				CheckInMethod = "None",
 				IsDraft = true,
 			},

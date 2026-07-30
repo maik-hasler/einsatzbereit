@@ -105,7 +105,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 				organizationId,
 				isRemote = true,
 				occurrence = "OneTime",
-				participationType = "Waitlist",
+				participationType = "ScheduledSlots",
 				checkInMethod = "None",
 				isDraft = true,
 			});
@@ -127,7 +127,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 			var engagementResponse = await setupHttp.PostAsJsonAsync(
 				$"/v1/volunteer-opportunities/{opportunityId}/engagements",
-				new { type = "Waitlist", timeSlotId, message = (string?)null });
+				new { type = "ScheduledSlots", timeSlotId, message = (string?)null });
 			engagementResponse.EnsureSuccessStatusCode();
 			var engagement = await engagementResponse.Content.ReadFromJsonAsync<JsonElement>();
 			var engagementId = engagement.GetProperty("id").GetString();

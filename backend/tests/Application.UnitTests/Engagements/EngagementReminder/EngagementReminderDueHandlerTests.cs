@@ -33,12 +33,12 @@ public class EngagementReminderDueHandlerTests
 
 	private VolunteerOpportunity CreateOpportunityWithTimeSlot(out TimeSlotId timeSlotId)
 	{
-		// Waitlist opportunities can't be created directly as Published (they must have
+		// ScheduledSlots opportunities can't be created directly as Published (they must have
 		// at least one time slot first - see VolunteerOpportunity.Create) - Draft is fine
 		// here since the handler doesn't look at Status at all.
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Beach Cleanup", "Help clean the beach", true, null,
-			Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
 		var now = DateTimeOffset.UtcNow;

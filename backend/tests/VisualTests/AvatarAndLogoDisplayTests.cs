@@ -88,7 +88,7 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
-			participationType = "Waitlist",
+			participationType = "ScheduledSlots",
 			checkInMethod = "None",
 			isDraft = true,
 			tags = new[] { tag },

@@ -61,7 +61,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			&& (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType) || !Enum.IsDefined(participationType)))
 		{
 			return Results.Problem(
-				"Invalid participation type. Allowed values: Waitlist, IndividualContact.",
+				"Invalid participation type. Allowed values: ScheduledSlots, IndividualContact.",
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 

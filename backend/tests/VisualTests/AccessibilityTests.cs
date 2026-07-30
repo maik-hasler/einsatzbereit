@@ -680,11 +680,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		// "Select a slot" only exists on an opportunity's own detail page
 		// (VolunteerOpportunityDetailPage.tsx) - the home page's cards link
-		// there but never render the button themselves. Filter to Waitlist-type
+		// there but never render the button themselves. Filter to ScheduledSlots-type
 		// opportunities (seed data has two, both with open capacity) and follow
 		// the first card's link in, matching the navigation pattern
 		// VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations above uses.
-		await Page.GotoAsync($"{frontend}?participationType=Waitlist");
+		await Page.GotoAsync($"{frontend}?participationType=ScheduledSlots");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var firstCard = Page.Locator("a[href*='/volunteer-opportunities/']").First;
@@ -694,7 +694,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			Skip.Test("no waitlist opportunity seeded");
+			Skip.Test("no ScheduledSlots opportunity seeded");
 		}
 
 		var href = await firstCard.GetAttributeAsync("href");
@@ -710,7 +710,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		}
 		catch (TimeoutException)
 		{
-			Skip.Test("no waitlist opportunity with open slots seeded");
+			Skip.Test("no ScheduledSlots opportunity with open slots seeded");
 		}
 
 		await signUpBtn.ClickAsync();

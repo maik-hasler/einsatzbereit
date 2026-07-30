@@ -45,7 +45,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByTestId("filter-type").ClickAsync();
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Scheduled slots" }).ClickAsync();
 
-		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=Waitlist"));
+		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=ScheduledSlots"));
 	}
 
 	[Test]
@@ -62,7 +62,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Scheduled slots" }).ClickAsync();
 
 		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*occurrence=OneTime"));
-		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=Waitlist"));
+		await Expect(Page).ToHaveURLAsync(new Regex(@"\?.*participationType=ScheduledSlots"));
 	}
 
 	[Test]
@@ -646,15 +646,15 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task PublishWaitlist_BlockedWithNoTimeSlots_SucceedsAfterAddingOne()
+	public async Task PublishScheduledSlots_BlockedWithNoTimeSlots_SucceedsAfterAddingOne()
 	{
-		// Regression for #542: a Waitlist opportunity could be published with
+		// Regression for #542: a ScheduledSlots opportunity could be published with
 		// zero time slots via the direct-create-as-Published path, since
 		// VolunteerOpportunity.Create() had no equivalent guard to Publish().
 		// Verifies the UI still blocks publishing with no slots, and that the
 		// supported draft -> add-slot -> publish flow succeeds.
 		var frontend = Fixture.GetEndpoint("frontend");
-		var uniqueTitle = $"Waitlist Publish Gap Test {Guid.NewGuid().ToString("N")[..8]}";
+		var uniqueTitle = $"ScheduledSlots Publish Gap Test {Guid.NewGuid().ToString("N")[..8]}";
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
@@ -669,16 +669,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// Step 1: title/description.
 		await Page.Locator("#opportunity-title").FillAsync(uniqueTitle);
 		await Page.Locator("#opportunity-description").FillAsync(
-			"Regression test for the Waitlist publish-with-no-slots gap.");
+			"Regression test for the ScheduledSlots publish-with-no-slots gap.");
 
 		// Step 2: remote, to skip address fields.
 		await Page.GetByTestId("wizard-stepper-2").ClickAsync();
 		await Page.Locator("#opportunity-remote").CheckAsync();
 
-		// Step 3: Waitlist participation type. Click the visible label card, not
+		// Step 3: ScheduledSlots participation type. Click the visible label card, not
 		// the sr-only radio <input>, which is not a reliable pointer target.
 		await Page.GetByTestId("wizard-stepper-3").ClickAsync();
-		await Page.Locator("label:has(input[name='participationType'][value='Waitlist'])").ClickAsync();
+		await Page.Locator("label:has(input[name='participationType'][value='ScheduledSlots'])").ClickAsync();
 
 		// Step 4: publishing with no time slots must still be blocked client-side.
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();

@@ -51,10 +51,10 @@ public class CancelEngagementCommandHandlerTests
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>
-		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		VolunteerOpportunity.Create(DefaultOrgId, "Test", "Test", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
-	private static Engagement CreatePendingWaitlistEngagement() =>
-		Engagement.CreateWaitlistSignUp(
+	private static Engagement CreatePendingScheduledSlotsEngagement() =>
+		Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			UserId.New(),
 			TimeSlotId.New());
@@ -65,7 +65,7 @@ public class CancelEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = CreatePendingWaitlistEngagement();
+		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act
@@ -81,7 +81,7 @@ public class CancelEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = CreatePendingWaitlistEngagement();
+		var engagement = CreatePendingScheduledSlotsEngagement();
 		engagement.Confirm();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -114,7 +114,7 @@ public class CancelEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = CreatePendingWaitlistEngagement();
+		var engagement = CreatePendingScheduledSlotsEngagement();
 		engagement.Cancel();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -131,7 +131,7 @@ public class CancelEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = CreatePendingWaitlistEngagement();
+		var engagement = CreatePendingScheduledSlotsEngagement();
 		engagement.Withdraw();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
@@ -148,7 +148,7 @@ public class CancelEngagementCommandHandlerTests
 	{
 		// Arrange
 		var engagementId = EngagementId.New();
-		var engagement = CreatePendingWaitlistEngagement();
+		var engagement = CreatePendingScheduledSlotsEngagement();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		// Act

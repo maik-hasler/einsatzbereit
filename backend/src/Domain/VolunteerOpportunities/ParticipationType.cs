@@ -2,6 +2,6 @@ namespace Domain.VolunteerOpportunities;
 
 public enum ParticipationType
 {
-	Waitlist,
+	ScheduledSlots,
 	IndividualContact
 }

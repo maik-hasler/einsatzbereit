@@ -42,7 +42,7 @@ internal sealed class CreateEngagementCommandHandler(
 
 			var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(
 				request.TimeSlotId.Value, cancellationToken);
-			if (activeCount >= timeSlot.MaxParticipants)
+			if (timeSlot.MaxParticipants is int max && activeCount >= max)
 				throw new ResultFailureException(Error.Conflict("Engagement.TimeSlotFull", "Conflict: this time slot has reached its capacity and cannot accept more sign-ups."));
 		}
 
@@ -58,7 +58,7 @@ internal sealed class CreateEngagementCommandHandler(
 		else
 		{
 			engagement = request.TimeSlotId is not null
-				? Engagement.CreateWaitlistSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
+				? Engagement.CreateSlotSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
 				: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
 					?? throw new ResultFailureException(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."))).GetValueOrThrow();
 
@@ -80,14 +80,14 @@ internal sealed class CreateEngagementCommandHandler(
 
 		var volunteer = await keycloakUserService.GetUserAsync(request.VolunteerId.Value, cancellationToken);
 		var volunteerName = volunteer.FirstName ?? volunteer.Username;
-		var isWaitlist = request.TimeSlotId is not null;
+		var isSlotSignUp = request.TimeSlotId is not null;
 
-		var volunteerSubject = isWaitlist
-			? $"You've joined the waitlist for \"{opportunity.Title}\""
+		var volunteerSubject = isSlotSignUp
+			? $"You've signed up for \"{opportunity.Title}\""
 			: $"Your request for \"{opportunity.Title}\" has been received";
 
-		var volunteerBody = isWaitlist
-			? $"Hi {volunteerName},\n\nYou're now on the waitlist for \"{opportunity.Title}\". " +
+		var volunteerBody = isSlotSignUp
+			? $"Hi {volunteerName},\n\nYou've signed up for \"{opportunity.Title}\". " +
 				$"An organizer will review your sign-up and confirm it soon.\n\nEinsatzbereit"
 			: $"Hi {volunteerName},\n\nYour request to participate in \"{opportunity.Title}\" has been received. " +
 				$"The organizer will be in touch.\n\nEinsatzbereit";

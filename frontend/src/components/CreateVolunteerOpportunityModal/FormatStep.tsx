@@ -87,7 +87,7 @@ export default function FormatStep({
 					current={participationType}
 					register={register}
 					options={[
-						["Waitlist", t("opportunities.waitlist")],
+						["ScheduledSlots", t("opportunities.waitlist")],
 						["IndividualContact", t("opportunities.individualContact")],
 					]}
 				/>

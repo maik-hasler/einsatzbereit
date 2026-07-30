@@ -236,13 +236,21 @@ export default function OrgOpportunitiesPage() {
 							{item.description}
 						</p>
 					)}
-					{item.totalMaxParticipants > 0 && (
+					{item.totalMaxParticipants == null ? (
 						<p className="mt-1 text-xs text-gray-500">
-							{t("orgOpportunities.participants", {
+							{t("orgOpportunities.participantsUnlimited", {
 								booked: item.currentParticipantCount,
-								max: item.totalMaxParticipants,
 							})}
 						</p>
+					) : (
+						item.totalMaxParticipants > 0 && (
+							<p className="mt-1 text-xs text-gray-500">
+								{t("orgOpportunities.participants", {
+									booked: item.currentParticipantCount,
+									max: item.totalMaxParticipants,
+								})}
+							</p>
+						)
 					)}
 				</div>
 				<div className="mt-auto flex flex-wrap items-center gap-2">

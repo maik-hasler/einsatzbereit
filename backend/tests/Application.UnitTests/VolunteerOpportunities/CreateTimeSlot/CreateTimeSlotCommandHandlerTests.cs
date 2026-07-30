@@ -37,7 +37,7 @@ public class CreateTimeSlotCommandHandlerTests
 	private VolunteerOpportunity CreateOpportunity() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
 	[Test]
@@ -201,6 +201,25 @@ public class CreateTimeSlotCommandHandlerTests
 		result.Should().HaveCount(1);
 		result[0].StartDateTime.Should().Be(BaseStart);
 		result[0].EndDateTime.Should().Be(BaseEnd);
+	}
+
+	[Test]
+	public async Task Handle_ShouldCreateSlot_WithUnlimitedCapacity_WhenMaxParticipantsIsNull(
+		CancellationToken cancellationToken)
+	{
+		var opportunity = CreateOpportunity();
+		var opportunityId = Guid.CreateVersion7();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new CreateTimeSlotCommand(
+			opportunityId, BaseStart, BaseEnd, MaxParticipants: null, DefaultRequestingUserId);
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().HaveCount(1);
+		result[0].MaxParticipants.Should().BeNull();
 	}
 
 	[Test]

@@ -59,7 +59,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		Organization.Create(OrganizationId.Create(id).GetValueOrThrow(), "Test Org").Value;
 
 	private VolunteerOpportunity CreateOpportunity(OrganizationId orgId) =>
-		VolunteerOpportunity.Create(orgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+		VolunteerOpportunity.Create(orgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldShadowDeleteOrganization_EvenWithMultipleMembers(

@@ -9736,9 +9736,8 @@ namespace IntegrationTests
         public System.DateTimeOffset EndDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("maxParticipants")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int MaxParticipants { get; set; } = default!;
+        public int? MaxParticipants { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("bookedCount")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -9994,9 +9993,8 @@ namespace IntegrationTests
         public System.DateTimeOffset EndDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("maxParticipants")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int MaxParticipants { get; set; } = default!;
+        public int? MaxParticipants { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("recurrenceFrequency")]
         public string? RecurrenceFrequency { get; set; } = default!;
@@ -10034,9 +10032,8 @@ namespace IntegrationTests
         public System.DateTimeOffset EndDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("maxParticipants")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int MaxParticipants { get; set; } = default!;
+        public int? MaxParticipants { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("seriesId")]
         public System.Guid? SeriesId { get; set; } = default!;
@@ -11761,9 +11758,8 @@ namespace IntegrationTests
         public System.DateTimeOffset EndDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("maxParticipants")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int MaxParticipants { get; set; } = default!;
+        public int? MaxParticipants { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("bookedCount")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -11867,9 +11863,8 @@ namespace IntegrationTests
         public System.DateTimeOffset? EndDateTime { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("maxParticipants")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int MaxParticipants { get; set; } = default!;
+        public int? MaxParticipants { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("scope")]
         public string? Scope { get; set; } = default!;
@@ -12195,9 +12190,8 @@ namespace IntegrationTests
         public System.DateTimeOffset? NextTimeSlotEnd { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("totalMaxParticipants")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int TotalMaxParticipants { get; set; } = default!;
+        public int? TotalMaxParticipants { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("currentParticipantCount")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

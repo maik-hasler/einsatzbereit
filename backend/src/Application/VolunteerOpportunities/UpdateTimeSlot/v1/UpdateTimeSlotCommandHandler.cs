@@ -54,7 +54,7 @@ internal sealed class UpdateTimeSlotCommandHandler(
 				"StartDateTime and EndDateTime are required when Scope is Only."));
 
 		var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(timeSlotId, cancellationToken);
-		if (request.MaxParticipants < activeCount)
+		if (request.MaxParticipants is int max && max < activeCount)
 			throw new ResultFailureException(Error.Validation(
 				"VolunteerOpportunity.TimeSlotCapacityBelowActive",
 				$"Cannot reduce capacity below the current number of active sign-ups ({activeCount})."));

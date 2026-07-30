@@ -29,7 +29,7 @@ public sealed record TimeSlotDetail(
 	Guid Id,
 	DateTimeOffset StartDateTime,
 	DateTimeOffset EndDateTime,
-	int MaxParticipants,
+	int? MaxParticipants,
 	int BookedCount,
 	Guid? SeriesId,
 	string? RecurrenceFrequency,

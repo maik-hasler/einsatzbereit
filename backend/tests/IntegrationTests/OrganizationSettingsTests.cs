@@ -769,7 +769,7 @@ public class OrganizationSettingsTests(
 				ZipCode = "12345",
 				City = "Berlin",
 				Occurrence = "OneTime",
-				ParticipationType = "Waitlist",
+				ParticipationType = "ScheduledSlots",
 				CheckInMethod = "None",
 				IsDraft = true,
 			},

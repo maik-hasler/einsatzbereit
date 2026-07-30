@@ -43,7 +43,7 @@ public class WithdrawEngagementCommandHandlerTests
 	private static (Engagement engagement, UserId volunteerId) CreatePendingEngagementWithVolunteer()
 	{
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());

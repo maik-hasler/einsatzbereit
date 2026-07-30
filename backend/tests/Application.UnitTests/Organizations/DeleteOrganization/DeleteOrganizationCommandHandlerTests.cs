@@ -53,7 +53,7 @@ public class DeleteOrganizationCommandHandlerTests
 	private VolunteerOpportunity CreateOpportunityWithFutureTimeSlot(OrganizationId orgId)
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			orgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
+			orgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 5, DateTimeOffset.UtcNow);
 		return opportunity;
 	}

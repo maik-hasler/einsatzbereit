@@ -248,7 +248,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
-			participationType = "Waitlist",
+			participationType = "ScheduledSlots",
 			checkInMethod = "None",
 			isDraft = true,
 		});
@@ -366,7 +366,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 			organizationId,
 			isRemote = true,
 			occurrence = "OneTime",
-			participationType = "Waitlist",
+			participationType = "ScheduledSlots",
 			checkInMethod = "None",
 			isDraft = true,
 		});

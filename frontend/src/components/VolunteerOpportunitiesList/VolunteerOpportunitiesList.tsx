@@ -443,7 +443,7 @@ export default function VolunteerOpportunitiesList() {
 						icon={<UsersIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelType")}
 						displayValue={
-							participationType === "Waitlist"
+							participationType === "ScheduledSlots"
 								? t("opportunities.waitlist")
 								: participationType === "IndividualContact"
 									? t("opportunities.individualContact")
@@ -466,9 +466,9 @@ export default function VolunteerOpportunitiesList() {
 						/>
 						<DropdownOption
 							label={t("opportunities.waitlist")}
-							selected={participationType === "Waitlist"}
+							selected={participationType === "ScheduledSlots"}
 							onClick={() => {
-								updateFilter("participationType", "Waitlist");
+								updateFilter("participationType", "ScheduledSlots");
 								setOpenFilter(null);
 							}}
 						/>

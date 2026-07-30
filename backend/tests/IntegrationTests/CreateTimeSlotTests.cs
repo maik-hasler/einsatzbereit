@@ -60,6 +60,30 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 		timeSlots.Should().HaveCount(1);
 	}
 
+	[Test]
+	public async Task CreateTimeSlot_ShouldSucceed_WithUnlimitedCapacity_WhenMaxParticipantsIsNull(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = null,
+				RecurrenceFrequency = null,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		timeSlots.Should().HaveCount(1);
+		timeSlots.Single().MaxParticipants.Should().BeNull();
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
@@ -84,8 +108,8 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Time slots can only be added to Waitlist opportunities (see
-		// VolunteerOpportunity.AddTimeSlot). Created as a draft since a Waitlist
+		// Time slots can only be added to ScheduledSlots opportunities (see
+		// VolunteerOpportunity.AddTimeSlot). Created as a draft since a ScheduledSlots
 		// opportunity can't be published until it has at least one time slot.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
@@ -98,7 +122,7 @@ public class CreateTimeSlotTests(IntegrationTestFixture fixture)
 				ZipCode = "12345",
 				City = "Berlin",
 				Occurrence = "Recurring",
-				ParticipationType = "Waitlist",
+				ParticipationType = "ScheduledSlots",
 				CheckInMethod = "None",
 				IsDraft = true,
 			},

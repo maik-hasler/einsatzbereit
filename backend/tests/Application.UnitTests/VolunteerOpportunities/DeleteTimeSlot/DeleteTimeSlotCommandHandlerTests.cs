@@ -46,7 +46,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		timeSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10, DateTimeOffset.UtcNow).Value;
@@ -104,7 +104,7 @@ public class DeleteTimeSlotCommandHandlerTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 
 		var seriesId = Guid.CreateVersion7();
@@ -171,8 +171,8 @@ public class DeleteTimeSlotCommandHandlerTests
 			.FindAsync(opportunityId, cancellationToken)
 			.Returns(opportunity);
 
-		var pendingEngagement = Engagement.CreateWaitlistSignUp(opportunityId, UserId.New(), slot1.Id);
-		var confirmedEngagement = Engagement.CreateWaitlistSignUp(opportunityId, UserId.New(), slot2.Id);
+		var pendingEngagement = Engagement.CreateSlotSignUp(opportunityId, UserId.New(), slot1.Id);
+		var confirmedEngagement = Engagement.CreateSlotSignUp(opportunityId, UserId.New(), slot2.Id);
 		confirmedEngagement.Confirm();
 
 		_dbContext
@@ -205,7 +205,7 @@ public class DeleteTimeSlotCommandHandlerTests
 		// artificially-past `now`), slot2 is still upcoming.
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, Address.Create("Hauptstrasse", "1", "12345", "Berlin").Value,
-			Occurrence.Recurring, ParticipationType.Waitlist, CheckInMethod.None, _pinGenerator,
+			Occurrence.Recurring, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
 			status: OpportunityStatus.Draft).Value;
 		var seriesId = Guid.CreateVersion7();
 		var pastStart = DateTimeOffset.UtcNow.AddDays(-9);

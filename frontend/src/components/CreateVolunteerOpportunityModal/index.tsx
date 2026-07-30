@@ -94,14 +94,14 @@ interface PendingTimeSlot {
 	batchCount: number;
 	startDateTime: string;
 	endDateTime: string;
-	maxParticipants: number;
+	maxParticipants: number | null;
 }
 
 interface EditingSlot {
 	id: string;
 	startDateTime: string;
 	endDateTime: string;
-	maxParticipants: number;
+	maxParticipants: number | null;
 	scope: SeriesEditScope;
 }
 
@@ -123,7 +123,7 @@ const DEFAULT_VALUES: OpportunityFormValues = {
 	zipCode: "",
 	city: "",
 	occurrence: "OneTime",
-	participationType: "Waitlist",
+	participationType: "ScheduledSlots",
 	checkInMethod: "None",
 	checkInPin: "",
 	category: undefined,
@@ -209,7 +209,11 @@ export default function CreateVolunteerOpportunityModal({
 	const [existingSlots, setExistingSlots] = useState<TimeSlotDetail[]>(
 		initialOpportunity?.timeSlots ?? [],
 	);
-	const [newSlot, setNewSlot] = useState({
+	const [newSlot, setNewSlot] = useState<{
+		startDateTime: string;
+		endDateTime: string;
+		maxParticipants: number | null;
+	}>({
 		startDateTime: "",
 		endDateTime: "",
 		maxParticipants: 1,
@@ -253,7 +257,7 @@ export default function CreateVolunteerOpportunityModal({
 
 	const occurrence = watch("occurrence");
 	const participationType = watch("participationType");
-	const isWaitlist = participationType === "Waitlist";
+	const isScheduledSlots = participationType === "ScheduledSlots";
 
 	useEffect(() => {
 		if (isEditMode) return;
@@ -395,7 +399,7 @@ export default function CreateVolunteerOpportunityModal({
 				const responses = await api.createTimeSlot(initialOpportunity.id, {
 					startDateTime: start,
 					endDateTime: end,
-					maxParticipants: newSlot.maxParticipants,
+					maxParticipants: newSlot.maxParticipants ?? undefined,
 					recurrenceFrequency: isRecurring ? recurrenceFrequency : undefined,
 					recurrenceCount: isRecurring ? recurrenceCount : 1,
 				});
@@ -496,7 +500,7 @@ export default function CreateVolunteerOpportunityModal({
 		id: string;
 		startDateTime: string;
 		endDateTime: string;
-		maxParticipants: number;
+		maxParticipants: number | null;
 	}) {
 		setSlotError(null);
 		setEditingSlot({
@@ -518,7 +522,7 @@ export default function CreateVolunteerOpportunityModal({
 					edit.scope === "Only" ? new Date(edit.startDateTime) : undefined,
 				endDateTime:
 					edit.scope === "Only" ? new Date(edit.endDateTime) : undefined,
-				maxParticipants: edit.maxParticipants,
+				maxParticipants: edit.maxParticipants ?? undefined,
 				scope: edit.scope,
 			});
 			if (edit.scope === "Only") {
@@ -529,14 +533,12 @@ export default function CreateVolunteerOpportunityModal({
 									...s,
 									startDateTime: new Date(edit.startDateTime),
 									endDateTime: new Date(edit.endDateTime),
-									maxParticipants: edit.maxParticipants,
+									maxParticipants: edit.maxParticipants ?? undefined,
 								}
 							: s,
 					),
 				);
 			} else {
-				// Bulk scope may have changed capacity on sibling occurrences too -
-				// refetch rather than trying to patch every affected row by hand.
 				const fresh = await api.getVolunteerOpportunityDetails(
 					initialOpportunity.id,
 				);
@@ -598,7 +600,7 @@ export default function CreateVolunteerOpportunityModal({
 		}
 
 		const values = getValues();
-		if (!asDraft && values.participationType === "Waitlist") {
+		if (!asDraft && values.participationType === "ScheduledSlots") {
 			const totalSlots = pendingSlots.length + existingSlots.length;
 			if (totalSlots === 0) {
 				setError(t("timeSlots.requiredForPublish"));
@@ -641,12 +643,13 @@ export default function CreateVolunteerOpportunityModal({
 					}
 				}
 			} else {
-				// A Waitlist opportunity can't be published until it has at least
-				// one time slot, and slots can only be added after the opportunity
-				// exists. Always create it as a draft, add slots and banner, then
-				// publish - this also keeps it invisible in listings if any step
-				// in between fails, instead of leaving a published dead-end.
-				const publishWaitlistAfterCreate = !asDraft && isWaitlist;
+				// A ScheduledSlots opportunity can't be published until it has at
+				// least one time slot, and slots can only be added after the
+				// opportunity exists. Always create it as a draft, add slots and
+				// banner, then publish - this also keeps it invisible in listings
+				// if any step in between fails, instead of leaving a published
+				// dead-end.
+				const publishScheduledSlotsAfterCreate = !asDraft && isScheduledSlots;
 
 				// If a previous attempt already created the draft but failed on a
 				// later step, reuse that id and update it instead of creating a
@@ -686,7 +689,7 @@ export default function CreateVolunteerOpportunityModal({
 						checkInPin: resolveCheckInPin(values),
 						category: values.category,
 						tags: values.tags,
-						isDraft: asDraft || publishWaitlistAfterCreate,
+						isDraft: asDraft || publishScheduledSlotsAfterCreate,
 					});
 					opportunityId = opportunity.id;
 					createdOpportunityIdRef.current = opportunityId;
@@ -721,7 +724,7 @@ export default function CreateVolunteerOpportunityModal({
 						await api.createTimeSlot(opportunityId, {
 							startDateTime: new Date(first.startDateTime),
 							endDateTime: new Date(first.endDateTime),
-							maxParticipants: first.maxParticipants,
+							maxParticipants: first.maxParticipants ?? undefined,
 							recurrenceFrequency: first.batchFrequency,
 							recurrenceCount: first.batchCount,
 						});
@@ -732,7 +735,7 @@ export default function CreateVolunteerOpportunityModal({
 							await api.createTimeSlot(opportunityId, {
 								startDateTime: new Date(slot.startDateTime),
 								endDateTime: new Date(slot.endDateTime),
-								maxParticipants: slot.maxParticipants,
+								maxParticipants: slot.maxParticipants ?? undefined,
 								recurrenceFrequency: undefined,
 								recurrenceCount: 1,
 							});
@@ -740,7 +743,7 @@ export default function CreateVolunteerOpportunityModal({
 						}
 					}
 				}
-				if (publishWaitlistAfterCreate) {
+				if (publishScheduledSlotsAfterCreate) {
 					try {
 						await api.publishVolunteerOpportunity(opportunityId);
 					} catch (publishErr) {
@@ -795,7 +798,7 @@ export default function CreateVolunteerOpportunityModal({
 		t("createOpportunity.step1Subtitle"),
 		t("createOpportunity.step2Subtitle"),
 		t("createOpportunity.step3Subtitle"),
-		isWaitlist
+		isScheduledSlots
 			? t("createOpportunity.step4SubtitleWaitlist")
 			: t("createOpportunity.step4Subtitle"),
 	];
@@ -835,7 +838,7 @@ export default function CreateVolunteerOpportunityModal({
 					s.endDateTime instanceof Date
 						? s.endDateTime.toISOString()
 						: String(s.endDateTime),
-				maxParticipants: s.maxParticipants,
+				maxParticipants: s.maxParticipants ?? null,
 				bookedCount: s.bookedCount,
 				persisted: true as const,
 				seriesId: s.seriesId,
@@ -972,7 +975,7 @@ export default function CreateVolunteerOpportunityModal({
 					{step === 4 && (
 						<DetailsStep
 							control={control}
-							isWaitlist={isWaitlist}
+							isScheduledSlots={isScheduledSlots}
 							occurrence={occurrence}
 							isEditMode={isEditMode}
 							allTimeSlots={allTimeSlots}

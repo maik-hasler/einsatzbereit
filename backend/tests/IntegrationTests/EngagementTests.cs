@@ -858,15 +858,15 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		result.Status.Should().Be("Pending");
 	}
 
-	// ── Waitlist capacity enforcement (#523) ─────────────────────────────────
+	// ── ScheduledSlots capacity enforcement (#523) ─────────────────────────────────
 
 	[Test]
-	public async Task CreateEngagement_ShouldReturn409_WhenWaitlistSlotIsFull(
+	public async Task CreateEngagement_ShouldReturn409_WhenTimeSlotIsFull(
 		CancellationToken cancellationToken)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
 			opportunity.Id,
@@ -902,7 +902,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
 			opportunity.Id,
@@ -1030,8 +1030,8 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 
-		var opportunityA = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
-		var opportunityB = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunityA = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunityB = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var slotsB = await olafClient.CreateTimeSlotAsync(
 			opportunityB.Id,
@@ -1058,12 +1058,12 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	// ── Multiple time slots per opportunity (#1067) ───────────────────────────
 
 	[Test]
-	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerSignsUpForASecondTimeSlot_OnSameWaitlistOpportunity(
+	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerSignsUpForASecondTimeSlot_OnSameScheduledSlotsOpportunity(
 		CancellationToken cancellationToken)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
 			opportunity.Id,
@@ -1101,7 +1101,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
 			opportunity.Id,
@@ -1137,7 +1137,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		// slot needs a brand new engagement row.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
 			opportunity.Id,
@@ -1243,23 +1243,23 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 	}
 
-	private static async Task<CreateVolunteerOpportunityResponse> CreateWaitlistOpportunityAsync(
+	private static async Task<CreateVolunteerOpportunityResponse> CreateScheduledSlotsOpportunityAsync(
 		EinsatzbereitApi client, Guid orgId, CancellationToken cancellationToken)
 	{
-		// Created as a draft: a Waitlist opportunity can't be published until it has
+		// Created as a draft: a ScheduledSlots opportunity can't be published until it has
 		// at least one time slot, and callers add slots separately after this returns.
 		return await client.CreateVolunteerOpportunityAsync(
 			new CreateVolunteerOpportunityRequest
 			{
-				Title = "Waitlist Opportunity",
-				Description = "Integration test waitlist opportunity",
+				Title = "ScheduledSlots Opportunity",
+				Description = "Integration test ScheduledSlots opportunity",
 				OrganizationId = orgId,
 				Street = "Test Street",
 				HouseNumber = "1",
 				ZipCode = "12345",
 				City = "Berlin",
 				Occurrence = "OneTime",
-				ParticipationType = "Waitlist",
+				ParticipationType = "ScheduledSlots",
 				CheckInMethod = "None",
 				IsDraft = true,
 			},

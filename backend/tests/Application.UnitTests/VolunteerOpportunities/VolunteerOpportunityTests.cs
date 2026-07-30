@@ -25,7 +25,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Draft).Value;
@@ -37,7 +37,7 @@ public class VolunteerOpportunityTests
 		opportunity.IsRemote.Should().BeFalse();
 		opportunity.Address.Should().Be(TestAddress);
 		opportunity.Occurrence.Should().Be(Occurrence.OneTime);
-		opportunity.ParticipationType.Should().Be(ParticipationType.Waitlist);
+		opportunity.ParticipationType.Should().Be(ParticipationType.ScheduledSlots);
 	}
 
 	[Test]
@@ -74,7 +74,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator);
 
@@ -97,7 +97,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Draft);
@@ -121,7 +121,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator);
 
@@ -144,7 +144,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Draft);
@@ -168,7 +168,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Draft);
@@ -191,7 +191,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Draft);
@@ -215,7 +215,7 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Draft);
@@ -235,7 +235,7 @@ public class VolunteerOpportunityTests
 			false,
 			null,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator);
 
@@ -265,7 +265,7 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
-	public void Create_ShouldFail_WhenPublishedWaitlistHasNoTimeSlots()
+	public void Create_ShouldFail_WhenPublishedScheduledSlotsHasNoTimeSlots()
 	{
 		// Act
 		var result = VolunteerOpportunity.Create(
@@ -275,14 +275,14 @@ public class VolunteerOpportunityTests
 			false,
 			TestAddress,
 			Occurrence.OneTime,
-			ParticipationType.Waitlist,
+			ParticipationType.ScheduledSlots,
 			CheckInMethod.None,
 			PinGenerator,
 			status: OpportunityStatus.Published);
 
 		// Assert
 		result.IsFailure.Should().BeTrue();
-		result.Error.Description.Should().Match("*Waitlist opportunity*");
+		result.Error.Description.Should().Match("*Scheduled slots opportunity*");
 	}
 
 	[Test]
@@ -310,7 +310,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Update_ShouldChangeAllFields()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		var newAddress = Address.Create("Neue Straße", "42", "10115", "Hamburg").Value;
 
 		opportunity.Rename("New title");
@@ -331,7 +331,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Reschedule_ShouldChangeOccurrence()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
 		opportunity.Reschedule(Occurrence.Recurring);
 
@@ -341,7 +341,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void SwitchParticipationType_ShouldChangeParticipationType()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
 		opportunity.SwitchParticipationType(ParticipationType.IndividualContact);
 
@@ -349,9 +349,9 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
-	public void SwitchParticipationType_ShouldClearTimeSlots_WhenSwitchingAwayFromWaitlist()
+	public void SwitchParticipationType_ShouldClearTimeSlots_WhenSwitchingAwayFromScheduledSlots()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10, Now);
 
 		opportunity.SwitchParticipationType(ParticipationType.IndividualContact);
@@ -360,13 +360,13 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
-	public void SwitchParticipationType_ShouldKeepTimeSlots_WhenStayingWaitlist()
+	public void SwitchParticipationType_ShouldKeepTimeSlots_WhenStayingScheduledSlots()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10, Now);
 
 		opportunity.Rename("New title");
-		opportunity.SwitchParticipationType(ParticipationType.Waitlist);
+		opportunity.SwitchParticipationType(ParticipationType.ScheduledSlots);
 
 		opportunity.TimeSlots.Should().HaveCount(1);
 	}
@@ -374,7 +374,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Relocate_ShouldAllowRemote_WithNullAddress()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
 		opportunity.Rename("Remote title");
 		opportunity.ChangeDescription("Remote desc");
@@ -390,7 +390,7 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void Rename_ShouldAllow_EmptyTitle_WhenDraft(string? title)
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 
 		var result = opportunity.Rename(title!);
 
@@ -404,7 +404,7 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void Rename_ShouldFail_WhenTitleIsEmpty_AndPublished(string? title)
 	{
-		var opportunity = CreatePublishedWaitlistOpportunity();
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
 		var result = opportunity.Rename(title!);
 
@@ -418,7 +418,7 @@ public class VolunteerOpportunityTests
 	[Arguments(null)]
 	public void ChangeDescription_ShouldFail_WhenDescriptionIsEmpty_AndPublished(string? description)
 	{
-		var opportunity = CreatePublishedWaitlistOpportunity();
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
 		var result = opportunity.ChangeDescription(description!);
 
@@ -429,7 +429,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Rename_ShouldFail_WhenTitleExceedsMaxLength_EvenWhenDraft()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		var title = new string('a', VolunteerOpportunity.MaxTitleLength + 1);
 
 		var result = opportunity.Rename(title);
@@ -441,7 +441,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void ChangeDescription_ShouldFail_WhenDescriptionExceedsMaxLength_EvenWhenDraft()
 	{
-		var opportunity = CreateDraftWaitlistOpportunity();
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
 		var description = new string('a', VolunteerOpportunity.MaxDescriptionLength + 1);
 
 		var result = opportunity.ChangeDescription(description);
@@ -453,7 +453,7 @@ public class VolunteerOpportunityTests
 	[Test]
 	public void Relocate_ShouldFail_WhenNotRemoteAndAddressIsNull_AndPublished()
 	{
-		var opportunity = CreatePublishedWaitlistOpportunity();
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
 		var result = opportunity.Relocate(false, null);
 
@@ -461,15 +461,15 @@ public class VolunteerOpportunityTests
 		result.Error.Description.Should().Be("Address is required for non-remote opportunities.");
 	}
 
-	private static VolunteerOpportunity CreateDraftWaitlistOpportunity() =>
+	private static VolunteerOpportunity CreateDraftScheduledSlotsOpportunity() =>
 		VolunteerOpportunity.Create(
-			TestOrganizationId, "Old title", "Old desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			TestOrganizationId, "Old title", "Old desc", false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 
-	private static VolunteerOpportunity CreatePublishedWaitlistOpportunity()
+	private static VolunteerOpportunity CreatePublishedScheduledSlotsOpportunity()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10, Now);
 		opportunity.Publish();
@@ -580,10 +580,10 @@ public class VolunteerOpportunityTests
 	// --- AddTimeSlot ---
 
 	[Test]
-	public void AddTimeSlot_ShouldAddSlot_WhenParticipationTypeIsWaitlist()
+	public void AddTimeSlot_ShouldAddSlot_WhenParticipationTypeIsScheduledSlots()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), maxParticipants: 20, Now);
@@ -602,14 +602,14 @@ public class VolunteerOpportunityTests
 		var result = opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), maxParticipants: 10, Now);
 
 		result.IsFailure.Should().BeTrue();
-		result.Error.Description.Should().Match("*Waitlist*");
+		result.Error.Description.Should().Match("*Scheduled slots*");
 	}
 
 	[Test]
 	public void AddTimeSlot_ShouldSupportMultipleSlots()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist,
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10, Now);
@@ -624,7 +624,7 @@ public class VolunteerOpportunityTests
 	public void RemoveTimeSlot_ShouldRemoveSlot_WhenSlotExists()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 10, Now);
 		var slotId = opportunity.TimeSlots.First().Id;
@@ -638,7 +638,7 @@ public class VolunteerOpportunityTests
 	public void RemoveTimeSlot_ShouldFail_WhenSlotNotFound()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.Waitlist,
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 		var nonExistentId = TimeSlotId.New();
 
@@ -652,7 +652,7 @@ public class VolunteerOpportunityTests
 	public void RemoveTimeSlot_ShouldOnlyRemoveTargetSlot_WhenMultipleSlotsExist()
 	{
 		var opportunity = VolunteerOpportunity.Create(
-			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.Waitlist,
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.Recurring, ParticipationType.ScheduledSlots,
 			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
 		opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), 5, Now);
 		opportunity.AddTimeSlot(FutureSlotStart.AddDays(7), FutureSlotStart.AddDays(7).AddHours(2), 5, Now);

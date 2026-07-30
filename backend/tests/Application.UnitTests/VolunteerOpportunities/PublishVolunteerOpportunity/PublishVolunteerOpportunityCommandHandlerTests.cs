@@ -98,12 +98,12 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldPublishWaitlistOpportunity_WhenAtLeastOneTimeSlotExists(
+	public async Task Handle_ShouldPublishScheduledSlotsOpportunity_WhenAtLeastOneTimeSlotExists(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateDraftOpportunity(participationType: ParticipationType.Waitlist);
+		var opportunity = CreateDraftOpportunity(participationType: ParticipationType.ScheduledSlots);
 		opportunity.AddTimeSlot(DateTimeOffset.UtcNow.AddDays(7), DateTimeOffset.UtcNow.AddDays(7).AddHours(2), 10, DateTimeOffset.UtcNow);
 		SetupOpportunity(opportunityId, opportunity);
 
@@ -248,12 +248,12 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenWaitlistParticipationType_AndNoTimeSlots(
+	public async Task Handle_ShouldThrow_WhenScheduledSlotsParticipationType_AndNoTimeSlots(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateDraftOpportunity(participationType: ParticipationType.Waitlist);
+		var opportunity = CreateDraftOpportunity(participationType: ParticipationType.ScheduledSlots);
 		SetupOpportunity(opportunityId, opportunity);
 
 		// Act
@@ -261,6 +261,6 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
-			.WithMessage("*Waitlist opportunity must have at least one time slot*");
+			.WithMessage("*Scheduled slots opportunity must have at least one time slot*");
 	}
 }

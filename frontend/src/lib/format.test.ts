@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import type { TFunction } from "i18next";
 import {
+	computeSpotsLeft,
 	formatOccurrence,
 	formatParticipationType,
 	formatDateTime,
 	formatPostedAgo,
+	isSlotFull,
 } from "./format";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -28,9 +30,9 @@ describe("formatOccurrence", () => {
 });
 
 describe("formatParticipationType", () => {
-	it("translates Waitlist", () => {
+	it("translates ScheduledSlots", () => {
 		const t = fakeT();
-		expect(formatParticipationType("Waitlist", t)).toBe(
+		expect(formatParticipationType("ScheduledSlots", t)).toBe(
 			"opportunities.waitlist",
 		);
 	});
@@ -40,6 +42,44 @@ describe("formatParticipationType", () => {
 		expect(formatParticipationType("DirectContact", t)).toBe(
 			"opportunities.individualContact",
 		);
+	});
+});
+
+describe("computeSpotsLeft", () => {
+	it("returns null for unlimited capacity (null maxParticipants)", () => {
+		expect(computeSpotsLeft(null, 42)).toBeNull();
+	});
+
+	it("returns null for unlimited capacity (undefined maxParticipants)", () => {
+		expect(computeSpotsLeft(undefined, 0)).toBeNull();
+	});
+
+	it("returns the remaining spots when capped", () => {
+		expect(computeSpotsLeft(10, 4)).toBe(6);
+	});
+
+	it("returns a non-positive number when at or over capacity", () => {
+		expect(computeSpotsLeft(5, 5)).toBe(0);
+		expect(computeSpotsLeft(5, 7)).toBe(-2);
+	});
+});
+
+describe("isSlotFull", () => {
+	it("is never full when capacity is unlimited, regardless of booked count", () => {
+		expect(isSlotFull(null, 0)).toBe(false);
+		expect(isSlotFull(null, 10_000)).toBe(false);
+	});
+
+	it("is not full when spots remain", () => {
+		expect(isSlotFull(10, 4)).toBe(false);
+	});
+
+	it("is full once bookings reach capacity", () => {
+		expect(isSlotFull(5, 5)).toBe(true);
+	});
+
+	it("is full when bookings exceed capacity", () => {
+		expect(isSlotFull(5, 6)).toBe(true);
 	});
 });
 

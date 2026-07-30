@@ -8,9 +8,25 @@ export function formatOccurrence(occurrence: string, t: TFunction): string {
 }
 
 export function formatParticipationType(type: string, t: TFunction): string {
-	return type === "Waitlist"
+	return type === "ScheduledSlots"
 		? t("opportunities.waitlist")
 		: t("opportunities.individualContact");
+}
+
+/** Remaining spots for a time slot/opportunity - null means unlimited capacity. */
+export function computeSpotsLeft(
+	maxParticipants: number | null | undefined,
+	bookedCount: number,
+): number | null {
+	return maxParticipants == null ? null : maxParticipants - bookedCount;
+}
+
+export function isSlotFull(
+	maxParticipants: number | null | undefined,
+	bookedCount: number,
+): boolean {
+	const spotsLeft = computeSpotsLeft(maxParticipants, bookedCount);
+	return spotsLeft !== null && spotsLeft <= 0;
 }
 
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();

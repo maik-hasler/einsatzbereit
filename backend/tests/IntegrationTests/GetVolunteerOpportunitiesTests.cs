@@ -144,7 +144,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		item.ZipCode.Should().Be("12345");
 		item.City.Should().Be("Berlin");
 		item.Occurrence.Should().Be("OneTime");
-		item.ParticipationType.Should().Be("Waitlist");
+		item.ParticipationType.Should().Be("ScheduledSlots");
 		item.IsRemote.Should().BeFalse();
 	}
 
@@ -165,7 +165,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
@@ -210,7 +210,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "Recurring",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
@@ -285,7 +285,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
@@ -342,7 +342,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "Recurring",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
@@ -418,7 +418,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetVolunteerOpportunities_ShouldFilterWaitlistOpportunitiesByRange_WhileStillIncludingSlotlessOnes(
+	public async Task GetVolunteerOpportunities_ShouldFilterScheduledSlotsOpportunitiesByRange_WhileStillIncludingSlotlessOnes(
 		CancellationToken cancellationToken)
 	{
 		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
@@ -467,7 +467,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None"
 		}, cancellationToken);
 
@@ -591,7 +591,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			Category = "Environment",
 			IsDraft = true,
@@ -613,7 +613,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
 		var matching = await sut.GetVolunteerOpportunitiesAsync(
-			1, 10, occurrence: "onetime", participationType: "waitlist", categories: ["environment"], cancellationToken: cancellationToken);
+			1, 10, occurrence: "onetime", participationType: "ScheduledSlots", categories: ["environment"], cancellationToken: cancellationToken);
 		var nonMatching = await sut.GetVolunteerOpportunitiesAsync(
 			1, 10, occurrence: "Recurring", cancellationToken: cancellationToken);
 
@@ -643,7 +643,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		EinsatzbereitApi client, Guid orgId, string title, string description,
 		CancellationToken cancellationToken)
 	{
-		// A Waitlist opportunity can't be published until it has at least one time
+		// A ScheduledSlots opportunity can't be published until it has at least one time
 		// slot, so create it as a draft, add a slot, then publish it.
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
@@ -655,7 +655,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
@@ -698,14 +698,14 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
 		{
 			Title = title,
-			Description = "Waitlist opportunity with a single time slot",
+			Description = "Scheduled slots opportunity with a single time slot",
 			OrganizationId = orgId,
 			Street = "Sample Street",
 			HouseNumber = "1",
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);
@@ -746,7 +746,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			ZipCode = "12345",
 			City = "Berlin",
 			Occurrence = "OneTime",
-			ParticipationType = "Waitlist",
+			ParticipationType = "ScheduledSlots",
 			CheckInMethod = "None",
 			IsDraft = true,
 		}, cancellationToken);

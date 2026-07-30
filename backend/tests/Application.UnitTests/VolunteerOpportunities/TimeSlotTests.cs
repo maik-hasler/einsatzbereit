@@ -93,6 +93,14 @@ public class TimeSlotTests
 	}
 
 	[Test]
+	public void Create_ShouldAllowNullMaxParticipants_ForUnlimitedCapacity()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: null, Now).Value;
+
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
 	public void Create_ShouldLeaveSeriesFieldsNull_WhenNotProvided()
 	{
 		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
@@ -115,6 +123,28 @@ public class TimeSlotTests
 	}
 
 	[Test]
+	public void Update_ShouldAllowChangingToUnlimitedCapacity()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.Update(Tomorrow, DayAfterTomorrow, maxParticipants: null, Now);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().BeNull();
+	}
+
+	[Test]
+	public void Update_ShouldAllowChangingFromUnlimitedToFixedCapacity()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: null, Now).Value;
+
+		var result = timeSlot.Update(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().Be(10);
+	}
+
+	[Test]
 	public void UpdateCapacity_ShouldChangeMaxParticipants_WhenPositive()
 	{
 		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
@@ -123,6 +153,17 @@ public class TimeSlotTests
 
 		result.IsSuccess.Should().BeTrue();
 		timeSlot.MaxParticipants.Should().Be(20);
+	}
+
+	[Test]
+	public void UpdateCapacity_ShouldAllowSettingToUnlimited()
+	{
+		var timeSlot = TimeSlot.Create(Tomorrow, DayAfterTomorrow, maxParticipants: 10, Now).Value;
+
+		var result = timeSlot.UpdateCapacity(null);
+
+		result.IsSuccess.Should().BeTrue();
+		timeSlot.MaxParticipants.Should().BeNull();
 	}
 
 	[Test]

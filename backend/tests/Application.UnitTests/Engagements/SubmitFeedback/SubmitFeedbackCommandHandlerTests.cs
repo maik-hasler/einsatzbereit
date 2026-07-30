@@ -26,7 +26,7 @@ public class SubmitFeedbackCommandHandlerTests
 	private static (Engagement engagement, UserId volunteerId) CreateCheckedInEngagementWithVolunteer()
 	{
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
@@ -120,7 +120,7 @@ public class SubmitFeedbackCommandHandlerTests
 	{
 		// Arrange
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateWaitlistSignUp(
+		var engagement = Engagement.CreateSlotSignUp(
 			VolunteerOpportunityId.New(),
 			volunteerId,
 			TimeSlotId.New());
