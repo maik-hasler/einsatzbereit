@@ -153,6 +153,25 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 		var response = await _keycloakClient.SendAsync(request, cancellationToken);
 		await EnsureSuccessAsync(response);
+
+		// Keycloak-side membership alone isn't enough: command handlers like
+		// ChangeMemberRoleCommandHandler resolve membership via the local
+		// organization_membership table (dbContext.GetMembershipAsync), not
+		// Keycloak, so this escape hatch must seed that row too or those
+		// handlers 404 on a member this call just added.
+		await using var conn = new NpgsqlConnection(_connectionString);
+		await conn.OpenAsync(cancellationToken);
+		await using var cmd = new NpgsqlCommand(
+			"""
+			INSERT INTO organization_membership (id, organization_id, user_id, role, created_on)
+			VALUES (@id, @organizationId, @userId, @role, now())
+			ON CONFLICT (organization_id, user_id) DO NOTHING
+			""", conn);
+		cmd.Parameters.AddWithValue("id", Guid.CreateVersion7());
+		cmd.Parameters.AddWithValue("organizationId", organizationId);
+		cmd.Parameters.AddWithValue("userId", userId);
+		cmd.Parameters.AddWithValue("role", "Member");
+		await cmd.ExecuteNonQueryAsync(cancellationToken);
 	}
 
 	// Olaf's well-known seed user id (ApplicationDbContextInitializer.OlafId,

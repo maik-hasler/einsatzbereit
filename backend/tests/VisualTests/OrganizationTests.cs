@@ -281,10 +281,19 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// intent). Verifies the role selector lets an organizer explicitly
 		// invite someone as an Organizer instead, shown on the pending
 		// invitation.
+		//
+		// Uses a throwaway org (not olaf's pinned/seeded one) because
+		// Organisator_InviteMemberFromDashboard_SendsInvitationInsteadOf403
+		// above already invites vera into that shared org, and
+		// organization_invitation rows aren't cleared between tests -
+		// inviting her there a second time would 409 with
+		// OrganizationInvitation.AlreadyInvited depending on run order.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
-		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1050 InviteRole", pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
 
