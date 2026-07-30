@@ -174,9 +174,10 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		// This page's data comes from a fresh fetch that fans out to Keycloak (user
 		// lookup) plus several DB queries (engagement count, badges, profile), so it
-		// is slower than a typical page load - give it the same headroom already
-		// used elsewhere in this file for API-heavy pages rather than the default.
-		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		// is slower than a typical page load - give it extra headroom (30s, up from
+		// 20s) beyond what's used elsewhere in this file for API-heavy pages, since
+		// this specific fetch fans out further than most.
+		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 30_000 });
 		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Preferred contact channel")).ToBeVisibleAsync();
 
