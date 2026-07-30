@@ -216,9 +216,9 @@ export default function OrgAppLayout() {
 				<h1 className={`text-gray-900 ${statusTitleClass}`}>
 					{t("error.boundaryTitle")}
 				</h1>
-				{/* role="alert"/aria-live (via ErrorBanner) so a retry that fails
-				    again - re-rendering this same branch, no navigation - is still
-				    announced to screen reader users, not just sighted ones. */}
+				{/* role="alert"/aria-live (via ErrorBanner) so a retry that fails again
+				- re-rendering this same branch, no navigation - is still announced to
+				screen reader users, not just sighted ones. */}
 				<ErrorBanner
 					message={errorMessage ?? t("error.serverError")}
 					className="max-w-md"
