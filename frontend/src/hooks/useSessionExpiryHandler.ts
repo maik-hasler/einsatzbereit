@@ -21,6 +21,8 @@ export function useSessionExpiryHandler() {
 	const handledRef = useRef(false);
 	const locationRef = useRef(location);
 	locationRef.current = location;
+	const authRef = useRef(auth);
+	authRef.current = auth;
 
 	useEffect(() => {
 		handledRef.current = false;
@@ -30,6 +32,16 @@ export function useSessionExpiryHandler() {
 		let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
 		function handleExpiry() {
+			// A stale/expired user object can still sit in localStorage from an
+			// earlier login - automaticSilentRenew fires a renewal attempt for it
+			// on mount regardless of what page is open, and that attempt fails
+			// immediately when there's no live Keycloak SSO session behind it
+			// (e.g. login_required). That is not "your active session just
+			// expired" - the user was never authenticated on this page to begin
+			// with, so there's nothing to interrupt them for. Only react when
+			// they actually still look logged in.
+			if (!authRef.current.isAuthenticated) return;
+
 			// Several concurrent API calls (or a bus event racing a silent-renew
 			// failure) can all report expiry around the same time - only act once.
 			if (handledRef.current) return;

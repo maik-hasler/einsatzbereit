@@ -61,10 +61,17 @@ export default function VolunteerOpportunityDetailPage() {
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
+	const isAuthenticated = auth.isAuthenticated;
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
-	const isOrganisator = roles.includes("organisator");
+	// A stale Keycloak session left in localStorage from an earlier login still
+	// populates auth.user.profile after the token has expired, so this must
+	// gate on isAuthenticated too - otherwise an anonymous visitor with old
+	// organisator claims fires an authenticated getOrganizations() call below,
+	// 401s, and gets force-redirected to sign-in on a page that's meant to
+	// work without being logged in.
+	const isOrganisator = isAuthenticated && roles.includes("organisator");
 	const [userOrgIds, setUserOrgIds] = useState<string[]>([]);
 
 	useEffect(() => {
@@ -187,7 +194,6 @@ export default function VolunteerOpportunityDetailPage() {
 	if (!opportunity)
 		return <p className="text-gray-500">{t("opportunities.notFound")}</p>;
 
-	const isAuthenticated = auth.isAuthenticated;
 	const isOwner =
 		isOrganisator && userOrgIds.includes(opportunity.organizationId);
 	const isDraft = opportunity.status === "Draft";
