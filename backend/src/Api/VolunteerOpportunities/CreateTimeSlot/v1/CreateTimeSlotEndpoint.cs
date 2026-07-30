@@ -67,7 +67,9 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		var timeSlots = await sender.Send(command, cancellationToken);
 
 		var responses = timeSlots
-			.Select(ts => new CreateTimeSlotResponse(ts.Id.Value, ts.StartDateTime, ts.EndDateTime, ts.MaxParticipants))
+			.Select(ts => new CreateTimeSlotResponse(
+				ts.Id.Value, ts.StartDateTime, ts.EndDateTime, ts.MaxParticipants,
+				ts.SeriesId, ts.RecurrenceFrequency, ts.RecurrenceCount))
 			.ToList();
 
 		return Results.Created($"/v1/volunteer-opportunities/{opportunityId}/time-slots", responses);

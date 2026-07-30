@@ -139,6 +139,10 @@ public interface IApplicationDbContext
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default);
 
+	Task<List<Engagement>> GetActiveEngagementsForTimeSlotsAsync(
+		IReadOnlyCollection<TimeSlotId> timeSlotIds,
+		CancellationToken cancellationToken = default);
+
 	Task<List<VolunteerOpportunity>> GetBlockingOpportunitiesForOrganizationAsync(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);

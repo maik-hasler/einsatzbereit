@@ -6,6 +6,7 @@ using Application.Common.Messaging;
 using Application.VolunteerOpportunities.DeleteTimeSlot.v1;
 using Domain.Primitives;
 using Domain.Users;
+using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -16,10 +17,12 @@ internal sealed class DeleteTimeSlotEndpoint : IEndpoint
 	public void MapEndpoint(IEndpointRouteBuilder app) =>
 		app.MapDelete("/volunteer-opportunities/{opportunityId:guid}/time-slots/{timeSlotId:guid}", DeleteTimeSlotAsync)
 			.WithName("DeleteTimeSlot")
-			.Produces(StatusCodes.Status204NoContent)
+			.Produces<DeleteTimeSlotResponse>(StatusCodes.Status200OK)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
 			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
@@ -28,13 +31,23 @@ internal sealed class DeleteTimeSlotEndpoint : IEndpoint
 	private static async Task<IResult> DeleteTimeSlotAsync(
 		[FromRoute] Guid opportunityId,
 		[FromRoute] Guid timeSlotId,
+		[FromQuery] string? scope,
 		[FromServices] ISender sender,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
-		var command = new DeleteTimeSlotCommand(opportunityId, timeSlotId, userId);
-		await sender.Send(command, cancellationToken);
-		return Results.NoContent();
+
+		var seriesScope = SeriesEditScope.Only;
+		if (!string.IsNullOrEmpty(scope) && !Enum.TryParse(scope, ignoreCase: true, out seriesScope))
+		{
+			return Results.Problem(
+				"Invalid scope. Allowed values: Only, ThisAndFollowing, EntireSeries.",
+				statusCode: StatusCodes.Status400BadRequest);
+		}
+
+		var command = new DeleteTimeSlotCommand(opportunityId, timeSlotId, userId, seriesScope);
+		var result = await sender.Send(command, cancellationToken);
+		return Results.Ok(new DeleteTimeSlotResponse(result.DeletedTimeSlotIds));
 	}
 }
