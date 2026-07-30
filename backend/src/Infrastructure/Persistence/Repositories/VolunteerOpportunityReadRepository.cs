@@ -47,11 +47,14 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (filter.IsRemote is bool isRemote)
 			query = query.Where(x => x.vo.IsRemote == isRemote);
 
+		// Opportunities without time slots (IndividualContact - see VolunteerOpportunity.AddTimeSlot)
+		// have no dates to compare against, so a date filter must not exclude them - matches the
+		// same "slot-less is never filtered out" convention already used for expiry above (#1059).
 		if (filter.DateFrom is DateTimeOffset dateFrom)
-			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+			query = query.Where(x => !x.vo.TimeSlots.Any() || x.vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
 
 		if (filter.DateTo is DateTimeOffset dateTo)
-			query = query.Where(x => x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+			query = query.Where(x => !x.vo.TimeSlots.Any() || x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
 		if (filter.Categories is { Length: > 0 })
 		{

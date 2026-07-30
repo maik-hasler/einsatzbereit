@@ -372,6 +372,82 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetVolunteerOpportunities_ShouldIncludeSlotlessOpportunity_WhenDateFromFilterApplied(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotless = await CreateSlotlessOpportunityAsync(authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
+
+		var nearSlotStart = DateTimeOffset.UtcNow.AddDays(2);
+		var tooEarly = await CreateOpportunityWithTimeSlotAsync(
+			authenticatedClient, orgId, "Too early for the filter", nearSlotStart, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10, dateFrom: DateTimeOffset.UtcNow.AddDays(5), cancellationToken: cancellationToken);
+
+		var ids = result.Items.Select(i => i.Id).ToList();
+		ids.Should().Contain(slotless.Id, "an opportunity with no time slots has no date to compare against and must not be hidden by a date filter");
+		ids.Should().NotContain(tooEarly.Id, "its only time slot starts before the requested dateFrom");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldIncludeSlotlessOpportunity_WhenDateToFilterApplied(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotless = await CreateSlotlessOpportunityAsync(authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
+
+		var farSlotStart = DateTimeOffset.UtcNow.AddDays(20);
+		var tooLate = await CreateOpportunityWithTimeSlotAsync(
+			authenticatedClient, orgId, "Too late for the filter", farSlotStart, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10, dateTo: DateTimeOffset.UtcNow.AddDays(5), cancellationToken: cancellationToken);
+
+		var ids = result.Items.Select(i => i.Id).ToList();
+		ids.Should().Contain(slotless.Id, "an opportunity with no time slots has no date to compare against and must not be hidden by a date filter");
+		ids.Should().NotContain(tooLate.Id, "its only time slot starts after the requested dateTo");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterWaitlistOpportunitiesByRange_WhileStillIncludingSlotlessOnes(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var slotless = await CreateSlotlessOpportunityAsync(authenticatedClient, orgId, "Express interest opportunity", cancellationToken);
+
+		var withinRange = await CreateOpportunityWithTimeSlotAsync(
+			authenticatedClient, orgId, "Within range", DateTimeOffset.UtcNow.AddDays(5), cancellationToken);
+
+		var outsideRange = await CreateOpportunityWithTimeSlotAsync(
+			authenticatedClient, orgId, "Outside range", DateTimeOffset.UtcNow.AddDays(20), cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10,
+			dateFrom: DateTimeOffset.UtcNow.AddDays(3),
+			dateTo: DateTimeOffset.UtcNow.AddDays(7),
+			cancellationToken: cancellationToken);
+
+		var ids = result.Items.Select(i => i.Id).ToList();
+		result.TotalItems.Should().Be(2);
+		ids.Should().Contain(slotless.Id);
+		ids.Should().Contain(withinRange.Id);
+		ids.Should().NotContain(outsideRange.Id);
+	}
+
+	[Test]
 	public async Task CreateVolunteerOpportunity_ShouldReturn403_WhenUserIsNotOrganizer(
 		CancellationToken cancellationToken)
 	{
@@ -590,6 +666,56 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			{
 				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
 				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		await client.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
+
+		return opportunity;
+	}
+
+	private static async Task<CreateVolunteerOpportunityResponse> CreateSlotlessOpportunityAsync(
+		EinsatzbereitApi client, Guid orgId, string title, CancellationToken cancellationToken) =>
+		await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = title,
+			Description = "No time slots - IndividualContact",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+		}, cancellationToken);
+
+	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithTimeSlotAsync(
+		EinsatzbereitApi client, Guid orgId, string title, DateTimeOffset slotStart, CancellationToken cancellationToken)
+	{
+		var opportunity = await client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = title,
+			Description = "Waitlist opportunity with a single time slot",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "Waitlist",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
+		await client.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = slotStart,
+				EndDateTime = slotStart.AddHours(2),
 				MaxParticipants = 10,
 				RecurrenceCount = 1,
 			},
