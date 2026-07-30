@@ -244,4 +244,90 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await Expect(Page.GetByText("Profile saved.")).ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task ProfileEditForm_PreservesUnsavedDraft_ThroughSilentTokenRenewal()
+	{
+		// #1221: react-oidc-context's automaticSilentRenew mints a fresh access
+		// token roughly every ~4 minutes in production (Keycloak's ~5 min default
+		// access token lifespan minus oidc-client-ts's 60s renewal buffer). The
+		// profile-load effect used to depend on that token's identity, so every
+		// renewal re-triggered form.reset(profile) and wiped whatever the user
+		// was mid-typing.
+		//
+		// FastSignInAsync can't reproduce this - its ROPC-minted refresh token
+		// belongs to the "frontend-test" client, not "frontend" (see its own
+		// comment on why it drops the refresh token entirely rather than seed an
+		// unusable one), so a silent renewal attempt would fail outright. A real
+		// LoginAsync session's refresh token is valid for "frontend", so
+		// oidc-client-ts's automaticSilentRenew can genuinely succeed via a
+		// background refresh-token grant (UserManager.signinSilent prefers the
+		// refresh token over the interactive iframe whenever one is present - no
+		// Keycloak SSO session needed for that path). Falsifying the just-minted
+		// session's stored expires_at makes that renewal fire on a short,
+		// predictable schedule instead of waiting out the realm's local
+		// accessTokenLifespan (3600s, bumped in AppHost.cs for other tests'
+		// benefit) or production's real ~4 minutes.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
+
+		// 80s remaining life at the next mount (below) means oidc-client-ts's
+		// AccessTokenEvents arms the "expiring" timer for 20s after that mount
+		// (80s - its 60s notification buffer) - comfortably after the
+		// navigate/edit/type steps below, but short enough not to bloat this
+		// test's runtime.
+		var originalAccessToken = await Page.EvaluateAsync<string>(
+			"""
+			() => {
+				for (let i = 0; i < localStorage.length; i++) {
+					const key = localStorage.key(i);
+					if (key && key.startsWith('oidc.user:')) {
+						const entry = JSON.parse(localStorage.getItem(key));
+						entry.expires_at = Math.floor(Date.now() / 1000) + 80;
+						localStorage.setItem(key, JSON.stringify(entry));
+						return entry.access_token;
+					}
+				}
+				throw new Error('no oidc.user storage entry found after LoginAsync');
+			}
+			""");
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await editButton.ClickAsync();
+
+		var draftBio = $"Unsaved silent-renewal draft {Guid.NewGuid()}";
+		await Page.Locator("#bio").FillAsync(draftBio, new() { Timeout = 10_000 });
+
+		// Confirms the renewal actually happened - without this, the assertion
+		// below would trivially pass on the old, buggy dependency array too,
+		// simply because nothing occurred within the wait.
+		string? renewedAccessToken = null;
+		await PollUntilAsync(async () =>
+		{
+			renewedAccessToken = await Page.EvaluateAsync<string?>(
+				"""
+				() => {
+					for (let i = 0; i < localStorage.length; i++) {
+						const key = localStorage.key(i);
+						if (key && key.startsWith('oidc.user:')) {
+							return JSON.parse(localStorage.getItem(key)).access_token;
+						}
+					}
+					return null;
+				}
+				""");
+			return renewedAccessToken != null && renewedAccessToken != originalAccessToken;
+		}, () => "silent token renewal should have replaced the stored access token "
+			+ $"within the timeout (last observed: {renewedAccessToken ?? "null"})",
+			timeoutMs: 40_000);
+
+		await Expect(Page.Locator("#bio")).ToHaveValueAsync(draftBio);
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save" })).ToBeVisibleAsync();
+	}
 }

@@ -272,6 +272,31 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_LayoutLoadFailed_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1234: a failed dashboard-layout fetch now renders its own inline
+		// error banner + retry button and disables the "Edit" quick action -
+		// a DOM state the plain page-load scan above never reaches, since its
+		// GET .../dashboard/layout always succeeds.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.RouteAsync("**/dashboard/layout", async route =>
+		{
+			if (route.Request.Method == "GET")
+				await route.AbortAsync();
+			else
+				await route.ContinueAsync();
+		});
+
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+
+		await Expect(Page.GetByTestId("dashboard-layout-retry")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrgDashboardPage_CalendarWidgetColorDialog_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #762 rebuilt the dashboard as a widget grid; the Calendar widget's

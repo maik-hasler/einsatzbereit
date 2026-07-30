@@ -63,6 +63,9 @@ jobs:
       - name: Check nginx HSTS header
         run: pnpm check:nginx-hsts
 
+      - name: Check nginx Permissions-Policy header
+        run: pnpm check:nginx-permissions-policy
+
       - name: Check PWA precache scoping
         run: pnpm check:pwa-precache
 

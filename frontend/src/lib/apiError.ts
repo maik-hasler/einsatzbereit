@@ -41,3 +41,17 @@ export function isApiNotFoundError(err: unknown): boolean {
 		(err as { status?: unknown }).status === 404
 	);
 }
+
+/**
+ * Detects a specific Result-pattern `errorCode` on a rejected API call (see
+ * `getApiErrorMessage` for the shape). Used to treat one particular failure
+ * as a benign no-op rather than surfacing it - e.g. a retried publish call
+ * landing on an opportunity a previous attempt already published.
+ */
+export function isApiErrorCode(err: unknown, code: string): boolean {
+	return (
+		!!err &&
+		typeof err === "object" &&
+		(err as { errorCode?: unknown }).errorCode === code
+	);
+}

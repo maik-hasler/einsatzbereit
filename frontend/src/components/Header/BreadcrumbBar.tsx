@@ -91,6 +91,7 @@ export default function BreadcrumbBar({
 								type="button"
 								onClick={action.onClick}
 								disabled={action.disabled}
+								title={action.title}
 								aria-label={action.label}
 								data-testid={`quick-action-${action.key}`}
 								className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${

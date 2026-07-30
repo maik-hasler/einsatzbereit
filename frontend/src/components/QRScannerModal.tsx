@@ -84,6 +84,7 @@ export default function QRScannerModal({
 				try {
 					const detector = new BarcodeDetector({ formats: ["qr_code"] });
 					const barcodes = await detector.detect(video);
+					let matched = false;
 					for (const barcode of barcodes) {
 						const raw = barcode.rawValue.trim();
 						if (!UUID_RE.test(raw)) continue;
@@ -92,6 +93,7 @@ export default function QRScannerModal({
 						// a real, checkable-in engagement - there is no complete
 						// client-side list to match against once the organizer's
 						// engagement view is paginated (#1401).
+						matched = true;
 						alive = false;
 						try {
 							await api.checkInEngagement(raw);
@@ -101,11 +103,14 @@ export default function QRScannerModal({
 							setScanError(
 								getApiErrorMessage(err, t("checkIn.qrCheckInError")),
 							);
+							// A failed check-in is retryable - keep the loop alive so
+							// the timer below reschedules the next scan instead of
+							// leaving the camera live with a dead loop (#1228).
 							alive = true;
 						}
-						return;
+						break;
 					}
-					setScanError(null);
+					if (!matched) setScanError(null);
 				} catch {
 					// detection failure - retry on next tick
 				}
