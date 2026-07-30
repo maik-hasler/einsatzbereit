@@ -125,8 +125,6 @@ export default function ProfileOverviewPage() {
 	usePageTitle(t("profile.title"));
 	usePageToolbar([{ label: t("breadcrumb.profile") }]);
 
-	const accessToken = auth.user?.access_token;
-
 	const [profile, setProfile] = useState<MyProfileResponse | null>(null);
 	const [profileLoading, setProfileLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -140,7 +138,13 @@ export default function ProfileOverviewPage() {
 	const form = useProfileForm(profile);
 	const avatarUpload = useAvatarUpload(setAvatarUrl);
 
-	// Load profile data (always load on mount with retry)
+	// Load profile data (always load on mount with retry). Depends on
+	// auth.isAuthenticated, not on the access token itself - react-oidc-context's
+	// automaticSilentRenew mints a fresh access token every ~4 minutes, and this
+	// effect previously kept re-running on that token's identity (#1221),
+	// re-triggering form.reset() and discarding whatever the user was mid-typing.
+	// ProtectedRoute only ever mounts this page while isAuthenticated is already
+	// true, so in practice this now runs once per mount.
 	useEffect(() => {
 		let cancelled = false;
 		const retryDelaysMs = [500, 1000, 2000];
@@ -177,7 +181,7 @@ export default function ProfileOverviewPage() {
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [accessToken]);
+	}, [auth.isAuthenticated]);
 
 	// Streak chips in the identity hero - a lightweight, non-critical stat
 	// display, so a failed fetch is silently ignored rather than surfaced.
