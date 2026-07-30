@@ -17,7 +17,8 @@ public sealed record VolunteerOpportunityFilter(
 	double? CenterLongitude = null,
 	double? RadiusKm = null,
 	string[]? Categories = null,
-	string? Tag = null)
+	string? Tag = null,
+	string? Search = null)
 {
 	public bool HasBoundingBox => North.HasValue && South.HasValue && East.HasValue && West.HasValue;
 

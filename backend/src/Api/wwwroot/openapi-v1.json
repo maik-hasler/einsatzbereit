@@ -929,6 +929,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

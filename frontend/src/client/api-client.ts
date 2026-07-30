@@ -694,9 +694,10 @@ export class EinsatzbereitApi {
      * @param radiusKm (optional) 
      * @param categories (optional) 
      * @param tag (optional) 
+     * @param search (optional) 
      * @return OK
      */
-    getVolunteerOpportunities(pageNumber: number, pageSize: number, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
+    getVolunteerOpportunities(pageNumber: number, pageSize: number, city: string | undefined, occurrence: string | undefined, participationType: string | undefined, isRemote: boolean | undefined, dateFrom: Date | undefined, dateTo: Date | undefined, north: number | undefined, south: number | undefined, east: number | undefined, west: number | undefined, centerLatitude: number | undefined, centerLongitude: number | undefined, radiusKm: number | undefined, categories: string[] | undefined, tag: string | undefined, search: string | undefined, signal?: AbortSignal): Promise<PagedListOfVolunteerOpportunitySummary> {
         let url_ = this.baseUrl + "/v1/volunteer-opportunities?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -766,6 +767,10 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'tag' cannot be null.");
         else if (tag !== undefined)
             url_ += "Tag=" + encodeURIComponent("" + tag) + "&";
+        if (search === null)
+            throw new globalThis.Error("The parameter 'search' cannot be null.");
+        else if (search !== undefined)
+            url_ += "Search=" + encodeURIComponent("" + search) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

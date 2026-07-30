@@ -40,6 +40,7 @@ describe("fetchVolunteerOpportunities", () => {
 			undefined,
 			undefined,
 			undefined,
+			undefined,
 		);
 	});
 
@@ -69,6 +70,7 @@ describe("fetchVolunteerOpportunities", () => {
 				radiusKm: 7,
 				categories: ["environment"],
 				tag: "cleanup",
+				search: "food bank",
 			},
 			signal,
 		);
@@ -91,6 +93,7 @@ describe("fetchVolunteerOpportunities", () => {
 			7,
 			["environment"],
 			"cleanup",
+			"food bank",
 			signal,
 		);
 	});

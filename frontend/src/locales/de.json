@@ -86,6 +86,8 @@
       "currentNeeds": "Aktuelle Einsätze",
       "subtitle": "Finde eine Aufgabe in deiner Nähe und pack mit an - die meisten dauern nur wenige Stunden.",
       "cityPlaceholder": "Stadt…",
+      "searchPlaceholder": "Einsätze nach Stichwort suchen…",
+      "clearSearch": "Suche löschen",
       "allFrequencies": "Alle Häufigkeiten",
       "oneTime": "Einmalig",
       "recurring": "Regelmäßig",

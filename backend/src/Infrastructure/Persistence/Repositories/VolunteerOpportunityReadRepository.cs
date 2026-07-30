@@ -73,6 +73,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 		if (!string.IsNullOrWhiteSpace(filter.Tag))
 			query = query.Where(x => x.vo.Tags.Contains(filter.Tag));
 
+		if (!string.IsNullOrWhiteSpace(filter.Search))
+		{
+			var search = filter.Search.ToLower();
+			query = query.Where(x => x.vo.Title.ToLower().Contains(search) || x.vo.Description.ToLower().Contains(search));
+		}
+
 		var boundingBox = ResolveBoundingBox(filter);
 
 		if (boundingBox is GeoBoundingBox box)

@@ -86,6 +86,8 @@
       "currentNeeds": "Current Opportunities",
       "subtitle": "Find a cause near you and lend a hand - most take just a few hours.",
       "cityPlaceholder": "City…",
+      "searchPlaceholder": "Search opportunities by keyword…",
+      "clearSearch": "Clear search",
       "allFrequencies": "All frequencies",
       "oneTime": "One-time",
       "recurring": "Recurring",

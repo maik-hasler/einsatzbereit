@@ -18,9 +18,12 @@ import {
 	GlobeIcon,
 	HashIcon,
 	PinIcon,
+	SearchIcon,
 	TagIcon,
 	UsersIcon,
 } from "./icons";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const CATEGORY_VALUES = [
 	"Social",
@@ -49,6 +52,7 @@ export default function VolunteerOpportunitiesList() {
 	const dateTo = searchParams.get("dateTo") ?? "";
 	const categoriesParam = searchParams.get("categories") ?? "";
 	const tag = searchParams.get("tag") ?? "";
+	const search = searchParams.get("search") ?? "";
 	const city = searchParams.get("city") ?? "";
 	const lat = searchParams.get("lat") ?? "";
 	const lng = searchParams.get("lng") ?? "";
@@ -62,6 +66,8 @@ export default function VolunteerOpportunitiesList() {
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
 	const [locationCityInput, setLocationCityInput] = useState(city);
 	const [locationLoading, setLocationLoading] = useState(false);
+	const [searchInput, setSearchInput] = useState(search);
+	const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const {
 		suggestions: locationSuggestions,
@@ -89,6 +95,7 @@ export default function VolunteerOpportunitiesList() {
 		dateTo,
 		categoriesParam,
 		tag,
+		search,
 		lat,
 		lng,
 		radius,
@@ -107,6 +114,39 @@ export default function VolunteerOpportunitiesList() {
 		return () => document.removeEventListener("mousedown", handleOutside);
 	}, []);
 
+	useEffect(() => {
+		return () => {
+			if (searchTimer.current) clearTimeout(searchTimer.current);
+		};
+	}, []);
+
+	function commitSearch(value: string) {
+		setSearchParams(
+			(prev) => {
+				const next = new URLSearchParams(prev);
+				if (value) next.set("search", value);
+				else next.delete("search");
+				return next;
+			},
+			{ replace: true },
+		);
+	}
+
+	function handleSearchInputChange(value: string) {
+		setSearchInput(value);
+		if (searchTimer.current) clearTimeout(searchTimer.current);
+		searchTimer.current = setTimeout(
+			() => commitSearch(value),
+			SEARCH_DEBOUNCE_MS,
+		);
+	}
+
+	function handleClearSearch() {
+		if (searchTimer.current) clearTimeout(searchTimer.current);
+		setSearchInput("");
+		commitSearch("");
+	}
+
 	function updateFilter(key: string, value: string) {
 		const next = new URLSearchParams(window.location.search);
 		if (value) next.set(key, value);
@@ -115,6 +155,8 @@ export default function VolunteerOpportunitiesList() {
 	}
 
 	function clearFilters() {
+		if (searchTimer.current) clearTimeout(searchTimer.current);
+		setSearchInput("");
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev);
@@ -129,6 +171,7 @@ export default function VolunteerOpportunitiesList() {
 				next.delete("dateTo");
 				next.delete("categories");
 				next.delete("tag");
+				next.delete("search");
 				return next;
 			},
 			{ replace: true },
@@ -235,7 +278,8 @@ export default function VolunteerOpportunitiesList() {
 		dateFrom ||
 		dateTo ||
 		selectedCategories.length > 0 ||
-		tag
+		tag ||
+		search
 	);
 
 	const locationDisplayValue = hasLocation ? `${city} · ${radius} km` : "";
@@ -269,6 +313,31 @@ export default function VolunteerOpportunitiesList() {
 				<p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
 					{t("opportunities.subtitle")}
 				</p>
+
+				<div className="relative mx-auto mt-6 max-w-lg">
+					<label htmlFor="opportunities-search" className="sr-only">
+						{t("opportunities.searchPlaceholder")}
+					</label>
+					<SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+					<input
+						id="opportunities-search"
+						type="search"
+						value={searchInput}
+						onChange={(e) => handleSearchInputChange(e.target.value)}
+						placeholder={t("opportunities.searchPlaceholder")}
+						className="w-full rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none"
+					/>
+					{searchInput && (
+						<button
+							type="button"
+							onClick={handleClearSearch}
+							aria-label={t("opportunities.clearSearch")}
+							className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+						>
+							&times;
+						</button>
+					)}
+				</div>
 			</div>
 
 			{/* Filter bar */}

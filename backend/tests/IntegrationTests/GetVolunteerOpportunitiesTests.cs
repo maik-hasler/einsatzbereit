@@ -621,6 +621,66 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		nonMatching.TotalItems.Should().Be(0);
 	}
 
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterBySearch_MatchingTitleOrDescription(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var titleMatch = await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Downtown Food Bank Drive", "Help sort donations.", cancellationToken);
+		var descriptionMatch = await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Weekend Cleanup", "Volunteers needed at the food bank.", cancellationToken);
+		var nonMatch = await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Tutoring for Kids", "Support students after school.", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, search: "food bank", cancellationToken: cancellationToken);
+
+		var ids = result.Items.Select(i => i.Id).ToList();
+		result.TotalItems.Should().Be(2);
+		ids.Should().Contain(titleMatch.Id);
+		ids.Should().Contain(descriptionMatch.Id);
+		ids.Should().NotContain(nonMatch.Id);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldMatchSearch_CaseInsensitively(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		var match = await CreateVolunteerOpportunityAsync(
+			authenticatedClient, orgId, "Tutoring for Kids", "Support students after school.", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, search: "TUTORING", cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(1);
+		result.Items.Single().Id.Should().Be(match.Id);
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldReturnEmpty_WhenSearchMatchesNothing(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateVolunteerOpportunityAsync(authenticatedClient, orgId, "Opportunity", "Description", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, search: "Nonexistent Keyword Xyz", cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(0);
+		result.Items.Should().BeEmpty();
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
 	{
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");

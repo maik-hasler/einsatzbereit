@@ -21,7 +21,7 @@ public class GetVolunteerOpportunitiesQueryHandlerTests
 	}
 
 	private static GetVolunteerOpportunitiesQuery Query(int pageNumber, int pageSize) =>
-		new(pageNumber, pageSize, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+		new(pageNumber, pageSize, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 
 	private async Task<VolunteerOpportunityFilter> CapturedFilterAsync(int pageNumber, int pageSize)
 	{
@@ -76,5 +76,21 @@ public class GetVolunteerOpportunitiesQueryHandlerTests
 	{
 		var filter = await CapturedFilterAsync(pageNumber: 1, pageSize: 25);
 		filter.PageSize.Should().Be(25);
+	}
+
+	[Test]
+	public async Task Handle_ShouldForwardSearch_ToFilter()
+	{
+		VolunteerOpportunityFilter? captured = null;
+		_readRepo
+			.GetPagedSummariesAsync(Arg.Do<VolunteerOpportunityFilter>(f => captured = f), Arg.Any<CancellationToken>())
+			.Returns(new PagedList<VolunteerOpportunitySummary>([], 0, 1, 10));
+
+		var query = new GetVolunteerOpportunitiesQuery(
+			1, 10, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "Tafel");
+		await _sut.Handle(query, CancellationToken.None);
+
+		captured.Should().NotBeNull();
+		captured!.Search.Should().Be("Tafel");
 	}
 }
