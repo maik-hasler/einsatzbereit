@@ -11,7 +11,7 @@ import type {
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { dispatchToast } from "../../lib/toastBus";
-import { getApiErrorMessage } from "../../lib/apiError";
+import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
@@ -215,6 +215,16 @@ export default function CreateVolunteerOpportunityModal({
 	>(null);
 	const [recurrenceFrequency, setRecurrenceFrequency] = useState("Weekly");
 	const [recurrenceCount, setRecurrenceCount] = useState(1);
+
+	// Create mode only: once the draft opportunity is persisted, its id is
+	// kept here (not in state) for the lifetime of this modal instance. If a
+	// later step (banner, a time slot, publish) throws and the user retries
+	// via the same button, `submit` reuses this id instead of calling
+	// `createVolunteerOpportunity` again - which would otherwise create a
+	// second, duplicate draft (#1227). `createdSlotIdsRef` mirrors this for
+	// time slots so a retry only creates the ones still missing.
+	const createdOpportunityIdRef = useRef<string | null>(null);
+	const createdSlotIdsRef = useRef<Set<string>>(new Set());
 
 	const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -553,42 +563,86 @@ export default function CreateVolunteerOpportunityModal({
 				// publish - this also keeps it invisible in listings if any step
 				// in between fails, instead of leaving a published dead-end.
 				const publishWaitlistAfterCreate = !asDraft && isWaitlist;
-				const opportunity = await api.createVolunteerOpportunity({
-					title: values.title,
-					description: values.description,
-					organizationId,
-					isRemote: values.isRemote,
-					street: values.isRemote ? undefined : values.street,
-					houseNumber: values.isRemote ? undefined : values.houseNumber,
-					zipCode: values.isRemote ? undefined : values.zipCode,
-					city: values.isRemote ? undefined : values.city,
-					occurrence: values.occurrence,
-					participationType: values.participationType,
-					checkInMethod: values.checkInMethod,
-					checkInPin: resolveCheckInPin(values),
-					category: values.category,
-					tags: values.tags,
-					isDraft: asDraft || publishWaitlistAfterCreate,
-				});
+
+				// If a previous attempt already created the draft but failed on a
+				// later step, reuse that id and update it instead of creating a
+				// second opportunity - createVolunteerOpportunity/createTimeSlot
+				// have no dedup on the backend, so calling either twice for the
+				// same logical attempt produces duplicates (#1227).
+				let opportunityId = createdOpportunityIdRef.current;
+				if (opportunityId) {
+					await api.updateVolunteerOpportunity(opportunityId, {
+						title: values.title,
+						description: values.description,
+						isRemote: values.isRemote,
+						street: values.isRemote ? undefined : values.street,
+						houseNumber: values.isRemote ? undefined : values.houseNumber,
+						zipCode: values.isRemote ? undefined : values.zipCode,
+						city: values.isRemote ? undefined : values.city,
+						occurrence: values.occurrence,
+						participationType: values.participationType,
+						checkInMethod: values.checkInMethod,
+						checkInPin: resolveCheckInPin(values),
+						category: values.category || undefined,
+						tags: values.tags,
+					});
+				} else {
+					const opportunity = await api.createVolunteerOpportunity({
+						title: values.title,
+						description: values.description,
+						organizationId,
+						isRemote: values.isRemote,
+						street: values.isRemote ? undefined : values.street,
+						houseNumber: values.isRemote ? undefined : values.houseNumber,
+						zipCode: values.isRemote ? undefined : values.zipCode,
+						city: values.isRemote ? undefined : values.city,
+						occurrence: values.occurrence,
+						participationType: values.participationType,
+						checkInMethod: values.checkInMethod,
+						checkInPin: resolveCheckInPin(values),
+						category: values.category,
+						tags: values.tags,
+						isDraft: asDraft || publishWaitlistAfterCreate,
+					});
+					opportunityId = opportunity.id;
+					createdOpportunityIdRef.current = opportunityId;
+				}
 				if (bannerFile) {
-					await uploadBanner(api, opportunity.id, bannerFile, () =>
+					await uploadBanner(api, opportunityId, bannerFile, () =>
 						dispatchToast("error", t("createOpportunity.bannerUploadFailed")),
 					);
 				}
 				for (const slot of pendingSlots) {
-					await api.createTimeSlot(opportunity.id, {
+					if (createdSlotIdsRef.current.has(slot.id)) continue;
+					await api.createTimeSlot(opportunityId, {
 						startDateTime: new Date(slot.startDateTime),
 						endDateTime: new Date(slot.endDateTime),
 						maxParticipants: slot.maxParticipants,
 						recurrenceFrequency: undefined,
 						recurrenceCount: 1,
 					});
+					createdSlotIdsRef.current.add(slot.id);
 				}
 				if (publishWaitlistAfterCreate) {
-					await api.publishVolunteerOpportunity(opportunity.id);
+					try {
+						await api.publishVolunteerOpportunity(opportunityId);
+					} catch (publishErr) {
+						// Publish isn't idempotent on the backend (a second call 409s
+						// with AlreadyPublished) - if a retry lands here after a prior
+						// attempt's publish call actually succeeded, treat that as the
+						// success it already is instead of surfacing a confusing error.
+						if (
+							!isApiErrorCode(
+								publishErr,
+								"VolunteerOpportunity.AlreadyPublished",
+							)
+						) {
+							throw publishErr;
+						}
+					}
 				}
 				if (asDraft) {
-					createdDraftId = opportunity.id;
+					createdDraftId = opportunityId;
 					dispatchToast("success", t("createOpportunity.draftSavedToast"));
 				}
 			}
