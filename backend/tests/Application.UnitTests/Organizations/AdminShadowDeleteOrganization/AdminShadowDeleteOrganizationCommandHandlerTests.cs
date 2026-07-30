@@ -161,10 +161,10 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 
 		var timeSlotId = TimeSlotId.New();
 		var opportunityA = CreateOpportunity(organizationId);
-		var engagementA = Engagement.CreateWaitlistSignUp(opportunityA.Id, UserId.New(), timeSlotId);
+		var engagementA = Engagement.CreateSlotSignUp(opportunityA.Id, UserId.New(), timeSlotId);
 		engagementA.Confirm();
 		var opportunityB = CreateOpportunity(organizationId);
-		var engagementB = Engagement.CreateWaitlistSignUp(opportunityB.Id, UserId.New(), timeSlotId);
+		var engagementB = Engagement.CreateSlotSignUp(opportunityB.Id, UserId.New(), timeSlotId);
 		engagementB.Confirm();
 
 		_dbContext

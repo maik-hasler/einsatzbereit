@@ -222,7 +222,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
-		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+		var opportunity = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
 		var timeSlots = await olafClient.CreateTimeSlotAsync(
 			opportunity.Id,
