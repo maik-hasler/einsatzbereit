@@ -15,6 +15,9 @@ public interface IEngagementReadRepository
 		VolunteerOpportunityId opportunityId,
 		int pageNumber,
 		int pageSize,
+		EngagementStatus? status = null,
+		TimeSlotId? timeSlotId = null,
+		IReadOnlyList<Guid>? volunteerIds = null,
 		CancellationToken cancellationToken = default);
 
 	ValueTask<PagedList<EngagementSummary>> GetByVolunteerAsync(

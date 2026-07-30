@@ -82,7 +82,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "Ready to help" },
 			cancellationToken);
 
-		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 
 		engagements.Items.Should().HaveCount(1);
 		engagements.Items.Single().Status.Should().Be("Pending");
@@ -94,7 +94,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var anonClient = new EinsatzbereitApi(fixture.CreateHttpClient());
 
-		var act = () => anonClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken);
+		var act = () => anonClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(401);
@@ -106,7 +106,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	{
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		var act = () => veraClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken);
+		var act = () => veraClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
@@ -124,7 +124,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
 		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
 
-		var result = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 2, cancellationToken);
+		var result = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 2, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(3);
 		result.Items.Should().HaveCount(2);
@@ -144,7 +144,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
 		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
 
-		var result = await olafClient.GetEngagementsAsync(opportunity.Id, 2, 2, cancellationToken);
+		var result = await olafClient.GetEngagementsAsync(opportunity.Id, 2, 2, cancellationToken: cancellationToken);
 
 		result.TotalItems.Should().Be(3);
 		result.Items.Should().HaveCount(1);
@@ -159,7 +159,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
-		var act = () => olafClient.GetEngagementsAsync(opportunity.Id, 0, 10, cancellationToken);
+		var act = () => olafClient.GetEngagementsAsync(opportunity.Id, 0, 10, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(400);
@@ -173,10 +173,120 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
 		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
 
-		var act = () => olafClient.GetEngagementsAsync(opportunity.Id, 1, 101, cancellationToken);
+		var act = () => olafClient.GetEngagementsAsync(opportunity.Id, 1, 101, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldReturn400_WhenStatusIsInvalid(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var act = () => olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, 10, status: "NotAStatus", cancellationToken: cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldFilterByStatus_WhenStatusProvided(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var confirmedEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "Confirm me" }, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(confirmedEngagement.Id, cancellationToken);
+
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, 10, status: "Confirmed", cancellationToken: cancellationToken);
+
+		result.Items.Should().ContainSingle(e => e.Id == confirmedEngagement.Id);
+		result.Items.Should().OnlyContain(e => e.Status == "Confirmed");
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldFilterByTimeSlot_WhenTimeSlotIdProvided(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "Weekly",
+				RecurrenceCount = 2,
+			},
+			cancellationToken);
+		var firstSlotId = timeSlots.ElementAt(0).Id;
+		var secondSlotId = timeSlots.ElementAt(1).Id;
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var firstEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = firstSlotId }, cancellationToken);
+		var secondEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = secondSlotId }, cancellationToken);
+
+		var result = await olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, 10, timeSlotId: firstSlotId, cancellationToken: cancellationToken);
+
+		result.Items.Should().ContainSingle(e => e.Id == firstEngagement.Id);
+		result.Items.Should().NotContain(e => e.Id == secondEngagement.Id);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldFilterBySearch_MatchingVolunteerUsername(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var (_, targetUsername, targetPassword) = await fixture.CreateEphemeralUserAsync(cancellationToken);
+		var targetClient = await CreateAuthenticatedClientAsync(targetUsername, targetPassword);
+		var targetEngagement = await targetClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { Message = "Pick me" }, cancellationToken);
+
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, 10, search: targetUsername, cancellationToken: cancellationToken);
+
+		result.Items.Should().ContainSingle(e => e.Id == targetEngagement.Id);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldReturnEmptyPage_WhenSearchMatchesNoVolunteer(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, 10, search: $"no-such-volunteer-{Guid.NewGuid():N}", cancellationToken: cancellationToken);
+
+		result.Items.Should().BeEmpty();
+		result.TotalItems.Should().Be(0);
 	}
 
 	// ── ConfirmEngagement ─────────────────────────────────────────────────────
@@ -669,7 +779,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		await CreateOrganizationAsync(veraClient, cancellationToken);
 
 		// vera (organisator, but NOT in org1) tries to access org1's engagements
-		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
+		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
@@ -1173,7 +1283,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var secondEngagement = await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { TimeSlotId = secondSlotId }, cancellationToken);
 
-		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 		var firstAfter = engagements.Items.Single(e => e.Id == firstEngagement.Id);
 		var secondAfter = engagements.Items.Single(e => e.Id == secondEngagement.Id);
 

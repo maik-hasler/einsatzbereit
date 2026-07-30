@@ -23,6 +23,7 @@ import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
+import { inputClass, labelClass } from "../lib/formClasses";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 const ENGAGEMENTS_PAGE_SIZE = 10;
@@ -74,6 +75,13 @@ export default function EngagementManagementPage() {
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
+	const [statusFilter, setStatusFilter] = useState("");
+	const [timeSlotFilter, setTimeSlotFilter] = useState("");
+	const [search, setSearch] = useState("");
+	const [appliedSearch, setAppliedSearch] = useState("");
+	const hasActiveFilters =
+		statusFilter !== "" || timeSlotFilter !== "" || appliedSearch !== "";
+
 	const {
 		items: engagements,
 		setItems: setEngagements,
@@ -92,6 +100,9 @@ export default function EngagementManagementPage() {
 					opportunityId,
 					page,
 					ENGAGEMENTS_PAGE_SIZE,
+					statusFilter || undefined,
+					timeSlotFilter || undefined,
+					appliedSearch.trim() || undefined,
 				);
 			} catch (err) {
 				if (isApiNotFoundError(err)) setNotFound(true);
@@ -99,9 +110,15 @@ export default function EngagementManagementPage() {
 			}
 		},
 		{
+			deps: [statusFilter, timeSlotFilter, appliedSearch],
 			getErrorMessage: (err) => getApiErrorMessage(err, t("error.serverError")),
 		},
 	);
+
+	function handleSearchSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setAppliedSearch(search);
+	}
 
 	const {
 		items: feedbackItems,
@@ -262,6 +279,76 @@ export default function EngagementManagementPage() {
 				</div>
 			)}
 
+			<div className="mb-4 flex flex-wrap items-end gap-3">
+				<div>
+					<label htmlFor="engagement-status-filter" className={labelClass}>
+						{t("engagementManagement.filterLabelStatus")}
+					</label>
+					<select
+						id="engagement-status-filter"
+						value={statusFilter}
+						onChange={(e) => setStatusFilter(e.target.value)}
+						className={inputClass}
+					>
+						<option value="">{t("engagementManagement.allStatuses")}</option>
+						{Object.entries(STATUS_LABELS).map(([value, label]) => (
+							<option key={value} value={value}>
+								{label}
+							</option>
+						))}
+					</select>
+				</div>
+				{opportunity && opportunity.timeSlots.length > 1 && (
+					<div>
+						<label htmlFor="engagement-timeslot-filter" className={labelClass}>
+							{t("engagementManagement.filterLabelTimeSlot")}
+						</label>
+						<select
+							id="engagement-timeslot-filter"
+							value={timeSlotFilter}
+							onChange={(e) => setTimeSlotFilter(e.target.value)}
+							className={inputClass}
+						>
+							<option value="">{t("engagementManagement.allTimeSlots")}</option>
+							{opportunity.timeSlots.map((slot) => (
+								<option key={slot.id} value={slot.id}>
+									{formatDateTime(
+										slot.startDateTime as unknown as string,
+										i18n.language,
+									)}{" "}
+									-{" "}
+									{formatDateTime(
+										slot.endDateTime as unknown as string,
+										i18n.language,
+									)}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+				<form
+					onSubmit={handleSearchSubmit}
+					className="flex flex-1 items-end gap-2"
+				>
+					<div className="min-w-0 flex-1">
+						<label htmlFor="engagement-search" className={labelClass}>
+							{t("engagementManagement.searchLabel")}
+						</label>
+						<input
+							id="engagement-search"
+							type="search"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							placeholder={t("engagementManagement.searchPlaceholder")}
+							className={inputClass}
+						/>
+					</div>
+					<Button type="submit">
+						{t("engagementManagement.searchButton")}
+					</Button>
+				</form>
+			</div>
+
 			{loading && (
 				<div className="flex items-center justify-center py-16">
 					<Spinner label={t("engagementManagement.loading")} />
@@ -273,12 +360,20 @@ export default function EngagementManagementPage() {
 				/>
 			)}
 
-			{!loading && !error && engagements.length === 0 && (
-				<EmptyState
-					title={t("engagementManagement.noApplications")}
-					message={t("engagementManagement.noApplicationsHint")}
-				/>
-			)}
+			{!loading &&
+				!error &&
+				engagements.length === 0 &&
+				(hasActiveFilters ? (
+					<EmptyState
+						title={t("engagementManagement.noResults")}
+						message={t("engagementManagement.noResultsHint")}
+					/>
+				) : (
+					<EmptyState
+						title={t("engagementManagement.noApplications")}
+						message={t("engagementManagement.noApplicationsHint")}
+					/>
+				))}
 
 			{!loading && !error && engagements.length > 0 && (
 				<ul className="space-y-3">
