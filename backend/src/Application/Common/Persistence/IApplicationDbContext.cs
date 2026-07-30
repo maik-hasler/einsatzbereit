@@ -103,6 +103,7 @@ public interface IApplicationDbContext
 	Task<bool> HasEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,
+		TimeSlotId? timeSlotId,
 		CancellationToken cancellationToken = default);
 
 	IAggregateRepository<UserStreak, UserStreakId> UserStreaks { get; }
@@ -178,6 +179,7 @@ public interface IApplicationDbContext
 	Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,
+		TimeSlotId? timeSlotId,
 		CancellationToken cancellationToken = default);
 
 	Task<bool> CanConnectAsync(

@@ -1055,6 +1055,138 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(400);
 	}
 
+	// ── Multiple time slots per opportunity (#1067) ───────────────────────────
+
+	[Test]
+	public async Task CreateEngagement_ShouldSucceed_WhenVolunteerSignsUpForASecondTimeSlot_OnSameWaitlistOpportunity(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "Weekly",
+				RecurrenceCount = 2,
+			},
+			cancellationToken);
+		var firstSlotId = timeSlots.ElementAt(0).Id;
+		var secondSlotId = timeSlots.ElementAt(1).Id;
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var firstEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = firstSlotId },
+			cancellationToken);
+
+		var secondEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { TimeSlotId = secondSlotId },
+			cancellationToken);
+
+		firstEngagement.Status.Should().Be("Pending");
+		secondEngagement.Status.Should().Be("Pending");
+		secondEngagement.Id.Should().NotBe(firstEngagement.Id);
+	}
+
+	[Test]
+	public async Task CreateEngagement_ShouldReturn409_WhenVolunteerSignsUpTwiceForTheSameTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		var slotId = timeSlots.First().Id;
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = slotId }, cancellationToken);
+
+		var act = () => veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = slotId }, cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(409);
+	}
+
+	[Test]
+	public async Task CreateEngagement_ShouldPreserveAttendanceAndFeedback_WhenOrganizerCancelsToFreeUpADifferentTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1067: an organizer cancelling an attended engagement to
+		// "unblock" a volunteer for a different slot of the same recurring
+		// opportunity must not resurrect that attended record into the new slot -
+		// its attendance/feedback history has to survive untouched, and the new
+		// slot needs a brand new engagement row.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateWaitlistOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var timeSlots = await olafClient.CreateTimeSlotAsync(
+			opportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceFrequency = "Weekly",
+				RecurrenceCount = 2,
+			},
+			cancellationToken);
+		var firstSlotId = timeSlots.ElementAt(0).Id;
+		var secondSlotId = timeSlots.ElementAt(1).Id;
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var firstEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = firstSlotId }, cancellationToken);
+
+		await olafClient.ConfirmEngagementAsync(firstEngagement.Id, cancellationToken);
+		await olafClient.CheckInEngagementAsync(firstEngagement.Id, cancellationToken);
+		await veraClient.SubmitFeedbackAsync(
+			firstEngagement.Id,
+			new SubmitFeedbackRequest { Rating = 5, Comment = "Great first session" },
+			cancellationToken);
+
+		// Organizer cancels the attended engagement to free up a spot for vera.
+		await olafClient.CancelEngagementAsync(
+			firstEngagement.Id,
+			new CancelEngagementRequest { Reason = "Freeing up a spot" },
+			cancellationToken);
+
+		var secondEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id, new CreateEngagementRequest { TimeSlotId = secondSlotId }, cancellationToken);
+
+		var engagements = await olafClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken);
+		var firstAfter = engagements.Items.Single(e => e.Id == firstEngagement.Id);
+		var secondAfter = engagements.Items.Single(e => e.Id == secondEngagement.Id);
+
+		firstAfter.Status.Should().Be("Cancelled");
+		firstAfter.IsCheckedIn.Should().BeTrue();
+		firstAfter.HasFeedback.Should().BeTrue();
+		firstAfter.TimeSlotId.Should().Be(firstSlotId);
+
+		secondAfter.Status.Should().Be("Pending");
+		secondAfter.TimeSlotId.Should().Be(secondSlotId);
+		secondAfter.Id.Should().NotBe(firstEngagement.Id);
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
