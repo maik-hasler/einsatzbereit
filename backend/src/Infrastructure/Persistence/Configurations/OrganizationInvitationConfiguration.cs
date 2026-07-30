@@ -44,6 +44,8 @@ internal sealed class OrganizationInvitationConfiguration : IEntityTypeConfigura
 			.HasConversion<string>()
 			.IsRequired();
 
+		builder.Property(i => i.ExpiresOn).IsRequired();
+
 		builder.Property(i => i.CreatedOn).IsRequired();
 		builder.Property(i => i.ModifiedOn);
 

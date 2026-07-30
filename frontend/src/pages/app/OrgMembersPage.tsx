@@ -74,6 +74,9 @@ export default function OrgMembersPage() {
 	const [dismissingInvitationId, setDismissingInvitationId] = useState<
 		string | null
 	>(null);
+	const [resendingInvitationId, setResendingInvitationId] = useState<
+		string | null
+	>(null);
 
 	useEffect(() => {
 		api
@@ -124,6 +127,25 @@ export default function OrgMembersPage() {
 			setSettingsError(t("orgSettings.dismissError"));
 		} finally {
 			setDismissingInvitationId(null);
+		}
+	}
+
+	async function handleResendInvitation(invitationId: string) {
+		setResendingInvitationId(invitationId);
+		try {
+			await api.resendInvitation(org.id, invitationId);
+			setInvitations((prev) =>
+				prev.map((i) =>
+					i.id === invitationId ? { ...i, status: "Pending" } : i,
+				),
+			);
+			setSettingsError(null);
+			setSuccessMessage(t("orgSettings.resendSent"));
+		} catch {
+			setSuccessMessage(null);
+			setSettingsError(t("orgSettings.resendError"));
+		} finally {
+			setResendingInvitationId(null);
 		}
 	}
 
@@ -293,6 +315,56 @@ export default function OrgMembersPage() {
 										>
 											{t("orgSettings.dismissInvitation")}
 										</button>
+									</li>
+								))}
+						</ul>
+					</div>
+				)}
+
+				{invitations.some((i) => i.status === "Expired") && (
+					<div className="mb-6">
+						<h2 className="mb-2 text-sm font-medium text-gray-700">
+							{t("orgSettings.expiredInvitations")}
+						</h2>
+						<ul className="divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
+							{invitations
+								.filter((i) => i.status === "Expired")
+								.map((invitation) => (
+									<li
+										key={invitation.id}
+										className="flex items-center justify-between px-3 py-2"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-medium text-gray-900">
+												{invitation.inviteeName}
+											</p>
+										</div>
+										<div className="ml-3 flex shrink-0 items-center gap-3">
+											<button
+												type="button"
+												onClick={() => handleResendInvitation(invitation.id)}
+												disabled={
+													resendingInvitationId === invitation.id ||
+													dismissingInvitationId === invitation.id
+												}
+												className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+											>
+												{resendingInvitationId === invitation.id
+													? t("orgSettings.resendingInvitation")
+													: t("orgSettings.resendInvitation")}
+											</button>
+											<button
+												type="button"
+												onClick={() => handleDismissInvitation(invitation.id)}
+												disabled={
+													dismissingInvitationId === invitation.id ||
+													resendingInvitationId === invitation.id
+												}
+												className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+											>
+												{t("orgSettings.dismissInvitation")}
+											</button>
+										</div>
 									</li>
 								))}
 						</ul>

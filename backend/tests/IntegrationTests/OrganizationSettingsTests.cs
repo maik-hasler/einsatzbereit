@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using AwesomeAssertions;
+using Infrastructure.BackgroundJobs;
 using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
@@ -522,6 +523,125 @@ public class OrganizationSettingsTests(
 
 		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
 		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
+	}
+
+	// ── Invitation expiry + resend (#1053) ───────────────────────────────────
+
+	[Test]
+	public async Task ResendInvitation_ShouldReturn409_WhenInvitationIsStillPending(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Resend 409 Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+
+		var act = () => olafClient.ResendInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+	}
+
+	[Test]
+	public async Task ResendInvitation_ShouldReturn204AndResetToPending_WhenInvitationIsExpired(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Resend Success Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await ExpireAllDueInvitationsAsync(cancellationToken);
+
+		var invitationsBeforeResend = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitationsBeforeResend.Should().ContainSingle(i => i.Id == invitation.InvitationId && i.Status == "Expired");
+
+		await olafClient.ResendInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var invitationsAfterResend = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitationsAfterResend.Should().ContainSingle(i => i.Id == invitation.InvitationId && i.Status == "Pending");
+
+		// Resend must re-surface it in the invitee's own pending list too, not
+		// just flip the status the organizer sees.
+		var veraInvitations = await veraClient.GetMyInvitationsAsync(cancellationToken);
+		veraInvitations.Should().ContainSingle(i => i.Id == invitation.InvitationId);
+	}
+
+	[Test]
+	public async Task ResendInvitation_ShouldReturn403_WhenRequestingUserIsNotMemberOfTheOrganization(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Resend 403 Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await ExpireAllDueInvitationsAsync(cancellationToken);
+
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 4" }, cancellationToken);
+
+		var act = () => veraClient.ResendInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task ResendInvitation_ShouldReturn404_WhenInvitationDoesNotExist(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Resend 404 Test Org" }, cancellationToken);
+
+		var act = () => olafClient.ResendInvitationAsync(org.Id.Value, Guid.NewGuid(), cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsExpired(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Dismiss Expired Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+		await ExpireAllDueInvitationsAsync(cancellationToken);
+
+		await olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
+	}
+
+	// Simulates InvitationExpiryJob's periodic tick firing well past every
+	// invitation's 14-day window, rather than waiting 14 real days in a test.
+	private async Task ExpireAllDueInvitationsAsync(CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var future = DateTimeOffset.UtcNow.AddDays(15);
+		await InvitationExpiryJob.ExpireDueInvitationsAsync(dbContext, future, cancellationToken);
 	}
 
 	// ── RemoveMember (last-member protection, #580) ──────────────────────────

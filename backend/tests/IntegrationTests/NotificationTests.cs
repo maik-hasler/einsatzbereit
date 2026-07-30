@@ -60,6 +60,33 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetMyNotifications_InvitationReceived_HasOrganizationNameAsRelatedTitleAndInvitationsUrl(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1053: RelatedEntityId on an InvitationReceived
+		// notification is the invitation's own id, not an opportunity id - the
+		// repository used to always look it up as one, so relatedTitle stayed
+		// null and the frontend rendered "You've been invited to join a
+		// deleted opportunity" for every single invitation.
+		const string organizationName = "Invitation Notification Test Org";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = organizationName }, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id }, cancellationToken);
+
+		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = veraNotifications.Items.Single(n => n.Kind == "InvitationReceived");
+		notification.RelatedTitle.Should().Be(organizationName);
+		notification.ActionUrl.Should().Be("/profile?tab=invitations");
+	}
+
+	[Test]
 	public async Task GetMyNotifications_BeforeCursor_ReturnsOnlyOlderNotifications(
 		CancellationToken cancellationToken)
 	{

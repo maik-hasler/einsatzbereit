@@ -33,7 +33,7 @@ public class AcceptInvitationCommandHandlerTests
 	}
 
 	private static OrganizationInvitation CreatePendingInvitation() =>
-		OrganizationInvitation.Create(OrgId, "Test Org", InviteeId, "Invitee Name", InviterId);
+		OrganizationInvitation.Create(OrgId, "Test Org", InviteeId, "Invitee Name", InviterId, DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldGrantOrganizerCapability_OnAccept(
