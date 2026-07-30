@@ -732,4 +732,92 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			.Filter(new() { HasText = uniqueTitle });
 		await Expect(listedCard).ToBeVisibleAsync(new() { Timeout = 30_000 });
 	}
+
+	[Test]
+	public async Task DetailPage_ClearsStaleError_AfterClientSideNavigationToAnotherOpportunity()
+	{
+		// Regression for #1223: load() reset `loading` but never reset `error`,
+		// so once one opportunity failed to load, the ErrorBanner stayed pinned
+		// over every opportunity visited afterwards - render checks `error`
+		// before `opportunity`, and the component instance is reused across
+		// /volunteer-opportunities/:opportunityId route changes (no remount),
+		// so a stale error from a previous id was never cleared by a later
+		// successful load.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Stale Error Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		async Task<(string Id, string Title)> CreateOpportunityAsync(string label)
+		{
+			var title = $"{label} {suffix}";
+			var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+			{
+				title,
+				description = $"{label} opportunity for issue 1223 stale-error coverage.",
+				organizationId,
+				isRemote = true,
+				occurrence = "OneTime",
+				participationType = "IndividualContact",
+				checkInMethod = "None",
+				isDraft = false,
+			});
+			response.EnsureSuccessStatusCode();
+			var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+			return (body.GetProperty("id").GetString()!, title);
+		}
+
+		var (idA, titleA) = await CreateOpportunityAsync("Sibling A");
+		var (idB, titleB) = await CreateOpportunityAsync("Sibling B");
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{idA}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(titleA, new() { Timeout = 15_000 });
+
+		var teaser = Page.GetByTestId("more-from-organization");
+		var siblingLink = teaser.GetByRole(AriaRole.Link, new() { Name = titleB });
+		await Expect(siblingLink).ToBeVisibleAsync();
+
+		// Force exactly the next request for opportunity B to fail, simulating
+		// a broken/deleted listing - the failure itself is expected behavior
+		// here, not the bug under test.
+		var failedOnce = false;
+		await Page.RouteAsync($"**/v1/volunteer-opportunities/{idB}", async route =>
+		{
+			if (failedOnce)
+			{
+				await route.ContinueAsync();
+				return;
+			}
+			failedOnce = true;
+			await route.FulfillAsync(new()
+			{
+				Status = 500,
+				ContentType = "application/json",
+				Headers = new Dictionary<string, string> { ["Access-Control-Allow-Origin"] = "*" },
+				Body = "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.6.1\",\"status\":500}",
+			});
+		});
+
+		// Client-side navigation (SPA <Link>, no full page reload) into the
+		// failing opportunity.
+		await siblingLink.ClickAsync();
+		var errorBanner = Page.Locator("[role='alert'][aria-live='assertive']");
+		await Expect(errorBanner).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Client-side back navigation to opportunity A - same mounted component,
+		// no full page reload - must show A's content cleanly, without the
+		// stale error banner pinned from B's earlier failed load.
+		await Page.GoBackAsync();
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(titleA, new() { Timeout = 15_000 });
+		await Expect(errorBanner).Not.ToBeVisibleAsync();
+	}
 }

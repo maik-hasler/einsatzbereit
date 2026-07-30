@@ -142,6 +142,54 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 	}
 
 	[Test]
+	public async Task QRScannerModal_ResumesScanning_AfterFailedCheckIn()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var keycloak = Fixture.GetEndpoint("keycloak");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var (opportunityId, organizationId, engagementId) =
+			await CreateQrCheckInEngagementAsync(keycloak, backend, "Retry");
+
+		await MockQrCameraSupportAsync(Page, grantCamera: true);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Scan QR code" }).ClickAsync();
+		var dialog = Page.Locator("[role='dialog']");
+		await Expect(dialog).ToBeVisibleAsync();
+		await Expect(dialog.Locator("video")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Regression for #1228: a failed check-in (404 here) used to leave the
+		// scan loop permanently dead - the camera stayed live but the timer
+		// that reschedules the next detect() call never fired again. Presenting
+		// a valid QR code afterwards must still succeed, proving the loop kept
+		// polling instead of silently doing nothing.
+		var unknownId = Guid.NewGuid().ToString();
+		await Page.EvaluateAsync(
+			"(id) => { window.__qrTestBarcodes = [{ rawValue: id, format: 'qr_code' }]; }",
+			unknownId);
+
+		await Expect(dialog.GetByText("Engagement not found."))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.EvaluateAsync(
+			"(id) => { window.__qrTestBarcodes = [{ rawValue: id, format: 'qr_code' }]; }",
+			engagementId);
+
+		await Expect(dialog.GetByText("Volunteer checked in successfully!"))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Done" }).ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+
+		await Expect(Page.GetByText("Checked in")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+	}
+
+	[Test]
 	public async Task QRScannerModal_ShowsCameraError_WhenCameraPermissionDenied()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");

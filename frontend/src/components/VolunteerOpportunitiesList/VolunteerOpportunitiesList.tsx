@@ -72,19 +72,27 @@ export default function VolunteerOpportunitiesList() {
 
 	const filterBarRef = useRef<HTMLDivElement>(null);
 
-	const { items, loading, loadingMore, error, hasMore, loadMore } =
-		useVolunteerOpportunitiesData({
-			occurrence,
-			participationType,
-			isRemoteParam,
-			dateFrom,
-			dateTo,
-			categoriesParam,
-			tag,
-			lat,
-			lng,
-			radius,
-		});
+	const {
+		items,
+		loading,
+		loadingMore,
+		error,
+		hasMore,
+		loadMore,
+		loadMoreError,
+		retryLoadMore,
+	} = useVolunteerOpportunitiesData({
+		occurrence,
+		participationType,
+		isRemoteParam,
+		dateFrom,
+		dateTo,
+		categoriesParam,
+		tag,
+		lat,
+		lng,
+		radius,
+	});
 
 	useEffect(() => {
 		function handleOutside(e: MouseEvent) {
@@ -629,6 +637,8 @@ export default function VolunteerOpportunitiesList() {
 				hasMore={hasMore}
 				loadingMore={loadingMore}
 				onLoadMore={loadMore}
+				loadMoreError={loadMoreError}
+				onRetryLoadMore={retryLoadMore}
 			/>
 		</div>
 	);

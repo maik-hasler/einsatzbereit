@@ -117,7 +117,7 @@ export default function OpportunityListItem({
 					<h3 className="text-base font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
 					</h3>
-					{item.nextTimeSlotStart && (
+					{item.nextTimeSlotStart ? (
 						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-brand-700">
 							<CalendarIcon className="h-4 w-4 shrink-0" />
 							<span>
@@ -126,6 +126,11 @@ export default function OpportunityListItem({
 									i18n.language,
 								)}
 							</span>
+						</p>
+					) : (
+						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
+							<CalendarIcon className="h-4 w-4 shrink-0" />
+							<span>{t("opportunities.flexibleDate")}</span>
 						</p>
 					)}
 					{item.description && (

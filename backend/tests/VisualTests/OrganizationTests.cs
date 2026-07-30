@@ -152,6 +152,68 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task RemoveMember_ShowsConfirmationDialog_AndOnlyRemovesAfterConfirm()
+	{
+		// Regression for #1231: the Members page's "Remove" button used to call
+		// RemoveMember directly on click - no confirmation, no way to back out,
+		// unlike every other destructive action on this page (Leave, Delete
+		// Organization) which already goes through ConfirmDialog. Verifies
+		// "Remove" now opens a dialog naming the member, "Keep" cancels without
+		// removing them, and only "Yes, remove" actually calls the API.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1231 RemoveConfirm", pinnedOrgId!.Value);
+
+		var match = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard");
+		match.Success.Should().BeTrue();
+		var organizationId = Guid.Parse(match.Groups[1].Value);
+
+		var vera = await Fixture.SignInAsync("vera", "vera123");
+		await Fixture.AddPlainMemberDirectlyAsync(organizationId, vera.UserId);
+
+		// OrgAppLayout only refetches org details on organizationId change, so
+		// the dashboard we're still on would otherwise keep showing its
+		// pre-membership snapshot (olaf as sole member) - force a refetch, same
+		// as the SoleOrganizer test above.
+		await Page.ReloadAsync();
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		// Scope to vera's row by her stable seed email rather than her display
+		// name: other tests in this shared session (e.g. ProfileOverviewTests)
+		// rename her last name to "Sample", and that mutation isn't reset
+		// between tests, so asserting a specific full name here is order-
+		// dependent flakiness waiting to happen.
+		var veraRow = Page.Locator("li", new() { HasText = "vera@example.com" });
+		await Expect(veraRow).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		var veraName = await veraRow.Locator("p").First.TextContentAsync();
+		veraName.Should().NotBeNullOrEmpty();
+
+		var removeButton = veraRow.GetByRole(AriaRole.Button, new() { Name = "Remove" });
+		await removeButton.ClickAsync();
+
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await Expect(dialog.GetByText(veraName!)).ToBeVisibleAsync();
+
+		// "Keep" must close the dialog without removing the member.
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Keep" }).ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+		await Expect(veraRow).ToBeVisibleAsync();
+
+		// "Yes, remove" on a second attempt actually removes them.
+		await removeButton.ClickAsync();
+		await Expect(dialog).ToBeVisibleAsync();
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, remove" }).ClickAsync();
+
+		await Expect(dialog).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(veraRow).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{
 		// #580: the new "Delete Organization" action, enabled only for the

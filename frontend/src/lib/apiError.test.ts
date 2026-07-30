@@ -12,7 +12,11 @@ vi.mock("../i18n", () => ({
 	},
 }));
 
-import { getApiErrorMessage, isApiNotFoundError } from "./apiError";
+import {
+	getApiErrorMessage,
+	isApiErrorCode,
+	isApiNotFoundError,
+} from "./apiError";
 
 describe("getApiErrorMessage", () => {
 	beforeEach(() => {
@@ -103,5 +107,46 @@ describe("isApiNotFoundError", () => {
 
 	it("returns false for a non-object value", () => {
 		expect(isApiNotFoundError("404")).toBe(false);
+	});
+});
+
+describe("isApiErrorCode", () => {
+	it("returns true when errorCode matches", () => {
+		expect(
+			isApiErrorCode(
+				{ errorCode: "VolunteerOpportunity.AlreadyPublished" },
+				"VolunteerOpportunity.AlreadyPublished",
+			),
+		).toBe(true);
+	});
+
+	it("returns false when errorCode is a different code", () => {
+		expect(
+			isApiErrorCode(
+				{ errorCode: "VolunteerOpportunity.NotFound" },
+				"VolunteerOpportunity.AlreadyPublished",
+			),
+		).toBe(false);
+	});
+
+	it("returns false when errorCode is missing", () => {
+		expect(isApiErrorCode({}, "VolunteerOpportunity.AlreadyPublished")).toBe(
+			false,
+		);
+	});
+
+	it("returns false for null", () => {
+		expect(isApiErrorCode(null, "VolunteerOpportunity.AlreadyPublished")).toBe(
+			false,
+		);
+	});
+
+	it("returns false for a non-object value", () => {
+		expect(
+			isApiErrorCode(
+				"VolunteerOpportunity.AlreadyPublished",
+				"VolunteerOpportunity.AlreadyPublished",
+			),
+		).toBe(false);
 	});
 });

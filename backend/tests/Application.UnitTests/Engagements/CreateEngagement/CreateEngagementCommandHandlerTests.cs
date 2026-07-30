@@ -59,7 +59,7 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
 		_dbContext.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
 			.Returns(0);
-		_dbContext.GetTerminalEngagementAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+		_dbContext.GetTerminalEngagementAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns((Engagement?)null);
 		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService);
 	}
@@ -259,5 +259,90 @@ public class CreateEngagementCommandHandlerTests
 		// Assert
 		result.TimeSlotId.Should().Be(timeSlotId);
 		result.Status.Should().Be(EngagementStatus.Pending);
+	}
+
+	// --- Time-slot-scoped uniqueness (#1067) ---
+
+	[Test]
+	public async Task Handle_ShouldCheckForDuplicateSignUp_ScopedToTheRequestedTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert - the duplicate check is scoped to this time slot, not the whole
+		// opportunity, so a second sign-up for a different slot isn't blocked.
+		await _dbContext.Received(1).HasEngagementAsync(volunteerId, opportunityId, timeSlotId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldLookUpTerminalEngagement_ScopedToTheRequestedTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert - a terminated engagement for a *different* slot must never
+		// surface here, or reactivating it would wipe that other slot's
+		// attendance/feedback data (the #1067 compounding bug).
+		await _dbContext.Received(1).GetTerminalEngagementAsync(volunteerId, opportunityId, timeSlotId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldReuseTerminalEngagement_WhenOneExistsForTheRequestedTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var terminalEngagement = Engagement.CreateSlotSignUp(opportunityId, volunteerId, timeSlotId);
+		terminalEngagement.Withdraw();
+		_dbContext.GetTerminalEngagementAsync(volunteerId, opportunityId, timeSlotId, Arg.Any<CancellationToken>())
+			.Returns(terminalEngagement);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeSameAs(terminalEngagement);
+		result.Status.Should().Be(EngagementStatus.Pending);
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldCreateNewEngagement_WhenATerminalEngagementOnlyExistsForAnotherTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - simulates the volunteer having a cancelled/attended
+		// engagement on a different slot of the same opportunity: since
+		// GetTerminalEngagementAsync is stubbed per-timeSlotId, it returns null
+		// for *this* slot, exactly like the real time-slot-scoped query would.
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert - a fresh engagement is created for this slot; nothing about the
+		// other slot's terminal engagement is touched.
+		result.TimeSlotId.Should().Be(timeSlotId);
+		result.Status.Should().Be(EngagementStatus.Pending);
+		await _engagementRepo.Received(1).AddAsync(Arg.Any<Engagement>(), cancellationToken);
 	}
 }

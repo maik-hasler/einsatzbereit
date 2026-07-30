@@ -70,8 +70,17 @@ internal sealed class EngagementConfiguration
 
 		builder.HasIndex(e => new { e.VolunteerId, e.Status });
 
-		builder.HasIndex(e => new { e.VolunteerId, e.OpportunityId })
+		// One engagement per volunteer per time slot - lets a volunteer sign up for
+		// several slots of the same recurring waitlist opportunity (#1067).
+		builder.HasIndex(e => new { e.VolunteerId, e.TimeSlotId })
 			.IsUnique();
+
+		// Individual-contact engagements have no time slot, so the index above
+		// doesn't constrain them (Postgres treats every NULL as distinct) - keep the
+		// original one-engagement-per-opportunity rule for that case explicitly.
+		builder.HasIndex(e => new { e.VolunteerId, e.OpportunityId })
+			.IsUnique()
+			.HasFilter("time_slot_id IS NULL");
 
 		builder.HasOne<TimeSlot>()
 			.WithMany()
