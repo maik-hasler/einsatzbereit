@@ -560,6 +560,7 @@
       "scheduledFor": "Termin: {{range}}",
       "registeredOn": "Angemeldet: {{date}}",
       "deletedOpportunityTitle": "Dieser Bedarf wurde entfernt",
+      "cancellationReason": "Grund: {{reason}}",
       "checkIn": "Einchecken",
       "withdraw": "Zurückziehen",
       "withdrawing": "…",
@@ -716,7 +717,9 @@
       "cancel": {
         "title": "Engagement absagen?",
         "message": "Möchtest du dieses Engagement wirklich absagen? Der Freiwillige wird informiert.",
-        "confirm": "Ja, absagen"
+        "confirm": "Ja, absagen",
+        "reasonLabel": "Grund (optional)",
+        "reasonPlaceholder": "Teile dem Freiwilligen den Grund mit…"
       },
       "editTimeSlot": {
         "title": "Zeitslot bearbeiten?",

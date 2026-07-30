@@ -6706,6 +6706,12 @@
               "null",
               "string"
             ]
+          },
+          "cancellationReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

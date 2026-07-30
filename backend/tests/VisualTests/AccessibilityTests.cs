@@ -929,4 +929,64 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		return org.GetProperty("id").GetProperty("value").GetString()
 			?? throw new InvalidOperationException("Created organization had no id.");
 	}
+
+	[Test]
+	public async Task EngagementManagementPage_CancelDialog_HasNoSeriousA11yViolations()
+	{
+		// #1051: the cancel/revoke ConfirmDialog gained an optional reason
+		// <label>/<textarea> + character-counter <p> (previously a plain
+		// yes/no dialog with no form control) - EngagementManagementPage_AsOlaf_...
+		// above never opens this dialog, so its new markup had zero axe
+		// coverage. Seeds its own opportunity/engagement rather than relying
+		// on olaf's shared seed data, so this doesn't skip like that test can.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"CancelDialogA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"CancelDialogA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "For the a11y scan." });
+		applyResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await Expect(dialog.Locator("#cancel-reason")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
 }

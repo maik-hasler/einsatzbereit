@@ -10464,6 +10464,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("volunteerPhone")]
         public string? VolunteerPhone { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("cancellationReason")]
+        public string? CancellationReason { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

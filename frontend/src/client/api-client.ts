@@ -5316,6 +5316,7 @@ export interface EngagementSummary {
     location?: string | undefined;
     volunteerEmail?: string | undefined;
     volunteerPhone?: string | undefined;
+    cancellationReason?: string | undefined;
 
     [key: string]: any;
 }

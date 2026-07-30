@@ -37,6 +37,7 @@ internal sealed class EngagementReadRepository(
 					e.IsCheckedIn,
 					e.FeedbackSubmittedAt,
 					e.CreatedOn,
+					e.CancellationReason,
 				})
 			.Join(
 				dbContext.OrganizationsQuery.Select(org => new { org.Id, org.Name }),
@@ -56,6 +57,7 @@ internal sealed class EngagementReadRepository(
 					x.IsCheckedIn,
 					x.FeedbackSubmittedAt,
 					x.CreatedOn,
+					x.CancellationReason,
 				})
 			.OrderByDescending(x => x.CreatedOn)
 			.ToListAsync(cancellationToken);
@@ -72,7 +74,8 @@ internal sealed class EngagementReadRepository(
 			x.Status.ToString(),
 			x.IsCheckedIn,
 			x.FeedbackSubmittedAt.HasValue,
-			x.CreatedOn)).ToList();
+			x.CreatedOn,
+			CancellationReason: x.CancellationReason)).ToList();
 	}
 
 	public async ValueTask<PagedList<EngagementSummary>> GetPagedByOpportunityAsync(
@@ -127,6 +130,7 @@ internal sealed class EngagementReadRepository(
 					e.IsCheckedIn,
 					e.FeedbackSubmittedAt,
 					e.CreatedOn,
+					e.CancellationReason,
 				})
 			.Join(
 				dbContext.OrganizationsQuery.Select(org => new { org.Id, org.Name }),
@@ -146,6 +150,7 @@ internal sealed class EngagementReadRepository(
 					x.IsCheckedIn,
 					x.FeedbackSubmittedAt,
 					x.CreatedOn,
+					x.CancellationReason,
 				})
 			.OrderByDescending(x => x.CreatedOn)
 			.Skip((pageNumber - 1) * pageSize)
@@ -181,7 +186,8 @@ internal sealed class EngagementReadRepository(
 			x.CreatedOn,
 			VolunteerPhone: x.VolunteerId is not null
 				? phonesByVolunteerId.GetValueOrDefault(x.VolunteerId.Value.Value)
-				: null)).ToList();
+				: null,
+			CancellationReason: x.CancellationReason)).ToList();
 
 		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
 	}
@@ -293,7 +299,8 @@ internal sealed class EngagementReadRepository(
 				e.CreatedOn,
 				TimeSlotStartDateTime: timeSlot?.StartDateTime,
 				TimeSlotEndDateTime: timeSlot?.EndDateTime,
-				Location: location);
+				Location: location,
+				CancellationReason: e.CancellationReason);
 		}).ToList();
 
 		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
