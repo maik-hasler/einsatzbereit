@@ -2849,80 +2849,6 @@
         }
       }
     },
-    "/v1/admin/organizations/{organizationId}/verify": {
-      "put": {
-        "tags": [
-          "VerifyOrganizationEndpoint"
-        ],
-        "operationId": "VerifyOrganization",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyOrganizationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/organizations/{organizationId}/logo": {
       "put": {
         "tags": [
@@ -6266,8 +6192,7 @@
         "required": [
           "id",
           "name",
-          "logoUrl",
-          "isVerified"
+          "logoUrl"
         ],
         "type": "object",
         "properties": {
@@ -6283,9 +6208,6 @@
               "null",
               "string"
             ]
-          },
-          "isVerified": {
-            "type": "boolean"
           }
         }
       },
@@ -7650,9 +7572,6 @@
               "string"
             ]
           },
-          "isVerified": {
-            "type": "boolean"
-          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -7780,7 +7699,6 @@
           "website",
           "logoUrl",
           "address",
-          "isVerified",
           "createdOn",
           "modifiedOn",
           "members"
@@ -7833,9 +7751,6 @@
                 "$ref": "#/components/schemas/AddressDto"
               }
             ]
-          },
-          "isVerified": {
-            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -8375,7 +8290,6 @@
           "contactPhone",
           "website",
           "address",
-          "isVerified",
           "openOpportunities",
           "logoUrl"
         ],
@@ -8422,9 +8336,6 @@
               }
             ]
           },
-          "isVerified": {
-            "type": "boolean"
-          },
           "openOpportunities": {
             "type": "array",
             "items": {
@@ -8446,7 +8357,6 @@
           "description",
           "city",
           "logoUrl",
-          "isVerified",
           "openOpportunityCount"
         ],
         "type": "object",
@@ -8475,9 +8385,6 @@
               "null",
               "string"
             ]
-          },
-          "isVerified": {
-            "type": "boolean"
           },
           "openOpportunityCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -9142,17 +9049,6 @@
           }
         }
       },
-      "VerifyOrganizationRequest": {
-        "required": [
-          "isVerified"
-        ],
-        "type": "object",
-        "properties": {
-          "isVerified": {
-            "type": "boolean"
-          }
-        }
-      },
       "VolunteerOpportunityDetails": {
         "required": [
           "id",
@@ -9480,10 +9376,6 @@
               "string"
             ]
           },
-          "isOrganizationVerified": {
-            "type": "boolean",
-            "default": false
-          },
           "organizationLogoUrl": {
             "type": [
               "null",
@@ -9548,9 +9440,6 @@
     },
     {
       "name": "Users"
-    },
-    {
-      "name": "VerifyOrganizationEndpoint"
     },
     {
       "name": "Organizations"

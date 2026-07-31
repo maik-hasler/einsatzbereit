@@ -6,5 +6,4 @@ public sealed record PublicOrganizationSummary(
 	string? Description,
 	string? City,
 	string? LogoUrl,
-	bool IsVerified,
 	int OpenOpportunityCount);

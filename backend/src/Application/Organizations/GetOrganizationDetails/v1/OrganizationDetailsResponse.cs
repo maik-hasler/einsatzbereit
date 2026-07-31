@@ -9,7 +9,6 @@ public sealed record OrganizationDetailsResponse(
 	string? Website,
 	string? LogoUrl,
 	AddressDto? Address,
-	bool IsVerified,
 	DateTimeOffset CreatedOn,
 	DateTimeOffset? ModifiedOn,
 	IReadOnlyList<OrganizationMemberDto> Members);
