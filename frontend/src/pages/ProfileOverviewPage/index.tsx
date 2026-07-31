@@ -201,7 +201,12 @@ export default function ProfileOverviewPage() {
 	// Legacy ?tab= deep links (App.tsx's /my-engagements and /achievements
 	// redirects still land here with ?tab=engagements/achievements) scroll to
 	// the section that now contains that content instead of switching tabs.
+	// Gated on profileLoading/streaks rather than firing once on mount ([]):
+	// the identity hero and "Profile details" section below it only render
+	// their full height once those finish loading, so scrolling before then
+	// targets a layout that's about to shift and never re-fires afterward.
 	useEffect(() => {
+		if (profileLoading) return;
 		const sectionId = LEGACY_TAB_SECTIONS[searchParams.get("tab") ?? ""];
 		if (!sectionId) return;
 		const reduceMotion = window.matchMedia(
@@ -215,7 +220,7 @@ export default function ProfileOverviewPage() {
 		});
 		return () => cancelAnimationFrame(frame);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [profileLoading, streaks]);
 
 	async function handleSave(e: React.FormEvent) {
 		e.preventDefault();
