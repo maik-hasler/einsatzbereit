@@ -130,9 +130,23 @@ export default function CheckInModal({
 				</p>
 			)}
 
-			{details && !success && checkInMethod === "None" && (
-				<p className="text-sm text-gray-600">{t("checkIn.noneInstruction")}</p>
-			)}
+			{details &&
+				!success &&
+				checkInMethod === "None" &&
+				details.participationType === "ScheduledSlots" && (
+					<p className="text-sm text-gray-600">
+						{t("checkIn.noneInstruction")}
+					</p>
+				)}
+
+			{details &&
+				!success &&
+				checkInMethod === "None" &&
+				details.participationType !== "ScheduledSlots" && (
+					<p className="text-sm text-gray-600">
+						{t("checkIn.noneIndividualInstruction")}
+					</p>
+				)}
 
 			{success && (
 				<p className="text-sm font-medium text-green-700">

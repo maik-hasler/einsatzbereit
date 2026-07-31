@@ -97,6 +97,8 @@ public static class ServiceCollectionExtensions
 		services.AddSingleton<IUnsubscribeLinkBuilder, UnsubscribeLinkBuilder>();
 		services.ConfigureOptions<EngagementReminderOptionsSetup>();
 		services.AddHostedService<EngagementReminderJob>();
+		services.ConfigureOptions<AutomaticCheckInOptionsSetup>();
+		services.AddHostedService<AutomaticCheckInJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();
 		services.AddHostedService<OutboxProcessorJob>();
 		services.AddHostedService<GeocodingRetryJob>();
