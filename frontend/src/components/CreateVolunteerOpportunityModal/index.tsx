@@ -114,6 +114,23 @@ function toDatetimeLocalValue(value: Date | string): string {
 		.slice(0, 16);
 }
 
+/** Converts a Date (or ISO string) to the `YYYY-MM-DD` value a `date`
+ * input expects, in the viewer's local time. */
+function toDateInputValue(value: Date | string): string {
+	const date = value instanceof Date ? value : new Date(value);
+	return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+		.toISOString()
+		.slice(0, 10);
+}
+
+/** Converts a `YYYY-MM-DD` date-input value to a Date at the end of that
+ * local day, so the deadline stays valid through the entire chosen day
+ * rather than expiring the instant it starts (einsatzbereit#1086). */
+function endOfDayFromDateInput(value: string): Date {
+	const [year, month, day] = value.split("-").map(Number);
+	return new Date(year, month - 1, day, 23, 59, 59, 999);
+}
+
 const DEFAULT_VALUES: OpportunityFormValues = {
 	title: "",
 	description: "",
@@ -128,6 +145,7 @@ const DEFAULT_VALUES: OpportunityFormValues = {
 	checkInPin: "",
 	category: undefined,
 	tags: [],
+	validUntil: "",
 };
 
 function formFromOpportunity(
@@ -148,6 +166,7 @@ function formFromOpportunity(
 		checkInPin: "",
 		category: opp.category ?? undefined,
 		tags: opp.tags ?? [],
+		validUntil: opp.validUntil ? toDateInputValue(opp.validUntil) : "",
 	};
 }
 
@@ -616,6 +635,16 @@ export default function CreateVolunteerOpportunityModal({
 				return;
 			}
 		}
+		if (
+			!asDraft &&
+			values.participationType === "IndividualContact" &&
+			!values.validUntil
+		) {
+			setError(t("createOpportunity.validUntilRequiredForPublish"));
+			setErrorToken((tk) => tk + 1);
+			setStep(4);
+			return;
+		}
 		setSubmitting(asDraft ? "draft" : "publish");
 		setError(null);
 		// Set only on the create-as-draft path so the dashboard knows which
@@ -637,6 +666,9 @@ export default function CreateVolunteerOpportunityModal({
 					checkInPin: resolveCheckInPin(values),
 					category: values.category || undefined,
 					tags: values.tags,
+					validUntil: values.validUntil
+						? endOfDayFromDateInput(values.validUntil)
+						: undefined,
 				});
 				if (bannerFile) {
 					await uploadBanner(api, initialOpportunity.id, bannerFile, () =>
@@ -679,6 +711,9 @@ export default function CreateVolunteerOpportunityModal({
 						checkInPin: resolveCheckInPin(values),
 						category: values.category || undefined,
 						tags: values.tags,
+						validUntil: values.validUntil
+							? endOfDayFromDateInput(values.validUntil)
+							: undefined,
 					});
 				} else {
 					const opportunity = await api.createVolunteerOpportunity({
@@ -696,6 +731,9 @@ export default function CreateVolunteerOpportunityModal({
 						checkInPin: resolveCheckInPin(values),
 						category: values.category,
 						tags: values.tags,
+						validUntil: values.validUntil
+							? endOfDayFromDateInput(values.validUntil)
+							: undefined,
 						isDraft: asDraft || publishScheduledSlotsAfterCreate,
 					});
 					opportunityId = opportunity.id;
@@ -807,7 +845,7 @@ export default function CreateVolunteerOpportunityModal({
 		t("createOpportunity.step3Subtitle"),
 		isScheduledSlots
 			? t("createOpportunity.step4SubtitleWaitlist")
-			: t("createOpportunity.step4Subtitle"),
+			: t("createOpportunity.step4SubtitleIndividualContact"),
 	];
 
 	// Position of each slot within its series (1-based, ordered by start time)

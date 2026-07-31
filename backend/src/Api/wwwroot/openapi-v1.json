@@ -6750,7 +6750,8 @@
           "category",
           "tags",
           "isDraft",
-          "checkInPin"
+          "checkInPin",
+          "validUntil"
         ],
         "type": "object",
         "properties": {
@@ -6832,6 +6833,13 @@
               "null",
               "string"
             ]
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -6854,7 +6862,8 @@
           "category",
           "tags",
           "createdOn",
-          "status"
+          "status",
+          "validUntil"
         ],
         "type": "object",
         "properties": {
@@ -6944,6 +6953,13 @@
           },
           "status": {
             "type": "string"
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -9043,7 +9059,8 @@
           "checkInMethod",
           "category",
           "tags",
-          "checkInPin"
+          "checkInPin",
+          "validUntil"
         ],
         "type": "object",
         "properties": {
@@ -9115,6 +9132,13 @@
               "null",
               "string"
             ]
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -9150,6 +9174,7 @@
           "tags",
           "timeSlots",
           "createdOn",
+          "validUntil",
           "currentParticipantCount",
           "status",
           "bannerImageUrl"
@@ -9252,6 +9277,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "currentParticipantCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -9301,6 +9333,7 @@
           "category",
           "tags",
           "createdOn",
+          "validUntil",
           "nextTimeSlotStart",
           "nextTimeSlotEnd",
           "totalMaxParticipants",
@@ -9398,6 +9431,13 @@
           },
           "createdOn": {
             "type": "string",
+            "format": "date-time"
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "nextTimeSlotStart": {

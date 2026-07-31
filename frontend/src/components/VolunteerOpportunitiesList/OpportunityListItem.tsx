@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type { VolunteerOpportunitySummary } from "../../client/api-client";
-import { formatDateTime, formatOccurrence } from "../../lib/format";
+import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
 import { getOpportunityCategoryBannerClassName } from "../../lib/opportunityCategoryTheme";
 import { useApiClient } from "../../hooks/useApiClient";
 import ReportFlagButton from "../ReportFlagButton";
@@ -125,6 +125,18 @@ export default function OpportunityListItem({
 									item.nextTimeSlotStart as unknown as string,
 									i18n.language,
 								)}
+							</span>
+						</p>
+					) : item.validUntil ? (
+						<p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
+							<CalendarIcon className="h-4 w-4 shrink-0" />
+							<span>
+								{t("opportunities.applyBy", {
+									date: formatDate(
+										item.validUntil as unknown as string,
+										i18n.language,
+									),
+								})}
 							</span>
 						</p>
 					) : (

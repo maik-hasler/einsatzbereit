@@ -17,4 +17,5 @@ public sealed record CreateVolunteerOpportunityRequest(
 	string? Category,
 	IReadOnlyList<string>? Tags,
 	bool? IsDraft,
-	[MaxLength(6)] string? CheckInPin);
+	[MaxLength(6)] string? CheckInPin,
+	DateTimeOffset? ValidUntil);

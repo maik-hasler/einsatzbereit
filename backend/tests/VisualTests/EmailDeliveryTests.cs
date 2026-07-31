@@ -179,6 +179,7 @@ public class EmailDeliveryTests(AspireFixture fixture) : VisualTestBase(fixture)
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = true,
 		});
 		draftResponse.EnsureSuccessStatusCode();

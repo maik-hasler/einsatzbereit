@@ -18,4 +18,5 @@ public sealed record CreateVolunteerOpportunityResponse(
 	string? Category,
 	IReadOnlyList<string> Tags,
 	DateTimeOffset CreatedOn,
-	string Status);
+	string Status,
+	DateTimeOffset? ValidUntil);

@@ -17,5 +17,6 @@ public sealed record UpdateVolunteerOpportunityCommand(
 	Category? Category,
 	List<string> Tags,
 	UserId RequestingUserId,
-	string? CheckInPin = null)
+	string? CheckInPin = null,
+	DateTimeOffset? ValidUntil = null)
 	: ICommand<bool>;

@@ -4,6 +4,7 @@ import {
 	computeSpotsLeft,
 	formatOccurrence,
 	formatParticipationType,
+	formatDate,
 	formatDateTime,
 	formatPostedAgo,
 	isSlotFull,
@@ -107,6 +108,32 @@ describe("formatDateTime", () => {
 	it("produces a different format for de than for en", () => {
 		const iso = "2024-03-15T14:30:00Z";
 		expect(formatDateTime(iso, "de")).not.toBe(formatDateTime(iso, "en"));
+	});
+});
+
+describe("formatDate", () => {
+	// Compares against the identical Intl call rather than a hardcoded string
+	// so the assertion doesn't depend on the host's local timezone offset.
+	it("formats using en-GB style by default, with no time-of-day", () => {
+		const iso = "2026-08-15T23:59:59.999Z";
+		const expected = new Date(iso).toLocaleDateString("en-GB", {
+			dateStyle: "medium",
+		});
+		expect(formatDate(iso)).toBe(expected);
+	});
+
+	it("formats using de-DE style when locale is de", () => {
+		const iso = "2026-08-15T23:59:59.999Z";
+		const expected = new Date(iso).toLocaleDateString("de-DE", {
+			dateStyle: "medium",
+		});
+		expect(formatDate(iso, "de")).toBe(expected);
+	});
+
+	it("omits the time-of-day that formatDateTime includes", () => {
+		const iso = "2026-08-15T23:59:59.999Z";
+		expect(formatDate(iso)).not.toBe(formatDateTime(iso));
+		expect(formatDate(iso).length).toBeLessThan(formatDateTime(iso).length);
 	});
 });
 

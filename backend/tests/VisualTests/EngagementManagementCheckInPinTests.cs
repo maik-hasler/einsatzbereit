@@ -116,6 +116,7 @@ public class EngagementManagementCheckInPinTests(AspireFixture fixture) : Visual
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();

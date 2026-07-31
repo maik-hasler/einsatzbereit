@@ -310,6 +310,7 @@ public class QRScannerModalTests(AspireFixture fixture) : VisualTestBase(fixture
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "QRCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();

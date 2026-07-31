@@ -19,6 +19,7 @@ public sealed record VolunteerOpportunitySummary(
 	string? Category,
 	IReadOnlyList<string> Tags,
 	DateTimeOffset CreatedOn,
+	DateTimeOffset? ValidUntil,
 	DateTimeOffset? NextTimeSlotStart,
 	DateTimeOffset? NextTimeSlotEnd,
 	int? TotalMaxParticipants,

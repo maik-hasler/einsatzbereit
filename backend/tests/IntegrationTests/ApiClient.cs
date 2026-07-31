@@ -11014,6 +11014,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInPin")]
         public string? CheckInPin { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
+        public System.DateTimeOffset? ValidUntil { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -11094,6 +11097,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Status { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
+        public System.DateTimeOffset? ValidUntil { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -12969,6 +12975,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("checkInPin")]
         public string? CheckInPin { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
+        public System.DateTimeOffset? ValidUntil { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -13071,6 +13080,9 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset CreatedOn { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
+        public System.DateTimeOffset? ValidUntil { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("currentParticipantCount")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
@@ -13165,6 +13177,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset CreatedOn { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("validUntil")]
+        public System.DateTimeOffset? ValidUntil { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("nextTimeSlotStart")]
         public System.DateTimeOffset? NextTimeSlotStart { get; set; } = default!;

@@ -51,6 +51,9 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 		await pinInput.FillAsync("482170");
 
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		// Individual-contact opportunities need an application deadline before
+		// they can be published (einsatzbereit#1086).
+		await Page.Locator("#create-valid-until").FillAsync(DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"));
 
 		var createResponseTask = Page.WaitForResponseAsync(r =>
 			r.Url.Contains("/v1/volunteer-opportunities") && r.Request.Method == "POST");
@@ -98,6 +101,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "PINCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			checkInPin = "135790",
 			isDraft = false,
 		});
