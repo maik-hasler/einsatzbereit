@@ -125,6 +125,29 @@
 				</div>
 			</#if>
 
+			<#-- Terms of Use -->
+			<div class="form-group">
+				<div id="kc-registration-terms-text">
+					${kcSanitize(msg("termsText"))?no_esc}
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="form-field">
+					<input
+						type="checkbox"
+						id="termsAccepted"
+						name="termsAccepted"
+						aria-invalid="<#if messagesPerField.existsError('termsAccepted')>true</#if>"
+					/>
+					<label for="termsAccepted">${msg("acceptTerms")}</label>
+				</div>
+				<#if messagesPerField.existsError('termsAccepted')>
+					<span id="input-error-termsAccepted" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+						${kcSanitize(messagesPerField.get('termsAccepted'))?no_esc}
+					</span>
+				</#if>
+			</div>
+
 			<div class="${properties.kcFormButtonsClass!}">
 				<input
 					class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"

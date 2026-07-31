@@ -194,6 +194,7 @@
     ]
   },
   "browserFlow": "einsatzbereit browser",
+  "registrationFlow": "einsatzbereit registration",
   "authenticationFlows": [
     {
       "alias": "einsatzbereit browser",
@@ -236,17 +237,65 @@
           "userSetupAllowed": false
         }
       ]
-    }
-  ],
-  "requiredActions": [
+    },
     {
-      "alias": "TERMS_AND_CONDITIONS",
-      "name": "Terms and Conditions",
-      "providerId": "TERMS_AND_CONDITIONS",
-      "enabled": true,
-      "defaultAction": true,
-      "priority": 20,
-      "config": {}
+      "alias": "einsatzbereit registration",
+      "description": "Registration flow - Terms of Use required (#1079)",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-page-form",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": true,
+          "flowAlias": "einsatzbereit registration form",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "einsatzbereit registration form",
+      "description": "Registration form - Terms of Use required (#1079)",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-user-creation",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-password-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 50,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-recaptcha-action",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 60,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "registration-terms-and-conditions",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 70,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
     }
   ],
   "users": [
