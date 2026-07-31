@@ -89,19 +89,39 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var badgesHeading = Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" });
 		await Expect(badgesHeading).ToBeVisibleAsync(new() { Timeout = 20_000 });
 
-		// The deep-link effect scrolls via scrollIntoView({ behavior: "smooth" })
-		// (unless the OS/browser prefers reduced motion), so the heading can still
-		// be mid-animation the instant it becomes visible - poll instead of reading
-		// the bounding box once, the same pattern used above for other
-		// layout-settling assertions in this file.
-		float? badgesY = null;
+		// A fixed "bounding box Y < 300" threshold (the previous version of this
+		// assertion, #1515) is inherently flaky: scrollIntoView({block: "start"})
+		// aligns the #achievements section's top with the viewport's top only
+		// when the document has enough scroll room left below it to do so - on
+		// a page just barely short of that (this one, depending on exactly how
+		// much content renders above/below Badges), the browser clamps to its
+		// max scroll offset instead, leaving the section a few px shy of 0 for
+		// entirely legitimate layout reasons, not a still-running animation. A
+		// hardcoded pixel threshold can't tell "still scrolling" apart from
+		// "already as far as the page can physically go" - so assert against
+		// the actual achievable scroll position instead: the current scrollTop
+		// should match the section's absolute document offset, clamped to the
+		// document's max scroll. Still polled, since the effect's own
+		// requestAnimationFrame can land a frame after NetworkIdle.
+		double? scrollTop = null;
+		double? desiredScrollTop = null;
 		await PollUntilAsync(async () =>
 		{
-			var badgesBox = await badgesHeading.BoundingBoxAsync();
-			badgesY = badgesBox?.Y;
-			return badgesBox is not null && badgesBox.Y < 300;
-		}, () => "the page should have scrolled the Badges section near the top of the viewport "
-			+ $"(last observed Y = {badgesY?.ToString() ?? "null"})");
+			var position = await Page.EvaluateAsync<double[]>(
+				"""
+				() => {
+					const el = document.getElementById('achievements');
+					const scrollingEl = document.scrollingElement;
+					const absoluteTop = el.getBoundingClientRect().top + window.scrollY;
+					const maxScrollTop = scrollingEl.scrollHeight - scrollingEl.clientHeight;
+					return [scrollingEl.scrollTop, Math.min(absoluteTop, maxScrollTop)];
+				}
+				""");
+			scrollTop = position[0];
+			desiredScrollTop = position[1];
+			return Math.Abs(scrollTop.Value - desiredScrollTop.Value) < 2;
+		}, () => "the page should have scrolled the Badges section as close to the top as the "
+			+ $"document allows (scrollTop = {scrollTop}, desired = {desiredScrollTop})");
 	}
 
 	[Test]
