@@ -30,5 +30,13 @@
   "EngagementReminder": {
     "subject": "Reminder: {OpportunityTitle} starts tomorrow",
     "body": "Hi {DisplayName},\n\nThis is a reminder that you are signed up for \"{OpportunityTitle}\" which starts on {StartFormatted}.\n\nWe are looking forward to seeing you!\n\nThe Einsatzbereit Team"
+  },
+  "InvitationReceived": {
+    "subject": "You've been invited to join an organization",
+    "body": "Hello {InviteeName},\n\nYou've been invited to join \"{OrganizationName}\" on Einsatzbereit.\n\nLog in to your account to accept or decline the invitation.\n\nEinsatzbereit"
+  },
+  "OpportunityUpdated": {
+    "subject": "An opportunity you signed up for has changed: \"{OpportunityTitle}\"",
+    "body": "Hello {VolunteerName},\n\nThe details for \"{OpportunityTitle}\" have changed. Please check the app for the latest information.\n\nEinsatzbereit"
   }
 }

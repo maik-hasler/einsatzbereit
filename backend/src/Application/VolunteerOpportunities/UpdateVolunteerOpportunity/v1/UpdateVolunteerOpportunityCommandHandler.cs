@@ -22,6 +22,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IPinGenerator pinGenerator,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer,
 	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
@@ -97,6 +98,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 				cancellationToken,
 				keycloakUserService: keycloakUserService,
 				emailService: emailService,
+				emailTemplateRenderer: emailTemplateRenderer,
 				opportunityTitle: opportunity.Title);
 
 		return true;

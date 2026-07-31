@@ -2,6 +2,7 @@ using Application.Common.Authorization;
 using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Notifications;
@@ -16,7 +17,8 @@ internal sealed class CreateInvitationCommandHandler(
 	IUnitOfWork unitOfWork,
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<CreateInvitationCommand, OrganizationInvitationId>
 {
 	public async ValueTask<OrganizationInvitationId> Handle(
@@ -67,13 +69,22 @@ internal sealed class CreateInvitationCommandHandler(
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
+		var inviteeUser = (await dbContext.GetOrCreateUsersAsync([request.InviteeId], cancellationToken))[0];
+		var inviteeLanguage = SupportedLanguages.Resolve(inviteeUser.PreferredLanguage);
+
+		var content = emailTemplateRenderer.Render(
+			EmailTemplateKind.InvitationReceived,
+			inviteeLanguage,
+			new Dictionary<string, string>
+			{
+				["InviteeName"] = inviteeProfile.FirstName ?? inviteeProfile.Username,
+				["OrganizationName"] = org.Name,
+			});
+
 		await emailService.SendAsync(
 			inviteeProfile.Email,
-			"You've been invited to join an organization",
-			$"Hello {inviteeProfile.FirstName ?? inviteeProfile.Username},\n\n" +
-			$"You've been invited to join \"{org.Name}\" on Einsatzbereit.\n\n" +
-			$"Log in to your account to accept or decline the invitation.\n\n" +
-			$"Einsatzbereit",
+			content.Subject,
+			content.Body,
 			cancellationToken);
 
 		return invitation.Id;

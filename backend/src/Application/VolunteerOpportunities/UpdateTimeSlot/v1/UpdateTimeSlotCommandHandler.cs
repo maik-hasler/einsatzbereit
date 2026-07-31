@@ -16,7 +16,8 @@ internal sealed class UpdateTimeSlotCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
 	IKeycloakUserService keycloakUserService,
-	IEmailService emailService)
+	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<UpdateTimeSlotCommand, UpdateTimeSlotResult>
 {
 	public async ValueTask<UpdateTimeSlotResult> Handle(
@@ -82,6 +83,7 @@ internal sealed class UpdateTimeSlotCommandHandler(
 			timeSlotId,
 			keycloakUserService,
 			emailService,
+			emailTemplateRenderer,
 			opportunity.Title);
 
 		return new UpdateTimeSlotResult(1, []);
