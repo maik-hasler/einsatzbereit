@@ -146,6 +146,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -181,13 +184,36 @@ jobs:
         working-directory: backend
         run: find . -path "*/bin/*" -type f -exec chmod +x {} +
 
+      # TUnit's Microsoft.Testing.Platform runner ships coverage support out of the
+      # box (Microsoft.Testing.Extensions.CodeCoverage arrives transitively via
+      # TUnit itself - no extra PackageReference needed in any test project) - a
+      # fixed --coverage-output name keeps the path below predictable instead of
+      # the tool's default GUID-named file.
       - name: Test - Application.UnitTests
         working-directory: backend
-        run: dotnet run --project tests/Application.UnitTests --no-restore --no-build
+        run: dotnet run --project tests/Application.UnitTests --no-restore --no-build --coverage --coverage-output-format cobertura --coverage-output application-unittests.cobertura.xml
 
       - name: Test - ArchitectureTests
         working-directory: backend
-        run: dotnet run --project tests/ArchitectureTests --no-restore --no-build
+        run: dotnet run --project tests/ArchitectureTests --no-restore --no-build --coverage --coverage-output-format cobertura --coverage-output architecturetests.cobertura.xml
+
+      # Report-only (einsatzbereit#1327): every finding in the audit this issue
+      # came from had to be established by hand-diffing handler lists against test
+      # files - this makes a coverage gap visible on the PR itself instead of
+      # requiring someone to go looking for it. No threshold gate: fail_below_threshold
+      # is false, so a low or dropping number never blocks a merge - visibility is
+      # the point, not enforcement.
+      - name: Publish coverage summary as PR comment
+        if: github.event_name == 'pull_request'
+        uses: 5monkeys/cobertura-action@ee5787cc56634acddedc51f21c7947985531e6eb # v14
+        with:
+          path: backend/tests/*/bin/**/TestResults/*.cobertura.xml
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          minimum_coverage: 0
+          fail_below_threshold: false
+          show_line: true
+          show_branch: true
+          show_class_names: true
 
   integration-tests:
     needs: build
