@@ -17,6 +17,14 @@ internal sealed class OutboxMessage
 
 	public string? Error { get; set; }
 
+	// See ValueObjectIdJsonConverterFactory: without it, the Guid-backed value-object IDs
+	// (VolunteerOpportunityId, UserId, ...) that domain events carry silently deserialize as
+	// Guid.Empty instead of round-tripping their real value.
+	private static readonly JsonSerializerOptions SerializerOptions = new()
+	{
+		Converters = { new ValueObjectIdJsonConverterFactory() },
+	};
+
 	public static OutboxMessage FromDomainEvent(
 		DomainEvent domainEvent,
 		DateTime occurredOnUtc) =>
@@ -24,7 +32,7 @@ internal sealed class OutboxMessage
 		{
 			Id = Guid.NewGuid(),
 			Type = domainEvent.GetType().FullName!,
-			Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType()),
+			Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions),
 			OccurredOnUtc = occurredOnUtc,
 		};
 
@@ -33,7 +41,7 @@ internal sealed class OutboxMessage
 		var type = typeof(DomainEvent).Assembly.GetType(Type)
 			?? throw new InvalidOperationException($"Unknown domain event type '{Type}'.");
 
-		return (DomainEvent)(JsonSerializer.Deserialize(Content, type)
+		return (DomainEvent)(JsonSerializer.Deserialize(Content, type, SerializerOptions)
 			?? throw new InvalidOperationException($"Failed to deserialize outbox message '{Id}' of type '{Type}'."));
 	}
 }

@@ -67,6 +67,10 @@ internal sealed class VolunteerOpportunityConfiguration
 			.HasConversion<string>()
 			.IsRequired();
 
+		// Unconstrained at the DB level, matching Engagement.CancellationReason -
+		// the 500-char cap is enforced at the API layer (CancelVolunteerOpportunityRequest).
+		builder.Property(vo => vo.CancellationReason);
+
 		builder.Property(vo => vo.BannerImageUrl);
 
 		builder.Property(vo => vo.Color);

@@ -1033,4 +1033,56 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
 	}
+
+	[Test]
+	public async Task OrgOpportunitiesPage_CancelDialog_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1038: the org opportunities hub gained an Unpublish
+		// action (a plain confirm, same shape as the existing unscanned Delete
+		// dialog on this page) and a Cancel action whose ConfirmDialog carries
+		// an optional reason <label>/<textarea> + character-counter <p> - the
+		// same "new form control on a previously plain confirm" gap
+		// EngagementManagementPage_CancelDialog_HasNoSeriousA11yViolations
+		// above exists to cover. OrgOpportunitiesPage_AsOlaf_... never opens
+		// this dialog, so seed a fresh published opportunity here instead of
+		// relying on olaf's shared seed data.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"CancelOpportunityDialogA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"CancelOpportunityDialogA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("opportunity-cancel").First.ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await Expect(dialog.Locator("#cancel-opportunity-reason")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
 }

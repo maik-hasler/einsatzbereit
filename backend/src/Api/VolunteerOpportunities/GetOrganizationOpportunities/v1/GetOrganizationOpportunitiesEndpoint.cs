@@ -39,7 +39,9 @@ internal sealed class GetOrganizationOpportunitiesEndpoint
 		CancellationToken cancellationToken)
 	{
 		if (!Enum.TryParse<OpportunityStatus>(status, ignoreCase: true, out var parsedStatus))
-			return Results.Problem("Status must be 'Draft' or 'Published'.", statusCode: StatusCodes.Status400BadRequest);
+			return Results.Problem(
+				$"Status must be one of: {string.Join(", ", Enum.GetNames<OpportunityStatus>())}.",
+				statusCode: StatusCodes.Status400BadRequest);
 
 		if (pageNumber < 1)
 			return Results.Problem("PageNumber must be at least 1.", statusCode: StatusCodes.Status400BadRequest);

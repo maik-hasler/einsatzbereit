@@ -160,10 +160,17 @@ export default function CreateVolunteerOpportunityModal({
 	const api = useApiClient();
 	const { t } = useTranslation();
 	const isEditMode = initialOpportunity !== undefined;
-	// A still-unpublished draft accepts lenient partial saves from any step,
-	// same as during initial creation - an already-published opportunity
-	// keeps the stricter publish-level validation on its single "Save" button.
-	const canSaveDraft = !isEditMode || initialOpportunity.status === "Draft";
+	// A Draft, and an Unpublished opportunity (taken off the public listing but
+	// not re-validated the way Publish() would), accept lenient partial saves
+	// from any step, same as during initial creation - the backend's own
+	// Rename/ChangeDescription/Relocate only re-run publishability checks when
+	// Status is Published (see VolunteerOpportunity.cs), so a Cancelled or
+	// Published opportunity keeps the stricter validation on its single "Save"
+	// button.
+	const canSaveDraft =
+		!isEditMode ||
+		initialOpportunity.status === "Draft" ||
+		initialOpportunity.status === "Unpublished";
 
 	const schema = useMemo(() => buildOpportunityFormSchema(t), [t]);
 	const {

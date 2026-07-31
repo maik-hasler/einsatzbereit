@@ -3,8 +3,6 @@ using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
-using Application.Engagements.Common;
-using Application.Notifications;
 using Domain.Notifications;
 using Domain.Reports;
 using Domain.Users;
@@ -80,31 +78,18 @@ internal static class VolunteerOpportunityDeletionHelper
 		DateTimeOffset now,
 		CancellationToken cancellationToken)
 	{
-		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
+		await VolunteerOpportunityEngagementCascadeHelper.NotifyAndCancelActiveEngagementsAsync(
 			dbContext,
 			engagementReadRepository,
+			keycloakUserService,
+			emailService,
+			emailTemplateRenderer,
+			unsubscribeLinkBuilder,
+			opportunity,
 			opportunityId,
 			NotificationKind.OpportunityDeleted,
+			"Opportunity was deleted.",
 			cancellationToken);
-
-		var activeEngagements = await dbContext.GetActiveEngagementsForOpportunityAsync(
-			opportunityId, cancellationToken);
-		foreach (var engagement in activeEngagements)
-		{
-			// Same notification + email path a single organizer-triggered cancel
-			// sends (#1057) - a deletion should not leave the volunteer with only
-			// the opportunity-level "was removed" notification above.
-			await EngagementCancellationHelper.CancelAndNotifyAsync(
-				dbContext,
-				keycloakUserService,
-				emailService,
-				emailTemplateRenderer,
-				unsubscribeLinkBuilder,
-				engagement,
-				opportunity.Title,
-				"Opportunity was deleted.",
-				cancellationToken);
-		}
 
 		var openReports = await dbContext.GetOpenReportsForTargetAsync(
 			ReportTargetType.VolunteerOpportunity, opportunityId.Value, cancellationToken);

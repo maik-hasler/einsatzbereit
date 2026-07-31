@@ -176,6 +176,10 @@
       "publish": "Veröffentlichen",
       "publishing": "Wird veröffentlicht…",
       "publishSuccess": "Bedarf veröffentlicht.",
+      "unpublish": "Zurückziehen",
+      "unpublishSuccess": "Bedarf zurückgezogen.",
+      "cancel": "Absagen",
+      "cancelSuccess": "Bedarf abgesagt.",
       "loginPrompt": "Melde dich an, um dich für diesen Einsatz anzumelden.",
       "yourApplication": "Deine Bewerbung",
       "aboutOrganization": "Über diese Organisation",
@@ -357,6 +361,12 @@
       "publishedHeading": "Veröffentlicht",
       "publishedDesc": "Live und für Freiwillige sichtbar.",
       "publishedBadge": "Veröffentlicht",
+      "unpublishedHeading": "Zurückgezogen",
+      "unpublishedDesc": "Von der öffentlichen Liste entfernt. Veröffentliche erneut, um ihn wieder sichtbar zu machen.",
+      "unpublishedBadge": "Zurückgezogen",
+      "cancelledHeading": "Abgesagt",
+      "cancelledDesc": "Endgültig abgesagt. Dies kann nicht rückgängig gemacht werden - lege stattdessen einen neuen Bedarf an, falls die Pläne wieder aufgenommen werden.",
+      "cancelledBadge": "Abgesagt",
       "manageApplications": "Bewerbungen verwalten",
       "participants": "{{booked}}/{{max}} Teilnehmende",
       "participantsUnlimited": "{{booked}} Anmeldungen (kein Limit)",
@@ -678,6 +688,8 @@
         "EngagementWithdrawn": "Eine Bewerbung für {{title}} wurde zurückgezogen",
         "OpportunityUpdated": "{{title}} wurde aktualisiert",
         "OpportunityDeleted": "Ein Bedarf, für den du dich angemeldet hast, wurde entfernt",
+        "OpportunityUnpublished": "{{title}} wurde zurückgezogen und dein Engagement wurde abgesagt",
+        "OpportunityCancelled": "{{title}} wurde abgesagt und dein Engagement wurde abgesagt",
         "InvitationReceived": "Du wurdest eingeladen, {{title}} beizutreten"
       }
     },
@@ -732,6 +744,18 @@
         "confirm": "Ja, absagen",
         "reasonLabel": "Grund (optional)",
         "reasonPlaceholder": "Teile dem Freiwilligen den Grund mit…"
+      },
+      "unpublish": {
+        "title": "Bedarf zurückziehen?",
+        "message": "Dies entfernt ihn von der öffentlichen Liste und sagt alle ausstehenden oder bestätigten Anmeldungen ab - Freiwillige werden informiert. Du kannst ihn später erneut veröffentlichen.",
+        "confirm": "Ja, zurückziehen"
+      },
+      "cancelOpportunity": {
+        "title": "Bedarf absagen?",
+        "message": "Dies sagt den Bedarf endgültig ab und alle ausstehenden oder bestätigten Anmeldungen werden ebenfalls abgesagt - Freiwillige werden informiert. Dies kann nicht rückgängig gemacht werden.",
+        "confirm": "Ja, Bedarf absagen",
+        "reasonLabel": "Grund (optional)",
+        "reasonPlaceholder": "Teile den Freiwilligen den Grund mit…"
       },
       "editTimeSlot": {
         "title": "Zeitslot bearbeiten?",
