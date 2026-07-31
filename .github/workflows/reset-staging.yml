@@ -104,8 +104,9 @@ jobs:
             # GF_SECURITY_ADMIN_USER/PASSWORD only apply on a completely empty
             # volume, so it has to be wiped here too or a changed
             # GRAFANA_ADMIN_PASSWORD secret silently stops matching the live
-            # account. postgres_backups is deliberately NOT removed - it is
-            # the safety net if this reset needs to be walked back.
+            # account. postgres_backups and minio_backups are deliberately
+            # NOT removed - they are the safety net if this reset needs to
+            # be walked back.
             echo "Removing data volumes (postgres_data, minio_data, grafana_data)..."
             docker volume rm einsatzbereit_postgres_data einsatzbereit_minio_data einsatzbereit_grafana_data
 

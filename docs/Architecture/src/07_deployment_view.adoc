@@ -118,7 +118,7 @@ Motivation::
 The deployed environment serves real users at `*.maik-hasler.de`. It runs `docker-compose.yml` on a single host, behind a shared, host-level Traefik reverse proxy that terminates TLS (certificates via ACME / Let's Encrypt). This is the environment every release candidate is verified against before a change is considered done.
 
 Quality and Performance Characteristics::
-All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with tiered retention. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`).
+All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with tiered retention, and the MinIO bucket is backed up daily with a flat retention window (#1087) - both backups still live on the same host as the data they protect, since staging is a single server with no off-host target to replicate to; this covers accidental deletion/corruption but not loss of the host itself. Container images are the release artifacts pulled from GHCR; the backend applies EF Core migrations on startup (`Database:MigrateOnStartup`).
 
 .Service Allocation
 [cols="2,2,2,2" options="header"]
@@ -154,6 +154,11 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |`quay.io/minio/minio`
 |`storage.maik-hasler.de`
 |S3-compatible object storage
+
+|minio-backup
+|`minio/mc`
+|internal
+|Daily mirror of the einsatzbereit bucket, retention 7 days
 
 |Grafana
 |`grafana/grafana`
