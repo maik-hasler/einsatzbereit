@@ -1102,6 +1102,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			participationType = "IndividualContact",
 			checkInMethod,
 			isDraft = false,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 		});
 		oppResponse.EnsureSuccessStatusCode();
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -1215,6 +1216,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 			participationType = "IndividualContact",
 			checkInMethod = "None",
 			isDraft = false,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 		});
 		oppResponse.EnsureSuccessStatusCode();
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -1268,6 +1270,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/callback");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
