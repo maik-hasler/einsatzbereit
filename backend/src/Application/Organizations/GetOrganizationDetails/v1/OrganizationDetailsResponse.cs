@@ -10,7 +10,6 @@ public sealed record OrganizationDetailsResponse(
 	string? LogoUrl,
 	AddressDto? Address,
 	DateTimeOffset CreatedOn,
-	DateTimeOffset? ModifiedOn,
 	IReadOnlyList<OrganizationMemberDto> Members);
 
 public sealed record AddressDto(

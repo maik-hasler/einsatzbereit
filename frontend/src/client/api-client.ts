@@ -5746,7 +5746,6 @@ export interface DomainEvent {
 export interface EngagementStatusResponse {
     id: string;
     status: string;
-    modifiedOn: Date | undefined;
     cancellationReason?: string | undefined;
 
     [key: string]: any;
@@ -5852,7 +5851,6 @@ export interface NotificationsPage {
 export interface NotificationSummary {
     id: string;
     kind: string;
-    relatedEntityId: string;
     relatedTitle: string | undefined;
     actionUrl: string | undefined;
     isRead: boolean;
@@ -5897,11 +5895,8 @@ export interface OrganizationCalendarEventDto {
 }
 
 export interface OrganizationDashboardResponse {
-    openOpportunities: number;
     pendingEngagements: number;
-    confirmedEngagementsNext7Days: number;
     confirmedEngagementsTotal: number;
-    cancelledEngagements: number;
 
     [key: string]: any;
 }
@@ -5916,7 +5911,6 @@ export interface OrganizationDetailsResponse {
     logoUrl: string | undefined;
     address: AddressDto | undefined;
     createdOn: Date;
-    modifiedOn: Date | undefined;
     members: OrganizationMemberDto[];
 
     [key: string]: any;

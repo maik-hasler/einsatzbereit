@@ -359,7 +359,6 @@
       "loading": "Loading…",
       "layoutLoadError": "Couldn't confirm your saved dashboard layout. What's shown below may not match it, and editing is disabled until this loads successfully.",
       "pendingEngagements": "Pending Sign-ups",
-      "pendingEngagementsDesc": "Sign-ups awaiting review",
       "viewOpportunities": "View opportunities →",
       "unnamedDraft": "Unnamed Draft",
       "signedUpVolunteers": "Signed-up Volunteers",
@@ -404,7 +403,6 @@
       "emptyStateMessage": "Add a widget to get started."
     },
     "orgSettings": {
-      "title": "Edit organization",
       "createdOn": "Created on {{date}}",
       "fieldLogo": "Logo",
       "logoUpload": "Upload logo",
@@ -680,8 +678,6 @@
       }
     },
     "language": {
-      "de": "Deutsch",
-      "en": "English",
       "switchLanguage": "Switch language"
     },
     "auth": {
@@ -866,7 +862,6 @@
       "types": {
         "Milestone": "Milestone",
         "Streak": "Streak",
-        "Social": "Social",
         "Hidden": "Special"
       },
       "badges": {

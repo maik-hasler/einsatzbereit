@@ -50,6 +50,6 @@ internal sealed class CancelEngagementEndpoint
 		// A cancelled engagement changes CurrentParticipantCount on the public listing.
 		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
-		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn, engagement.CancellationReason));
+		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.CancellationReason));
 	}
 }

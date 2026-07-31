@@ -260,6 +260,10 @@ internal sealed class ApplicationDbContext(
 		await Set<UserStreak>()
 			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
 
+	public async Task<int> CountUserStreaksAsync(
+		CancellationToken cancellationToken = default) =>
+		await Set<UserStreak>().CountAsync(cancellationToken);
+
 	public async Task DeleteUserStreakAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default) =>

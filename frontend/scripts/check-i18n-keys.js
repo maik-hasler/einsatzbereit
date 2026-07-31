@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, statSync } from "fs";
 import { fileURLToPath } from "url";
-import { join, dirname } from "path";
+import { join, dirname, extname } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -236,6 +236,86 @@ function checkPluralSuffixParity(enKeys, deKeys, label) {
 	return [`${label}: plural-form suffixes differ between en and de for the same key:\n` + violations.join("\n")];
 }
 
+// ── Usage check (#1002) ─────────────────────────────────────────────────────
+// Parity alone lets dead keys accumulate silently, as long as both locale
+// files stay in lockstep. This scans source for t("key") / t(`key`) calls and
+// flags any en.json key with no reference - literal or via a dynamic prefix
+// (t(`foo.${x}`), t(`foo` + x), t("foo." + x)). A dynamic reference protects
+// its whole prefix subtree rather than trying to guess the exact suffix, so
+// this only ever produces false negatives (missing a truly dead key), never
+// false positives that would break an unrelated PR. Locale-only - email
+// templates aren't referenced via t() from frontend source.
+function checkUnusedKeys(enKeys) {
+	const srcDir = join(__dirname, "../src");
+
+	function walkSourceFiles(dir, out = []) {
+		for (const entry of readdirSync(dir)) {
+			if (entry === "node_modules") continue;
+			const full = join(dir, entry);
+			const st = statSync(full);
+			if (st.isDirectory()) {
+				walkSourceFiles(full, out);
+			} else if ([".ts", ".tsx"].includes(extname(entry)) && entry !== "api-client.ts") {
+				out.push(full);
+			}
+		}
+		return out;
+	}
+
+	// A key is "translation.foo.bar" once flattened - t() calls never spell out
+	// the implicit i18next default-namespace root, so strip it before comparing.
+	const enKeysNoRoot = new Set([...enKeys].map((k) => k.replace(/^translation\./, "")));
+
+	const sourceText = walkSourceFiles(srcDir)
+		.map((f) => readFileSync(f, "utf8"))
+		.join("\n");
+
+	const dynamicRoots = new Set();
+
+	// `foo.bar.${x}` / `foo${x}` - static text between the opening backtick and
+	// the first ${, truncated to the last "." so a bare suffix like `scope${s}`
+	// doesn't wrongly protect the whole file (no dot -> no root added; that shape
+	// is caught by the concatenation branch below instead). A dotted one like
+	// `foo.bar.${x}` protects "foo.bar". Deliberately NOT anchored to a preceding
+	// `t(` - a key is often built into a variable first (e.g.
+	// `const key = \`apiError.${code}\`; i18next.t(key)` in lib/apiError.ts) and
+	// only passed to t()/i18next.t() afterward.
+	for (const m of sourceText.matchAll(/`([A-Za-z0-9_.]*)\$\{/g)) {
+		const prefix = m[1];
+		const lastDot = prefix.lastIndexOf(".");
+		if (lastDot > 0) dynamicRoots.add(prefix.slice(0, lastDot));
+	}
+
+	// "foo.bar" + x / "foo.bar." + x / `foo.bar` + x - static text immediately
+	// before a `+`. Same reasoning as above: not anchored to a preceding t(.
+	for (const m of sourceText.matchAll(/["'`]([A-Za-z0-9_.]+)["'`]\s*\+/g)) {
+		const prefix = m[1].replace(/\.$/, "");
+		dynamicRoots.add(prefix);
+	}
+
+	function isUsed(key) {
+		const base = pluralBaseKey(key) ?? key;
+		if (
+			sourceText.includes(`"${base}"`) ||
+			sourceText.includes(`'${base}'`) ||
+			sourceText.includes(`\`${base}\``)
+		) {
+			return true;
+		}
+		for (const root of dynamicRoots) {
+			if (base === root || base.startsWith(`${root}.`)) return true;
+		}
+		return false;
+	}
+
+	const unused = [...enKeysNoRoot].filter((k) => !isUsed(k)).sort();
+	if (unused.length === 0) return [];
+	return [
+		`locales: ${unused.length} translation key(s) have no reference anywhere in frontend/src:\n` +
+			unused.map((k) => `  - ${k}`).join("\n"),
+	];
+}
+
 function runParityChecks(enPath, dePath, label) {
 	const en = JSON.parse(readFileSync(enPath, "utf8"));
 	const de = JSON.parse(readFileSync(dePath, "utf8"));
@@ -253,6 +333,7 @@ function runParityChecks(enPath, dePath, label) {
 		...checkPlaceholderDrift(enValues, deValues, enKeys, label),
 		...checkPluralCompleteness(enValues, deValues, label),
 		...checkPluralSuffixParity(enKeys, deKeys, label),
+		...(label === "locales" ? checkUnusedKeys(enKeys) : []),
 	];
 }
 

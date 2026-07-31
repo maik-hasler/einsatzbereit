@@ -122,6 +122,9 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	Task<int> CountUserStreaksAsync(
+		CancellationToken cancellationToken = default);
+
 	Task DeleteUserStreakAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);

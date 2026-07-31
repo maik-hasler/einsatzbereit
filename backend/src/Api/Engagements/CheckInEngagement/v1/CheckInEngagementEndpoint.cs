@@ -37,6 +37,6 @@ internal sealed class CheckInEngagementEndpoint
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 		var command = new CheckInEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
 		var engagement = await sender.Send(command, cancellationToken);
-		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
+		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
 	}
 }

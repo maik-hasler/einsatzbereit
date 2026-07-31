@@ -98,7 +98,6 @@ public class GetMyNotificationsQueryHandlerTests
 			.Select(i => new NotificationSummary(
 				Guid.NewGuid(),
 				"EngagementCreated",
-				Guid.NewGuid(),
 				"Some Title",
 				"/my-engagements",
 				false,
