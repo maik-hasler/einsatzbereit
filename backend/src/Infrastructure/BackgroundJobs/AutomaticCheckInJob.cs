@@ -100,81 +100,92 @@ internal sealed class AutomaticCheckInJob(
 		int maxBatchSize,
 		CancellationToken cancellationToken = default)
 	{
-		// One transaction for the whole claim-and-enqueue batch - see
-		// EngagementReminderJob.ClaimAndQueueRemindersAsync for why: without it, a
-		// crash between the ExecuteUpdateAsync claims and the outbox SaveChangesAsync
-		// below would leave engagements marked IsCheckedIn with no outbox row ever
-		// written for the domain event, losing it silently instead of retrying.
-		await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+		// EnableRetryOnFailure (ServiceCollectionExtensions.cs) requires a
+		// manually-began transaction to run as one retryable unit via
+		// CreateExecutionStrategy() - see
+		// ApplicationDbContext.ExecuteInTransactionAsync's comment and
+		// EngagementReminderJob's matching wrapper for why retrying this
+		// whole delegate from scratch is safe.
+		var strategy = dbContext.Database.CreateExecutionStrategy();
 
-		// Only ScheduledSlots engagements carry a TimeSlotId, so IndividualContact
-		// opportunities (which have no time slot, hence no well-defined "event end")
-		// are not candidates here - the same limitation EngagementReminderJob already
-		// has for its 24h-before-start window.
-		var candidates = await dbContext.Set<Engagement>()
-			.Where(e =>
-				e.Status == EngagementStatus.Confirmed &&
-				!e.IsCheckedIn &&
-				e.TimeSlotId != null)
-			.Join(
-				dbContext.Set<TimeSlot>(),
-				e => e.TimeSlotId,
-				ts => ts.Id,
-				(e, ts) => new { e.Id, e.VolunteerId, e.OpportunityId, ts.EndDateTime })
-			.Join(
-				dbContext.Set<VolunteerOpportunity>(),
-				x => x.OpportunityId,
-				vo => vo.Id,
-				(x, vo) => new { x.Id, x.VolunteerId, x.OpportunityId, x.EndDateTime, vo.CheckInMethod })
-			.Where(x => x.EndDateTime <= now && x.CheckInMethod == CheckInMethod.None)
-			.OrderBy(x => x.EndDateTime)
-			.Take(maxBatchSize)
-			.ToListAsync(cancellationToken);
-
-		if (candidates.Count == 0)
+		return await strategy.ExecuteAsync<int>(async _ =>
 		{
+			// One transaction for the whole claim-and-enqueue batch - see
+			// EngagementReminderJob.ClaimAndQueueRemindersAsync for why: without it, a
+			// crash between the ExecuteUpdateAsync claims and the outbox SaveChangesAsync
+			// below would leave engagements marked IsCheckedIn with no outbox row ever
+			// written for the domain event, losing it silently instead of retrying.
+			await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+			// Only ScheduledSlots engagements carry a TimeSlotId, so IndividualContact
+			// opportunities (which have no time slot, hence no well-defined "event end")
+			// are not candidates here - the same limitation EngagementReminderJob already
+			// has for its 24h-before-start window.
+			var candidates = await dbContext.Set<Engagement>()
+				.Where(e =>
+					e.Status == EngagementStatus.Confirmed &&
+					!e.IsCheckedIn &&
+					e.TimeSlotId != null)
+				.Join(
+					dbContext.Set<TimeSlot>(),
+					e => e.TimeSlotId,
+					ts => ts.Id,
+					(e, ts) => new { e.Id, e.VolunteerId, e.OpportunityId, ts.EndDateTime })
+				.Join(
+					dbContext.Set<VolunteerOpportunity>(),
+					x => x.OpportunityId,
+					vo => vo.Id,
+					(x, vo) => new { x.Id, x.VolunteerId, x.OpportunityId, x.EndDateTime, vo.CheckInMethod })
+				.Where(x => x.EndDateTime <= now && x.CheckInMethod == CheckInMethod.None)
+				.OrderBy(x => x.EndDateTime)
+				.Take(maxBatchSize)
+				.ToListAsync(cancellationToken);
+
+			if (candidates.Count == 0)
+			{
+				await transaction.CommitAsync(cancellationToken);
+				return 0;
+			}
+
+			var occurredOnUtc = now.UtcDateTime;
+			var claimedMessages = new List<OutboxMessage>(candidates.Count);
+
+			foreach (var candidate in candidates)
+			{
+				// Atomic per-row claim, same reasoning as EngagementReminderJob: if another
+				// replica's tick already claimed this engagement, this affects 0 rows
+				// instead of racing to check it in (and raise its domain event) twice.
+				var rowsAffected = await dbContext.Set<Engagement>()
+					.Where(e => e.Id == candidate.Id && !e.IsCheckedIn)
+					.ExecuteUpdateAsync(
+						s => s
+							.SetProperty(e => e.IsCheckedIn, true)
+							.SetProperty(e => e.ModifiedOn, now),
+						cancellationToken);
+
+				if (rowsAffected == 0)
+					continue;
+
+				var domainEvent = new EngagementCheckedInDomainEvent(
+					candidate.Id, candidate.VolunteerId!.Value, candidate.OpportunityId);
+				claimedMessages.Add(OutboxMessage.FromDomainEvent(domainEvent, occurredOnUtc));
+			}
+
+			if (claimedMessages.Count == 0)
+			{
+				await transaction.CommitAsync(cancellationToken);
+				return 0;
+			}
+
+			// ExecuteUpdateAsync above bypasses the ChangeTracker, so
+			// ConvertDomainEventsToOutboxMessagesInterceptor never sees these events - the
+			// outbox rows are built directly here instead, then written in a single batched
+			// SaveChangesAsync for however many this tick actually won.
+			dbContext.Set<OutboxMessage>().AddRange(claimedMessages);
+			await dbContext.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-			return 0;
-		}
 
-		var occurredOnUtc = now.UtcDateTime;
-		var claimedMessages = new List<OutboxMessage>(candidates.Count);
-
-		foreach (var candidate in candidates)
-		{
-			// Atomic per-row claim, same reasoning as EngagementReminderJob: if another
-			// replica's tick already claimed this engagement, this affects 0 rows
-			// instead of racing to check it in (and raise its domain event) twice.
-			var rowsAffected = await dbContext.Set<Engagement>()
-				.Where(e => e.Id == candidate.Id && !e.IsCheckedIn)
-				.ExecuteUpdateAsync(
-					s => s
-						.SetProperty(e => e.IsCheckedIn, true)
-						.SetProperty(e => e.ModifiedOn, now),
-					cancellationToken);
-
-			if (rowsAffected == 0)
-				continue;
-
-			var domainEvent = new EngagementCheckedInDomainEvent(
-				candidate.Id, candidate.VolunteerId!.Value, candidate.OpportunityId);
-			claimedMessages.Add(OutboxMessage.FromDomainEvent(domainEvent, occurredOnUtc));
-		}
-
-		if (claimedMessages.Count == 0)
-		{
-			await transaction.CommitAsync(cancellationToken);
-			return 0;
-		}
-
-		// ExecuteUpdateAsync above bypasses the ChangeTracker, so
-		// ConvertDomainEventsToOutboxMessagesInterceptor never sees these events - the
-		// outbox rows are built directly here instead, then written in a single batched
-		// SaveChangesAsync for however many this tick actually won.
-		dbContext.Set<OutboxMessage>().AddRange(claimedMessages);
-		await dbContext.SaveChangesAsync(cancellationToken);
-		await transaction.CommitAsync(cancellationToken);
-
-		return claimedMessages.Count;
+			return claimedMessages.Count;
+		}, cancellationToken);
 	}
 }
