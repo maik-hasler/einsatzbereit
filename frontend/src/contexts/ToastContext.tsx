@@ -70,7 +70,18 @@ function ToastList() {
 	const { t } = useTranslation();
 
 	return (
-		<div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2">
+		// role="region": ToastProvider mounts this at the app root (main.tsx),
+		// as a sibling of the routed page rather than inside AppLayout's <main>
+		// - without an explicit landmark here, a visible toast's text sits
+		// outside every landmark on the page, which is exactly what axe's
+		// "region" rule (escalated to CI-blocking, see AccessibilityTests.cs)
+		// flags. aria-label since a generic "region" needs one to be exposed
+		// as a distinct landmark rather than an anonymous one.
+		<div
+			role="region"
+			aria-label={t("error.toastRegionLabel")}
+			className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2"
+		>
 			{toasts.map((toast) => (
 				<div
 					key={toast.id}
@@ -79,7 +90,7 @@ function ToastList() {
 						toast.level === "error"
 							? "bg-red-600"
 							: toast.level === "warning"
-								? "bg-yellow-500"
+								? "bg-yellow-700"
 								: toast.level === "success"
 									? "bg-green-700"
 									: "bg-gray-700"

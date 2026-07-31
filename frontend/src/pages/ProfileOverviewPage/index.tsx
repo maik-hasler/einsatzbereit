@@ -289,11 +289,19 @@ export default function ProfileOverviewPage() {
 					{profileError && (
 						<ErrorBanner message={profileError} className="mb-4" />
 					)}
-					{successMessage && (
-						<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-							{successMessage}
-						</div>
-					)}
+					{/* Always mounted (not conditional on `successMessage`) so the live
+					region is registered before it ever gets content - see
+					CheckInModal.tsx's identical pattern for why. */}
+					<div
+						role="status"
+						className={
+							successMessage
+								? "mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
+								: "sr-only"
+						}
+					>
+						{successMessage}
+					</div>
 
 					{/* Identity + momentum hero */}
 					{!editing && (

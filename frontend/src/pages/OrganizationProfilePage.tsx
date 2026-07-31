@@ -102,7 +102,7 @@ export default function OrganizationProfilePage() {
 					)
 				}
 			>
-				<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+				<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
 					{t("orgProfile.currentNeeds")}
 				</h2>
 

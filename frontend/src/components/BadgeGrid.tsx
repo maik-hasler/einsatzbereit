@@ -41,7 +41,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 
 	return (
 		<div
-			className={`group relative flex flex-col items-center rounded-card border p-4 text-center transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
+			className={`group relative flex flex-col items-center rounded-card border p-4 text-center transition-all ${
 				isEarned
 					? "border-brand-200 bg-white shadow-resting hover:shadow-raised"
 					: "border-gray-100 bg-gray-50"

@@ -174,7 +174,7 @@ export default function OpportunityListItem({
 							</span>
 						</Link>
 						{(item.isRemote || item.city) && (
-							<span className="ml-auto flex items-center gap-1 text-xs text-gray-400">
+							<span className="ml-auto flex items-center gap-1 text-xs text-gray-500">
 								{item.isRemote ? (
 									<>
 										<GlobeIcon className="h-3.5 w-3.5 shrink-0" />

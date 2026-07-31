@@ -12,8 +12,12 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	// still carry that exact class attribute, so a future edit to one page's
 	// input styling can't silently drift from the other without touching the
 	// shared module.
+	// einsatzbereit#1281: the low-contrast focus:outline-none/focus:ring-*
+	// pair was dropped - the global :focus-visible ring in global.css
+	// (issue #992) already overrides it, so it was dead weight, same as
+	// Button.tsx's BASE_CLASSES already had it removed.
 	private const string ExpectedInputClass =
-		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
+		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-brand-400";
 
 	[Test]
 	public async Task ProfilePageInput_UsesSharedInputClass()

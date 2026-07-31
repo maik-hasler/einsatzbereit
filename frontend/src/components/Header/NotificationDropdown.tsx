@@ -39,6 +39,11 @@ export default function NotificationDropdown({
 		markAllRead,
 		markOneRead,
 	} = menu;
+	const panelId = mobile ? "notification-panel-mobile" : "notification-panel";
+	const bellLabel =
+		unreadCount > 0
+			? t("notifications.bellLabelWithCount", { count: unreadCount })
+			: t("notifications.bellLabel");
 
 	async function handleSelect(n: NotificationSummary) {
 		// Marking as read is a side effect, not a prerequisite for navigation -
@@ -54,12 +59,23 @@ export default function NotificationDropdown({
 
 	return (
 		<div className="relative" ref={containerRef}>
+			{/* Always-mounted (not conditional on unreadCount) so a change from
+			e.g. 0 to 1 while the page is open, with focus elsewhere, is itself
+			the mutation a screen reader announces - the bell's own aria-label
+			is only read when the bell itself is focused/hovered. */}
+			<span aria-live="polite" className="sr-only">
+				{unreadCount > 0
+					? t("notifications.bellLabelWithCount", { count: unreadCount })
+					: ""}
+			</span>
 			<button
 				type="button"
 				data-testid={mobile ? "notification-bell-mobile" : "notification-bell"}
 				onClick={() => setNotifOpen((o) => !o)}
 				className={`relative p-2 rounded-lg transition-colors cursor-pointer ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
-				aria-label={t("notifications.bellLabel")}
+				aria-label={bellLabel}
+				aria-haspopup="menu"
+				aria-controls={panelId}
 				aria-expanded={notifOpen}
 			>
 				<svg
@@ -84,6 +100,7 @@ export default function NotificationDropdown({
 			</button>
 			{notifOpen && (
 				<div
+					id={panelId}
 					data-testid={
 						mobile ? "notification-panel-mobile" : "notification-panel"
 					}
@@ -105,7 +122,7 @@ export default function NotificationDropdown({
 					</div>
 					<ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
 						{notifications.length === 0 ? (
-							<li className="px-4 py-6 text-center text-sm text-gray-400">
+							<li className="px-4 py-6 text-center text-sm text-gray-500">
 								{t("notifications.empty")}
 							</li>
 						) : (

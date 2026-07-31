@@ -101,10 +101,10 @@ export function FloatingField({
 	inputMode?: "numeric";
 	pattern?: string;
 }) {
-	const fieldClass = `peer w-full rounded-xl border bg-white px-4 pb-2 pt-5 text-sm text-gray-900 shadow-sm transition focus:outline-none focus:ring-2 ${
+	const fieldClass = `peer w-full rounded-xl border bg-white px-4 pb-2 pt-5 text-sm text-gray-900 shadow-sm transition ${
 		error
-			? "border-red-300 focus:border-red-400 focus:ring-red-400/30"
-			: "border-gray-200 focus:border-brand-400 focus:ring-brand-400/30"
+			? "border-red-300 focus:border-red-400"
+			: "border-gray-200 focus:border-brand-400"
 	}`;
 	const labelClass = `pointer-events-none absolute left-4 top-1.5 text-xs font-medium transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-gray-600 peer-focus:top-1.5 peer-focus:text-xs peer-focus:font-medium ${
 		error

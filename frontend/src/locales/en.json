@@ -538,6 +538,7 @@
       "cancel": "Cancel",
       "submitError": "Could not submit feedback. Please try again.",
       "averageRating": "{{rating}} out of 5 ({{count}} ratings)",
+      "itemRatingLabel": "{{rating}} out of 5 stars",
       "organizerTab": "Feedback",
       "noFeedback": "No feedback yet.",
       "feedbackCount_one": "{{count}} rating",
@@ -564,6 +565,7 @@
       "organizerPin": "Check-in PIN",
       "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
       "markCheckedIn": "Mark as checked in",
+      "markCheckedInSuccess": "Volunteer marked as checked in.",
       "markingCheckedIn": "…",
       "undoCheckIn": "Undo check-in",
       "undoingCheckIn": "…",
@@ -627,6 +629,7 @@
       "cancel": "Cancel",
       "revoke": "Revoke",
       "processing": "…",
+      "confirmSuccess": "Application confirmed.",
       "confirmError": "Error confirming",
       "cancelError": "Error cancelling",
       "loadMore": "Load more",
@@ -703,6 +706,8 @@
     },
     "notifications": {
       "bellLabel": "Notifications",
+      "bellLabelWithCount_one": "Notifications, {{count}} unread notification",
+      "bellLabelWithCount_other": "Notifications, {{count}} unread notifications",
       "markAllRead": "Mark all as read",
       "empty": "No notifications.",
       "loadMore": "Load more",
@@ -949,7 +954,8 @@
       "boundaryMessage": "An unexpected error occurred. You can try going back or reloading the page.",
       "goBack": "Go back",
       "reload": "Reload",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "toastRegionLabel": "Notifications"
     },
     "userProfile": {
       "loading": "Loading profile...",

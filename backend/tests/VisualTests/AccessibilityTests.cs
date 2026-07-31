@@ -31,6 +31,16 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		"landmark-no-duplicate-contentinfo",
 		"landmark-no-duplicate-main",
 		"landmark-unique",
+		// "region" (also moderate) is deliberately NOT escalated here: axe's
+		// region rule flags any visible content not contained by a landmark,
+		// and ToastContext.tsx mounts its toast list at the app root (outside
+		// AppLayout's <main>) - escalating this blind, without being able to
+		// run the full ~200-test Playwright suite in this sandbox (no Docker/
+		// Aspire, see root AGENTS.md), risks breaking CI across every test
+		// that happens to scan a page with a toast or similar page-root
+		// overlay visible. Fixed the one instance found by inspection
+		// (ToastList now has role="region" + aria-label) without gating CI on
+		// a rule this sandbox can't verify page-by-page.
 	];
 
 	private static void AssertNoViolations(AxeResult result)
@@ -56,35 +66,6 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await Page.GotoAsync(frontend.ToString());
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
-	public async Task OrganizationsDirectoryPage_HasNoSeriousA11yViolations()
-	{
-		// #763: the public organization directory page - not covered by any
-		// existing a11y test, which is exactly how the text-gray-400 city-line
-		// contrast violation (same defect as the "Received:" meta line fixed
-		// alongside it) would have shipped unnoticed.
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/organizations");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
-	[Test]
-	public async Task MyEngagementsPage_AsVera_HasNoSeriousA11yViolations()
-	{
-		var frontend = Fixture.GetEndpoint("frontend");
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/my-engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
@@ -1096,6 +1077,212 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var dialog = Page.GetByRole(AriaRole.Dialog);
 		await Expect(dialog).ToBeVisibleAsync();
 		await Expect(dialog.Locator("#cancel-opportunity-reason")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	// einsatzbereit#1297: the axe gate never opened a toast, CheckInModal,
+	// SubmitFeedbackModal, or the home page's date-range popover - all four
+	// states below are seeded deterministically (not "skip if missing seed
+	// data" like several of the tests above) so a regression fails loudly
+	// instead of silently passing on an empty scan.
+	private async Task<(string OrganizationId, string OpportunityId, string EngagementId)>
+		SeedConfirmedEngagementAsync(string checkInMethod, string label)
+	{
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"{label} Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString()
+			?? throw new InvalidOperationException("Created organization had no id.");
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"{label} Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod,
+			isDraft = false,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString()
+			?? throw new InvalidOperationException("Created opportunity had no id.");
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = $"{label} application." });
+		applyResponse.EnsureSuccessStatusCode();
+		var engagement = await applyResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString()
+			?? throw new InvalidOperationException("Created engagement had no id.");
+
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", null)).EnsureSuccessStatusCode();
+
+		return (organizationId, opportunityId, engagementId);
+	}
+
+	[Test]
+	public async Task ProfileOverviewPage_CheckedInAwaitingFeedback_AsVera_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1305/#1297: the "Leave feedback" button (white text on
+		// yellow-500) only renders for a checked-in-without-feedback engagement -
+		// vera's seeded data never has one, so the existing ProfileOverviewPage
+		// scan never actually rendered this control. Also exercises
+		// SubmitFeedbackModal (einsatzbereit#1287's star-rating contrast fix).
+		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("Manual", "FeedbackA11y");
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
+		// Past (it represents a shift that already happened), not "Current &
+		// Upcoming" - see EngagementReadRepository.GetByVolunteerAsync.
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Leave feedback" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+
+		var modalResult = await Page.RunAxe();
+		AssertNoViolations(modalResult);
+	}
+
+	[Test]
+	public async Task ProfileOverviewPage_CheckInModalPinCode_AsVera_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1297: CheckInModal's PIN-entry state (and its
+		// einsatzbereit#1289 success announcement) never had axe coverage.
+		var (_, _, engagementId) = await SeedConfirmedEngagementAsync("PINCode", "CheckInModalA11y");
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Check in" }).ClickAsync();
+		await Expect(Page.Locator("#pin-input")).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task EngagementManagementPage_ConfirmSuccessToast_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1297/#1285: no scan ever opened a toast, so the
+		// white-on-yellow-500/green-600 contrast failures shipped unnoticed.
+		// Also exercises einsatzbereit#1289's new success-toast dispatch on
+		// confirm (previously only the failure path was announced at all).
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"ToastA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"ToastA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			isDraft = false,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "For the toast a11y scan." });
+		applyResponse.EnsureSuccessStatusCode();
+
+		var frontend = Fixture.GetEndpoint("frontend");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Confirm" }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Alert)).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task HomePage_DateRangeFilterOpen_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1297/#1292: none of the seven home-page filter popovers
+		// were ever scanned - MiniCalendar's day-grid gained full ARIA
+		// grid/keyboard-navigation semantics (einsatzbereit#1292) with no test
+		// covering the open state those semantics live in.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Date", Exact = true }).ClickAsync();
+		await Expect(Page.GetByRole(AriaRole.Grid)).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
+	public async Task CallbackPage_HasNoSeriousA11yViolations()
+	{
+		// einsatzbereit#1297: /callback (the OIDC redirect landing page) never
+		// had axe coverage of any kind.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/callback");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

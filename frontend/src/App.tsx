@@ -67,19 +67,26 @@ function OrgAppOutletRelay() {
 function CallbackPage() {
 	const auth = useAuth();
 	const { t } = useTranslation();
+	// /callback is a bare top-level route (see below) with no AppLayout
+	// wrapper, so unlike every other page it has to supply its own <main>/
+	// <h1> rather than relying on a shared layout for them - previously had
+	// neither.
 	if (auth.error) {
 		return (
-			<div className="flex min-h-screen items-center justify-center">
+			<main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+				<h1 className="text-xl font-semibold text-gray-900">
+					{t("error.boundaryTitle")}
+				</h1>
 				<ErrorBanner
 					message={t("auth.authError", { message: auth.error.message })}
 				/>
-			</div>
+			</main>
 		);
 	}
 	return (
-		<div className="flex min-h-screen items-center justify-center">
-			<span className="text-gray-500">{t("auth.completing")}</span>
-		</div>
+		<main className="flex min-h-screen items-center justify-center">
+			<h1 className="text-gray-500">{t("auth.completing")}</h1>
+		</main>
 	);
 }
 

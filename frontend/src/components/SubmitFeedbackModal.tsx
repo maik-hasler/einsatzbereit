@@ -15,7 +15,7 @@ interface SubmitFeedbackModalProps {
 function StarIcon({ filled }: { filled: boolean }) {
 	return (
 		<svg
-			className={`h-8 w-8 transition-colors ${filled ? "text-yellow-400" : "text-gray-300"}`}
+			className={`h-8 w-8 transition-colors ${filled ? "text-yellow-700" : "text-gray-500"}`}
 			fill="currentColor"
 			viewBox="0 0 24 24"
 			aria-hidden="true"
@@ -89,7 +89,7 @@ export default function SubmitFeedbackModal({
 								onClick={() => setRating(star)}
 								onMouseEnter={() => setHovered(star)}
 								onMouseLeave={() => setHovered(0)}
-								className="rounded focus:outline-none focus:ring-2 focus:ring-brand-500"
+								className="rounded"
 							>
 								<StarIcon filled={star <= displayRating} />
 							</button>
@@ -111,9 +111,9 @@ export default function SubmitFeedbackModal({
 						value={comment}
 						onChange={(e) => setComment(e.target.value)}
 						placeholder={t("feedback.commentPlaceholder")}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 					/>
-					<p className="mt-1 text-right text-xs text-gray-400">
+					<p className="mt-1 text-right text-xs text-gray-500">
 						{comment.length}/500
 					</p>
 				</div>

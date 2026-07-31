@@ -21,6 +21,7 @@ import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
+import { formatDateTime } from "../../../lib/format";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -58,32 +59,59 @@ interface CalEvent {
 	maxParticipants: number | null;
 }
 
-function CalEventChip({ event }: { event: object }) {
-	const { t } = useTranslation();
+// react-big-calendar renders this inside a plain, non-focusable <div>/<td>
+// (Month/Week/Day: EventCell.js's `.rbc-event`; Agenda: a bare
+// `rbc-agenda-event-cell` <td>) - neither ever gets a tabIndex or role from
+// the library itself, so a mouse click was previously the only way to reach
+// the event dialog. Rendering a real <button> as the chip's own root element
+// fixes every view at once (components.event is the one seam RBC threads
+// through both EventCell and Agenda) without needing to fight the library's
+// internal onKeyPress/eventWrapper plumbing, which - confirmed by reading
+// node_modules/react-big-calendar/lib/{EventCell,Agenda,Calendar}.js -
+// forwards onKeyPressEvent as a *separate*, unwired prop rather than
+// invoking onSelectEvent on Enter/Space by default.
+function CalEventChip({
+	event,
+	onActivate,
+}: {
+	event: object;
+	onActivate: (event: object) => void;
+}) {
+	const { t, i18n } = useTranslation();
 	const e = event as CalEvent;
+	const timeRange = `${formatDateTime(e.start.toISOString(), i18n.language)} - ${formatDateTime(e.end.toISOString(), i18n.language)}`;
+	const capacityLabel =
+		e.maxParticipants === null
+			? t("orgOverview.eventChipUnlimited", { booked: e.bookedCount })
+			: e.maxParticipants > 0
+				? `${e.bookedCount}/${e.maxParticipants}`
+				: "";
+	const ariaLabel = [e.title, timeRange, capacityLabel]
+		.filter(Boolean)
+		.join(", ");
+
 	return (
-		<span className="flex items-center justify-between gap-1 overflow-hidden">
+		<button
+			type="button"
+			aria-label={ariaLabel}
+			style={{ color: "inherit" }}
+			className="flex h-full w-full items-center justify-between gap-1 overflow-hidden border-0 bg-transparent p-0 text-left"
+			onClick={(evt) => {
+				// The outer .rbc-event/rbc-agenda-event-cell that RBC wraps this
+				// button in already has its own onClick wired to the same
+				// onSelectEvent - without stopping propagation, a click here would
+				// bubble up and invoke it a second time.
+				evt.stopPropagation();
+				onActivate(event);
+			}}
+		>
 			<span className="truncate">{e.title}</span>
-			{e.maxParticipants === null ? (
-				<span className="shrink-0 text-xs opacity-80">
-					{t("orgOverview.eventChipUnlimited", { booked: e.bookedCount })}
-				</span>
-			) : (
-				e.maxParticipants > 0 && (
-					<span className="shrink-0 text-xs opacity-80">
-						{e.bookedCount}/{e.maxParticipants}
-					</span>
-				)
+			{capacityLabel && (
+				<span className="shrink-0 text-xs opacity-80">{capacityLabel}</span>
 			)}
-		</span>
+		</button>
 	);
 }
-
-// Neither depends on component state/props, so both are declared once at
-// module scope - passing fresh object/function literals as Calendar props
-// on every render defeats react-big-calendar's own internal memoization
-// (see #1397).
-const calendarComponents = { event: CalEventChip };
 
 function calendarEventPropGetter(event: object) {
 	const e = event as CalEvent;
@@ -198,6 +226,20 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 		setPickerColor(e.color ?? DEFAULT_EVENT_COLOR);
 		setColorSaveError(null);
 	}, []);
+
+	// Only recomputed when handleSelectEvent's identity changes (never, since
+	// it has an empty dep array) - keeps the same stable-object-reference
+	// property the previous module-scope `calendarComponents` constant had
+	// (see #1397), while still being able to close over a per-instance
+	// handler now that CalEventChip needs one for keyboard activation.
+	const calendarComponents = useMemo(
+		() => ({
+			event: (props: { event: object }) => (
+				<CalEventChip {...props} onActivate={handleSelectEvent} />
+			),
+		}),
+		[handleSelectEvent],
+	);
 
 	function handleColorPickerChange(value: string) {
 		if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
