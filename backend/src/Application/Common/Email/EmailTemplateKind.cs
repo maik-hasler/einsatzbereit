@@ -16,4 +16,6 @@ public enum EmailTemplateKind
 
 	EngagementWithdrawnNotifyOrganizer,
 	EngagementReminder,
+	InvitationReceived,
+	OpportunityUpdated,
 }

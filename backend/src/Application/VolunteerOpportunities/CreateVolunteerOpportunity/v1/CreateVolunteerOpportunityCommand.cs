@@ -19,5 +19,6 @@ public sealed record CreateVolunteerOpportunityCommand(
 	List<string> Tags,
 	OpportunityStatus Status,
 	UserId RequestingUserId,
-	string? CheckInPin = null)
+	string? CheckInPin = null,
+	DateTimeOffset? ValidUntil = null)
 	: ICommand<VolunteerOpportunity>;

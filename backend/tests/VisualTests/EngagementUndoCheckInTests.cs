@@ -205,6 +205,7 @@ public class EngagementUndoCheckInTests(AspireFixture fixture) : VisualTestBase(
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();

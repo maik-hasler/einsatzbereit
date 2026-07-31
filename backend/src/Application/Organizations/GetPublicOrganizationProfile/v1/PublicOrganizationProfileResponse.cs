@@ -8,7 +8,6 @@ public sealed record PublicOrganizationProfileResponse(
 	string? ContactPhone,
 	string? Website,
 	PublicAddressDto? Address,
-	bool IsVerified,
 	IReadOnlyList<PublicOpportunitySummaryDto> OpenOpportunities,
 	string? LogoUrl);
 

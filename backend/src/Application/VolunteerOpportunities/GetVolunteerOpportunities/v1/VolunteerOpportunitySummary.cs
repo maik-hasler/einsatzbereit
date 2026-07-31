@@ -19,11 +19,11 @@ public sealed record VolunteerOpportunitySummary(
 	string? Category,
 	IReadOnlyList<string> Tags,
 	DateTimeOffset CreatedOn,
+	DateTimeOffset? ValidUntil,
 	DateTimeOffset? NextTimeSlotStart,
 	DateTimeOffset? NextTimeSlotEnd,
 	int? TotalMaxParticipants,
 	int CurrentParticipantCount,
 	string Status,
 	string? BannerImageUrl,
-	bool IsOrganizationVerified = false,
 	string? OrganizationLogoUrl = null);

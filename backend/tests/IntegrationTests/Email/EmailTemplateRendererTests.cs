@@ -28,6 +28,8 @@ public class EmailTemplateRendererTests
 				["StartFormatted"] = "Monday, 1. January 2027 at 10:00",
 				["Reason"] = "Not enough sign-ups",
 				["ReasonBlock"] = "",
+				["InviteeName"] = "Vera",
+				["OrganizationName"] = "Beach Cleanup Crew",
 			};
 
 			var content = _sut.Render(kind, language, placeholders);
@@ -50,6 +52,30 @@ public class EmailTemplateRendererTests
 			});
 
 		content.Subject.Should().Be("Your engagement has been confirmed");
+		content.Body.Should().Contain("Vera").And.Contain("Beach Cleanup");
+	}
+
+	[Test]
+	public void Render_ShouldInterpolateEveryPlaceholder_ForInvitationReceived_InGerman()
+	{
+		var content = _sut.Render(
+			EmailTemplateKind.InvitationReceived,
+			"de",
+			new Dictionary<string, string> { ["InviteeName"] = "Vera", ["OrganizationName"] = "Strandreinigung e.V." });
+
+		content.Subject.Should().Be("Du wurdest eingeladen, einer Organisation beizutreten");
+		content.Body.Should().Contain("Vera").And.Contain("Strandreinigung e.V.");
+	}
+
+	[Test]
+	public void Render_ShouldInterpolateEveryPlaceholder_ForOpportunityUpdated_InEnglish()
+	{
+		var content = _sut.Render(
+			EmailTemplateKind.OpportunityUpdated,
+			"en",
+			new Dictionary<string, string> { ["VolunteerName"] = "Vera", ["OpportunityTitle"] = "Beach Cleanup" });
+
+		content.Subject.Should().Contain("Beach Cleanup");
 		content.Body.Should().Contain("Vera").And.Contain("Beach Cleanup");
 	}
 

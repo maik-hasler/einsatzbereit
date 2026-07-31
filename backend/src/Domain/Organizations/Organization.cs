@@ -22,8 +22,6 @@ public sealed class Organization
 
 	public string? LogoUrl { get; private set; }
 
-	public bool IsVerified { get; private set; }
-
 	public DateTimeOffset CreatedOn { get; private set; }
 
 	public DateTimeOffset? ModifiedOn { get; private set; }
@@ -57,26 +55,6 @@ public sealed class Organization
 	public void SetLogoUrl(string? url)
 	{
 		LogoUrl = url;
-	}
-
-	public Result Verify()
-	{
-		if (IsVerified)
-			return Result.Failure(Error.Conflict("Organization.AlreadyVerified", "Organization is already verified."));
-
-		IsVerified = true;
-		AddEvent(new OrganizationVerifiedDomainEvent(Id));
-		return Result.Success();
-	}
-
-	public Result RevokeVerification()
-	{
-		if (!IsVerified)
-			return Result.Failure(Error.Conflict("Organization.NotVerified", "Organization is not verified."));
-
-		IsVerified = false;
-		AddEvent(new OrganizationVerificationRevokedDomainEvent(Id));
-		return Result.Success();
 	}
 
 	public Result Rename(string name)

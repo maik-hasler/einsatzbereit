@@ -99,6 +99,7 @@ public class SignUpModalMessageFieldTests(AspireFixture fixture) : VisualTestBas
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = true,
 		});
 		draftResponse.EnsureSuccessStatusCode();

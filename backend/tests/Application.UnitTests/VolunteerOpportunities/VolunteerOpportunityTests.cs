@@ -54,7 +54,8 @@ public class VolunteerOpportunityTests
 			Occurrence.Recurring,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
-			PinGenerator).Value;
+			PinGenerator,
+			validUntil: Now.AddDays(30)).Value;
 
 		// Assert
 		opportunity.IsRemote.Should().BeTrue();
@@ -258,7 +259,8 @@ public class VolunteerOpportunityTests
 			Occurrence.Recurring,
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
-			PinGenerator).Value;
+			PinGenerator,
+			validUntil: Now.AddDays(30)).Value;
 
 		// Assert
 		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
@@ -287,7 +289,7 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
-	public void Create_ShouldAllow_PublishedIndividualContact_WithNoTimeSlots()
+	public void Create_ShouldAllow_PublishedIndividualContact_WithNoTimeSlots_AndValidUntilGiven()
 	{
 		// Act
 		var opportunity = VolunteerOpportunity.Create(
@@ -300,10 +302,205 @@ public class VolunteerOpportunityTests
 			ParticipationType.IndividualContact,
 			CheckInMethod.None,
 			PinGenerator,
-			status: OpportunityStatus.Published).Value;
+			status: OpportunityStatus.Published,
+			validUntil: Now.AddDays(30)).Value;
 
 		// Assert
 		opportunity.Status.Should().Be(OpportunityStatus.Published);
+		opportunity.TimeSlots.Should().BeEmpty();
+	}
+
+	// --- ValidUntil (einsatzbereit#1086) ---
+
+	[Test]
+	public void Create_ShouldFail_WhenPublishedIndividualContact_HasNoValidUntil()
+	{
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Published);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deadline*");
+	}
+
+	[Test]
+	public void Create_ShouldAllow_DraftIndividualContact_WithNoValidUntil()
+	{
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft);
+
+		// Assert
+		result.IsSuccess.Should().BeTrue();
+		result.Value.ValidUntil.Should().BeNull();
+	}
+
+	[Test]
+	public void Create_ShouldFail_WhenValidUntilGiven_ForScheduledSlots()
+	{
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft,
+			validUntil: Now.AddDays(30));
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("A deadline can only be set for Individual contact opportunities.");
+	}
+
+	[Test]
+	[Arguments(0)]
+	[Arguments(-1)]
+	public void Create_ShouldFail_WhenValidUntilIsNotInFuture(int daysOffset)
+	{
+		// Act
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId,
+			"Title",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			PinGenerator,
+			status: OpportunityStatus.Draft,
+			validUntil: Now.AddDays(daysOffset),
+			now: Now);
+
+		// Assert
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Deadline must be in the future.");
+	}
+
+	[Test]
+	public void Publish_ShouldFail_WhenIndividualContactHasNoValidUntil()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
+
+		var result = opportunity.Publish();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deadline*");
+		opportunity.Status.Should().Be(OpportunityStatus.Draft);
+	}
+
+	[Test]
+	public void Publish_ShouldSucceed_WhenIndividualContactHasValidUntil()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
+		opportunity.SetValidUntil(Now.AddDays(14), Now);
+
+		var result = opportunity.Publish();
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Status.Should().Be(OpportunityStatus.Published);
+	}
+
+	[Test]
+	public void SetValidUntil_ShouldSetValue_WhenIndividualContact()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
+
+		var result = opportunity.SetValidUntil(Now.AddDays(14), Now);
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.ValidUntil.Should().Be(Now.AddDays(14));
+	}
+
+	[Test]
+	public void SetValidUntil_ShouldClearValue_WhenGivenNull()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft, validUntil: Now.AddDays(14)).Value;
+
+		var result = opportunity.SetValidUntil(null, Now);
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.ValidUntil.Should().BeNull();
+	}
+
+	[Test]
+	public void SetValidUntil_ShouldFail_WhenScheduledSlots()
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.SetValidUntil(Now.AddDays(14), Now);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("A deadline can only be set for Individual contact opportunities.");
+	}
+
+	[Test]
+	public void SetValidUntil_ShouldFail_WhenNotInFuture()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
+
+		var result = opportunity.SetValidUntil(Now, Now);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Deadline must be in the future.");
+	}
+
+	[Test]
+	public void SwitchParticipationType_ShouldClearValidUntil_WhenSwitchingAwayFromIndividualContact()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft, validUntil: Now.AddDays(14)).Value;
+
+		opportunity.SwitchParticipationType(ParticipationType.ScheduledSlots);
+
+		opportunity.ValidUntil.Should().BeNull();
+	}
+
+	[Test]
+	public void SwitchParticipationType_ShouldKeepValidUntil_WhenStayingIndividualContact()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft, validUntil: Now.AddDays(14)).Value;
+
+		opportunity.SwitchParticipationType(ParticipationType.IndividualContact);
+
+		opportunity.ValidUntil.Should().Be(Now.AddDays(14));
 	}
 
 	// --- Unpublish / Cancel (einsatzbereit#1038) ---
@@ -606,7 +803,7 @@ public class VolunteerOpportunityTests
 
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, pinGenerator).Value;
+			CheckInMethod.PINCode, pinGenerator, validUntil: Now.AddDays(30)).Value;
 
 		opportunity.CheckInPin.Should().Be("1234");
 	}
@@ -616,7 +813,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "13579").Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "13579", validUntil: Now.AddDays(30)).Value;
 
 		opportunity.CheckInPin.Should().Be("13579");
 	}
@@ -626,7 +823,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.None, PinGenerator, checkInPin: "1234").Value;
+			CheckInMethod.None, PinGenerator, checkInPin: "1234", validUntil: Now.AddDays(30)).Value;
 
 		opportunity.CheckInPin.Should().BeNull();
 	}
@@ -650,7 +847,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111").Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111", validUntil: Now.AddDays(30)).Value;
 
 		opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator, checkInPin: "2222");
 
@@ -662,7 +859,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111").Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111", validUntil: Now.AddDays(30)).Value;
 
 		opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator);
 
@@ -677,7 +874,7 @@ public class VolunteerOpportunityTests
 
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.None, pinGenerator).Value;
+			CheckInMethod.None, pinGenerator, validUntil: Now.AddDays(30)).Value;
 
 		opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, pinGenerator);
 
@@ -689,7 +886,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111").Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111", validUntil: Now.AddDays(30)).Value;
 
 		var result = opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator, checkInPin: "abc");
 
@@ -717,7 +914,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.None, PinGenerator).Value;
+			CheckInMethod.None, PinGenerator, validUntil: Now.AddDays(30)).Value;
 
 		var result = opportunity.AddTimeSlot(FutureSlotStart, FutureSlotStart.AddHours(2), maxParticipants: 10, Now);
 

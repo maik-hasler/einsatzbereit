@@ -2477,46 +2477,6 @@
         }
       }
     },
-    "/v1/users/me/export": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "operationId": "ExportMyData",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserDataExportResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/admin/users/{userId}": {
       "delete": {
         "tags": [
@@ -2868,80 +2828,6 @@
           },
           "409": {
             "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/admin/organizations/{organizationId}/verify": {
-      "put": {
-        "tags": [
-          "VerifyOrganizationEndpoint"
-        ],
-        "operationId": "VerifyOrganization",
-        "parameters": [
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyOrganizationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6306,8 +6192,7 @@
         "required": [
           "id",
           "name",
-          "logoUrl",
-          "isVerified"
+          "logoUrl"
         ],
         "type": "object",
         "properties": {
@@ -6323,9 +6208,6 @@
               "null",
               "string"
             ]
-          },
-          "isVerified": {
-            "type": "boolean"
           }
         }
       },
@@ -6790,7 +6672,8 @@
           "category",
           "tags",
           "isDraft",
-          "checkInPin"
+          "checkInPin",
+          "validUntil"
         ],
         "type": "object",
         "properties": {
@@ -6872,6 +6755,13 @@
               "null",
               "string"
             ]
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -6894,7 +6784,8 @@
           "category",
           "tags",
           "createdOn",
-          "status"
+          "status",
+          "validUntil"
         ],
         "type": "object",
         "properties": {
@@ -6984,6 +6875,13 @@
           },
           "status": {
             "type": "string"
+          },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -7674,9 +7572,6 @@
               "string"
             ]
           },
-          "isVerified": {
-            "type": "boolean"
-          },
           "createdOn": {
             "type": "string",
             "format": "date-time"
@@ -7804,7 +7699,6 @@
           "website",
           "logoUrl",
           "address",
-          "isVerified",
           "createdOn",
           "modifiedOn",
           "members"
@@ -7857,9 +7751,6 @@
                 "$ref": "#/components/schemas/AddressDto"
               }
             ]
-          },
-          "isVerified": {
-            "type": "boolean"
           },
           "createdOn": {
             "type": "string",
@@ -7925,26 +7816,6 @@
           },
           "isOrganisator": {
             "type": "boolean"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
-      "OrganizationMembershipSummary": {
-        "required": [
-          "organizationId",
-          "organizationName",
-          "role"
-        ],
-        "type": "object",
-        "properties": {
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "organizationName": {
-            "type": "string"
           },
           "role": {
             "type": "string"
@@ -8419,7 +8290,6 @@
           "contactPhone",
           "website",
           "address",
-          "isVerified",
           "openOpportunities",
           "logoUrl"
         ],
@@ -8466,9 +8336,6 @@
               }
             ]
           },
-          "isVerified": {
-            "type": "boolean"
-          },
           "openOpportunities": {
             "type": "array",
             "items": {
@@ -8490,7 +8357,6 @@
           "description",
           "city",
           "logoUrl",
-          "isVerified",
           "openOpportunityCount"
         ],
         "type": "object",
@@ -8519,9 +8385,6 @@
               "null",
               "string"
             ]
-          },
-          "isVerified": {
-            "type": "boolean"
           },
           "openOpportunityCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -9103,7 +8966,8 @@
           "checkInMethod",
           "category",
           "tags",
-          "checkInPin"
+          "checkInPin",
+          "validUntil"
         ],
         "type": "object",
         "properties": {
@@ -9175,136 +9039,13 @@
               "null",
               "string"
             ]
-          }
-        }
-      },
-      "UserDataExportProfile": {
-        "required": [
-          "id",
-          "username",
-          "firstName",
-          "lastName",
-          "email",
-          "avatarUrl",
-          "bio",
-          "phone",
-          "skills",
-          "languages",
-          "preferredContact",
-          "preferredLanguage"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
           },
-          "username": {
-            "type": "string"
-          },
-          "firstName": {
+          "validUntil": {
             "type": [
               "null",
               "string"
-            ]
-          },
-          "lastName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "email": {
-            "type": "string"
-          },
-          "avatarUrl": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "bio": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "phone": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "skills": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "languages": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "preferredContact": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "preferredLanguage": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "UserDataExportResponse": {
-        "required": [
-          "profile",
-          "engagements",
-          "achievements",
-          "streak",
-          "organizationMemberships"
-        ],
-        "type": "object",
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/UserDataExportProfile"
-          },
-          "engagements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EngagementSummary"
-            }
-          },
-          "achievements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AchievementSummary"
-            }
-          },
-          "streak": {
-            "$ref": "#/components/schemas/StreakSummary"
-          },
-          "organizationMemberships": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrganizationMembershipSummary"
-            }
-          }
-        }
-      },
-      "VerifyOrganizationRequest": {
-        "required": [
-          "isVerified"
-        ],
-        "type": "object",
-        "properties": {
-          "isVerified": {
-            "type": "boolean"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -9329,6 +9070,7 @@
           "tags",
           "timeSlots",
           "createdOn",
+          "validUntil",
           "currentParticipantCount",
           "status",
           "bannerImageUrl"
@@ -9431,6 +9173,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "currentParticipantCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -9480,6 +9229,7 @@
           "category",
           "tags",
           "createdOn",
+          "validUntil",
           "nextTimeSlotStart",
           "nextTimeSlotEnd",
           "totalMaxParticipants",
@@ -9579,6 +9329,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "validUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "nextTimeSlotStart": {
             "type": [
               "null",
@@ -9618,10 +9375,6 @@
               "null",
               "string"
             ]
-          },
-          "isOrganizationVerified": {
-            "type": "boolean",
-            "default": false
           },
           "organizationLogoUrl": {
             "type": [
@@ -9687,9 +9440,6 @@
     },
     {
       "name": "Users"
-    },
-    {
-      "name": "VerifyOrganizationEndpoint"
     },
     {
       "name": "Organizations"

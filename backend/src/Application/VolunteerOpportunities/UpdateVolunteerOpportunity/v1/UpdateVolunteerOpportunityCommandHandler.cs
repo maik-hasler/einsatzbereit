@@ -22,6 +22,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IPinGenerator pinGenerator,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
+	IEmailTemplateRenderer emailTemplateRenderer,
 	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
@@ -80,6 +81,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 		opportunity.Recategorize(request.Category, request.Tags);
 		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, request.CheckInPin).ThrowIfFailure();
 		opportunity.SwitchParticipationType(request.ParticipationType);
+		opportunity.SetValidUntil(request.ValidUntil, DateTimeOffset.UtcNow).ThrowIfFailure();
 
 		// Only notify on material changes (location or schedule); cosmetic edits
 		// (title, description, tags) must not spam engaged volunteers.
@@ -97,6 +99,7 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 				cancellationToken,
 				keycloakUserService: keycloakUserService,
 				emailService: emailService,
+				emailTemplateRenderer: emailTemplateRenderer,
 				opportunityTitle: opportunity.Title);
 
 		return true;

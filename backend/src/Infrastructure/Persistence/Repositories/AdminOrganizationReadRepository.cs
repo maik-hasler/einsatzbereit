@@ -18,6 +18,6 @@ internal sealed class AdminOrganizationReadRepository(
 			.OrderBy(o => o.Name)
 			.ToPagedListAsync(pageNumber, pageSize, cancellationToken);
 
-		return paged.Map(o => new AdminOrganizationSummary(o.Id.Value, o.Name, o.LogoUrl, o.IsVerified));
+		return paged.Map(o => new AdminOrganizationSummary(o.Id.Value, o.Name, o.LogoUrl));
 	}
 }

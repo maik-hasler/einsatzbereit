@@ -29,6 +29,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -54,6 +55,15 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_emailService
 			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(callInfo =>
+			{
+				var placeholders = (IReadOnlyDictionary<string, string>)callInfo[2]!;
+				return new EmailContent("Test Subject", $"Test Body {string.Join(" ", placeholders.Values)}");
+			});
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_engagementReadRepository,
@@ -61,11 +71,14 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			_pinGenerator,
 			_keycloakUserService,
 			_emailService,
+			_emailTemplateRenderer,
 			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
 	private VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
-		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).Value;
+		VolunteerOpportunity.Create(
+			DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 
 	private VolunteerOpportunity CreateDraftOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
 		VolunteerOpportunity.Create(DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator, status: OpportunityStatus.Draft).Value;
@@ -154,6 +167,77 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		// Assert
 		opportunity.Occurrence.Should().Be(Occurrence.Recurring);
 		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
+	}
+
+	[Test]
+	public async Task Handle_ShouldSetValidUntil_WhenGivenForIndividualContact(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var validUntil = DateTimeOffset.UtcNow.AddDays(60);
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
+			ValidUntil: validUntil);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		opportunity.ValidUntil.Should().Be(validUntil);
+	}
+
+	[Test]
+	public async Task Handle_ShouldClearValidUntil_WhenSwitchingToScheduledSlots(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateDraftOpportunity();
+		opportunity.SetValidUntil(DateTimeOffset.UtcNow.AddDays(30), DateTimeOffset.UtcNow);
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		opportunity.ValidUntil.Should().BeNull();
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenValidUntilNotInFuture(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId,
+			ValidUntil: DateTimeOffset.UtcNow.AddDays(-1));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*Deadline must be in the future*");
 	}
 
 	[Test]
@@ -374,6 +458,46 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldRenderOpportunityUpdatedEmail_InVolunteersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var activeVolunteerId = UserId.New();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
+			.Returns([activeVolunteerId.Value]);
+
+		var activeVolunteer = User.Create(activeVolunteerId);
+		activeVolunteer.SetPreferredLanguage("en");
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([activeVolunteer]);
+
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.TransientFailure);
+
+		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.OpportunityUpdated,
+			"en",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotNotifyVolunteers_WhenOnlyCosmeticFieldsChange(
 		CancellationToken cancellationToken)
 	{
@@ -496,7 +620,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, geocodedAddress, Occurrence.OneTime,
-			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).GetValueOrThrow();
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
@@ -525,7 +650,8 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Altes Thema", "Alte Beschreibung", true, null, Occurrence.OneTime,
-			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator).GetValueOrThrow();
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)

@@ -124,6 +124,15 @@ export default function DetailsStep({
 	const { t, i18n } = useTranslation();
 	const errorRef = useRef<HTMLParagraphElement>(null);
 
+	// Local-timezone "today" as a date-input value, so a deadline can't be
+	// picked in the past (mirrors the ScheduledSlots start-time `min` below).
+	const today = new Date();
+	const todayDateInputValue = new Date(
+		today.getTime() - today.getTimezoneOffset() * 60000,
+	)
+		.toISOString()
+		.slice(0, 10);
+
 	// The publish-blocking error (e.g. "needs a time slot") can land below the
 	// fold of this step's scrollable body - scroll and focus it into view so
 	// it isn't effectively invisible, on top of role="alert" announcing it.
@@ -578,6 +587,34 @@ export default function DetailsStep({
 							{addingSlot ? t("timeSlots.adding") : t("timeSlots.addButton")}
 						</button>
 					</div>
+				</div>
+			)}
+
+			{!isScheduledSlots && (
+				<div className="rounded-card border border-gray-200 bg-gray-50 p-4">
+					<label
+						htmlFor="create-valid-until"
+						className="mb-1.5 block text-sm font-semibold text-gray-800"
+					>
+						{t("createOpportunity.fieldValidUntil")}
+					</label>
+					<Controller
+						name="validUntil"
+						control={control}
+						render={({ field }) => (
+							<input
+								id="create-valid-until"
+								type="date"
+								value={field.value}
+								min={todayDateInputValue}
+								onChange={(e) => field.onChange(e.target.value)}
+								className={dateInputClass}
+							/>
+						)}
+					/>
+					<p className="mt-1.5 text-xs text-gray-500">
+						{t("createOpportunity.validUntilHint")}
+					</p>
 				</div>
 			)}
 
