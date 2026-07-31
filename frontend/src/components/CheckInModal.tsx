@@ -164,11 +164,17 @@ export default function CheckInModal({
 					</p>
 				)}
 
-			{success && (
-				<p role="status" className="text-sm font-medium text-green-700">
-					{t("checkIn.success")}
-				</p>
-			)}
+			{/* Always mounted (not conditional on `success`) so the live region is
+			registered before it ever gets content - a screen reader can miss a
+			role="status" node that's inserted into the DOM already populated,
+			same reasoning as the notification bell's live region (see
+			NotificationDropdown.tsx). */}
+			<p
+				role="status"
+				className={success ? "text-sm font-medium text-green-700" : "sr-only"}
+			>
+				{success ? t("checkIn.success") : ""}
+			</p>
 
 			<Button
 				type="button"

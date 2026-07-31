@@ -192,11 +192,15 @@ export default function QRScannerModal({
 				</>
 			)}
 
-			{success && (
-				<p role="status" className="text-sm font-medium text-green-700">
-					{t("checkIn.qrSuccess")}
-				</p>
-			)}
+			{/* Always mounted (not conditional on `success`) so the live region is
+			registered before it ever gets content - see CheckInModal.tsx's
+			identical pattern for why. */}
+			<p
+				role="status"
+				className={success ? "text-sm font-medium text-green-700" : "sr-only"}
+			>
+				{success ? t("checkIn.qrSuccess") : ""}
+			</p>
 
 			<Button
 				type="button"
