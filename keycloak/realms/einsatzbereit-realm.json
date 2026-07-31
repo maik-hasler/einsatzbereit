@@ -238,6 +238,17 @@
       ]
     }
   ],
+  "requiredActions": [
+    {
+      "alias": "TERMS_AND_CONDITIONS",
+      "name": "Terms and Conditions",
+      "providerId": "TERMS_AND_CONDITIONS",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 20,
+      "config": {}
+    }
+  ],
   "users": [
     {
       "id": "00000000-0000-0000-0000-000000000002",
