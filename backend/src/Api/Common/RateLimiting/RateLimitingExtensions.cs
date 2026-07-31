@@ -59,8 +59,12 @@ internal static class RateLimitingExtensions
 		});
 	}
 
-	private static string GetClientIp(HttpContext ctx) =>
-		ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-		?? ctx.Connection.RemoteIpAddress?.ToString()
-		?? "unknown";
+	// X-Forwarded-For is no longer read directly here (#1332): ForwardedHeadersMiddleware
+	// (see Program.cs + TrustedNetworksOptions) already rewrote Connection.RemoteIpAddress
+	// from it, but only when the immediate connection came from a known trusted network -
+	// otherwise the header is a client-controlled value with no verification at all, and
+	// trusting it here would let any caller bypass the anonymous rate limit by sending a
+	// different one per request.
+	internal static string GetClientIp(HttpContext ctx) =>
+		ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 }

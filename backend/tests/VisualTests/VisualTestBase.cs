@@ -20,7 +20,10 @@ namespace VisualTests;
 /// comment), which alone is enough headroom for this whole suite - the per-test
 /// IP partitioning here is kept as a second, independent layer on top of that
 /// bump: it predates it, costs nothing, and means this suite doesn't silently
-/// regress to 429s if that bump is ever narrowed or reverted.
+/// regress to 429s if that bump is ever narrowed or reverted. Still honored after
+/// #1332 hardened the production rate limiter against X-Forwarded-For spoofing -
+/// this backend process is only ever reached over loopback here, which
+/// TrustedNetworksOptions deliberately keeps trusted.
 ///
 /// This header hits the exact same Keycloak CORS wall as <c>traceparent</c> above -
 /// Keycloak doesn't allow it in <c>Access-Control-Allow-Headers</c> either, so any

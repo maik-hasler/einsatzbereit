@@ -4,6 +4,7 @@ using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
 using Api.Common.Health;
 using Api.Common.Middleware;
+using Api.Common.Network;
 using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application;
@@ -13,6 +14,7 @@ using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -99,6 +101,15 @@ builder.Services.AddResponseCompression(options =>
 	options.Providers.Add<BrotliCompressionProvider>();
 	options.Providers.Add<GzipCompressionProvider>();
 	options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json");
+});
+
+var trustedNetworks = builder.Configuration.GetSection("TrustedNetworks").Get<TrustedNetworksOptions>()
+	?? new TrustedNetworksOptions();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+	foreach (var cidr in trustedNetworks.Cidrs)
+		options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(cidr));
 });
 
 builder.Services.AddHttpLogging(logging =>
@@ -204,6 +215,11 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 }
 
 app.MapDefaultEndpoints();
+
+// Must run before anything that reads Connection.RemoteIpAddress (HTTP logging,
+// the rate limiter's anonymous partition key) - see TrustedNetworksOptions for why
+// only these known networks are trusted to set X-Forwarded-For (#1332).
+app.UseForwardedHeaders();
 
 app.UseHttpLogging();
 app.UseResponseCompression();
