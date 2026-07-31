@@ -15,8 +15,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build:
@@ -34,16 +32,25 @@ jobs:
           echo "revremark=$(git log -1 --format=%s)" >> "$GITHUB_OUTPUT"
           echo "revdate=$(date +%d.%m.%Y)" >> "$GITHUB_OUTPUT"
 
+      # revremark in particular comes from a commit subject an outside
+      # contributor controls (the PR title, on a squash-merge push to main).
+      # Passing it through env: instead of splicing "${{ }}" into the
+      # program text below means a backtick or "$( )" in that text is just
+      # an env var value, never re-parsed as shell syntax.
       - name: Build AsciiDoc
         uses: tonynv/asciidoctor-action@755dc03a42aee715c3705fc31d2ca106b7ee90fd # v2
+        env:
+          REVNUMBER: ${{ steps.revision.outputs.revnumber }}
+          REVDATE: ${{ steps.revision.outputs.revdate }}
+          REVREMARK: ${{ steps.revision.outputs.revremark }}
         with:
           program: |
             asciidoctor \
               -r asciidoctor-diagram \
               -a imagesdir=images \
-              -a revnumber="${{ steps.revision.outputs.revnumber }}" \
-              -a revdate="${{ steps.revision.outputs.revdate }}" \
-              -a revremark="${{ steps.revision.outputs.revremark }}" \
+              -a revnumber="$REVNUMBER" \
+              -a revdate="$REVDATE" \
+              -a revremark="$REVREMARK" \
               -b html5 \
               -D build \
               docs/Architecture/Architecture.adoc
@@ -65,6 +72,9 @@ jobs:
     needs: build
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     concurrency:
       group: pages
       cancel-in-progress: true

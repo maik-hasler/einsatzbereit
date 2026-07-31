@@ -357,6 +357,16 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Vite bakes VITE_* into the JS bundle at build time - these are only
+          # ever used as a fallback if the runtime config (config.js, envsubst'd
+          # at container start per docker-compose.yml/frontend/AGENTS.md) is
+          # somehow unavailable. Without these, that fallback is the Dockerfile's
+          # own ARG defaults (http://localhost:...), which is what a returning
+          # user's browser would silently point at instead - see #1345.
+          build-args: |
+            VITE_KEYCLOAK_AUTHORITY_URL=https://login.maik-hasler.de/realms/einsatzbereit
+            VITE_KEYCLOAK_CLIENT_ID=frontend
+            VITE_API_URL=https://api.maik-hasler.de
 
   publish-keycloak:
     name: Publish Keycloak
@@ -419,6 +429,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: staging
+    # Job-level (not workflow-level), so image builds for a later tag can
+    # still run concurrently with an in-progress deploy - only the actual
+    # SSH/compose mutation of the shared staging host is serialized. Without
+    # this, two RC tags pushed minutes apart (routine in this repo's release
+    # flow) can both scp the same .env and both `docker compose up -d`
+    # against the same host at once.
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -427,7 +446,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
+          # Pinned host key from a secret, not ssh-keyscan's live result - a
+          # DNS or BGP hijack of STAGING_SSH_HOST would otherwise have its
+          # attacker-controlled host key trusted automatically, handing it
+          # the deploy key and the rendered .env (Postgres, Keycloak admin,
+          # MinIO credentials). See .github/AGENTS.md for how
+          # STAGING_SSH_HOST_KEY was captured and verified.
+          echo "${{ secrets.STAGING_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
 
       - name: Render .env
         env:
@@ -441,6 +466,10 @@ jobs:
           KEYCLOAK_BACKEND_SECRET: ${{ secrets.KEYCLOAK_BACKEND_SECRET }}
           MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
           MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          # Bucket-scoped app credentials minio-init provisions the backend
+          # with, instead of the root credentials above (#1353).
+          MINIO_APP_ACCESS_KEY: ${{ secrets.MINIO_APP_ACCESS_KEY }}
+          MINIO_APP_SECRET_KEY: ${{ secrets.MINIO_APP_SECRET_KEY }}
           # SMTP relay mailbox shared by Keycloak (KC_SMTP_*) and the backend
           # (Smtp__*) in docker-compose.yml - see #1070, #1341, #1342.
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
@@ -474,6 +503,8 @@ jobs:
             printf 'KEYCLOAK_ADMIN_PASSWORD="%s"\n' "$(escape "$KEYCLOAK_ADMIN_PASSWORD")"
             printf 'KEYCLOAK_BACKEND_SECRET="%s"\n' "$(escape "$KEYCLOAK_BACKEND_SECRET")"
             printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
+            printf 'MINIO_APP_ACCESS_KEY="%s"\n' "$(escape "$MINIO_APP_ACCESS_KEY")"
+            printf 'MINIO_APP_SECRET_KEY="%s"\n' "$(escape "$MINIO_APP_SECRET_KEY")"
             printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
             printf 'SMTP_HOST="%s"\n' "$(escape "$SMTP_HOST")"
             printf 'SMTP_PORT="%s"\n' "$(escape "$SMTP_PORT")"
@@ -562,12 +593,29 @@ jobs:
 
       - name: Pull and restart
         id: pull_and_restart
+        env:
+          # Kept out of the heredoc below on purpose - a GitHub Actions
+          # "${{ }}" expression is substituted into the run: text *before*
+          # any shell sees it, so splicing a secret directly into a script
+          # body means shell metacharacters in that secret's value would be
+          # re-interpreted as script syntax instead of a literal value. An
+          # intermediate env var avoids that: the value only ever flows
+          # through normal shell variable expansion.
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
+          # Separate ssh call, with the token piped over stdin rather than
+          # embedded in any command string (local or remote) - docker login
+          # writes ~/.docker/config.json on the remote host, so its effect
+          # persists into the next ssh session below. ${GHCR_USERNAME@Q}
+          # shell-quotes the value for safe re-parsing by the remote shell.
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" \
+            "docker login ghcr.io -u ${GHCR_USERNAME@Q} --password-stdin" <<< "$GHCR_TOKEN"
+
           ssh -i ~/.ssh/id_ed25519 "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" bash -s <<'EOF'
             set -euo pipefail
             cd /opt/einsatzbereit
             chmod 600 .env
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             # Tag running images as staging-previous so we can roll back if the
             # health gate fails after the deploy.
             for svc in backend frontend keycloak; do
