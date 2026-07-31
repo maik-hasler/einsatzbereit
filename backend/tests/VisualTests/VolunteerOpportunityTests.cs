@@ -308,6 +308,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 				occurrence = "OneTime",
 				participationType = "IndividualContact",
 				checkInMethod = "None",
+				validUntil = DateTimeOffset.UtcNow.AddDays(30),
 				isDraft = false,
 			});
 			response.EnsureSuccessStatusCode();
@@ -609,6 +610,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = true,
 		});
 		draftResponse.EnsureSuccessStatusCode();
@@ -622,6 +624,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		publishedResponse.EnsureSuccessStatusCode();
@@ -769,6 +772,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 				occurrence = "OneTime",
 				participationType = "IndividualContact",
 				checkInMethod = "None",
+				validUntil = DateTimeOffset.UtcNow.AddDays(30),
 				isDraft = false,
 			});
 			response.EnsureSuccessStatusCode();

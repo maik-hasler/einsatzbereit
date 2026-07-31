@@ -1349,6 +1349,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 				Occurrence = "OneTime",
 				ParticipationType = "IndividualContact",
 				CheckInMethod = checkInMethod,
+				ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 			},
 			cancellationToken);
 	}

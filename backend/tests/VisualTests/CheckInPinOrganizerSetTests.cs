@@ -98,6 +98,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "PINCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			checkInPin = "135790",
 			isDraft = false,
 		});

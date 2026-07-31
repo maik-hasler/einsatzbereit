@@ -48,6 +48,26 @@ export function formatDateTime(dt: string, locale: string = "en"): string {
 	return getDateTimeFormatter(locale).format(new Date(dt));
 }
 
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getDateFormatter(locale: string): Intl.DateTimeFormat {
+	const resolvedLocale = locale === "de" ? "de-DE" : "en-GB";
+	let formatter = dateFormatters.get(resolvedLocale);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(resolvedLocale, {
+			dateStyle: "medium",
+		});
+		dateFormatters.set(resolvedLocale, formatter);
+	}
+	return formatter;
+}
+
+/** Date-only formatting (no time-of-day) - for deadlines like ValidUntil,
+ * where the time component isn't meaningful to the viewer. */
+export function formatDate(dt: string, locale: string = "en"): string {
+	return getDateFormatter(locale).format(new Date(dt));
+}
+
 export function formatPostedAgo(dt: string, t: TFunction): string {
 	const days = differenceInCalendarDays(new Date(), new Date(dt));
 	return days <= 0

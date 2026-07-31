@@ -98,7 +98,8 @@ internal sealed class UpdateVolunteerOpportunityEndpoint
 			category,
 			[.. request.Tags ?? []],
 			userId,
-			string.IsNullOrWhiteSpace(request.CheckInPin) ? null : request.CheckInPin);
+			string.IsNullOrWhiteSpace(request.CheckInPin) ? null : request.CheckInPin,
+			request.ValidUntil);
 
 		await sender.Send(command, cancellationToken);
 

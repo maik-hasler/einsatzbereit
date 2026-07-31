@@ -139,7 +139,8 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			null,
 			[],
 			OpportunityStatus.Published,
-			DefaultRequestingUserId);
+			DefaultRequestingUserId,
+			ValidUntil: DateTimeOffset.UtcNow.AddDays(30));
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
@@ -180,6 +181,93 @@ public class CreateVolunteerOpportunityCommandHandlerTests
 			.VolunteerOpportunities
 			.DidNotReceive()
 			.AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldPersistValidUntil_ForIndividualContact(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var validUntil = DateTimeOffset.UtcNow.AddDays(14);
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title",
+			"Description",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			null,
+			[],
+			OpportunityStatus.Draft,
+			DefaultRequestingUserId,
+			ValidUntil: validUntil);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.ValidUntil.Should().Be(validUntil);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenPublishingIndividualContactDirectlyWithNoValidUntil(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title",
+			"Description",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			null,
+			[],
+			OpportunityStatus.Published,
+			DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*Individual contact opportunity must have a deadline*");
+		await _dbContext
+			.VolunteerOpportunities
+			.DidNotReceive()
+			.AddAsync(Arg.Any<VolunteerOpportunity>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenValidUntilGiven_ForScheduledSlots(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new CreateVolunteerOpportunityCommand(
+			"Title",
+			"Description",
+			TestOrganizationId,
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.None,
+			null,
+			[],
+			OpportunityStatus.Draft,
+			DefaultRequestingUserId,
+			ValidUntil: DateTimeOffset.UtcNow.AddDays(14));
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*deadline can only be set for Individual contact*");
 	}
 
 	[Test]

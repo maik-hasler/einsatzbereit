@@ -40,6 +40,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();
@@ -87,6 +88,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "PINCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			checkInPin = pin,
 			isDraft = false,
 		});
@@ -144,6 +146,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "PINCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			checkInPin = pin,
 			isDraft = false,
 		});
@@ -205,6 +208,7 @@ public class EngagementCheckInStatusCodeTests(AspireFixture fixture) : VisualTes
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "PINCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			checkInPin = pin,
 			isDraft = false,
 		});

@@ -5685,6 +5685,7 @@ export interface CreateVolunteerOpportunityRequest {
     tags: string[] | undefined;
     isDraft: boolean | undefined;
     checkInPin: string | undefined;
+    validUntil: Date | undefined;
 
     [key: string]: any;
 }
@@ -5708,6 +5709,7 @@ export interface CreateVolunteerOpportunityResponse {
     tags: string[];
     createdOn: Date;
     status: string;
+    validUntil: Date | undefined;
 
     [key: string]: any;
 }
@@ -6272,6 +6274,7 @@ export interface UpdateVolunteerOpportunityRequest {
     category: string | undefined;
     tags: string[] | undefined;
     checkInPin: string | undefined;
+    validUntil: Date | undefined;
 
     [key: string]: any;
 }
@@ -6302,6 +6305,7 @@ export interface VolunteerOpportunityDetails {
     tags: string[];
     timeSlots: TimeSlotDetail[];
     createdOn: Date;
+    validUntil: Date | undefined;
     currentParticipantCount: number;
     status: string;
     bannerImageUrl: string | undefined;
@@ -6329,6 +6333,7 @@ export interface VolunteerOpportunitySummary {
     category: string | undefined;
     tags: string[];
     createdOn: Date;
+    validUntil: Date | undefined;
     nextTimeSlotStart: Date | undefined;
     nextTimeSlotEnd: Date | undefined;
     totalMaxParticipants: number | undefined;
