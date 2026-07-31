@@ -150,13 +150,18 @@ public class EngagementUndoCheckInTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		await row.GetByRole(AriaRole.Button, new() { Name = "Mark as checked in" }).ClickAsync();
-		await Expect(row.GetByText("Checked in")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		// Exact: true - GetByText's default substring/case-insensitive match
+		// would otherwise also match the "Mark as checked in" button's label
+		// (which contains "checked in"), making the post-undo assertion below
+		// find that still-visible button instead of the (by-then-gone) badge.
+		var checkedInBadge = row.GetByText("Checked in", new() { Exact = true });
+		await Expect(checkedInBadge).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		var undoButton = row.GetByRole(AriaRole.Button, new() { Name = "Undo check-in" });
 		await Expect(undoButton).ToBeVisibleAsync();
 
 		await undoButton.ClickAsync();
 
-		await Expect(row.GetByText("Checked in")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(checkedInBadge).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Mark as checked in" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 	}
