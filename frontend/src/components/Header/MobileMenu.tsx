@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
+import { runtimeConfig } from "../../lib/runtimeConfig";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
@@ -101,6 +102,15 @@ export default function MobileMenu({
 						>
 							{t("nav.myProfile")}
 						</Link>
+						<a
+							href={`${runtimeConfig.keycloakAuthorityUrl}/account`}
+							target="_blank"
+							rel="noopener noreferrer"
+							onClick={onClose}
+							className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
+						>
+							{t("nav.accountSettings")}
+						</a>
 						{isAdmin && (
 							<Link
 								to="/administration"
