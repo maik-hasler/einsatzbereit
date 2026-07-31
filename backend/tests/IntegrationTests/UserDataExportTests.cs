@@ -33,6 +33,7 @@ public class UserDataExportTests(IntegrationTestFixture fixture)
 				Occurrence = "OneTime",
 				ParticipationType = "IndividualContact",
 				CheckInMethod = "None",
+				ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 			},
 			cancellationToken);
 
