@@ -199,17 +199,26 @@ internal sealed class ApplicationDbContext(
 
 	public async Task<List<OrganizationMembershipSummary>> GetMembershipsForUserAsync(
 		UserId userId,
-		CancellationToken cancellationToken = default) =>
-		await Set<OrganizationMembership>()
+		CancellationToken cancellationToken = default)
+	{
+		// Role.ToString() can't be pushed into the SQL projection below (Npgsql has
+		// no translation for enum-to-string conversion mid-query) - project the raw
+		// enum value instead and stringify it client-side after materializing.
+		var raw = await Set<OrganizationMembership>()
 			.AsNoTracking()
 			.Where(m => m.UserId == userId)
 			.Join(
 				Set<Organization>().AsNoTracking(),
 				m => m.OrganizationId,
 				o => o.Id,
-				(m, o) => new OrganizationMembershipSummary(o.Id.Value, o.Name, m.Role.ToString()))
+				(m, o) => new { OrganizationId = o.Id.Value, OrganizationName = o.Name, m.Role })
 			.OrderBy(s => s.OrganizationName)
 			.ToListAsync(cancellationToken);
+
+		return raw
+			.Select(s => new OrganizationMembershipSummary(s.OrganizationId, s.OrganizationName, s.Role.ToString()))
+			.ToList();
+	}
 
 	public async Task<bool> HasAchievementAsync(
 		UserId userId,
