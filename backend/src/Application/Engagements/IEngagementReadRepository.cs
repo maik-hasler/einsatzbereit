@@ -28,6 +28,15 @@ public interface IEngagementReadRepository
 		CancellationToken cancellationToken = default);
 
 	/// <summary>
+	/// All engagements for the volunteer, unpaginated and not split into
+	/// upcoming/past buckets - used by the account data export (#1076), which
+	/// needs the complete history in one shot rather than a page of it.
+	/// </summary>
+	ValueTask<List<EngagementSummary>> GetAllByVolunteerAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default);
+
+	/// <summary>
 	/// Distinct volunteer ids with an active (pending or confirmed) engagement on
 	/// the opportunity, filtered at the database level using the existing
 	/// (OpportunityId, Status) index - or, when <paramref name="timeSlotId"/> is

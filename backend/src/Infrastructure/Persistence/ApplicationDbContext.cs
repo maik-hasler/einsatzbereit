@@ -1,5 +1,6 @@
 using System.Reflection;
 using Application.Common.Persistence;
+using Application.Organizations;
 using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
@@ -194,6 +195,20 @@ internal sealed class ApplicationDbContext(
 				o => o.Id,
 				(m, o) => o)
 			.OrderBy(o => o.Name)
+			.ToListAsync(cancellationToken);
+
+	public async Task<List<OrganizationMembershipSummary>> GetMembershipsForUserAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.AsNoTracking()
+			.Where(m => m.UserId == userId)
+			.Join(
+				Set<Organization>().AsNoTracking(),
+				m => m.OrganizationId,
+				o => o.Id,
+				(m, o) => new OrganizationMembershipSummary(o.Id.Value, o.Name, m.Role.ToString()))
+			.OrderBy(s => s.OrganizationName)
 			.ToListAsync(cancellationToken);
 
 	public async Task<bool> HasAchievementAsync(
