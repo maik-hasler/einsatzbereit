@@ -26,6 +26,7 @@ public class UpdateTimeSlotCommandHandlerTests
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly UpdateTimeSlotCommandHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
@@ -53,7 +54,12 @@ public class UpdateTimeSlotCommandHandlerTests
 		_emailService
 			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
-		_sut = new UpdateTimeSlotCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService);
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
+		_sut = new UpdateTimeSlotCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	private VolunteerOpportunity CreateScheduledSlotsOpportunity() =>

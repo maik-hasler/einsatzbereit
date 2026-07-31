@@ -29,6 +29,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly UpdateVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -54,6 +55,15 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_emailService
 			.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => callInfo.Arg<IReadOnlyList<EmailMessage>>()!.Select(_ => true).ToList());
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(callInfo =>
+			{
+				var placeholders = (IReadOnlyDictionary<string, string>)callInfo[2]!;
+				return new EmailContent("Test Subject", $"Test Body {string.Join(" ", placeholders.Values)}");
+			});
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_engagementReadRepository,
@@ -61,6 +71,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			_pinGenerator,
 			_keycloakUserService,
 			_emailService,
+			_emailTemplateRenderer,
 			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
 	}
 
@@ -371,6 +382,46 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			Arg.Is<IReadOnlyList<EmailMessage>>(messages =>
 				messages!.Count == 1 && messages[0].To == "user@example.com" && messages[0].Body.Contains("Neues Thema")),
 			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderOpportunityUpdatedEmail_InVolunteersPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = CreateOpportunity();
+		var activeVolunteerId = UserId.New();
+
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
+			.Returns([activeVolunteerId.Value]);
+
+		var activeVolunteer = User.Create(activeVolunteerId);
+		activeVolunteer.SetPreferredLanguage("en");
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([activeVolunteer]);
+
+		_geocodingService
+			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(GeocodingResult.TransientFailure);
+
+		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
+		var command = new UpdateVolunteerOpportunityCommand(
+			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.OpportunityUpdated,
+			"en",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 
 	[Test]

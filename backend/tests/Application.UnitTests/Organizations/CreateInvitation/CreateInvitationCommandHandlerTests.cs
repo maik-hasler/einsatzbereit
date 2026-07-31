@@ -19,6 +19,7 @@ public class CreateInvitationCommandHandlerTests
 	private readonly IKeycloakOrganizationService _keycloakOrgService = Substitute.For<IKeycloakOrganizationService>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
 	private readonly IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> _invitationRepo =
@@ -44,8 +45,13 @@ public class CreateInvitationCommandHandlerTests
 		_keycloakUserService
 			.GetUserAsync(DefaultInviteeId.Value, Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(DefaultInviteeId.Value, "vera", "Vera", "Miller", "vera@test.de"));
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
 		_sut = new CreateInvitationCommandHandler(
-			_dbContext, _unitOfWork, _keycloakOrgService, _keycloakUserService, _emailService);
+			_dbContext, _unitOfWork, _keycloakOrgService, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	[Test]
@@ -86,5 +92,44 @@ public class CreateInvitationCommandHandlerTests
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 		await _emailService.Received(1).SendAsync(
 			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderInvitationEmail_InInviteesPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitee = User.Create(DefaultInviteeId);
+		invitee.SetPreferredLanguage("en");
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([invitee]);
+		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.InvitationReceived,
+			"en",
+			Arg.Is<IReadOnlyDictionary<string, string>>(p =>
+				p!["InviteeName"] == "Vera" && p["OrganizationName"] == "Test Org"));
+	}
+
+	[Test]
+	public async Task Handle_ShouldDefaultToGerman_WhenInviteeHasNoPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.InvitationReceived,
+			"de",
+			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 }

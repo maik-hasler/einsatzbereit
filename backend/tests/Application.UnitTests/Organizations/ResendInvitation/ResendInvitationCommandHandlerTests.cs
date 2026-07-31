@@ -18,6 +18,7 @@ public class ResendInvitationCommandHandlerTests
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> _invitationRepo =
 		Substitute.For<IAggregateRepository<OrganizationInvitation, OrganizationInvitationId>>();
 	private readonly ResendInvitationCommandHandler _sut;
@@ -35,8 +36,13 @@ public class ResendInvitationCommandHandlerTests
 		_keycloakUserService
 			.GetUserAsync(DefaultInviteeId.Value, Arg.Any<CancellationToken>())
 			.Returns(new KeycloakUserProfile(DefaultInviteeId.Value, "vera", "Vera", "Miller", "vera@test.de"));
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
+		_emailTemplateRenderer
+			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+			.Returns(new EmailContent("Test Subject", "Test Body"));
 		_sut = new ResendInvitationCommandHandler(
-			_dbContext, _unitOfWork, _keycloakUserService, _emailService);
+			_dbContext, _unitOfWork, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	private static OrganizationInvitation CreateExpiredInvitation(OrganizationId orgId)
@@ -148,5 +154,29 @@ public class ResendInvitationCommandHandlerTests
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 		await _emailService.DidNotReceive().SendAsync(
 			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldRenderInvitationEmail_InInviteesPreferredLanguage(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var invitation = CreateExpiredInvitation(DefaultOrgId);
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var invitee = User.Create(DefaultInviteeId);
+		invitee.SetPreferredLanguage("en");
+		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
+			.Returns([invitee]);
+		var command = new ResendInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.InvitationReceived,
+			"en",
+			Arg.Is<IReadOnlyDictionary<string, string>>(p =>
+				p!["InviteeName"] == "Vera" && p["OrganizationName"] == "Test Org"));
 	}
 }
