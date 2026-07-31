@@ -2,6 +2,16 @@
 # multiple projects on the same host). Our services attach to the existing
 # proxy network and register routes via labels - they expect a Traefik
 # instance with the `myresolver` ACME resolver already configured.
+#
+# Every service below shares the same `logging: *default-logging` driver
+# config (json-file, capped at 10m x 3 files) - without it, container stdout
+# grows unbounded on the host disk (#1081).
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:18
@@ -9,6 +19,7 @@ services:
     restart: unless-stopped
     networks:
       - db
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -35,6 +46,7 @@ services:
     networks:
       - proxy
       - db
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -101,6 +113,7 @@ services:
     restart: unless-stopped
     networks:
       - db
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -128,6 +141,7 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - proxy
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -176,6 +190,7 @@ services:
       - proxy
       - db
       - monitoring
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -259,6 +274,7 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -289,6 +305,7 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    logging: *default-logging
     # Only a handful of scrape targets (itself, node-exporter, backend), so a
     # low ceiling is plenty - trimmed down from 256m to leave more host
     # headroom on a memory-constrained box (staging runs on a 4GB VM).
@@ -302,8 +319,38 @@ services:
     configs:
       - source: prometheus-config
         target: /etc/prometheus/prometheus.yml
+      - source: prometheus-rules
+        target: /etc/prometheus/alert.rules.yml
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # Routes firing alerts (prometheus-config's `alerting:` block + the rules in
+  # prometheus-rules below) to email over the same SMTP relay the backend and
+  # Keycloak already use (#1341) - no new third-party notification channel,
+  # consistent with this stack's self-hosted-over-SaaS precedent (ADR-6, #1081).
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    networks:
+      - monitoring
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+          cpus: "0.10"
+    volumes:
+      - alertmanager_data:/alertmanager
+    configs:
+      - source: alertmanager-config
+        target: /etc/alertmanager/alertmanager.yml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9093/-/healthy || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -319,6 +366,7 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -341,6 +389,7 @@ services:
     networks:
       - proxy
       - monitoring
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -380,6 +429,7 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    logging: *default-logging
     # Now scoped to just this stack's own ~6 containers (see alloy's
     # discovery filter below), so log volume is small - trimmed down from
     # 256m to leave more host headroom on a memory-constrained box
@@ -412,6 +462,7 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -447,6 +498,7 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -479,6 +531,7 @@ volumes:
   postgres_backups:
   minio_data:
   prometheus_data:
+  alertmanager_data:
   grafana_data:
   loki_data:
   alloy_data:
@@ -494,6 +547,14 @@ configs:
       global:
         scrape_interval: 15s
         evaluation_interval: 15s
+
+      alerting:
+        alertmanagers:
+          - static_configs:
+              - targets: ["alertmanager:9093"]
+
+      rule_files:
+        - /etc/prometheus/alert.rules.yml
 
       scrape_configs:
         - job_name: prometheus
@@ -517,6 +578,49 @@ configs:
               type: A
               port: 8081
               refresh_interval: 30s
+  # Kept to a single, well-established signal (staleness) rather than guessing
+  # at application metric names/thresholds that haven't been validated against
+  # real staging traffic - see #1081. Fires whenever any scrape target
+  # (prometheus/node-exporter/backend) stops responding.
+  #
+  # "$$labels" (not "$labels"): this whole block is compose-interpolated
+  # before Prometheus ever sees it, so a literal "$" for Prometheus's own Go
+  # template syntax must be escaped the same way node-exporter's regex above
+  # escapes its own literal "$".
+  prometheus-rules:
+    content: |
+      groups:
+        - name: staging-availability
+          rules:
+            - alert: InstanceDown
+              expr: up == 0
+              for: 2m
+              labels:
+                severity: critical
+              annotations:
+                summary: "{{ $$labels.job }} instance {{ $$labels.instance }} is down"
+                description: "Prometheus has not been able to scrape {{ $$labels.job }} ({{ $$labels.instance }}) for more than 2 minutes."
+  alertmanager-config:
+    content: |
+      global:
+        smtp_smarthost: '${SMTP_HOST:?set SMTP_HOST in .env}:${SMTP_PORT:?set SMTP_PORT in .env}'
+        smtp_from: '${SMTP_FROM_ADDRESS:?set SMTP_FROM_ADDRESS in .env}'
+        smtp_auth_username: '${SMTP_USERNAME:?set SMTP_USERNAME in .env}'
+        smtp_auth_password: '${SMTP_PASSWORD:?set SMTP_PASSWORD in .env}'
+        smtp_require_tls: true
+
+      route:
+        receiver: default
+        group_by: ['alertname']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+
+      receivers:
+        - name: default
+          email_configs:
+            - to: '${ALERT_NOTIFICATION_EMAIL:?set ALERT_NOTIFICATION_EMAIL in .env}'
+              send_resolved: true
   grafana-datasources:
     content: |
       apiVersion: 1
@@ -538,6 +642,13 @@ configs:
           access: proxy
           url: http://tempo:3200
           editable: false
+        - name: Alertmanager
+          type: alertmanager
+          access: proxy
+          url: http://alertmanager:9093
+          editable: false
+          jsonData:
+            implementation: prometheus
   alloy-config:
     content: |
       discovery.docker "containers" {

@@ -158,12 +158,17 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |Grafana
 |`grafana/grafana`
 |`grafana.maik-hasler.de`
-|Dashboards; datasources are Prometheus (metrics), Loki (logs), and Tempo (traces)
+|Dashboards; datasources are Prometheus (metrics), Loki (logs), Tempo (traces), and Alertmanager (alerts)
 
 |Prometheus
 |`prom/prometheus`
 |internal only
-|Metrics store; scrapes node-exporter, not exposed via Traefik
+|Metrics store; scrapes node-exporter, not exposed via Traefik; evaluates alert rules and forwards firing alerts to Alertmanager
+
+|Alertmanager
+|`prom/alertmanager`
+|internal only
+|Routes firing alerts to email over the same SMTP relay as the backend/Keycloak, not exposed via Traefik
 
 |node-exporter
 |`prom/node-exporter`
@@ -193,4 +198,4 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 
 Deployment is release-driven: a version tag triggers `publish.yml`, which builds and pushes the images to GHCR and then deploys to the host over SSH (`docker compose pull` + `up`). The deploy is health-gated (backend `/alive` and `/health`) and rolls back to the previous images on failure.
 
-Prometheus, node-exporter, Loki, and Tempo sit on an internal-only `monitoring` Docker network with no Traefik route, since none of them has built-in auth and would leak scraped metrics, log, or trace content if reachable from the internet. Grafana is the only service in this group with a public route, gated by its own admin login (`GF_SECURITY_ADMIN_USER`/`GF_SECURITY_ADMIN_PASSWORD`), and reads Prometheus (metrics), Loki (logs), and Tempo (traces) as datasources. Alloy ships container logs to Loki; it discovers containers and streams their logs through a read-only mount of the host's Docker socket, the standard pattern for Docker-aware log shippers - this is a narrower grant than cAdvisor's (list containers and read their logs, not full host filesystem and cgroup access, which is why cAdvisor itself was left out of this pass), but a compromised container with socket access still has effective host-level reach, so it is not risk-free. Per-container metrics (cAdvisor) remain a possible follow-up if the host-level view here proves insufficient. Tempo has no equivalent shipper: the backend pushes traces to it directly over OTLP (see ADR 6), since the app already speaks OTLP natively via the Aspire service defaults.
+Prometheus, Alertmanager, node-exporter, Loki, and Tempo sit on an internal-only `monitoring` Docker network with no Traefik route, since none of them has built-in auth and would leak scraped metrics, log, trace, or alert content if reachable from the internet. Grafana is the only service in this group with a public route, gated by its own admin login (`GF_SECURITY_ADMIN_USER`/`GF_SECURITY_ADMIN_PASSWORD`), and reads Prometheus (metrics), Loki (logs), Tempo (traces), and Alertmanager (alerts) as datasources. Alloy ships container logs to Loki; it discovers containers and streams their logs through a read-only mount of the host's Docker socket, the standard pattern for Docker-aware log shippers - this is a narrower grant than cAdvisor's (list containers and read their logs, not full host filesystem and cgroup access, which is why cAdvisor itself was left out of this pass), but a compromised container with socket access still has effective host-level reach, so it is not risk-free. Per-container metrics (cAdvisor) remain a possible follow-up if the host-level view here proves insufficient. Tempo has no equivalent shipper: the backend pushes traces to it directly over OTLP (see ADR 6), since the app already speaks OTLP natively via the Aspire service defaults. Alertmanager notifies over email (SMTP) rather than a push-based shipper, since alerts are pulled from Prometheus's own rule evaluation, not scraped or streamed from elsewhere.
