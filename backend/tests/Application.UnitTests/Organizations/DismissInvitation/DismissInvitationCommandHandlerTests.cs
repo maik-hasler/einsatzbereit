@@ -108,11 +108,33 @@ public class DismissInvitationCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrowConflict_WhenInvitationIsStillPending(
+	public async Task Handle_ShouldDeleteInvitation_WhenRequestingUserIsOrgMemberAndInvitationIsPending(
+		CancellationToken cancellationToken)
+	{
+		// #1040: a pending invitation must be revocable, not just Declined/Expired
+		// ones - previously an organizer had no way to undo a wrong invite before
+		// the invitee acted on it.
+		// Arrange
+		var invitation = CreatePendingInvitation(DefaultOrgId);
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		var command = new DismissInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		_invitationRepo.Received(1).Delete(invitation);
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowConflict_WhenInvitationIsAlreadyAccepted(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var invitation = CreatePendingInvitation(DefaultOrgId);
+		invitation.Accept();
 		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
 		var command = new DismissInvitationCommand(DefaultOrgId, invitation.Id, DefaultRequestingUserId);
 
@@ -121,7 +143,7 @@ public class DismissInvitationCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
-			.WithMessage("*declined or expired*");
+			.WithMessage("*Accepted invitations*");
 		_invitationRepo.DidNotReceive().Delete(Arg.Any<OrganizationInvitation>());
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}

@@ -558,6 +558,56 @@ public class OrganizationSettingsTests(
 		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
 	}
 
+	[Test]
+	public async Task DismissInvitation_ShouldReturn204AndRemoveIt_WhenInvitationIsPending(
+		CancellationToken cancellationToken)
+	{
+		// #1040: a pending invitation must be revocable by the organizer before
+		// the invitee acts on it - previously only Declined/Expired invitations
+		// could be dismissed, so an organizer who invited the wrong person had
+		// no way to undo it before they accepted and gained Organizer access.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Dismiss Pending Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Organizer" }, cancellationToken);
+
+		await olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var invitations = await olafClient.GetOrgInvitationsAsync(org.Id.Value, cancellationToken);
+		invitations.Should().NotContain(i => i.Id == invitation.InvitationId);
+
+		// The revoked invitation can no longer be accepted.
+		var act = () => veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task DismissInvitation_ShouldReturn409_WhenInvitationIsAlreadyAccepted(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Dismiss Accepted Test Org" }, cancellationToken);
+
+		var invitation = await olafClient.CreateInvitationAsync(
+			org.Id.Value, new CreateInvitationRequest { InviteeId = vera.Id, Role = "Member" }, cancellationToken);
+		await veraClient.AcceptInvitationAsync(invitation.InvitationId, cancellationToken);
+
+		var act = () => olafClient.DismissInvitationAsync(org.Id.Value, invitation.InvitationId, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+	}
+
 	// ── Invitation expiry + resend (#1053) ───────────────────────────────────
 
 	[Test]

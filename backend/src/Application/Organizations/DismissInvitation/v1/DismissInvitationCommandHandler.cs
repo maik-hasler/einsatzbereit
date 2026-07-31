@@ -28,8 +28,13 @@ internal sealed class DismissInvitationCommandHandler(
 		if (invitation.OrganizationId != request.OrganizationId)
 			throw new ResultFailureException(Error.Validation("OrganizationInvitation.WrongOrganization", "Invitation does not belong to this organization."));
 
-		if (invitation.Status != InvitationStatus.Declined && invitation.Status != InvitationStatus.Expired)
-			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.NotDeclined", "Only declined or expired invitations can be dismissed."));
+		// #1040: Pending must be dismissible too, not just Declined/Expired - an
+		// organizer who invited the wrong person otherwise has no way to revoke
+		// it, and accepting grants full Organizer capability (#826). Only a
+		// finalized Accepted invitation - now a real membership row, removed via
+		// RemoveMember instead - is excluded.
+		if (invitation.Status == InvitationStatus.Accepted)
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyAccepted", "Accepted invitations cannot be dismissed."));
 
 		dbContext.OrganizationInvitations.Delete(invitation);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
