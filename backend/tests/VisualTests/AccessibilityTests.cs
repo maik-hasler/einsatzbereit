@@ -1142,6 +1142,11 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
+		// Past (it represents a shift that already happened), not "Current &
+		// Upcoming" - see EngagementReadRepository.GetByVolunteerAsync.
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
