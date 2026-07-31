@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.10 AS base
 # GitHub Actions runners live on Azure, where the generic archive.ubuntu.com /
 # security.ubuntu.com mirrors are known to be unreliable; route both pockets
 # through the Azure-optimized mirror instead (same one the runner host itself uses).

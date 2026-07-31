@@ -135,7 +135,11 @@ services:
       - postgres_backups:/backups
 
   minio:
-    image: quay.io/minio/minio:latest
+    # Pinned instead of :latest - an unreviewed upstream MinIO release landing
+    # on every `docker compose pull` during a deploy is exactly the kind of
+    # unattended-breaking-change risk pinning exists to prevent. Renovate
+    # tracks new RELEASE.* tags the same way it tracks everything else here.
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772@sha256:cf3dadcfa1fb0324f43958bad1abba986d53c4ecc04d4d50b46c7dcda28bd3cd
     container_name: minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -167,6 +171,34 @@ services:
       - traefik.http.routers.minio.tls.certresolver=myresolver
       - traefik.http.services.minio.loadbalancer.server.port=9000
 
+  # One-shot bootstrap (#1353): creates the "einsatzbereit" bucket if it
+  # doesn't exist yet and a bucket-scoped service account for the backend to
+  # authenticate with instead of MinIO's own root credentials - a leaked
+  # backend secret can then only read/write inside this one bucket, not
+  # administer the whole MinIO instance (create/delete other buckets, manage
+  # other users). Re-runs harmlessly on every deploy (docker compose up -d
+  # restarts a previously-exited one-shot container the same as any other) -
+  # every step below is idempotent or explicitly tolerant of already existing.
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: minio-init
+    restart: "no"
+    entrypoint: ["/bin/sh", "/init.sh"]
+    networks:
+      - proxy
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      MINIO_BUCKET_NAME: einsatzbereit
+      MINIO_APP_ACCESS_KEY: ${MINIO_APP_ACCESS_KEY:?set MINIO_APP_ACCESS_KEY in .env}
+      MINIO_APP_SECRET_KEY: ${MINIO_APP_SECRET_KEY:?set MINIO_APP_SECRET_KEY in .env}
+    configs:
+      - source: minio-init-script
+        target: /init.sh
+
   # Daily snapshot of the "einsatzbereit" bucket (avatars/logos/banners) into
   # its own volume, mirroring db-backup's role for Postgres (#1087 - MinIO
   # previously had no backup at all). Still same-host, same as db-backup
@@ -176,7 +208,8 @@ services:
   # Off-host replication is tracked separately and deliberately not attempted
   # here.
   minio-backup:
-    image: minio/mc:latest
+    # Pinned for the same reason as minio's own image above.
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: minio-backup
     restart: unless-stopped
     entrypoint: ["/bin/sh", "/backup.sh"]
@@ -225,6 +258,12 @@ services:
     # Database.MigrateAsync()); this change only removes the blocker that made scaling
     # impossible to even attempt.
     restart: unless-stopped
+    # Compose's default stop_grace_period (10s) is shorter than .NET's own
+    # shutdown timeout (30s), so `docker compose down`/`up --remove-orphans`
+    # on every deploy could SIGKILL the backend mid-shutdown before
+    # OutboxProcessorJob/EngagementReminderJob finish their current
+    # iteration. Match .NET's timeout instead of cutting it short.
+    stop_grace_period: 30s
     networks:
       - proxy
       - db
@@ -242,6 +281,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     # curl is installed in the Dockerfile (as root before switching to $APP_UID).
     # /alive (not /health) is used so the container is gated on the app being up,
     # not on downstream readiness, which avoids dependency deadlocks.
@@ -273,8 +314,11 @@ services:
       # frontend's origin.
       Api__PublicBaseUrl: https://api.maik-hasler.de
       Storage__Endpoint: http://minio:9000
-      Storage__AccessKey: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
-      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      # Bucket-scoped app credentials (minio-init, #1353), not MinIO's root
+      # user - a leaked value here can only touch this one bucket, not
+      # administer the whole MinIO instance.
+      Storage__AccessKey: ${MINIO_APP_ACCESS_KEY:?set MINIO_APP_ACCESS_KEY in .env}
+      Storage__SecretKey: ${MINIO_APP_SECRET_KEY:?set MINIO_APP_SECRET_KEY in .env}
       Storage__BucketName: einsatzbereit
       Storage__PublicEndpoint: https://storage.maik-hasler.de
       # Same mailbox as the keycloak service's KC_SMTP_* above (#1341).
@@ -588,6 +632,41 @@ configs:
   # no findutils) - the directory listing/pruning below deliberately uses
   # only shell globbing plus sort/wc/head/rm, all confirmed present in that
   # image, instead.
+  # Bootstraps the bucket-scoped app service account (#1353) - see the
+  # minio-init service above. Idempotent: safe to re-run on every deploy.
+  # Same `$$` escaping convention as minio-backup-script below.
+  minio-init-script:
+    content: |
+      #!/bin/sh
+      set -eu
+
+      mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null
+
+      mc mb --ignore-existing "local/$${MINIO_BUCKET_NAME}"
+
+      cat > /tmp/app-policy.json <<POLICY
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["s3:*"],
+            "Resource": [
+              "arn:aws:s3:::$${MINIO_BUCKET_NAME}",
+              "arn:aws:s3:::$${MINIO_BUCKET_NAME}/*"
+            ]
+          }
+        ]
+      }
+      POLICY
+
+      mc admin policy create local einsatzbereit-app /tmp/app-policy.json
+
+      mc admin user add local "$$MINIO_APP_ACCESS_KEY" "$$MINIO_APP_SECRET_KEY" 2>/dev/null || true
+
+      mc admin policy attach local einsatzbereit-app --user "$$MINIO_APP_ACCESS_KEY" 2>/dev/null || true
+
+      echo "MinIO app service account ready (bucket: $${MINIO_BUCKET_NAME})."
   # Every `$` below is doubled (`$$`) - compose interpolates `${...}`/`$VAR`
   # in config content the same as anywhere else in this file, so a single `$`
   # here would be silently resolved (usually to blank, since these are
