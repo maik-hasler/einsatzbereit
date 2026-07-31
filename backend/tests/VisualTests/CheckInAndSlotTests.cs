@@ -45,6 +45,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();
@@ -130,6 +131,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();

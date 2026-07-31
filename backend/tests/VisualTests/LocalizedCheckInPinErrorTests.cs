@@ -48,6 +48,7 @@ public class LocalizedCheckInPinErrorTests(AspireFixture fixture) : VisualTestBa
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "PINCode",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			checkInPin = pin,
 			isDraft = false,
 		});

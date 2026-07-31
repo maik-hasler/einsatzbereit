@@ -38,7 +38,8 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		ParticipationType participationType = ParticipationType.IndividualContact) =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, title, description, false, DefaultAddress, Occurrence.OneTime, participationType, CheckInMethod.None, _pinGenerator,
-			status: OpportunityStatus.Draft).Value;
+			status: OpportunityStatus.Draft,
+			validUntil: participationType == ParticipationType.IndividualContact ? DateTimeOffset.UtcNow.AddDays(30) : null).Value;
 
 	private void SetupOpportunity(Guid opportunityId, VolunteerOpportunity opportunity) =>
 		_opportunityRepo
@@ -262,5 +263,24 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Scheduled slots opportunity must have at least one time slot*");
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenIndividualContactParticipationType_AndNoValidUntil(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = Guid.CreateVersion7();
+		var opportunity = VolunteerOpportunity.Create(
+			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Draft).Value;
+		SetupOpportunity(opportunityId, opportunity);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(new PublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*Individual contact opportunity must have a deadline*");
 	}
 }

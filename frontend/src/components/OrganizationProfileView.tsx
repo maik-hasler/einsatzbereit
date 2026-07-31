@@ -15,7 +15,6 @@ interface OrganizationProfileViewProps {
 	contactPhone?: string | null;
 	website?: string | null;
 	address?: OrganizationAddress | null;
-	badge?: ReactNode;
 	subtitle?: ReactNode;
 	actions?: ReactNode;
 	beforeContent?: ReactNode;
@@ -37,7 +36,6 @@ export default function OrganizationProfileView({
 	contactPhone,
 	website,
 	address,
-	badge,
 	subtitle,
 	actions,
 	beforeContent,
@@ -63,12 +61,9 @@ export default function OrganizationProfileView({
 						</span>
 					)}
 					<div>
-						<div className="flex items-center gap-2">
-							<NameTag className="text-xl font-bold text-gray-900">
-								{name}
-							</NameTag>
-							{badge}
-						</div>
+						<NameTag className="text-xl font-bold text-gray-900">
+							{name}
+						</NameTag>
 						{subtitle}
 					</div>
 				</div>

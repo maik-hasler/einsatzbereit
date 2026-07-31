@@ -60,7 +60,8 @@ public class VolunteerOpportunityUnpublishedDomainEventHandlerTests
 	private static VolunteerOpportunity CreatePublishedOpportunity() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Published).Value;
+			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Published,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 
 	[Test]
 	public async Task Handle_ShouldNotifyActiveVolunteers_WithOpportunityUnpublishedKind(

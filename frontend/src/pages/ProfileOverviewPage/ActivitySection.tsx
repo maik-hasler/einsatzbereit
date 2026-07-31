@@ -401,7 +401,7 @@ export default function ActivitySection() {
 								{e.isCheckedIn && !e.hasFeedback && (
 									<button
 										onClick={() => setFeedbackEngagement(e)}
-										className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-800 transition-colors hover:bg-yellow-100"
+										className="rounded-lg bg-yellow-500 px-3 py-1 text-xs font-medium text-gray-900 transition-colors hover:bg-yellow-600"
 									>
 										{t("feedback.buttonLabel")}
 									</button>

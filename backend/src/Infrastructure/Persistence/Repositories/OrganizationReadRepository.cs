@@ -37,7 +37,6 @@ internal sealed class OrganizationReadRepository(
 				o.Description,
 				City = o.Address != null ? o.Address.City : null,
 				o.LogoUrl,
-				o.IsVerified,
 			})
 			.ToListAsync(cancellationToken);
 
@@ -59,7 +58,6 @@ internal sealed class OrganizationReadRepository(
 				o.Description,
 				o.City,
 				o.LogoUrl,
-				o.IsVerified,
 				openCounts.GetValueOrDefault(o.Id, 0)))
 			.ToList();
 

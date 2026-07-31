@@ -58,6 +58,7 @@ public class LoadMoreErrorPreservesItemsTests(AspireFixture fixture) : VisualTes
 				occurrence = "OneTime",
 				participationType = "IndividualContact",
 				checkInMethod = "None",
+				validUntil = DateTimeOffset.UtcNow.AddDays(30),
 				isDraft = false,
 				tags = new[] { tag },
 			});

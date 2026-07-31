@@ -164,6 +164,7 @@
       "back": "← Zurück",
       "filterToggle": "Filter",
       "flexibleDate": "Flexibler Termin",
+      "applyBy": "Bewerbung bis {{date}}",
       "full": "Ausgebucht",
       "spotsLeft": "{{count}} Plätze frei",
       "spotsLeft_one": "{{count}} Platz frei",
@@ -204,7 +205,7 @@
       "step3Title": "Format",
       "step3Subtitle": "Wie oft findet der Einsatz statt und wie melden sich Freiwillige an?",
       "step4Title": "Details",
-      "step4Subtitle": "Optional: Kategorie, Tags und Zeitfenster helfen Freiwilligen, den passenden Einsatz zu finden.",
+      "step4SubtitleIndividualContact": "Kategorie und Tags sind optional. Ein Einsatz mit individueller Kontaktaufnahme benötigt außerdem eine Bewerbungsfrist, bevor er veröffentlicht werden kann.",
       "step4SubtitleWaitlist": "Kategorie und Tags sind optional. Ein Zeitslots-Einsatz benötigt außerdem mindestens einen Zeitslot, bevor er veröffentlicht werden kann.",
       "back": "Zurück",
       "next": "Weiter",
@@ -233,6 +234,9 @@
       "fieldTagsPlaceholder": "z.B. outdoor, Jugend, Wochenende",
       "fieldTagsHint": "Enter oder Komma drücken, um ein Tag hinzuzufügen.",
       "removeTag": "Tag {{tag}} entfernen",
+      "fieldValidUntil": "Bewerbungsfrist",
+      "validUntilHint": "Einsätze mit individueller Kontaktaufnahme haben keinen Zeitslot, daher zeigt eine Frist Freiwilligen, wie lange dieser Bedarf noch offen ist. Vor der Veröffentlichung erforderlich.",
+      "validUntilRequiredForPublish": "Ein Einsatz mit individueller Kontaktaufnahme muss eine Bewerbungsfrist haben, bevor er veröffentlicht werden kann.",
       "charCount": "{{current}} / {{max}}",
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
@@ -806,7 +810,6 @@
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden.",
-      "verified": "Verifizierte Organisation",
       "report": "Melden",
       "reportOrganization": "Organisation melden"
     },
@@ -939,12 +942,6 @@
       "viewAllAchievements": "Alle Abzeichen anzeigen",
       "reportUser": "Nutzer melden"
     },
-    "organizations": {
-      "verified": "Verifizierte Organisation",
-      "verifyToggle": "Verifizierung umschalten",
-      "verifySuccess": "Organisations-Verifizierung aktualisiert.",
-      "verifyError": "Verifizierung konnte nicht aktualisiert werden."
-    },
     "administration": {
       "title": "Administration",
       "organizationsHeading": "Organisationen",
@@ -955,8 +952,6 @@
         "loading": "Organisationen werden geladen...",
         "error": "Organisationen konnten nicht geladen werden.",
         "noOrganizations": "Keine Organisationen gefunden.",
-        "verify": "Verifizieren",
-        "unverify": "Verifizierung aufheben",
         "loadMore": "Mehr laden"
       },
       "users": {
@@ -1038,7 +1033,6 @@
       "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
       "clearSearch": "Suche zurücksetzen",
       "loadMore": "Mehr laden",
-      "verified": "Verifizierte Organisation",
       "openOpportunities": "{{count}} offene Einsätze",
       "openOpportunities_one": "{{count}} offener Einsatz",
       "openOpportunities_other": "{{count}} offene Einsätze"
@@ -1126,8 +1120,6 @@
       "Organization": {
         "NameRequired": "Name darf nicht leer sein.",
         "NameTooLong": "Der Name der Organisation darf 100 Zeichen nicht überschreiten.",
-        "AlreadyVerified": "Die Organisation ist bereits verifiziert.",
-        "NotVerified": "Die Organisation ist nicht verifiziert.",
         "NotFound": "Organisation nicht gefunden.",
         "MultipleMembers": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
         "HasBlockingOpportunities": "Diese Organisation hat noch Bedarfe mit zukünftigen Zeitslots oder aktiven Engagements. Bitte löse das zuerst auf.",

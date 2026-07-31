@@ -25,7 +25,7 @@ public class ListOrganizationsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
-		var item = new AdminOrganizationSummary(Guid.NewGuid(), "Fire Department", null, true);
+		var item = new AdminOrganizationSummary(Guid.NewGuid(), "Fire Department", null);
 
 		_readRepo
 			.GetPagedAsync(1, 10, cancellationToken)

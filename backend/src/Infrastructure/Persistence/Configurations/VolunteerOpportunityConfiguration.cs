@@ -80,6 +80,8 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.Property(vo => vo.CheckInPin);
 
+		builder.Property(vo => vo.ValidUntil);
+
 		builder.Property(vo => vo.CreatedOn);
 
 		builder.Property(vo => vo.ModifiedOn);

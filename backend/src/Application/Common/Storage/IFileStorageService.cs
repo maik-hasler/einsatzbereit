@@ -12,4 +12,8 @@ public interface IFileStorageService
 	Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default);
 
 	string GetPublicUrl(string objectKey);
+
+	// Throws if the storage backend is unreachable; used by StorageHealthCheck
+	// (Api/Common/Health) to back the "ready" readiness probe (#1081).
+	Task PingAsync(CancellationToken cancellationToken = default);
 }

@@ -256,6 +256,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			Occurrence = "OneTime",
 			ParticipationType = "IndividualContact",
 			CheckInMethod = "None",
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 		}, cancellationToken);
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
@@ -313,6 +314,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			Occurrence = "OneTime",
 			ParticipationType = "IndividualContact",
 			CheckInMethod = "None",
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 		}, cancellationToken);
 
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
@@ -493,7 +495,8 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			City = "Munich",
 			Occurrence = "Recurring",
 			ParticipationType = "IndividualContact",
-			CheckInMethod = "None"
+			CheckInMethod = "None",
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30)
 		}, cancellationToken);
 
 		result.Street.Should().Be("Main Street");
@@ -690,6 +693,7 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 			Occurrence = "OneTime",
 			ParticipationType = "IndividualContact",
 			CheckInMethod = "None",
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
 		}, cancellationToken);
 
 	private static async Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithTimeSlotAsync(

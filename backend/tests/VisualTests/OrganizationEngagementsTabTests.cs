@@ -60,6 +60,7 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
 			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
 		oppResponse.EnsureSuccessStatusCode();

@@ -57,6 +57,7 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 				occurrence = "OneTime",
 				participationType = "IndividualContact",
 				checkInMethod = "None",
+				validUntil = DateTimeOffset.UtcNow.AddDays(30),
 				isDraft = false,
 			});
 			oppResponse.EnsureSuccessStatusCode();

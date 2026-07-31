@@ -20,6 +20,7 @@ public sealed record VolunteerOpportunityDetails(
 	IReadOnlyList<string> Tags,
 	IReadOnlyList<TimeSlotDetail> TimeSlots,
 	DateTimeOffset CreatedOn,
+	DateTimeOffset? ValidUntil,
 	int CurrentParticipantCount,
 	string Status,
 	string? BannerImageUrl,

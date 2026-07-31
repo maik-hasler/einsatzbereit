@@ -72,7 +72,8 @@ builder.Services.AddHttpClient(KeycloakHealthCheck.HttpClientName, client =>
 
 builder.Services.AddHealthChecks()
 	.AddCheck<DatabaseHealthCheck>("database", tags: ["ready"])
-	.AddCheck<KeycloakHealthCheck>("keycloak", tags: ["ready"]);
+	.AddCheck<KeycloakHealthCheck>("keycloak", tags: ["ready"])
+	.AddCheck<StorageHealthCheck>("storage", tags: ["ready"]);
 
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);

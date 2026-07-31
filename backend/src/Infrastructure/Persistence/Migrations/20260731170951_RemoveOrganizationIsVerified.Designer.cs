@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260731170951_RemoveOrganizationIsVerified")]
+	partial class RemoveOrganizationIsVerified
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -752,10 +755,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasMaxLength(200)
 						.HasColumnType("character varying(200)")
 						.HasColumnName("title");
-
-					b.Property<DateTimeOffset?>("ValidUntil")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("valid_until");
 
 					b.HasKey("Id")
 						.HasName("pk_volunteer_opportunity");

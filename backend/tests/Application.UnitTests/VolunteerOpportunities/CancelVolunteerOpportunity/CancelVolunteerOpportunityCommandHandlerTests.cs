@@ -36,7 +36,8 @@ public class CancelVolunteerOpportunityCommandHandlerTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Draft).Value;
+			CheckInMethod.None, Substitute.For<IPinGenerator>(), status: OpportunityStatus.Draft,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
 		opportunity.Publish();
 		return opportunity;
 	}

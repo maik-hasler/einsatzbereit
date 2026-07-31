@@ -30,6 +30,7 @@ export function buildOpportunityFormSchema(t: TFunction) {
 			checkInPin: z.string(),
 			category: z.string().optional(),
 			tags: z.array(z.string()),
+			validUntil: z.string(),
 		})
 		.superRefine((data, ctx) => {
 			if (!data.title.trim())

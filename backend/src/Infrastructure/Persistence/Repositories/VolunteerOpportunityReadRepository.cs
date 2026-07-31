@@ -25,7 +25,12 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
-			.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.EndDateTime >= now))
+			// ScheduledSlots opportunities expire once their last time slot ends.
+			// IndividualContact opportunities can never have time slots (see
+			// VolunteerOpportunity.AddTimeSlot) and instead expire via ValidUntil -
+			// a null ValidUntil (a legacy row published before ValidUntil existed)
+			// is treated as already expired rather than kept forever (#1086).
+			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now))
 			.Join(
 				dbContext.OrganizationsQuery,
 				vo => vo.OrganizationId,
@@ -91,7 +96,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
-				OrgIsVerified = x.org.IsVerified,
 				OrgLogoUrl = x.org.LogoUrl,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -106,6 +110,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
+				x.vo.ValidUntil,
 				NextTimeSlotStart = x.vo.TimeSlots
 					.Where(ts => ts.EndDateTime >= now)
 					.OrderBy(ts => ts.StartDateTime)
@@ -143,9 +148,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
 
 			var summaries = page
-				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 					x.Status, x.BannerImageUrl,
 					maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0)))
 				.ToList();
@@ -166,9 +171,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var result = rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
@@ -232,7 +237,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 		string description,
 		Guid organizationId,
 		string orgName,
-		bool orgIsVerified,
 		string? orgLogoUrl,
 		string? street,
 		string? houseNumber,
@@ -247,6 +251,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		Category? category,
 		IReadOnlyList<string> tags,
 		DateTimeOffset createdOn,
+		DateTimeOffset? validUntil,
 		DateTimeOffset? nextTimeSlotStart,
 		DateTimeOffset? nextTimeSlotEnd,
 		OpportunityStatus status,
@@ -272,13 +277,13 @@ internal sealed class VolunteerOpportunityReadRepository(
 			category?.ToString(),
 			tags,
 			createdOn,
+			validUntil,
 			nextTimeSlotStart,
 			nextTimeSlotEnd,
 			totalMaxParticipants,
 			currentParticipantCount,
 			status.ToString(),
 			bannerImageUrl,
-			orgIsVerified,
 			orgLogoUrl);
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
@@ -310,6 +315,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
+				x.vo.ValidUntil,
 				x.vo.Status,
 				BannerImageUrl = x.vo.BannerImageUrl
 			})
@@ -393,6 +399,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			result.Tags,
 			timeSlots,
 			result.CreatedOn,
+			result.ValidUntil,
 			currentParticipantCount,
 			result.Status.ToString(),
 			result.BannerImageUrl,
@@ -427,7 +434,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
-				OrgIsVerified = x.org.IsVerified,
 				OrgLogoUrl = x.org.LogoUrl,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -442,6 +448,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
+				x.vo.ValidUntil,
 				NextTimeSlotStart = x.vo.TimeSlots
 					.Where(ts => ts.EndDateTime >= now)
 					.OrderBy(ts => ts.StartDateTime)
@@ -464,9 +471,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		return rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();
@@ -503,7 +510,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
-				OrgIsVerified = x.org.IsVerified,
 				OrgLogoUrl = x.org.LogoUrl,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -518,6 +524,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Category,
 				x.vo.Tags,
 				x.vo.CreatedOn,
+				x.vo.ValidUntil,
 				NextTimeSlotStart = x.vo.TimeSlots
 					.Where(ts => ts.EndDateTime >= now)
 					.OrderBy(ts => ts.StartDateTime)
@@ -540,9 +547,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var items = rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
 				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
 			.ToList();

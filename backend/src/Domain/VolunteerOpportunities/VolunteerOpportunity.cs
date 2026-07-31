@@ -47,6 +47,14 @@ public sealed class VolunteerOpportunity
 
 	public string? CheckInPin { get; private set; }
 
+	/// <summary>
+	/// Application deadline for Individual contact opportunities, which can never
+	/// have TimeSlots (see AddTimeSlot) and would otherwise carry no date at all
+	/// (einsatzbereit#1086). Always null for ScheduledSlots opportunities, which
+	/// express "when" through their time slots instead.
+	/// </summary>
+	public DateTimeOffset? ValidUntil { get; private set; }
+
 	public IReadOnlyCollection<TimeSlot> TimeSlots => _timeSlots.AsReadOnly();
 
 	public DateTimeOffset CreatedOn { get; private set; }
@@ -75,7 +83,8 @@ public sealed class VolunteerOpportunity
 		IReadOnlyCollection<string> tags,
 		OpportunityStatus status,
 		IPinGenerator pinGenerator,
-		string? checkInPin)
+		string? checkInPin,
+		DateTimeOffset? validUntil)
 		: base(id)
 	{
 		OrganizationId = organizationId;
@@ -89,6 +98,7 @@ public sealed class VolunteerOpportunity
 		Category = category;
 		_tags = new List<string>(tags);
 		Status = status;
+		ValidUntil = validUntil;
 		if (checkInMethod == CheckInMethod.PINCode)
 			CheckInPin = checkInPin ?? pinGenerator.GeneratePin();
 	}
@@ -117,6 +127,32 @@ public sealed class VolunteerOpportunity
 		return Result.Success();
 	}
 
+	private static Result EnsureValidValidUntil(ParticipationType participationType, DateTimeOffset? validUntil, DateTimeOffset now)
+	{
+		if (validUntil is null)
+			return Result.Success();
+
+		if (participationType != ParticipationType.IndividualContact)
+			return Result.Failure(Error.Validation(
+				"VolunteerOpportunity.ValidUntilNotAllowed",
+				"A deadline can only be set for Individual contact opportunities."));
+
+		if (validUntil <= now)
+			return Result.Failure(Error.Validation("VolunteerOpportunity.ValidUntilMustBeFuture", "Deadline must be in the future."));
+
+		return Result.Success();
+	}
+
+	private static Result EnsureIndividualContactHasValidUntil(ParticipationType participationType, DateTimeOffset? validUntil)
+	{
+		if (participationType == ParticipationType.IndividualContact && validUntil is null)
+			return Result.Failure(Error.Validation(
+				"VolunteerOpportunity.IndividualContactRequiresValidUntil",
+				"An Individual contact opportunity must have a deadline before it can be published."));
+
+		return Result.Success();
+	}
+
 	public static Result<VolunteerOpportunity> Create(
 		OrganizationId organizationId,
 		string title,
@@ -130,7 +166,9 @@ public sealed class VolunteerOpportunity
 		Category? category = null,
 		IReadOnlyCollection<string>? tags = null,
 		OpportunityStatus status = OpportunityStatus.Published,
-		string? checkInPin = null)
+		string? checkInPin = null,
+		DateTimeOffset? validUntil = null,
+		DateTimeOffset? now = null)
 	{
 		var validTitleLength = EnsureValidTitleLength(title);
 		if (validTitleLength.IsFailure)
@@ -147,6 +185,10 @@ public sealed class VolunteerOpportunity
 				return Result.Failure<VolunteerOpportunity>(validPin.Error);
 		}
 
+		var validValidUntil = EnsureValidValidUntil(participationType, validUntil, now ?? DateTimeOffset.UtcNow);
+		if (validValidUntil.IsFailure)
+			return Result.Failure<VolunteerOpportunity>(validValidUntil.Error);
+
 		if (status == OpportunityStatus.Published)
 		{
 			var publishable = EnsurePublishable(title, description, isRemote, address);
@@ -161,6 +203,10 @@ public sealed class VolunteerOpportunity
 				return Result.Failure<VolunteerOpportunity>(Error.Validation(
 					"VolunteerOpportunity.ScheduledSlotsMustStartAsDraft",
 					"A Scheduled slots opportunity must be created as a draft and published after adding at least one time slot."));
+
+			var hasValidUntil = EnsureIndividualContactHasValidUntil(participationType, validUntil);
+			if (hasValidUntil.IsFailure)
+				return Result.Failure<VolunteerOpportunity>(hasValidUntil.Error);
 		}
 
 		return new VolunteerOpportunity(
@@ -177,7 +223,8 @@ public sealed class VolunteerOpportunity
 			tags ?? [],
 			status,
 			pinGenerator,
-			checkInPin);
+			checkInPin,
+			validUntil);
 	}
 
 	private static Result EnsurePublishable(
@@ -218,6 +265,10 @@ public sealed class VolunteerOpportunity
 			return Result.Failure(Error.Validation(
 				"VolunteerOpportunity.ScheduledSlotsRequiresTimeSlot",
 				"A Scheduled slots opportunity must have at least one time slot before it can be published."));
+
+		var hasValidUntil = EnsureIndividualContactHasValidUntil(ParticipationType, ValidUntil);
+		if (hasValidUntil.IsFailure)
+			return hasValidUntil;
 
 		Status = OpportunityStatus.Published;
 		AddEvent(new VolunteerOpportunityPublishedDomainEvent(Id, OrganizationId));
@@ -359,7 +410,22 @@ public sealed class VolunteerOpportunity
 		if (ParticipationType == ParticipationType.ScheduledSlots && participationType != ParticipationType.ScheduledSlots)
 			_timeSlots.Clear();
 
+		// Mirror of the above for the other direction: ValidUntil is only
+		// meaningful for IndividualContact opportunities (see SetValidUntil).
+		if (ParticipationType == ParticipationType.IndividualContact && participationType != ParticipationType.IndividualContact)
+			ValidUntil = null;
+
 		ParticipationType = participationType;
+	}
+
+	public Result SetValidUntil(DateTimeOffset? validUntil, DateTimeOffset now)
+	{
+		var validation = EnsureValidValidUntil(ParticipationType, validUntil, now);
+		if (validation.IsFailure)
+			return validation;
+
+		ValidUntil = validUntil;
+		return Result.Success();
 	}
 
 	public Result<TimeSlot> AddTimeSlot(

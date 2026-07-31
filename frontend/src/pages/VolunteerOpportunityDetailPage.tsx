@@ -8,6 +8,7 @@ import type {
 } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import {
+	formatDate,
 	formatDateTime,
 	formatOccurrence,
 	formatParticipationType,
@@ -479,6 +480,21 @@ export default function VolunteerOpportunityDetailPage() {
 								</li>
 							))}
 						</ul>
+					</div>
+				)}
+
+			{/* Application deadline */}
+			{opportunity.participationType === "IndividualContact" &&
+				opportunity.validUntil && (
+					<div className="mb-6 flex items-center gap-1.5 text-sm font-medium text-gray-600">
+						<span>
+							{t("opportunities.applyBy", {
+								date: formatDate(
+									opportunity.validUntil as unknown as string,
+									i18n.language,
+								),
+							})}
+						</span>
 					</div>
 				)}
 
