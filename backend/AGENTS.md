@@ -197,8 +197,14 @@ Because dispatch now happens in a fresh scope after commit (not inline inside th
 - Root `AGENTS.md`'s "Mandatory: Deploy and verify" flow requires a matching assertion here for every bug fix/feature - see step 7
 
 ### Run all tests
+TUnit uses Microsoft.Testing.Platform, not the `dotnet test` new testing
+experience - run each project directly, the same way CI does:
 ```bash
-dotnet test  # from backend/
+# from backend/
+dotnet run --project tests/Application.UnitTests
+dotnet run --project tests/ArchitectureTests
+dotnet run --project tests/IntegrationTests
+dotnet run --project tests/VisualTests
 ```
 
 ## NuGet Packages (key ones)

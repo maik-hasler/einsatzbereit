@@ -65,7 +65,7 @@ include::../images/technical-context.puml[]
 
 |Backend → SMTP mail server
 |Outbound
-|The backend sends notification and reminder emails via SMTP (Mailpit locally, a real SMTP server in production).
+|The backend sends notification and reminder emails via SMTP (Mailpit locally, a real SMTP relay on staging).
 
 |Backend → Object storage (MinIO / S3)
 |Outbound

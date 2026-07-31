@@ -1,6 +1,6 @@
 # Einsatzbereit
 
-Volunteer coordination platform matching helpers with regional needs. English UI and code, multilingual support.
+Volunteer coordination platform matching helpers with regional needs. English-source UI strings and code; German is the default served locale. See `CONTRIBUTING.md`'s Language Convention for the full breakdown.
 
 ## Monorepo Structure
 

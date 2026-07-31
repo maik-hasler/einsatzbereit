@@ -42,7 +42,7 @@ docs/
 
 ## Build
 
-Triggered by `.github/workflows/docs.yml` on push to `main` (paths: `docs/**`).
+Triggered by `.github/workflows/docs.yml` on push or PR to `main` (paths: `docs/**`). Pull requests only build (a check); GitHub Pages deployment is gated to pushes on `main`.
 
 Local build requires Asciidoctor + asciidoctor-diagram gem. Easier to push and let CI build.
 

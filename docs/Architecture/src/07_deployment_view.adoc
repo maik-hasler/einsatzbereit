@@ -80,7 +80,7 @@ The backend workflow (`dotnet.yml`) runs four independent jobs in parallel (no `
 
 The frontend workflow (`frontend.yml`) runs lint, i18n key-parity, type-check, and build; `lint.yml` enforces ASCII dashes and EditorConfig. Typical `dotnet.yml` critical-path runtime is about 6 minutes, down from ~10 minutes before the jobs were split into parallel jobs in issue #773 - `visual-tests` remains the longest-running job - see TDR-2.
 
-The architecture docs build (`docs.yml`) is a separate, main-branch-only deployment to GitHub Pages, not a pull-request gate.
+The architecture docs build (`docs.yml`) also builds on every pull request touching `docs/**`, as a build-only check - GitHub Pages deployment stays gated to pushes on `main`, so a docs PR can never publish a preview.
 
 ==== Image Publishing (on tag push)
 
@@ -154,6 +154,11 @@ All public traffic is HTTPS via Traefik. PostgreSQL data is backed up daily with
 |`quay.io/minio/minio`
 |`storage.maik-hasler.de`
 |S3-compatible object storage
+
+|minio-init
+|`minio/mc`
+|internal, one-shot
+|Bootstraps the bucket and a bucket-scoped app service account for the backend on first deploy (#1353)
 
 |minio-backup
 |`minio/mc`

@@ -4,14 +4,16 @@
 
 ```
 .github/workflows/
-├── dotnet.yml        Backend: build + test
-├── frontend.yml      Frontend: lint → build
-├── docs.yml          Docs: AsciiDoc build → GitHub Pages deploy
-├── publish.yml       Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging
-├── release-rc.yml    Promotes a release/v* branch into a real tag (used by Claude Code on the web)
-├── reset-staging.yml Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
-├── lint.yml          Ban em/en dashes + EditorConfig check
-└── pr-title.yml      Validate PR title against Conventional Commits
+├── dotnet.yml                  Backend: build + test
+├── frontend.yml                Frontend: lint → build
+├── docs.yml                    Docs: AsciiDoc build (push + PR) → GitHub Pages deploy (push only)
+├── security.yml                Weekly (+ manual) NuGet/npm dependency vulnerability audit
+├── keycloak-realm-import.yml   Verifies the committed realm still imports on the production Keycloak version
+├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging
+├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
+├── reset-staging.yml           Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
+├── lint.yml                    Ban em/en dashes + EditorConfig check
+└── pr-title.yml                Validate PR title against Conventional Commits
 ```
 
 ## CI Workflows (run on push/PR to main)
@@ -108,6 +110,16 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 
 **Required `staging` Environment secret:** `KEYCLOAK_BACKEND_SECRET` - a randomly generated value (not a committed literal), used both as the `backend` Keycloak client's real secret (resolved into the `${KEYCLOAK_BACKEND_SECRET}` placeholder in `keycloak/realms/einsatzbereit-realm.json` at realm-import time) and as the backend app's `Keycloak__ClientSecret`. See `keycloak/AGENTS.md`. If unset, `deploy-staging` fails loudly (docker compose's `:?` guard in `docker-compose.yml`) rather than deploying with a weak default.
 
+**Required `staging` Environment secret:** `STAGING_SSH_HOST_KEY` - the pinned SSH host key `deploy-staging` trusts, instead of accepting whatever `ssh-keyscan` returns live on every run (a DNS/BGP hijack of `STAGING_SSH_HOST` would otherwise have its host key trusted automatically). Capture it once, out-of-band, from a connection you've already verified is the real host:
+```bash
+ssh-keyscan -H <staging-host> > host_key.txt
+# Verify the key fingerprint against the hosting provider's console/docs
+# before trusting it, then store the file's contents as the secret.
+```
+Rotating the staging host's SSH host key (a fresh box, a reinstall) requires updating this secret to match.
+
+**Required `staging` Environment secrets:** `MINIO_APP_ACCESS_KEY` / `MINIO_APP_SECRET_KEY` - a generated (not MinIO root) credential pair the `minio-init` compose service provisions on first deploy, scoped to only the `einsatzbereit` bucket. The backend authenticates with these instead of `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` (#1353) - a leaked value can then only read/write that one bucket, not administer the whole MinIO instance.
+
 ## Reset Workflow (manual)
 
 `reset-staging.yml` wipes all staging test data - Postgres (`einsatzbereit` + `keycloak` databases, one instance) and MinIO uploads - then restarts the stack. It does **not** run `docker compose pull`, so the exact image tags/versions already running come back up unchanged; only data is reset.
@@ -123,15 +135,19 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 
 ```
 .github/ISSUE_TEMPLATE/
-├── bug_report.yml       [Bug]: prefix, label: bug
-└── feature_request.yml  [Feature]: prefix, label: enhancement
+├── bug_report.yml   [Bug]: prefix, label: bug
+├── chore.yml        [Chore]: prefix, label: chore
+├── user_story.yml   [Story]: prefix, label: user-story
+└── config.yml       blank_issues_enabled: false (no config for the templates above)
 ```
 
-Both templates are in **German**. Fields:
+All templates are in **English** (see `CONTRIBUTING.md`'s Language Convention). Fields:
 
-**Bug report:** Priorität (Niedrig/Mittel/Hoch), Beschreibung, Reproduktionsschritte, Zusätzliche Infos
+**Bug report:** Affected Persona (dropdown: Volunteer Vera/Organizer Olaf/Contributor Caro/Maintainer Milo/All), Priority (Low/Medium/High), Description, Steps to Reproduce, Environment, Additional Information
 
-**Feature request:** Priorität, User Story (Als X, möchte ich Y, damit Z), Akzeptanzkriterien (checkboxes), Beschreibung, Umsetzungsideen, Zusätzliche Infos
+**Chore:** Priority, Description, Acceptance Criteria (checkboxes)
+
+**User story:** Persona (dropdown, same options as Bug report minus "All"), Priority, User Story (As/I want/so that), Description, Acceptance Criteria (Given/When/Then), Implementation Proposal, Additional Information
 
 ## Review & PR Template
 

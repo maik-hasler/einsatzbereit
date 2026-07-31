@@ -7,8 +7,12 @@ Every contribution counts - bug reports, ideas, documentation, or code.
 
 | Context | Language |
 |---|---|
-| UI, end-user documentation | German |
+| UI source strings (i18n keys in `frontend/src/locales/en.json`) | English - add or edit new keys here first |
+| UI German translation (`frontend/src/locales/de.json`) | German - keep in parity with `en.json` via `pnpm i18n:check` |
+| End-user-facing app and documentation | German (`<html lang="de">` is the default served locale; Einsatzbereit's primary audience is German-speaking) |
 | Code, commits, issues, pull requests | English |
+
+A PR that adds or changes UI text must update both `en.json` (the source) and `de.json` (the translation) - see `frontend/AGENTS.md`.
 
 ## Getting Started
 
@@ -31,11 +35,13 @@ einsatzbereit/
 ├── backend/        .NET 10 Clean Architecture API
 ├── frontend/       Vite SPA + React 19 + Tailwind CSS 4
 ├── keycloak/       Custom Keycloak image + realm config
-├── postgres/       DB init script
 ├── docs/           arc42 architecture docs + ADRs
 ├── wiki/           Project LLM wiki (informal knowledge)
 └── .github/        CI/CD workflows
 ```
+
+There is no separate `postgres/` directory - the database init SQL is a
+`docker-compose.yml` `configs: postgres-init` entry, inline in that file.
 
 Each component has its own `AGENTS.md` with component-specific conventions
 (Claude Code additionally reads a same-named `CLAUDE.md`, which imports
@@ -108,12 +114,19 @@ PR titles are validated against Conventional Commits in CI by the [`PR Title`](.
 ## Testing
 
 ### Backend
+
+TUnit uses Microsoft.Testing.Platform, so run each test project with `dotnet run --project <path>`, not `dotnet test` (which needs opt-in to the new testing experience on .NET 10 and isn't how CI runs these - see `.github/workflows/dotnet.yml`):
+
 ```bash
 cd backend
-dotnet test
+dotnet run --project tests/Application.UnitTests
+dotnet run --project tests/ArchitectureTests
 ```
 
-Integration tests use Testcontainers and require Docker.
+Integration tests use Testcontainers and require Docker:
+```bash
+dotnet run --project tests/IntegrationTests
+```
 Do not mock the database - all integration tests run against a real PostgreSQL instance.
 
 ### E2E
@@ -122,17 +135,16 @@ E2E tests live under `backend/tests/VisualTests/` (TUnit.Playwright + Aspire). T
 
 ```bash
 cd backend
-dotnet test tests/VisualTests
+dotnet run --project tests/VisualTests
 ```
 
 ### API Client
 
 The frontend API client (`frontend/src/client/api-client.ts`) is **NSwag-generated**.
-**Never hand-edit this file.** Regenerate it after backend changes:
+**Never hand-edit this file.** It regenerates automatically the next time the backend builds in the Debug configuration (the `NSwag` MSBuild target in `src/Api/Api.csproj`, gated on `Configuration == Debug`):
 ```bash
-# From the backend directory with the API running:
 cd backend
-dotnet tool run openapi
+dotnet build
 ```
 
 ## Code Style
