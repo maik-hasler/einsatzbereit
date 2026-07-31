@@ -91,7 +91,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
-				OrgIsVerified = x.org.IsVerified,
 				OrgLogoUrl = x.org.LogoUrl,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -143,7 +142,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
 
 			var summaries = page
-				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 					x.Status, x.BannerImageUrl,
@@ -166,7 +165,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var result = rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
@@ -232,7 +231,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 		string description,
 		Guid organizationId,
 		string orgName,
-		bool orgIsVerified,
 		string? orgLogoUrl,
 		string? street,
 		string? houseNumber,
@@ -278,7 +276,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			currentParticipantCount,
 			status.ToString(),
 			bannerImageUrl,
-			orgIsVerified,
 			orgLogoUrl);
 
 	public async ValueTask<VolunteerOpportunityDetails?> GetDetailsAsync(
@@ -427,7 +424,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
-				OrgIsVerified = x.org.IsVerified,
 				OrgLogoUrl = x.org.LogoUrl,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -464,7 +460,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		return rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,
@@ -503,7 +499,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 				x.vo.Description,
 				OrganizationId = x.vo.OrganizationId.Value,
 				OrgName = x.org.Name,
-				OrgIsVerified = x.org.IsVerified,
 				OrgLogoUrl = x.org.LogoUrl,
 				Street = x.vo.Address != null ? x.vo.Address.Street : null,
 				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
@@ -540,7 +535,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
 
 		var items = rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgIsVerified, x.OrgLogoUrl,
+			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
 				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
 				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.NextTimeSlotStart, x.NextTimeSlotEnd,
 				x.Status, x.BannerImageUrl,

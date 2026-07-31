@@ -800,7 +800,6 @@
       "address": "Address:",
       "currentNeeds": "Current Opportunities",
       "noOpportunities": "No current opportunities available.",
-      "verified": "Verified Organization",
       "report": "Report",
       "reportOrganization": "Report organization"
     },
@@ -932,12 +931,6 @@
       "viewAllAchievements": "View all achievements",
       "reportUser": "Report user"
     },
-    "organizations": {
-      "verified": "Verified organization",
-      "verifyToggle": "Toggle verification",
-      "verifySuccess": "Organization verification updated.",
-      "verifyError": "Failed to update verification."
-    },
     "administration": {
       "title": "Administration",
       "organizationsHeading": "Organizations",
@@ -948,8 +941,6 @@
         "loading": "Loading organizations...",
         "error": "Failed to load organizations.",
         "noOrganizations": "No organizations found.",
-        "verify": "Verify",
-        "unverify": "Unverify",
         "loadMore": "Load more"
       },
       "users": {
@@ -1031,7 +1022,6 @@
       "noResultsWithSearch": "No organizations match \"{{search}}\".",
       "clearSearch": "Clear search",
       "loadMore": "Load more",
-      "verified": "Verified organization",
       "openOpportunities": "{{count}} open opportunities",
       "openOpportunities_one": "{{count}} open opportunity",
       "openOpportunities_other": "{{count}} open opportunities"
@@ -1119,8 +1109,6 @@
       "Organization": {
         "NameRequired": "Name must not be empty.",
         "NameTooLong": "Organization name must not exceed 100 characters.",
-        "AlreadyVerified": "Organization is already verified.",
-        "NotVerified": "Organization is not verified.",
         "NotFound": "Organization not found.",
         "MultipleMembers": "Only the organization's sole remaining member can delete it. Remove the other members first.",
         "HasBlockingOpportunities": "This organization has opportunities with future time slots or active engagements. Resolve or cancel these first.",

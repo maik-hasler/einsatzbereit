@@ -800,7 +800,6 @@
       "address": "Adresse:",
       "currentNeeds": "Aktuelle Bedarfe",
       "noOpportunities": "Keine aktuellen Bedarfe vorhanden.",
-      "verified": "Verifizierte Organisation",
       "report": "Melden",
       "reportOrganization": "Organisation melden"
     },
@@ -932,12 +931,6 @@
       "viewAllAchievements": "Alle Abzeichen anzeigen",
       "reportUser": "Nutzer melden"
     },
-    "organizations": {
-      "verified": "Verifizierte Organisation",
-      "verifyToggle": "Verifizierung umschalten",
-      "verifySuccess": "Organisations-Verifizierung aktualisiert.",
-      "verifyError": "Verifizierung konnte nicht aktualisiert werden."
-    },
     "administration": {
       "title": "Administration",
       "organizationsHeading": "Organisationen",
@@ -948,8 +941,6 @@
         "loading": "Organisationen werden geladen...",
         "error": "Organisationen konnten nicht geladen werden.",
         "noOrganizations": "Keine Organisationen gefunden.",
-        "verify": "Verifizieren",
-        "unverify": "Verifizierung aufheben",
         "loadMore": "Mehr laden"
       },
       "users": {
@@ -1031,7 +1022,6 @@
       "noResultsWithSearch": "Keine Organisationen gefunden für \"{{search}}\".",
       "clearSearch": "Suche zurücksetzen",
       "loadMore": "Mehr laden",
-      "verified": "Verifizierte Organisation",
       "openOpportunities": "{{count}} offene Einsätze",
       "openOpportunities_one": "{{count}} offener Einsatz",
       "openOpportunities_other": "{{count}} offene Einsätze"
@@ -1119,8 +1109,6 @@
       "Organization": {
         "NameRequired": "Name darf nicht leer sein.",
         "NameTooLong": "Der Name der Organisation darf 100 Zeichen nicht überschreiten.",
-        "AlreadyVerified": "Die Organisation ist bereits verifiziert.",
-        "NotVerified": "Die Organisation ist nicht verifiziert.",
         "NotFound": "Organisation nicht gefunden.",
         "MultipleMembers": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
         "HasBlockingOpportunities": "Diese Organisation hat noch Bedarfe mit zukünftigen Zeitslots oder aktiven Engagements. Bitte löse das zuerst auf.",

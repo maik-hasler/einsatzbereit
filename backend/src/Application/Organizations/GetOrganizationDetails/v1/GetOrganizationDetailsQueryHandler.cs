@@ -48,7 +48,6 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 			organization.Website,
 			organization.LogoUrl,
 			address,
-			organization.IsVerified,
 			organization.CreatedOn,
 			organization.ModifiedOn,
 			members

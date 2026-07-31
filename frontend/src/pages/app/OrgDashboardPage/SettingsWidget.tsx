@@ -53,16 +53,9 @@ function SettingsWidget({ org, size }: Props) {
 			>
 				{logo}
 				<div className="min-w-0">
-					<div className="flex items-center gap-2">
-						<p className="truncate text-sm font-semibold text-gray-900">
-							{org.name}
-						</p>
-						{org.isVerified && (
-							<span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-								{t("orgProfile.verified")}
-							</span>
-						)}
-					</div>
+					<p className="truncate text-sm font-semibold text-gray-900">
+						{org.name}
+					</p>
 					<p className="text-xs text-gray-500">
 						<Link
 							to={`/app/${org.id}/dashboard/members`}

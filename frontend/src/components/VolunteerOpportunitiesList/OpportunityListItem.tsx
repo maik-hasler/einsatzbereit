@@ -160,21 +160,6 @@ export default function OpportunityListItem({
 							<span className="text-sm font-medium text-gray-600 transition-colors group-hover/org:text-brand-700 group-hover/org:underline">
 								{item.organizationName}
 							</span>
-							{item.isOrganizationVerified && (
-								<svg
-									className="h-4 w-4 shrink-0 text-brand-600"
-									viewBox="0 0 20 20"
-									fill="currentColor"
-									aria-label={t("orgProfile.verified")}
-									role="img"
-								>
-									<path
-										fillRule="evenodd"
-										d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
-										clipRule="evenodd"
-									/>
-								</svg>
-							)}
 						</Link>
 						{(item.isRemote || item.city) && (
 							<span className="ml-auto flex items-center gap-1 text-xs text-gray-400">

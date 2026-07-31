@@ -28,7 +28,6 @@ const PAGE_SIZE = 10;
 interface OrgRow {
 	id: string;
 	name: string;
-	isVerified: boolean;
 }
 
 export default function AdministrationPage() {
@@ -91,11 +90,8 @@ function OrganizationsSection() {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
-	const [toggling, setToggling] = useState<string | null>(null);
-
 	const {
 		items: rows,
-		setItems: setRows,
 		loading,
 		loadingMore,
 		error,
@@ -109,30 +105,11 @@ function OrganizationsSection() {
 				items: result.items.map((o) => ({
 					id: o.id,
 					name: o.name,
-					isVerified: o.isVerified,
 				})),
 				pageCount: result.pageCount,
 			})),
 		{ getErrorMessage: () => t("administration.organizations.error") },
 	);
-
-	async function toggleVerified(orgId: string, next: boolean) {
-		setToggling(orgId);
-		try {
-			await api.verifyOrganization(orgId, { isVerified: next });
-			setRows((prev) =>
-				prev.map((r) => (r.id === orgId ? { ...r, isVerified: next } : r)),
-			);
-			dispatchToast("success", t("organizations.verifySuccess"));
-		} catch (err) {
-			dispatchToast(
-				"error",
-				getApiErrorMessage(err, t("organizations.verifyError")),
-			);
-		} finally {
-			setToggling(null);
-		}
-	}
 
 	if (loading) {
 		return (
@@ -156,42 +133,6 @@ function OrganizationsSection() {
 							<tr key={row.id} className="flex items-center gap-4 px-4 py-3">
 								<td className="flex flex-1 items-center gap-2 font-medium text-gray-900">
 									{row.name}
-									{row.isVerified && (
-										<svg
-											className="h-4 w-4 shrink-0 text-brand-600"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-											aria-label={t("organizations.verified")}
-											role="img"
-										>
-											<path
-												fillRule="evenodd"
-												d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
-												clipRule="evenodd"
-											/>
-										</svg>
-									)}
-								</td>
-								<td>
-									{row.isVerified ? (
-										<button
-											type="button"
-											disabled={toggling === row.id}
-											onClick={() => void toggleVerified(row.id, false)}
-											className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-										>
-											{t("administration.organizations.unverify")}
-										</button>
-									) : (
-										<Button
-											type="button"
-											disabled={toggling === row.id}
-											onClick={() => void toggleVerified(row.id, true)}
-											size="sm"
-										>
-											{t("administration.organizations.verify")}
-										</Button>
-									)}
 								</td>
 							</tr>
 						))}
