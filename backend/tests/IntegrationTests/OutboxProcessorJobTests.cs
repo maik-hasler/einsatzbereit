@@ -70,6 +70,33 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task ProcessBatchAsync_RoundTripsGuidBackedValueObjectIds_NotAsGuidEmpty(
+		CancellationToken cancellationToken)
+	{
+		// Regression test: these Guid-backed value-object IDs have a private constructor and
+		// a get-only Value property, so System.Text.Json's default reflection-based
+		// deserializer has no way to populate them - it was silently producing a
+		// Guid.Empty-backed instance instead of throwing (see
+		// ValueObjectIdJsonConverterFactory), which einsatzbereit#1038's cascade-cancel tests
+		// caught: the first outbox-dispatched handler to actually look an entity up by the
+		// deserialized id rather than just logging it.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		var dispatcher = new RecordingDispatcher();
+		await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, batchSize: 20, cancellationToken);
+
+		var redispatched = dispatcher.DispatchedEvents.Should().ContainSingle().Subject
+			.Should().BeOfType<EngagementConfirmedDomainEvent>().Subject;
+
+		redispatched.EngagementId.Should().Be(domainEvent.EngagementId);
+		redispatched.VolunteerId.Should().Be(domainEvent.VolunteerId);
+		redispatched.OpportunityId.Should().Be(domainEvent.OpportunityId);
+	}
+
+	[Test]
 	public async Task ProcessBatchAsync_TwoConcurrentCalls_OnlyOneDispatchesTheLockedMessage(
 		CancellationToken cancellationToken)
 	{
