@@ -18,6 +18,7 @@ namespace Application.UnitTests.VolunteerOpportunities.CancelVolunteerOpportunit
 public class VolunteerOpportunityCancelledDomainEventHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
@@ -52,7 +53,7 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
 		_sut = new VolunteerOpportunityCancelledDomainEventHandler(
-			_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder,
+			_dbContext, _unitOfWork, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder,
 			NullLogger<VolunteerOpportunityCancelledDomainEventHandler>.Instance);
 	}
 
@@ -144,5 +145,40 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		// Assert
 		await act.Should().NotThrowAsync();
 		await _notifRepo.DidNotReceive().AddAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldSaveChanges_AfterCascade(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - regression: Publisher.Publish() resolves this handler from
+		// its own child scope (a different IApplicationDbContext instance than
+		// OutboxProcessorJob's), so nothing else persists the engagement
+		// cancellation/notification writes unless this handler saves them itself.
+		var opportunity = CreatePublishedOpportunity();
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunity.Id, DefaultOrgId, "reason");
+
+		// Act
+		await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotSaveChanges_WhenOpportunityNoLongerExists(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		_opportunityRepo.FindAsync(opportunityId, cancellationToken).Returns((VolunteerOpportunity?)null);
+		var domainEvent = new VolunteerOpportunityCancelledDomainEvent(opportunityId, DefaultOrgId, "reason");
+
+		// Act
+		await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert
+		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 	}
 }
