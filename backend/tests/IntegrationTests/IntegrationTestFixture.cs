@@ -95,6 +95,15 @@ public class IntegrationTestFixture
 	public HttpClient CreateHttpClient() =>
 		_app.CreateHttpClient("backend", "http");
 
+	// Resolves the real (Aspire-assigned) base address of the test MinIO
+	// container, for tests that construct a MinioFileStorageService directly
+	// against it (StorageHealthCheckTests.cs) rather than through the backend.
+	public string GetMinioEndpoint()
+	{
+		using var client = _app.CreateHttpClient("minio", "api");
+		return client.BaseAddress!.ToString();
+	}
+
 	public async Task<string> GetAccessTokenAsync(string username, string password)
 	{
 		var content = new FormUrlEncodedContent([

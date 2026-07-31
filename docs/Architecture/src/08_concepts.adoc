@@ -120,3 +120,5 @@ Key logged events:
 * Slow requests (flagged by the performance pipeline behavior)
 
 No third-party observability SaaS (Datadog, Grafana Cloud, etc.) is wired in by default - a deliberate trade-off to keep operational complexity minimal; any OTLP backend can be pointed at the exporter, and the self-hosted Grafana stack (Prometheus, Loki, Tempo) already deployed alongside the app is what it points at in staging/production.
+
+Prometheus evaluates alert rules (`docker-compose.yml`'s `prometheus-rules` config, mounted at `/etc/prometheus/alert.rules.yml`) and forwards firing alerts to a self-hosted Alertmanager, which emails them out over the same SMTP relay the backend and Keycloak already use (#1081) - again keeping the "self-hosted over SaaS" trade-off above rather than adding a third-party alerting/incident vendor. The only rule shipped so far is `InstanceDown` (any scrape target unreachable for 2 minutes); it is deliberately the one signal that needs no application-specific metric knowledge, left minimal until real staging traffic justifies additional thresholds.

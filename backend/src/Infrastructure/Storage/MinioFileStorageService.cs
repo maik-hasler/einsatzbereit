@@ -82,6 +82,16 @@ internal sealed class MinioFileStorageService : IFileStorageService
 		return $"{baseUrl}/{_settings.BucketName}/{objectKey}";
 	}
 
+	// BucketExistsAsync's own bool result only distinguishes "bucket present"
+	// from "bucket absent" - both are a reachable server and neither should fail
+	// a readiness probe on a fresh deployment before EnsureBucketReadyAsync has
+	// ever run. Unreachability (the thing the probe actually cares about) surfaces
+	// as a thrown exception instead, which callers are expected to catch.
+	public async Task PingAsync(CancellationToken cancellationToken = default) =>
+		await _minio.BucketExistsAsync(
+			new BucketExistsArgs().WithBucket(_settings.BucketName),
+			cancellationToken);
+
 	// Object keys don't change on re-upload, so the version query param is
 	// what invalidates a browser's cached copy once the underlying object
 	// changes - without it, CacheControlHeaderValue's max-age would let a
