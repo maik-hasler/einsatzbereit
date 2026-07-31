@@ -241,6 +241,30 @@ internal sealed class EngagementReadRepository(
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
 
+		var items = await MapToSummariesAsync(engagements, cancellationToken);
+
+		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
+	}
+
+	public async ValueTask<List<EngagementSummary>> GetAllByVolunteerAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default)
+	{
+		// Same no-inner-join rationale as GetByVolunteerAsync above (#667) - a
+		// deleted opportunity must not drop the volunteer's own engagement from
+		// their data export.
+		var engagements = await dbContext.EngagementsQuery
+			.Where(e => e.VolunteerId == volunteerId)
+			.OrderByDescending(e => e.CreatedOn)
+			.ToListAsync(cancellationToken);
+
+		return await MapToSummariesAsync(engagements, cancellationToken);
+	}
+
+	private async Task<List<EngagementSummary>> MapToSummariesAsync(
+		List<Engagement> engagements,
+		CancellationToken cancellationToken)
+	{
 		var opportunityIds = engagements.Select(e => e.OpportunityId).Distinct().ToList();
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.Where(o => opportunityIds.Contains(o.Id))
@@ -267,7 +291,7 @@ internal sealed class EngagementReadRepository(
 				.ToDictionaryAsync(ts => ts.Id, cancellationToken);
 		}
 
-		var items = engagements.Select(e =>
+		return engagements.Select(e =>
 		{
 			opportunities.TryGetValue(e.OpportunityId, out var opportunity);
 			var organization = opportunity is not null
@@ -302,8 +326,6 @@ internal sealed class EngagementReadRepository(
 				Location: location,
 				CancellationReason: e.CancellationReason);
 		}).ToList();
-
-		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
 	}
 
 	private static string? FormatAddress(Address? address)

@@ -1,3 +1,4 @@
+using Application.Organizations;
 using Domain.Achievements;
 using Domain.Engagements;
 using Domain.Notifications;
@@ -80,6 +81,10 @@ public interface IApplicationDbContext
 		CancellationToken cancellationToken = default);
 
 	Task<List<Organization>> GetOrganizerOrganizationsAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<OrganizationMembershipSummary>> GetMembershipsForUserAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
