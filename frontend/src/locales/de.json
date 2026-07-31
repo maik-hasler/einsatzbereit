@@ -527,6 +527,7 @@
       "cancel": "Abbrechen",
       "submitError": "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.",
       "averageRating": "{{rating}} von 5 ({{count}} Bewertungen)",
+      "itemRatingLabel": "{{rating}} von 5 Sternen",
       "organizerTab": "Feedback",
       "noFeedback": "Noch kein Feedback.",
       "feedbackCount_one": "{{count}} Bewertung",
@@ -553,6 +554,7 @@
       "organizerPin": "Eincheck-PIN",
       "organizerPinHint": "Teile diese PIN mit deinen Freiwilligen, damit sie einchecken können.",
       "markCheckedIn": "Als eingecheckt markieren",
+      "markCheckedInSuccess": "Freiwilliger als eingecheckt markiert.",
       "markingCheckedIn": "…",
       "undoCheckIn": "Check-in rückgängig machen",
       "undoingCheckIn": "…",
@@ -616,6 +618,7 @@
       "cancel": "Absagen",
       "revoke": "Stornieren",
       "processing": "…",
+      "confirmSuccess": "Bewerbung bestätigt.",
       "confirmError": "Fehler beim Bestätigen",
       "cancelError": "Fehler beim Absagen",
       "loadMore": "Mehr laden",
@@ -675,6 +678,8 @@
     },
     "notifications": {
       "bellLabel": "Benachrichtigungen",
+      "bellLabelWithCount_one": "Benachrichtigungen, {{count}} ungelesen",
+      "bellLabelWithCount_other": "Benachrichtigungen, {{count}} ungelesen",
       "markAllRead": "Alle als gelesen markieren",
       "empty": "Keine Benachrichtigungen.",
       "loadMore": "Mehr laden",
@@ -922,7 +927,8 @@
       "boundaryMessage": "Ein unerwarteter Fehler ist aufgetreten. Du kannst zurück navigieren oder die Seite neu laden.",
       "goBack": "Zurück",
       "reload": "Neu laden",
-      "dismiss": "Schließen"
+      "dismiss": "Schließen",
+      "toastRegionLabel": "Benachrichtigungen"
     },
     "userProfile": {
       "loading": "Profil wird geladen...",

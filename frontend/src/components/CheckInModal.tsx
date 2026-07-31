@@ -33,6 +33,22 @@ export default function CheckInModal({
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 
+	// The PIN form (including whatever field was focused when it was
+	// submitted) unmounts once `success` flips true - move focus deliberately
+	// to the remaining "Done" button instead of letting it drop to <body>.
+	// Queried by data-testid rather than a ref: Button.tsx doesn't forward
+	// refs, and this is the only place in the app that would need it to.
+	useEffect(() => {
+		if (!success) return;
+		requestAnimationFrame(() => {
+			document
+				.querySelector<HTMLButtonElement>(
+					'[data-testid="checkin-close-button"]',
+				)
+				?.focus();
+		});
+	}, [success]);
+
 	useEffect(() => {
 		api
 			.getVolunteerOpportunityDetails(opportunityId)
@@ -81,7 +97,7 @@ export default function CheckInModal({
 						{t("checkIn.qrInstruction")}
 					</p>
 					<QRCodeSVG value={engagementId} size={200} />
-					<p className="break-all font-mono text-xs text-gray-400">
+					<p className="break-all font-mono text-xs text-gray-500">
 						{engagementId}
 					</p>
 				</div>
@@ -109,7 +125,7 @@ export default function CheckInModal({
 								value={pin}
 								onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
 								placeholder={t("checkIn.pinPlaceholder")}
-								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+								className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 							/>
 						</div>
 						{error && <ErrorBanner message={error} />}
@@ -149,7 +165,7 @@ export default function CheckInModal({
 				)}
 
 			{success && (
-				<p className="text-sm font-medium text-green-700">
+				<p role="status" className="text-sm font-medium text-green-700">
 					{t("checkIn.success")}
 				</p>
 			)}
@@ -160,6 +176,7 @@ export default function CheckInModal({
 				onClick={onClose}
 				fullWidth
 				className="mt-5"
+				data-testid="checkin-close-button"
 			>
 				{t("checkIn.close")}
 			</Button>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
@@ -62,6 +63,8 @@ export default function VolunteerOpportunitiesList() {
 	const [openFilter, setOpenFilter] = useState<string | null>(null);
 	const [locationCityInput, setLocationCityInput] = useState(city);
 	const [locationLoading, setLocationLoading] = useState(false);
+	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+	const locationListboxId = "location-suggestions-listbox";
 
 	const {
 		suggestions: locationSuggestions,
@@ -69,6 +72,42 @@ export default function VolunteerOpportunitiesList() {
 		setShow: setShowLocationSuggestions,
 		reset: resetLocationSuggestions,
 	} = useCitySuggestions(locationCityInput);
+
+	// Keeps the roving highlight in bounds (and cleared) whenever the
+	// suggestion list itself changes - a stale index from the previous
+	// keystroke's results would otherwise point at the wrong (or a
+	// no-longer-existing) option.
+	useEffect(() => {
+		setActiveSuggestionIndex(-1);
+	}, [locationSuggestions]);
+
+	function handleLocationInputKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+		if (!showLocationSuggestions || locationSuggestions.length === 0) return;
+		switch (e.key) {
+			case "ArrowDown":
+				e.preventDefault();
+				setActiveSuggestionIndex((i) => (i + 1) % locationSuggestions.length);
+				break;
+			case "ArrowUp":
+				e.preventDefault();
+				setActiveSuggestionIndex(
+					(i) =>
+						(i - 1 + locationSuggestions.length) % locationSuggestions.length,
+				);
+				break;
+			case "Enter":
+				if (activeSuggestionIndex >= 0) {
+					e.preventDefault();
+					selectLocationSuggestion(locationSuggestions[activeSuggestionIndex]);
+				}
+				break;
+			case "Escape":
+				e.preventDefault();
+				setShowLocationSuggestions(false);
+				setActiveSuggestionIndex(-1);
+				break;
+		}
+	}
 
 	const filterBarRef = useRef<HTMLDivElement>(null);
 
@@ -298,10 +337,20 @@ export default function VolunteerOpportunitiesList() {
 								<PinIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
 									type="text"
+									role="combobox"
 									aria-label={t("opportunities.filterLabelCity")}
+									aria-expanded={showLocationSuggestions}
+									aria-controls={locationListboxId}
+									aria-autocomplete="list"
+									aria-activedescendant={
+										showLocationSuggestions && activeSuggestionIndex >= 0
+											? `${locationListboxId}-option-${activeSuggestionIndex}`
+											: undefined
+									}
 									placeholder={t("opportunities.locationPlaceholder")}
 									value={locationCityInput}
 									onChange={(e) => setLocationCityInput(e.target.value)}
+									onKeyDown={handleLocationInputKeyDown}
 									onBlur={() =>
 										setTimeout(() => setShowLocationSuggestions(false), 150)
 									}
@@ -326,22 +375,33 @@ export default function VolunteerOpportunitiesList() {
 								)}
 								{showLocationSuggestions && (
 									<ul
+										id={locationListboxId}
 										role="listbox"
+										aria-label={t("opportunities.filterLabelCity")}
 										className="absolute top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-modal"
 									>
 										{locationSuggestions.map((s, i) => (
 											<li
 												key={i}
+												id={`${locationListboxId}-option-${i}`}
 												role="option"
-												aria-selected={false}
-												tabIndex={-1}
+												aria-selected={i === activeSuggestionIndex}
 												onMouseDown={(e) => e.preventDefault()}
+												onMouseEnter={() => setActiveSuggestionIndex(i)}
 												onClick={() => selectLocationSuggestion(s)}
+												// Keyboard selection normally goes through the input's
+												// own onKeyDown (aria-activedescendant combobox
+												// pattern - this option is never itself focused), but
+												// jsx-a11y/click-events-have-key-events still requires
+												// a click element to carry its own key handler too.
 												onKeyDown={(e) => {
-													if (e.key === "Enter" || e.key === " ")
-														selectLocationSuggestion(s);
+													if (e.key === "Enter") selectLocationSuggestion(s);
 												}}
-												className="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+												className={`cursor-pointer px-3 py-2 text-sm text-gray-700 ${
+													i === activeSuggestionIndex
+														? "bg-brand-50 text-brand-700"
+														: "hover:bg-brand-50 hover:text-brand-700"
+												}`}
 											>
 												<span className="flex items-center gap-2">
 													<PinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />

@@ -290,7 +290,10 @@ export default function ProfileOverviewPage() {
 						<ErrorBanner message={profileError} className="mb-4" />
 					)}
 					{successMessage && (
-						<div className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
+						<div
+							role="status"
+							className="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
+						>
 							{successMessage}
 						</div>
 					)}

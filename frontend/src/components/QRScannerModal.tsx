@@ -38,6 +38,21 @@ export default function QRScannerModal({
 	const [scanError, setScanError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 
+	// The camera/scan UI unmounts once `success` flips true (see the
+	// conditional render below) - move focus deliberately to the remaining
+	// "Done" button instead of letting it drop to <body>. Queried by
+	// data-testid rather than a ref since Button.tsx doesn't forward refs.
+	useEffect(() => {
+		if (!success) return;
+		requestAnimationFrame(() => {
+			document
+				.querySelector<HTMLButtonElement>(
+					'[data-testid="qr-scanner-close-button"]',
+				)
+				?.focus();
+		});
+	}, [success]);
+
 	// Check browser support
 	useEffect(() => {
 		const ok =
@@ -178,7 +193,7 @@ export default function QRScannerModal({
 			)}
 
 			{success && (
-				<p className="text-sm font-medium text-green-700">
+				<p role="status" className="text-sm font-medium text-green-700">
 					{t("checkIn.qrSuccess")}
 				</p>
 			)}
@@ -189,6 +204,7 @@ export default function QRScannerModal({
 				onClick={onClose}
 				fullWidth
 				className="mt-5"
+				data-testid="qr-scanner-close-button"
 			>
 				{t("checkIn.close")}
 			</Button>

@@ -188,7 +188,7 @@ export default function DetailsStep({
 					</p>
 
 					{allTimeSlots.length === 0 ? (
-						<p className="text-xs text-gray-400">{t("timeSlots.noSlots")}</p>
+						<p className="text-xs text-gray-500">{t("timeSlots.noSlots")}</p>
 					) : (
 						<ul className="mb-3 space-y-2">
 							{allTimeSlots.map((slot) =>
@@ -372,7 +372,7 @@ export default function DetailsStep({
 												</span>
 											)}
 											{slot.bookedCount > 0 && (
-												<span className="ml-2 text-xs text-gray-400">
+												<span className="ml-2 text-xs text-gray-500">
 													{t("timeSlots.bookedCount", {
 														count: slot.bookedCount,
 													})}

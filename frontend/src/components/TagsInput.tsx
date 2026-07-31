@@ -99,7 +99,7 @@ export default function TagsInput({
 				/>
 			</div>
 			{hint && (
-				<p id={hintId} className="mt-1 text-xs text-gray-400">
+				<p id={hintId} className="mt-1 text-xs text-gray-500">
 					{hint}
 				</p>
 			)}

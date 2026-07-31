@@ -91,7 +91,7 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 							id="quick-checkin-opportunity"
 							value={selectedId}
 							onChange={(e) => setSelectedId(e.target.value)}
-							className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+							className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 						>
 							{opportunities.map((o) => (
 								<option key={o.id} value={o.id}>

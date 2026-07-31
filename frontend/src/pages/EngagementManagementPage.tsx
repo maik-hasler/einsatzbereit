@@ -161,6 +161,19 @@ export default function EngagementManagementPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [opportunityId, opportunity?.checkInMethod]);
 
+	// Confirming/checking a volunteer in swaps the row's button pair for a
+	// different one (Pending's Confirm/Cancel -> Confirmed's Revoke, or
+	// Confirmed's "Mark as checked in" -> "Undo check-in") - the pressed
+	// button unmounts on success, so focus needs somewhere deliberate to land
+	// instead of dropping to <body>. Both a success toast (previously only
+	// the error path was announced) and the refocus below run one frame after
+	// the state update so the replacement button already exists in the DOM.
+	function focusEngagementRowControl(testId: string) {
+		requestAnimationFrame(() => {
+			document.querySelector<HTMLElement>(`[data-testid="${testId}"]`)?.focus();
+		});
+	}
+
 	async function handleConfirm(engagementId: string) {
 		setConfirming(engagementId);
 		try {
@@ -170,6 +183,8 @@ export default function EngagementManagementPage() {
 					e.id === engagementId ? { ...e, status: updated.status } : e,
 				),
 			);
+			dispatchToast("success", t("engagementManagement.confirmSuccess"));
+			focusEngagementRowControl(`engagement-revoke-${engagementId}`);
 		} catch (err) {
 			dispatchToast(
 				"error",
@@ -191,6 +206,8 @@ export default function EngagementManagementPage() {
 					e.id === engagementId ? { ...e, isCheckedIn: true } : e,
 				),
 			);
+			dispatchToast("success", t("checkIn.markCheckedInSuccess"));
+			focusEngagementRowControl(`engagement-undo-checkin-${engagementId}`);
 		} catch (err) {
 			dispatchToast(
 				"error",
@@ -529,6 +546,7 @@ export default function EngagementManagementPage() {
 											)}
 											{e.isCheckedIn && (
 												<button
+													data-testid={`engagement-undo-checkin-${e.id}`}
 													onClick={() => handleUndoCheckIn(e.id)}
 													disabled={undoingCheckIn === e.id}
 													className="text-xs text-amber-700 hover:underline disabled:opacity-50"
@@ -539,6 +557,7 @@ export default function EngagementManagementPage() {
 												</button>
 											)}
 											<button
+												data-testid={`engagement-revoke-${e.id}`}
 												onClick={() => setConfirmCancelId(e.id)}
 												className="text-xs text-red-600 hover:underline"
 											>
@@ -622,7 +641,7 @@ export default function EngagementManagementPage() {
 						onChange={(e) => setCancelReason(e.target.value)}
 						placeholder={t("confirmDialog.cancel.reasonPlaceholder")}
 						disabled={cancelling}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{cancelReason.length}/500
@@ -651,11 +670,17 @@ export default function EngagementManagementPage() {
 										key={idx}
 										className="rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting"
 									>
-										<div className="flex items-center gap-1">
+										<div
+											className="flex items-center gap-1"
+											role="img"
+											aria-label={t("feedback.itemRatingLabel", {
+												rating: item.rating,
+											})}
+										>
 											{[1, 2, 3, 4, 5].map((s) => (
 												<svg
 													key={s}
-													className={`h-4 w-4 ${s <= item.rating ? "text-yellow-400" : "text-gray-200"}`}
+													className={`h-4 w-4 ${s <= item.rating ? "text-yellow-700" : "text-gray-500"}`}
 													fill="currentColor"
 													viewBox="0 0 24 24"
 													aria-hidden="true"

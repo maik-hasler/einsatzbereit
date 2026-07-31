@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { addDays, addMonths, endOfWeek, startOfWeek } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 
 export function fmtIso(d: Date): string {
@@ -49,6 +51,66 @@ export default function MiniCalendar({
 	);
 	const [hover, setHover] = useState<Date | null>(null);
 
+	// Roving-tabindex target for the day grid's keyboard navigation (WAI-ARIA
+	// date-picker grid pattern) - exactly one day button is in the tab order
+	// at a time, Arrow/Home/End/PageUp/PageDown move it. Kept separate from
+	// `from`/`to` (the actual selection) since a keyboard user arrowing
+	// around to explore the calendar shouldn't change the selection until
+	// they press Enter/Space on a button, same as a native <select>.
+	const [focusedDate, setFocusedDate] = useState<Date>(
+		() => from ?? todayMidnight,
+	);
+	const shouldMoveDomFocusRef = useRef(false);
+	const gridRef = useRef<HTMLDivElement>(null);
+	const monthLabelId = useId();
+
+	useEffect(() => {
+		if (!shouldMoveDomFocusRef.current) return;
+		shouldMoveDomFocusRef.current = false;
+		gridRef.current
+			?.querySelector<HTMLButtonElement>(`[data-date="${fmtIso(focusedDate)}"]`)
+			?.focus();
+	}, [focusedDate, calMonth, calYear]);
+
+	function moveFocusTo(target: Date) {
+		if (target.getMonth() !== calMonth || target.getFullYear() !== calYear) {
+			setCalMonth(target.getMonth());
+			setCalYear(target.getFullYear());
+		}
+		setFocusedDate(target);
+		shouldMoveDomFocusRef.current = true;
+	}
+
+	function computeArrowNavigationTarget(day: Date, key: string): Date | null {
+		switch (key) {
+			case "ArrowRight":
+				return addDays(day, 1);
+			case "ArrowLeft":
+				return addDays(day, -1);
+			case "ArrowDown":
+				return addDays(day, 7);
+			case "ArrowUp":
+				return addDays(day, -7);
+			case "Home":
+				return startOfWeek(day, { weekStartsOn: 1 });
+			case "End":
+				return endOfWeek(day, { weekStartsOn: 1 });
+			case "PageUp":
+				return addMonths(day, -1);
+			case "PageDown":
+				return addMonths(day, 1);
+			default:
+				return null;
+		}
+	}
+
+	function handleDayKeyDown(e: KeyboardEvent<HTMLButtonElement>, day: Date) {
+		const target = computeArrowNavigationTarget(day, e.key);
+		if (!target) return;
+		e.preventDefault();
+		moveFocusTo(target);
+	}
+
 	const firstOfMonth = new Date(calYear, calMonth, 1);
 	const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 	const startDow = (firstOfMonth.getDay() + 6) % 7; // Mon=0
@@ -67,6 +129,10 @@ export default function MiniCalendar({
 	const rangeB = from && effTo ? (from <= effTo ? effTo : from) : null;
 
 	function clickDay(day: Date) {
+		// Keeps the roving-tabindex position in sync with mouse/pointer
+		// interaction too - native focus already lands on the clicked button,
+		// this just makes sure the next arrow-key press moves relative to it.
+		setFocusedDate(day);
 		if (!from || (from && to)) {
 			onChange(fmtIso(day), "");
 		} else if (day < from) {
@@ -98,10 +164,19 @@ export default function MiniCalendar({
 	const monthName = new Intl.DateTimeFormat(locale, {
 		month: "long",
 	}).format(firstOfMonth);
+	const fullDateFormatter = new Intl.DateTimeFormat(locale, {
+		weekday: "long",
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	});
 	const dayLabels = Array.from({ length: 7 }, (_, i) => {
 		const ref = new Date(2024, 0, 1 + i); // 2024-01-01 was Monday
 		return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(ref);
 	});
+
+	const weeks: (Date | null)[][] = [];
+	for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
 	return (
 		<div className="w-64 select-none p-3">
@@ -114,7 +189,14 @@ export default function MiniCalendar({
 				>
 					<ChevronLeftIcon />
 				</button>
-				<span className="text-sm font-medium text-gray-800">
+				{/* aria-live: silent for mouse users but announces the new month to
+				screen-reader users when prev/next is pressed - focus stays on
+				whichever nav button was clicked, so nothing else would announce it. */}
+				<span
+					id={monthLabelId}
+					aria-live="polite"
+					className="text-sm font-medium text-gray-800"
+				>
 					{monthName} {calYear}
 				</span>
 				<button
@@ -131,71 +213,109 @@ export default function MiniCalendar({
 				{dayLabels.map((dl, i) => (
 					<div
 						key={i}
-						className="py-1 text-center text-xs font-medium text-gray-400"
+						className="py-1 text-center text-xs font-medium text-gray-500"
 					>
 						{dl}
 					</div>
 				))}
 			</div>
 
-			<div className="grid grid-cols-7">
-				{cells.map((day, i) => {
-					if (!day) return <div key={i} className="h-9" />;
+			<div
+				ref={gridRef}
+				role="grid"
+				aria-labelledby={monthLabelId}
+				className="grid grid-cols-7"
+			>
+				{weeks.map((week, wi) => (
+					// display:contents so this row wrapper (needed for a valid
+					// role="row"/gridcell structure) doesn't participate in the
+					// grid-cols-7 layout itself - its gridcell children do instead.
+					<div role="row" key={wi} className="contents">
+						{week.map((day, di) => {
+							if (!day)
+								return (
+									<div
+										role="gridcell"
+										aria-hidden="true"
+										key={di}
+										className="h-9"
+									/>
+								);
 
-					const t0 = day.getTime();
-					const isToday = t0 === todayMidnight.getTime();
-					const isFrom = from !== null && t0 === from.getTime();
-					const isTo = to !== null && t0 === to.getTime();
-					const isEdge = isFrom || isTo;
-					const inRange =
-						rangeA !== null && rangeB !== null && day > rangeA && day < rangeB;
-					const isRangeStart =
-						rangeA !== null && rangeB !== null && t0 === rangeA.getTime();
-					const isRangeEnd =
-						rangeA !== null && rangeB !== null && t0 === rangeB.getTime();
-					const isHoverRange =
-						from !== null &&
-						!to &&
-						hover !== null &&
-						hover >= from &&
-						day > from &&
-						day <= hover;
+							const t0 = day.getTime();
+							const isToday = t0 === todayMidnight.getTime();
+							const isFrom = from !== null && t0 === from.getTime();
+							const isTo = to !== null && t0 === to.getTime();
+							const isEdge = isFrom || isTo;
+							const inRange =
+								rangeA !== null &&
+								rangeB !== null &&
+								day > rangeA &&
+								day < rangeB;
+							const isRangeStart =
+								rangeA !== null && rangeB !== null && t0 === rangeA.getTime();
+							const isRangeEnd =
+								rangeA !== null && rangeB !== null && t0 === rangeB.getTime();
+							const isHoverRange =
+								from !== null &&
+								!to &&
+								hover !== null &&
+								hover >= from &&
+								day > from &&
+								day <= hover;
+							const isFocusTarget = t0 === focusedDate.getTime();
+							const setHoverIfPicking = () => {
+								if (from && !to) setHover(day);
+							};
+							const clearHoverIfPicking = () => {
+								if (from && !to) setHover(null);
+							};
 
-					return (
-						<div
-							key={i}
-							className={[
-								"flex h-9 items-center justify-center",
-								inRange || isHoverRange ? "bg-brand-100" : "",
-								isRangeStart && rangeB ? "rounded-l-full" : "",
-								isRangeEnd && rangeA ? "rounded-r-full" : "",
-							]
-								.join(" ")
-								.trim()}
-						>
-							<button
-								type="button"
-								onClick={() => clickDay(day)}
-								onMouseEnter={() => {
-									if (from && !to) setHover(day);
-								}}
-								onMouseLeave={() => {
-									if (from && !to) setHover(null);
-								}}
-								className={[
-									"flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
-									isEdge
-										? "bg-brand-600 font-semibold text-white"
-										: isToday
-											? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
-											: "text-gray-700 hover:bg-gray-100",
-								].join(" ")}
-							>
-								{day.getDate()}
-							</button>
-						</div>
-					);
-				})}
+							return (
+								<div
+									role="gridcell"
+									key={di}
+									className={[
+										"flex h-9 items-center justify-center",
+										inRange || isHoverRange ? "bg-brand-100" : "",
+										isRangeStart && rangeB ? "rounded-l-full" : "",
+										isRangeEnd && rangeA ? "rounded-r-full" : "",
+									]
+										.join(" ")
+										.trim()}
+								>
+									<button
+										type="button"
+										data-date={fmtIso(day)}
+										tabIndex={isFocusTarget ? 0 : -1}
+										aria-label={fullDateFormatter.format(day)}
+										aria-current={isToday ? "date" : undefined}
+										aria-pressed={isEdge || inRange}
+										onClick={() => clickDay(day)}
+										onKeyDown={(e) => handleDayKeyDown(e, day)}
+										onMouseEnter={setHoverIfPicking}
+										onMouseLeave={clearHoverIfPicking}
+										// Keyboard equivalent of the mouse hover range-preview
+										// above - a keyboard user arrowing past the end of the
+										// range being picked sees the same live preview.
+										onFocus={setHoverIfPicking}
+										onBlur={clearHoverIfPicking}
+										className={[
+											"flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
+											isEdge
+												? "bg-brand-600 font-semibold text-white"
+												: isToday
+													? "font-medium text-brand-700 ring-2 ring-brand-300 hover:bg-brand-50"
+													: "text-gray-700 hover:bg-gray-100",
+										].join(" ")}
+									>
+										{day.getDate()}
+									</button>
+								</div>
+							);
+						})}
+					</div>
+				))}
 			</div>
 
 			{from && (
@@ -207,7 +327,7 @@ export default function MiniCalendar({
 					<button
 						type="button"
 						onClick={() => onChange("", "")}
-						className="text-xs text-gray-400 hover:text-gray-600"
+						className="text-xs text-gray-500 hover:text-gray-600"
 					>
 						{t("opportunities.clearDate")}
 					</button>
