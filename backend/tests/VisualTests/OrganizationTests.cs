@@ -317,6 +317,50 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task Organizer_CanDismissPendingInvitation_RevokingItBeforeAcceptance()
+	{
+		// Regression for #1040: a pending invitation had no dismiss control at
+		// all (only Declined/Expired rows did), and the backend explicitly
+		// rejected dismissing one - so an organizer who invited the wrong
+		// person had no way to revoke it before that person could accept and
+		// gain full Organizer access. Verifies the same "Dismiss" control
+		// already available on Declined/Expired rows now also appears - and
+		// works - for a still-Pending one, and that the removal survives a
+		// reload (persisted, not just optimistic local state).
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Throwaway org, not olaf's pinned/seeded one - other tests in this
+		// shared session already invite vera into that org, and
+		// organization_invitation rows aren't cleared between tests, so
+		// reusing it here could 409 with AlreadyInvited depending on run order.
+		await CreateOrganizationAsync("Visual1040 DismissPending", pinnedOrgId!.Value);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		await Page.Locator("#member-search").FillAsync("vera");
+		var inviteButton = Page.GetByRole(AriaRole.Button, new() { Name = "Invite" });
+		await Expect(inviteButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await inviteButton.First.ClickAsync();
+
+		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+
+		var dismissButton = Page.GetByRole(AriaRole.Button, new() { Name = "Dismiss" });
+		await Expect(dismissButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await dismissButton.ClickAsync();
+
+		await Expect(Page.GetByText("Could not dismiss invitation.")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByText("Pending Invitations")).Not.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Page.ReloadAsync();
+		await Expect(Page.Locator("#member-search")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByText("Pending Invitations")).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task SoleMember_CanDeleteOrganization_FromSettingsPage()
 	{
 		// #580: the new "Delete Organization" action, enabled only for the

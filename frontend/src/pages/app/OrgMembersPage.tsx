@@ -338,6 +338,14 @@ export default function OrgMembersPage() {
 												})}
 											</p>
 										</div>
+										<button
+											type="button"
+											onClick={() => handleDismissInvitation(invitation.id)}
+											disabled={dismissingInvitationId === invitation.id}
+											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+										>
+											{t("orgSettings.dismissInvitation")}
+										</button>
 									</li>
 								))}
 						</ul>
