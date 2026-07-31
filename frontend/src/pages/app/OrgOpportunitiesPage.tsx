@@ -22,6 +22,13 @@ import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const OPPORTUNITIES_PAGE_SIZE = 10;
 
+const STATUS_BADGE_CLASSES: Record<string, string> = {
+	Draft: "bg-amber-100 text-amber-800",
+	Published: "bg-green-100 text-green-800",
+	Unpublished: "bg-gray-200 text-gray-700",
+	Cancelled: "bg-red-100 text-red-800",
+};
+
 export default function OrgOpportunitiesPage() {
 	const { org } = useOutletContext<OrgAppContext>();
 	const { t } = useTranslation();
@@ -76,9 +83,59 @@ export default function OrgOpportunitiesPage() {
 		},
 	);
 
+	const {
+		items: unpublished,
+		loading: unpublishedLoading,
+		loadingMore: unpublishedLoadingMore,
+		error: unpublishedError,
+		loadMoreError: unpublishedLoadMoreError,
+		hasMore: hasMoreUnpublished,
+		loadMore: loadMoreUnpublished,
+		retryLoadMore: retryLoadMoreUnpublished,
+		reset: resetUnpublished,
+	} = useLoadMore<VolunteerOpportunitySummary>(
+		(page) =>
+			api.getOrganizationOpportunities(
+				organizationId,
+				"Unpublished",
+				page,
+				OPPORTUNITIES_PAGE_SIZE,
+			),
+		{
+			deps: [organizationId],
+			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
+		},
+	);
+
+	const {
+		items: cancelled,
+		loading: cancelledLoading,
+		loadingMore: cancelledLoadingMore,
+		error: cancelledError,
+		loadMoreError: cancelledLoadMoreError,
+		hasMore: hasMoreCancelled,
+		loadMore: loadMoreCancelled,
+		retryLoadMore: retryLoadMoreCancelled,
+		reset: resetCancelled,
+	} = useLoadMore<VolunteerOpportunitySummary>(
+		(page) =>
+			api.getOrganizationOpportunities(
+				organizationId,
+				"Cancelled",
+				page,
+				OPPORTUNITIES_PAGE_SIZE,
+			),
+		{
+			deps: [organizationId],
+			getErrorMessage: (e) => getApiErrorMessage(e, t("error.serverError")),
+		},
+	);
+
 	function reloadAll() {
 		resetDrafts();
 		resetPublished();
+		resetUnpublished();
+		resetCancelled();
 	}
 
 	const [showCreate, setShowCreate] = useState(false);
@@ -89,6 +146,15 @@ export default function OrgOpportunitiesPage() {
 	const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 	const [deleting, setDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [unpublishTargetId, setUnpublishTargetId] = useState<string | null>(
+		null,
+	);
+	const [unpublishing, setUnpublishing] = useState(false);
+	const [unpublishError, setUnpublishError] = useState<string | null>(null);
+	const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+	const [cancelReason, setCancelReason] = useState("");
+	const [cancelling, setCancelling] = useState(false);
+	const [cancelError, setCancelError] = useState<string | null>(null);
 
 	const [searchParams, setSearchParams] = useSearchParams();
 	// Id of a just-saved / just-arrived-at draft to reveal, so the organizer
@@ -141,7 +207,7 @@ export default function OrgOpportunitiesPage() {
 		});
 		const timer = setTimeout(() => setHighlightedId(null), 2500);
 		return () => clearTimeout(timer);
-	}, [highlightedId, drafts, published]);
+	}, [highlightedId, drafts, published, unpublished, cancelled]);
 
 	async function openEdit(id: string) {
 		setEditLoadingId(id);
@@ -195,9 +261,62 @@ export default function OrgOpportunitiesPage() {
 		}
 	}
 
+	async function handleUnpublishConfirm() {
+		if (!unpublishTargetId) return;
+		setUnpublishing(true);
+		setUnpublishError(null);
+		try {
+			await api.unpublishVolunteerOpportunity(unpublishTargetId);
+			setUnpublishTargetId(null);
+			dispatchToast("success", t("opportunities.unpublishSuccess"));
+			reloadAll();
+		} catch (err) {
+			setUnpublishError(getApiErrorMessage(err, t("error.serverError")));
+		} finally {
+			setUnpublishing(false);
+		}
+	}
+
+	function handleCancelClose() {
+		if (cancelling) return;
+		setCancelTargetId(null);
+		setCancelReason("");
+		setCancelError(null);
+	}
+
+	async function handleCancelConfirm() {
+		if (!cancelTargetId) return;
+		setCancelling(true);
+		setCancelError(null);
+		try {
+			const trimmedReason = cancelReason.trim();
+			await api.cancelVolunteerOpportunity(cancelTargetId, {
+				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			});
+			setCancelTargetId(null);
+			setCancelReason("");
+			dispatchToast("success", t("opportunities.cancelSuccess"));
+			reloadAll();
+		} catch (err) {
+			setCancelError(getApiErrorMessage(err, t("error.serverError")));
+		} finally {
+			setCancelling(false);
+		}
+	}
+
 	function renderRow(item: VolunteerOpportunitySummary) {
-		const isDraft = item.status === "Draft";
+		const status = item.status;
 		const isHighlighted = item.id === highlightedId;
+		const badgeLabel =
+			status === "Draft"
+				? t("opportunities.draftBadge")
+				: status === "Published"
+					? t("orgOpportunities.publishedBadge")
+					: status === "Unpublished"
+						? t("orgOpportunities.unpublishedBadge")
+						: status === "Cancelled"
+							? t("orgOpportunities.cancelledBadge")
+							: status;
 		return (
 			<li
 				key={item.id}
@@ -221,14 +340,10 @@ export default function OrgOpportunitiesPage() {
 						<span
 							data-testid="opportunity-status-badge"
 							className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-								isDraft
-									? "bg-amber-100 text-amber-800"
-									: "bg-green-100 text-green-800"
+								STATUS_BADGE_CLASSES[status] ?? "bg-gray-100 text-gray-700"
 							}`}
 						>
-							{isDraft
-								? t("opportunities.draftBadge")
-								: t("orgOpportunities.publishedBadge")}
+							{badgeLabel}
 						</span>
 					</div>
 					{item.description && (
@@ -254,17 +369,19 @@ export default function OrgOpportunitiesPage() {
 					)}
 				</div>
 				<div className="mt-auto flex flex-wrap items-center gap-2">
-					<button
-						type="button"
-						onClick={() => void openEdit(item.id)}
-						disabled={editLoadingId === item.id}
-						data-testid="opportunity-edit"
-						className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
-					>
-						{editLoadingId === item.id
-							? t("orgOpportunities.editLoading")
-							: t("opportunities.edit")}
-					</button>
+					{status !== "Cancelled" && (
+						<button
+							type="button"
+							onClick={() => void openEdit(item.id)}
+							disabled={editLoadingId === item.id}
+							data-testid="opportunity-edit"
+							className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+						>
+							{editLoadingId === item.id
+								? t("orgOpportunities.editLoading")
+								: t("opportunities.edit")}
+						</button>
+					)}
 					<button
 						type="button"
 						onClick={() => {
@@ -276,7 +393,7 @@ export default function OrgOpportunitiesPage() {
 					>
 						{t("opportunities.delete")}
 					</button>
-					{isDraft ? (
+					{(status === "Draft" || status === "Unpublished") && (
 						<Button
 							type="button"
 							onClick={() => void publish(item.id)}
@@ -288,7 +405,35 @@ export default function OrgOpportunitiesPage() {
 								? t("opportunities.publishing")
 								: t("opportunities.publish")}
 						</Button>
-					) : (
+					)}
+					{status === "Published" && (
+						<button
+							type="button"
+							onClick={() => {
+								setUnpublishTargetId(item.id);
+								setUnpublishError(null);
+							}}
+							data-testid="opportunity-unpublish"
+							className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
+						>
+							{t("opportunities.unpublish")}
+						</button>
+					)}
+					{(status === "Published" || status === "Unpublished") && (
+						<button
+							type="button"
+							onClick={() => {
+								setCancelTargetId(item.id);
+								setCancelReason("");
+								setCancelError(null);
+							}}
+							data-testid="opportunity-cancel"
+							className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
+						>
+							{t("opportunities.cancel")}
+						</button>
+					)}
+					{status !== "Draft" && (
 						<Link
 							to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
 							className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
@@ -315,11 +460,61 @@ export default function OrgOpportunitiesPage() {
 		);
 	}
 
-	const initialLoading = draftsLoading || publishedLoading;
+	function renderSection(
+		testId: string,
+		heading: string,
+		description: string,
+		items: VolunteerOpportunitySummary[],
+		loading: boolean,
+		error: string | null,
+		hasMore: boolean,
+		loadMoreError: string | null,
+		loadingMore: boolean,
+		onLoadMore: () => void,
+		onRetryLoadMore: () => void,
+	) {
+		if (loading || error || items.length === 0) return null;
+		return (
+			<section data-testid={testId}>
+				<h2 className="text-lg font-semibold text-gray-900">{heading}</h2>
+				<p className="mt-1 text-sm text-gray-500">{description}</p>
+				<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					{items.map(renderRow)}
+				</ul>
+				{hasMore &&
+					(loadMoreError ? (
+						<LoadMoreError
+							message={t("orgOpportunities.error", { message: loadMoreError })}
+							retrying={loadingMore}
+							onRetry={onRetryLoadMore}
+						/>
+					) : (
+						<div className="mt-4 flex justify-center">
+							<button
+								onClick={onLoadMore}
+								disabled={loadingMore}
+								className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
+							>
+								{loadingMore
+									? t("orgOpportunities.loading")
+									: t("orgOpportunities.loadMore")}
+							</button>
+						</div>
+					))}
+			</section>
+		);
+	}
+
+	const initialLoading =
+		draftsLoading || publishedLoading || unpublishedLoading || cancelledLoading;
+	const anyError =
+		draftsError || publishedError || unpublishedError || cancelledError;
+	const totalCount =
+		drafts.length + published.length + unpublished.length + cancelled.length;
 
 	return (
 		<div>
-			{initialLoading && !draftsError && !publishedError && (
+			{initialLoading && !anyError && (
 				<div className="flex items-center justify-center py-16">
 					<Spinner label={t("orgOpportunities.loading")} />
 				</div>
@@ -335,94 +530,81 @@ export default function OrgOpportunitiesPage() {
 					message={t("orgOpportunities.error", { message: publishedError })}
 				/>
 			)}
+			{unpublishedError && (
+				<ErrorBanner
+					message={t("orgOpportunities.error", { message: unpublishedError })}
+				/>
+			)}
+			{cancelledError && (
+				<ErrorBanner
+					message={t("orgOpportunities.error", { message: cancelledError })}
+				/>
+			)}
 
-			{!initialLoading &&
-				!draftsError &&
-				!publishedError &&
-				drafts.length === 0 &&
-				published.length === 0 && (
-					<EmptyState
-						title={t("orgOpportunities.emptyTitle")}
-						message={t("orgOpportunities.emptyDesc")}
-						action={{
-							label: t("orgOverview.createOpportunity"),
-							onClick: () => setShowCreate(true),
-						}}
-					/>
-				)}
+			{!initialLoading && !anyError && totalCount === 0 && (
+				<EmptyState
+					title={t("orgOpportunities.emptyTitle")}
+					message={t("orgOpportunities.emptyDesc")}
+					action={{
+						label: t("orgOverview.createOpportunity"),
+						onClick: () => setShowCreate(true),
+					}}
+				/>
+			)}
 
-			{(drafts.length > 0 || published.length > 0) && (
+			{totalCount > 0 && (
 				<div className="space-y-8">
-					{!draftsLoading && !draftsError && drafts.length > 0 && (
-						<section data-testid="drafts-section">
-							<h2 className="text-lg font-semibold text-gray-900">
-								{t("orgOpportunities.draftsHeading")}
-							</h2>
-							<p className="mt-1 text-sm text-gray-500">
-								{t("orgOpportunities.draftsDesc")}
-							</p>
-							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-								{drafts.map(renderRow)}
-							</ul>
-							{hasMoreDrafts &&
-								(draftsLoadMoreError ? (
-									<LoadMoreError
-										message={t("orgOpportunities.error", {
-											message: draftsLoadMoreError,
-										})}
-										retrying={draftsLoadingMore}
-										onRetry={retryLoadMoreDrafts}
-									/>
-								) : (
-									<div className="mt-4 flex justify-center">
-										<button
-											onClick={loadMoreDrafts}
-											disabled={draftsLoadingMore}
-											className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-										>
-											{draftsLoadingMore
-												? t("orgOpportunities.loading")
-												: t("orgOpportunities.loadMore")}
-										</button>
-									</div>
-								))}
-						</section>
+					{renderSection(
+						"drafts-section",
+						t("orgOpportunities.draftsHeading"),
+						t("orgOpportunities.draftsDesc"),
+						drafts,
+						draftsLoading,
+						draftsError,
+						hasMoreDrafts,
+						draftsLoadMoreError,
+						draftsLoadingMore,
+						loadMoreDrafts,
+						retryLoadMoreDrafts,
 					)}
-
-					{!publishedLoading && !publishedError && published.length > 0 && (
-						<section data-testid="published-section">
-							<h2 className="text-lg font-semibold text-gray-900">
-								{t("orgOpportunities.publishedHeading")}
-							</h2>
-							<p className="mt-1 text-sm text-gray-500">
-								{t("orgOpportunities.publishedDesc")}
-							</p>
-							<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-								{published.map(renderRow)}
-							</ul>
-							{hasMorePublished &&
-								(publishedLoadMoreError ? (
-									<LoadMoreError
-										message={t("orgOpportunities.error", {
-											message: publishedLoadMoreError,
-										})}
-										retrying={publishedLoadingMore}
-										onRetry={retryLoadMorePublished}
-									/>
-								) : (
-									<div className="mt-4 flex justify-center">
-										<button
-											onClick={loadMorePublished}
-											disabled={publishedLoadingMore}
-											className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-										>
-											{publishedLoadingMore
-												? t("orgOpportunities.loading")
-												: t("orgOpportunities.loadMore")}
-										</button>
-									</div>
-								))}
-						</section>
+					{renderSection(
+						"published-section",
+						t("orgOpportunities.publishedHeading"),
+						t("orgOpportunities.publishedDesc"),
+						published,
+						publishedLoading,
+						publishedError,
+						hasMorePublished,
+						publishedLoadMoreError,
+						publishedLoadingMore,
+						loadMorePublished,
+						retryLoadMorePublished,
+					)}
+					{renderSection(
+						"unpublished-section",
+						t("orgOpportunities.unpublishedHeading"),
+						t("orgOpportunities.unpublishedDesc"),
+						unpublished,
+						unpublishedLoading,
+						unpublishedError,
+						hasMoreUnpublished,
+						unpublishedLoadMoreError,
+						unpublishedLoadingMore,
+						loadMoreUnpublished,
+						retryLoadMoreUnpublished,
+					)}
+					{renderSection(
+						"cancelled-section",
+						t("orgOpportunities.cancelledHeading"),
+						t("orgOpportunities.cancelledDesc"),
+						cancelled,
+						cancelledLoading,
+						cancelledError,
+						hasMoreCancelled,
+						cancelledLoadMoreError,
+						cancelledLoadingMore,
+						loadMoreCancelled,
+						retryLoadMoreCancelled,
 					)}
 				</div>
 			)}
@@ -458,6 +640,54 @@ export default function OrgOpportunitiesPage() {
 					loading={deleting}
 					error={deleteError}
 				/>
+			)}
+
+			{unpublishTargetId && (
+				<ConfirmDialog
+					title={t("confirmDialog.unpublish.title")}
+					message={t("confirmDialog.unpublish.message")}
+					confirmLabel={t("confirmDialog.unpublish.confirm")}
+					onConfirm={handleUnpublishConfirm}
+					onClose={() => {
+						if (unpublishing) return;
+						setUnpublishTargetId(null);
+						setUnpublishError(null);
+					}}
+					loading={unpublishing}
+					error={unpublishError}
+				/>
+			)}
+
+			{cancelTargetId && (
+				<ConfirmDialog
+					title={t("confirmDialog.cancelOpportunity.title")}
+					message={t("confirmDialog.cancelOpportunity.message")}
+					confirmLabel={t("confirmDialog.cancelOpportunity.confirm")}
+					onConfirm={handleCancelConfirm}
+					onClose={handleCancelClose}
+					loading={cancelling}
+					error={cancelError}
+				>
+					<label
+						htmlFor="cancel-opportunity-reason"
+						className="block text-xs font-medium text-gray-700"
+					>
+						{t("confirmDialog.cancelOpportunity.reasonLabel")}
+					</label>
+					<textarea
+						id="cancel-opportunity-reason"
+						rows={3}
+						maxLength={500}
+						value={cancelReason}
+						onChange={(e) => setCancelReason(e.target.value)}
+						placeholder={t("confirmDialog.cancelOpportunity.reasonPlaceholder")}
+						disabled={cancelling}
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+					/>
+					<p className="mt-1 text-right text-xs text-gray-500">
+						{cancelReason.length}/500
+					</p>
+				</ConfirmDialog>
 			)}
 		</div>
 	);

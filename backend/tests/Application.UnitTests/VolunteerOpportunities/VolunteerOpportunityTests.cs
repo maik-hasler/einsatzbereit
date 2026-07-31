@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Domain.Common;
 using Domain.Organizations;
+using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 using NSubstitute;
 
@@ -303,6 +304,125 @@ public class VolunteerOpportunityTests
 
 		// Assert
 		opportunity.Status.Should().Be(OpportunityStatus.Published);
+	}
+
+	// --- Unpublish / Cancel (einsatzbereit#1038) ---
+
+	[Test]
+	public void Unpublish_ShouldSetStatusToUnpublished_WhenPublished()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+
+		var result = opportunity.Unpublish();
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Status.Should().Be(OpportunityStatus.Unpublished);
+	}
+
+	[Test]
+	public void Unpublish_ShouldFail_WhenDraft()
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.Unpublish();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Type.Should().Be(ErrorType.Conflict);
+	}
+
+	[Test]
+	public void Unpublish_ShouldFail_WhenAlreadyUnpublished()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+		opportunity.Unpublish();
+
+		var result = opportunity.Unpublish();
+
+		result.IsFailure.Should().BeTrue();
+	}
+
+	[Test]
+	public void Unpublish_ShouldFail_WhenCancelled()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+		opportunity.Cancel();
+
+		var result = opportunity.Unpublish();
+
+		result.IsFailure.Should().BeTrue();
+	}
+
+	[Test]
+	public void Publish_ShouldRepublish_AnUnpublishedOpportunity()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+		opportunity.Unpublish();
+
+		var result = opportunity.Publish();
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Status.Should().Be(OpportunityStatus.Published);
+	}
+
+	[Test]
+	public void Cancel_ShouldSetStatusToCancelled_WhenPublished()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+
+		var result = opportunity.Cancel("No longer needed");
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Status.Should().Be(OpportunityStatus.Cancelled);
+		opportunity.CancellationReason.Should().Be("No longer needed");
+	}
+
+	[Test]
+	public void Cancel_ShouldSetStatusToCancelled_WhenUnpublished()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+		opportunity.Unpublish();
+
+		var result = opportunity.Cancel();
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Status.Should().Be(OpportunityStatus.Cancelled);
+		opportunity.CancellationReason.Should().BeNull();
+	}
+
+	[Test]
+	public void Cancel_ShouldFail_WhenDraft()
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.Cancel();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Type.Should().Be(ErrorType.Conflict);
+		opportunity.Status.Should().Be(OpportunityStatus.Draft);
+	}
+
+	[Test]
+	public void Cancel_ShouldFail_WhenAlreadyCancelled()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+		opportunity.Cancel();
+
+		var result = opportunity.Cancel();
+
+		result.IsFailure.Should().BeTrue();
+	}
+
+	[Test]
+	public void Publish_ShouldFail_WhenCancelled_AndNotResurrectOpportunity()
+	{
+		var opportunity = CreatePublishedScheduledSlotsOpportunity();
+		opportunity.Cancel();
+
+		var result = opportunity.Publish();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Type.Should().Be(ErrorType.Conflict);
+		opportunity.Status.Should().Be(OpportunityStatus.Cancelled);
 	}
 
 	// --- Update (granular methods) ---

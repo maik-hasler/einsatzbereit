@@ -1,0 +1,61 @@
+using Application.Common.Email;
+using Application.Common.Keycloak;
+using Application.Common.Persistence;
+using Application.Engagements;
+using Application.Engagements.Common;
+using Application.Notifications;
+using Domain.Notifications;
+using Domain.VolunteerOpportunities;
+
+namespace Application.VolunteerOpportunities.Common;
+
+/// <summary>
+/// Notifies affected volunteers and cancels active engagements for an
+/// opportunity that is going away or off the public listing - shared by
+/// hard delete/shadow delete (<see cref="VolunteerOpportunityDeletionHelper"/>)
+/// and the Unpublish/Cancel domain event handlers (einsatzbereit#1038), so all
+/// three flows leave volunteers notified and no engagement dangling against a
+/// listing that is no longer live.
+/// </summary>
+internal static class VolunteerOpportunityEngagementCascadeHelper
+{
+	public static async Task NotifyAndCancelActiveEngagementsAsync(
+		IApplicationDbContext dbContext,
+		IEngagementReadRepository engagementReadRepository,
+		IKeycloakUserService keycloakUserService,
+		IEmailService emailService,
+		IEmailTemplateRenderer emailTemplateRenderer,
+		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
+		VolunteerOpportunity opportunity,
+		VolunteerOpportunityId opportunityId,
+		NotificationKind opportunityNotificationKind,
+		string engagementCancellationReason,
+		CancellationToken cancellationToken)
+	{
+		await OpportunityNotificationHelper.NotifyActiveVolunteersAsync(
+			dbContext,
+			engagementReadRepository,
+			opportunityId,
+			opportunityNotificationKind,
+			cancellationToken);
+
+		var activeEngagements = await dbContext.GetActiveEngagementsForOpportunityAsync(
+			opportunityId, cancellationToken);
+		foreach (var engagement in activeEngagements)
+		{
+			// Same notification + email path a single organizer-triggered cancel
+			// sends (#1057) - the volunteer shouldn't hear about this only via
+			// the opportunity-level notification above.
+			await EngagementCancellationHelper.CancelAndNotifyAsync(
+				dbContext,
+				keycloakUserService,
+				emailService,
+				emailTemplateRenderer,
+				unsubscribeLinkBuilder,
+				engagement,
+				opportunity.Title,
+				engagementCancellationReason,
+				cancellationToken);
+		}
+	}
+}

@@ -176,6 +176,10 @@
       "publish": "Publish",
       "publishing": "Publishing…",
       "publishSuccess": "Opportunity published.",
+      "unpublish": "Unpublish",
+      "unpublishSuccess": "Opportunity unpublished.",
+      "cancel": "Cancel",
+      "cancelSuccess": "Opportunity cancelled.",
       "loginPrompt": "Sign in to sign up for this opportunity.",
       "yourApplication": "Your application",
       "aboutOrganization": "About this organization",
@@ -355,6 +359,12 @@
       "publishedHeading": "Published",
       "publishedDesc": "Live and visible to volunteers.",
       "publishedBadge": "Published",
+      "unpublishedHeading": "Unpublished",
+      "unpublishedDesc": "Taken off the public listing. Publish again to make it visible once more.",
+      "unpublishedBadge": "Unpublished",
+      "cancelledHeading": "Cancelled",
+      "cancelledDesc": "Permanently cancelled. This cannot be undone - create a new opportunity if plans resume.",
+      "cancelledBadge": "Cancelled",
       "manageApplications": "Manage applications",
       "participants": "{{booked}}/{{max}} participants",
       "participantsUnlimited": "{{booked}} participants (no cap)",
@@ -672,6 +682,8 @@
         "EngagementWithdrawn": "An application for {{title}} was withdrawn",
         "OpportunityUpdated": "{{title}} was updated",
         "OpportunityDeleted": "An opportunity you signed up for was removed",
+        "OpportunityUnpublished": "{{title}} was taken down and your engagement was cancelled",
+        "OpportunityCancelled": "{{title}} was cancelled and your engagement was cancelled",
         "InvitationReceived": "You've been invited to join {{title}}"
       }
     },
@@ -726,6 +738,18 @@
         "confirm": "Yes, cancel",
         "reasonLabel": "Reason (optional)",
         "reasonPlaceholder": "Let the volunteer know why…"
+      },
+      "unpublish": {
+        "title": "Unpublish opportunity?",
+        "message": "This removes it from the public listing and cancels any pending or confirmed sign-ups - volunteers will be informed. You can publish it again later.",
+        "confirm": "Yes, unpublish"
+      },
+      "cancelOpportunity": {
+        "title": "Cancel opportunity?",
+        "message": "This permanently cancels the opportunity and cancels any pending or confirmed sign-ups - volunteers will be informed. This cannot be undone.",
+        "confirm": "Yes, cancel opportunity",
+        "reasonLabel": "Reason (optional)",
+        "reasonPlaceholder": "Let volunteers know why…"
       },
       "editTimeSlot": {
         "title": "Edit time slot?",

@@ -39,6 +39,8 @@ public sealed class VolunteerOpportunity
 
 	public OpportunityStatus Status { get; private set; }
 
+	public string? CancellationReason { get; private set; }
+
 	public string? BannerImageUrl { get; private set; }
 
 	public string? Color { get; private set; }
@@ -201,6 +203,13 @@ public sealed class VolunteerOpportunity
 		if (Status == OpportunityStatus.Published)
 			return Result.Failure(Error.Conflict("VolunteerOpportunity.AlreadyPublished", "Opportunity is already published."));
 
+		// Cancelled is terminal - unlike Unpublished, there is no way back to
+		// Published. Without this guard, calling Publish() on a Cancelled
+		// opportunity would silently resurrect it (Publish only otherwise checks
+		// for "already Published", not the source state).
+		if (Status == OpportunityStatus.Cancelled)
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.CannotPublishCancelled", "A cancelled opportunity cannot be published again."));
+
 		var publishable = EnsurePublishable(Title, Description, IsRemote, Address);
 		if (publishable.IsFailure)
 			return publishable;
@@ -212,6 +221,33 @@ public sealed class VolunteerOpportunity
 
 		Status = OpportunityStatus.Published;
 		AddEvent(new VolunteerOpportunityPublishedDomainEvent(Id, OrganizationId));
+		return Result.Success();
+	}
+
+	public Result Unpublish()
+	{
+		if (Status != OpportunityStatus.Published)
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.NotPublished", "Only a published opportunity can be unpublished."));
+
+		Status = OpportunityStatus.Unpublished;
+		AddEvent(new VolunteerOpportunityUnpublishedDomainEvent(Id, OrganizationId));
+		return Result.Success();
+	}
+
+	public Result Cancel(string? reason = null)
+	{
+		if (Status == OpportunityStatus.Cancelled)
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.AlreadyCancelled", "Opportunity is already cancelled."));
+
+		// Draft opportunities have no engagements and no public visibility to
+		// take down - Delete already covers "give up on this draft" without
+		// needing a cancellation reason kept around for audit purposes.
+		if (Status == OpportunityStatus.Draft)
+			return Result.Failure(Error.Conflict("VolunteerOpportunity.CannotCancelDraft", "A draft opportunity cannot be cancelled - delete it instead."));
+
+		CancellationReason = reason;
+		Status = OpportunityStatus.Cancelled;
+		AddEvent(new VolunteerOpportunityCancelledDomainEvent(Id, OrganizationId, reason));
 		return Result.Success();
 	}
 
