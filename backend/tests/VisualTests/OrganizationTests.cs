@@ -551,6 +551,9 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			.ClickAsync();
 
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();
+		// Individual-contact opportunities need an application deadline before
+		// they can be published (einsatzbereit#1086).
+		await Page.Locator("#create-valid-until").FillAsync(DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"));
 		await Page.GetByTestId("modal-submit").ClickAsync();
 		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync(new() { Timeout = 30_000 });
 
