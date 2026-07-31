@@ -74,6 +74,7 @@ export default function EngagementManagementPage() {
 	const [cancelling, setCancelling] = useState(false);
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const [checkingIn, setCheckingIn] = useState<string | null>(null);
+	const [undoingCheckIn, setUndoingCheckIn] = useState<string | null>(null);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
 	const [statusFilter, setStatusFilter] = useState("");
@@ -197,6 +198,25 @@ export default function EngagementManagementPage() {
 			);
 		} finally {
 			setCheckingIn(null);
+		}
+	}
+
+	async function handleUndoCheckIn(engagementId: string) {
+		setUndoingCheckIn(engagementId);
+		try {
+			await api.undoCheckInEngagement(engagementId);
+			setEngagements((prev) =>
+				prev.map((e) =>
+					e.id === engagementId ? { ...e, isCheckedIn: false } : e,
+				),
+			);
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("checkIn.undoCheckInError")),
+			);
+		} finally {
+			setUndoingCheckIn(null);
 		}
 	}
 
@@ -506,6 +526,17 @@ export default function EngagementManagementPage() {
 														? t("checkIn.markingCheckedIn")
 														: t("checkIn.markCheckedIn")}
 												</Button>
+											)}
+											{e.isCheckedIn && (
+												<button
+													onClick={() => handleUndoCheckIn(e.id)}
+													disabled={undoingCheckIn === e.id}
+													className="text-xs text-amber-700 hover:underline disabled:opacity-50"
+												>
+													{undoingCheckIn === e.id
+														? t("checkIn.undoingCheckIn")
+														: t("checkIn.undoCheckIn")}
+												</button>
 											)}
 											<button
 												onClick={() => setConfirmCancelId(e.id)}

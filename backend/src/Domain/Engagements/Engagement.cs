@@ -157,6 +157,19 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
+	public Result UndoCheckIn()
+	{
+		if (IsTerminated)
+			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
+
+		if (!IsCheckedIn)
+			return Result.Failure(Error.Conflict("Engagement.CheckInNotActive", "Only checked-in engagements can have their check-in undone."));
+
+		IsCheckedIn = false;
+		AddEvent(new EngagementCheckInUndoneDomainEvent(Id, VolunteerId!.Value, OpportunityId));
+		return Result.Success();
+	}
+
 	public Result SubmitFeedback(int rating, string? comment, DateTimeOffset now)
 	{
 		if (!IsCheckedIn)
