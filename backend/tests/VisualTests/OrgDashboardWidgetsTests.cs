@@ -192,6 +192,94 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	[Test]
+	public async Task CalendarWidget_AgendaView_RendersGermanColumnHeaders_WhenAppLocaleIsGerman()
+	{
+		// #1254: the `messages` object passed to react-big-calendar never
+		// overrode `date`/`time`/`event` (among others), so its own English
+		// defaults rendered these Agenda column headers regardless of the
+		// app's selected language - a German organizer's first look at the
+		// widget (Agenda is the default view on a narrow placement) showed
+		// "Date | Time | Event".
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var organizationId = pinnedOrgId!.Value.ToString();
+
+		// Gives the Calendar widget an event to render - without one, the
+		// Agenda view shows its empty-state span instead of the table whose
+		// column headers this test needs to inspect.
+		var oppTitle = $"Visual1254 Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CalendarWidget agenda-header i18n test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(3);
+		var end = start.AddHours(2);
+		(await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 }))
+			.EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Calendar", Exact = true }),
+		});
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+
+		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
+		var agendaButton = viewGroup.GetByRole(AriaRole.Button, new() { Name = "Agenda", Exact = true });
+		await agendaButton.ScrollIntoViewIfNeededAsync();
+		await agendaButton.ClickAsync();
+
+		var headerRow = calendarWidget.Locator(".rbc-agenda-table thead tr");
+		await Expect(headerRow.GetByText("Datum", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(headerRow.GetByText("Uhrzeit", new() { Exact = true })).ToBeVisibleAsync();
+		await Expect(headerRow.GetByText("Termin", new() { Exact = true })).ToBeVisibleAsync();
+		// The pre-fix English defaults must not leak through alongside them.
+		await Expect(headerRow.GetByText("Date", new() { Exact = true })).Not.ToBeVisibleAsync();
+		await Expect(headerRow.GetByText("Time", new() { Exact = true })).Not.ToBeVisibleAsync();
+		await Expect(headerRow.GetByText("Event", new() { Exact = true })).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
 	{
 		// #812: WidgetCard only set overflow-y-auto on its content wrapper, and

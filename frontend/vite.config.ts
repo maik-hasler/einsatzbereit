@@ -76,7 +76,9 @@ export default defineConfig({
 			manifest: {
 				name: "Einsatzbereit",
 				short_name: "Einsatzbereit",
-				description: "Volunteer coordination platform",
+				description:
+					"Volunteer coordination platform - find local volunteer opportunities and help your community.",
+				lang: "en",
 				start_url: "/",
 				display: "standalone",
 				background_color: "#ffffff",

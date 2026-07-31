@@ -8,6 +8,7 @@ import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
+import { resolveDateLocale } from "../../../lib/format";
 
 const MAX_ITEMS = 5;
 const OPPORTUNITY_PAGE_SIZE = 100;
@@ -33,7 +34,7 @@ function UpcomingOpportunitiesWidget({
 }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	// Shared with QuickCheckInWidget, which fetches the same organization-wide
 	// opportunities on the same mount - see useSharedOrgFetch. Only one of the

@@ -266,6 +266,14 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 			day: t("orgOverview.calendarDay"),
 			agenda: t("orgOverview.calendarAgenda"),
 			noEventsInRange: t("orgOverview.calendarNoEvents"),
+			date: t("orgOverview.calendarDate"),
+			time: t("orgOverview.calendarTime"),
+			event: t("orgOverview.calendarEvent"),
+			allDay: t("orgOverview.calendarAllDay"),
+			yesterday: t("orgOverview.calendarYesterday"),
+			tomorrow: t("orgOverview.calendarTomorrow"),
+			showMore: (total: number) =>
+				t("orgOverview.calendarShowMore", { count: total }),
 		}),
 		[t],
 	);

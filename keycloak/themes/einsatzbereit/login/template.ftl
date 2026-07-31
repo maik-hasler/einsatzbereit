@@ -1,10 +1,10 @@
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle">
 <!DOCTYPE html>
 <html lang="${locale.current!'de'}" class="<#if locale.current?? && locale.current == 'de'>lang-de<#else>lang-en</#if>">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>${msg("loginTitle", realm.displayName!'Einsatzbereit')}</title>
+	<title>${msg(pageTitle, realm.displayName!'Einsatzbereit')}</title>
 	<link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/logo.svg">
 	<link rel="stylesheet" href="${url.resourcesPath}/css/einsatzbereit.css">
 	<#if properties.stylesCommon?has_content>

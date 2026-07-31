@@ -1,6 +1,7 @@
 using Api.Common.Endpoints;
 using Api.Common.RateLimiting;
 using Application.Common.Geocoding;
+using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Maps.SearchCities.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -24,12 +25,14 @@ internal sealed class SearchCitiesEndpoint : IEndpoint
 	private static async Task<IResult> SearchCitiesAsync(
 		[AsParameters] SearchCitiesRequest request,
 		[FromServices] ISender sender,
+		HttpContext httpContext,
 		CancellationToken cancellationToken)
 	{
 		if (string.IsNullOrWhiteSpace(request.Q))
 			return Results.Ok(Array.Empty<CitySuggestion>());
 
-		var query = new SearchCitiesQuery(request.Q);
+		var requestLanguage = httpContext.Request.Headers["X-Language"].FirstOrDefault();
+		var query = new SearchCitiesQuery(request.Q, SupportedLanguages.Resolve(requestLanguage));
 
 		var result = await sender.Send(query, cancellationToken);
 

@@ -4,8 +4,8 @@
     "body": "Hi {VolunteerName},\n\nYour request to participate in \"{OpportunityTitle}\" has been received. The organizer will be in touch.\n\nEinsatzbereit"
   },
   "EngagementWaitlisted": {
-    "subject": "You've joined the waitlist for \"{OpportunityTitle}\"",
-    "body": "Hi {VolunteerName},\n\nYou're now on the waitlist for \"{OpportunityTitle}\". An organizer will review your sign-up and confirm it soon.\n\nEinsatzbereit"
+    "subject": "Your sign-up for \"{OpportunityTitle}\" is pending",
+    "body": "Hi {VolunteerName},\n\nYour sign-up for \"{OpportunityTitle}\" has been received. An organizer will review it and confirm your time slot soon.\n\nEinsatzbereit"
   },
   "EngagementSignupNotifyOrganizer": {
     "subject": "New sign-up: {VolunteerName} joined \"{OpportunityTitle}\"",

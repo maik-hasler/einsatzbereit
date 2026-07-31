@@ -4,6 +4,7 @@ import type {
 	BadgeCatalogEntry,
 } from "../client/api-client";
 import Spinner from "./Spinner";
+import { resolveDateLocale } from "../lib/format";
 
 const TYPE_ICON: Record<string, string> = {
 	Milestone: "🏆",
@@ -31,7 +32,7 @@ interface BadgeCardProps {
 
 function BadgeCard({ catalog, earned }: BadgeCardProps) {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 	const isEarned = !!earned;
 	const isHidden = catalog.isHidden && !isEarned;
 	const typeName = isEarned ? typeLabel(earned.type) : typeLabel(catalog.type);

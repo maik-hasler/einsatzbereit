@@ -98,10 +98,18 @@ internal sealed class EngagementReminderDueHandler(
 	// Mirrors the frontend's own locale mapping (frontend/src/lib/format.ts:
 	// "de" -> "de-DE", else "en-GB") so reminder emails read naturally in
 	// either language instead of leaking an English day/month name.
+	//
+	// No per-opportunity timezone is stored (see ConfirmEngagementCommandHandler's
+	// own ResolveTimeZone), so - like every other server-side fallback in this
+	// codebase - this defaults to Europe/Berlin rather than .ToLocalTime(), which
+	// would resolve against the container's clock (UTC, since no TZ is set in the
+	// API's Dockerfile) and announce the wrong hour to the volunteer.
 	private static string FormatStart(DateTimeOffset startDateTime, string language)
 	{
 		var culture = CultureInfo.GetCultureInfo(language == "de" ? "de-DE" : "en-GB");
 		var pattern = language == "de" ? "dddd, d. MMMM yyyy 'um' HH:mm" : "dddd, d. MMMM yyyy 'at' HH:mm";
-		return startDateTime.ToLocalTime().ToString(pattern, culture);
+		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
+		var local = TimeZoneInfo.ConvertTime(startDateTime, berlin);
+		return local.ToString(pattern, culture);
 	}
 }
