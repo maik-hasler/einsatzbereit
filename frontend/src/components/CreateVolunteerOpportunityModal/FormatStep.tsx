@@ -108,6 +108,17 @@ export default function FormatStep({
 						["Manual", t("checkInMethod.manual")],
 					]}
 				/>
+				{checkInMethod === "None" && participationType === "ScheduledSlots" && (
+					<p className="mt-2 text-xs text-gray-500">
+						{t("createOpportunity.checkInMethodNoneHint")}
+					</p>
+				)}
+				{checkInMethod === "None" &&
+					participationType === "IndividualContact" && (
+						<p className="mt-2 text-xs text-amber-600">
+							{t("createOpportunity.checkInMethodNoneIndividualWarning")}
+						</p>
+					)}
 			</div>
 
 			{checkInMethod === "PINCode" && (

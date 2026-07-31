@@ -218,6 +218,8 @@
       "fieldCheckInMethod": "Check-in method",
       "fieldCheckInPin": "Check-in PIN",
       "checkInPinHint": "4 to 6 digits. Leave blank to generate one automatically.",
+      "checkInMethodNoneHint": "Participants aren't checked in during the event. They're automatically marked as checked in once the time slot has ended, which also unlocks feedback for them.",
+      "checkInMethodNoneIndividualWarning": "Individual-contact opportunities have no time slot, so there's no automatic point to check participants in - they will never be marked as checked in or able to leave feedback. Choose Manual instead if you need attendance tracking.",
       "checkInPinInvalid": "PIN must be 4 to 6 digits.",
       "generateRandomPin": "Generate random",
       "fieldCategory": "Category",
@@ -256,7 +258,7 @@
       "discardChanges": "Discard changes"
     },
     "checkInMethod": {
-      "none": "None (automatic)",
+      "none": "Automatic (after the event)",
       "qrCode": "QR Code",
       "pinCode": "PIN Code",
       "manual": "Manual"
@@ -535,7 +537,8 @@
       "success": "Checked in successfully!",
       "invalidPin": "Invalid PIN. Please try again.",
       "manualInstruction": "The organizer will check you in manually.",
-      "noneInstruction": "This opportunity doesn't require an explicit check-in step.",
+      "noneInstruction": "No explicit check-in is needed - you'll be marked as checked in automatically once the event has ended.",
+      "noneIndividualInstruction": "This opportunity doesn't require an explicit check-in step.",
       "close": "Done",
       "organizerPin": "Check-in PIN",
       "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
