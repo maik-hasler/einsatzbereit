@@ -34,6 +34,7 @@
       "browseOrganizations": "Organisationen durchsuchen",
       "legal": "Rechtliches",
       "imprint": "Impressum",
+      "terms": "Nutzungsbedingungen",
       "privacy": "Datenschutz",
       "contact": "Kontakt",
       "followUs": "Folge uns",
@@ -677,6 +678,23 @@
       "reportSectionBody": "Wenn dir ein Bedarf oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Bedarfs-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
       "otherSectionTitle": "Andere Fragen oder Anliegen",
       "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform."
+    },
+    "termsOfUse": {
+      "title": "Nutzungsbedingungen",
+      "section1Title": "Geltungsbereich und Zustimmung",
+      "section1Body": "Diese Nutzungsbedingungen regeln die Nutzung von Einsatzbereit (die \"Plattform\"). Mit der Erstellung eines Kontos, der Anmeldung zu einem Einsatz oder der sonstigen Nutzung der Plattform erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie die Plattform bitte nicht.",
+      "section2Title": "Unsere Rolle als Plattform",
+      "section2Body": "Einsatzbereit vermittelt zwischen Freiwilligen und Einsätzen, die von unabhängigen Organisationen veröffentlicht werden. Wir organisieren, beaufsichtigen oder begleiten die auf der Plattform gelisteten Aktivitäten nicht und sind keine Vertragspartei einer Vereinbarung zwischen Freiwilligen und Organisationen. Organisationen sind allein verantwortlich für die von ihnen veröffentlichten Einsätze, einschließlich deren Inhalt, Sicherheit und Eignung.",
+      "section3Title": "Zulässige Nutzung",
+      "section3Body": "Bei der Nutzung der Plattform verpflichten Sie sich, korrekte Angaben zu Ihrer Person zu machen und diese aktuell zu halten, andere Nutzerinnen und Nutzer, Organisationen und die Menschen, denen Sie helfen, respektvoll zu behandeln, den Anweisungen der veranstaltenden Organisation vor Ort zu folgen und keine Inhalte zu veröffentlichen oder zu teilen, die rechtswidrig, betrügerisch, belästigend oder anderweitig schädlich sind. Sie dürfen die Plattform nicht nutzen, um bezahlte Arbeit anzubieten, personenbezogene Daten für plattformfremde Zwecke zu sammeln oder Ihre Identität oder Zugehörigkeit zu einer Organisation falsch darzustellen.",
+      "section4Title": "Organisationen und Einsätze",
+      "section4Body": "Organisationen, die Einsätze veröffentlichen, sind verantwortlich für die Richtigkeit ihrer Angebote und für ein sicheres Umfeld am angegebenen Ort und zur angegebenen Zeit. Ein Verifizierungs-Badge im Profil einer Organisation bestätigt, dass wir deren Identität geprüft haben; es garantiert nicht die Qualität, Sicherheit oder Rechtmäßigkeit eines von ihr veröffentlichten Einsatzes. Wenn Ihnen Inhalte auffallen, die wie Spam, Betrug oder anderweitig rechtswidrig wirken, nutzen Sie bitte die auf unserer <contactLink>Kontaktseite</contactLink> beschriebene Meldefunktion.",
+      "section5Title": "Haftung",
+      "section5Body": "Die Plattform wird nach bestem Bemühen und nicht gewerblich zur Verfügung gestellt. Wir übernehmen keine Gewähr für die Verfügbarkeit, Richtigkeit oder Vollständigkeit von Angeboten und haften nicht für das Verhalten von Freiwilligen oder Organisationen oder für Verluste, Verletzungen oder Schäden, die aus der Teilnahme an einem Einsatz entstehen. Die Teilnahme an Einsätzen erfolgt auf eigenes Risiko. Nichts in diesem Abschnitt beschränkt eine Haftung, die nach geltendem Recht nicht ausgeschlossen werden kann.",
+      "section6Title": "Sperrung und Kündigung",
+      "section6Body": "Wir können ein Konto sperren oder deaktivieren, das gegen diese Bedingungen verstößt, betrügerische oder unsichere Inhalte veröffentlicht oder Gegenstand belegter Meldungen anderer Nutzerinnen und Nutzer ist. Wo möglich, informieren wir das betroffene Konto über den Grund. Sie können die Nutzung der Plattform jederzeit beenden und die Löschung Ihres Kontos beantragen; Einzelheiten zum Umgang mit Ihren Daten finden Sie in unserer <privacyLink>Datenschutzerklärung</privacyLink>.",
+      "section7Title": "Änderungen dieser Bedingungen",
+      "section7Body": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren, um Änderungen der Plattform oder rechtlicher Vorgaben widerzuspiegeln. Die fortgesetzte Nutzung der Plattform nach einer Aktualisierung gilt als Zustimmung zu den geänderten Bedingungen. Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte über die in unserem <imprintLink>Impressum</imprintLink> genannten Angaben."
     },
     "notifications": {
       "bellLabel": "Benachrichtigungen",

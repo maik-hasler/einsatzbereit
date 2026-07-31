@@ -60,6 +60,14 @@ export default function Footer() {
 							</li>
 							<li>
 								<Link
+									to="/terms-of-use"
+									className="hover:text-white transition-colors"
+								>
+									{t("footer.terms")}
+								</Link>
+							</li>
+							<li>
+								<Link
 									to="/privacy-policy"
 									className="hover:text-white transition-colors"
 								>

@@ -29,6 +29,7 @@ import HomePage from "./pages/HomePage";
 // fires twice instead of once.
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ImprintPage = lazy(() => import("./pages/ImprintPage"));
+const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const VolunteerOpportunityDetailPage = lazy(
 	() => import("./pages/VolunteerOpportunityDetailPage"),
@@ -118,6 +119,7 @@ export default function App() {
 				<Route path="/" element={<HomePage />} />
 				<Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 				<Route path="/imprint" element={<ImprintPage />} />
+				<Route path="/terms-of-use" element={<TermsOfUsePage />} />
 				<Route path="/contact" element={<ContactPage />} />
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
