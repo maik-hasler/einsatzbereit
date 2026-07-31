@@ -44,6 +44,15 @@ export default defineConfig({
 					"assets/{index,vendor}-*.js",
 					"assets/*.css",
 				],
+				// config.js is runtime config (docker-entrypoint.d/99-runtime-config.sh
+				// envsubst's it at container start, see frontend/AGENTS.md) - it can
+				// change between deployments with no build-time hash to bust a stale
+				// precache entry, unlike everything above. None of the globPatterns
+				// above would currently match a root-level "config.js" file anyway,
+				// but excluding it explicitly guards against a future globPatterns
+				// change (e.g. widening to a "**/*.js"-style pattern) silently
+				// reintroducing that staleness.
+				globIgnores: ["config.js"],
 				// Route chunks (everything else under assets/) aren't precached, so
 				// serve them stale-while-revalidate: instant load from cache once
 				// visited once, with a background refetch keeping the cache warm
