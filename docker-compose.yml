@@ -167,6 +167,45 @@ services:
       - traefik.http.routers.minio.tls.certresolver=myresolver
       - traefik.http.services.minio.loadbalancer.server.port=9000
 
+  # Daily snapshot of the "einsatzbereit" bucket (avatars/logos/banners) into
+  # its own volume, mirroring db-backup's role for Postgres (#1087 - MinIO
+  # previously had no backup at all). Still same-host, same as db-backup
+  # today: this staging box is a single server with no S3/second host to
+  # replicate off-host to, so this is a local safety net against accidental
+  # deletion/corruption of minio_data, not disaster recovery for a lost host.
+  # Off-host replication is tracked separately and deliberately not attempted
+  # here.
+  minio-backup:
+    image: minio/mc:latest
+    container_name: minio-backup
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    networks:
+      - proxy
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.10"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      MINIO_BUCKET_NAME: einsatzbereit
+      # Mirrors db-backup's BACKUP_KEEP_DAYS (see above) - no weekly/monthly
+      # tiers here, unlike db-backup, since a daily full mirror of MinIO's
+      # (much smaller, less write-heavy) bucket is cheap enough that one flat
+      # retention window is proportionate rather than under-engineered.
+      BACKUP_KEEP_DAYS: "7"
+      BACKUP_INTERVAL_SECONDS: "86400"
+    volumes:
+      - minio_backups:/backups
+    configs:
+      - source: minio-backup-script
+        target: /backup.sh
+
   backend:
     image: ghcr.io/maik-hasler/einsatzbereit-backend:staging
     # No container_name (#1392): a fixed name forbids `docker compose up --scale
@@ -530,6 +569,7 @@ volumes:
   postgres_data:
   postgres_backups:
   minio_data:
+  minio_backups:
   prometheus_data:
   alertmanager_data:
   grafana_data:
@@ -542,6 +582,58 @@ configs:
     content: |
       SELECT 'CREATE DATABASE einsatzbereit' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'einsatzbereit')\gexec
       SELECT 'CREATE DATABASE keycloak' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'keycloak')\gexec
+  # Backs up the einsatzbereit bucket to /backups/<YYYY-MM-DD>, once per
+  # BACKUP_INTERVAL_SECONDS, pruning down to BACKUP_KEEP_DAYS snapshots after
+  # each run. `find` is not available in the minio/mc image (RHEL9-UBI-based,
+  # no findutils) - the directory listing/pruning below deliberately uses
+  # only shell globbing plus sort/wc/head/rm, all confirmed present in that
+  # image, instead.
+  # Every `$` below is doubled (`$$`) - compose interpolates `${...}`/`$VAR`
+  # in config content the same as anywhere else in this file, so a single `$`
+  # here would be silently resolved (usually to blank, since these are
+  # script-local shell variables Compose has never heard of) before the
+  # script ever reaches the container. `$$` escapes to a literal `$`, which
+  # is what the container's own /bin/sh needs to see.
+  minio-backup-script:
+    content: |
+      #!/bin/sh
+      set -eu
+
+      BUCKET="$${MINIO_BUCKET_NAME:-einsatzbereit}"
+      KEEP_DAYS="$${BACKUP_KEEP_DAYS:-7}"
+      INTERVAL="$${BACKUP_INTERVAL_SECONDS:-86400}"
+
+      mc alias set source http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null
+
+      backup_once() {
+        stamp="$$(date +%Y-%m-%d)"
+        dest="/backups/$${stamp}"
+        echo "$$(date -Iseconds) backing up source/$${BUCKET} to $${dest}"
+        mc mirror --overwrite --quiet "source/$${BUCKET}" "$${dest}"
+      }
+
+      prune_old() {
+        list_file=/tmp/.backup-dirs
+        : > "$$list_file"
+        for d in /backups/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]; do
+          [ -d "$$d" ] && echo "$$d" >> "$$list_file"
+        done
+        sort -o "$$list_file" "$$list_file"
+        total=$$(wc -l < "$$list_file")
+        excess=$$((total - KEEP_DAYS))
+        if [ "$$excess" -gt 0 ]; then
+          head -n "$$excess" "$$list_file" | while read -r old; do
+            echo "$$(date -Iseconds) pruning $${old}"
+            rm -rf "$${old}"
+          done
+        fi
+      }
+
+      while true; do
+        backup_once
+        prune_old
+        sleep "$$INTERVAL"
+      done
   prometheus-config:
     content: |
       global:
