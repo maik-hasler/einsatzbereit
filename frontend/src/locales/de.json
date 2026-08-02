@@ -823,6 +823,17 @@
         "confirm": "Ja, wiederherstellen"
       }
     },
+    "imageCrop": {
+      "loading": "Bild wird geladen…",
+      "loadError": "Dieses Bild konnte nicht geladen werden.",
+      "dragHint": "Zum Verschieben ziehen, mit dem Regler zoomen.",
+      "frameLabel": "Bildausschnitt - mit der Maus oder den Pfeiltasten verschieben",
+      "panBoundary": "Bildrand erreicht.",
+      "zoomLabel": "Zoom",
+      "cancel": "Abbrechen",
+      "apply": "Übernehmen",
+      "applying": "Wird übernommen…"
+    },
     "orgProfile": {
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",

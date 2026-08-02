@@ -235,6 +235,8 @@ export default function VolunteerOpportunityDetailPage() {
 				<img
 					src={opportunity.bannerImageUrl}
 					alt=""
+					width={1200}
+					height={480}
 					className="mb-6 h-56 w-full rounded-card object-cover shadow-resting sm:h-72"
 				/>
 			)}

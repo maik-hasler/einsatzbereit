@@ -15,6 +15,7 @@ import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
+import ImageCropModal from "../ImageCropModal";
 import { Stepper } from "./shared";
 import BasicsStep from "./BasicsStep";
 import LocationStep from "./LocationStep";
@@ -229,6 +230,9 @@ export default function CreateVolunteerOpportunityModal({
 	);
 	const [bannerError, setBannerError] = useState<string | null>(null);
 	const [bannerRemoved, setBannerRemoved] = useState(false);
+	const [croppingBannerFile, setCroppingBannerFile] = useState<File | null>(
+		null,
+	);
 
 	// Time slots: pending = not yet persisted (create mode); existing = already saved (edit mode)
 	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
@@ -395,8 +399,13 @@ export default function CreateVolunteerOpportunityModal({
 			return;
 		}
 		setBannerError(null);
-		setBannerFile(file);
-		setBannerPreview(URL.createObjectURL(file));
+		setCroppingBannerFile(file);
+	}
+
+	function handleBannerCropped(croppedFile: File) {
+		setCroppingBannerFile(null);
+		setBannerFile(croppedFile);
+		setBannerPreview(URL.createObjectURL(croppedFile));
 	}
 
 	function removeBanner() {
@@ -908,7 +917,8 @@ export default function CreateVolunteerOpportunityModal({
 				suspended={
 					showDiscardConfirm ||
 					pendingSlotEdit !== null ||
-					pendingSeriesDelete !== null
+					pendingSeriesDelete !== null ||
+					croppingBannerFile !== null
 				}
 				initialFocusRef={bodyRef}
 			>
@@ -1137,6 +1147,19 @@ export default function CreateVolunteerOpportunityModal({
 					error={seriesDeleteError}
 					onConfirm={(scope) => void performSeriesDelete(scope)}
 					onClose={() => setPendingSeriesDelete(null)}
+				/>
+			)}
+
+			{croppingBannerFile && (
+				<ImageCropModal
+					file={croppingBannerFile}
+					aspectRatio={2.5}
+					shape="rect"
+					outputWidth={1200}
+					outputHeight={480}
+					title={t("createOpportunity.fieldBanner")}
+					onCancel={() => setCroppingBannerFile(null)}
+					onCropped={handleBannerCropped}
 				/>
 			)}
 		</>

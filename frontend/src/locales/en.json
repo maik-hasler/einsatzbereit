@@ -823,6 +823,17 @@
         "confirm": "Yes, restore"
       }
     },
+    "imageCrop": {
+      "loading": "Loading image…",
+      "loadError": "Could not load this image.",
+      "dragHint": "Drag to reposition, use the slider to zoom.",
+      "frameLabel": "Image crop area - drag or use arrow keys to reposition",
+      "panBoundary": "Reached the edge of the image.",
+      "zoomLabel": "Zoom",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "applying": "Applying…"
+    },
     "orgProfile": {
       "loading": "Loading…",
       "error": "Error: {{message}}",

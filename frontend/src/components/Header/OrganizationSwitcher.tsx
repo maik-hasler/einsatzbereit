@@ -66,6 +66,8 @@ export default function OrganizationSwitcher({
 						<img
 							src={currentOrg.logoUrl}
 							alt=""
+							width={24}
+							height={24}
 							className="h-6 w-6 shrink-0 rounded-md object-cover"
 						/>
 					) : (
@@ -117,6 +119,9 @@ export default function OrganizationSwitcher({
 											<img
 												src={org.logoUrl}
 												alt=""
+												width={24}
+												height={24}
+												loading="lazy"
 												className="h-6 w-6 shrink-0 rounded-md object-cover"
 											/>
 										) : (

@@ -62,6 +62,9 @@ export default function BasicsStep({
 						<img
 							src={bannerPreview}
 							alt={t("createOpportunity.fieldBanner")}
+							width={1200}
+							height={480}
+							loading="lazy"
 							className="h-36 w-full object-cover"
 						/>
 						<button
