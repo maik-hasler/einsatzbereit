@@ -340,26 +340,31 @@ overflow-y-auto already handles vertical scrolling. */
 	}
 }
 
-/* ── Header offset token (issue #1130) ────────────────────────────────────
---header-offset is Header.tsx's h-16 (4rem) plus AppLayout's <main> padding-
-top at each breakpoint, i.e. exactly how far a full-bleed section (the
-HomePage hero) must pull itself up to tuck under the sticky header. Defined
-once here so neither side has to hand-recalculate the sum when Header's
-height or AppLayout's padding changes. */
+/* ── Header offset tokens (issue #1130) ───────────────────────────────────
+Header.tsx's header is `sticky`, not `fixed`, so it already occupies flow
+space above AppLayout's <main> - --main-top-padding is just <main>'s own
+breathing room below it, unchanged per breakpoint from before. --header-
+offset adds --header-height on top of that: the full distance a full-bleed
+section (the HomePage hero) must pull itself up by to cancel both <main>'s
+padding and the header's own height and reach the very top of the document,
+tucking under the sticky (and, on the hero, transparent) header. Both
+tokens are defined once here so AppLayout and the hero can no longer drift
+out of sync with each other or with Header's actual height. */
 :root {
 	--header-height: 4rem;
-	--header-offset: calc(var(--header-height) + 1.5rem);
+	--main-top-padding: 1.5rem;
+	--header-offset: calc(var(--header-height) + var(--main-top-padding));
 }
 
 @media (min-width: 640px) {
 	:root {
-		--header-offset: calc(var(--header-height) + 2.5rem);
+		--main-top-padding: 2.5rem;
 	}
 }
 
 @media (min-width: 1024px) {
 	:root {
-		--header-offset: calc(var(--header-height) + 3rem);
+		--main-top-padding: 3rem;
 	}
 }
 
