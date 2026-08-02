@@ -132,8 +132,22 @@ internal sealed class CheckInAttemptLimiter(
 	internal static async Task ResetAsync(
 		ApplicationDbContext dbContext,
 		Guid engagementId,
-		CancellationToken cancellationToken = default) =>
-		await dbContext.Set<CheckInAttempt>()
-			.Where(a => a.EngagementId == engagementId)
-			.ExecuteDeleteAsync(cancellationToken);
+		CancellationToken cancellationToken = default)
+	{
+		// A tracked fetch-then-Remove, not ExecuteDeleteAsync: ExecuteDelete
+		// issues a raw DELETE that bypasses the change tracker entirely, which
+		// would leave a CheckInAttempt instance a caller already tracked on this
+		// same DbContext (e.g. from a prior RegisterFailedAttemptAsync call)
+		// stale - believing the now-deleted row still exists - and throw an
+		// "already tracked" conflict the next time this engagement's row is
+		// looked up on that DbContext.
+		var attempt = await dbContext.Set<CheckInAttempt>()
+			.FirstOrDefaultAsync(a => a.EngagementId == engagementId, cancellationToken);
+
+		if (attempt is null)
+			return;
+
+		dbContext.Set<CheckInAttempt>().Remove(attempt);
+		await dbContext.SaveChangesAsync(cancellationToken);
+	}
 }
