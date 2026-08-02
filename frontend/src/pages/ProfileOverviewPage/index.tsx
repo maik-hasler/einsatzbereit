@@ -39,6 +39,44 @@ const LEGACY_TAB_SECTIONS: Record<string, string> = {
 	achievements: "achievements",
 };
 
+function FireIcon({ className = "h-5 w-5" }: { className?: string }) {
+	return (
+		<svg
+			className={className}
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"
+			/>
+		</svg>
+	);
+}
+
+function CalendarIcon({ className = "h-5 w-5" }: { className?: string }) {
+	return (
+		<svg
+			className={className}
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+			/>
+		</svg>
+	);
+}
+
 function Field({
 	label,
 	id,
@@ -333,8 +371,8 @@ export default function ProfileOverviewPage() {
 							{streaks && (
 								<div className="flex flex-wrap gap-3">
 									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
-										<span className="text-2xl" aria-hidden="true">
-											🔥
+										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+											<FireIcon />
 										</span>
 										<div>
 											<p className="text-xl font-bold text-gray-900">
@@ -348,8 +386,8 @@ export default function ProfileOverviewPage() {
 										</div>
 									</div>
 									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
-										<span className="text-2xl" aria-hidden="true">
-											📅
+										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+											<CalendarIcon />
 										</span>
 										<div>
 											<p className="text-xl font-bold text-gray-900">
