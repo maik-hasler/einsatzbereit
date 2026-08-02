@@ -7,6 +7,20 @@ namespace IntegrationTests;
 [NotInParallel("IntegrationDb")]
 public class NotificationTests(IntegrationTestFixture fixture)
 {
+	// einsatzbereit#1382: engagement sign-up/confirmation notifications are no
+	// longer created inline inside the command handler's own transaction - they're
+	// raised as domain events (Domain/Engagements/EngagementCreatedDomainEvent.cs,
+	// EngagementConfirmedDomainEvent.cs) and only turned into Notification rows by
+	// EngagementSignUpNotificationHandler/EngagementConfirmedNotificationHandler
+	// once OutboxProcessorJob dispatches them post-commit (see OutboxTests.cs for
+	// the same pattern against EngagementCheckedInDomainEvent). Tests that assert
+	// on a resulting notification must wait for that dispatch instead of racing it.
+	private const string EngagementCreatedDomainEventType = "Domain.Engagements.EngagementCreatedDomainEvent";
+	private const string EngagementConfirmedDomainEventType = "Domain.Engagements.EngagementConfirmedDomainEvent";
+	private const string EngagementCancelledByOrganizerDomainEventType = "Domain.Engagements.EngagementCancelledByOrganizerDomainEvent";
+	private const string EngagementWithdrawnDomainEventType = "Domain.Engagements.EngagementWithdrawnDomainEvent";
+	private static readonly TimeSpan OutboxDispatchTimeout = TimeSpan.FromSeconds(45);
+
 	[Before(Test)]
 	public Task ResetAsync() => fixture.ResetAsync();
 
@@ -25,6 +39,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementCreatedDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementSignUpNotificationHandler should have created the organizer notification by now");
 
 		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 
@@ -52,6 +70,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		await olafClient.ConfirmEngagementAsync(engagement.Id, cancellationToken);
 
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementConfirmedDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementConfirmedNotificationHandler should have created the volunteer notification by now");
+
 		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 
 		var notification = veraNotifications.Items.Single(n => n.Kind == "EngagementConfirmed");
@@ -77,6 +99,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 
 		await olafClient.CancelEngagementAsync(engagement.Id, cancellationToken: cancellationToken);
 
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementCancelledByOrganizerDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementCancelledByOrganizerNotificationHandler should have created the volunteer notification by now");
+
 		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 
 		var notification = veraNotifications.Items.Single(n => n.Kind == "EngagementCancelled");
@@ -101,6 +127,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			cancellationToken);
 
 		await veraClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementWithdrawnDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementWithdrawnNotificationHandler should have created the organizer notification by now");
 
 		// The organizer, not the withdrawing volunteer, is the recipient here.
 		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
@@ -153,6 +183,13 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		await veraClient.CreateEngagementAsync(
 			opportunityTwo.Id, new CreateEngagementRequest { Message = "Second" }, cancellationToken);
 
+		// minCount: 2 - both sign-ups raise their own EngagementCreatedDomainEvent, and
+		// the test needs both notifications, not just whichever the outbox happens to
+		// dispatch first.
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementCreatedDomainEventType, OutboxDispatchTimeout, minCount: 2);
+		processed.Should().BeTrue("EngagementSignUpNotificationHandler should have created both organizer notifications by now");
+
 		var firstPage = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 		var ordered = firstPage.Items
 			.Where(n => n.Kind == "EngagementCreated")
@@ -179,6 +216,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		await veraClient.CreateEngagementAsync(
 			opportunity.Id, new CreateEngagementRequest { Message = "I want to help!" }, cancellationToken);
 
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementCreatedDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementSignUpNotificationHandler should have created the organizer notification by now");
+
 		var countBeforeRead = await olafClient.GetUnreadNotificationCountAsync(cancellationToken);
 		countBeforeRead.Should().Be(1);
 
@@ -204,6 +245,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
 
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementCreatedDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementSignUpNotificationHandler should have created the organizer notification by now");
+
 		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
 
@@ -228,6 +273,10 @@ public class NotificationTests(IntegrationTestFixture fixture)
 			opportunity.Id,
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
+
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			EngagementCreatedDomainEventType, OutboxDispatchTimeout);
+		processed.Should().BeTrue("EngagementSignUpNotificationHandler should have created the organizer notification by now");
 
 		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
 		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");

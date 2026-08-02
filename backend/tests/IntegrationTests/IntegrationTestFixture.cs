@@ -174,18 +174,22 @@ public class IntegrationTestFixture
 	// Polls for OutboxProcessorJob (Infrastructure/BackgroundJobs/OutboxProcessorJob.cs)
 	// to have picked up and dispatched a message - proving the full write -> background
 	// dispatch -> INotificationHandler<T> round trip, not just the transactional write.
+	// minCount lets a caller that triggered several events of the same type (e.g. two
+	// sign-ups, each raising its own EngagementCreatedDomainEvent) wait for all of them
+	// to have been dispatched, not just the first - checking for any single processed
+	// row would already be true after only one of them lands.
 	public async Task<bool> WaitForOutboxMessageProcessedAsync(
-		string domainEventTypeFullName, TimeSpan timeout)
+		string domainEventTypeFullName, TimeSpan timeout, int minCount = 1)
 	{
 		var deadline = DateTime.UtcNow.Add(timeout);
 
 		while (DateTime.UtcNow < deadline)
 		{
 			await using var context = CreateApplicationDbContext();
-			var processed = await context.Set<OutboxMessage>()
-				.AnyAsync(m => m.Type == domainEventTypeFullName && m.ProcessedOnUtc != null);
+			var processedCount = await context.Set<OutboxMessage>()
+				.CountAsync(m => m.Type == domainEventTypeFullName && m.ProcessedOnUtc != null);
 
-			if (processed) return true;
+			if (processedCount >= minCount) return true;
 
 			await Task.Delay(500);
 		}

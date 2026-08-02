@@ -59,6 +59,10 @@ public class OutboxMessageSerializationTests
 	{
 		yield return new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), "Reason");
+		yield return new EngagementCancelledByOrganizerDomainEvent(
+			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), "Reason");
+		yield return new EngagementCreatedDomainEvent(
+			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementCheckInUndoneDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementCheckedInDomainEvent(
