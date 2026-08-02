@@ -31,7 +31,7 @@ export default function OpportunityListItem({
 			: null;
 
 	return (
-		<li className="group relative flex h-full flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised">
+		<li className="group relative flex h-full flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10"
