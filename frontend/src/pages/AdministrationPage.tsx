@@ -16,7 +16,7 @@ import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import Chip from "../components/Chip";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
@@ -114,8 +114,20 @@ function OrganizationsSection() {
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("administration.organizations.loading")} />
+			<div
+				role="status"
+				className="overflow-hidden rounded-card border border-gray-200"
+			>
+				<span className="sr-only">
+					{t("administration.organizations.loading")}
+				</span>
+				<div className="divide-y divide-gray-100">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div key={i} aria-hidden="true" className="px-4 py-3">
+							<Skeleton className="h-4 w-1/3" />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
@@ -285,8 +297,23 @@ function UsersSection() {
 			</p>
 
 			{loading ? (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("administration.users.loading")} />
+				<div
+					role="status"
+					className="overflow-hidden rounded-card border border-gray-200"
+				>
+					<span className="sr-only">{t("administration.users.loading")}</span>
+					<div className="divide-y divide-gray-100">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div
+								key={i}
+								aria-hidden="true"
+								className="flex items-center gap-3 px-4 py-3"
+							>
+								<Skeleton className="h-4 w-1/3" />
+								<Skeleton className="h-4 w-16 rounded-full" />
+							</div>
+						))}
+					</div>
 				</div>
 			) : error ? (
 				<ErrorBanner message={error} />
@@ -531,8 +558,19 @@ function ReportsSection() {
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("administration.reports.loading")} />
+			<div
+				role="status"
+				className="overflow-hidden rounded-card border border-gray-200"
+			>
+				<span className="sr-only">{t("administration.reports.loading")}</span>
+				<div className="divide-y divide-gray-100">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
+							<Skeleton className="h-4 w-1/2" />
+							<Skeleton className="h-3 w-2/3" />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
@@ -729,8 +767,11 @@ function ReportHistoryModal({
 			{loadError ? (
 				<ErrorBanner message={loadError} />
 			) : entries === null ? (
-				<div className="flex justify-center py-8">
-					<Spinner label={t("administration.reports.loading")} />
+				<div role="status" className="space-y-3">
+					<span className="sr-only">{t("administration.reports.loading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<Skeleton key={i} className="h-14 w-full" />
+					))}
 				</div>
 			) : (
 				<ul className="max-h-96 space-y-3 overflow-y-auto">

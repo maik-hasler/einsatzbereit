@@ -13,7 +13,7 @@ import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
-import Spinner from "../../components/Spinner";
+import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
@@ -516,8 +516,22 @@ export default function OrgOpportunitiesPage() {
 	return (
 		<div>
 			{initialLoading && !anyError && (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("orgOpportunities.loading")} />
+				<div
+					role="status"
+					className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+				>
+					<span className="sr-only">{t("orgOpportunities.loading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							aria-hidden="true"
+							className="space-y-2 rounded-card border border-gray-100 bg-white p-4 shadow-resting"
+						>
+							<Skeleton className="h-4 w-2/3" />
+							<Skeleton className="h-3 w-1/2" />
+							<Skeleton className="h-3 w-1/3" />
+						</div>
+					))}
 				</div>
 			)}
 

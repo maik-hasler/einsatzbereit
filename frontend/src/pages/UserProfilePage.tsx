@@ -9,7 +9,7 @@ import type {
 import BadgeGrid from "../components/BadgeGrid";
 import ProfileFieldsView from "../components/ProfileFieldsView";
 import ReportFlagButton from "../components/ReportFlagButton";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
 import { useApiClient } from "../hooks/useApiClient";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -47,8 +47,21 @@ export default function UserProfilePage() {
 
 	if (loading)
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("userProfile.loading")} />
+			<div role="status">
+				<span className="sr-only">{t("userProfile.loading")}</span>
+				<div className="mb-8 flex items-center gap-4">
+					<Skeleton className="h-16 w-16 shrink-0 rounded-full" />
+					<div className="space-y-2">
+						<Skeleton className="h-6 w-40" />
+						<Skeleton className="h-4 w-32" />
+					</div>
+				</div>
+				<Skeleton className="mb-4 h-4 w-32" />
+				<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+					{Array.from({ length: 6 }).map((_, i) => (
+						<Skeleton key={i} className="h-28 w-full" />
+					))}
+				</div>
 			</div>
 		);
 	if (error) return <ErrorBanner message={error} />;

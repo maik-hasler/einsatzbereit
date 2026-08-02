@@ -7,7 +7,7 @@ import OrganizationProfileView from "../components/OrganizationProfileView";
 import ReportContentModal, {
 	type ReportReason,
 } from "../components/ReportContentModal";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
 import EmptyState from "../components/EmptyState";
 import { useApiClient } from "../hooks/useApiClient";
@@ -47,8 +47,22 @@ export default function OrganizationProfilePage() {
 
 	if (loading)
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("orgProfile.loading")} />
+			<div role="status">
+				<span className="sr-only">{t("orgProfile.loading")}</span>
+				<div className="mb-6 flex items-center gap-4">
+					<Skeleton className="h-16 w-16 shrink-0 rounded-full" />
+					<Skeleton className="h-6 w-48" />
+				</div>
+				<div className="max-w-2xl">
+					<Skeleton className="mb-2 h-4 w-full" />
+					<Skeleton className="mb-6 h-4 w-2/3" />
+					<Skeleton className="mb-3 h-3 w-32" />
+					<div className="space-y-3">
+						{Array.from({ length: 2 }).map((_, i) => (
+							<Skeleton key={i} className="h-20 w-full" />
+						))}
+					</div>
+				</div>
 			</div>
 		);
 	if (error)
