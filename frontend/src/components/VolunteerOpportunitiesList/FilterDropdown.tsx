@@ -170,7 +170,11 @@ export default function FilterDropdown({
 				<div
 					ref={panelRef}
 					style={{ left: panelLeft }}
-					className="absolute top-full z-200 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
+					// Below Header.tsx's sticky z-40 - this panel's ancestors (the
+					// filter bar, <main>) are all unpositioned, so its z-index
+					// competes with the header directly at the document root instead
+					// of nesting inside it (#1119).
+					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
 				>
 					{children}
 				</div>

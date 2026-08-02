@@ -66,6 +66,27 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task FrequencyFilter_PanelStaysBelowHeader()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("filter-frequency").ClickAsync();
+		var oneTimeOption = Page.GetByRole(AriaRole.Button, new() { Name = "One-time" });
+		await Expect(oneTimeOption).ToBeVisibleAsync();
+
+		// The panel's own ancestors (the filter bar, <main>) are all
+		// unpositioned, so its z-index competes directly with Header.tsx's
+		// sticky z-40 at the document root instead of nesting inside it - pin
+		// it below the header rather than the old z-[200] that painted over
+		// it (#1119).
+		var panel = oneTimeOption.Locator("xpath=..");
+		await Expect(panel).ToHaveCSSAsync("z-index", "30");
+	}
+
+	[Test]
 	public async Task HomePage_OpportunitiesSection_IsCenteredWithStyledCards()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
