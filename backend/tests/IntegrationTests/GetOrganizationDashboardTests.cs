@@ -62,6 +62,7 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 				RecurrenceCount = 1,
 			},
 			cancellationToken)).Single().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunityB.Id, cancellationToken);
 
 		// Pending: vera signs up for opportunityA and is left untouched.
 		await veraClient.CreateEngagementAsync(

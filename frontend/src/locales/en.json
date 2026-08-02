@@ -1176,7 +1176,8 @@
         "TimeSlotNotInOpportunity": "The selected time slot does not belong to this opportunity.",
         "TimeSlotFull": "This time slot has reached its capacity and cannot accept more sign-ups.",
         "InvalidPin": "Invalid PIN. Please try again.",
-        "CheckInLocked": "Too many failed PIN attempts. Try again later."
+        "CheckInLocked": "Too many failed PIN attempts. Try again later.",
+        "OpportunityNotPublished": "Only a published opportunity can be signed up for."
       },
       "DashboardLayout": {
         "InvalidWidgetKey": "Unknown widget.",

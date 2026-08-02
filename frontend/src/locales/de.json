@@ -1174,6 +1174,7 @@
         "NotOwner": "Du kannst nur deine eigenen Engagements verwalten.",
         "AlreadySignedUp": "Du bist für diesen Einsatz bereits angemeldet.",
         "TimeSlotNotInOpportunity": "Der ausgewählte Zeitslot gehört nicht zu diesem Einsatz.",
+        "OpportunityNotPublished": "Für diesen Einsatz kann man sich nur anmelden, wenn er veröffentlicht ist.",
         "TimeSlotFull": "Dieser Zeitslot hat seine Kapazität erreicht und kann keine weiteren Anmeldungen annehmen.",
         "InvalidPin": "Falsche PIN. Bitte erneut versuchen.",
         "CheckInLocked": "Zu viele fehlgeschlagene PIN-Versuche. Bitte versuche es später erneut."

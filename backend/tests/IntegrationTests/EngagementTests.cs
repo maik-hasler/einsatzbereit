@@ -237,6 +237,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var firstSlotId = timeSlots.ElementAt(0).Id;
 		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var firstEngagement = await veraClient.CreateEngagementAsync(
@@ -1019,6 +1020,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 		var slotId = timeSlots.First().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var olafEngagement = await olafClient.CreateEngagementAsync(
 			opportunity.Id,
@@ -1055,6 +1057,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 		var slotId = timeSlots.First().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var olafEngagement = await olafClient.CreateEngagementAsync(
 			opportunity.Id,
@@ -1173,6 +1176,21 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var opportunityA = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 		var opportunityB = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
+		// opportunityA needs a slot of its own purely so it can be published -
+		// the request below targets opportunityA with a time slot id from
+		// opportunityB, and that mismatch is what the test is exercising.
+		await olafClient.CreateTimeSlotAsync(
+			opportunityA.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		await olafClient.PublishVolunteerOpportunityAsync(opportunityA.Id, cancellationToken);
+
 		var slotsB = await olafClient.CreateTimeSlotAsync(
 			opportunityB.Id,
 			new CreateTimeSlotRequest
@@ -1218,6 +1236,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var firstSlotId = timeSlots.ElementAt(0).Id;
 		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var firstEngagement = await veraClient.CreateEngagementAsync(
@@ -1254,6 +1273,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 		var slotId = timeSlots.First().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
@@ -1292,6 +1312,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var firstSlotId = timeSlots.ElementAt(0).Id;
 		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var firstEngagement = await veraClient.CreateEngagementAsync(
