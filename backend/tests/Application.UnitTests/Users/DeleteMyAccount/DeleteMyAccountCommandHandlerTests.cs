@@ -122,10 +122,13 @@ public class DeleteMyAccountCommandHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange: a malformed/legacy AvatarUrl that GetObjectKeyFromPublicUrl can't parse back
-		// into an object key - defaults to null via the unconfigured NSubstitute mock.
+		// into an object key. Explicitly configured to return null - NSubstitute's unconfigured
+		// default for a string-returning method is "", not null, even though this method's
+		// return type is string?.
 		var user = User.Create(DefaultUserId);
 		user.SetAvatarUrl("not-a-valid-storage-url");
 		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_fileStorage.GetObjectKeyFromPublicUrl("not-a-valid-storage-url").Returns((string?)null);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
