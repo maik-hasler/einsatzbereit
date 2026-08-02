@@ -369,7 +369,7 @@ export default function ProfileOverviewPage() {
 
 					{/* Profile details */}
 					<section className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 							{t("profile.sectionDetails")}
 						</h2>
 

@@ -81,7 +81,7 @@ export default function OrganizationProfilePage() {
 							onClick={() => setShowReport(true)}
 							data-testid="report-organization"
 							aria-label={t("orgProfile.reportOrganization")}
-							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 						>
 							<svg
 								className="h-4 w-4"
@@ -102,7 +102,7 @@ export default function OrganizationProfilePage() {
 					)
 				}
 			>
-				<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+				<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-500 uppercase">
 					{t("orgProfile.currentNeeds")}
 				</h2>
 

@@ -177,7 +177,7 @@ export default function EditableWidgetTile({
 								onGripPointerDown(e);
 							}}
 							disabled={placingDisabled}
-							className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
+							className={`absolute top-2 left-1/2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
 							<GripIcon />
@@ -223,7 +223,7 @@ export default function EditableWidgetTile({
 								onResizePointerDown(e);
 							}}
 							disabled={placingDisabled}
-							className="pointer-events-auto absolute bottom-2 right-2 z-20 cursor-nwse-resize touch-none rounded-lg bg-white/95 p-1 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+							className="pointer-events-auto absolute right-2 bottom-2 z-20 cursor-nwse-resize touch-none rounded-lg bg-white/95 p-1 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
 						>
 							<ResizeHandleIcon />
 						</button>
@@ -233,7 +233,7 @@ export default function EditableWidgetTile({
 						onPointerDown={(e) => e.stopPropagation()}
 						onClick={onRemove}
 						disabled={placingDisabled}
-						className="pointer-events-auto absolute right-2 top-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+						className="pointer-events-auto absolute top-2 right-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
 						aria-label={t("orgDashboard.removeWidget", { widget: title })}
 					>
 						<TrashIcon />

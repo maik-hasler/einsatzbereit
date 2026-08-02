@@ -25,9 +25,9 @@ function AppLayoutInner() {
 				}
 			: undefined;
 	return (
-		<div className="min-h-screen flex flex-col">
+		<div className="flex min-h-screen flex-col">
 			<Header breadcrumb={breadcrumb} />
-			<main className="mx-auto max-w-7xl px-4 pb-16 pt-[var(--main-top-padding)] flex-1 w-full sm:px-6 lg:px-8">
+			<main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-[var(--main-top-padding)] pb-16 sm:px-6 lg:px-8">
 				<Suspense
 					fallback={
 						<div className="flex justify-center py-16">

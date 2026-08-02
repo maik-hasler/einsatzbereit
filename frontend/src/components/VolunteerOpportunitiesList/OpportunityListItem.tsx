@@ -55,7 +55,7 @@ export default function OpportunityListItem({
 						<>
 							<div
 								aria-hidden="true"
-								className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl"
+								className="pointer-events-none absolute -top-8 -right-6 h-24 w-24 rounded-full bg-white/15 blur-xl"
 							/>
 							<div
 								aria-hidden="true"
@@ -65,7 +65,7 @@ export default function OpportunityListItem({
 								category={item.category}
 								className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
 							/>
-							<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80">
+							<span className="absolute right-0 bottom-2 left-0 px-2 text-center text-xs font-semibold tracking-wider text-white/80 uppercase">
 								{item.category
 									? t(`opportunities.category.${item.category}`)
 									: t("opportunities.category.Other")}
@@ -114,11 +114,11 @@ export default function OpportunityListItem({
 										details: details || undefined,
 									});
 								}}
-								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null && !isUnlimited ? " ml-auto" : ""}`}
+								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null && !isUnlimited ? "ml-auto" : ""}`}
 							/>
 						)}
 					</div>
-					<h3 className="text-base font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
+					<h3 className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
 					</h3>
 					{item.nextTimeSlotStart ? (

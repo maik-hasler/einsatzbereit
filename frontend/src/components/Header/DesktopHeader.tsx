@@ -36,7 +36,7 @@ export default function DesktopHeader({
 	return (
 		<nav
 			aria-label={t("nav.primaryLabel")}
-			className="hidden md:flex items-center gap-3"
+			className="hidden items-center gap-3 md:flex"
 		>
 			{isLoggedIn ? (
 				<AccountControls
@@ -68,7 +68,7 @@ export default function DesktopHeader({
 				</div>
 			)}
 			<div
-				className={`w-px h-6 ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
+				className={`h-6 w-px ${isTransparent ? "bg-white/30" : "bg-gray-200"}`}
 			/>
 			<LanguageSelector transparent={isTransparent} />
 		</nav>

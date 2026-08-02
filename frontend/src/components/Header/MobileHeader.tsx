@@ -43,13 +43,13 @@ export default function MobileHeader({
 				ref={menuButtonRef}
 				type="button"
 				onClick={() => setMobileOpen((o) => !o)}
-				className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
+				className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors ${isTransparent ? "text-white hover:bg-white/10" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
 				aria-label={t("nav.openMenu")}
 				aria-expanded={mobileOpen}
 			>
 				{mobileOpen ? (
 					<svg
-						className="w-6 h-6"
+						className="h-6 w-6"
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="1.5"
@@ -63,7 +63,7 @@ export default function MobileHeader({
 					</svg>
 				) : (
 					<svg
-						className="w-6 h-6"
+						className="h-6 w-6"
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="1.5"

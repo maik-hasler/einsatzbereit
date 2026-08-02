@@ -27,7 +27,7 @@ export default function ProfileFieldsView({
 					<p className="mb-1 text-sm font-medium text-gray-700">
 						{t("profile.fieldBio")}
 					</p>
-					<p className="whitespace-pre-wrap text-sm text-gray-600">{bio}</p>
+					<p className="text-sm whitespace-pre-wrap text-gray-600">{bio}</p>
 				</div>
 			)}
 

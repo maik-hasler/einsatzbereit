@@ -97,7 +97,7 @@ export default function CheckInModal({
 						{t("checkIn.qrInstruction")}
 					</p>
 					<QRCodeSVG value={engagementId} size={200} />
-					<p className="break-all font-mono text-xs text-gray-500">
+					<p className="font-mono text-xs break-all text-gray-500">
 						{engagementId}
 					</p>
 				</div>

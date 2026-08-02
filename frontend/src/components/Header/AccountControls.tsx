@@ -52,7 +52,7 @@ export default function AccountControls({
 				<button
 					type="button"
 					onClick={() => setDropdownOpen((o) => !o)}
-					className="flex items-center gap-1.5 rounded-full p-0.5 hover:ring-2 hover:ring-brand-200 transition-all cursor-pointer"
+					className="flex cursor-pointer items-center gap-1.5 rounded-full p-0.5 transition-all hover:ring-2 hover:ring-brand-200"
 					aria-label={t("nav.userMenu")}
 					aria-expanded={dropdownOpen}
 				>
@@ -62,15 +62,15 @@ export default function AccountControls({
 							alt=""
 							width={36}
 							height={36}
-							className="w-9 h-9 rounded-full object-cover"
+							className="h-9 w-9 rounded-full object-cover"
 						/>
 					) : (
-						<span className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
+						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
 							{initials}
 						</span>
 					)}
 					<svg
-						className={`w-4 h-4 ${transparent ? "text-white/70" : "text-gray-400"}`}
+						className={`h-4 w-4 ${transparent ? "text-white/70" : "text-gray-400"}`}
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="2"
@@ -86,17 +86,17 @@ export default function AccountControls({
 				</button>
 
 				{dropdownOpen && (
-					<div className="absolute right-0 top-full mt-2 w-56 rounded-lg border shadow-modal z-50 bg-white border-gray-200">
-						<div className="px-4 py-3 border-b border-gray-100">
+					<div className="absolute top-full right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-modal">
+						<div className="border-b border-gray-100 px-4 py-3">
 							<p className="text-sm font-medium text-gray-900">{displayName}</p>
 						</div>
 						<div className="py-1">
 							<Link
 								to="/profile"
-								className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 							>
 								<svg
-									className="w-4 h-4"
+									className="h-4 w-4"
 									fill="none"
 									viewBox="0 0 24 24"
 									strokeWidth="1.5"
@@ -115,10 +115,10 @@ export default function AccountControls({
 								href={`${runtimeConfig.keycloakAuthorityUrl}/account`}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+								className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 							>
 								<svg
-									className="w-4 h-4"
+									className="h-4 w-4"
 									fill="none"
 									viewBox="0 0 24 24"
 									strokeWidth="1.5"
@@ -136,10 +136,10 @@ export default function AccountControls({
 							{isAdmin && (
 								<Link
 									to="/administration"
-									className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+									className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 								>
 									<svg
-										className="w-4 h-4"
+										className="h-4 w-4"
 										fill="none"
 										viewBox="0 0 24 24"
 										strokeWidth="1.5"
@@ -167,11 +167,11 @@ export default function AccountControls({
 										onClick={() => setOrgMenuOpen((o) => !o)}
 										aria-expanded={orgMenuOpen}
 										aria-haspopup="true"
-										className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors text-gray-700 hover:bg-brand-50 hover:text-brand-700"
+										className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-brand-50 hover:text-brand-700"
 									>
 										<span className="flex items-center gap-3">
 											<svg
-												className="w-4 h-4"
+												className="h-4 w-4"
 												fill="none"
 												viewBox="0 0 24 24"
 												strokeWidth="1.5"
@@ -202,7 +202,7 @@ export default function AccountControls({
 										</svg>
 									</button>
 									{orgMenuOpen && (
-										<div className="absolute right-full top-0 mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-modal">
+										<div className="absolute top-0 right-full mr-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-modal">
 											{ORG_TABS.map((tab) => (
 												<Link
 													key={tab.key}
@@ -220,10 +220,10 @@ export default function AccountControls({
 							<button
 								type="button"
 								onClick={onSignOut}
-								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors text-red-600 hover:bg-red-50 hover:text-red-700"
+								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
 							>
 								<svg
-									className="w-4 h-4"
+									className="h-4 w-4"
 									fill="none"
 									viewBox="0 0 24 24"
 									strokeWidth="1.5"

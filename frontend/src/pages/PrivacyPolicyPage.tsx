@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
 					{t("privacyPolicy.section1Title")}
 				</h2>
 				<p
-					className="text-gray-700 leading-relaxed"
+					className="leading-relaxed text-gray-700"
 					style={{ whiteSpace: "pre-line" }}
 				>
 					{t("privacyPolicy.section1Body")}
@@ -30,10 +30,10 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section2Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed mb-4">
+				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section2Body1")}
 				</p>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("privacyPolicy.section2Body2")}
 				</p>
 			</section>
@@ -42,16 +42,16 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section3Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed mb-4">
+				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section3Body")}
 				</p>
 				<h3 className="mb-1 text-lg font-medium">
 					{t("privacyPolicy.section3bTitle")}
 				</h3>
-				<p className="text-gray-700 leading-relaxed mb-2">
+				<p className="mb-2 leading-relaxed text-gray-700">
 					{t("privacyPolicy.section3bBody")}
 				</p>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("privacyPolicy.section3bLinksIntro")}{" "}
 					<a
 						href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section4Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("privacyPolicy.section4Body")}
 				</p>
 			</section>
@@ -86,7 +86,7 @@ export default function PrivacyPolicyPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("privacyPolicy.section5Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("privacyPolicy.section5Body")}
 				</p>
 			</section>

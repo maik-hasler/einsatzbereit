@@ -314,7 +314,7 @@ export default function DetailsStep({
 																	parseInt(e.target.value, 10) || 1,
 															})
 														}
-														className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30 disabled:bg-gray-100 disabled:text-gray-400"
+														className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
 													/>
 													<label
 														htmlFor={`edit-slot-unlimited-${slot.id}`}
@@ -501,7 +501,7 @@ export default function DetailsStep({
 											maxParticipants: parseInt(e.target.value, 10) || 1,
 										})
 									}
-									className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30 disabled:bg-gray-100 disabled:text-gray-400"
+									className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
 								/>
 								<label
 									htmlFor="slot-unlimited"
@@ -570,7 +570,7 @@ export default function DetailsStep({
 												),
 											)
 										}
-										className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+										className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none"
 									/>
 								</div>
 							</div>

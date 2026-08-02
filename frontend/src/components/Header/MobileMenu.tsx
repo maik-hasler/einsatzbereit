@@ -60,18 +60,18 @@ export default function MobileMenu({
 	return (
 		<div
 			ref={rootRef}
-			className={`absolute left-0 right-0 top-full border-t md:hidden shadow-modal ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
+			className={`absolute top-full right-0 left-0 border-t shadow-modal md:hidden ${isTransparent ? "border-white/20 bg-brand-800" : "border-gray-100 bg-white"}`}
 		>
 			{isTransparent && (
 				<div
 					className="pointer-events-none absolute inset-0 overflow-hidden"
 					aria-hidden="true"
 				>
-					<div className="absolute -left-20 -top-10 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl" />
-					<div className="absolute -right-16 -top-8 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl" />
+					<div className="absolute -top-10 -left-20 h-64 w-64 rounded-full bg-brand-700 opacity-60 blur-3xl" />
+					<div className="absolute -top-8 -right-16 h-48 w-48 rounded-full bg-brand-600 opacity-40 blur-3xl" />
 				</div>
 			)}
-			<div className="relative px-4 py-4 space-y-2">
+			<div className="relative space-y-2 px-4 py-4">
 				<div className="pb-2">
 					<LanguageSelector transparent={isTransparent} />
 				</div>
@@ -85,10 +85,10 @@ export default function MobileMenu({
 									width={36}
 									height={36}
 									loading="lazy"
-									className="w-9 h-9 rounded-full object-cover"
+									className="h-9 w-9 rounded-full object-cover"
 								/>
 							) : (
-								<div className="w-9 h-9 rounded-full bg-brand-700 text-white flex items-center justify-center text-sm font-semibold">
+								<div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
 									{initials}
 								</div>
 							)}
@@ -101,7 +101,7 @@ export default function MobileMenu({
 						<Link
 							to="/profile"
 							onClick={onClose}
-							className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
+							className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
 						>
 							{t("nav.myProfile")}
 						</Link>
@@ -110,7 +110,7 @@ export default function MobileMenu({
 							target="_blank"
 							rel="noopener noreferrer"
 							onClick={onClose}
-							className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
+							className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
 						>
 							{t("nav.accountSettings")}
 						</a>
@@ -118,7 +118,7 @@ export default function MobileMenu({
 							<Link
 								to="/administration"
 								onClick={onClose}
-								className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
+								className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
 							>
 								{t("nav.administration")}
 							</Link>
@@ -129,7 +129,7 @@ export default function MobileMenu({
 									type="button"
 									onClick={() => setOrgMenuOpen((o) => !o)}
 									aria-expanded={orgMenuOpen}
-									className={`flex w-full items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${menuItemVariant}`}
+									className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
 								>
 									{t("nav.organization")}
 									<svg
@@ -156,7 +156,7 @@ export default function MobileMenu({
 												key={tab.key}
 												to={orgTabPath(activeOrg.id, tab.key)}
 												onClick={onClose}
-												className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-600"}`}
+												className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isTransparent ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-gray-600 hover:bg-brand-50 hover:text-brand-600"}`}
 											>
 												{t(tab.labelKey)}
 											</Link>
@@ -168,7 +168,7 @@ export default function MobileMenu({
 						<button
 							type="button"
 							onClick={onSignOut}
-							className={`block w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isTransparent ? "text-red-400 hover:bg-white/10 hover:text-red-300" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
+							className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${isTransparent ? "text-red-400 hover:bg-white/10 hover:text-red-300" : "text-red-600 hover:bg-red-50 hover:text-red-700"}`}
 						>
 							{t("nav.signOut")}
 						</button>
@@ -178,14 +178,14 @@ export default function MobileMenu({
 						<button
 							type="button"
 							onClick={onSignIn}
-							className={`block w-full text-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
+							className={`block w-full rounded-lg px-4 py-2 text-center text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
 						>
 							{t("nav.signIn")}
 						</button>
 						<button
 							type="button"
 							onClick={onRegister}
-							className={`block w-full text-center rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
+							className={`block w-full rounded-lg border px-4 py-2 text-center text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
 						>
 							{t("nav.register")}
 						</button>

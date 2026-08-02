@@ -191,7 +191,7 @@ export default function ActivitySection() {
 			)}
 			{!invitationsLoading && invitations.length > 0 && (
 				<div className="mb-6">
-					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+					<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 						{t("profileOverview.invitationsHeading")}
 					</h2>
 					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -238,7 +238,7 @@ export default function ActivitySection() {
 				</div>
 			)}
 
-			<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+			<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 				{t("myEngagements.title")}
 			</h2>
 
@@ -338,7 +338,7 @@ export default function ActivitySection() {
 											{e.opportunityTitle}
 										</Link>
 									) : (
-										<span className="text-sm font-semibold italic text-gray-500">
+										<span className="text-sm font-semibold text-gray-500 italic">
 											{t("myEngagements.deletedOpportunityTitle")}
 										</span>
 									)}
@@ -353,7 +353,7 @@ export default function ActivitySection() {
 										</p>
 									)}
 									{e.message && (
-										<p className="mt-1 truncate text-sm italic text-gray-500">
+										<p className="mt-1 truncate text-sm text-gray-500 italic">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
@@ -395,7 +395,7 @@ export default function ActivitySection() {
 									)}
 								</div>
 								<span
-									className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+									className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
 								>
 									{STATUS_LABELS[e.status] ?? e.status}
 								</span>

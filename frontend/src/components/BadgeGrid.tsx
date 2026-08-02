@@ -61,7 +61,7 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 			</div>
 			<p
 				id={nameId}
-				className={`text-sm font-semibold leading-snug ${
+				className={`text-sm leading-snug font-semibold ${
 					isEarned ? "text-gray-900" : "text-gray-500"
 				}`}
 			>

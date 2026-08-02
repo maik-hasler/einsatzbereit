@@ -92,7 +92,7 @@ export default function AddToCalendarMenu({
 			</button>
 
 			{open && (
-				<ul className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal">
+				<ul className="absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal">
 					<li>
 						<a
 							href={googleUrl}

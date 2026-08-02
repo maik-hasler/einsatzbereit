@@ -154,10 +154,26 @@ Run lint before every commit. All errors must be fixed - zero warnings allowed (
 pnpm lint
 ```
 
-Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`, `jsx-a11y/recommended`.
+Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`, `jsx-a11y/recommended`, `tailwindcss/classnames-order`, `tailwindcss/no-contradicting-classname`, `tailwindcss/no-unnecessary-arbitrary-value`, `tailwindcss/enforces-negative-arbitrary-values`.
 
 - No non-null assertions (`!`). Use `as Type` or type narrowing (`if (!x) return`).
 - If `api` is intentionally excluded from `exhaustive-deps`, suppress with `// eslint-disable-next-line react-hooks/exhaustive-deps` and keep it consistent with the existing pattern.
+- `prettier-plugin-tailwindcss` sorts `className` values automatically as part of `pnpm format:write` - don't hand-order classes. `eslint-plugin-tailwindcss` (`tailwindcss/*` rules above) is the CI-enforced backstop for anything that slips through unformatted, plus `no-contradicting-classname` (e.g. `mt-2 mt-4` on the same element) and `no-unnecessary-arbitrary-value`/`enforces-negative-arbitrary-values` (flags e.g. `w-[480px]` where the equivalent scale utility `w-120` exists). Both plugins resolve the theme from `src/styles/global.css` (`.prettierrc.json`'s `tailwindStylesheet`, `eslint.config.js`'s `settings.tailwindcss.cssConfigPath`), so custom tokens like `brand-700` are recognized.
+
+## Design System
+
+Shared UI primitives live in `src/components/` and `src/lib/` (no separate design-system package). Reuse these instead of re-deriving their markup/classes - each exists because the same visual pattern had drifted into 2-4 slightly different hand-rolled versions across pages (see the rationale comments in `Button.tsx` and `ErrorBanner.tsx` for two examples); the Tailwind lint rules above only catch class-order and arbitrary-value drift, not this kind of duplication.
+
+| Primitive     | File                          | Use for                                                                                                                               |
+| ------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`      | `components/Button.tsx`      | Every clickable action, button or link - `variant` (`primary`/`secondary`), `size` (`sm`/`md`/`lg`), `fullWidth`                     |
+| `formClasses` | `lib/formClasses.ts`         | `inputClass`, `textareaClass`, `labelClass` for every form control                                                                   |
+| `ErrorBanner` | `components/ErrorBanner.tsx` | Inline "action failed" message - the one boxed style every page's error state should share                                          |
+| `EmptyState`  | `components/EmptyState.tsx`  | "Nothing here yet" placeholder with an optional CTA button                                                                           |
+| `Skeleton`    | `components/Skeleton.tsx`    | Loading placeholders (`animate-pulse` block)                                                                                         |
+| `Modal`       | `components/Modal.tsx`       | Every dialog - backdrop-button a11y pattern (see Accessibility below), focus trap, Escape-to-close, portals out of `inert` ancestors |
+
+**Tokens:** the brand color scale (`brand-50`...`brand-900`) and `accent-400` are defined once in `src/styles/global.css`'s `@theme` block - use them instead of ad hoc hex values or arbitrary colors. `rounded-xl` is the default corner radius for interactive surfaces (buttons, inputs, cards, modals); `rounded-md` is reserved for `Skeleton` loading blocks.
 
 ## Accessibility (a11y)
 
