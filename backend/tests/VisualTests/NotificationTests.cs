@@ -83,6 +83,14 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			new { message = "Notify Olaf please." });
 		applyResponse.EnsureSuccessStatusCode();
 
+		// The EngagementCreated notification is now raised post-commit via the
+		// outbox (not created synchronously within the apply request above), so
+		// wait for it to actually exist server-side before opening the panel -
+		// the frontend only fetches the notification list once, when the panel
+		// opens (einsatzbereit#1384), and won't retry if it beat the outbox's
+		// dispatch.
+		await WaitForNotificationAsync(olafHttp, oppTitle);
+
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 
 		var bell = Page.GetByTestId("notification-bell");
@@ -154,6 +162,11 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 			new { message = "Notify Olaf please." });
 		applyResponse.EnsureSuccessStatusCode();
 
+		// See the identical wait in EngagementCreatedNotification_NavigatesToEngagementManagementPage
+		// above - the EngagementCreated notification is raised post-commit via the outbox now, so
+		// it must exist before the panel's one-shot fetch on open, or it never appears.
+		await WaitForNotificationAsync(olafHttp, oppTitle);
+
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 
 		await Page.RouteAsync("**/v1/notifications/*/read", async route =>
@@ -191,5 +204,33 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var errorToast = Page.GetByRole(AriaRole.Alert)
 			.Filter(new() { HasTextString = "Failed to mark notification as read." });
 		await Expect(errorToast).ToBeVisibleAsync(new() { Timeout = 5_000 });
+	}
+
+	// Polls the recipient's own notification list (rather than trusting the
+	// triggering request's HTTP response alone) so tests fail loudly instead
+	// of racing the outbox - same rationale as EmailDeliveryTests'
+	// AssertMailpitReceivedMessageToAsync for the equally-async email side
+	// effect.
+	private static async Task WaitForNotificationAsync(HttpClient authenticatedClient, string relatedTitleContains)
+	{
+		var deadline = DateTime.UtcNow.AddSeconds(30);
+
+		while (DateTime.UtcNow < deadline)
+		{
+			var response = await authenticatedClient.GetAsync("/v1/notifications");
+			if (response.IsSuccessStatusCode)
+			{
+				var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+				if (body.TryGetProperty("items", out var items) &&
+					items.EnumerateArray().Any(item =>
+						item.TryGetProperty("relatedTitle", out var relatedTitle) &&
+						(relatedTitle.GetString()?.Contains(relatedTitleContains, StringComparison.Ordinal) ?? false)))
+					return;
+			}
+
+			await Task.Delay(500);
+		}
+
+		throw new TimeoutException($"No notification with relatedTitle containing '{relatedTitleContains}' appeared within 30s.");
 	}
 }
