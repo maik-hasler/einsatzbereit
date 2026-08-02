@@ -29,6 +29,7 @@ internal sealed class UploadOpportunityBannerEndpoint
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitOrganisatorPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.DisableAntiforgery()
+			.WithMetadata(new RequestSizeLimitAttribute(ImageUploadValidator.MaxRequestBodySizeBytes))
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> UploadOpportunityBannerAsync(
