@@ -103,6 +103,61 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenOpportunityIsDraft(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1155: this endpoint is anonymous (no organizer check), so an
+		// unpublished Draft opportunity's details must not leak to whoever holds the
+		// engagement id, matching what GetDetailsAsync already enforces.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var calendarInfo = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		calendarInfo.Should().BeNull();
+	}
+
+	[Test]
+	public async Task GetCalendarInfoAsync_ShouldReturnInfo_WhenOpportunityIsPublished(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator()).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var calendarInfo = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		calendarInfo.Should().NotBeNull();
+		calendarInfo!.OpportunityTitle.Should().Be("Titel");
+	}
+
+	[Test]
 	public async Task GetPagedByOpportunityAsync_ShouldEnrichVolunteerPhone_FromLocalUserRow(
 		CancellationToken cancellationToken)
 	{
