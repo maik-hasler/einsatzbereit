@@ -34,6 +34,7 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		[FromServices] ISender sender,
 		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
+		HttpRequest httpRequest,
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
@@ -58,6 +59,7 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
+		var timezone = httpRequest.Headers["X-Timezone"].FirstOrDefault();
 		var command = new CreateTimeSlotCommand(
 			opportunityId,
 			request.StartDateTime,
@@ -65,7 +67,8 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 			request.MaxParticipants,
 			userId,
 			request.RecurrenceFrequency,
-			recurrenceCount);
+			recurrenceCount,
+			timezone);
 
 		var timeSlots = await sender.Send(command, cancellationToken);
 
