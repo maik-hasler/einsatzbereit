@@ -139,9 +139,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		var opportunity = VolunteerOpportunity.Create(
 			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
-			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator()).GetValueOrThrow();
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		opportunity.Publish().ThrowIfFailure();
 		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
