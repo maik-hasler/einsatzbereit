@@ -92,10 +92,7 @@ internal sealed class CheckInAttemptLimiter(
 			dbContext.Set<CheckInAttempt>().Add(attempt);
 		}
 
-		attempt.FailedAttempts++;
-		attempt.LastAttemptOn = now;
-		if (attempt.FailedAttempts >= MaxFailedAttempts)
-			attempt.LockedUntil = now.Add(LockoutDuration);
+		ApplyFailedAttempt(attempt, now);
 
 		if (!isNew)
 		{
@@ -120,13 +117,26 @@ internal sealed class CheckInAttemptLimiter(
 			attempt = await dbContext.Set<CheckInAttempt>()
 				.SingleAsync(a => a.EngagementId == engagementId, cancellationToken);
 
-			attempt.FailedAttempts++;
-			attempt.LastAttemptOn = now;
-			if (attempt.FailedAttempts >= MaxFailedAttempts)
-				attempt.LockedUntil = now.Add(LockoutDuration);
+			ApplyFailedAttempt(attempt, now);
 
 			await dbContext.SaveChangesAsync(cancellationToken);
 		}
+	}
+
+	// IsLockedOutAsync is always checked (and short-circuits) before this method is
+	// ever called, so a persisted LockedUntil reaching here has already expired -
+	// without this, FailedAttempts only ever grew, so once it first hit
+	// MaxFailedAttempts the very next wrong guess re-locked for another full
+	// LockoutDuration forever, with no way to ever earn a fresh attempt budget
+	// again (#1159, ported from the earlier in-memory limiter this replaced).
+	private static void ApplyFailedAttempt(CheckInAttempt attempt, DateTimeOffset now)
+	{
+		var previousLockoutExpired = attempt.LockedUntil is not null;
+		attempt.FailedAttempts = previousLockoutExpired ? 1 : attempt.FailedAttempts + 1;
+		attempt.LastAttemptOn = now;
+		attempt.LockedUntil = attempt.FailedAttempts >= MaxFailedAttempts
+			? now.Add(LockoutDuration)
+			: null;
 	}
 
 	internal static async Task ResetAsync(

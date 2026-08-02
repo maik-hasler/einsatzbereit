@@ -8,5 +8,6 @@ public sealed record EngagementCancelledDomainEvent(
 	EngagementId EngagementId,
 	UserId VolunteerId,
 	VolunteerOpportunityId OpportunityId,
-	string? Reason)
+	string? Reason,
+	string? OpportunityTitle = null)
 	: DomainEvent;

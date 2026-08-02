@@ -306,6 +306,17 @@ internal sealed class ApplicationDbContext(
 				&& (e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed),
 				cancellationToken);
 
+	public async Task LockTimeSlotForUpdateAsync(
+		TimeSlotId timeSlotId,
+		CancellationToken cancellationToken = default) =>
+		await Set<TimeSlot>()
+			.FromSqlInterpolated($@"
+				SELECT id, end_date_time, max_participants, recurrence_count, recurrence_frequency, series_id, start_date_time, volunteer_opportunity_id
+				FROM time_slot
+				WHERE id = {timeSlotId.Value}
+				FOR UPDATE")
+			.ToListAsync(cancellationToken);
+
 	public async Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default) =>
@@ -433,6 +444,24 @@ internal sealed class ApplicationDbContext(
 			await Set<User>().AddRangeAsync(created, cancellationToken);
 
 		return [.. existing, .. created];
+	}
+
+	public async Task<User> GetOrCreateUserAsync(
+		UserId userId,
+		string? preferredLanguage,
+		CancellationToken cancellationToken = default)
+	{
+		var existing = await Users.FindAsync(userId, cancellationToken);
+		if (existing is not null)
+			return existing;
+
+		await Database.ExecuteSqlInterpolatedAsync($@"
+			INSERT INTO ""user"" (id, languages, skills, preferred_language)
+			VALUES ({userId.Value}, '[]', '[]', {preferredLanguage})
+			ON CONFLICT (id) DO NOTHING", cancellationToken);
+
+		return await Users.FindAsync(userId, cancellationToken)
+			?? throw new InvalidOperationException($"User '{userId.Value}' was not found immediately after being inserted.");
 	}
 
 	public async Task<Engagement?> GetTerminalEngagementAsync(

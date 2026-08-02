@@ -331,4 +331,138 @@ public class EngagementTests
 
 		engagement.ReactivationCount.Should().Be(5);
 	}
+
+	// --- CheckIn ---
+
+	[Test]
+	public void CheckIn_ShouldSetIsCheckedIn_WhenConfirmed()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+
+		engagement.CheckIn();
+
+		engagement.IsCheckedIn.Should().BeTrue();
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenNotConfirmed()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		var result = engagement.CheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Only confirmed*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenAlreadyCheckedIn()
+	{
+		// Issue #1162: a repeated CheckIn() call used to re-raise EngagementCheckedInDomainEvent
+		// every time, corrupting the audit trail and any future once-only consumer.
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+
+		var result = engagement.CheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*already checked in*");
+	}
+
+	// --- Anonymized guard (#1140) ---
+	// DeleteMyAccountCommandHandler anonymizes an engagement (VolunteerId = null) when its
+	// volunteer deletes their account. Every subsequent state transition must refuse to run
+	// rather than dereference the now-null VolunteerId.
+
+	[Test]
+	public void Confirm_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Anonymize();
+
+		var result = engagement.Confirm();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void Cancel_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Anonymize();
+
+		var result = engagement.Cancel();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void Withdraw_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Anonymize();
+
+		var result = engagement.Withdraw();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void Reactivate_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+		engagement.Anonymize();
+
+		var result = engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.Anonymize();
+
+		var result = engagement.CheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void UndoCheckIn_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.Anonymize();
+
+		var result = engagement.UndoCheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void SubmitFeedback_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.Anonymize();
+
+		var result = engagement.SubmitFeedback(5, "Great shift", DateTimeOffset.UtcNow);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
 }

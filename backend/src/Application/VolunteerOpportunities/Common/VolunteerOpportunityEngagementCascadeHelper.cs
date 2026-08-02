@@ -1,5 +1,3 @@
-using Application.Common.Email;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Engagements.Common;
@@ -22,12 +20,8 @@ internal static class VolunteerOpportunityEngagementCascadeHelper
 	public static async Task NotifyAndCancelActiveEngagementsAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
-		IKeycloakUserService keycloakUserService,
-		IEmailService emailService,
-		IEmailTemplateRenderer emailTemplateRenderer,
-		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
-		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
+		string opportunityTitle,
 		NotificationKind opportunityNotificationKind,
 		string engagementCancellationReason,
 		CancellationToken cancellationToken)
@@ -48,13 +42,9 @@ internal static class VolunteerOpportunityEngagementCascadeHelper
 			// the opportunity-level notification above.
 			await EngagementCancellationHelper.CancelAndNotifyAsync(
 				dbContext,
-				keycloakUserService,
-				emailService,
-				emailTemplateRenderer,
-				unsubscribeLinkBuilder,
 				engagement,
-				opportunity.Title,
 				engagementCancellationReason,
+				opportunityTitle,
 				cancellationToken);
 		}
 	}

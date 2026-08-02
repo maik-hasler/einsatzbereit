@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -26,11 +24,7 @@ namespace Application.Organizations.AdminShadowDeleteOrganization.v1;
 /// </summary>
 internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
+	IEngagementReadRepository engagementReadRepository)
 	: ICommandHandler<AdminShadowDeleteOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -49,10 +43,6 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 			await VolunteerOpportunityDeletionHelper.ShadowDeleteAsync(
 				dbContext,
 				engagementReadRepository,
-				keycloakUserService,
-				emailService,
-				emailTemplateRenderer,
-				unsubscribeLinkBuilder,
 				opportunity,
 				opportunity.Id,
 				request.AdminUserId,

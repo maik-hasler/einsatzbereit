@@ -101,7 +101,15 @@ public class AccountDeletionTests(IntegrationTestFixture fixture)
 
 		await ephemeralClient.DeleteMyAccountAsync(cancellationToken);
 
-		// Keycloak subsystem: the account can no longer authenticate at all.
+		// Keycloak subsystem: the account can no longer authenticate at all. The
+		// Keycloak deletion itself is no longer part of DeleteMyAccount's own
+		// transaction - UserAccountDeletedDomainEventHandler does it post-commit
+		// via the outbox (#1141), so it must be awaited before re-login is
+		// expected to fail.
+		var processed = await fixture.WaitForOutboxMessageProcessedAsync(
+			"Domain.Users.UserAccountDeletedDomainEvent", TimeSpan.FromSeconds(45));
+		processed.Should().BeTrue("UserAccountDeletedDomainEventHandler should have deleted the Keycloak user by now");
+
 		var reLogin = () => fixture.GetAccessTokenAsync(ephemeralUsername, ephemeralPassword);
 		await reLogin.Should().ThrowAsync<Exception>();
 

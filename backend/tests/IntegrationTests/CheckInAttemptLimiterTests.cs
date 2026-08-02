@@ -102,6 +102,39 @@ public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task RegisterFailedAttemptAsync_ShouldStartAFreshAttemptBudget_OnceAPreviousLockoutHasExpired(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1159: FailedAttempts only ever grew, so once it first hit
+		// MaxFailedAttempts the very next wrong guess re-locked for another full
+		// LockoutDuration forever, with no way to ever earn a fresh attempt budget -
+		// even long after the original lockout had actually expired. This bug was
+		// originally fixed in the in-memory ConcurrentDictionary-backed limiter this
+		// class replaced (#1176), and had to be re-ported here since the DB-persisted
+		// rewrite reintroduced it independently.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
+
+		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken))
+			.Should().BeTrue("5 failures trip the lockout");
+
+		var afterLockoutWindow = now.Add(CheckInAttemptLimiter.LockoutDuration).AddSeconds(1);
+		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken))
+			.Should().BeFalse("the lockout has now elapsed");
+
+		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken);
+
+		// A single wrong guess after expiry must not immediately re-lock - the old
+		// (buggy) behavior would have jumped straight back to "locked" here, since
+		// FailedAttempts had never been reset and was already >= MaxFailedAttempts.
+		(await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken))
+			.Should().BeFalse();
+	}
+
+	[Test]
 	public async Task RegisterFailedAttemptAsync_PersistsAcrossIndependentDbContexts(
 		CancellationToken cancellationToken)
 	{

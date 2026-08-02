@@ -262,10 +262,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldAllowParticipationTypeChange_WhenOnlyCancelledEngagementsExist(
+	public async Task Handle_ShouldThrow_WhenParticipationTypeChanges_AndOnlyCancelledEngagementsExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - issue #1145: switching away from ScheduledSlots clears every time
+		// slot, which cascade-sets even a Cancelled engagement's TimeSlotId to null,
+		// silently erasing its historical date. The guard must block on ANY engagement
+		// referencing this opportunity, not just Pending/Confirmed ones.
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
@@ -284,11 +287,11 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
-		var result = await _sut.Handle(command, cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.Should().BeTrue();
-		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*ParticipationType cannot be changed*");
 	}
 
 	[Test]

@@ -59,13 +59,13 @@ public class OutboxMessageSerializationTests
 	{
 		yield return new EngagementCancelledDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), "Reason");
+		yield return new EngagementCreatedDomainEvent(
+			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementCheckInUndoneDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementCheckedInDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementConfirmedDomainEvent(
-			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
-		yield return new EngagementCreatedDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementFeedbackSubmittedDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), 5);
@@ -79,6 +79,7 @@ public class OutboxMessageSerializationTests
 			OrganizationInvitationId.New(), CoreOrganizationId.New(), UserId.New());
 		yield return new OrganizationInvitationDeclinedDomainEvent(
 			OrganizationInvitationId.New(), CoreOrganizationId.New(), UserId.New());
+		yield return new UserAccountDeletedDomainEvent(UserId.New());
 		yield return new VolunteerOpportunityCancelledDomainEvent(
 			VolunteerOpportunityId.New(), CoreOrganizationId.New(), "Reason");
 		yield return new VolunteerOpportunityGeocodingRequestedDomainEvent(

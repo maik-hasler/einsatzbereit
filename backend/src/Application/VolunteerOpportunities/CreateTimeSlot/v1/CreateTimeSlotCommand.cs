@@ -11,5 +11,6 @@ public sealed record CreateTimeSlotCommand(
 	int? MaxParticipants,
 	UserId RequestingUserId,
 	string? RecurrenceFrequency = null,
-	int RecurrenceCount = 1)
+	int RecurrenceCount = 1,
+	string? Timezone = null)
 	: ICommand<IReadOnlyList<TimeSlot>>;

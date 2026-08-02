@@ -114,6 +114,7 @@ public static class ServiceCollectionExtensions
 		services.AddHostedService<AutomaticCheckInJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();
 		services.AddHostedService<OutboxProcessorJob>();
+		services.AddHostedService<OutboxRetentionJob>();
 		services.AddHostedService<GeocodingRetryJob>();
 		services.AddHostedService<OrganizationMembershipBackfillJob>();
 		services.ConfigureOptions<InvitationExpiryOptionsSetup>();

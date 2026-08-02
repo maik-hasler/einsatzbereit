@@ -1,22 +1,15 @@
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements.Common;
 using Domain.Engagements;
 using Domain.Primitives;
-using Domain.Users;
 
 namespace Application.Engagements.CancelEngagement.v1;
 
 internal sealed class CancelEngagementCommandHandler(
-	IApplicationDbContext dbContext,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
+	IApplicationDbContext dbContext)
 	: ICommandHandler<CancelEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -37,13 +30,9 @@ internal sealed class CancelEngagementCommandHandler(
 
 		await EngagementCancellationHelper.CancelAndNotifyAsync(
 			dbContext,
-			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
-			unsubscribeLinkBuilder,
 			engagement,
-			opportunity.Title,
 			request.Reason,
+			opportunity.Title,
 			cancellationToken);
 
 		return engagement;

@@ -153,6 +153,7 @@ internal sealed class EngagementReadRepository(
 					x.CancellationReason,
 				})
 			.OrderByDescending(x => x.CreatedOn)
+			.ThenBy(x => x.Id)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
@@ -199,13 +200,24 @@ internal sealed class EngagementReadRepository(
 		int pageSize,
 		CancellationToken cancellationToken = default)
 	{
+		var now = DateTimeOffset.UtcNow;
+
 		// Deliberately not an inner join against VolunteerOpportunitiesQuery: deleting an
 		// opportunity hard-deletes its row while only cancelling (not deleting) the
 		// volunteer's Engagement rows, so an inner join would silently drop those
 		// engagements from the volunteer's own history (#667). Opportunity/organization
 		// data is instead looked up separately and merged in below, falling back to
 		// null when the opportunity no longer exists.
-		var scopedQuery = dbContext.EngagementsQuery.Where(e => e.VolunteerId == volunteerId);
+		//
+		// The time slot join below IS a left join (an IndividualContact engagement has
+		// no TimeSlotId at all), used only to bucket/order by the slot's dates - actual
+		// time slot data for the response is still looked up in MapToSummariesAsync.
+		var scopedQuery =
+			from e in dbContext.EngagementsQuery
+			where e.VolunteerId == volunteerId
+			join ts in dbContext.TimeSlotsQuery on e.TimeSlotId equals ts.Id into tsGroup
+			from ts in tsGroup.DefaultIfEmpty()
+			select new { Engagement = e, TimeSlotStart = (DateTimeOffset?)ts.StartDateTime, TimeSlotEnd = (DateTimeOffset?)ts.EndDateTime };
 
 		// Current/upcoming vs. past split (#675): a checked-in Confirmed engagement
 		// represents a shift that has already happened, so it counts as past even
@@ -219,24 +231,39 @@ internal sealed class EngagementReadRepository(
 
 		// A non-terminal engagement whose opportunity was deleted can never be
 		// confirmed, checked into, or otherwise acted on again, so it belongs in
-		// Past rather than staying in "Current & Upcoming" forever (#703).
+		// Past rather than staying in "Current & Upcoming" forever (#703). Likewise
+		// (#1163) a time slot that has already ended moves the engagement to Past
+		// regardless of status/check-in - previously only IsCheckedIn could do that,
+		// but check-in is optional (CheckInMethod.None has no check-in action at all),
+		// so a shift nobody checked in for stayed "upcoming" permanently. An
+		// engagement with no time slot (IndividualContact) is unaffected either way.
 		scopedQuery = upcoming
-			? scopedQuery.Where(e =>
-				(e.Status == EngagementStatus.Pending
-					|| (e.Status == EngagementStatus.Confirmed && !e.IsCheckedIn))
-				&& opportunityExists.Contains(e.OpportunityId))
-			: scopedQuery.Where(e =>
-				e.Status == EngagementStatus.Cancelled
-				|| e.Status == EngagementStatus.Withdrawn
-				|| (e.Status == EngagementStatus.Confirmed && e.IsCheckedIn)
-				|| ((e.Status == EngagementStatus.Pending
-						|| (e.Status == EngagementStatus.Confirmed && !e.IsCheckedIn))
-					&& !opportunityExists.Contains(e.OpportunityId)));
+			? scopedQuery.Where(x =>
+				(x.Engagement.Status == EngagementStatus.Pending
+					|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn))
+				&& opportunityExists.Contains(x.Engagement.OpportunityId)
+				&& (x.TimeSlotEnd == null || x.TimeSlotEnd >= now))
+			: scopedQuery.Where(x =>
+				x.Engagement.Status == EngagementStatus.Cancelled
+				|| x.Engagement.Status == EngagementStatus.Withdrawn
+				|| (x.Engagement.Status == EngagementStatus.Confirmed && x.Engagement.IsCheckedIn)
+				|| ((x.Engagement.Status == EngagementStatus.Pending
+						|| (x.Engagement.Status == EngagementStatus.Confirmed && !x.Engagement.IsCheckedIn))
+					&& (!opportunityExists.Contains(x.Engagement.OpportunityId)
+						|| (x.TimeSlotEnd != null && x.TimeSlotEnd < now))));
 
 		var totalCount = await scopedQuery.CountAsync(cancellationToken);
 
-		var engagements = await scopedQuery
-			.OrderByDescending(e => e.CreatedOn)
+		// Upcoming is ordered by the slot's own start time (soonest shift first,
+		// #1163) rather than CreatedOn, which reflected sign-up order, not shift
+		// order; entries with no time slot sort last. Both branches add the primary
+		// key as a tiebreaker (#1161) so ties can't repeat/skip rows across pages.
+		var orderedQuery = upcoming
+			? scopedQuery.OrderBy(x => x.TimeSlotStart ?? DateTimeOffset.MaxValue).ThenBy(x => x.Engagement.Id)
+			: scopedQuery.OrderByDescending(x => x.Engagement.CreatedOn).ThenBy(x => x.Engagement.Id);
+
+		var engagements = await orderedQuery
+			.Select(x => x.Engagement)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
@@ -356,6 +383,10 @@ internal sealed class EngagementReadRepository(
 		if (engagement is null || engagement.TimeSlotId is null)
 			return null;
 
+		// Status == Published (#1155): this endpoint is anonymous, so without this an
+		// unpublished Draft opportunity's title/description/address leaked to anyone
+		// holding an engagement id for it - the one thing GetDetailsAsync already
+		// refuses to show a non-organizer.
 		var opportunity = await dbContext.VolunteerOpportunitiesQuery
 			.Where(o => o.Id == engagement.OpportunityId && o.Status == OpportunityStatus.Published)
 			.Select(o => new { o.Id, o.Title, o.Description, o.IsRemote, o.Address })
@@ -422,6 +453,7 @@ internal sealed class EngagementReadRepository(
 
 		var items = await scopedQuery
 			.OrderByDescending(e => e.FeedbackSubmittedAt)
+			.ThenBy(e => e.Id)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.Select(e => new FeedbackItemDto(

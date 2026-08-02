@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260802140000_AddVolunteerOpportunityAddressLengthCaps")]
+	partial class AddVolunteerOpportunityAddressLengthCaps
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -124,12 +127,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("uuid")
 						.HasColumnName("opportunity_id");
 
-					b.Property<int>("ReactivationCount")
-						.ValueGeneratedOnAdd()
-						.HasColumnType("integer")
-						.HasDefaultValue(0)
-						.HasColumnName("reactivation_count");
-
 					b.Property<DateTimeOffset?>("ReminderSentAt")
 						.HasColumnType("timestamp with time zone")
 						.HasColumnName("reminder_sent_at");
@@ -230,13 +227,11 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("id");
 
 					b.Property<string>("ContactEmail")
-						.HasMaxLength(254)
-						.HasColumnType("character varying(254)")
+						.HasColumnType("text")
 						.HasColumnName("contact_email");
 
 					b.Property<string>("ContactPhone")
-						.HasMaxLength(30)
-						.HasColumnType("character varying(30)")
+						.HasColumnType("text")
 						.HasColumnName("contact_phone");
 
 					b.Property<DateTimeOffset>("CreatedOn")
@@ -248,8 +243,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("deleted_on");
 
 					b.Property<string>("Description")
-						.HasMaxLength(1000)
-						.HasColumnType("character varying(1000)")
+						.HasColumnType("text")
 						.HasColumnName("description");
 
 					b.Property<bool>("IsDeleted")
@@ -273,8 +267,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("name");
 
 					b.Property<string>("Website")
-						.HasMaxLength(500)
-						.HasColumnType("character varying(500)")
+						.HasColumnType("text")
 						.HasColumnName("website");
 
 					b.HasKey("Id")
@@ -492,8 +485,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("avatar_url");
 
 					b.Property<string>("Bio")
-						.HasMaxLength(1000)
-						.HasColumnType("character varying(1000)")
+						.HasColumnType("text")
 						.HasColumnName("bio");
 
 					b.Property<DateTimeOffset?>("DeletedOn")
@@ -542,8 +534,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("notify_on_withdrawal");
 
 					b.Property<string>("Phone")
-						.HasMaxLength(30)
-						.HasColumnType("character varying(30)")
+						.HasColumnType("text")
 						.HasColumnName("phone");
 
 					b.Property<string>("PreferredContact")
@@ -683,12 +674,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("uuid")
 						.HasColumnName("id");
 
-					b.Property<bool>("AddressGeocodingFailed")
-						.ValueGeneratedOnAdd()
-						.HasColumnType("boolean")
-						.HasDefaultValue(false)
-						.HasColumnName("address_geocoding_failed");
-
 					b.Property<string>("BannerImageUrl")
 						.HasColumnType("text")
 						.HasColumnName("banner_image_url");
@@ -782,14 +767,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasIndex("OrganizationId")
 						.HasDatabaseName("ix_volunteer_opportunity_organization_id");
 
-					b.HasIndex("Tags")
-						.HasDatabaseName("ix_volunteer_opportunity_tags");
-
-					NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Tags"), "gin");
-
-					b.HasIndex("Status", "CreatedOn")
-						.HasDatabaseName("ix_volunteer_opportunity_status_created_on");
-
 					b.ToTable("volunteer_opportunity", (string)null);
 				});
 
@@ -798,12 +775,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<Guid>("Id")
 						.HasColumnType("uuid")
 						.HasColumnName("id");
-
-					b.Property<int>("AttemptCount")
-						.ValueGeneratedOnAdd()
-						.HasColumnType("integer")
-						.HasDefaultValue(0)
-						.HasColumnName("attempt_count");
 
 					b.Property<string>("Content")
 						.IsRequired()
@@ -834,33 +805,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasDatabaseName("ix_outbox_message_processed_on_utc");
 
 					b.ToTable("outbox_message", (string)null);
-				});
-
-			modelBuilder.Entity("Infrastructure.Persistence.RateLimiting.CheckInAttempt", b =>
-				{
-					b.Property<Guid>("EngagementId")
-						.HasColumnType("uuid")
-						.HasColumnName("engagement_id");
-
-					b.Property<int>("FailedAttempts")
-						.HasColumnType("integer")
-						.HasColumnName("failed_attempts");
-
-					b.Property<DateTimeOffset>("LastAttemptOn")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("last_attempt_on");
-
-					b.Property<DateTimeOffset?>("LockedUntil")
-						.HasColumnType("timestamp with time zone")
-						.HasColumnName("locked_until");
-
-					b.HasKey("EngagementId")
-						.HasName("pk_check_in_attempt");
-
-					b.HasIndex("LastAttemptOn")
-						.HasDatabaseName("ix_check_in_attempt_last_attempt_on");
-
-					b.ToTable("check_in_attempt", (string)null);
 				});
 
 			modelBuilder.Entity("Infrastructure.Persistence.StartupTasks.OrganizationMembershipBackfillState", b =>

@@ -35,6 +35,7 @@ internal sealed class AdminReportReadRepository(
 				LastReportedOn = g.Max(r => r.CreatedOn),
 			})
 			.OrderByDescending(g => g.LastReportedOn)
+			.ThenBy(g => g.TargetId)
 			.ToList();
 
 		var totalItems = groups.Count;

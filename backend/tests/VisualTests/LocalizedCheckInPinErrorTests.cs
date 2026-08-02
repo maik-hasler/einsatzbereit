@@ -74,12 +74,29 @@ public class LocalizedCheckInPinErrorTests(AspireFixture fixture) : VisualTestBa
 		await Page.GotoAsync($"{origin}/profile?tab=engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
+		var row = Page.Locator("li", new() { HasText = oppTitle });
+
+		// This engagement has no time slot (IndividualContact), and
+		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
+		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// a shared session where other concurrently-running tests have already
+		// given vera their own time-slotted upcoming engagements, this row can
+		// land past the first (10-item) page. Click "Load more" until it shows up
+		// or there is nothing left to load, before switching language below (the
+		// load state doesn't depend on locale) - see MyEngagementsTests.cs.
+		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
+		var loadMoreDeadline = DateTimeOffset.UtcNow.AddSeconds(60);
+		while (!await row.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync() && DateTimeOffset.UtcNow < loadMoreDeadline)
+		{
+			await loadMoreButton.ClickAsync();
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		}
+
 		// Switch to German only after signing in - FastSignInAsync itself waits on
 		// the English "User menu" aria-label (see OrgDashboardWidgetsTests).
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
 		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
 
-		var row = Page.Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await row.GetByRole(AriaRole.Button, new() { Name = "Einchecken" }).ClickAsync();
 

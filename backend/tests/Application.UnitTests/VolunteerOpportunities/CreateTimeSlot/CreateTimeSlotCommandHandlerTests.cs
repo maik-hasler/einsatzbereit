@@ -222,6 +222,60 @@ public class CreateTimeSlotCommandHandlerTests
 		result[0].MaxParticipants.Should().BeNull();
 	}
 
+	// --- DST-aware recurrence (#1160) ---
+
+	[Test]
+	public async Task Handle_ShouldKeepLocalWallClockTime_AcrossADstTransition(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1160: a weekly Saturday 10:00 Europe/Berlin shift created
+		// in September must still read 10:00 local after the Oct 25, 2026 CEST->CET
+		// transition - naive UTC AddDays() carried the *original* +02:00 offset
+		// forward unchanged, silently shifting every post-transition occurrence an
+		// hour early. This mirrors the issue's own repro dates exactly.
+		var opportunity = CreateOpportunity();
+		var opportunityId = Guid.CreateVersion7();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var start = new DateTimeOffset(2026, 9, 5, 10, 0, 0, TimeSpan.FromHours(2));
+		var end = start.AddHours(2);
+		var command = new CreateTimeSlotCommand(
+			opportunityId, start, end, 10, DefaultRequestingUserId,
+			RecurrenceFrequency: "Weekly", RecurrenceCount: 9, Timezone: "Europe/Berlin");
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result.Should().HaveCount(9);
+		// Pre-transition occurrence keeps +02:00 (CEST).
+		result[3].StartDateTime.Should().Be(new DateTimeOffset(2026, 9, 26, 10, 0, 0, TimeSpan.FromHours(2)));
+		// Post-transition occurrence (the 9th slot, per the issue's own repro) moves
+		// to +01:00 (CET) - still 10:00 local, not the naive +02:00 (which would be 11:00 CET).
+		result[8].StartDateTime.Should().Be(new DateTimeOffset(2026, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
+	}
+
+	[Test]
+	public async Task Handle_ShouldFallBackToEuropeBerlin_WhenTimezoneHeaderIsMissingOrInvalid(
+		CancellationToken cancellationToken)
+	{
+		var opportunity = CreateOpportunity();
+		var opportunityId = Guid.CreateVersion7();
+		_opportunityRepo
+			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
+			.Returns(opportunity);
+
+		var start = new DateTimeOffset(2026, 9, 5, 10, 0, 0, TimeSpan.FromHours(2));
+		var end = start.AddHours(2);
+		var command = new CreateTimeSlotCommand(
+			opportunityId, start, end, 10, DefaultRequestingUserId,
+			RecurrenceFrequency: "Weekly", RecurrenceCount: 9, Timezone: "Not/A_Real_Zone");
+
+		var result = await _sut.Handle(command, cancellationToken);
+
+		result[8].StartDateTime.Should().Be(new DateTimeOffset(2026, 10, 31, 10, 0, 0, TimeSpan.FromHours(1)));
+	}
+
 	[Test]
 	public async Task Handle_ShouldThrow_WhenOpportunityNotFound(
 		CancellationToken cancellationToken)
