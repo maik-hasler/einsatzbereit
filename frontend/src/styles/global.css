@@ -362,6 +362,18 @@ same unlayered-override pattern already used in this file). */
 }
 
 @theme {
+	/* Lexend (self-hosted via @fontsource-variable/lexend, imported once in
+	main.tsx) replaces Tailwind's default OS-UI-font stack everywhere -
+	Preflight derives html's font-family from --font-sans (see
+	tailwindcss/preflight.css), so this one override is enough. Chosen over
+	the more common Inter/system-ui defaults for its research backing on
+	reading speed/fluency, which fits a platform that already treats
+	legibility and a11y as first-class (see frontend/AGENTS.md's a11y
+	conventions) - not just a stylistic pick. Variable weight axis covers
+	100-900 in one file, matching every font-weight utility already in use
+	(font-medium through font-black) without extra @font-face declarations. */
+	--font-sans: "Lexend Variable", ui-sans-serif, system-ui, sans-serif;
+
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;
 	--color-brand-200: #a8dfc3;
