@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 
 const LANGUAGES = [
-	{ code: "en", flag: "🇬🇧" },
-	{ code: "de", flag: "🇩🇪" },
+	{ code: "en", short: "EN" },
+	{ code: "de", short: "DE" },
 ] as const;
 
 type LangCode = (typeof LANGUAGES)[number]["code"];
@@ -33,7 +33,12 @@ export default function LanguageSelector({
 				aria-label={t("language.switchLanguage")}
 				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
-				<span>{current.flag}</span>
+				<span
+					aria-hidden="true"
+					className={`rounded border px-1 py-0.5 text-xs font-bold leading-none tracking-wide ${transparent ? "border-white/30 text-white" : "border-gray-300 text-gray-600"}`}
+				>
+					{current.short}
+				</span>
 				<span className="font-medium">{t(`language.${current.code}`)}</span>
 				<svg
 					className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
@@ -82,7 +87,20 @@ export default function LanguageSelector({
 											: "text-gray-700 hover:bg-gray-50"
 								}`}
 							>
-								<span>{lang.flag}</span>
+								<span
+									aria-hidden="true"
+									className={`rounded border px-1 py-0.5 text-xs font-bold leading-none tracking-wide ${
+										transparent
+											? lang.code === currentCode
+												? "border-white/50 text-white"
+												: "border-white/30 text-white/80"
+											: lang.code === currentCode
+												? "border-brand-300 text-brand-700"
+												: "border-gray-300 text-gray-600"
+									}`}
+								>
+									{lang.short}
+								</span>
 								<span>{t(`language.${lang.code}`)}</span>
 								{lang.code === currentCode && (
 									<span
