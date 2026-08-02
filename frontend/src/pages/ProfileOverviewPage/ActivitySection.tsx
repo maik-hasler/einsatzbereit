@@ -106,10 +106,20 @@ export default function ActivitySection() {
 		setWithdrawError(null);
 		try {
 			const updated = await api.withdrawEngagement(confirmWithdrawId);
+			// Withdrawing moves the engagement out of the "upcoming" scope (a
+			// Withdrawn engagement is never returned by the server's upcoming
+			// filter), so patching its status in place would leave it stuck in
+			// the currently-viewed Upcoming list. Remove it there instead; in
+			// the "past" scope (e.g. an engagement whose opportunity was
+			// deleted, still withdrawable but already bucketed as past) it
+			// stays visible with its updated status like the other in-place
+			// patches below.
 			setEngagements((prev) =>
-				prev.map((e) =>
-					e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
-				),
+				engagementsScope === "upcoming"
+					? prev.filter((e) => e.id !== confirmWithdrawId)
+					: prev.map((e) =>
+							e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
+						),
 			);
 			setConfirmWithdrawId(null);
 		} catch (err) {
