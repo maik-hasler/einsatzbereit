@@ -959,7 +959,7 @@ export default function CreateVolunteerOpportunityModal({
 				</div>
 
 				{/* Stepper lives in its own row in the body, not the header. */}
-				<div className="border-b border-gray-100 px-6 pb-3 pt-3">
+				<div className="border-b border-gray-100 px-6 pt-3 pb-3">
 					<Stepper
 						current={step}
 						errorSteps={errorSteps}

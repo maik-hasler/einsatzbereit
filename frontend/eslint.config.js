@@ -4,6 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import prettier from "eslint-config-prettier";
 import i18next from "eslint-plugin-i18next";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import tailwindcss from "eslint-plugin-tailwindcss";
 
 export default tseslint.config(
 	js.configs.recommended,
@@ -69,6 +70,21 @@ export default tseslint.config(
 					mode: "jsx-text-only",
 				},
 			],
+		},
+	},
+	{
+		files: ["src/**/*.{ts,tsx}"],
+		plugins: { tailwindcss },
+		settings: {
+			tailwindcss: {
+				cssConfigPath: "./src/styles/global.css",
+			},
+		},
+		rules: {
+			"tailwindcss/classnames-order": "warn",
+			"tailwindcss/no-contradicting-classname": "error",
+			"tailwindcss/no-unnecessary-arbitrary-value": "warn",
+			"tailwindcss/enforces-negative-arbitrary-values": "warn",
 		},
 	},
 	prettier,

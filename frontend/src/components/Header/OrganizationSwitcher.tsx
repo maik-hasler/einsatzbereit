@@ -79,7 +79,7 @@ export default function OrganizationSwitcher({
 					)}
 					<span
 						data-testid="org-switcher-current-name"
-						className="min-w-[6rem] max-w-[200px] flex-1 truncate"
+						className="max-w-50 min-w-24 flex-1 truncate"
 					>
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
@@ -100,7 +100,7 @@ export default function OrganizationSwitcher({
 				</button>
 
 				{open && (
-					<div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-modal">
+					<div className="absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-modal">
 						<ul className="max-h-60 overflow-y-auto py-1">
 							{orgs.map((org) => (
 								<li key={org.id}>

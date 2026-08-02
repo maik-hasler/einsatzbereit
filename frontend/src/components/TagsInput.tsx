@@ -77,7 +77,7 @@ export default function TagsInput({
 					onBlur={commitDraft}
 					aria-describedby={hintId}
 					placeholder={value.length === 0 ? placeholder : undefined}
-					className="min-w-32 flex-1 border-none bg-transparent py-0.5 text-sm text-gray-900 focus:outline-none focus:ring-0"
+					className="min-w-32 flex-1 border-none bg-transparent py-0.5 text-sm text-gray-900 focus:ring-0 focus:outline-none"
 				/>
 			</div>
 			{hint && (

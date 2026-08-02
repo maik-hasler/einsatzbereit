@@ -70,7 +70,7 @@ export default function BasicsStep({
 						<button
 							type="button"
 							onClick={onBannerRemove}
-							className="absolute right-2 top-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
+							className="absolute top-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-black/80"
 						>
 							{t("createOpportunity.bannerRemove")}
 						</button>

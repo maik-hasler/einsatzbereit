@@ -72,14 +72,14 @@ export default function NotificationDropdown({
 				type="button"
 				data-testid={mobile ? "notification-bell-mobile" : "notification-bell"}
 				onClick={() => setNotifOpen((o) => !o)}
-				className={`relative p-2 rounded-lg transition-colors cursor-pointer ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
+				className={`relative cursor-pointer rounded-lg p-2 transition-colors ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
 				aria-label={bellLabel}
 				aria-haspopup="menu"
 				aria-controls={panelId}
 				aria-expanded={notifOpen}
 			>
 				<svg
-					className="w-5 h-5"
+					className="h-5 w-5"
 					fill="none"
 					viewBox="0 0 24 24"
 					strokeWidth="1.5"
@@ -104,23 +104,23 @@ export default function NotificationDropdown({
 					data-testid={
 						mobile ? "notification-panel-mobile" : "notification-panel"
 					}
-					className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-modal z-50 bg-white border-gray-200"
+					className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-modal"
 				>
-					<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+					<div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
 						<p className="text-sm font-medium text-gray-900">
 							{t("notifications.bellLabel")}
 						</p>
 						{notifications.some((n) => !n.isRead) && (
 							<button
 								type="button"
-								className="text-xs hover:underline cursor-pointer text-brand-700"
+								className="cursor-pointer text-xs text-brand-700 hover:underline"
 								onClick={() => void markAllRead()}
 							>
 								{t("notifications.markAllRead")}
 							</button>
 						)}
 					</div>
-					<ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+					<ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
 						{notifications.length === 0 ? (
 							<li className="px-4 py-6 text-center text-sm text-gray-500">
 								{t("notifications.empty")}
@@ -145,7 +145,7 @@ export default function NotificationDropdown({
 											}
 											disabled={notifLoadingMore}
 											onClick={() => void loadMoreNotifications()}
-											className="text-xs hover:underline cursor-pointer text-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+											className="cursor-pointer text-xs text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											{notifLoadingMore
 												? t("notifications.loadingMore")

@@ -182,19 +182,19 @@ export default function HomePage() {
 				{/* Decorative glow blobs */}
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-brand-700 opacity-60 blur-3xl"
+					className="pointer-events-none absolute -top-40 -left-40 h-120 w-120 rounded-full bg-brand-700 opacity-60 blur-3xl"
 				/>
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute -right-32 top-0 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
+					className="pointer-events-none absolute top-0 -right-32 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
 				/>
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-[500px] -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
+					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-125 -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
 				/>
 
 				{/* Content grid */}
-				<div className="relative mx-auto max-w-7xl px-4 pb-16 pt-[5.5rem] sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
+				<div className="relative mx-auto max-w-7xl px-4 pt-22 pb-16 sm:px-6 sm:pt-28 sm:pb-20 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
 					{/* Left feature cards - xl+ only */}
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
 						<div className="flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
@@ -321,7 +321,7 @@ export default function HomePage() {
 									{t("landing.heroCtaOrgOverview")}
 								</Link>
 							) : orgsLoading ? (
-								<Skeleton className="h-[52px] w-full rounded-xl sm:w-56" />
+								<Skeleton className="h-13 w-full rounded-xl sm:w-56" />
 							) : orgsFailed ? null : (
 								<button
 									type="button"
@@ -397,7 +397,7 @@ export default function HomePage() {
 				</div>
 
 				{/* Wave bottom edge */}
-				<div aria-hidden="true" className="absolute bottom-0 left-0 right-0">
+				<div aria-hidden="true" className="absolute right-0 bottom-0 left-0">
 					<svg
 						viewBox="0 0 1440 56"
 						preserveAspectRatio="none"
@@ -430,7 +430,7 @@ export default function HomePage() {
 						>
 							<div className="relative mb-5">
 								<span
-									className="select-none text-8xl font-black leading-none text-brand-100"
+									className="text-8xl leading-none font-black text-brand-100 select-none"
 									aria-hidden="true"
 								>
 									{"0" + step}
@@ -453,7 +453,7 @@ export default function HomePage() {
 			{/* Mission */}
 			<section aria-labelledby={missionTitleId} className="mb-20">
 				<div className="animate-fade-up overflow-hidden rounded-card bg-brand-800 px-8 py-12 text-center sm:px-16">
-					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
+					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-200 uppercase">
 						{t("landing.missionLabel")}
 					</p>
 					<h2
@@ -492,7 +492,7 @@ export default function HomePage() {
 						to="/organizations"
 						data-testid="organizations-teaser-cta"
 						size="lg"
-						className="shadow-sm shrink-0"
+						className="shrink-0 shadow-sm"
 					>
 						{t("landing.orgsTeaserCta")}
 					</Button>

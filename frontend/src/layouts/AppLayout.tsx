@@ -25,7 +25,7 @@ function AppLayoutInner() {
 				}
 			: undefined;
 	return (
-		<div className="min-h-screen flex flex-col">
+		<div className="flex min-h-screen flex-col">
 			<Header breadcrumb={breadcrumb} />
 			<main className="mx-auto max-w-7xl px-4 pb-16 pt-[var(--main-top-padding)] flex-1 w-full sm:px-6 lg:px-8">
 				<Suspense

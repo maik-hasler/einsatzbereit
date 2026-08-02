@@ -136,9 +136,9 @@ export default function FilterDropdown({
 					data-testid={testId}
 					onClick={onToggle}
 					aria-expanded={isOpen}
-					className={`flex items-center gap-1.5 whitespace-nowrap py-1.5 text-sm transition-colors ${
+					className={`flex items-center gap-1.5 py-1.5 text-sm whitespace-nowrap transition-colors ${
 						active
-							? "pl-3 pr-1.5 font-medium text-brand-700"
+							? "pr-1.5 pl-3 font-medium text-brand-700"
 							: "px-3 text-gray-600 hover:bg-gray-50"
 					}`}
 				>
@@ -170,7 +170,7 @@ export default function FilterDropdown({
 				<div
 					ref={panelRef}
 					style={{ left: panelLeft }}
-					className="absolute top-full z-[200] mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
+					className="absolute top-full z-200 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
 				>
 					{children}
 				</div>

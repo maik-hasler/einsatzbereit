@@ -19,7 +19,7 @@ export default function ImprintPage() {
 					{t("imprint.section1Title")}
 				</h2>
 				<p
-					className="text-gray-700 leading-relaxed"
+					className="leading-relaxed text-gray-700"
 					style={{ whiteSpace: "pre-line" }}
 				>
 					{t("imprint.section1Body")}
@@ -31,7 +31,7 @@ export default function ImprintPage() {
 					{t("imprint.section2Title")}
 				</h2>
 				<p
-					className="text-gray-700 leading-relaxed"
+					className="leading-relaxed text-gray-700"
 					style={{ whiteSpace: "pre-line" }}
 				>
 					{t("imprint.section2Body")}
@@ -43,7 +43,7 @@ export default function ImprintPage() {
 					{t("imprint.section3Title")}
 				</h2>
 				<p
-					className="text-gray-700 leading-relaxed"
+					className="leading-relaxed text-gray-700"
 					style={{ whiteSpace: "pre-line" }}
 				>
 					{t("imprint.section3Body")}
@@ -57,13 +57,13 @@ export default function ImprintPage() {
 				<h3 className="mb-1 text-lg font-medium">
 					{t("imprint.section4aTitle")}
 				</h3>
-				<p className="text-gray-700 leading-relaxed mb-4">
+				<p className="mb-4 leading-relaxed text-gray-700">
 					{t("imprint.section4aBody")}
 				</p>
 				<h3 className="mb-1 text-lg font-medium">
 					{t("imprint.section4bTitle")}
 				</h3>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("imprint.section4bBody")}
 				</p>
 			</section>

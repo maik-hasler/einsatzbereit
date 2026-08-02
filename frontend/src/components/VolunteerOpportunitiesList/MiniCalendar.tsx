@@ -180,7 +180,7 @@ export default function MiniCalendar({
 	for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
 	return (
-		<div className="w-64 select-none p-3">
+		<div className="w-64 p-3 select-none">
 			<div className="mb-2 flex items-center justify-between">
 				<button
 					type="button"

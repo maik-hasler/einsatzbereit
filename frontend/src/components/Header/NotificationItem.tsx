@@ -16,7 +16,7 @@ export default function NotificationItem({
 		<li>
 			<button
 				type="button"
-				className={`w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
+				className={`w-full cursor-pointer px-4 py-3 text-left text-sm transition-colors hover:bg-brand-50 ${!n.isRead ? "font-medium text-gray-900" : "text-gray-500"}`}
 				onClick={() => void onSelect(n)}
 			>
 				<span className="flex items-start gap-2">

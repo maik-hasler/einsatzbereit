@@ -442,7 +442,7 @@ export default function EngagementManagementPage() {
 												})}
 											</span>
 										) : (
-											<span className="text-xs italic text-gray-500">
+											<span className="text-xs text-gray-500 italic">
 												{t("engagementManagement.anonymizedVolunteer")}
 											</span>
 										)}
@@ -468,7 +468,7 @@ export default function EngagementManagementPage() {
 										</p>
 									)}
 									{e.message && (
-										<p className="mt-1 text-sm italic text-gray-700">
+										<p className="mt-1 text-sm text-gray-700 italic">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
@@ -508,7 +508,7 @@ export default function EngagementManagementPage() {
 								</div>
 								<div className="flex shrink-0 flex-col items-end gap-2">
 									<span
-										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>

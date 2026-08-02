@@ -336,7 +336,7 @@ export default function VolunteerOpportunitiesList() {
 								{t("opportunities.filterLabelCity")}
 							</p>
 							<div className="relative mb-3">
-								<PinIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+								<PinIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
 									type="text"
 									role="combobox"
@@ -360,7 +360,7 @@ export default function VolunteerOpportunitiesList() {
 										if (locationSuggestions.length > 0)
 											setShowLocationSuggestions(true);
 									}}
-									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
+									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
 								/>
 								{locationCityInput && (
 									<button
@@ -370,7 +370,7 @@ export default function VolunteerOpportunitiesList() {
 											resetLocationSuggestions();
 										}}
 										aria-label={t("opportunities.clearCity")}
-										className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+										className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
 									>
 										&times;
 									</button>
@@ -640,7 +640,7 @@ export default function VolunteerOpportunitiesList() {
 							aria-label={`${t("opportunities.filterLabelTag")}: ${tag}`}
 							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-brand-50"
 						>
-							<span className="flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-3 pr-1.5 text-sm font-medium text-brand-700">
+							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
 								<HashIcon
 									className="h-3.5 w-3.5 shrink-0 text-brand-500"
 									aria-hidden="true"

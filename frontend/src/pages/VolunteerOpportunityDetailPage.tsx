@@ -246,7 +246,7 @@ export default function VolunteerOpportunityDetailPage() {
 			<div className="mb-3 flex items-center justify-between gap-3">
 				<Link
 					to={`/organizations/${opportunity.organizationId}`}
-					className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors"
+					className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
 				>
 					{opportunity.organizationName}
 				</Link>
@@ -255,7 +255,7 @@ export default function VolunteerOpportunityDetailPage() {
 						onClick={handleShare}
 						data-testid="share-opportunity"
 						aria-label={t("opportunities.shareOpportunity")}
-						className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+						className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 					>
 						<svg
 							className="h-4 w-4"
@@ -278,7 +278,7 @@ export default function VolunteerOpportunityDetailPage() {
 							onClick={() => setShowReport(true)}
 							data-testid="report-opportunity"
 							aria-label={t("opportunities.reportOpportunity")}
-							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 						>
 							<svg
 								className="h-4 w-4"
@@ -450,7 +450,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{opportunity.participationType === "ScheduledSlots" &&
 				opportunity.timeSlots.length > 0 && (
 					<div className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 							{t("opportunities.availableTimeSlots")}
 						</h2>
 						<ul className="space-y-2">
@@ -590,7 +590,7 @@ export default function VolunteerOpportunityDetailPage() {
 					orgProfile.website ||
 					orgProfile.address) && (
 					<div className="mb-6" data-testid="about-organization">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 							{t("opportunities.aboutOrganization")}
 						</h2>
 						{orgProfile.description && (
@@ -713,7 +713,7 @@ export default function VolunteerOpportunityDetailPage() {
 			{/* More from this organization */}
 			{otherOrgOpportunities.length > 0 && (
 				<div className="mb-6" data-testid="more-from-organization">
-					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+					<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 						{t("opportunities.moreFromOrganization")}
 					</h2>
 					<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -195,7 +195,7 @@ export default function Dropdown({
 					id={listboxId}
 					role="listbox"
 					aria-labelledby={id}
-					className="absolute left-0 top-full z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal"
+					className="absolute top-full left-0 z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal"
 				>
 					{options.map((opt, index) => (
 						<li

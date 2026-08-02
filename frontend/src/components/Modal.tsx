@@ -84,7 +84,7 @@ export default function Modal({
 	// descendants, so portaling out from under it keeps the modal interactive
 	// regardless of the widget's own edit-mode state.
 	return createPortal(
-		<div className="fixed inset-0 z-[2000] flex items-center justify-center overflow-hidden p-3 sm:p-4">
+		<div className="fixed inset-0 z-2000 flex items-center justify-center overflow-hidden p-3 sm:p-4">
 			<button
 				type="button"
 				className={`absolute inset-0 ${backdropClassName}`}
