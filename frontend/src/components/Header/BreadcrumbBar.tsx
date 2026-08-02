@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import Button from "../Button";
 import type { BreadcrumbItem } from "../../contexts/ToolbarContext";
 import type { QuickAction } from "../../contexts/QuickActionsContext";
 import { HomeIcon } from "../icons";
@@ -74,7 +75,7 @@ export default function BreadcrumbBar({
 				{actions && actions.length > 0 && (
 					<div className="flex shrink-0 items-center gap-2">
 						{actions.map((action) => (
-							<button
+							<Button
 								key={action.key}
 								type="button"
 								onClick={action.onClick}
@@ -82,15 +83,16 @@ export default function BreadcrumbBar({
 								title={action.title}
 								aria-label={action.label}
 								data-testid={`quick-action-${action.key}`}
-								className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+								variant={action.variant === "primary" ? "primary" : "outline"}
+								className={
 									action.variant === "primary"
-										? "bg-brand-700 font-semibold text-white shadow-sm hover:bg-brand-800"
-										: "border border-gray-200 text-gray-700 hover:bg-gray-50"
-								}`}
+										? "shrink-0 shadow-sm"
+										: "shrink-0"
+								}
 							>
 								{action.icon}
 								<span className="hidden sm:inline">{action.label}</span>
-							</button>
+							</Button>
 						))}
 					</div>
 				)}

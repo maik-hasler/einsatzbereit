@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { OrganizationSummaryDto } from "../client/api-client";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
@@ -216,29 +216,38 @@ export default function HomePage() {
 							{t("landing.heroSubtitle")}
 						</p>
 						<div className="animate-fade-up-d3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-							<a
+							<Button
 								href="#opportunities"
-								className="w-full rounded-xl bg-white px-8 py-3 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50 sm:w-auto sm:py-3.5"
+								variant="onDark"
+								size="lg"
+								fullWidth
+								className="shadow-lg sm:w-auto"
 							>
 								{t("landing.heroCta")}
-							</a>
+							</Button>
 							{auth.isAuthenticated && orgAppPath ? (
-								<Link
+								<Button
 									to={orgAppPath}
-									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+									variant="outlineOnDark"
+									size="lg"
+									fullWidth
+									className="sm:w-auto"
 								>
 									{t("landing.heroCtaOrgOverview")}
-								</Link>
+								</Button>
 							) : orgsLoading ? (
 								<Skeleton className="h-13 w-full rounded-xl sm:w-56" />
 							) : orgsFailed ? null : (
-								<button
+								<Button
 									type="button"
 									onClick={handleOrgCta}
-									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+									variant="outlineOnDark"
+									size="lg"
+									fullWidth
+									className="sm:w-auto"
 								>
 									{t("landing.heroCtaOrg")}
-								</button>
+								</Button>
 							)}
 						</div>
 						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
@@ -361,12 +370,13 @@ export default function HomePage() {
 					<p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-100">
 						{t("landing.missionText")}
 					</p>
-					<a
+					<Button
 						href="#opportunities"
-						className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
+						variant="onDark"
+						className="mt-8 shadow-lg"
 					>
 						{t("landing.missionCta")}
-					</a>
+					</Button>
 				</div>
 			</section>
 
