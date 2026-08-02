@@ -54,7 +54,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// A brand-new organization has no applications and no confirmed
 		// volunteers yet - both KPI stats read 0.
-		await Expect(todoWidget).ToContainTextAsync("Pending Applications");
+		await Expect(todoWidget).ToContainTextAsync("Pending Sign-ups");
 		await Expect(todoWidget).ToContainTextAsync("Signed-up Volunteers");
 		// Selects on data-testid rather than the text-3xl Tailwind utility
 		// class - see #1328, a purely cosmetic restyle of that class would
@@ -204,7 +204,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var backend = Fixture.GetEndpoint("backend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
-		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var token = await Page.EvaluateAsync<string?>(@"() => {
@@ -222,8 +222,16 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
+		// A dedicated fresh organization rather than olaf's shared pinned
+		// org - that org accumulates widget-layout customization and dozens
+		// of opportunities/notifications across the whole test suite over a
+		// full run, and this test only cares about a lone Calendar widget in
+		// its default (compact) placement.
 		var suffix = Guid.NewGuid().ToString("N");
-		var organizationId = pinnedOrgId!.Value.ToString();
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1254 {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
 
 		// Gives the Calendar widget an event to render - without one, the
 		// Agenda view shows its empty-state span instead of the table whose

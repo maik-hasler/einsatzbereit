@@ -6,7 +6,7 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #665: EngagementManagementPage ("Manage applications")
+/// Regression for #665: EngagementManagementPage ("Manage sign-ups")
 /// unconditionally called GET .../check-in-pin on every load, regardless of
 /// the opportunity's checkInMethod. The backend returns 404 whenever the PIN
 /// is null, i.e. for every checkInMethod other than "PINCode" - so the

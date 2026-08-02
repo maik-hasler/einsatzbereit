@@ -10,7 +10,7 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 {
 	/// <summary>
 	/// Regression for #572: a Confirmed engagement with a time slot must show
-	/// an "Add to Calendar" menu in "My Engagements" with Google Calendar,
+	/// an "Add to Calendar" menu in "My Sign-ups" with Google Calendar,
 	/// Apple Calendar (webcal), and .ics download links scoped to that one
 	/// engagement - not the old opportunity-level file download.
 	/// </summary>
