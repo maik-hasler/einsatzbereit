@@ -4,6 +4,7 @@ using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
 using Api.Common.Health;
 using Api.Common.Middleware;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application;
 using Application.Common.Startup;
@@ -12,6 +13,7 @@ using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -86,6 +88,18 @@ builder.Services.AddHealthChecks()
 
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);
+builder.Services.AddOutputCachingPolicies(builder.Configuration);
+
+// EnableForHttps is safe here: this API is a pure JSON/token (Bearer, not cookie) API,
+// so there's no session secret reflected back into a compressible response body that a
+// BREACH-style attack could exploit (#1391).
+builder.Services.AddResponseCompression(options =>
+{
+	options.EnableForHttps = true;
+	options.Providers.Add<BrotliCompressionProvider>();
+	options.Providers.Add<GzipCompressionProvider>();
+	options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json");
+});
 
 builder.Services.AddHttpLogging(logging =>
 {
@@ -192,6 +206,7 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 app.MapDefaultEndpoints();
 
 app.UseHttpLogging();
+app.UseResponseCompression();
 
 app.Use(async (context, next) =>
 {
@@ -228,6 +243,12 @@ app.Use(async (ctx, next) =>
 });
 
 app.UseMiddleware<LoginStreakMiddleware>();
+
+// Placed after LoginStreakMiddleware, not before: a cache hit short-circuits the
+// pipeline entirely (next() is never called), which would otherwise silently skip
+// that day's login-streak update for every authenticated request that happens to
+// land on a cached response (#1391).
+app.UseOutputCache();
 
 app.MapEndpoints();
 

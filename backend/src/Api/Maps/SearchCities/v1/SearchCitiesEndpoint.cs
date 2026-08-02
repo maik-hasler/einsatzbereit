@@ -1,9 +1,11 @@
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Geocoding;
 using Application.Common.Messaging;
 using Application.Maps.SearchCities.v1;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Maps.SearchCities.v1;
 
@@ -18,6 +20,7 @@ internal sealed class SearchCitiesEndpoint : IEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.LongPublicRead)
 			.MapToApiVersion(1);
 	}
 
