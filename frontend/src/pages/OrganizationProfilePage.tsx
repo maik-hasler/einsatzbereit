@@ -16,6 +16,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
+import { FlagIcon } from "../components/icons";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -98,20 +99,7 @@ export default function OrganizationProfilePage() {
 							aria-label={t("orgProfile.reportOrganization")}
 							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 						>
-							<svg
-								className="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="2"
-								stroke="currentColor"
-								aria-hidden="true"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M3 3v18M3 4.5h13.5l-2.25 3.75 2.25 3.75H3"
-								/>
-							</svg>
+							<FlagIcon className="h-4 w-4" />
 							<span className="hidden sm:inline">{t("orgProfile.report")}</span>
 						</button>
 					)

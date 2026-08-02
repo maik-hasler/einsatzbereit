@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useDismissableOverlay } from "../hooks/useDismissableOverlay";
+import { ChevronDownIcon } from "./icons";
 
 export interface DropdownOption {
 	value: string;
@@ -173,20 +174,10 @@ export default function Dropdown({
 				<span className={`truncate ${selected ? "" : "text-gray-500"}`}>
 					{selected ? selected.label : (placeholder ?? "")}
 				</span>
-				<svg
-					aria-hidden="true"
-					className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2"
-					stroke="currentColor"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="m19.5 8.25-7.5 7.5-7.5-7.5"
-					/>
-				</svg>
+				<ChevronDownIcon
+					open={open}
+					className="h-4 w-4 shrink-0 text-gray-400"
+				/>
 			</button>
 
 			{open && (

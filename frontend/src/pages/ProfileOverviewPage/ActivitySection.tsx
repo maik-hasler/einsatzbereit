@@ -19,6 +19,7 @@ import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
+import { CheckIconSolid } from "../../components/icons";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -378,18 +379,7 @@ export default function ActivitySection() {
 									</p>
 									{e.isCheckedIn && (
 										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-											<svg
-												className="h-3 w-3"
-												fill="currentColor"
-												viewBox="0 0 20 20"
-												aria-hidden="true"
-											>
-												<path
-													fillRule="evenodd"
-													d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-													clipRule="evenodd"
-												/>
-											</svg>
+											<CheckIconSolid className="h-3 w-3" />
 											{t("checkIn.checkedInLabel")}
 										</span>
 									)}

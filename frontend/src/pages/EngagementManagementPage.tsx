@@ -24,6 +24,7 @@ import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, labelClass } from "../lib/formClasses";
+import { CheckIconSolid, QrCodeIcon, StarIcon } from "../components/icons";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 const ENGAGEMENTS_PAGE_SIZE = 10;
@@ -298,25 +299,7 @@ export default function EngagementManagementPage() {
 			{showQrScanner && (
 				<div className="mb-6">
 					<Button type="button" onClick={() => setQrScannerOpen(true)}>
-						<svg
-							className="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							strokeWidth="1.5"
-							stroke="currentColor"
-							aria-hidden="true"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"
-							/>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"
-							/>
-						</svg>
+						<QrCodeIcon className="h-4 w-4" />
 						{t("checkIn.qrScanButton")}
 					</Button>
 				</div>
@@ -500,18 +483,7 @@ export default function EngagementManagementPage() {
 									</p>
 									{e.isCheckedIn && (
 										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-											<svg
-												className="h-3 w-3"
-												fill="currentColor"
-												viewBox="0 0 20 20"
-												aria-hidden="true"
-											>
-												<path
-													fillRule="evenodd"
-													d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-													clipRule="evenodd"
-												/>
-											</svg>
+											<CheckIconSolid className="h-3 w-3" />
 											{t("checkIn.checkedInLabel")}
 										</span>
 									)}
@@ -692,15 +664,10 @@ export default function EngagementManagementPage() {
 											})}
 										>
 											{[1, 2, 3, 4, 5].map((s) => (
-												<svg
+												<StarIcon
 													key={s}
 													className={`h-4 w-4 ${s <= item.rating ? "text-yellow-700" : "text-gray-500"}`}
-													fill="currentColor"
-													viewBox="0 0 24 24"
-													aria-hidden="true"
-												>
-													<path d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" />
-												</svg>
+												/>
 											))}
 											<span className="ml-1 text-xs text-gray-500">
 												{new Date(item.submittedAt).toLocaleDateString(locale)}

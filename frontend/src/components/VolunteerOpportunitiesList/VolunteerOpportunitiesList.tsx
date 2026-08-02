@@ -16,14 +16,14 @@ import { SpinnerIcon } from "../Spinner";
 import {
 	BroomIcon,
 	CalendarIcon,
-	ChipXIcon,
 	ClockIcon,
+	CloseIcon,
 	GlobeIcon,
-	HashIcon,
-	PinIcon,
+	HashtagIcon,
+	MapPinIcon,
 	TagIcon,
 	UsersIcon,
-} from "./icons";
+} from "../icons";
 
 const CATEGORY_VALUES = [
 	"Social",
@@ -317,7 +317,7 @@ export default function VolunteerOpportunitiesList() {
 				<div className="flex flex-wrap items-center justify-center gap-2 pb-3">
 					{/* Location + Radius */}
 					<FilterDropdown
-						icon={<PinIcon className="h-3.5 w-3.5" />}
+						icon={<MapPinIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelLocation")}
 						displayValue={locationDisplayValue}
 						isOpen={openFilter === "location"}
@@ -336,7 +336,7 @@ export default function VolunteerOpportunitiesList() {
 								{t("opportunities.filterLabelCity")}
 							</p>
 							<div className="relative mb-3">
-								<PinIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+								<MapPinIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
 									type="text"
 									role="combobox"
@@ -406,7 +406,7 @@ export default function VolunteerOpportunitiesList() {
 												}`}
 											>
 												<span className="flex items-center gap-2">
-													<PinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+													<MapPinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
 													{s.label}
 												</span>
 											</li>
@@ -425,7 +425,7 @@ export default function VolunteerOpportunitiesList() {
 								{locationLoading ? (
 									<SpinnerIcon className="h-4 w-4" />
 								) : (
-									<PinIcon className="h-4 w-4" />
+									<MapPinIcon className="h-4 w-4" />
 								)}
 								{t("opportunities.nearMe")}
 							</button>
@@ -641,10 +641,7 @@ export default function VolunteerOpportunitiesList() {
 							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-brand-50"
 						>
 							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
-								<HashIcon
-									className="h-3.5 w-3.5 shrink-0 text-brand-500"
-									aria-hidden="true"
-								/>
+								<HashtagIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
 								<span>#{tag}</span>
 							</span>
 							<button
@@ -653,7 +650,7 @@ export default function VolunteerOpportunitiesList() {
 								aria-label={t("opportunities.clearTag")}
 								className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
 							>
-								<ChipXIcon />
+								<CloseIcon />
 							</button>
 						</div>
 					)}

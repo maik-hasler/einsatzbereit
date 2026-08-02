@@ -6,6 +6,7 @@ import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
 import { runtimeConfig } from "../../lib/runtimeConfig";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import { ChevronDownIcon } from "../icons";
 
 // Mobile menu overlay (absolute-positioned so it doesn't push content down),
 // toggled open by MobileHeader's burger button.
@@ -132,20 +133,10 @@ export default function MobileMenu({
 									className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${menuItemVariant}`}
 								>
 									{t("nav.organization")}
-									<svg
-										className={`h-4 w-4 shrink-0 transition-transform ${orgMenuOpen ? "rotate-180" : ""}`}
-										fill="none"
-										viewBox="0 0 24 24"
-										strokeWidth="2"
-										stroke="currentColor"
-										aria-hidden="true"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											d="m19.5 8.25-7.5 7.5-7.5-7.5"
-										/>
-									</svg>
+									<ChevronDownIcon
+										open={orgMenuOpen}
+										className="h-4 w-4 shrink-0"
+									/>
 								</button>
 								{orgMenuOpen && (
 									<div

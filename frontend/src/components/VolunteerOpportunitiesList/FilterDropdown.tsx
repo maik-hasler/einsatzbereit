@@ -1,5 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronIcon, ChipXIcon, CheckMiniIcon } from "./icons";
+import {
+	CheckIcon,
+	CheckIconSolid,
+	ChevronDownIcon,
+	CloseIcon,
+} from "../icons";
 
 const EDGE_MARGIN = 8;
 
@@ -21,18 +26,7 @@ export function DropdownOption({
 			}`}
 		>
 			{selected && (
-				<svg
-					className="h-4 w-4 shrink-0 text-brand-600"
-					viewBox="0 0 20 20"
-					fill="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						fillRule="evenodd"
-						d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-						clipRule="evenodd"
-					/>
-				</svg>
+				<CheckIconSolid className="h-4 w-4 shrink-0 text-brand-600" />
 			)}
 			{label}
 		</button>
@@ -64,7 +58,7 @@ export function MultiDropdownOption({
 						: "border-gray-300 bg-white"
 				}`}
 			>
-				{selected && <CheckMiniIcon />}
+				{selected && <CheckIcon className="h-2.5 w-2.5 text-white" />}
 			</span>
 			{label}
 		</button>
@@ -150,9 +144,7 @@ export default function FilterDropdown({
 					</span>
 					<span>{active ? displayValue : label}</span>
 					{!active && (
-						<ChevronIcon
-							className={`h-3 w-3 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
-						/>
+						<ChevronDownIcon open={isOpen} className="h-3 w-3 text-gray-400" />
 					)}
 				</button>
 				{active && (
@@ -162,7 +154,7 @@ export default function FilterDropdown({
 						aria-label={clearAriaLabel}
 						className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
 					>
-						<ChipXIcon />
+						<CloseIcon className="h-3 w-3" />
 					</button>
 				)}
 			</div>
