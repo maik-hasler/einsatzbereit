@@ -77,10 +77,10 @@ public class OutboxMessageSerializationTests
 			OrganizationInvitationId.New(), CoreOrganizationId.New(), UserId.New());
 		yield return new OrganizationInvitationDeclinedDomainEvent(
 			OrganizationInvitationId.New(), CoreOrganizationId.New(), UserId.New());
-		yield return new OrganizationVerificationRevokedDomainEvent(CoreOrganizationId.New());
-		yield return new OrganizationVerifiedDomainEvent(CoreOrganizationId.New());
 		yield return new VolunteerOpportunityCancelledDomainEvent(
 			VolunteerOpportunityId.New(), CoreOrganizationId.New(), "Reason");
+		yield return new VolunteerOpportunityGeocodingRequestedDomainEvent(
+			VolunteerOpportunityId.New());
 		yield return new VolunteerOpportunityPublishedDomainEvent(
 			VolunteerOpportunityId.New(), CoreOrganizationId.New());
 		yield return new VolunteerOpportunityUnpublishedDomainEvent(
