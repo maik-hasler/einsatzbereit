@@ -149,6 +149,13 @@ public interface IApplicationDbContext
 		TimeSlotId timeSlotId,
 		CancellationToken cancellationToken = default);
 
+	// Takes a row lock on the time slot before counting active sign-ups, so a
+	// second concurrent sign-up for the same slot blocks until the first one's
+	// transaction commits instead of both reading the same stale count (#1142).
+	Task LockTimeSlotForUpdateAsync(
+		TimeSlotId timeSlotId,
+		CancellationToken cancellationToken = default);
+
 	Task<List<Engagement>> GetActiveEngagementsForOpportunityAsync(
 		VolunteerOpportunityId opportunityId,
 		CancellationToken cancellationToken = default);
