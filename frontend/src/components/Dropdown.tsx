@@ -170,7 +170,7 @@ export default function Dropdown({
 				onKeyDown={handleKeyDown}
 				className={`flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
 			>
-				<span className={`truncate ${selected ? "" : "text-gray-400"}`}>
+				<span className={`truncate ${selected ? "" : "text-gray-500"}`}>
 					{selected ? selected.label : (placeholder ?? "")}
 				</span>
 				<svg
