@@ -38,17 +38,20 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 		response.Headers.TryGetValues("Strict-Transport-Security", out _).Should().BeFalse();
 	}
 
-	// Uses /v1/organizations/directory rather than /alive: ASP.NET Core's own
-	// health-check middleware sets its own Cache-Control on every /alive response
-	// regardless of authentication, which would make this assertion fail for a
-	// reason unrelated to what it's testing.
+	// Uses a successful (200) anonymous request specifically: /alive's health-check
+	// middleware, and a bad-request ProblemDetails response, both independently carry
+	// their own cache-prevention headers regardless of authentication - unrelated to
+	// the Cache-Control:no-store logic this test targets, but enough to make the
+	// assertion fail for the wrong reason. A plain 200 avoids both.
 	[Test]
 	public async Task GetPublicOrganizations_ShouldNotIncludeCacheControl_WhenAnonymous(CancellationToken cancellationToken)
 	{
 		using var httpClient = fixture.CreateHttpClient();
 
-		var response = await httpClient.GetAsync("/v1/organizations/directory", cancellationToken);
+		var response = await httpClient.GetAsync(
+			"/v1/organizations/directory?pageNumber=1&pageSize=10", cancellationToken);
 
+		response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 		response.Headers.TryGetValues("Cache-Control", out _).Should().BeFalse();
 	}
 
