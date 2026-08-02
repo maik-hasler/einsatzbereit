@@ -141,6 +141,28 @@ public class OrganizationSettingsTests(
 	}
 
 	[Test]
+	public async Task UpdateOrganization_ShouldReturn400_WhenContactEmailExceedsMaxLength(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1173: [MaxLength] attributes on request records were
+		// never enforced (no validation was registered), so an oversized value
+		// here used to reach the DB unbounded instead of being rejected.
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var created = await client.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Oversized Contact Email Org" }, cancellationToken);
+
+		var act = () => client.UpdateOrganizationAsync(created.Id.Value, new UpdateOrganizationRequest
+		{
+			Name = "Oversized Contact Email Org",
+			ContactEmail = new string('a', 255) + "@example.com",
+		}, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
 	public async Task UpdateOrganization_ShouldReturn401_WhenNotAuthenticated(
 		CancellationToken cancellationToken)
 	{
