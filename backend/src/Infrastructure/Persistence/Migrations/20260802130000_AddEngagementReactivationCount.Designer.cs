@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	[Migration("20260802120000_AddEngagementReactivationCount")]
+	[Migration("20260802130000_AddEngagementReactivationCount")]
 	partial class AddEngagementReactivationCount
 	{
 		/// <inheritdoc />
