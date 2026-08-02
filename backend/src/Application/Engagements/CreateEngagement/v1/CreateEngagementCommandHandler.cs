@@ -101,7 +101,8 @@ internal sealed class CreateEngagementCommandHandler(
 		// response to the volunteer's own just-submitted action, not a repeatable
 		// notification about someone else's activity - equivalent to an order
 		// receipt, which platforms conventionally don't let users opt out of.
-		await emailService.SendAsync(volunteer.Email, volunteerContent.Subject, volunteerContent.Body, cancellationToken);
+		await emailService.SendAsync(
+			volunteer.Email, volunteerContent.Subject, volunteerContent.Body, engagement.Id.Value.ToString(), cancellationToken);
 
 		var organizerIds = members
 			.Where(m => m.IsOrganisator)
@@ -138,6 +139,7 @@ internal sealed class CreateEngagementCommandHandler(
 				organizer.Email,
 				organizerContent.Subject,
 				EmailFooter.Append(organizerContent.Body, unsubscribeUrl),
+				engagement.Id.Value.ToString(),
 				cancellationToken);
 		}
 

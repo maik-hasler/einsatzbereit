@@ -366,6 +366,7 @@ public class ConfirmEngagementCommandHandlerTests
 			"user@example.com",
 			Arg.Any<string>(),
 			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
@@ -393,7 +394,7 @@ public class ConfirmEngagementCommandHandlerTests
 
 		// Assert
 		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>

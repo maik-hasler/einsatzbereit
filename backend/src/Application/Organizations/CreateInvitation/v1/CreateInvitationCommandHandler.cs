@@ -85,6 +85,7 @@ internal sealed class CreateInvitationCommandHandler(
 			inviteeProfile.Email,
 			content.Subject,
 			content.Body,
+			invitation.Id.Value.ToString(),
 			cancellationToken);
 
 		return invitation.Id;

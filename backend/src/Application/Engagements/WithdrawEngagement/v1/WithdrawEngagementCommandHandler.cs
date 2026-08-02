@@ -84,6 +84,7 @@ internal sealed class WithdrawEngagementCommandHandler(
 					organizer.Email,
 					content.Subject,
 					EmailFooter.Append(content.Body, unsubscribeUrl),
+					engagement.Id.Value.ToString(),
 					cancellationToken);
 			}
 		}

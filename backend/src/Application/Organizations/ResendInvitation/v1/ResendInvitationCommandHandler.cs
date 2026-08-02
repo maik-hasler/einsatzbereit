@@ -65,6 +65,7 @@ internal sealed class ResendInvitationCommandHandler(
 			invitee.Email,
 			content.Subject,
 			content.Body,
+			invitation.Id.Value.ToString(),
 			cancellationToken);
 
 		return true;
