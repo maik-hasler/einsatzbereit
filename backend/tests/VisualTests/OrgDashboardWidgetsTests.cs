@@ -356,7 +356,13 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		var start = DateTimeOffset.UtcNow.AddDays(3);
+		// Pinned to a fixed 10:00 UTC start rather than DateTimeOffset.UtcNow -
+		// a "now + 3 days" slot inherits whatever time of day the suite happens
+		// to run at, and a 2-hour slot starting late enough in the day crosses
+		// midnight. The Agenda view then renders the one event as two rows (one
+		// per day it touches), and the GetByText(oppTitle) lookup below hits a
+		// Playwright strict-mode violation from matching both.
+		var start = new DateTimeOffset(DateTime.UtcNow.Date.AddDays(3).AddHours(10), TimeSpan.Zero);
 		var end = start.AddHours(2);
 		(await http.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",

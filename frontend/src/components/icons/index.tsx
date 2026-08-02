@@ -149,14 +149,32 @@ export function CheckIcon({ className = "h-4 w-4" }: IconProps) {
 	);
 }
 
-export function Bars3Icon({ className = "h-6 w-6" }: IconProps) {
+// A single component switching its inner <path> by prop, not two components
+// switched by a ternary at the call site - see MobileHeader.tsx's usage: a
+// ternary between two different icon *components* at the same JSX position
+// made Playwright's (and real users') clicks on the wrapping <button> stop
+// reaching its onClick handler, since React remounts the whole subtree - SVG
+// element and all - across the type change. A ternary between two <path>s
+// inside one stable component (this) doesn't remount anything.
+export function MenuToggleIcon({
+	className = "h-6 w-6",
+	open = false,
+}: ChevronIconProps) {
 	return (
 		<StrokeIcon className={className}>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-			/>
+			{open ? (
+				<path
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					d="M6 18 18 6M6 6l12 12"
+				/>
+			) : (
+				<path
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+				/>
+			)}
 		</StrokeIcon>
 	);
 }
