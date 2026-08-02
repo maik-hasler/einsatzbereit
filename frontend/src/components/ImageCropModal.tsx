@@ -240,7 +240,7 @@ export default function ImageCropModal({
 			<button
 				type="button"
 				aria-label={t("imageCrop.frameLabel")}
-				className="relative mt-4 block touch-none overflow-hidden rounded-card border-0 bg-gray-100 p-0 outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+				className="relative mt-4 block touch-none overflow-hidden rounded-card border-0 bg-gray-100 p-0"
 				style={{ width: frameWidth, height: frameHeight }}
 				onPointerDown={handlePointerDown}
 				onPointerMove={handlePointerMove}
