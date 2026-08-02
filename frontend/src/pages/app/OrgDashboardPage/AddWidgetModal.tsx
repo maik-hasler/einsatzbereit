@@ -24,7 +24,7 @@ function Bar({ className = "" }: { className?: string }) {
 // OrgDashboardPage's drag overlay (see EditableWidgetTile) for the same
 // reason: the floating clone shown while dragging must not mount a second
 // live instance of the widget (double data fetch, duplicate side effects).
-export function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
+function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 	switch (widgetKey) {
 		case "ToDo":
 			return (

@@ -49,7 +49,7 @@ internal sealed class WithdrawEngagementEndpoint
 			// A withdrawn engagement changes CurrentParticipantCount on the public listing.
 			await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
-			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
+			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
 		}
 		catch (ResultFailureException ex) when (ex.Error.Type == ErrorType.NotFound)
 		{

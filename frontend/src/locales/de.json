@@ -359,7 +359,6 @@
       "loading": "Wird geladen…",
       "layoutLoadError": "Dein gespeichertes Dashboard-Layout konnte nicht bestätigt werden. Die Ansicht unten stimmt damit möglicherweise nicht überein - Bearbeiten ist deaktiviert, bis dies erfolgreich geladen wurde.",
       "pendingEngagements": "Ausstehende Anmeldungen",
-      "pendingEngagementsDesc": "Anmeldungen, die noch geprüft werden",
       "viewOpportunities": "Einsätze anzeigen →",
       "unnamedDraft": "Unbenannter Entwurf",
       "signedUpVolunteers": "Angemeldete Freiwillige",
@@ -404,7 +403,6 @@
       "emptyStateMessage": "Füge ein Widget hinzu, um loszulegen."
     },
     "orgSettings": {
-      "title": "Organisation bearbeiten",
       "createdOn": "Erstellt am {{date}}",
       "fieldLogo": "Logo",
       "logoUpload": "Logo hochladen",
@@ -867,7 +865,6 @@
       "types": {
         "Milestone": "Meilenstein",
         "Streak": "Serie",
-        "Social": "Sozial",
         "Hidden": "Besonders"
       },
       "badges": {

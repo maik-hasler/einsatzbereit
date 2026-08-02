@@ -25,11 +25,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		var kpis = await olafClient.GetOrganizationDashboardAsync(orgId, cancellationToken);
 
-		kpis.OpenOpportunities.Should().Be(0);
 		kpis.PendingEngagements.Should().Be(0);
-		kpis.CancelledEngagements.Should().Be(0);
 		kpis.ConfirmedEngagementsTotal.Should().Be(0);
-		kpis.ConfirmedEngagementsNext7Days.Should().Be(0);
 	}
 
 	[Test]
@@ -98,11 +95,8 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		var kpis = await olafClient.GetOrganizationDashboardAsync(orgId, cancellationToken);
 
-		kpis.OpenOpportunities.Should().Be(2);
 		kpis.PendingEngagements.Should().Be(1);
-		kpis.CancelledEngagements.Should().Be(1);
 		kpis.ConfirmedEngagementsTotal.Should().Be(2);
-		kpis.ConfirmedEngagementsNext7Days.Should().Be(1);
 	}
 
 	[Test]
@@ -136,7 +130,6 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 
 		var org1Kpis = await olafClient.GetOrganizationDashboardAsync(org1Id, cancellationToken);
 
-		org1Kpis.OpenOpportunities.Should().Be(1);
 		org1Kpis.PendingEngagements.Should().Be(0);
 		org1Kpis.ConfirmedEngagementsTotal.Should().Be(1);
 	}

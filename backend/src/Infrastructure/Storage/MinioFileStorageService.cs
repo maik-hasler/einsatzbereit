@@ -90,7 +90,7 @@ internal sealed class MinioFileStorageService : IFileStorageService
 			cancellationToken);
 	}
 
-	public string GetPublicUrl(string objectKey)
+	private string GetPublicUrl(string objectKey)
 	{
 		var baseUrl = (_settings.PublicEndpoint ?? _settings.Endpoint).TrimEnd('/');
 		return $"{baseUrl}/{_settings.BucketName}/{PublicPrefix}{objectKey}";

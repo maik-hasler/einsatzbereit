@@ -45,6 +45,50 @@ public class RecordLoginCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldSendEarlyAdopterAward_WhenUserIsAmongFirst100(CancellationToken cancellationToken)
+	{
+		var userId = UserId.New();
+		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		_dbContext.CountUserStreaksAsync(cancellationToken).Returns(99);
+
+		await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
+
+		await _sender.Received(1).Send(
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "early-adopter" && c.UserId == userId),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotSendEarlyAdopterAward_WhenUserIsThe101stToLogIn(CancellationToken cancellationToken)
+	{
+		var userId = UserId.New();
+		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		_dbContext.CountUserStreaksAsync(cancellationToken).Returns(100);
+
+		await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
+
+		await _sender.DidNotReceive().Send(
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "early-adopter"),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotSendEarlyAdopterAward_WhenUserAlreadyHasAStreak(CancellationToken cancellationToken)
+	{
+		var userId = UserId.New();
+		var streak = BuildStreakWithLoginCount(userId, 3);
+		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
+
+		var nextDay = streak.LastLoginDate!.Value.AddDays(1);
+		await _sut.Handle(new RecordLoginCommand(userId, nextDay), cancellationToken);
+
+		await _dbContext.DidNotReceive().CountUserStreaksAsync(Arg.Any<CancellationToken>());
+		await _sender.DidNotReceive().Send(
+			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "early-adopter"),
+			Arg.Any<CancellationToken>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotSendAwardCommand_WhenStreakIsBelow7(CancellationToken cancellationToken)
 	{
 		var userId = UserId.New();
