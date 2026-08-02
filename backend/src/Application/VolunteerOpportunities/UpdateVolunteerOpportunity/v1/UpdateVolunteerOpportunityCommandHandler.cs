@@ -43,13 +43,16 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			var engagements = await engagementReadRepository.GetByOpportunityAsync(
 				opportunityId, cancellationToken);
 
-			var hasActiveEngagements = engagements.Any(e =>
-				e.Status is "Pending" or "Confirmed");
-
-			if (hasActiveEngagements)
+			// Widened from "Pending or Confirmed" to any engagement at all (#1145):
+			// switching away from ScheduledSlots clears every time slot
+			// (VolunteerOpportunity.SwitchParticipationType), which cascade-deletes
+			// the slot rows and sets Withdrawn/Cancelled/checked-in-and-completed
+			// engagements' TimeSlotId to null too, silently erasing their date -
+			// not just the active ones the old guard checked.
+			if (engagements.Count > 0)
 				throw new ResultFailureException(Error.Conflict(
 					"VolunteerOpportunity.ParticipationTypeLocked",
-					"ParticipationType cannot be changed while active engagements exist."));
+					"ParticipationType cannot be changed while any engagement exists for this opportunity."));
 		}
 
 		// Snapshot material fields before mutation to detect meaningful changes.

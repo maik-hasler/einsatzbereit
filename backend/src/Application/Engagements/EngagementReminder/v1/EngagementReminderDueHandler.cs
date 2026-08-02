@@ -106,10 +106,9 @@ internal sealed class EngagementReminderDueHandler(
 	// API's Dockerfile) and announce the wrong hour to the volunteer.
 	private static string FormatStart(DateTimeOffset startDateTime, string language)
 	{
+		var berlinTime = TimeZoneInfo.ConvertTime(startDateTime, TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin"));
 		var culture = CultureInfo.GetCultureInfo(language == "de" ? "de-DE" : "en-GB");
 		var pattern = language == "de" ? "dddd, d. MMMM yyyy 'um' HH:mm" : "dddd, d. MMMM yyyy 'at' HH:mm";
-		var berlin = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
-		var local = TimeZoneInfo.ConvertTime(startDateTime, berlin);
-		return local.ToString(pattern, culture);
+		return berlinTime.ToString(pattern, culture);
 	}
 }

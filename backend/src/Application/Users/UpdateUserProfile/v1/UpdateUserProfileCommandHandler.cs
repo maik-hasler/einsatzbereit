@@ -1,7 +1,6 @@
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
-using Domain.Users;
 
 namespace Application.Users.UpdateUserProfile.v1;
 
@@ -21,13 +20,9 @@ internal sealed class UpdateUserProfileCommandHandler(
 			request.LastName,
 			cancellationToken);
 
-		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
-
-		if (user is null)
-		{
-			user = User.Create(request.UserId);
-			await dbContext.Users.AddAsync(user, cancellationToken);
-		}
+		// preferredLanguage: null - PreferredLanguage is set explicitly below regardless
+		// of whether this call creates the row or finds an existing one (#1148).
+		var user = await dbContext.GetOrCreateUserAsync(request.UserId, preferredLanguage: null, cancellationToken);
 
 		user.ChangeBio(request.Bio);
 		user.SetPhone(request.Phone);

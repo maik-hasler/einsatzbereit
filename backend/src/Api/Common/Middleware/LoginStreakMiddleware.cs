@@ -2,14 +2,19 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.RecordLogin.v1;
 using Domain.Users;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Api.Common.Middleware;
 
 internal sealed class LoginStreakMiddleware(RequestDelegate next)
 {
-	private static readonly HashSet<string> _todayUpdated = [];
-	private static DateOnly _currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
-	private static readonly Lock _lock = new();
+	// Sliding-expiry entry per (user, their own resolved date) instead of one
+	// process-wide date (#1143): the previous static HashSet/DateOnly pair was
+	// shared by every user, so two users whose local dates differed (or either
+	// side of local midnight) wiped the whole dedupe set on alternate requests,
+	// turning every authenticated request into a DB round trip. 48h comfortably
+	// outlives the "today" it dedupes without needing to be cleared manually.
+	private static readonly TimeSpan DedupeWindow = TimeSpan.FromHours(48);
 
 	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
 	{
@@ -25,7 +30,7 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next)
 		}
 	}
 
-	public async Task InvokeAsync(HttpContext context, ISender sender)
+	public async Task InvokeAsync(HttpContext context, ISender sender, IMemoryCache cache)
 	{
 		if (context.User.Identity?.IsAuthenticated == true)
 		{
@@ -36,19 +41,11 @@ internal sealed class LoginStreakMiddleware(RequestDelegate next)
 				var tz = ResolveTimeZone(tzHeader);
 				var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz).DateTime);
 
-				bool shouldUpdate;
-				lock (_lock)
+				var cacheKey = $"login-streak:{subClaim}:{today:O}";
+				if (!cache.TryGetValue(cacheKey, out _))
 				{
-					if (_currentDate != today)
-					{
-						_todayUpdated.Clear();
-						_currentDate = today;
-					}
-					shouldUpdate = _todayUpdated.Add(subClaim);
-				}
+					cache.Set(cacheKey, true, DedupeWindow);
 
-				if (shouldUpdate)
-				{
 					try
 					{
 						await sender.Send(

@@ -3,6 +3,7 @@ using Application.Organizations;
 using Application.Organizations.GetOrganizationDashboard.v1;
 using Domain.Engagements;
 using Domain.Organizations;
+using Domain.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;
@@ -26,8 +27,16 @@ internal sealed class OrganizationDashboardReadRepository(
 			.Where(vo => vo.OrganizationId == orgId)
 			.Select(vo => vo.Id);
 
+		// Matches VolunteerOpportunityReadRepository.GetPagedSummariesAsync's own
+		// "open" predicate - Published, and either a not-yet-ended time slot or
+		// (for IndividualContact opportunities, which never have time slots) a
+		// future ValidUntil. Without this the KPI counted every opportunity ever
+		// created for the org, including drafts and long-finished ones (#1157).
 		var openOpportunities = await dbContext.VolunteerOpportunitiesQuery
-			.CountAsync(vo => vo.OrganizationId == orgId, cancellationToken);
+			.CountAsync(vo => vo.OrganizationId == orgId
+				&& vo.Status == OpportunityStatus.Published
+				&& (vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now)),
+				cancellationToken);
 
 		// A single grouped query covers every status breakdown (pending, cancelled, ...).
 		var countsByStatus = await dbContext.EngagementsQuery

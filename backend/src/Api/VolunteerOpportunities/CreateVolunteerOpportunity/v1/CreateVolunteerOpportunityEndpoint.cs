@@ -42,21 +42,21 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			? UserId.Create(uid).GetValueOrThrow()
 			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence))
+		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence) || !Enum.IsDefined(occurrence))
 		{
 			return Results.Problem(
 				"Invalid occurrence. Allowed values: OneTime, Recurring.",
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		if (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType))
+		if (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType) || !Enum.IsDefined(participationType))
 		{
 			return Results.Problem(
 				"Invalid participation type. Allowed values: ScheduledSlots, IndividualContact.",
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod))
+		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod) || !Enum.IsDefined(checkInMethod))
 		{
 			return Results.Problem(
 				"Invalid check-in method. Allowed values: None, QRCode, PINCode, Manual.",
@@ -66,7 +66,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 		Category? category = null;
 		if (!string.IsNullOrWhiteSpace(request.Category))
 		{
-			if (!Enum.TryParse<Category>(request.Category, ignoreCase: true, out var parsedCategory))
+			if (!Enum.TryParse<Category>(request.Category, ignoreCase: true, out var parsedCategory) || !Enum.IsDefined(parsedCategory))
 			{
 				return Results.Problem(
 					"Invalid category.",

@@ -447,6 +447,15 @@ public sealed class VolunteerOpportunity
 			else if (CheckInPin is null)
 				CheckInPin = pinGenerator.GeneratePin();
 		}
+		else
+		{
+			// Otherwise the old PIN stays live for anyone who saw it even after the
+			// organizer deliberately turns PIN check-in off - and it would silently
+			// come back into effect if PINCode is re-selected later without
+			// supplying a fresh custom PIN, since the regeneration branch above only
+			// fires when CheckInPin is null (#1165).
+			CheckInPin = null;
+		}
 
 		return Result.Success();
 	}
