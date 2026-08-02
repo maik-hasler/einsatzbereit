@@ -13,6 +13,20 @@ internal sealed class MinioFileStorageService : IFileStorageService
 	// upload) keeps caching effective without that staleness risk.
 	internal const string CacheControlHeaderValue = "public, max-age=3600";
 
+	// Everything this service stores today (avatars/logos/banners) is meant
+	// to be publicly viewable in an <img> tag, but the bucket policy only
+	// needs to cover this prefix, not the whole bucket - a future object type
+	// that isn't meant to be public (participant lists, ID scans) can then be
+	// stored outside this prefix without any policy change here at all.
+	// Transparent to every caller: GetPublicUrl(key) already returns the full
+	// URL, and nothing outside this class parses or reconstructs an object
+	// key by hand. Changing this prefix moves where new uploads land but does
+	// not relocate objects already stored under the old (whole-bucket-public)
+	// policy - acceptable on this repo's disposable, resettable staging
+	// environment (see reset-staging.yml), not something a one-time
+	// migration script is worth writing for pre-1.0.
+	private const string PublicPrefix = "public/";
+
 	private readonly IMinioClient _minio;
 	private readonly StorageSettings _settings;
 	private static readonly SemaphoreSlim _initLock = new(1, 1);
@@ -52,7 +66,7 @@ internal sealed class MinioFileStorageService : IFileStorageService
 		await _minio.PutObjectAsync(
 			new PutObjectArgs()
 				.WithBucket(_settings.BucketName)
-				.WithObject(objectKey)
+				.WithObject(PublicPrefix + objectKey)
 				.WithStreamData(content)
 				.WithObjectSize(size)
 				.WithContentType(contentType)
@@ -72,14 +86,14 @@ internal sealed class MinioFileStorageService : IFileStorageService
 		await _minio.RemoveObjectAsync(
 			new RemoveObjectArgs()
 				.WithBucket(_settings.BucketName)
-				.WithObject(objectKey),
+				.WithObject(PublicPrefix + objectKey),
 			cancellationToken);
 	}
 
 	public string GetPublicUrl(string objectKey)
 	{
 		var baseUrl = (_settings.PublicEndpoint ?? _settings.Endpoint).TrimEnd('/');
-		return $"{baseUrl}/{_settings.BucketName}/{objectKey}";
+		return $"{baseUrl}/{_settings.BucketName}/{PublicPrefix}{objectKey}";
 	}
 
 	// BucketExistsAsync's own bool result only distinguishes "bucket present"
@@ -119,7 +133,9 @@ internal sealed class MinioFileStorageService : IFileStorageService
 					cancellationToken);
 			}
 
-			var policy = $"{{\"Version\":\"2012-10-17\",\"Statement\":[{{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::{_settings.BucketName}/*\"]}}]}}";
+			// Scoped to PublicPrefix, not the whole bucket - see that constant's
+			// comment for why.
+			var policy = $"{{\"Version\":\"2012-10-17\",\"Statement\":[{{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::{_settings.BucketName}/{PublicPrefix}*\"]}}]}}";
 
 			await _minio.SetPolicyAsync(
 				new SetPolicyArgs()

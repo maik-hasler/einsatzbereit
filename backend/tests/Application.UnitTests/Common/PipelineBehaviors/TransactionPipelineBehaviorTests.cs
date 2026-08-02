@@ -10,33 +10,41 @@ namespace Application.UnitTests.Common.PipelineBehaviors;
 public class TransactionPipelineBehaviorTests
 {
 	[Test]
-	public async Task Handle_ShouldBeginSaveAndCommit_WhenNoTransactionIsActive(
+	public async Task Handle_ShouldExecuteInTransactionAndSaveChanges_WhenNoTransactionIsActive(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var unitOfWork = Substitute.For<IUnitOfWork>();
 		unitOfWork.HasActiveTransaction.Returns(false);
+		unitOfWork
+			.ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task<string>>>(), cancellationToken)
+			.Returns(callInfo => callInfo.Arg<Func<CancellationToken, Task<string>>>()!(cancellationToken));
 
 		var behavior = new TransactionPipelineBehavior<TestCommand, string>(unitOfWork);
 
 		// Act
 		var result = await behavior.Handle(new TestCommand(), () => ValueTask.FromResult("ok"), cancellationToken);
 
-		// Assert
+		// Assert - begin/commit-or-rollback is ApplicationDbContext's own
+		// responsibility now (ExecuteInTransactionAsync, wrapped in
+		// CreateExecutionStrategy for EnableRetryOnFailure); this only verifies
+		// the behavior runs the operation through it and saves afterwards.
 		result.Should().Be("ok");
-		await unitOfWork.Received(1).BeginTransactionAsync(cancellationToken);
+		await unitOfWork.Received(1).ExecuteInTransactionAsync(
+			Arg.Any<Func<CancellationToken, Task<string>>>(), cancellationToken);
 		await unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
-		await unitOfWork.Received(1).CommitTransactionAsync(cancellationToken);
-		await unitOfWork.DidNotReceive().RollbackTransactionAsync(Arg.Any<CancellationToken>());
 	}
 
 	[Test]
-	public async Task Handle_ShouldRollback_WhenNoTransactionIsActiveAndNextThrows(
+	public async Task Handle_ShouldPropagateExceptionWithoutSaving_WhenNoTransactionIsActiveAndNextThrows(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var unitOfWork = Substitute.For<IUnitOfWork>();
 		unitOfWork.HasActiveTransaction.Returns(false);
+		unitOfWork
+			.ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task<string>>>(), cancellationToken)
+			.Returns(callInfo => callInfo.Arg<Func<CancellationToken, Task<string>>>()!(cancellationToken));
 
 		var behavior = new TransactionPipelineBehavior<TestCommand, string>(unitOfWork);
 
@@ -46,15 +54,12 @@ public class TransactionPipelineBehaviorTests
 		Func<Task> act = async () => await behavior.Handle(new TestCommand(), Next, cancellationToken);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>();
-		await unitOfWork.Received(1).BeginTransactionAsync(cancellationToken);
-		await unitOfWork.Received(1).RollbackTransactionAsync(cancellationToken);
+		await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("boom");
 		await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-		await unitOfWork.DidNotReceive().CommitTransactionAsync(Arg.Any<CancellationToken>());
 	}
 
 	[Test]
-	public async Task Handle_ShouldSkipBeginSaveAndCommit_WhenATransactionIsAlreadyActive(
+	public async Task Handle_ShouldSkipTransactionAndSaveChanges_WhenATransactionIsAlreadyActive(
 		CancellationToken cancellationToken)
 	{
 		// Arrange - simulates a nested Send() call (e.g. AwardAchievementCommand
@@ -68,17 +73,16 @@ public class TransactionPipelineBehaviorTests
 		// Act
 		var result = await behavior.Handle(new TestCommand(), () => ValueTask.FromResult("nested-ok"), cancellationToken);
 
-		// Assert - the outermost command owns begin/save/commit/rollback; this
-		// nested invocation must not touch any of them.
+		// Assert - the outermost command owns the single transaction/save; this
+		// nested invocation must not touch either.
 		result.Should().Be("nested-ok");
-		await unitOfWork.DidNotReceive().BeginTransactionAsync(Arg.Any<CancellationToken>());
+		await unitOfWork.DidNotReceive().ExecuteInTransactionAsync(
+			Arg.Any<Func<CancellationToken, Task<string>>>(), Arg.Any<CancellationToken>());
 		await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-		await unitOfWork.DidNotReceive().CommitTransactionAsync(Arg.Any<CancellationToken>());
-		await unitOfWork.DidNotReceive().RollbackTransactionAsync(Arg.Any<CancellationToken>());
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotSwallowRollback_WhenATransactionIsAlreadyActiveAndNextThrows(
+	public async Task Handle_ShouldNotSwallowException_WhenATransactionIsAlreadyActiveAndNextThrows(
 		CancellationToken cancellationToken)
 	{
 		// Arrange - a nested command's own failure must still propagate so the
@@ -95,7 +99,6 @@ public class TransactionPipelineBehaviorTests
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("nested boom");
-		await unitOfWork.DidNotReceive().RollbackTransactionAsync(Arg.Any<CancellationToken>());
 	}
 
 	private sealed record TestCommand : ICommand<string>;

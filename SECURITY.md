@@ -30,9 +30,15 @@ notes unless you'd prefer to stay anonymous.
 
 ## Scope
 
-`Dependency Security Scan` (`.github/workflows/security.yml`) already audits
-NuGet and npm dependencies for known CVEs on a weekly schedule and on
-pull requests/pushes that touch dependency manifests. Use this policy for
+`Dependency Security Scan` (`.github/workflows/security.yml`) audits NuGet
+and npm dependencies for known CVEs on a weekly schedule, on manual dispatch,
+and on pull requests/pushes that touch a dependency manifest
+(`backend/Directory.Packages.props`, `backend/**/*.csproj`,
+`frontend/pnpm-lock.yaml`, `frontend/package.json`). Use this policy for
 vulnerabilities in Einsatzbereit's own code (backend, frontend, or the
 Keycloak realm configuration), not for dependency CVEs already caught by
 that scan.
+
+Known gaps, not yet covered by any workflow: static application security
+testing (no CodeQL or equivalent SAST scan) and container image scanning
+(no Trivy/Grype step in `publish.yml` before images are pushed to GHCR).

@@ -50,6 +50,8 @@ jobs:
           KEYCLOAK_BACKEND_SECRET: ${{ secrets.KEYCLOAK_BACKEND_SECRET }}
           MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
           MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          MINIO_APP_ACCESS_KEY: ${{ secrets.MINIO_APP_ACCESS_KEY }}
+          MINIO_APP_SECRET_KEY: ${{ secrets.MINIO_APP_SECRET_KEY }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
@@ -74,6 +76,8 @@ jobs:
             printf 'KEYCLOAK_BACKEND_SECRET="%s"\n' "$(escape "$KEYCLOAK_BACKEND_SECRET")"
             printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
             printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
+            printf 'MINIO_APP_ACCESS_KEY="%s"\n' "$(escape "$MINIO_APP_ACCESS_KEY")"
+            printf 'MINIO_APP_SECRET_KEY="%s"\n' "$(escape "$MINIO_APP_SECRET_KEY")"
             printf 'SMTP_HOST="%s"\n' "$(escape "$SMTP_HOST")"
             printf 'SMTP_PORT="%s"\n' "$(escape "$SMTP_PORT")"
             printf 'SMTP_USERNAME="%s"\n' "$(escape "$SMTP_USERNAME")"

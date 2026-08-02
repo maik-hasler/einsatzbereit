@@ -6,6 +6,7 @@ using Api.Common.Health;
 using Api.Common.Middleware;
 using Api.Common.RateLimiting;
 using Application;
+using Application.Common.Startup;
 using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Persistence;
@@ -13,6 +14,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+
+// OpenApiGenerateDocumentsOnBuild/NSwag regenerate the OpenAPI document on every
+// build by launching this Main via Microsoft.Extensions.Hosting.HostFactoryResolver
+// (dotnet-getdocument), which runs the whole app - including the config check below
+// - for real, with no ASPNETCORE_ENVIRONMENT set. That design-time invocation is
+// recognizable by the synthetic "--applicationName=" argument it passes, which a real
+// run (dotnet run/dotnet Api.dll/the published container) never does.
+var isDesignTimeToolInvocation = args.Any(a => a.StartsWith("--applicationName=", StringComparison.Ordinal));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -135,6 +144,27 @@ builder.Services.AddOpenApi("v1", options =>
 });
 
 var app = builder.Build();
+
+// appsettings.json's ConnectionStrings/Keycloak:ClientSecret/Authentication:Authority
+// defaults are dev-only fallbacks (see the comments in that file) that also ship in
+// the production image - fail fast outside Development instead of silently running
+// with a working Postgres superuser connection string or a plain-http authority if
+// an environment's override is ever dropped or misspelled. Skipped for the
+// design-time tool invocation (see isDesignTimeToolInvocation above), which never
+// has any of this configured and never actually serves traffic either.
+if (!isDesignTimeToolInvocation)
+{
+	var missingConfiguration = RequiredConfigurationValidator.FindMissing(
+		app.Environment.IsDevelopment(),
+		app.Configuration.GetConnectionString("einsatzbereit"),
+		app.Configuration["Keycloak:ClientSecret"],
+		app.Configuration["Authentication:Authority"],
+		app.Configuration.GetSection("Cors:Origins").Get<string[]>());
+
+	if (missingConfiguration.Count > 0)
+		throw new InvalidOperationException(
+			$"Missing required configuration outside Development: {string.Join(", ", missingConfiguration)}.");
+}
 
 if (app.Environment.IsDevelopment())
 {

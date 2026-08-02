@@ -23,23 +23,15 @@ internal sealed class TransactionPipelineBehavior<TCommand, TResponse>(
 			return await next();
 		}
 
-		await unitOfWork.BeginTransactionAsync(cancellationToken);
+		return await unitOfWork.ExecuteInTransactionAsync(
+			async ct =>
+			{
+				var response = await next();
 
-		try
-		{
-			var response = await next();
+				await unitOfWork.SaveChangesAsync(ct);
 
-			await unitOfWork.SaveChangesAsync(cancellationToken);
-
-			await unitOfWork.CommitTransactionAsync(cancellationToken);
-
-			return response;
-		}
-		catch (Exception)
-		{
-			await unitOfWork.RollbackTransactionAsync(cancellationToken);
-
-			throw;
-		}
+				return response;
+			},
+			cancellationToken);
 	}
 }

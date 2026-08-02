@@ -99,59 +99,72 @@ internal sealed class OutboxProcessorJob(
 		int batchSize,
 		CancellationToken cancellationToken = default)
 	{
-		// FOR UPDATE SKIP LOCKED (#1392): without this, two replicas' timers ticking
-		// concurrently would both SELECT the same unprocessed rows and both dispatch
-		// them, since nothing previously marked a row "claimed" before dispatch - it was
-		// only marked ProcessedOnUtc after dispatch succeeded. Holding the row locks for
-		// this whole transaction (not just the SELECT) is what makes a second replica's
-		// concurrent SKIP LOCKED query skip these rows entirely instead of blocking on
-		// them, so it picks a disjoint batch instead of waiting to double-process this one.
-		await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+		// EnableRetryOnFailure (ServiceCollectionExtensions.cs) requires a
+		// manually-began transaction to run as one retryable unit via
+		// CreateExecutionStrategy() - see
+		// ApplicationDbContext.ExecuteInTransactionAsync's comment. A retried
+		// attempt re-runs this whole delegate, including re-dispatching
+		// messages - the same at-least-once semantics this job already has if
+		// the process crashes between a successful DispatchAsync and the
+		// commit below, just reachable slightly more often now.
+		var strategy = dbContext.Database.CreateExecutionStrategy();
 
-		var messages = await dbContext.Set<OutboxMessage>()
-			.FromSqlInterpolated($@"
-				SELECT id, type, content, occurred_on_utc, processed_on_utc, error
-				FROM outbox_message
-				WHERE processed_on_utc IS NULL
-				ORDER BY occurred_on_utc
-				LIMIT {batchSize}
-				FOR UPDATE SKIP LOCKED")
-			.ToListAsync(cancellationToken);
-
-		if (messages.Count == 0)
+		return await strategy.ExecuteAsync<int>(async _ =>
 		{
+			// FOR UPDATE SKIP LOCKED (#1392): without this, two replicas' timers ticking
+			// concurrently would both SELECT the same unprocessed rows and both dispatch
+			// them, since nothing previously marked a row "claimed" before dispatch - it was
+			// only marked ProcessedOnUtc after dispatch succeeded. Holding the row locks for
+			// this whole transaction (not just the SELECT) is what makes a second replica's
+			// concurrent SKIP LOCKED query skip these rows entirely instead of blocking on
+			// them, so it picks a disjoint batch instead of waiting to double-process this one.
+			await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+			var messages = await dbContext.Set<OutboxMessage>()
+				.FromSqlInterpolated($@"
+					SELECT id, type, content, occurred_on_utc, processed_on_utc, error
+					FROM outbox_message
+					WHERE processed_on_utc IS NULL
+					ORDER BY occurred_on_utc
+					LIMIT {batchSize}
+					FOR UPDATE SKIP LOCKED")
+				.ToListAsync(cancellationToken);
+
+			if (messages.Count == 0)
+			{
+				await transaction.CommitAsync(cancellationToken);
+				return 0;
+			}
+
+			foreach (var message in messages)
+			{
+				try
+				{
+					var domainEvent = message.ToDomainEvent();
+					await dispatcher.DispatchAsync([domainEvent], cancellationToken);
+
+					message.ProcessedOnUtc = DateTime.UtcNow;
+					message.Error = null;
+				}
+				catch (Exception ex)
+				{
+					message.Error = ex.Message;
+
+					logger.LogError(
+						ex,
+						"Failed to dispatch outbox message {OutboxMessageId} of type {OutboxMessageType}",
+						message.Id,
+						message.Type);
+				}
+			}
+
+			// A single SaveChangesAsync for the whole batch instead of one per message - the
+			// row locks from FOR UPDATE above are held for this transaction regardless, so
+			// batching the writes costs nothing extra.
+			await dbContext.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-			return 0;
-		}
 
-		foreach (var message in messages)
-		{
-			try
-			{
-				var domainEvent = message.ToDomainEvent();
-				await dispatcher.DispatchAsync([domainEvent], cancellationToken);
-
-				message.ProcessedOnUtc = DateTime.UtcNow;
-				message.Error = null;
-			}
-			catch (Exception ex)
-			{
-				message.Error = ex.Message;
-
-				logger.LogError(
-					ex,
-					"Failed to dispatch outbox message {OutboxMessageId} of type {OutboxMessageType}",
-					message.Id,
-					message.Type);
-			}
-		}
-
-		// A single SaveChangesAsync for the whole batch instead of one per message - the
-		// row locks from FOR UPDATE above are held for this transaction regardless, so
-		// batching the writes costs nothing extra.
-		await dbContext.SaveChangesAsync(cancellationToken);
-		await transaction.CommitAsync(cancellationToken);
-
-		return messages.Count;
+			return messages.Count;
+		}, cancellationToken);
 	}
 }

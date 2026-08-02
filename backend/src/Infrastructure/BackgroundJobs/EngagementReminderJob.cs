@@ -102,82 +102,95 @@ internal sealed class EngagementReminderJob(
 		var windowStart = now.AddHours(23);
 		var windowEnd = now.AddHours(25);
 
-		// One transaction for the whole claim-and-enqueue batch: without it, a crash or
-		// a failed SaveChangesAsync after some ExecuteUpdateAsync claims already
-		// auto-committed would leave those engagements with ReminderSentAt permanently
-		// set but no outbox row ever written for them - silently losing the reminder
-		// forever instead of retrying it next tick. Wrapping in a transaction makes the
-		// whole batch all-or-nothing while still preserving the per-row claim below:
-		// Postgres still evaluates each UPDATE's WHERE clause atomically against
-		// whatever the row's current committed state is.
-		await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+		// EnableRetryOnFailure (ServiceCollectionExtensions.cs) requires a
+		// manually-began transaction to run as one retryable unit via
+		// CreateExecutionStrategy() - see
+		// ApplicationDbContext.ExecuteInTransactionAsync's comment. Retrying
+		// this whole delegate from scratch is safe: the per-row
+		// ExecuteUpdateAsync claim below is re-evaluated against whatever is
+		// actually committed, so a retried attempt just re-selects candidates
+		// and re-claims them the same way a fresh tick would.
+		var strategy = dbContext.Database.CreateExecutionStrategy();
 
-		// Caps how many engagements one tick claims. Anything left over still has
-		// ReminderSentAt == null and its TimeSlot still falls in the (now+23h, now+25h)
-		// window on the next tick (the window is 2h wide, the timer fires every
-		// PollIntervalHours), so it is picked up then instead of being lost.
-		var candidates = await dbContext.Set<Engagement>()
-			.Where(e =>
-				e.Status == EngagementStatus.Confirmed &&
-				e.TimeSlotId != null &&
-				e.ReminderSentAt == null)
-			.Join(
-				dbContext.Set<TimeSlot>(),
-				e => e.TimeSlotId,
-				ts => ts.Id,
-				(e, ts) => new { e.Id, e.VolunteerId, e.OpportunityId, e.TimeSlotId, ts.StartDateTime })
-			.Where(x => x.StartDateTime >= windowStart && x.StartDateTime <= windowEnd)
-			.OrderBy(x => x.StartDateTime)
-			.Take(maxBatchSize)
-			.ToListAsync(cancellationToken);
-
-		if (candidates.Count == 0)
+		return await strategy.ExecuteAsync<int>(async _ =>
 		{
+			// One transaction for the whole claim-and-enqueue batch: without it, a crash or
+			// a failed SaveChangesAsync after some ExecuteUpdateAsync claims already
+			// auto-committed would leave those engagements with ReminderSentAt permanently
+			// set but no outbox row ever written for them - silently losing the reminder
+			// forever instead of retrying it next tick. Wrapping in a transaction makes the
+			// whole batch all-or-nothing while still preserving the per-row claim below:
+			// Postgres still evaluates each UPDATE's WHERE clause atomically against
+			// whatever the row's current committed state is.
+			await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+			// Caps how many engagements one tick claims. Anything left over still has
+			// ReminderSentAt == null and its TimeSlot still falls in the (now+23h, now+25h)
+			// window on the next tick (the window is 2h wide, the timer fires every
+			// PollIntervalHours), so it is picked up then instead of being lost.
+			var candidates = await dbContext.Set<Engagement>()
+				.Where(e =>
+					e.Status == EngagementStatus.Confirmed &&
+					e.TimeSlotId != null &&
+					e.ReminderSentAt == null)
+				.Join(
+					dbContext.Set<TimeSlot>(),
+					e => e.TimeSlotId,
+					ts => ts.Id,
+					(e, ts) => new { e.Id, e.VolunteerId, e.OpportunityId, e.TimeSlotId, ts.StartDateTime })
+				.Where(x => x.StartDateTime >= windowStart && x.StartDateTime <= windowEnd)
+				.OrderBy(x => x.StartDateTime)
+				.Take(maxBatchSize)
+				.ToListAsync(cancellationToken);
+
+			if (candidates.Count == 0)
+			{
+				await transaction.CommitAsync(cancellationToken);
+				return 0;
+			}
+
+			var occurredOnUtc = now.UtcDateTime;
+			var claimedMessages = new List<OutboxMessage>(candidates.Count);
+
+			foreach (var candidate in candidates)
+			{
+				// Atomic per-row claim: this UPDATE's WHERE clause is re-evaluated by
+				// Postgres against the row's current committed state, so if another
+				// replica's tick already claimed this engagement, it affects 0 rows instead
+				// of racing to a duplicate reminder (#1392) - unlike the plain
+				// tracked-entity SaveChangesAsync this job used to do, which had no guard
+				// against exactly that race.
+				var rowsAffected = await dbContext.Set<Engagement>()
+					.Where(e => e.Id == candidate.Id && e.ReminderSentAt == null)
+					.ExecuteUpdateAsync(
+						s => s
+							.SetProperty(e => e.ReminderSentAt, now)
+							.SetProperty(e => e.ModifiedOn, now),
+						cancellationToken);
+
+				if (rowsAffected == 0)
+					continue;
+
+				var domainEvent = new EngagementReminderDueDomainEvent(
+					candidate.Id, candidate.VolunteerId!.Value, candidate.OpportunityId, candidate.TimeSlotId!.Value);
+				claimedMessages.Add(OutboxMessage.FromDomainEvent(domainEvent, occurredOnUtc));
+			}
+
+			if (claimedMessages.Count == 0)
+			{
+				await transaction.CommitAsync(cancellationToken);
+				return 0;
+			}
+
+			// ExecuteUpdateAsync above bypasses the ChangeTracker, so
+			// ConvertDomainEventsToOutboxMessagesInterceptor never sees these events - the
+			// outbox rows are built directly here instead, then written in a single batched
+			// SaveChangesAsync for however many this tick actually won.
+			dbContext.Set<OutboxMessage>().AddRange(claimedMessages);
+			await dbContext.SaveChangesAsync(cancellationToken);
 			await transaction.CommitAsync(cancellationToken);
-			return 0;
-		}
 
-		var occurredOnUtc = now.UtcDateTime;
-		var claimedMessages = new List<OutboxMessage>(candidates.Count);
-
-		foreach (var candidate in candidates)
-		{
-			// Atomic per-row claim: this UPDATE's WHERE clause is re-evaluated by
-			// Postgres against the row's current committed state, so if another
-			// replica's tick already claimed this engagement, it affects 0 rows instead
-			// of racing to a duplicate reminder (#1392) - unlike the plain
-			// tracked-entity SaveChangesAsync this job used to do, which had no guard
-			// against exactly that race.
-			var rowsAffected = await dbContext.Set<Engagement>()
-				.Where(e => e.Id == candidate.Id && e.ReminderSentAt == null)
-				.ExecuteUpdateAsync(
-					s => s
-						.SetProperty(e => e.ReminderSentAt, now)
-						.SetProperty(e => e.ModifiedOn, now),
-					cancellationToken);
-
-			if (rowsAffected == 0)
-				continue;
-
-			var domainEvent = new EngagementReminderDueDomainEvent(
-				candidate.Id, candidate.VolunteerId!.Value, candidate.OpportunityId, candidate.TimeSlotId!.Value);
-			claimedMessages.Add(OutboxMessage.FromDomainEvent(domainEvent, occurredOnUtc));
-		}
-
-		if (claimedMessages.Count == 0)
-		{
-			await transaction.CommitAsync(cancellationToken);
-			return 0;
-		}
-
-		// ExecuteUpdateAsync above bypasses the ChangeTracker, so
-		// ConvertDomainEventsToOutboxMessagesInterceptor never sees these events - the
-		// outbox rows are built directly here instead, then written in a single batched
-		// SaveChangesAsync for however many this tick actually won.
-		dbContext.Set<OutboxMessage>().AddRange(claimedMessages);
-		await dbContext.SaveChangesAsync(cancellationToken);
-		await transaction.CommitAsync(cancellationToken);
-
-		return claimedMessages.Count;
+			return claimedMessages.Count;
+		}, cancellationToken);
 	}
 }

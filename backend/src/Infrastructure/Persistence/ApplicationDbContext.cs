@@ -478,29 +478,37 @@ internal sealed class ApplicationDbContext(
 	public bool HasActiveTransaction =>
 		Database.CurrentTransaction != null;
 
-	public async Task BeginTransactionAsync(
-		CancellationToken cancellationToken = default) =>
-			await Database.BeginTransactionAsync(cancellationToken);
-
-	public async Task CommitTransactionAsync(
+	// CreateExecutionStrategy() + strategy.ExecuteAsync(...) is required here,
+	// not just Database.BeginTransactionAsync(...) directly - with
+	// EnableRetryOnFailure configured (ServiceCollectionExtensions.cs), EF
+	// Core throws on a manually-began transaction unless the begin/operation/
+	// commit-or-rollback all run as a single retryable unit. A transient
+	// failure re-runs this whole delegate from scratch against a fresh
+	// transaction, so `operation` must be safe to invoke again in that case.
+	public async Task<TResult> ExecuteInTransactionAsync<TResult>(
+		Func<CancellationToken, Task<TResult>> operation,
 		CancellationToken cancellationToken = default)
 	{
-		var currentTransaction = Database.CurrentTransaction;
+		var strategy = Database.CreateExecutionStrategy();
 
-		if (currentTransaction != null)
+		return await strategy.ExecuteAsync<TResult>(async ct =>
 		{
-			await currentTransaction.CommitAsync(cancellationToken);
-		}
-	}
+			await using var transaction = await Database.BeginTransactionAsync(ct);
 
-	public async Task RollbackTransactionAsync(
-		CancellationToken cancellationToken = default)
-	{
-		var currentTransaction = Database.CurrentTransaction;
+			try
+			{
+				TResult result = await operation(ct);
 
-		if (currentTransaction != null)
-		{
-			await currentTransaction.RollbackAsync(cancellationToken);
-		}
+				await transaction.CommitAsync(ct);
+
+				return result;
+			}
+			catch (Exception)
+			{
+				await transaction.RollbackAsync(ct);
+
+				throw;
+			}
+		}, cancellationToken);
 	}
 }

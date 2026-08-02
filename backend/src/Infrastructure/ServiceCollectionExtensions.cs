@@ -59,7 +59,20 @@ public static class ServiceCollectionExtensions
 
 			options.UseNpgsql(
 				sp.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.Einsatzbereit,
-				mig => mig.MigrationsAssembly("Infrastructure"));
+				npg =>
+				{
+					npg.MigrationsAssembly("Infrastructure");
+
+					// A restarting postgres container (daily db-backup dump, the
+					// same-host db-backup restart, a connection reset) is a normal
+					// event on this single-node compose stack - retry transient
+					// Npgsql faults instead of surfacing them as a 500. Every
+					// manually-began transaction (TransactionPipelineBehavior,
+					// the outbox/reminder/check-in background jobs) runs through
+					// Database.CreateExecutionStrategy() so it can be retried as
+					// one unit - see ApplicationDbContext.ExecuteInTransactionAsync.
+					npg.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+				});
 
 			options.UseSnakeCaseNamingConvention();
 		});
