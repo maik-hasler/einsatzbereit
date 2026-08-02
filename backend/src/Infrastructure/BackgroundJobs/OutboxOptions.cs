@@ -10,4 +10,15 @@ internal sealed class OutboxOptions
 	// dead-letter state (ProcessedOnUtc stamped, Error left populated) instead of
 	// being retried forever - see einsatzbereit#1317.
 	public int MaxAttempts { get; init; } = 5;
+
+	// How long a successfully processed row is kept before OutboxRetentionJob
+	// prunes it - the table would otherwise grow without bound, since nothing else
+	// ever deletes a processed message. A dead-lettered row (ProcessedOnUtc
+	// stamped but Error still populated - see MaxAttempts above) is never pruned
+	// regardless of age, since it's the only record that something went wrong.
+	public int RetentionDays { get; init; } = 30;
+
+	// How often OutboxRetentionJob checks for processed rows past RetentionDays -
+	// a low-frequency housekeeping concern, unlike the processor's 5s dispatch poll.
+	public int RetentionCheckIntervalHours { get; init; } = 24;
 }
