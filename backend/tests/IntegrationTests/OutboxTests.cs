@@ -1,5 +1,8 @@
 using System.Net.Http.Headers;
 using AwesomeAssertions;
+using Domain.Engagements;
+using Infrastructure.Persistence.Outbox;
+using Microsoft.EntityFrameworkCore;
 using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
@@ -60,6 +63,18 @@ public class OutboxTests(IntegrationTestFixture fixture)
 			EngagementCheckedInDomainEventType, TimeSpan.FromSeconds(45));
 
 		processed.Should().BeTrue("OutboxProcessorJob should dispatch the message to EngagementCheckedInAuditLogHandler within a few poll cycles");
+
+		// Regression for #1336: the message reaching ProcessedOnUtc only proves the
+		// outbox pipeline ran, not that the payload it dispatched was intact - a
+		// silent Guid.Empty round-trip of EngagementId would pass the assertion
+		// above just as easily. Deserialize the actual dispatched message and
+		// assert it carries the engagement this test created.
+		await using var context = fixture.CreateApplicationDbContext();
+		var message = await context.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == EngagementCheckedInDomainEventType, cancellationToken);
+		var dispatchedEvent = (EngagementCheckedInDomainEvent)message.ToDomainEvent();
+
+		dispatchedEvent.EngagementId.Value.Should().Be(engagement.Id);
 	}
 
 	// ── Helpers ───────────────────────────────────────────────────────────────

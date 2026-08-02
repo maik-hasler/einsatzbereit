@@ -17,6 +17,10 @@ internal sealed class OutboxMessage
 
 	public string? Error { get; set; }
 
+	// Incremented on every failed dispatch attempt; once it reaches OutboxOptions.MaxAttempts
+	// the message is moved to a terminal dead-letter state instead of retrying forever (#1317).
+	public int AttemptCount { get; set; }
+
 	// See ValueObjectIdJsonConverterFactory: without it, the Guid-backed value-object IDs
 	// (VolunteerOpportunityId, UserId, ...) that domain events carry silently deserialize as
 	// Guid.Empty instead of round-tripping their real value.

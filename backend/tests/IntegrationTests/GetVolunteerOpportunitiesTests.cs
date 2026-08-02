@@ -2,7 +2,13 @@ using System.Net.Http.Headers;
 using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.VolunteerOpportunities;
+using Infrastructure.Persistence;
 using TUnit.Core.Interfaces;
+// ApiClient.cs (generated, same "IntegrationTests" namespace) also declares
+// "OrganizationId" and "Address" DTO types, which would otherwise shadow the
+// domain types of the same name.
+using DomainOrganizationId = Domain.Organizations.OrganizationId;
+using DomainAddress = Domain.Common.Address;
 
 namespace IntegrationTests;
 
@@ -644,6 +650,77 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		nonMatching.TotalItems.Should().Be(0);
 	}
 
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByCity(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateOpportunityInCityAsync(authenticatedClient, orgId, "Munich Opportunity", "Munich", cancellationToken);
+		await CreateOpportunityInCityAsync(authenticatedClient, orgId, "Hamburg Opportunity", "Hamburg", cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, city: "munich", cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(1);
+		result.Items.Single().Title.Should().Be("Munich Opportunity");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByTag(
+		CancellationToken cancellationToken)
+	{
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		await CreateOpportunityWithTagsAsync(
+			authenticatedClient, orgId, "Beach Cleanup", ["outdoors", "environment"], cancellationToken);
+		await CreateOpportunityWithTagsAsync(
+			authenticatedClient, orgId, "Tutoring", ["education"], cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, tag: "environment", cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(1);
+		result.Items.Single().Title.Should().Be("Beach Cleanup");
+	}
+
+	[Test]
+	public async Task GetVolunteerOpportunities_ShouldFilterByRadius_AndOrderResultsByDistanceAscending(
+		CancellationToken cancellationToken)
+	{
+		// The API-created opportunities above never carry real coordinates in this
+		// test environment (geocoding is deliberately pointed at an unroutable
+		// address for integration tests - see IntegrationTestFixture), so radius
+		// search needs opportunities seeded directly with explicit Latitude/Longitude.
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+
+		const double centerLat = 52.52;
+		const double centerLon = 13.405;
+
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		await SeedPublishedOpportunityWithCoordinatesAsync(
+			dbContext, orgId, "Near Opportunity", centerLat + 0.01, centerLon, cancellationToken);
+		await SeedPublishedOpportunityWithCoordinatesAsync(
+			dbContext, orgId, "Mid Opportunity", centerLat + 0.05, centerLon, cancellationToken);
+		await SeedPublishedOpportunityWithCoordinatesAsync(
+			dbContext, orgId, "Far Opportunity", centerLat + 0.5, centerLon, cancellationToken);
+
+		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var result = await sut.GetVolunteerOpportunitiesAsync(
+			1, 10, centerLatitude: centerLat, centerLongitude: centerLon, radiusKm: 20, cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(2, "only the near and mid opportunities fall within the 20km radius");
+		result.Items.Select(i => i.Title).Should().Equal(
+			["Near Opportunity", "Mid Opportunity"],
+			"radius search results must be ordered by distance ascending");
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
 	{
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");
@@ -792,5 +869,72 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 		aggregate.AddTimeSlot(start, start.AddHours(2), maxParticipants: 10, now: start.AddDays(-1)).GetValueOrThrow();
 
 		await dbContext.SaveChangesAsync(cancellationToken);
+	}
+
+	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityInCityAsync(
+		EinsatzbereitApi client, Guid orgId, string title, string city, CancellationToken cancellationToken) =>
+		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = title,
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = city,
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
+		}, cancellationToken);
+
+	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithTagsAsync(
+		EinsatzbereitApi client, Guid orgId, string title, string[] tags, CancellationToken cancellationToken) =>
+		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = title,
+			Description = "Description",
+			OrganizationId = orgId,
+			Street = "Sample Street",
+			HouseNumber = "1",
+			ZipCode = "12345",
+			City = "Berlin",
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+			Tags = tags,
+			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
+		}, cancellationToken);
+
+	// Radius search needs real coordinates, which nothing created through the API
+	// has in this test environment (geocoding is deliberately unroutable here) -
+	// seeded directly the same way AddExpiredTimeSlotDirectlyAsync above does.
+	private static async Task SeedPublishedOpportunityWithCoordinatesAsync(
+		ApplicationDbContext dbContext, Guid orgId, string title, double latitude, double longitude,
+		CancellationToken cancellationToken)
+	{
+		var address = DomainAddress.Create("Sample Street", "1", "12345", "Berlin").GetValueOrThrow()
+			.WithCoordinates(latitude, longitude).GetValueOrThrow();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.Create(orgId).GetValueOrThrow(),
+			title,
+			"Description",
+			isRemote: false,
+			address,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			new NoOpPinGenerator(),
+			status: OpportunityStatus.Published,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
+
+		dbContext.Set<VolunteerOpportunity>().Add(opportunity);
+		await dbContext.SaveChangesAsync(cancellationToken);
+	}
+
+	private sealed class NoOpPinGenerator : IPinGenerator
+	{
+		public string GeneratePin() => "0000";
 	}
 }

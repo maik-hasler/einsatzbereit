@@ -43,12 +43,49 @@ public class OrganizationSettingsTests(
 	}
 
 	[Test]
-	public async Task GetOrganizationDetails_ShouldReturn403_WhenUserLacksOrganisatorRole(
+	public async Task GetOrganizationDetails_ShouldReturn403_WhenUserHasNoOrganisatorRoleAtAll(
 		CancellationToken cancellationToken)
 	{
+		// This proves only the RequireAuthorization(EinsatzbereitOrganisatorPolicy)
+		// role-claim gate on the endpoint - vera holds no "organisator" realm role
+		// at all, so this 403 fires before the handler (and its OwnershipGuard
+		// membership check) ever runs. See the membership-gate test below for the
+		// case this one used to be mistaken for.
 		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
 
 		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task GetOrganizationDetails_ShouldReturn403_WhenRequestingUserIsAPlainMemberOfADifferentOrganization(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1335: the test above only proves the role-claim gate,
+		// never the handler's OwnershipGuard.EnsureIsOrganizerAsync membership
+		// check. Modelled on the #691 escalation test above - holding the
+		// platform-wide "organisator" role from one org must not grant read
+		// access to a different org the same user is merely a plain member of.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		// vera becomes an organizer of her own, unrelated org - she now holds
+		// the platform-wide "organisator" role.
+		await veraClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Vera's Own Org 6" }, cancellationToken);
+		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Details Membership Gate Test Org" }, cancellationToken);
+
+		// olaf's org gains vera as a plain member - never promoted to Organizer
+		// of this specific org.
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		var act = () => veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);

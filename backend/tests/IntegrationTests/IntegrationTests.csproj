@@ -12,6 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\src\Api\Api.csproj" />
 		<ProjectReference Include="..\..\src\Aspire\AppHost\AppHost.csproj" />
 		<ProjectReference Include="..\..\src\Aspire\ServiceDefaults\ServiceDefaults.csproj" />
 		<ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />

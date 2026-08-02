@@ -3,17 +3,23 @@ using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 namespace Application.UnitTests.Engagements.CheckInEngagement;
 
 public class EngagementCheckedInAuditLogHandlerTests
 {
-	private readonly EngagementCheckedInAuditLogHandler _sut =
-		new(NullLogger<EngagementCheckedInAuditLogHandler>.Instance);
+	private readonly FakeLogger<EngagementCheckedInAuditLogHandler> _logger = new();
+	private readonly EngagementCheckedInAuditLogHandler _sut;
+
+	public EngagementCheckedInAuditLogHandlerTests()
+	{
+		_sut = new EngagementCheckedInAuditLogHandler(_logger);
+	}
 
 	[Test]
-	public async Task Handle_ShouldNotThrow_WhenEngagementCheckedIn(
+	public async Task Handle_ShouldWriteAuditLogEntry_WithEngagementVolunteerAndOpportunityIds(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -23,9 +29,14 @@ public class EngagementCheckedInAuditLogHandlerTests
 			VolunteerOpportunityId.New());
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
+		await _sut.Handle(domainEvent, cancellationToken);
 
 		// Assert
-		await act.Should().NotThrowAsync();
+		var record = _logger.Collector.GetSnapshot().Should().ContainSingle().Subject;
+
+		record.Level.Should().Be(LogLevel.Information);
+		record.Message.Should().Contain(domainEvent.VolunteerId.Value.ToString());
+		record.Message.Should().Contain(domainEvent.EngagementId.Value.ToString());
+		record.Message.Should().Contain(domainEvent.OpportunityId.Value.ToString());
 	}
 }

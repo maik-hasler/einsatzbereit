@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -372,6 +374,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgName = await CreateOrganizationAsync("Visual580 Delete", pinnedOrgId!.Value);
+		var orgId = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value;
 
 		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
@@ -388,6 +391,24 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, delete" }).ClickAsync();
 
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 10_000 });
+
+		// Regression for #1331: the redirect alone proves nothing about whether
+		// DELETE actually deleted anything - a swallowed exception or a rolled-
+		// back transaction would redirect home just the same. Assert the org is
+		// actually gone via the backend directly: its public profile 404s, and
+		// it no longer appears in the public directory a volunteer would browse.
+		var backend = Fixture.GetEndpoint("backend");
+		using var http = new HttpClient { BaseAddress = backend };
+
+		var profileResponse = await http.GetAsync($"/v1/organizations/{orgId}/profile");
+		profileResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+
+		var directoryResponse = await http.GetAsync(
+			$"/v1/organizations/directory?pageNumber=1&pageSize=10&search={Uri.EscapeDataString(orgName)}");
+		directoryResponse.EnsureSuccessStatusCode();
+		var directory = await directoryResponse.Content.ReadFromJsonAsync<JsonElement>();
+		directory.GetProperty("totalItems").GetInt32().Should().Be(0,
+			"a deleted organization must not still be browsable in the public directory");
 	}
 
 	[Test]

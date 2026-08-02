@@ -7,7 +7,11 @@ namespace IntegrationTests;
 [NotInParallel("IntegrationDb")]
 public class RateLimitingTests(IntegrationTestFixture fixture)
 {
-	// Unique IP so this test's quota is isolated from other test classes
+	// Unique IP so this test's quota is isolated from other test classes. Still
+	// honored after #1332: the real backend process in this fixture is only ever
+	// reached over loopback, which TrustedNetworksOptions deliberately keeps
+	// trusted (see its own comment) - only a caller connecting from *outside*
+	// that trusted set now has X-Forwarded-For ignored.
 	private const string TestIp = "10.0.0.99";
 
 	[Test]
