@@ -80,7 +80,7 @@ export default function OrganizationSwitcher({
 					)}
 					<span
 						data-testid="org-switcher-current-name"
-						className="max-w-50 min-w-24 flex-1 truncate"
+						className="max-w-50 flex-1 truncate sm:min-w-24"
 					>
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
