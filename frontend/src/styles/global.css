@@ -340,6 +340,37 @@ overflow-y-auto already handles vertical scrolling. */
 	}
 }
 
+/* ── Header offset token (issue #1130) ────────────────────────────────────
+--header-offset is Header.tsx's h-16 (4rem) plus AppLayout's <main> padding-
+top at each breakpoint, i.e. exactly how far a full-bleed section (the
+HomePage hero) must pull itself up to tuck under the sticky header. Defined
+once here so neither side has to hand-recalculate the sum when Header's
+height or AppLayout's padding changes. */
+:root {
+	--header-height: 4rem;
+	--header-offset: calc(var(--header-height) + 1.5rem);
+}
+
+@media (min-width: 640px) {
+	:root {
+		--header-offset: calc(var(--header-height) + 2.5rem);
+	}
+}
+
+@media (min-width: 1024px) {
+	:root {
+		--header-offset: calc(var(--header-height) + 3rem);
+	}
+}
+
+/* Full-bleed: break an element out of its centered max-w container to span
+the full viewport width, regardless of the container's own max-width. */
+.full-bleed {
+	left: 50%;
+	width: 100vw;
+	margin-left: -50vw;
+}
+
 /* ── Global focus-visible ring (issue #992) ──────────────────────────────
 A single shared token instead of the browser's inconsistent default outline
 or ad-hoc per-component ring utilities. Dual-tone (brand outline + white
