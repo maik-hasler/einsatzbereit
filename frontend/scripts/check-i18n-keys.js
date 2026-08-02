@@ -84,6 +84,7 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"report.reasons.Spam",
 		"invitations.accepting",
 		"invitations.declining",
+		"imageCrop.zoomLabel",
 		"profile.preferredLanguageDe",
 		"profile.preferredLanguageEn",
 		"administration.title",
