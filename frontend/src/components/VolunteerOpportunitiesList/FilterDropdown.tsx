@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronIcon, ChipXIcon, CheckMiniIcon } from "./icons";
 
 const EDGE_MARGIN = 8;
@@ -119,23 +119,6 @@ export default function FilterDropdown({
 			window.innerWidth - EDGE_MARGIN - panelWidth - containerRect.left;
 		setPanelLeft(Math.min(Math.max(preferred, minLeft), maxLeft));
 	}, [isOpen]);
-
-	// The panel is positioned relative to its trigger (top-full), not the
-	// viewport, so scrolling drags it along instead of leaving it anchored in
-	// place - close it rather than let it drift over the sticky header or the
-	// results below (#1119). Skipped while focus is inside the panel: a
-	// keyboard user tabbing through a panel taller than the viewport can
-	// trigger the browser's own focus-follow auto-scroll, and closing under
-	// them mid-navigation would drop focus to <body> with no warning.
-	useEffect(() => {
-		if (!isOpen) return;
-		function handleScroll() {
-			if (panelRef.current?.contains(document.activeElement)) return;
-			onToggle();
-		}
-		window.addEventListener("scroll", handleScroll, { passive: true });
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, [isOpen, onToggle]);
 
 	return (
 		<div ref={containerRef} className="relative shrink-0">

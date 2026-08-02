@@ -66,7 +66,7 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
-	public async Task FrequencyFilter_ClosesOnScroll_AndPanelStaysBelowHeader()
+	public async Task FrequencyFilter_PanelStaysBelowHeader()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -84,13 +84,6 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		// it (#1119).
 		var panel = oneTimeOption.Locator("xpath=..");
 		await Expect(panel).ToHaveCSSAsync("z-index", "30");
-
-		// The panel is positioned relative to its trigger, not the viewport,
-		// so it would otherwise drift toward (and under) the sticky header as
-		// the page scrolls - closing it on scroll is what actually prevents
-		// the collision.
-		await Page.EvaluateAsync("() => window.scrollBy(0, 300)");
-		await Expect(oneTimeOption).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
