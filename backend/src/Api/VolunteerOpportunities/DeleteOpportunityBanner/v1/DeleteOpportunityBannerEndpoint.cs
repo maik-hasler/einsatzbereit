@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.VolunteerOpportunities.DeleteOpportunityBanner.v1;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.DeleteOpportunityBanner.v1;
@@ -27,6 +29,7 @@ internal sealed class DeleteOpportunityBannerEndpoint : IEndpoint
 	private static async Task<IResult> DeleteOpportunityBannerAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -37,6 +40,8 @@ internal sealed class DeleteOpportunityBannerEndpoint : IEndpoint
 		await sender.Send(
 			new DeleteOpportunityBannerCommand(opportunityId, userId),
 			cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.NoContent();
 	}

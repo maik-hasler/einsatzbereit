@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.Engagements.WithdrawEngagement.v1;
 using Domain.Engagements;
 using Domain.Primitives;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Engagements.WithdrawEngagement.v1;
 
@@ -29,6 +31,7 @@ internal sealed class WithdrawEngagementEndpoint
 	private static async Task<IResult> WithdrawEngagementAsync(
 		[FromRoute] Guid engagementId,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		HttpContext httpContext,
 		CancellationToken cancellationToken)
 	{
@@ -42,6 +45,10 @@ internal sealed class WithdrawEngagementEndpoint
 		{
 			var command = new WithdrawEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId);
 			var engagement = await sender.Send(command, cancellationToken);
+
+			// A withdrawn engagement changes CurrentParticipantCount on the public listing.
+			await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
+
 			return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
 		}
 		catch (ResultFailureException ex) when (ex.Error.Type == ErrorType.NotFound)

@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -8,6 +9,7 @@ using Application.VolunteerOpportunities.UploadOpportunityBanner.v1;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.UploadOpportunityBanner.v1;
@@ -33,6 +35,7 @@ internal sealed class UploadOpportunityBannerEndpoint
 		[FromRoute] Guid opportunityId,
 		IFormFile file,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -52,6 +55,8 @@ internal sealed class UploadOpportunityBannerEndpoint
 				file.ContentType,
 				userId),
 			cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.NoContent();
 	}

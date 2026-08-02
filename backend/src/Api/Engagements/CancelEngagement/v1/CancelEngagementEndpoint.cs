@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -8,6 +9,7 @@ using Domain.Engagements;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.Engagements.CancelEngagement.v1;
@@ -33,6 +35,7 @@ internal sealed class CancelEngagementEndpoint
 		[FromRoute] Guid engagementId,
 		[FromBody] CancelEngagementRequest? body,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -43,6 +46,10 @@ internal sealed class CancelEngagementEndpoint
 
 		var command = new CancelEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId, body?.Reason);
 		var engagement = await sender.Send(command, cancellationToken);
+
+		// A cancelled engagement changes CurrentParticipantCount on the public listing.
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
+
 		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn, engagement.CancellationReason));
 	}
 }

@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.VolunteerOpportunities.CreateTimeSlot.v1;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.CreateTimeSlot.v1;
@@ -30,6 +32,7 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		[FromRoute] Guid opportunityId,
 		[FromBody] CreateTimeSlotRequest request,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -65,6 +68,8 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 			recurrenceCount);
 
 		var timeSlots = await sender.Send(command, cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		var responses = timeSlots
 			.Select(ts => new CreateTimeSlotResponse(

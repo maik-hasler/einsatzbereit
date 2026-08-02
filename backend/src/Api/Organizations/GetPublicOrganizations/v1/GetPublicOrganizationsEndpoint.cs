@@ -1,9 +1,11 @@
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Common.Pagination;
 using Application.Organizations.GetPublicOrganizations.v1;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Organizations.GetPublicOrganizations.v1;
 
@@ -19,6 +21,7 @@ internal sealed class GetPublicOrganizationsEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.ShortPublicRead)
 			.MapToApiVersion(1);
 	}
 

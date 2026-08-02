@@ -1,9 +1,11 @@
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Achievements.BadgeCatalog;
 using Application.Achievements.GetBadgeCatalog.v1;
 using Application.Common.Messaging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Achievements.GetBadgeCatalog.v1;
 
@@ -18,6 +20,7 @@ internal sealed class GetBadgeCatalogEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.LongPublicRead)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetBadgeCatalogAsync(

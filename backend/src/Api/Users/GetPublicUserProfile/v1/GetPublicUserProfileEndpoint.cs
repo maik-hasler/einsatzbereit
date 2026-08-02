@@ -1,10 +1,12 @@
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Users.GetPublicUserProfile.v1;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Users.GetPublicUserProfile.v1;
 
@@ -19,6 +21,7 @@ internal sealed class GetPublicUserProfileEndpoint : IEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.ShortPublicRead)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetPublicUserProfileAsync(
