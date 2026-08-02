@@ -107,7 +107,7 @@ function UpcomingOpportunitiesWidget({
 					{items.map((item) => (
 						<li
 							key={item.id}
-							className="relative rounded-xl border border-gray-100 p-3 transition hover:bg-gray-50"
+							className="relative rounded-xl border border-gray-100 bg-white p-3 shadow-resting transition-shadow hover:shadow-raised"
 						>
 							<Link
 								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}

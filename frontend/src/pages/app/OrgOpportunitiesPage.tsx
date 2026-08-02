@@ -324,7 +324,7 @@ export default function OrgOpportunitiesPage() {
 				ref={isHighlighted ? highlightRef : null}
 				data-highlighted={isHighlighted ? "true" : undefined}
 				data-testid="opportunity-row"
-				className={`flex h-full scroll-mt-24 flex-col gap-3 rounded-card border bg-white p-4 shadow-resting transition ${
+				className={`flex h-full scroll-mt-24 flex-col gap-3 rounded-card border bg-white p-4 shadow-resting transition-shadow hover:shadow-raised ${
 					isHighlighted
 						? "border-brand-400 ring-2 ring-brand-500 ring-offset-2"
 						: "border-gray-100"
