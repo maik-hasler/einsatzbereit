@@ -263,9 +263,13 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 			.EnsureSuccessStatusCode();
 
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		// Locate by the widget's stable heading id (WidgetCard's titleId), not
+		// by heading text - the heading itself is what this test switches to
+		// German below, so matching on "Calendar" would stop resolving the
+		// moment the switch takes effect.
 		var calendarWidget = Page.Locator("section", new()
 		{
-			Has = Page.GetByRole(AriaRole.Heading, new() { Name = "Calendar", Exact = true }),
+			Has = Page.Locator("#widget-calendar-title"),
 		});
 		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
