@@ -151,6 +151,38 @@ const CALENDAR_MIN_HEIGHT_PX = 400;
 function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
+	const calendarContainerRef = useRef<HTMLDivElement | null>(null);
+
+	// Month/Week views wrap each week's strip of overlaid event chips in a
+	// container with role="row" (node_modules/react-big-calendar/lib/
+	// DateContentRow.js), but that container's only children are the
+	// heading cells (Month only) and the event chips themselves - never a
+	// cell/gridcell/columnheader, because it isn't a second row of the day
+	// grid at all: it's a decorative overlay sitting on top of the real day
+	// cells (BackgroundCells' .rbc-row-bg), which already carry their own
+	// correct roles. axe-core's aria-required-children rule correctly flags
+	// role="row" with no such children; each event chip already exposes its
+	// own accessible <button> (CalEventChip below), so the fix is to drop
+	// the incorrect role rather than fabricate fake gridcells. Unlike
+	// .rbc-event (see calendarComponents below), RBC doesn't thread a
+	// components seam through DateContentRow for this wrapper, so a
+	// MutationObserver is the only way to correct it without patching the
+	// library itself.
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container) return;
+
+		function stripInvalidRowRole() {
+			container
+				?.querySelectorAll('.rbc-row-content[role="row"]')
+				.forEach((el) => el.setAttribute("role", "presentation"));
+		}
+
+		stripInvalidRowRole();
+		const observer = new MutationObserver(stripInvalidRowRole);
+		observer.observe(container, { childList: true, subtree: true });
+		return () => observer.disconnect();
+	}, []);
 
 	// Lazy initializer - only the INITIAL view depends on size; once mounted,
 	// the organizer's own view-button clicks take over and this doesn't
@@ -287,7 +319,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 				/>
 			)}
 			{!calLoading && !calError && (
-				<div className="rbc-container h-full">
+				<div ref={calendarContainerRef} className="rbc-container h-full">
 					<Calendar
 						localizer={localizer}
 						culture={i18n.language === "de" ? "de" : "en-US"}
