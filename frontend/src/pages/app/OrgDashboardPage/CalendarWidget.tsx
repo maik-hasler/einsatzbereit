@@ -308,35 +308,44 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 			titleId="widget-calendar-title"
 			title={t("orgDashboard.calendarWidgetTitle")}
 		>
-			{calLoading && (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("orgOverview.calendarLoading")} />
-				</div>
-			)}
-			{calError && (
-				<ErrorBanner
-					message={t("orgOverview.calendarError", { message: calError })}
-				/>
-			)}
-			{!calLoading && !calError && (
-				<div ref={calendarContainerRef} className="rbc-container h-full">
-					<Calendar
-						localizer={localizer}
-						culture={i18n.language === "de" ? "de" : "en-US"}
-						events={calEvents}
-						view={calView}
-						onView={(v: View) => setCalView(v)}
-						date={calDate}
-						onNavigate={(d: Date) => setCalDate(d)}
-						views={["month", "week", "work_week", "day", "agenda"]}
-						style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
-						components={calendarComponents}
-						eventPropGetter={calendarEventPropGetter}
-						onSelectEvent={handleSelectEvent}
-						messages={calendarMessages}
+			{/* display:contents - a purely structural wrapper (matches
+			MiniCalendar.tsx's own use of the same pattern) so the
+			MutationObserver above has a stable node to attach to regardless of
+			calLoading/calError, without affecting layout: the ref used to sit
+			directly on the calendar's own div below, which doesn't exist yet on
+			first mount while calLoading is still true - the effect's one-time
+			[] run found a null ref and never got a second chance to attach. */}
+			<div ref={calendarContainerRef} className="contents">
+				{calLoading && (
+					<div className="flex items-center justify-center py-16">
+						<Spinner label={t("orgOverview.calendarLoading")} />
+					</div>
+				)}
+				{calError && (
+					<ErrorBanner
+						message={t("orgOverview.calendarError", { message: calError })}
 					/>
-				</div>
-			)}
+				)}
+				{!calLoading && !calError && (
+					<div className="rbc-container h-full">
+						<Calendar
+							localizer={localizer}
+							culture={i18n.language === "de" ? "de" : "en-US"}
+							events={calEvents}
+							view={calView}
+							onView={(v: View) => setCalView(v)}
+							date={calDate}
+							onNavigate={(d: Date) => setCalDate(d)}
+							views={["month", "week", "work_week", "day", "agenda"]}
+							style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
+							components={calendarComponents}
+							eventPropGetter={calendarEventPropGetter}
+							onSelectEvent={handleSelectEvent}
+							messages={calendarMessages}
+						/>
+					</div>
+				)}
+			</div>
 
 			{selectedEvent && (
 				<Modal
