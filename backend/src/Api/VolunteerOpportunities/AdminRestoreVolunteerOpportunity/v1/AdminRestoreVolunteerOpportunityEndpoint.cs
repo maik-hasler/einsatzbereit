@@ -1,9 +1,11 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.VolunteerOpportunities.AdminRestoreVolunteerOpportunity.v1;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.VolunteerOpportunities.AdminRestoreVolunteerOpportunity.v1;
 
@@ -27,9 +29,12 @@ internal sealed class AdminRestoreVolunteerOpportunityEndpoint
 	private static async Task<IResult> AdminRestoreVolunteerOpportunityAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		CancellationToken cancellationToken)
 	{
 		await sender.Send(new AdminRestoreVolunteerOpportunityCommand(opportunityId), cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.NoContent();
 	}

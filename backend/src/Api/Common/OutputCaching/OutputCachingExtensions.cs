@@ -24,6 +24,19 @@ internal static class OutputCachingExtensions
 
 			cache.AddPolicy(OutputCachingPolicies.ShortPublicRead, policy =>
 				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds)));
+
+			cache.AddPolicy(OutputCachingPolicies.VolunteerOpportunityListing, policy =>
+				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds))
+					.Tag(OutputCachingPolicies.VolunteerOpportunityListingTag));
 		});
 	}
+
+	// Called by every command that changes what the public volunteer-opportunity
+	// listing should show (see OutputCachingPolicies.VolunteerOpportunityListingTag
+	// for the full list) so a write is reflected on the very next read of the listing
+	// instead of waiting out the policy's Expire() duration (#1543).
+	public static ValueTask EvictVolunteerOpportunityListingCacheAsync(
+		this IOutputCacheStore store,
+		CancellationToken cancellationToken) =>
+		store.EvictByTagAsync(OutputCachingPolicies.VolunteerOpportunityListingTag, cancellationToken);
 }

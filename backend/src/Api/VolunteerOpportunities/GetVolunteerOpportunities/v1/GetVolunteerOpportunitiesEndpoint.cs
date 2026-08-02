@@ -23,7 +23,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
-			.CacheOutput(OutputCachingPolicies.ShortPublicRead)
+			.CacheOutput(OutputCachingPolicies.VolunteerOpportunityListing)
 			.MapToApiVersion(1);
 	}
 

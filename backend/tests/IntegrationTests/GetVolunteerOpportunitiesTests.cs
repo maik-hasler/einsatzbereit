@@ -17,6 +17,26 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	public async Task GetVolunteerOpportunities_ShouldReturnEmptyPagedList_WhenNoneExist(
 		CancellationToken cancellationToken)
 	{
+		// This test (unlike its siblings) performs no write of its own before reading the
+		// listing, so it has nothing to evict the shared output cache tag with (#1543) -
+		// Respawn resets the database between tests, but not the output-cached response
+		// from whichever earlier test last populated this exact route/query-string's cache
+		// entry. Creating a Draft opportunity forces a fresh (post-eviction) read while
+		// keeping the assertions below accurate: drafts never appear in the public,
+		// Published-only listing.
+		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
+		await authenticatedClient.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
+		{
+			Title = "Draft - never published",
+			Description = "Exists only to force a fresh output-cache read; see comment above.",
+			OrganizationId = orgId,
+			Occurrence = "OneTime",
+			ParticipationType = "IndividualContact",
+			CheckInMethod = "None",
+			IsDraft = true,
+		}, cancellationToken);
+
 		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
 
 		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, cancellationToken: cancellationToken);
