@@ -13,6 +13,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
+import FileUploadButton from "../../components/FileUploadButton";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { resolveDateLocale } from "../../lib/format";
 
@@ -286,22 +287,17 @@ export default function OrgSettingsPage() {
 									)}
 									<div>
 										<div className="flex items-center gap-3">
-											<label
-												htmlFor="logo-upload"
-												className={`cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 ${uploadingLogo || removingLogo ? "opacity-50 pointer-events-none" : ""}`}
-											>
-												{uploadingLogo
-													? t("orgSettings.logoUploading")
-													: t("orgSettings.logoUpload")}
-											</label>
-											<input
-												ref={logoInputRef}
+											<FileUploadButton
 												id="logo-upload"
-												type="file"
+												label={
+													uploadingLogo
+														? t("orgSettings.logoUploading")
+														: t("orgSettings.logoUpload")
+												}
 												accept="image/jpeg,image/png,image/webp"
-												className="sr-only"
 												onChange={handleLogoChange}
 												disabled={uploadingLogo || removingLogo}
+												inputRef={logoInputRef}
 											/>
 											{logoUrl && (
 												<button
