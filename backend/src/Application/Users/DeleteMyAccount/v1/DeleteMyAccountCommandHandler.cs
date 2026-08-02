@@ -1,8 +1,8 @@
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
+using Domain.Engagements;
 using Domain.Primitives;
 using Domain.Users;
 
@@ -10,7 +10,6 @@ namespace Application.Users.DeleteMyAccount.v1;
 
 internal sealed class DeleteMyAccountCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakUserService keycloakUserService,
 	IFileStorageService fileStorage)
 	: ICommandHandler<DeleteMyAccountCommand, bool>
 {
@@ -24,7 +23,15 @@ internal sealed class DeleteMyAccountCommandHandler(
 			request.UserId, cancellationToken);
 
 		foreach (var engagement in engagements)
+		{
+			// Terminate non-terminal engagements before anonymizing so they
+			// stop occupying time-slot capacity and organizers can act on
+			// them, instead of leaving a permanently-stuck nameless row (#1140).
+			if (!engagement.IsCheckedIn && engagement.Status is EngagementStatus.Pending or EngagementStatus.Confirmed)
+				engagement.Withdraw().ThrowIfFailure();
+
 			engagement.Anonymize();
+		}
 
 		await dbContext.DeleteNotificationsForRecipientAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteUserStreakAsync(request.UserId, cancellationToken);
@@ -55,10 +62,9 @@ internal sealed class DeleteMyAccountCommandHandler(
 				}
 			}
 
+			user.MarkAccountDeleted();
 			dbContext.Users.Delete(user);
 		}
-
-		await keycloakUserService.DeleteUserAsync(request.UserId.Value, cancellationToken);
 
 		return true;
 	}
