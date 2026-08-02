@@ -31,10 +31,17 @@ internal sealed class CheckInAttemptLimiter : ICheckInAttemptLimiter
 			_ => new AttemptState(1, null),
 			(_, existing) =>
 			{
-				var failedAttempts = existing.FailedAttempts + 1;
-				var lockedUntil = failedAttempts >= MaxFailedAttempts
+				// IsLockedOutAsync is always checked (and short-circuits) before this is
+				// ever called, so a set LockedUntil reaching here has already expired -
+				// without this, FailedAttempts only ever grew, so once it first hit
+				// MaxFailedAttempts the very next wrong guess re-locked for another full
+				// LockoutDuration forever, with no way to ever earn a fresh attempt
+				// budget again (#1159).
+				var previousLockoutExpired = existing.LockedUntil is not null;
+				var failedAttempts = previousLockoutExpired ? 1 : existing.FailedAttempts + 1;
+				DateTimeOffset? lockedUntil = failedAttempts >= MaxFailedAttempts
 					? DateTimeOffset.UtcNow.Add(LockoutDuration)
-					: existing.LockedUntil;
+					: null;
 
 				return new AttemptState(failedAttempts, lockedUntil);
 			});
