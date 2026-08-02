@@ -67,7 +67,7 @@ export default function VolunteerOpportunityDetailPage() {
 	const roles = (
 		Array.isArray(auth.user?.profile?.roles) ? auth.user?.profile?.roles : []
 	) as string[];
-	// A stale Keycloak session left in localStorage from an earlier login still
+	// A stale Keycloak session left in sessionStorage from an earlier login still
 	// populates auth.user.profile after the token has expired, so this must
 	// gate on isAuthenticated too - otherwise an anonymous visitor with old
 	// organisator claims fires an authenticated getOrganizations() call below,

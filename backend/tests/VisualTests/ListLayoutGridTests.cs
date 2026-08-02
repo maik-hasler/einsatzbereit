@@ -28,16 +28,16 @@ public class ListLayoutGridTests(AspireFixture fixture) : VisualTestBase(fixture
 	private static async Task<string> GetAccessTokenAsync(IPage page)
 	{
 		var token = await page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 		return token!;
 	}
 

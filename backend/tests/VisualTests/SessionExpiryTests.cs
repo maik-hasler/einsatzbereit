@@ -105,7 +105,7 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 	// Regression: a Keycloak session that naturally lapsed (browser closed,
 	// reopened later - no explicit sign-out) leaves an already-expired user
-	// object sitting in localStorage. automaticSilentRenew (main.tsx) fires a
+	// object sitting in sessionStorage. automaticSilentRenew (main.tsx) fires a
 	// renewal attempt for it immediately on mount regardless of which page is
 	// open, and that attempt fails right away (no live Keycloak SSO session
 	// behind it, since this session was minted out-of-band here rather than
@@ -183,7 +183,7 @@ public class SessionExpiryTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var storageKey = $"oidc.user:{session.Authority}:frontend";
 
 		await Page.AddInitScriptAsync(
-			$"window.localStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
+			$"window.sessionStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
 			+ $"{JsonSerializer.Serialize(storageValue)});");
 
 		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");

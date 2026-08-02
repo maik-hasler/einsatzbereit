@@ -168,10 +168,10 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var userId = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.profile?.sub) return entry.profile.sub;
 				}
 			}
@@ -314,12 +314,12 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		var originalAccessToken = await Page.EvaluateAsync<string>(
 			"""
 			() => {
-				for (let i = 0; i < localStorage.length; i++) {
-					const key = localStorage.key(i);
+				for (let i = 0; i < sessionStorage.length; i++) {
+					const key = sessionStorage.key(i);
 					if (key && key.startsWith('oidc.user:')) {
-						const entry = JSON.parse(localStorage.getItem(key));
+						const entry = JSON.parse(sessionStorage.getItem(key));
 						entry.expires_at = Math.floor(Date.now() / 1000) + 80;
-						localStorage.setItem(key, JSON.stringify(entry));
+						sessionStorage.setItem(key, JSON.stringify(entry));
 						return entry.access_token;
 					}
 				}
@@ -346,10 +346,10 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 			renewedAccessToken = await Page.EvaluateAsync<string?>(
 				"""
 				() => {
-					for (let i = 0; i < localStorage.length; i++) {
-						const key = localStorage.key(i);
+					for (let i = 0; i < sessionStorage.length; i++) {
+						const key = sessionStorage.key(i);
 						if (key && key.startsWith('oidc.user:')) {
-							return JSON.parse(localStorage.getItem(key)).access_token;
+							return JSON.parse(sessionStorage.getItem(key)).access_token;
 						}
 					}
 					return null;

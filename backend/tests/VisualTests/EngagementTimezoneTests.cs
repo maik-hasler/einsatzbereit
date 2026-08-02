@@ -20,19 +20,19 @@ public class EngagementTimezoneTests(AspireFixture fixture) : VisualTestBase(fix
 
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 
-		// Extract the OIDC access token stored by oidc-client-ts in localStorage.
+		// Extract the OIDC access token stored by oidc-client-ts in sessionStorage.
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
 
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 
 		// Probe the confirm endpoint with a non-existent engagement ID and an
 		// IANA timezone that differs from Europe/Berlin to exercise the header path.
