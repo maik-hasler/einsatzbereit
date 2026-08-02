@@ -63,13 +63,15 @@ public sealed class Engagement
 		UserId volunteerId,
 		TimeSlotId timeSlotId)
 	{
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId,
 			message: null,
 			EngagementStatus.Pending);
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public static Result<Engagement> CreateIndividualContact(
@@ -82,13 +84,15 @@ public sealed class Engagement
 				"Engagement.MessageRequired",
 				"A message is required when expressing interest via individual contact."));
 
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId: null,
 			message,
 			EngagementStatus.Pending);
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public Result Confirm()
@@ -104,7 +108,13 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	public Result Cancel(string? reason = null)
+	// opportunityTitle is denormalized onto EngagementCancelledDomainEvent (#1150)
+	// rather than looked up from OpportunityId when the event is later dispatched -
+	// several callers cancel engagements as part of deleting the opportunity itself
+	// in the same transaction, so by dispatch time there would be nothing left to
+	// look up. Optional only so existing callers/tests that don't have a title
+	// handy (or don't care about the eventual notification) keep compiling.
+	public Result Cancel(string? reason = null, string? opportunityTitle = null)
 	{
 		if (IsAnonymized)
 			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
@@ -114,7 +124,7 @@ public sealed class Engagement
 
 		CancellationReason = reason;
 		Status = EngagementStatus.Cancelled;
-		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason));
+		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason, opportunityTitle));
 		return Result.Success();
 	}
 

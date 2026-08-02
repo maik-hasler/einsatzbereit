@@ -1,4 +1,3 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
@@ -22,11 +21,7 @@ public class DeleteOrganizationCommandHandlerTests
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly DeleteOrganizationCommandHandler _sut;
 
@@ -51,8 +46,7 @@ public class DeleteOrganizationCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Guid>());
-		_sut = new DeleteOrganizationCommandHandler(
-			_dbContext, _keycloakService, _keycloakUserService, _engagementReadRepository, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new DeleteOrganizationCommandHandler(_dbContext, _keycloakService, _engagementReadRepository);
 	}
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>

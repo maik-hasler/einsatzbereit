@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Domain.Notifications;
@@ -21,10 +19,6 @@ internal static class VolunteerOpportunityDeletionHelper
 	public static async Task DeleteAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
-		IKeycloakUserService keycloakUserService,
-		IEmailService emailService,
-		IEmailTemplateRenderer emailTemplateRenderer,
-		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -32,8 +26,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer, unsubscribeLinkBuilder,
-			opportunity, opportunityId, actingUserId, now, cancellationToken);
+			dbContext, engagementReadRepository, opportunity, opportunityId, actingUserId, now, cancellationToken);
 
 		dbContext.VolunteerOpportunities.Delete(opportunity);
 	}
@@ -48,10 +41,6 @@ internal static class VolunteerOpportunityDeletionHelper
 	public static async Task ShadowDeleteAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
-		IKeycloakUserService keycloakUserService,
-		IEmailService emailService,
-		IEmailTemplateRenderer emailTemplateRenderer,
-		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -59,8 +48,7 @@ internal static class VolunteerOpportunityDeletionHelper
 		CancellationToken cancellationToken)
 	{
 		await ResolveEngagementsAndReportsAsync(
-			dbContext, engagementReadRepository, keycloakUserService, emailService, emailTemplateRenderer, unsubscribeLinkBuilder,
-			opportunity, opportunityId, actingUserId, now, cancellationToken);
+			dbContext, engagementReadRepository, opportunity, opportunityId, actingUserId, now, cancellationToken);
 
 		opportunity.MarkDeleted(now).ThrowIfFailure();
 	}
@@ -68,10 +56,6 @@ internal static class VolunteerOpportunityDeletionHelper
 	private static async Task ResolveEngagementsAndReportsAsync(
 		IApplicationDbContext dbContext,
 		IEngagementReadRepository engagementReadRepository,
-		IKeycloakUserService keycloakUserService,
-		IEmailService emailService,
-		IEmailTemplateRenderer emailTemplateRenderer,
-		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		VolunteerOpportunity opportunity,
 		VolunteerOpportunityId opportunityId,
 		UserId actingUserId,
@@ -81,12 +65,8 @@ internal static class VolunteerOpportunityDeletionHelper
 		await VolunteerOpportunityEngagementCascadeHelper.NotifyAndCancelActiveEngagementsAsync(
 			dbContext,
 			engagementReadRepository,
-			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
-			unsubscribeLinkBuilder,
-			opportunity,
 			opportunityId,
+			opportunity.Title,
 			NotificationKind.OpportunityDeleted,
 			"Opportunity was deleted.",
 			cancellationToken);

@@ -4,10 +4,8 @@ using Domain.VolunteerOpportunities;
 
 namespace Domain.Engagements;
 
-public sealed record EngagementCancelledDomainEvent(
+public sealed record EngagementCreatedDomainEvent(
 	EngagementId EngagementId,
 	UserId VolunteerId,
-	VolunteerOpportunityId OpportunityId,
-	string? Reason,
-	string? OpportunityTitle = null)
+	VolunteerOpportunityId OpportunityId)
 	: DomainEvent;
