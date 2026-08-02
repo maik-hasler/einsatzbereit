@@ -28,6 +28,7 @@ internal sealed class OrganizationReadRepository(
 
 		var page = await query
 			.OrderBy(o => o.Name)
+			.ThenBy(o => o.Id.Value)
 			.Skip((filter.PageNumber - 1) * filter.PageSize)
 			.Take(filter.PageSize)
 			.Select(o => new
