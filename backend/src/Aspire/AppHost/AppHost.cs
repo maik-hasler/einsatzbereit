@@ -33,12 +33,16 @@ var keycloakThemePath = Path.GetFullPath(
 	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
 // The committed realm keeps production security settings; some break the local
-// Aspire + Playwright flow. Write a dev-only copy with two relaxations and import
+// Aspire + Playwright flow. Write a dev-only copy with three relaxations and import
 // that. Production never runs this AppHost - it uses the baked image + committed realm.
 //  - webOrigins: Aspire serves the frontend on a dynamic http://localhost:<port>
 //    origin that no fixed webOrigins entry matches (Keycloak webOrigins are exact CORS
 //    origins, not port wildcards), so the browser OIDC token exchange is CORS-blocked.
 //    Allow all origins for the public frontend client.
+//  - redirectUris / post.logout.redirect.uris: same dynamic-port problem as webOrigins
+//    above. The committed realm only lists the production callback (#1190 removed the
+//    "http://localhost:*" wildcard from the deployed realm to keep it out of
+//    production) - add it back here, local dev only.
 //  - bruteForceProtected: the parallel VisualTests log in concurrently as the shared
 //    seed users, which trips brute-force protection and gets rejected. Disable it.
 var localRealm = JsonNode.Parse(
@@ -53,7 +57,13 @@ if (localRealm["clients"] is JsonArray realmClients)
 		var clientId = clientObject["clientId"]?.GetValue<string>();
 
 		if (clientId == "frontend")
+		{
 			clientObject["webOrigins"] = new JsonArray("*");
+			clientObject["redirectUris"] = new JsonArray("http://localhost:*");
+
+			if (clientObject["attributes"] is JsonObject frontendAttributes)
+				frontendAttributes["post.logout.redirect.uris"] = "http://localhost:*";
+		}
 
 		if (clientId == "backend")
 			clientObject["secret"] = "backend-secret";
