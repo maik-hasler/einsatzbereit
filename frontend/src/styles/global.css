@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* ── Document color-scheme guard (issue #1120) ────────────────────────────
+No dark theme exists yet - every surface is hard-coded light (bg-white,
+text-gray-900, etc.). Without an explicit color-scheme, browsers/OSes that
+auto-invert unstyled pages (e.g. Chromium's opt-in Android "force dark")
+treat this as fair game and algorithmically invert brand colors and
+overlays into something broken. Declaring light here (mirrored by the
+<meta name="color-scheme"> tag in index.html) tells the browser this page
+is intentionally light-only, so it renders as authored instead of guessing. */
+:root {
+	color-scheme: light;
+}
+
 html {
 	scroll-behavior: smooth;
 	overflow-x: clip;
