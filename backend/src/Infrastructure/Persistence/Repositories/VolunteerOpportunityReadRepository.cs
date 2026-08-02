@@ -24,12 +24,8 @@ internal sealed class VolunteerOpportunityReadRepository(
 		var now = DateTimeOffset.UtcNow;
 
 		// No Join to Organizations here - org name/logo are looked up separately below,
-		// for just the page actually returned. Combining a Join with the correlated
-		// TimeSlots.Any() expiry filter below and a multi-key OrderBy/ThenBy (needed for
-		// stable pagination) defeated the Npgsql provider's translation of the whole
-		// query (confirmed via the CI failure this caused: "could not be translated").
-		// Splitting the org lookup into its own tiny query sidesteps that combination
-		// entirely instead of relying on operator reordering, which EF normalizes away.
+		// for just the page actually returned, keeping this query focused on filtering
+		// and paging VolunteerOpportunity rows.
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
 			// ScheduledSlots opportunities expire once their last time slot ends.
@@ -89,7 +85,15 @@ internal sealed class VolunteerOpportunityReadRepository(
 				vo.Address.Latitude >= box.South && vo.Address.Latitude <= box.North &&
 				vo.Address.Longitude >= box.West && vo.Address.Longitude <= box.East);
 
+		// Order on the entity itself, before the Select below - ordering by a
+		// value-object id's unwrapped .Value (whether accessed directly in the key
+		// selector or read back off an already-projected anonymous property) defeats
+		// the Npgsql provider's translation of the whole query ("could not be
+		// translated"). Ordering by the value object (vo.Id) instead translates
+		// cleanly, since EF already has a converter registered for it.
 		var baseQuery = query
+			.OrderByDescending(vo => vo.CreatedOn)
+			.ThenBy(vo => vo.Id)
 			.Select(vo => new
 			{
 				Id = vo.Id.Value,
@@ -122,9 +126,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 					.FirstOrDefault(),
 				vo.Status,
 				vo.BannerImageUrl,
-			})
-			.OrderByDescending(x => x.CreatedOn)
-			.ThenBy(x => x.Id);
+			});
 
 		if (filter.HasRadius)
 		{
@@ -538,7 +540,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				org => org.Id,
 				(vo, org) => new { vo, org })
 			.OrderByDescending(x => x.vo.CreatedOn)
-			.ThenBy(x => x.vo.Id.Value)
+			.ThenBy(x => x.vo.Id)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.Select(x => new
