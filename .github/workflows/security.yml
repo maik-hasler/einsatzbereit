@@ -10,13 +10,6 @@ on:
       - 'backend/**/*.csproj'
       - 'frontend/pnpm-lock.yaml'
       - 'frontend/package.json'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'backend/Directory.Packages.props'
-      - 'backend/**/*.csproj'
-      - 'frontend/pnpm-lock.yaml'
-      - 'frontend/package.json'
   workflow_dispatch:
 
 concurrency:
