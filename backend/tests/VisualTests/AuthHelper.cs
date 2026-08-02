@@ -68,7 +68,7 @@ public static class AuthHelper
 	/// <summary>
 	/// Signs in without touching Keycloak's login UI: mints a real token via
 	/// <see cref="AspireFixture.SignInAsync"/> (direct grant, frontend-test client)
-	/// and seeds it into localStorage in oidc-client-ts's own storage shape
+	/// and seeds it into sessionStorage in oidc-client-ts's own storage shape
 	/// (verified against the installed oidc-client-ts package - see User.toStorageString
 	/// and UserManager._userStoreKey), so the SPA boots already authenticated with
 	/// no redirect round trip.
@@ -138,8 +138,11 @@ public static class AuthHelper
 		// AddInitScriptAsync (not EvaluateAsync after navigation) so this runs
 		// before the SPA's own bundle - by the time React/oidc-client-ts mounts,
 		// the "user" is already in storage and no anonymous render happens first.
+		// sessionStorage, not localStorage (main.tsx) - an init script re-runs on
+		// every document navigation in this page/tab, so it stays seeded across
+		// GotoAsync calls the same way it would with localStorage.
 		await page.AddInitScriptAsync(
-			$"window.localStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
+			$"window.sessionStorage.setItem({JsonSerializer.Serialize(storageKey)}, "
 			+ $"{JsonSerializer.Serialize(storageValue)});");
 
 		// Computed regardless of pinActiveOrg so callers that deliberately stay

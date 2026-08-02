@@ -108,12 +108,14 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();
 		await Page.Locator("textarea").FillAsync("First sign-up attempt.");
 
-		// A second page in the same browser context: the OIDC user store is
-		// localStorage (frontend/src/main.tsx), shared across pages in one
-		// context, so this page is already authenticated as vera too - it
-		// simulates a second tab racing the first to sign up for the same
-		// opportunity.
+		// A second page in the same browser context, simulating a second tab
+		// racing the first to sign up for the same opportunity. Unlike
+		// localStorage, the OIDC user store (sessionStorage, frontend/src/main.tsx)
+		// is scoped per top-level browsing context, not shared context-wide -
+		// Context.NewPageAsync creates an independent one, so this page needs
+		// its own sign-in rather than inheriting vera's session from Page.
 		var page2 = await Context.NewPageAsync();
+		await AuthHelper.FastSignInAsync(page2, Fixture, frontend, "vera", "vera123", pinActiveOrg: false);
 		await page2.GotoAsync(detailUrl);
 		await page2.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await page2.GetByRole(AriaRole.Button, new() { Name = "Express interest" }).ClickAsync();

@@ -75,10 +75,10 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
 
 		var userId = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.profile?.sub) return entry.profile.sub;
 				}
 			}
