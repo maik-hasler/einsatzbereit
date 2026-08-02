@@ -81,7 +81,7 @@ function QuickCheckInWidget({
 					compact
 					title={t("orgDashboard.quickCheckInNoOpportunities")}
 					action={{
-						label: t("orgOverview.createOpportunity"),
+						label: t("orgDashboard.emptyStateCreateAction"),
 						onClick: () => setShowCreateModal(true),
 					}}
 				/>

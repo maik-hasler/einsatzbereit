@@ -599,13 +599,15 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task OrgDashboardPage_EmptyOpportunitiesCreateOpportunityCta_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1122: UpcomingOpportunitiesWidget and QuickCheckInWidget's empty
-		// states gained a "Create opportunity" CTA (EmptyState's new
-		// compact variant) that opens CreateVolunteerOpportunityModal
-		// directly from the widget. Olaf's seeded org (used by
-		// NavigateToOrgAppDashboardAsOlafAsync above) almost certainly
-		// already has opportunities by the time this suite runs - a fresh,
-		// otherwise-untouched org is the only deterministic way to reach
-		// this branch.
+		// states gained a "Create one" CTA (EmptyState's new compact
+		// variant) that opens CreateVolunteerOpportunityModal directly from
+		// the widget - worded distinctly from CreateOpportunityWidget's own
+		// "Create opportunity" button (also on this dashboard by default)
+		// so the two don't collide as duplicate accessible names. Olaf's
+		// seeded org (used by NavigateToOrgAppDashboardAsOlafAsync above)
+		// almost certainly already has opportunities by the time this suite
+		// runs - a fresh, otherwise-untouched org is the only deterministic
+		// way to reach this branch.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var backend = Fixture.GetEndpoint("backend");
 
@@ -627,7 +629,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(upcomingWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var upcomingCreateButton = upcomingWidget.GetByRole(
-			AriaRole.Button, new() { Name = "Create opportunity" });
+			AriaRole.Button, new() { Name = "Create one" });
 		await Expect(upcomingCreateButton).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
@@ -663,7 +665,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(quickCheckInWidget).ToBeVisibleAsync();
 
 		var quickCheckInCreateButton = quickCheckInWidget.GetByRole(
-			AriaRole.Button, new() { Name = "Create opportunity" });
+			AriaRole.Button, new() { Name = "Create one" });
 		await Expect(quickCheckInCreateButton).ToBeVisibleAsync();
 
 		await quickCheckInCreateButton.ClickAsync();

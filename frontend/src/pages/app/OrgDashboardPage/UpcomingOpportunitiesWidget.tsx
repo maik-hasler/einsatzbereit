@@ -99,7 +99,7 @@ function UpcomingOpportunitiesWidget({
 					compact
 					title={t("orgDashboard.upcomingEmpty")}
 					action={{
-						label: t("orgOverview.createOpportunity"),
+						label: t("orgDashboard.emptyStateCreateAction"),
 						onClick: () => setShowCreateModal(true),
 					}}
 				/>
