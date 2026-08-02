@@ -289,6 +289,36 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		result.TotalItems.Should().Be(0);
 	}
 
+	// #1381: KeycloakUserService.GetUserProfilesAsync resolves one volunteer per
+	// entry concurrently now (was a sequential loop). This guards against the
+	// obvious way that could go wrong - a result ending up under the wrong
+	// volunteer's id because of an indexing/ordering bug in the parallel fetch.
+	[Test]
+	public async Task GetEngagements_ShouldResolveEachVolunteersOwnName_WhenLookedUpConcurrently(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		const int volunteerCount = 10;
+		var expectedUsernameByEngagementId = new Dictionary<Guid, string>();
+		for (var i = 0; i < volunteerCount; i++)
+		{
+			var (engagementId, username) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+			expectedUsernameByEngagementId[engagementId] = username;
+		}
+
+		var result = await olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, volunteerCount, cancellationToken: cancellationToken);
+
+		result.Items.Should().HaveCount(volunteerCount);
+		foreach (var item in result.Items)
+		{
+			item.VolunteerName.Should().Be(expectedUsernameByEngagementId[item.Id]);
+		}
+	}
+
 	// ── ConfirmEngagement ─────────────────────────────────────────────────────
 
 	[Test]
@@ -1318,15 +1348,16 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		return org.Id.Value;
 	}
 
-	private async Task SignUpEphemeralVolunteerAsync(
+	private async Task<(Guid EngagementId, string Username)> SignUpEphemeralVolunteerAsync(
 		Guid opportunityId, CancellationToken cancellationToken)
 	{
 		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
-		await volunteerClient.CreateEngagementAsync(
+		var engagement = await volunteerClient.CreateEngagementAsync(
 			opportunityId,
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
+		return (engagement.Id, username);
 	}
 
 	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(

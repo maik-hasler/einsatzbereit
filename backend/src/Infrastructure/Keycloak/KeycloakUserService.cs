@@ -21,6 +21,12 @@ internal sealed class KeycloakUserService(
 
 	private const int RoleLookupConcurrency = 8;
 
+	// Keycloak's admin API isn't built for a burst of concurrent per-user
+	// lookups; this caps how many of the (up to MaxPageSize) volunteer profile
+	// lookups run at once so a large page doesn't fire e.g. 100 simultaneous
+	// requests at it.
+	private const int MaxConcurrentUserLookups = 8;
+
 	private readonly KeycloakOptions _options = options.Value;
 
 	public async Task<KeycloakUserProfile> GetUserAsync(
@@ -50,21 +56,34 @@ internal sealed class KeycloakUserService(
 		IReadOnlyList<Guid> userIds,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new Dictionary<Guid, string>(userIds.Count);
-		foreach (var userId in userIds.Distinct())
+		var distinctIds = userIds.Distinct().ToList();
+		var names = new string?[distinctIds.Count];
+
+		// Each slot is written by exactly one iteration, so no cross-task
+		// synchronization is needed for the array itself.
+		await Parallel.ForEachAsync(
+			Enumerable.Range(0, distinctIds.Count),
+			new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrentUserLookups, CancellationToken = cancellationToken },
+			async (i, ct) =>
+			{
+				try
+				{
+					var profile = await GetUserAsync(distinctIds[i], ct);
+					names[i] = profile.FirstName is not null || profile.LastName is not null
+						? $"{profile.FirstName} {profile.LastName}".Trim()
+						: profile.Username;
+				}
+				catch
+				{
+					// ignore individual lookup failures
+				}
+			});
+
+		var result = new Dictionary<Guid, string>(distinctIds.Count);
+		for (var i = 0; i < distinctIds.Count; i++)
 		{
-			try
-			{
-				var profile = await GetUserAsync(userId, cancellationToken);
-				var name = profile.FirstName is not null || profile.LastName is not null
-					? $"{profile.FirstName} {profile.LastName}".Trim()
-					: profile.Username;
-				result[userId] = name;
-			}
-			catch
-			{
-				// ignore individual lookup failures
-			}
+			if (names[i] is { } name)
+				result[distinctIds[i]] = name;
 		}
 		return result;
 	}
@@ -73,17 +92,29 @@ internal sealed class KeycloakUserService(
 		IReadOnlyList<Guid> userIds,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new Dictionary<Guid, KeycloakUserProfile>(userIds.Count);
-		foreach (var userId in userIds.Distinct())
+		var distinctIds = userIds.Distinct().ToList();
+		var profiles = new KeycloakUserProfile?[distinctIds.Count];
+
+		await Parallel.ForEachAsync(
+			Enumerable.Range(0, distinctIds.Count),
+			new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrentUserLookups, CancellationToken = cancellationToken },
+			async (i, ct) =>
+			{
+				try
+				{
+					profiles[i] = await GetUserAsync(distinctIds[i], ct);
+				}
+				catch
+				{
+					// ignore individual lookup failures - same tolerance as GetDisplayNamesAsync above
+				}
+			});
+
+		var result = new Dictionary<Guid, KeycloakUserProfile>(distinctIds.Count);
+		for (var i = 0; i < distinctIds.Count; i++)
 		{
-			try
-			{
-				result[userId] = await GetUserAsync(userId, cancellationToken);
-			}
-			catch
-			{
-				// ignore individual lookup failures - same tolerance as GetDisplayNamesAsync above
-			}
+			if (profiles[i] is { } profile)
+				result[distinctIds[i]] = profile;
 		}
 		return result;
 	}
