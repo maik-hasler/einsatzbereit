@@ -33,7 +33,7 @@ var keycloakThemePath = Path.GetFullPath(
 	Path.Combine(builder.AppHostDirectory, "..", "..", "..", "..", "keycloak", "themes", "einsatzbereit"));
 
 // The committed realm keeps production security settings; some break the local
-// Aspire + Playwright flow. Write a dev-only copy with three relaxations and import
+// Aspire + Playwright flow. Write a dev-only copy with these relaxations and import
 // that. Production never runs this AppHost - it uses the baked image + committed realm.
 //  - webOrigins: Aspire serves the frontend on a dynamic http://localhost:<port>
 //    origin that no fixed webOrigins entry matches (Keycloak webOrigins are exact CORS
@@ -45,6 +45,13 @@ var keycloakThemePath = Path.GetFullPath(
 //    production) - add it back here, local dev only.
 //  - bruteForceProtected: the parallel VisualTests log in concurrently as the shared
 //    seed users, which trips brute-force protection and gets rejected. Disable it.
+//  - frontend-test's "enabled": the committed realm ships it disabled (#1167 - a
+//    public ROPC-enabled client in the same realm baked into the staging/production
+//    image turns credential stuffing into a single scriptable token request, no
+//    browser or PKCE needed). IntegrationTestFixture.GetAccessTokenAsync and
+//    AspireFixture.SignInAsync both need it live to mint tokens for the test suites,
+//    and both boot Keycloak through this AppHost, never the baked image - so
+//    re-enable it only here.
 var localRealm = JsonNode.Parse(
 	File.ReadAllText(Path.Combine(keycloakRealmPath, "einsatzbereit-realm.json")))!;
 if (localRealm["clients"] is JsonArray realmClients)
@@ -64,6 +71,9 @@ if (localRealm["clients"] is JsonArray realmClients)
 			if (clientObject["attributes"] is JsonObject frontendAttributes)
 				frontendAttributes["post.logout.redirect.uris"] = "http://localhost:*";
 		}
+
+		if (clientId == "frontend-test")
+			clientObject["enabled"] = true;
 
 		if (clientId == "backend")
 			clientObject["secret"] = "backend-secret";

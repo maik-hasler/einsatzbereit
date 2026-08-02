@@ -117,7 +117,7 @@
     },
     {
       "clientId": "frontend-test",
-      "enabled": true,
+      "enabled": false,
       "publicClient": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": true,
