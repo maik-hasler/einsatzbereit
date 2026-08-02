@@ -1,9 +1,26 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-export default function Footer() {
+export default function Footer({ compact = false }: { compact?: boolean }) {
 	const { t } = useTranslation();
 	const currentYear = new Date().getFullYear();
+
+	// Logged-in app shells (e.g. OrgAppLayout) use this utility variant instead
+	// of the full marketing footer - same legal links, one implementation, so
+	// they can't drift out of sync (#1126).
+	if (compact) {
+		return (
+			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
+				<Link to="/imprint" className="hover:text-gray-600">
+					{t("footer.imprint")}
+				</Link>
+				<span className="mx-2">&middot;</span>
+				<Link to="/privacy-policy" className="hover:text-gray-600">
+					{t("footer.privacy")}
+				</Link>
+			</footer>
+		);
+	}
 
 	return (
 		<footer className="bg-brand-800 text-brand-200">
