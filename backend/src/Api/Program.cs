@@ -240,26 +240,46 @@ app.UseMiddleware<RequestSizeLimitMiddleware>();
 
 app.UseHttpLogging();
 app.UseResponseCompression();
-
-app.Use(async (context, next) =>
-{
-	context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-	context.Response.Headers["X-Frame-Options"] = "DENY";
-	context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-
-	// Bearer tokens must never travel over a downgraded HTTP connection - skipped in
-	// Development since local dev runs over plain HTTP (#1370).
-	if (!app.Environment.IsDevelopment())
-		context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-
-	context.Response.Headers["X-Trace-Id"] =
-		Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
-	await next();
-});
-
 app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
+
+// Registered after UseAuthentication (Cache-Control needs context.User) and via
+// Response.OnStarting rather than set directly - ExceptionHandlerMiddleware calls
+// Response.Clear() before writing a caught exception's ProblemDetails body, which
+// wipes any header set directly before next() regardless of where in the pipeline
+// this middleware sits. OnStarting callbacks run right before the response is
+// actually sent, after that Clear(), so these headers decorate error responses too
+// (#1180).
+app.Use(async (context, next) =>
+{
+	context.Response.OnStarting(() =>
+	{
+		context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+		context.Response.Headers["X-Frame-Options"] = "DENY";
+		context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+		// Bearer tokens must never travel over a downgraded HTTP connection - skipped in
+		// Development since local dev runs over plain HTTP (#1370).
+		if (!app.Environment.IsDevelopment())
+			context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+
+		// PII-bearing authenticated responses (GET /v1/users/me, member search, the
+		// check-in PIN, etc.) must never be retained by a shared proxy or a browser's
+		// back/forward cache. AllowAnonymous endpoints are unaffected and opt into
+		// caching explicitly via OutputCachingPolicies instead (#1180).
+		if (context.User.Identity?.IsAuthenticated == true)
+			context.Response.Headers["Cache-Control"] = "no-store";
+
+		context.Response.Headers["X-Trace-Id"] =
+			Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+
+		return Task.CompletedTask;
+	});
+
+	await next();
+});
+
 app.UseRateLimiter();
 app.UseAuthorization();
 
