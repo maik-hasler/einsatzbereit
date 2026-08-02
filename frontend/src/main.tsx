@@ -25,8 +25,13 @@ const oidcConfig = {
 	post_logout_redirect_uri: window.location.origin,
 	scope: "openid profile email",
 	automaticSilentRenew: true,
-	// Use localStorage so Playwright storageState captures the session
-	userStore: new WebStorageStateStore({ store: window.localStorage }),
+	// sessionStorage, not localStorage: tokens (incl. refresh_token, since the
+	// realm has "rememberMe": true) must not survive tab close or browser
+	// restart on a shared/kiosk machine - a realistic setting for a
+	// volunteer-coordination app used at events (#1171). Playwright seeds
+	// sessionStorage directly via page.addInitScript instead of relying on
+	// storageState (see AuthHelper.FastSignInAsync in backend/tests/VisualTests).
+	userStore: new WebStorageStateStore({ store: window.sessionStorage }),
 	onSigninCallback: async (user: User | undefined) => {
 		// Only fall back to the Keycloak login page's locale on a browser
 		// that has never had an explicit in-app language choice - otherwise a
