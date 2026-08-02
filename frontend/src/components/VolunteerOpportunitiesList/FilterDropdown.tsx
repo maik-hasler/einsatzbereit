@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronIcon, ChipXIcon, CheckMiniIcon } from "./icons";
+
+const EDGE_MARGIN = 8;
 
 export function DropdownOption({
 	label,
@@ -92,13 +94,30 @@ export default function FilterDropdown({
 }) {
 	const active = !!displayValue;
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [alignRight, setAlignRight] = useState(false);
+	const panelRef = useRef<HTMLDivElement>(null);
+	const [panelLeft, setPanelLeft] = useState(0);
 
-	useEffect(() => {
-		if (isOpen && containerRef.current) {
-			const rect = containerRef.current.getBoundingClientRect();
-			setAlignRight(rect.left + 300 > window.innerWidth - 8);
-		}
+	useLayoutEffect(() => {
+		const container = containerRef.current;
+		const panel = panelRef.current;
+		if (!isOpen || !container || !panel) return;
+
+		const containerRect = container.getBoundingClientRect();
+		const panelWidth = panel.getBoundingClientRect().width;
+
+		// Prefer aligning the panel's left edge with the trigger's left edge,
+		// flipping to the trigger's right edge only if that would overflow the
+		// viewport - then clamp so neither edge can end up off-screen.
+		const leftAligned = 0;
+		const rightAligned = containerRect.width - panelWidth;
+		const overflowsRight =
+			containerRect.left + panelWidth > window.innerWidth - EDGE_MARGIN;
+		const preferred = overflowsRight ? rightAligned : leftAligned;
+
+		const minLeft = EDGE_MARGIN - containerRect.left;
+		const maxLeft =
+			window.innerWidth - EDGE_MARGIN - panelWidth - containerRect.left;
+		setPanelLeft(Math.min(Math.max(preferred, minLeft), maxLeft));
 	}, [isOpen]);
 
 	return (
@@ -149,7 +168,9 @@ export default function FilterDropdown({
 			</div>
 			{isOpen && (
 				<div
-					className={`absolute ${alignRight ? "right-0" : "left-0"} top-full z-[200] mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal`}
+					ref={panelRef}
+					style={{ left: panelLeft }}
+					className="absolute top-full z-[200] mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
 				>
 					{children}
 				</div>
