@@ -214,7 +214,17 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 		await initializer.SeedAsync();
 }
 
-app.MapDefaultEndpoints();
+// Both anonymous and previously exempt from every rate limiting/caching policy -
+// /health additionally ran a DB connect + an outbound Keycloak HTTP call on every
+// single hit, so a trivial unauthenticated flood could exhaust the Npgsql pool and
+// starve Keycloak (#1172). RequireRateLimiting caps the request rate itself;
+// CacheOutput on /health also bounds how often the underlying dependency checks run
+// at all, independent of how many distinct callers/IPs are behind a flood.
+app.MapDefaultEndpoints(
+	health => health
+		.RequireRateLimiting(RateLimitingPolicies.Read)
+		.CacheOutput(OutputCachingPolicies.HealthCheck),
+	alive => alive.RequireRateLimiting(RateLimitingPolicies.Read));
 
 // Must run before anything that reads Connection.RemoteIpAddress (HTTP logging,
 // the rate limiter's anonymous partition key) - see TrustedNetworksOptions for why

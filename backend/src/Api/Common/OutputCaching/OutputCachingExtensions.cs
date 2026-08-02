@@ -25,6 +25,13 @@ internal static class OutputCachingExtensions
 			cache.AddPolicy(OutputCachingPolicies.ShortPublicRead, policy =>
 				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds)));
 
+			// Output caching only ever caches 200 responses (the framework default), so an
+			// Unhealthy/Degraded result (mapped to 503 by MapHealthChecks) is never cached -
+			// a real outage is still observed on the very next request instead of being
+			// masked for up to HealthCheckSeconds (#1172).
+			cache.AddPolicy(OutputCachingPolicies.HealthCheck, policy =>
+				policy.Expire(TimeSpan.FromSeconds(options.HealthCheckSeconds)));
+
 			cache.AddPolicy(OutputCachingPolicies.VolunteerOpportunityListing, policy =>
 				policy.Expire(TimeSpan.FromSeconds(options.ShortPublicReadSeconds))
 					.Tag(OutputCachingPolicies.VolunteerOpportunityListingTag));

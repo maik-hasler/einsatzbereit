@@ -32,4 +32,44 @@ public class RateLimitingTests(IntegrationTestFixture fixture)
 
 		statusCodes.Should().Contain(HttpStatusCode.TooManyRequests);
 	}
+
+	// Regression coverage for #1172: /health used to be exempt from every rate
+	// limiting policy while running a DB connect + an outbound Keycloak HTTP call on
+	// every hit - a trivial unauthenticated flood could exhaust the Npgsql pool and
+	// starve Keycloak. Own test IP so this quota is isolated from the test above.
+	[Test]
+	public async Task GetHealth_ShouldReturn429_WhenAnonymousRateLimitExceeded(
+		CancellationToken cancellationToken)
+	{
+		using var httpClient = fixture.CreateHttpClient();
+		httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", "10.0.0.100");
+
+		var statusCodes = new List<HttpStatusCode>();
+
+		for (var i = 0; i < 65; i++)
+		{
+			var response = await httpClient.GetAsync("/health", cancellationToken);
+			statusCodes.Add(response.StatusCode);
+		}
+
+		statusCodes.Should().Contain(HttpStatusCode.TooManyRequests);
+	}
+
+	[Test]
+	public async Task GetAlive_ShouldReturn429_WhenAnonymousRateLimitExceeded(
+		CancellationToken cancellationToken)
+	{
+		using var httpClient = fixture.CreateHttpClient();
+		httpClient.DefaultRequestHeaders.Add("X-Forwarded-For", "10.0.0.101");
+
+		var statusCodes = new List<HttpStatusCode>();
+
+		for (var i = 0; i < 65; i++)
+		{
+			var response = await httpClient.GetAsync("/alive", cancellationToken);
+			statusCodes.Add(response.StatusCode);
+		}
+
+		statusCodes.Should().Contain(HttpStatusCode.TooManyRequests);
+	}
 }
