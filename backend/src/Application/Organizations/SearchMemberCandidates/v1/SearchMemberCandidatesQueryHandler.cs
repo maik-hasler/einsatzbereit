@@ -36,8 +36,7 @@ internal sealed class SearchMemberCandidatesQueryHandler(
 				u.UserId,
 				u.Username,
 				u.FirstName,
-				u.LastName,
-				u.Email))
+				u.LastName))
 			.ToList();
 	}
 }

@@ -7304,8 +7304,7 @@
           "userId",
           "username",
           "firstName",
-          "lastName",
-          "email"
+          "lastName"
         ],
         "type": "object",
         "properties": {
@@ -7327,9 +7326,6 @@
               "null",
               "string"
             ]
-          },
-          "email": {
-            "type": "string"
           }
         }
       },

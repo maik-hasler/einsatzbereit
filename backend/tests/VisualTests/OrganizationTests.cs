@@ -76,6 +76,35 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task MemberSearch_RequiresFourCharacters_AndNeverExposesCandidateEmail()
+	{
+		// Regression for #1170: any authenticated user could self-create an
+		// organization to become an organizer, then abuse this search - a
+		// 2-char minimum, each result carrying the candidate's email address -
+		// to enumerate the realm-wide user directory. Verifies a 3-char query
+		// returns nothing and a matching search never renders an email
+		// address in the results.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1170 MemberSearch", pinnedOrgId!.Value);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		await Page.Locator("#member-search").FillAsync("ver");
+		await Page.WaitForTimeoutAsync(800);
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Invite" })).Not.ToBeVisibleAsync();
+
+		await Page.Locator("#member-search").FillAsync("vera");
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Invite" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Expect(Page.GetByText("vera@example.com")).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task SoleMember_MembersPage_ShowsDisabledLeaveInsteadOfRemove()
 	{
 		// #580: the org's sole member must see a disabled "Leave" action on

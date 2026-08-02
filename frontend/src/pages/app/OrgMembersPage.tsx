@@ -63,7 +63,7 @@ export default function OrgMembersPage() {
 	function handleMemberSearchChange(value: string) {
 		setMemberSearch(value);
 		if (memberSearchTimer.current) clearTimeout(memberSearchTimer.current);
-		if (value.length < 2) {
+		if (value.length < 4) {
 			setMemberCandidates([]);
 			return;
 		}
@@ -279,9 +279,11 @@ export default function OrgMembersPage() {
 												? `${candidate.firstName} ${candidate.lastName}`
 												: candidate.username}
 										</p>
-										<p className="truncate text-xs text-gray-500">
-											{candidate.email}
-										</p>
+										{candidate.firstName && candidate.lastName && (
+											<p className="truncate text-xs text-gray-500">
+												@{candidate.username}
+											</p>
+										)}
 									</div>
 									<Button
 										type="button"
@@ -296,7 +298,7 @@ export default function OrgMembersPage() {
 							))}
 						</ul>
 					)}
-					{memberSearch.length >= 2 &&
+					{memberSearch.length >= 4 &&
 						!memberSearchLoading &&
 						memberCandidates.length === 0 && (
 							<p className="mt-1 text-xs text-gray-500">

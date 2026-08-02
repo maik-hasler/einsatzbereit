@@ -5800,7 +5800,6 @@ export interface MemberCandidateDto {
     username: string;
     firstName: string | undefined;
     lastName: string | undefined;
-    email: string;
 
     [key: string]: any;
 }
