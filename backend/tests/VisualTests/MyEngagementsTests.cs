@@ -75,6 +75,21 @@ public class MyEngagementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("h1").First).ToBeVisibleAsync();
 
 		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+
+		// IndividualContact engagements have no time slot, and
+		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
+		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// a shared session where other concurrently-running tests have already
+		// given vera their own time-slotted upcoming engagements, this card can
+		// land past the first (10-item) page instead of being visible immediately.
+		// Click "Load more" until it shows up or there is nothing left to load.
+		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
+		for (var i = 0; i < 20 && !await card.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync(); i++)
+		{
+			await loadMoreButton.ClickAsync();
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		}
+
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgLink = card.Locator($"a[href='/organizations/{organizationId}']");
