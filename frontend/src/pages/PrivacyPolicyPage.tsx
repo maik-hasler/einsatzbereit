@@ -9,8 +9,10 @@ export default function PrivacyPolicyPage() {
 	usePageToolbar([{ label: t("privacyPolicy.title") }]);
 
 	return (
-		<>
-			<h1 className={`mb-8 ${pageTitleClass}`}>{t("privacyPolicy.title")}</h1>
+		<div data-content-wrapper className="max-w-2xl">
+			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
+				{t("privacyPolicy.title")}
+			</h1>
 
 			<section className="mb-8">
 				<h2 className="mb-2 text-xl font-semibold">
@@ -88,6 +90,6 @@ export default function PrivacyPolicyPage() {
 					{t("privacyPolicy.section5Body")}
 				</p>
 			</section>
-		</>
+		</div>
 	);
 }
