@@ -25,6 +25,7 @@ const BASE_CLASSES =
 const VARIANT_CLASSES = {
 	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	secondary: "text-gray-600 hover:bg-gray-100",
+	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
 } as const;
 
 type Variant = keyof typeof VARIANT_CLASSES;
