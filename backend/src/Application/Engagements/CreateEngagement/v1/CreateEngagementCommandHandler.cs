@@ -31,6 +31,15 @@ internal sealed class CreateEngagementCommandHandler(
 		if (opportunity is null)
 			throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found."));
 
+		if (opportunity.Status != OpportunityStatus.Published)
+			throw new ResultFailureException(Error.Conflict("Engagement.OpportunityNotPublished", "Conflict: this opportunity is not open for sign-ups."));
+
+		if (opportunity.ParticipationType == ParticipationType.ScheduledSlots && request.TimeSlotId is null)
+			throw new ResultFailureException(Error.Validation("Engagement.TimeSlotRequired", "A time slot is required to sign up for this opportunity."));
+
+		if (opportunity.ParticipationType == ParticipationType.IndividualContact && request.TimeSlotId is not null)
+			throw new ResultFailureException(Error.Validation("Engagement.TimeSlotNotAllowed", "This opportunity does not use time slots."));
+
 		var alreadySignedUp = await dbContext.HasEngagementAsync(
 			request.VolunteerId, request.OpportunityId, request.TimeSlotId, cancellationToken);
 
@@ -42,6 +51,14 @@ internal sealed class CreateEngagementCommandHandler(
 			var timeSlot = opportunity.TimeSlots.FirstOrDefault(ts => ts.Id == request.TimeSlotId);
 			if (timeSlot is null)
 				throw new ResultFailureException(Error.Validation("Engagement.TimeSlotNotInOpportunity", "The selected time slot does not belong to this opportunity."));
+
+			if (timeSlot.EndDateTime <= DateTimeOffset.UtcNow)
+				throw new ResultFailureException(Error.Conflict("Engagement.TimeSlotEnded", "Conflict: this time slot has already ended."));
+
+			// Row lock (#1142): held for the rest of this command's transaction, so a
+			// second concurrent sign-up for the same slot blocks here until this one
+			// commits or rolls back, instead of both reading the same stale count.
+			await dbContext.LockTimeSlotForUpdateAsync(request.TimeSlotId.Value, cancellationToken);
 
 			var activeCount = await dbContext.CountActiveEngagementsForTimeSlotAsync(
 				request.TimeSlotId.Value, cancellationToken);
