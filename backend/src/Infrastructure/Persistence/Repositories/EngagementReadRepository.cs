@@ -382,8 +382,12 @@ internal sealed class EngagementReadRepository(
 		if (engagement is null || engagement.TimeSlotId is null)
 			return null;
 
+		// Status == Published (#1155): this endpoint is anonymous, so without this an
+		// unpublished Draft opportunity's title/description/address leaked to anyone
+		// holding an engagement id for it - the one thing GetDetailsAsync already
+		// refuses to show a non-organizer.
 		var opportunity = await dbContext.VolunteerOpportunitiesQuery
-			.Where(o => o.Id == engagement.OpportunityId)
+			.Where(o => o.Id == engagement.OpportunityId && o.Status == OpportunityStatus.Published)
 			.Select(o => new { o.Id, o.Title, o.Description, o.IsRemote, o.Address })
 			.FirstOrDefaultAsync(cancellationToken);
 
