@@ -38,8 +38,10 @@ public class CreateEngagementCommandHandlerTests
 
 	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
 
-	private VolunteerOpportunity CreateTestOpportunity(VolunteerOpportunityId id) =>
-		VolunteerOpportunity.Create(
+	private VolunteerOpportunity CreateTestOpportunity(
+		VolunteerOpportunityId id, OpportunityStatus status = OpportunityStatus.Published)
+	{
+		var opportunity = VolunteerOpportunity.Create(
 			OrganizationId.New(),
 			"Test Opportunity",
 			"Description",
@@ -50,6 +52,28 @@ public class CreateEngagementCommandHandlerTests
 			CheckInMethod.None,
 			_pinGenerator,
 			status: OpportunityStatus.Draft).Value;
+
+		if (status == OpportunityStatus.Draft)
+			return opportunity;
+
+		// Published is unreachable at construction time for ScheduledSlots (see
+		// Create's ScheduledSlotsMustStartAsDraft guard) - add a throwaway slot
+		// so Publish()'s own ScheduledSlotsRequiresTimeSlot check is satisfied,
+		// then walk to the requested terminal status the same way real code would.
+		opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1),
+			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
+			maxParticipants: 10,
+			DateTimeOffset.UtcNow).Value;
+		opportunity.Publish().ThrowIfFailure();
+
+		if (status == OpportunityStatus.Unpublished)
+			opportunity.Unpublish().ThrowIfFailure();
+		else if (status == OpportunityStatus.Cancelled)
+			opportunity.Cancel().ThrowIfFailure();
+
+		return opportunity;
+	}
 
 	public CreateEngagementCommandHandlerTests()
 	{
@@ -74,16 +98,18 @@ public class CreateEngagementCommandHandlerTests
 		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
 	}
 
-	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
+	private void SetupOpportunityExists(
+		VolunteerOpportunityId opportunityId, OpportunityStatus status = OpportunityStatus.Published)
 	{
-		var opportunity = CreateTestOpportunity(opportunityId);
+		var opportunity = CreateTestOpportunity(opportunityId, status);
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns(opportunity);
 	}
 
-	private TimeSlotId SetupOpportunityExistsWithTimeSlot(VolunteerOpportunityId opportunityId, int? maxParticipants = 10)
+	private TimeSlotId SetupOpportunityExistsWithTimeSlot(
+		VolunteerOpportunityId opportunityId, int? maxParticipants = 10, OpportunityStatus status = OpportunityStatus.Published)
 	{
-		var opportunity = CreateTestOpportunity(opportunityId);
+		var opportunity = CreateTestOpportunity(opportunityId, status);
 		var timeSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
@@ -110,6 +136,29 @@ public class CreateEngagementCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
+	}
+
+	// --- Publish status gate (#1182) ---
+
+	[Test]
+	[Arguments(OpportunityStatus.Draft)]
+	[Arguments(OpportunityStatus.Unpublished)]
+	[Arguments(OpportunityStatus.Cancelled)]
+	public async Task Handle_ShouldThrow_WhenOpportunityIsNotPublished(
+		OpportunityStatus status, CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		SetupOpportunityExists(opportunityId, status);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "Ich helfe gerne!");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

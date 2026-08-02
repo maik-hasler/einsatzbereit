@@ -31,6 +31,9 @@ internal sealed class CreateEngagementCommandHandler(
 		if (opportunity is null)
 			throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity with id '{request.OpportunityId.Value}' was not found."));
 
+		if (opportunity.Status != OpportunityStatus.Published)
+			throw new ResultFailureException(Error.Conflict("Engagement.OpportunityNotPublished", "Only a published opportunity can be signed up for."));
+
 		var alreadySignedUp = await dbContext.HasEngagementAsync(
 			request.VolunteerId, request.OpportunityId, request.TimeSlotId, cancellationToken);
 
