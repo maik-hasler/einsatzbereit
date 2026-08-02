@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronIcon, ChipXIcon, CheckMiniIcon } from "./icons";
 
 const EDGE_MARGIN = 8;
@@ -120,6 +120,23 @@ export default function FilterDropdown({
 		setPanelLeft(Math.min(Math.max(preferred, minLeft), maxLeft));
 	}, [isOpen]);
 
+	// The panel is positioned relative to its trigger (top-full), not the
+	// viewport, so scrolling drags it along instead of leaving it anchored in
+	// place - close it rather than let it drift over the sticky header or the
+	// results below (#1119). Skipped while focus is inside the panel: a
+	// keyboard user tabbing through a panel taller than the viewport can
+	// trigger the browser's own focus-follow auto-scroll, and closing under
+	// them mid-navigation would drop focus to <body> with no warning.
+	useEffect(() => {
+		if (!isOpen) return;
+		function handleScroll() {
+			if (panelRef.current?.contains(document.activeElement)) return;
+			onToggle();
+		}
+		window.addEventListener("scroll", handleScroll, { passive: true });
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, [isOpen, onToggle]);
+
 	return (
 		<div ref={containerRef} className="relative shrink-0">
 			<div
@@ -170,7 +187,11 @@ export default function FilterDropdown({
 				<div
 					ref={panelRef}
 					style={{ left: panelLeft }}
-					className="absolute top-full z-200 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
+					// Below Header.tsx's sticky z-40 - this panel's ancestors (the
+					// filter bar, <main>) are all unpositioned, so its z-index
+					// competes with the header directly at the document root instead
+					// of nesting inside it (#1119).
+					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
 				>
 					{children}
 				</div>
