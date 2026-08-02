@@ -80,6 +80,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 				volunteer.Email,
 				content.Subject,
 				EmailFooter.Append(content.Body, unsubscribeUrl),
+				engagement.Id.Value.ToString(),
 				cancellationToken);
 		}
 

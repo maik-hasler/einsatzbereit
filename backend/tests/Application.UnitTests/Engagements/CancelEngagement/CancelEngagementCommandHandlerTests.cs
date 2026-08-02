@@ -193,6 +193,7 @@ public class CancelEngagementCommandHandlerTests
 			"vera@example.com",
 			"Test Subject",
 			Arg.Is<string>(body => body!.StartsWith("Test Body")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
@@ -242,6 +243,7 @@ public class CancelEngagementCommandHandlerTests
 			"user@example.com",
 			Arg.Any<string>(),
 			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
@@ -309,6 +311,6 @@ public class CancelEngagementCommandHandlerTests
 
 		// Assert
 		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }

@@ -275,6 +275,7 @@ public class WithdrawEngagementCommandHandlerTests
 			"olaf@example.com",
 			Arg.Any<string>(),
 			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
@@ -309,6 +310,6 @@ public class WithdrawEngagementCommandHandlerTests
 
 		// Assert
 		await _emailService.DidNotReceive().SendAsync(
-			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }

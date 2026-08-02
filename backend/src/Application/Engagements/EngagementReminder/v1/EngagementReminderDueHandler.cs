@@ -84,14 +84,14 @@ internal sealed class EngagementReminderDueHandler(
 		// SendBatchAsync with a single message (rather than SendAsync) so a failed send
 		// is observable as a bool - SendAsync never throws and never reports outcome,
 		// which would make it impossible to know whether to let the outbox retry.
-		var results = await emailService.SendBatchAsync([new EmailMessage(user.Email, subject, body)], cancellationToken);
+		var results = await emailService.SendBatchAsync(
+			[new EmailMessage(user.Email, subject, body, notification.EngagementId.Value.ToString())], cancellationToken);
 		if (!results[0])
 			throw new InvalidOperationException(
 				$"Failed to send 24h reminder email for engagement {notification.EngagementId.Value}");
 
 		logger.LogInformation(
-			"Sent 24h reminder to {Email} for engagement {EngagementId}",
-			user.Email,
+			"Sent 24h reminder for engagement {EngagementId}",
 			notification.EngagementId.Value);
 	}
 

@@ -205,6 +205,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 			"user@example.com",
 			"Test Subject",
 			Arg.Is<string>(body => body!.StartsWith("Test Body")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
