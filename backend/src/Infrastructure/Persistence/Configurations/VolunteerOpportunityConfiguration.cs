@@ -103,6 +103,14 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.HasIndex(vo => vo.OrganizationId);
 
+		// Covers GetPagedSummariesAsync's landing-page query: filters on Status,
+		// sorts by CreatedOn (#1385).
+		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
+
+		// Supports the Tags.Contains(filter.Tag) array-containment filter (#1385).
+		builder.HasIndex(vo => vo.Tags)
+			.HasMethod("gin");
+
 		builder.Ignore(vo => vo.Events);
 	}
 }

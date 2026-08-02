@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260802044219_AddOpportunityStatusCreatedOnAndTagsIndexes")]
+	partial class AddOpportunityStatusCreatedOnAndTagsIndexes
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -670,12 +673,6 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("uuid")
 						.HasColumnName("id");
 
-					b.Property<bool>("AddressGeocodingFailed")
-						.ValueGeneratedOnAdd()
-						.HasColumnType("boolean")
-						.HasDefaultValue(false)
-						.HasColumnName("address_geocoding_failed");
-
 					b.Property<string>("BannerImageUrl")
 						.HasColumnType("text")
 						.HasColumnName("banner_image_url");
@@ -785,12 +782,6 @@ namespace Infrastructure.Persistence.Migrations
 					b.Property<Guid>("Id")
 						.HasColumnType("uuid")
 						.HasColumnName("id");
-
-					b.Property<int>("AttemptCount")
-						.ValueGeneratedOnAdd()
-						.HasColumnType("integer")
-						.HasDefaultValue(0)
-						.HasColumnName("attempt_count");
 
 					b.Property<string>("Content")
 						.IsRequired()
