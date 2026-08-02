@@ -14,8 +14,6 @@ internal sealed class DeleteMyAccountCommandHandler(
 	IFileStorageService fileStorage)
 	: ICommandHandler<DeleteMyAccountCommand, bool>
 {
-	private static readonly string[] AvatarExtensions = [".jpg", ".png", ".webp"];
-
 	public async ValueTask<bool> Handle(
 		DeleteMyAccountCommand request,
 		CancellationToken cancellationToken = default)
@@ -38,15 +36,22 @@ internal sealed class DeleteMyAccountCommandHandler(
 		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
 		if (user is not null)
 		{
-			foreach (var ext in AvatarExtensions)
+			// The avatar's random object key (issue #1175) can't be reconstructed
+			// from the user id, so it has to come from the stored AvatarUrl instead
+			// of a guessed extension.
+			var avatarObjectKey = user.AvatarUrl is not null
+				? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
+				: null;
+
+			if (avatarObjectKey is not null)
 			{
 				try
 				{
-					await fileStorage.DeleteAsync($"user-avatars/{request.UserId.Value}{ext}", cancellationToken);
+					await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
 				}
 				catch
 				{
-					// Object may not exist for this extension; continue
+					// Object may already be gone or storage may be transiently unavailable; continue.
 				}
 			}
 

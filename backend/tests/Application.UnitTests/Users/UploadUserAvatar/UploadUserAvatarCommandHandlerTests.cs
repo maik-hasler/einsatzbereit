@@ -6,6 +6,7 @@ using AwesomeAssertions;
 using Domain.Primitives;
 using Domain.Users;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Application.UnitTests.Users.UploadUserAvatar;
 
@@ -67,6 +68,95 @@ public class UploadUserAvatarCommandHandlerTests
 		await _usersRepo.Received(1).AddAsync(
 			Arg.Is<User>(u => u!.Id == userId && u.AvatarUrl == "https://example.com/user-avatars/avatar.png"),
 			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldUseARandomObjectKeyUnderTheUserId_NotOnlyTheUserId(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: the avatar object key must not be reconstructible from the user id
+		// alone (issue #1175) - it's a public identifier exposed by member search and
+		// public-profile endpoints.
+		var userId = UserId.New();
+		var user = User.Create(userId);
+		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.Received(1).UploadAsync(
+			Arg.Is<string>(key => key!.StartsWith($"user-avatars/{userId.Value}/", StringComparison.Ordinal)
+				&& key != $"user-avatars/{userId.Value}/"),
+			Arg.Any<Stream>(),
+			Arg.Any<long>(),
+			Arg.Any<string>(),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteThePreviousAvatarObject_WhenUserAlreadyHadOne(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var userId = UserId.New();
+		var user = User.Create(userId);
+		user.SetAvatarUrl("https://example.com/user-avatars/old-key/old.png");
+		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/user-avatars/old-key/old.png")
+			.Returns("user-avatars/old-key/old.png");
+		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _fileStorage.Received(1).DeleteAsync("user-avatars/old-key/old.png", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptDeletion_WhenUserHadNoPreviousAvatar(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var userId = UserId.New();
+		var user = User.Create(userId);
+		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotThrow_WhenDeletingThePreviousAvatarObjectFails(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: the new avatar is already live at this point, so a cleanup failure
+		// for the orphaned old object must not fail the whole upload.
+		var userId = UserId.New();
+		var user = User.Create(userId);
+		user.SetAvatarUrl("https://example.com/user-avatars/old-key/old.png");
+		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_fileStorage
+			.GetObjectKeyFromPublicUrl("https://example.com/user-avatars/old-key/old.png")
+			.Returns("user-avatars/old-key/old.png");
+		_fileStorage
+			.DeleteAsync("user-avatars/old-key/old.png", Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
+		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
 	}
 
 	[Test]

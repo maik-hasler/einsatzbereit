@@ -77,14 +77,18 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldDeleteAvatarForEveryKnownExtension_AndSwallowFailures(
+	public async Task Handle_ShouldDeleteAvatarByItsExactObjectKey_AndSwallowFailures(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
+		user.SetAvatarUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png");
 		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
 		_fileStorage
-			.DeleteAsync($"user-avatars/{DefaultUserId.Value}.jpg", Arg.Any<CancellationToken>())
+			.GetObjectKeyFromPublicUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png")
+			.Returns($"user-avatars/{DefaultUserId.Value}/abc123.png");
+		_fileStorage
+			.DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
@@ -93,11 +97,45 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		await act.Should().NotThrowAsync();
-		// Issue #829: a failure deleting one avatar extension is swallowed rather than rolled back -
-		// the remaining extensions are still attempted even though the .jpg deletion threw.
-		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}.jpg", cancellationToken);
-		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}.png", cancellationToken);
-		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}.webp", cancellationToken);
+		// Issue #829: a failure deleting the avatar is swallowed rather than rolled back.
+		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptAvatarDeletion_WhenUserHasNoAvatar(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var user = User.Create(DefaultUserId);
+		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptAvatarDeletion_WhenStoredAvatarUrlDoesNotMatchAnyKnownObjectKey(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: a malformed/legacy AvatarUrl that GetObjectKeyFromPublicUrl can't parse back
+		// into an object key. Explicitly configured to return null - NSubstitute's unconfigured
+		// default for a string-returning method is "", not null, even though this method's
+		// return type is string?.
+		var user = User.Create(DefaultUserId);
+		user.SetAvatarUrl("not-a-valid-storage-url");
+		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_fileStorage.GetObjectKeyFromPublicUrl("not-a-valid-storage-url").Returns((string?)null);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
