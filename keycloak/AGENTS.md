@@ -37,7 +37,8 @@ Imported on container startup. This file IS the auth configuration - edit here, 
   - `backend-audience` - adds `backend` client to audience in access tokens
 
 **`frontend-test`** (public OIDC client, integration tests only)
-- ROPC enabled (`directAccessGrantsEnabled: true`) - used by `IntegrationTestFixture.GetAccessTokenAsync`
+- `enabled: false` in the committed realm - it ships in the same realm baked into the staging/production image (#1167: a public client with ROPC enabled there turns credential stuffing into a single scriptable `grant_type=password` request, no browser, no PKCE, no redirect-URI constraint). `backend/src/Aspire/AppHost/AppHost.cs` flips it back to `enabled: true` in the dev-only realm copy it writes before import, since that's the only path that ever needs it live - see below
+- ROPC enabled (`directAccessGrantsEnabled: true`) - used by `IntegrationTestFixture.GetAccessTokenAsync` and `VisualTests/AspireFixture.SignInAsync`, both of which boot Keycloak through the Aspire AppHost, never the baked image
 - Redirect URIs: `http://localhost:*` only (never production)
 - Same protocol mappers as `frontend` (roles, realm-name, backend-audience)
 
