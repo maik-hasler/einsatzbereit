@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import Chip from "./Chip";
 
 interface ProfileFieldsViewProps {
 	bio?: string | null;
@@ -37,12 +38,9 @@ export default function ProfileFieldsView({
 					</p>
 					<div className="flex flex-wrap gap-2">
 						{skills.map((s) => (
-							<span
-								key={s}
-								className="rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700"
-							>
+							<Chip key={s} tone="brand">
 								{s}
-							</span>
+							</Chip>
 						))}
 					</div>
 				</div>
@@ -55,12 +53,9 @@ export default function ProfileFieldsView({
 					</p>
 					<div className="flex flex-wrap gap-2">
 						{languages.map((l) => (
-							<span
-								key={l}
-								className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"
-							>
+							<Chip key={l} tone="neutral">
 								{l}
-							</span>
+							</Chip>
 						))}
 					</div>
 				</div>

@@ -15,6 +15,7 @@ import {
 	formatPostedAgo,
 } from "../lib/format";
 import { pageTitleClass } from "../lib/headingClasses";
+import Chip from "../components/Chip";
 import SignUpModal from "../components/SignUpModal";
 import ReportContentModal, {
 	type ReportReason,
@@ -417,18 +418,15 @@ export default function VolunteerOpportunityDetailPage() {
 				(opportunity.tags && opportunity.tags.length > 0)) && (
 				<div className="mb-6 flex flex-wrap gap-2">
 					{opportunity.category && (
-						<span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+						<Chip tone="brand">
 							{t(`opportunities.category.${opportunity.category}`)}
-						</span>
+						</Chip>
 					)}
 					{opportunity.tags &&
 						opportunity.tags.map((tag) => (
-							<span
-								key={tag}
-								className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600"
-							>
+							<Chip key={tag} tone="neutral">
 								{tag}
-							</span>
+							</Chip>
 						))}
 				</div>
 			)}
@@ -508,15 +506,12 @@ export default function VolunteerOpportunityDetailPage() {
 							<p className="mb-1 text-xs text-gray-500">
 								{t("opportunities.yourApplication")}
 							</p>
-							<span
-								className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-									cue.status === "Confirmed"
-										? "bg-green-50 text-green-700 border-green-100"
-										: "bg-yellow-50 text-yellow-700 border-yellow-100"
-								}`}
+							<Chip
+								tone={cue.status === "Confirmed" ? "success" : "warning"}
+								size="sm"
 							>
 								{t(`myEngagements.status.${cue.status}`)}
-							</span>
+							</Chip>
 						</div>
 						<button
 							onClick={() => setShowWithdrawConfirm(true)}
@@ -741,20 +736,20 @@ export default function VolunteerOpportunityDetailPage() {
 									</p>
 								)}
 								<div className="mt-2 flex flex-wrap gap-2">
-									<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+									<Chip tone="neutral" size="sm">
 										{formatOccurrence(opp.occurrence, t)}
-									</span>
-									<span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+									</Chip>
+									<Chip tone="brand" size="sm">
 										{formatParticipationType(opp.participationType, t)}
-									</span>
+									</Chip>
 									{opp.isRemote ? (
-										<span className="rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
+										<Chip tone="success" size="sm">
 											{t("opportunities.remote")}
-										</span>
+										</Chip>
 									) : opp.street ? (
-										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+										<Chip tone="neutral" size="sm">
 											{opp.street} {opp.houseNumber}, {opp.zipCode} {opp.city}
-										</span>
+										</Chip>
 									) : null}
 								</div>
 							</li>

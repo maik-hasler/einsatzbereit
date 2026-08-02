@@ -9,6 +9,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
+import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
@@ -22,11 +23,11 @@ import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const OPPORTUNITIES_PAGE_SIZE = 10;
 
-const STATUS_BADGE_CLASSES: Record<string, string> = {
-	Draft: "bg-amber-100 text-amber-800",
-	Published: "bg-green-100 text-green-800",
-	Unpublished: "bg-gray-200 text-gray-700",
-	Cancelled: "bg-red-100 text-red-800",
+const STATUS_BADGE_TONE: Record<string, ChipTone> = {
+	Draft: "warning",
+	Published: "success",
+	Unpublished: "neutral",
+	Cancelled: "danger",
 };
 
 export default function OrgOpportunitiesPage() {
@@ -337,14 +338,14 @@ export default function OrgOpportunitiesPage() {
 						>
 							{item.title || t("orgDashboard.unnamedDraft")}
 						</Link>
-						<span
+						<Chip
 							data-testid="opportunity-status-badge"
-							className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-								STATUS_BADGE_CLASSES[status] ?? "bg-gray-100 text-gray-700"
-							}`}
+							tone={STATUS_BADGE_TONE[status] ?? "neutral"}
+							size="sm"
+							className="shrink-0"
 						>
 							{badgeLabel}
-						</span>
+						</Chip>
 					</div>
 					{item.description && (
 						<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
