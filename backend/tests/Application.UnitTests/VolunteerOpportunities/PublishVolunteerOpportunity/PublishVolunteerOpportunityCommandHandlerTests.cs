@@ -91,9 +91,10 @@ public class PublishVolunteerOpportunityCommandHandlerTests
 		await _sut.Handle(new PublishVolunteerOpportunityCommand(opportunityId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
-		var domainEvent = opportunity.Events.Should().ContainSingle().Which;
-		domainEvent.Should().BeOfType<VolunteerOpportunityPublishedDomainEvent>();
-		var published = (VolunteerOpportunityPublishedDomainEvent)domainEvent;
+		// CreateDraftOpportunity's non-remote address also raises a
+		// VolunteerOpportunityGeocodingRequestedDomainEvent at creation time (see
+		// VolunteerOpportunity.Create) - filter to the Published event specifically.
+		var published = opportunity.Events.OfType<VolunteerOpportunityPublishedDomainEvent>().Should().ContainSingle().Which;
 		published.OpportunityId.Should().Be(opportunity.Id);
 		published.OrganizationId.Should().Be(DefaultOrgId);
 	}
