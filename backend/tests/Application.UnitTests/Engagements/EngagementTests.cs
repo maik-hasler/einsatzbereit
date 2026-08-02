@@ -86,6 +86,37 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 	}
 
+	// --- Domain events (einsatzbereit#1382) ---
+	// Notification/email side effects moved off the command handlers'
+	// open DB transaction into async, outbox-dispatched consumers of these
+	// events - see Application/Engagements/*/v1/Engagement*NotificationHandler.
+
+	[Test]
+	public void CreateSlotSignUp_ShouldRaiseEngagementCreatedDomainEvent()
+	{
+		var volunteerId = AnyUserId();
+		var opportunityId = AnyOpportunityId();
+
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, volunteerId, AnyTimeSlotId());
+
+		engagement.Events.Should().ContainSingle(e => e is EngagementCreatedDomainEvent
+			&& ((EngagementCreatedDomainEvent)e).VolunteerId == volunteerId
+			&& ((EngagementCreatedDomainEvent)e).OpportunityId == opportunityId);
+	}
+
+	[Test]
+	public void CreateIndividualContact_ShouldRaiseEngagementCreatedDomainEvent()
+	{
+		var volunteerId = AnyUserId();
+		var opportunityId = AnyOpportunityId();
+
+		var result = Engagement.CreateIndividualContact(opportunityId, volunteerId, "Ich bin verfügbar.");
+
+		result.Value.Events.Should().ContainSingle(e => e is EngagementCreatedDomainEvent
+			&& ((EngagementCreatedDomainEvent)e).VolunteerId == volunteerId
+			&& ((EngagementCreatedDomainEvent)e).OpportunityId == opportunityId);
+	}
+
 	// --- Confirm ---
 
 	[Test]
@@ -179,6 +210,36 @@ public class EngagementTests
 
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*already terminated*");
+	}
+
+	[Test]
+	public void Cancel_ShouldNotRaiseEngagementCancelledByOrganizerDomainEvent_ByDefault()
+	{
+		// A cascade cancellation (opportunity/time-slot deletion) already
+		// notifies the volunteer inline as part of its own async handler -
+		// raising this event too would double-send the notification.
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.ClearEvents();
+
+		engagement.Cancel("reason");
+
+		engagement.Events.Should().NotContain(e => e is EngagementCancelledByOrganizerDomainEvent);
+	}
+
+	[Test]
+	public void Cancel_ShouldRaiseEngagementCancelledByOrganizerDomainEvent_WhenNotifyVolunteerIsTrue()
+	{
+		var volunteerId = AnyUserId();
+		var opportunityId = AnyOpportunityId();
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, volunteerId, AnyTimeSlotId());
+		engagement.ClearEvents();
+
+		engagement.Cancel("reason", notifyVolunteer: true);
+
+		engagement.Events.Should().ContainSingle(e => e is EngagementCancelledByOrganizerDomainEvent
+			&& ((EngagementCancelledByOrganizerDomainEvent)e).VolunteerId == volunteerId
+			&& ((EngagementCancelledByOrganizerDomainEvent)e).OpportunityId == opportunityId
+			&& ((EngagementCancelledByOrganizerDomainEvent)e).Reason == "reason");
 	}
 
 	// --- Withdraw ---

@@ -1,8 +1,6 @@
 using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements.ConfirmEngagement.v1;
@@ -23,20 +21,12 @@ public class ConfirmEngagementCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
-	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
-		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IAggregateRepository<UserStreak, UserStreakId> _streakRepo =
 		Substitute.For<IAggregateRepository<UserStreak, UserStreakId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
-	private readonly IAggregateRepository<User, UserId> _userRepo =
-		Substitute.For<IAggregateRepository<User, UserId>>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly ISender _sender = Substitute.For<ISender>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly ConfirmEngagementCommandHandler _sut;
 
 	private static readonly UserId DefaultRequestingUserId = UserId.New();
@@ -46,25 +36,15 @@ public class ConfirmEngagementCommandHandlerTests
 	public ConfirmEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
-		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.UserStreaks.Returns(_streakRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
-		_dbContext.Users.Returns(_userRepo);
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(CreateDefaultOpportunity());
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new ConfirmEngagementCommandHandler(_dbContext, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder, _sender);
+		_sut = new ConfirmEngagementCommandHandler(_dbContext, _sender);
 	}
 
 	[Test]
@@ -317,83 +297,30 @@ public class ConfirmEngagementCommandHandlerTests
 			Arg.Any<CancellationToken>());
 	}
 
-	[Test]
-	public async Task Handle_ShouldRenderConfirmationEmail_InVolunteersPreferredLanguage(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var engagementId = EngagementId.New();
-		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateSlotSignUp(
-			VolunteerOpportunityId.New(),
-			volunteerId,
-			TimeSlotId.New());
-		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		var volunteer = User.Create(volunteerId);
-		volunteer.SetPreferredLanguage("en");
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([volunteer]);
-
-		// Act
-		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementConfirmed,
-			"en",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
-	}
-
-	// --- Volunteer email notification preferences (#1055) ---
+	// --- Notification/email dispatch moved to EngagementConfirmedNotificationHandler (#1382) ---
 
 	[Test]
-	public async Task Handle_ShouldEmailVolunteer_WhenSubscribedToEngagementConfirmed(
+	public async Task Handle_ShouldRaiseEngagementConfirmedDomainEvent(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - the Keycloak lookup, in-app notification, and confirmation
+		// email that used to run inline (inside the open DB transaction) now
+		// happen in EngagementConfirmedNotificationHandler, dispatched
+		// post-commit via the outbox once this event lands on the aggregate.
 		var engagementId = EngagementId.New();
 		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
+		var opportunityId = VolunteerOpportunityId.New();
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, volunteerId, TimeSlotId.New());
+		engagement.ClearEvents();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
 
 		// Act
-		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
+		var result = await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
 		// Assert
-		await _emailService.Received(1).SendAsync(
-			"user@example.com",
-			Arg.Any<string>(),
-			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
-			cancellationToken);
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotEmailVolunteer_WhenOptedOutOfEngagementConfirmed(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var engagementId = EngagementId.New();
-		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateSlotSignUp(VolunteerOpportunityId.New(), volunteerId, TimeSlotId.New());
-		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		var optedOutVolunteer = User.Create(volunteerId);
-		optedOutVolunteer.UpdateNotificationPreferences(
-			notifyOnNewSignUp: true,
-			notifyOnWithdrawal: true,
-			notifyOnEngagementConfirmed: false,
-			notifyOnEngagementCancelled: true,
-			notifyOnEngagementReminder: true);
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([optedOutVolunteer]);
-
-		// Act
-		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
-
-		// Assert
-		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		result.Events.Should().ContainSingle(e => e is EngagementConfirmedDomainEvent
+			&& ((EngagementConfirmedDomainEvent)e).VolunteerId == volunteerId
+			&& ((EngagementConfirmedDomainEvent)e).OpportunityId == opportunityId);
 	}
 
 	private VolunteerOpportunity CreateDefaultOpportunity() =>

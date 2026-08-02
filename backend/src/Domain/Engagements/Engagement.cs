@@ -63,13 +63,16 @@ public sealed class Engagement
 		UserId volunteerId,
 		TimeSlotId timeSlotId)
 	{
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId,
 			message: null,
 			EngagementStatus.Pending);
+
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public static Result<Engagement> CreateIndividualContact(
@@ -82,13 +85,16 @@ public sealed class Engagement
 				"Engagement.MessageRequired",
 				"A message is required when expressing interest via individual contact."));
 
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId: null,
 			message,
 			EngagementStatus.Pending);
+
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public Result Confirm()
@@ -101,7 +107,12 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	public Result Cancel(string? reason = null)
+	// notifyVolunteer distinguishes a direct, organizer-triggered cancellation
+	// (CancelEngagementCommandHandler) from a cascade cancellation (opportunity/
+	// time-slot deletion) that already notifies the volunteer itself as part of
+	// its own async handler - raising EngagementCancelledByOrganizerDomainEvent
+	// for both would double-send the notification for cascades.
+	public Result Cancel(string? reason = null, bool notifyVolunteer = false)
 	{
 		if (IsTerminated)
 			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
@@ -109,6 +120,8 @@ public sealed class Engagement
 		CancellationReason = reason;
 		Status = EngagementStatus.Cancelled;
 		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason));
+		if (notifyVolunteer)
+			AddEvent(new EngagementCancelledByOrganizerDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason));
 		return Result.Success();
 	}
 

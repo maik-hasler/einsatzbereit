@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements.CreateEngagement.v1;
 using AwesomeAssertions;
@@ -18,12 +16,6 @@ namespace Application.UnitTests.Engagements.CreateEngagement;
 public class CreateEngagementCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-	private readonly IKeycloakOrganizationService _keycloakService =
-		Substitute.For<IKeycloakOrganizationService>();
-	private readonly IKeycloakUserService _keycloakUserService =
-		Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
@@ -33,7 +25,6 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IAggregateRepository<User, UserId> _userRepo =
 		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly CreateEngagementCommandHandler _sut;
 
 	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
@@ -57,21 +48,11 @@ public class CreateEngagementCommandHandlerTests
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.Users.Returns(_userRepo);
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([]);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
 		_dbContext.CountActiveEngagementsForTimeSlotAsync(Arg.Any<TimeSlotId>(), Arg.Any<CancellationToken>())
 			.Returns(0);
 		_dbContext.GetTerminalEngagementAsync(Arg.Any<UserId>(), Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns((Engagement?)null);
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new CreateEngagementCommandHandler(_dbContext);
 	}
 
 	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
@@ -356,108 +337,49 @@ public class CreateEngagementCommandHandlerTests
 		await _engagementRepo.Received(1).AddAsync(Arg.Any<Engagement>(), cancellationToken);
 	}
 
-	// --- Localized emails (#1052) ---
+	// --- Notification/email dispatch moved to EngagementSignUpNotificationHandler (#1382) ---
 
 	[Test]
-	public async Task Handle_ShouldRenderVolunteerEmail_InVolunteersPreferredLanguage(
+	public async Task Handle_ShouldRaiseEngagementCreatedDomainEvent_WhenCreatingNewEngagement(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the Keycloak lookups, in-app notifications, and emails that
+		// used to run inline (inside the open DB transaction) now happen in
+		// EngagementSignUpNotificationHandler, dispatched post-commit via the
+		// outbox once this event lands on the aggregate.
+		var opportunityId = VolunteerOpportunityId.New();
+		var volunteerId = UserId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Events.Should().ContainSingle(e => e is EngagementCreatedDomainEvent
+			&& ((EngagementCreatedDomainEvent)e).VolunteerId == volunteerId
+			&& ((EngagementCreatedDomainEvent)e).OpportunityId == opportunityId);
+	}
+
+	[Test]
+	public async Task Handle_ShouldRaiseEngagementReactivatedDomainEvent_WhenReusingATerminalEngagement(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var opportunityId = VolunteerOpportunityId.New();
 		var volunteerId = UserId.New();
-		SetupOpportunityExists(opportunityId);
-		var volunteer = User.Create(volunteerId);
-		volunteer.SetPreferredLanguage("en");
-		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns(volunteer);
-		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Hi!");
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementRequestReceived,
-			"en",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
-	}
-
-	[Test]
-	public async Task Handle_ShouldDefaultVolunteerEmailToGerman_WhenNoProfileExistsYet(
-		CancellationToken cancellationToken)
-	{
-		// Arrange - a volunteer who signs up without ever having loaded their
-		// profile page has no User row yet, so PreferredLanguage can't have
-		// been seeded; the recipient's language must still resolve, never NRE.
-		var opportunityId = VolunteerOpportunityId.New();
-		var volunteerId = UserId.New();
-		SetupOpportunityExists(opportunityId);
-		_userRepo.FindAsync(volunteerId, Arg.Any<CancellationToken>()).Returns((User?)null);
-		var command = new CreateEngagementCommand(opportunityId, volunteerId, TimeSlotId: null, "Hi!");
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementRequestReceived,
-			"de",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
-	}
-
-	// --- Organizer email notification preferences (#1055) ---
-
-	[Test]
-	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToNewSignUp(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
-		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
+		var terminalEngagement = Engagement.CreateSlotSignUp(opportunityId, volunteerId, timeSlotId);
+		terminalEngagement.Withdraw();
+		terminalEngagement.ClearEvents();
+		_dbContext.GetTerminalEngagementAsync(volunteerId, opportunityId, timeSlotId, Arg.Any<CancellationToken>())
+			.Returns(terminalEngagement);
+		var command = new CreateEngagementCommand(opportunityId, volunteerId, timeSlotId, Message: null);
 
 		// Act
-		await _sut.Handle(command, cancellationToken);
+		var result = await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _emailService.Received(1).SendAsync(
-			"olaf@example.com",
-			Arg.Any<string>(),
-			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
-			cancellationToken);
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = VolunteerOpportunityId.New();
-		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		var organizerUserId = UserId.Create(organizerId).GetValueOrThrow();
-		var optedOutOrganizer = User.Create(organizerUserId);
-		optedOutOrganizer.UpdateNotificationPreferences(
-			notifyOnNewSignUp: false,
-			notifyOnWithdrawal: true,
-			notifyOnEngagementConfirmed: true,
-			notifyOnEngagementCancelled: true,
-			notifyOnEngagementReminder: true);
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([optedOutOrganizer]);
-		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		await _emailService.DidNotReceive().SendAsync(
-			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		result.Events.Should().ContainSingle(e => e is EngagementReactivatedDomainEvent);
 	}
 }
