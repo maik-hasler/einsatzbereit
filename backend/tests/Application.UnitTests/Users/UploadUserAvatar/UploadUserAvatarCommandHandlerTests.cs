@@ -87,7 +87,7 @@ public class UploadUserAvatarCommandHandlerTests
 
 		// Assert
 		await _fileStorage.Received(1).UploadAsync(
-			Arg.Is<string>(key => key.StartsWith($"user-avatars/{userId.Value}/", StringComparison.Ordinal)
+			Arg.Is<string>(key => key!.StartsWith($"user-avatars/{userId.Value}/", StringComparison.Ordinal)
 				&& key != $"user-avatars/{userId.Value}/"),
 			Arg.Any<Stream>(),
 			Arg.Any<long>(),
