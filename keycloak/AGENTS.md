@@ -30,7 +30,7 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 **`frontend`** (public OIDC client)
 - Authorization Code + PKCE (S256 enforced) flow only
 - ROPC disabled (`directAccessGrantsEnabled: false`) - use `frontend-test` for integration tests
-- Redirect URIs: `http://localhost:*`, `https://einsatzbereit.maik-hasler.de/callback`
+- Redirect URIs / web origins / post-logout redirect URIs: `https://einsatzbereit.maik-hasler.de` only in the committed realm - the same file ships baked into the production Keycloak image (`Dockerfile`), so a `http://localhost:*` entry here would be live on `login.maik-hasler.de` (#1190). `AppHost.cs` overlays `http://localhost:*` (and `webOrigins: ["*"]`, since Aspire's dynamic port can't be matched by a fixed origin) back in for local Aspire/Playwright runs only - see its comment above the realm-patching block
 - Protocol mappers:
   - `realm-roles` - injects `roles: [...]` into id_token, access_token, userinfo
   - `realm-name` - injects hardcoded claim `realm: "einsatzbereit"` (used by backend auth policies)
