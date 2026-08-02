@@ -34,6 +34,12 @@ builder.AddServiceDefaults();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+// .NET 10 minimal-API opt-in (#1146): without this, every [MaxLength] on a
+// request DTO only affects the generated OpenAPI/NSwag client - ASP.NET Core
+// never evaluates DataAnnotations on minimal-API parameters unless this is
+// registered, so the server itself accepted unbounded text on every endpoint.
+builder.Services.AddValidation();
+
 builder.Services.AddApiVersioning(options =>
 	{
 		options.DefaultApiVersion = new ApiVersion(1);

@@ -48,6 +48,33 @@ public class CreateOrganizationTests(
 	}
 
 	[Test]
+	public async Task CreateOrganization_ShouldReturn400_WhenAddressStreetExceedsMaxLength(
+		CancellationToken cancellationToken)
+	{
+		// Issue #1146: [MaxLength] on request DTOs used to only affect the generated
+		// OpenAPI/NSwag client - nothing evaluated DataAnnotations server-side, so an
+		// oversized Address field was silently accepted and stored as unbounded text.
+		var client = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var act = () => client.CreateOrganizationAsync(
+			new CreateOrganizationRequest
+			{
+				Name = "Org With Bad Address",
+				Address = new CreateAddressRequest
+				{
+					Street = new string('a', 201),
+					HouseNumber = "1",
+					ZipCode = "12345",
+					City = "Berlin",
+				},
+			},
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
 	public async Task CreateOrganization_ShouldReturn401_WhenNotAuthenticated(
 		CancellationToken cancellationToken)
 	{

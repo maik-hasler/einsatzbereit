@@ -67,4 +67,48 @@ public class OrganizationTests
 		result.IsFailure.Should().BeTrue();
 	}
 
+	// --- Name length cap (#1158) ---
+	// Create already enforced this in CreateOrganizationCommandHandler (before its
+	// Keycloak call), but Rename had no cap at all - both now share the same rule.
+
+	[Test]
+	public void Create_ShouldFail_WhenNameExceedsMaxLength()
+	{
+		var result = Organization.Create(OrganizationId.New(), new string('a', Organization.MaxNameLength + 1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Contain("100 characters");
+	}
+
+	[Test]
+	public void Create_ShouldSucceed_WhenNameIsExactlyMaxLength()
+	{
+		var result = Organization.Create(OrganizationId.New(), new string('a', Organization.MaxNameLength));
+
+		result.IsFailure.Should().BeFalse();
+	}
+
+	[Test]
+	public void Rename_ShouldFail_WhenNameExceedsMaxLength()
+	{
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+
+		var result = org.Rename(new string('a', Organization.MaxNameLength + 1));
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Contain("100 characters");
+		org.Name.Should().Be("Org");
+	}
+
+	[Test]
+	public void Rename_ShouldSucceed_WhenNameIsExactlyMaxLength()
+	{
+		var org = Organization.Create(OrganizationId.New(), "Org").Value;
+		var maxLengthName = new string('a', Organization.MaxNameLength);
+
+		var result = org.Rename(maxLengthName);
+
+		result.IsFailure.Should().BeFalse();
+		org.Name.Should().Be(maxLengthName);
+	}
 }

@@ -20,7 +20,8 @@ internal sealed class OrganizationConfiguration
 			.ValueGeneratedNever();
 
 		builder.Property(org => org.Name)
-			.IsRequired();
+			.IsRequired()
+			.HasMaxLength(Organization.MaxNameLength);
 
 		builder.Property(org => org.Description);
 
@@ -34,10 +35,13 @@ internal sealed class OrganizationConfiguration
 
 		builder.OwnsOne(org => org.Address, address =>
 		{
-			address.Property(a => a.Street).IsRequired();
-			address.Property(a => a.HouseNumber).IsRequired();
+			// Matches the [MaxLength] already declared on Create/UpdateOrganizationRequest's
+			// address fields (#1146) - previously only inert on the request DTO, since
+			// nothing evaluated it server-side and the DB column was unbounded text.
+			address.Property(a => a.Street).HasMaxLength(200).IsRequired();
+			address.Property(a => a.HouseNumber).HasMaxLength(20).IsRequired();
 			address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
-			address.Property(a => a.City).IsRequired();
+			address.Property(a => a.City).HasMaxLength(100).IsRequired();
 			address.Property(a => a.Latitude);
 			address.Property(a => a.Longitude);
 		});
