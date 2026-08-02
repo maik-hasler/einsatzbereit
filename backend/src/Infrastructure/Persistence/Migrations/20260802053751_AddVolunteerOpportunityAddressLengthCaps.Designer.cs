@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	[Migration("20260802053751_AddOrganizationNameAndAddressLengthCaps")]
-	partial class AddOrganizationNameAndAddressLengthCaps
+	[Migration("20260802053751_AddVolunteerOpportunityAddressLengthCaps")]
+	partial class AddVolunteerOpportunityAddressLengthCaps
 	{
 		/// <inheritdoc />
 		protected override void BuildTargetModel(ModelBuilder modelBuilder)
