@@ -913,7 +913,6 @@ export default function CreateVolunteerOpportunityModal({
 				labelledBy="create-opportunity-dialog-title"
 				maxWidth="max-w-xl"
 				className="flex min-w-0 flex-col overflow-hidden rounded-card bg-white shadow-modal"
-				backdropClassName="bg-black/60 backdrop-blur-sm"
 				suspended={
 					showDiscardConfirm ||
 					pendingSlotEdit !== null ||
@@ -929,7 +928,7 @@ export default function CreateVolunteerOpportunityModal({
 				<div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
 					<h2
 						id="create-opportunity-dialog-title"
-						className="text-lg font-bold text-gray-900"
+						className="text-lg font-semibold text-gray-900"
 					>
 						{isEditMode
 							? t("createOpportunity.editTitle")
@@ -1061,30 +1060,30 @@ export default function CreateVolunteerOpportunityModal({
 
 				{/* Footer navigation */}
 				<div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
-					<button
+					<Button
 						type="button"
+						variant="secondary"
 						data-testid="modal-cancel"
 						onClick={() => (step > 1 ? setStep((s) => s - 1) : requestClose())}
-						className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
 					>
 						{step === 1
 							? t("createOpportunity.cancel")
 							: t("createOpportunity.back")}
-					</button>
+					</Button>
 
 					<div className="flex items-center gap-2">
 						{canSaveDraft && (
-							<button
+							<Button
 								type="button"
+								variant="tertiary"
 								data-testid="modal-save-draft"
 								disabled={submitting !== null}
 								onClick={() => void submit(true)}
-								className="rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-40"
 							>
 								{submitting === "draft"
 									? t("createOpportunity.savingDraft")
 									: t("createOpportunity.saveDraft")}
-							</button>
+							</Button>
 						)}
 						{step < TOTAL_STEPS ? (
 							<Button

@@ -21,11 +21,14 @@ const BASE_CLASSES =
 // primary: solid brand-color CTA. secondary: borderless cancel/close action -
 // the single style every modal's cancel/close button should share (see
 // issue #847: three different visual treatments for the same action before
-// this existed).
+// this existed). tertiary: borderless brand-color action for a secondary CTA
+// alongside a primary one (e.g. "Save draft" next to "Publish") - distinct
+// from `secondary` since it needs to read as an action, not a dismissal.
 const VARIANT_CLASSES = {
 	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	secondary: "text-gray-600 hover:bg-gray-100",
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
+	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
 } as const;
 
 type Variant = keyof typeof VARIANT_CLASSES;
