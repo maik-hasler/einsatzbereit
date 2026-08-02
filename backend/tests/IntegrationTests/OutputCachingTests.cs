@@ -62,6 +62,7 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 			Title = "Freshly published opportunity",
 			Description = "Proves a create evicts the output cache (#1543)",
 			OrganizationId = orgId,
+			IsRemote = true,
 			Occurrence = "OneTime",
 			ParticipationType = "IndividualContact",
 			CheckInMethod = "None",
