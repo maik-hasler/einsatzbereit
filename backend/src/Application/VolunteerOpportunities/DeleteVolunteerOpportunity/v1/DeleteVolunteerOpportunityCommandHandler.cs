@@ -1,7 +1,5 @@
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -13,11 +11,7 @@ namespace Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
 
 internal sealed class DeleteVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
-	IEngagementReadRepository engagementReadRepository,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
+	IEngagementReadRepository engagementReadRepository)
 	: ICommandHandler<DeleteVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -41,10 +35,6 @@ internal sealed class DeleteVolunteerOpportunityCommandHandler(
 		await VolunteerOpportunityDeletionHelper.DeleteAsync(
 			dbContext,
 			engagementReadRepository,
-			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
-			unsubscribeLinkBuilder,
 			opportunity,
 			opportunityId,
 			request.RequestingUserId,

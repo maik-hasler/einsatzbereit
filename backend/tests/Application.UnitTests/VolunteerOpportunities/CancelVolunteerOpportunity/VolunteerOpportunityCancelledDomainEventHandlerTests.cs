@@ -1,5 +1,3 @@
-using Application.Common.Email;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.CancelVolunteerOpportunity.v1;
@@ -25,10 +23,6 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly VolunteerOpportunityCancelledDomainEventHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -44,16 +38,8 @@ public class VolunteerOpportunityCancelledDomainEventHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
 		_sut = new VolunteerOpportunityCancelledDomainEventHandler(
-			_dbContext, _unitOfWork, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder,
+			_dbContext, _unitOfWork, _engagementReadRepository,
 			NullLogger<VolunteerOpportunityCancelledDomainEventHandler>.Instance);
 	}
 

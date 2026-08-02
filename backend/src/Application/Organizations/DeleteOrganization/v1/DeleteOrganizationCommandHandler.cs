@@ -1,5 +1,4 @@
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
@@ -15,11 +14,7 @@ namespace Application.Organizations.DeleteOrganization.v1;
 internal sealed class DeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
 	IKeycloakOrganizationService keycloakOrganizationService,
-	IKeycloakUserService keycloakUserService,
-	IEngagementReadRepository engagementReadRepository,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
+	IEngagementReadRepository engagementReadRepository)
 	: ICommandHandler<DeleteOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -76,10 +71,6 @@ internal sealed class DeleteOrganizationCommandHandler(
 			await VolunteerOpportunityDeletionHelper.DeleteAsync(
 				dbContext,
 				engagementReadRepository,
-				keycloakUserService,
-				emailService,
-				emailTemplateRenderer,
-				unsubscribeLinkBuilder,
 				opportunity,
 				opportunity.Id,
 				request.RequestingUserId,

@@ -1,35 +1,31 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
-using Application.Common.Localization;
 using Application.Common.Persistence;
 using Domain.Engagements;
 using Domain.Notifications;
-using Domain.Users;
 
 namespace Application.Engagements.Common;
 
 /// <summary>
-/// Cancels an engagement and sends the same in-app notification + email that
-/// <see cref="CancelEngagement.v1.CancelEngagementCommandHandler"/> sends for an
+/// Cancels an engagement and creates the same in-app notification that
+/// <see cref="CancelEngagement.v1.CancelEngagementCommandHandler"/> creates for an
 /// organizer-triggered cancellation - shared so engagements auto-cancelled by an
 /// opportunity deletion notify the volunteer identically instead of only via the
-/// opportunity-level notification (einsatzbereit#1057).
+/// opportunity-level notification (einsatzbereit#1057). The volunteer's cancellation
+/// email itself is not sent here (#1150): Cancel() raises EngagementCancelledDomainEvent,
+/// consumed post-commit by EngagementCancelledNotificationHandler, so it fires correctly
+/// whether this call happens inside a command's own not-yet-committed transaction or
+/// from another already-post-commit domain event handler.
 /// </summary>
 internal static class EngagementCancellationHelper
 {
 	public static async Task CancelAndNotifyAsync(
 		IApplicationDbContext dbContext,
-		IKeycloakUserService keycloakUserService,
-		IEmailService emailService,
-		IEmailTemplateRenderer emailTemplateRenderer,
-		IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 		Engagement engagement,
-		string opportunityTitle,
 		string? reason,
+		string opportunityTitle,
 		CancellationToken cancellationToken)
 	{
-		engagement.Cancel(reason).ThrowIfFailure();
+		engagement.Cancel(reason, opportunityTitle).ThrowIfFailure();
 
 		var notification = Notification.Create(
 			engagement.VolunteerId!.Value,
@@ -37,38 +33,5 @@ internal static class EngagementCancellationHelper
 			engagement.Id.Value);
 
 		await dbContext.Notifications.AddAsync(notification, cancellationToken);
-		var volunteer = await keycloakUserService.GetUserAsync(engagement.VolunteerId!.Value.Value, cancellationToken);
-		var volunteerUser = (await dbContext.GetOrCreateUsersAsync([engagement.VolunteerId!.Value], cancellationToken))[0];
-		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser.PreferredLanguage);
-
-		if (volunteerUser.IsSubscribedTo(EmailNotificationType.EngagementCancelled))
-		{
-			var reasonBlock = string.IsNullOrWhiteSpace(reason)
-				? string.Empty
-				: emailTemplateRenderer.Render(
-					EmailTemplateKind.EngagementCancelledReasonSuffix,
-					volunteerLanguage,
-					new Dictionary<string, string> { ["Reason"] = reason }).Body;
-
-			var content = emailTemplateRenderer.Render(
-				EmailTemplateKind.EngagementCancelled,
-				volunteerLanguage,
-				new Dictionary<string, string>
-				{
-					["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
-					["OpportunityTitle"] = opportunityTitle,
-					["ReasonBlock"] = reasonBlock,
-				});
-
-			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
-				engagement.VolunteerId!.Value, volunteerUser.UnsubscribeToken, EmailNotificationType.EngagementCancelled);
-
-			await emailService.SendAsync(
-				volunteer.Email,
-				content.Subject,
-				EmailFooter.Append(content.Body, unsubscribeUrl),
-				engagement.Id.Value.ToString(),
-				cancellationToken);
-		}
 	}
 }

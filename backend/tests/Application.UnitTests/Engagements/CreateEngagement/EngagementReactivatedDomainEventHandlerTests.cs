@@ -113,6 +113,32 @@ public class EngagementReactivatedDomainEventHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldSkip_WhenVolunteersKeycloakAccountIsAlreadyDeleted(
+		CancellationToken cancellationToken)
+	{
+		// A volunteer who deletes their account immediately after reactivating a
+		// withdrawn sign-up can have UserAccountDeletedDomainEvent dispatched from
+		// the outbox before this event - there is no ordering guarantee between the
+		// two - so this must tolerate the volunteer already being gone rather than
+		// dead-lettering forever.
+		var organizationId = OrganizationId.New();
+		var opportunity = CreateOpportunity(organizationId);
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		_keycloakUserService
+			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+			.Returns<KeycloakUserProfile>(_ => throw new InvalidOperationException("404 Not Found"));
+		var domainEvent = new EngagementReactivatedDomainEvent(EngagementId.New(), UserId.New(), opportunity.Id);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert
+		await act.Should().NotThrowAsync();
+		await _emailService.DidNotReceive().SendAsync(
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
 	public async Task Handle_ShouldNotThrow_WhenOpportunityNoLongerExists(
 		CancellationToken cancellationToken)
 	{

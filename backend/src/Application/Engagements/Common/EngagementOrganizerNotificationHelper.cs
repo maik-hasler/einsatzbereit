@@ -48,7 +48,29 @@ internal static class EngagementOrganizerNotificationHelper
 			return;
 		}
 
-		var volunteer = await keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken);
+		// DeleteMyAccountCommandHandler withdraws non-terminal engagements and raises
+		// UserAccountDeletedDomainEvent in the same commit (#1140/#1141) - both are
+		// dispatched from the same outbox batch with no ordering guarantee between
+		// them, so this can legitimately run after the volunteer's Keycloak identity
+		// is already deleted (most reachable via EngagementWithdrawnDomainEventHandler,
+		// but the same race applies to a sign-up/reactivation followed by an
+		// immediate account deletion). Retrying would never resolve that, so skip
+		// the notification rather than dead-lettering forever.
+		KeycloakUserProfile volunteer;
+		try
+		{
+			volunteer = await keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			logger.LogWarning(
+				ex,
+				"Skipping organizer notification for engagement {EngagementId}: volunteer {VolunteerId} could not be looked up in Keycloak",
+				engagementId.Value,
+				volunteerId.Value);
+			return;
+		}
+
 		var volunteerName = volunteer.FirstName ?? volunteer.Username;
 
 		var members = await keycloakOrganizationService

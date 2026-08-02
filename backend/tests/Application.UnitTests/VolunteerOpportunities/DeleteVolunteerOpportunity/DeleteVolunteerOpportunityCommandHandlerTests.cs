@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.DeleteVolunteerOpportunity.v1;
@@ -26,11 +24,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly DeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -53,15 +47,7 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new DeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
@@ -165,12 +151,15 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotifyAndEmailEachVolunteer_WhenActiveEngagementsAutoCancelled(
+	public async Task Handle_ShouldNotifyAndCancelEachVolunteer_WhenActiveEngagementsAutoCancelled(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - a deletion must notify+email the volunteer the same way an
-		// organizer-triggered single-engagement cancel does (einsatzbereit#1057),
-		// not just via the opportunity-level "was removed" notification.
+		// Arrange - a deletion must in-app-notify+cancel the volunteer the same way
+		// an organizer-triggered single-engagement cancel does (einsatzbereit#1057),
+		// not just via the opportunity-level "was removed" notification. The email
+		// itself now happens post-commit via EngagementCancelledNotificationHandler
+		// (#1150), so this only proves each engagement is cancelled and carries the
+		// right title on its event.
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
@@ -201,12 +190,10 @@ public class DeleteVolunteerOpportunityCommandHandlerTests
 				&& n.Kind == NotificationKind.EngagementCancelled
 				&& n.RelatedEntityId == confirmedEngagement.Id.Value),
 			cancellationToken);
-		await _emailService.Received(2).SendAsync(
-			"user@example.com",
-			"Test Subject",
-			Arg.Is<string>(body => body!.StartsWith("Test Body")),
-			Arg.Any<string>(),
-			cancellationToken);
+		pendingEngagement.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent)
+			.Which.Should().BeOfType<EngagementCancelledDomainEvent>()
+			.Which.OpportunityTitle.Should().Be("Titel");
+		confirmedEngagement.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent);
 	}
 
 	[Test]
