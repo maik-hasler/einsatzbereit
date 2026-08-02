@@ -132,8 +132,10 @@ function OrganizationsSection() {
 					<tbody className="divide-y divide-gray-100">
 						{rows.map((row) => (
 							<tr key={row.id} className="flex items-center gap-4 px-4 py-3">
-								<td className="flex flex-1 items-center gap-2 font-medium text-gray-900">
-									{row.name}
+								<td className="min-w-0 flex-1">
+									<p className="truncate font-medium text-gray-900">
+										{row.name}
+									</p>
 								</td>
 							</tr>
 						))}
