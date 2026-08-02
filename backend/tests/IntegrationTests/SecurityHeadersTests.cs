@@ -38,12 +38,16 @@ public class SecurityHeadersTests(IntegrationTestFixture fixture)
 		response.Headers.TryGetValues("Strict-Transport-Security", out _).Should().BeFalse();
 	}
 
+	// Uses /v1/organizations/directory rather than /alive: ASP.NET Core's own
+	// health-check middleware sets its own Cache-Control on every /alive response
+	// regardless of authentication, which would make this assertion fail for a
+	// reason unrelated to what it's testing.
 	[Test]
-	public async Task GetAlive_ShouldNotIncludeCacheControl_WhenAnonymous(CancellationToken cancellationToken)
+	public async Task GetPublicOrganizations_ShouldNotIncludeCacheControl_WhenAnonymous(CancellationToken cancellationToken)
 	{
 		using var httpClient = fixture.CreateHttpClient();
 
-		var response = await httpClient.GetAsync("/alive", cancellationToken);
+		var response = await httpClient.GetAsync("/v1/organizations/directory", cancellationToken);
 
 		response.Headers.TryGetValues("Cache-Control", out _).Should().BeFalse();
 	}
