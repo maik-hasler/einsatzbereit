@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from "react";
 import i18next from "i18next";
 import { statusTitleClass } from "../lib/headingClasses";
+import Button from "./Button";
 
 interface Props {
 	children: ReactNode;
@@ -39,23 +40,17 @@ export default class ErrorBoundary extends Component<Props, State> {
 			const t = i18next.t.bind(i18next);
 			return (
 				<div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
-					<h1 className={`text-gray-900 ${statusTitleClass}`}>
+					<h1 className={`text-brand-700 ${statusTitleClass}`}>
 						{t("error.boundaryTitle")}
 					</h1>
 					<p className="max-w-md text-gray-500">{t("error.boundaryMessage")}</p>
 					<div className="flex gap-3">
-						<button
-							onClick={this.handleBack}
-							className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
-						>
+						<Button variant="secondary" onClick={this.handleBack}>
 							{t("error.goBack")}
-						</button>
-						<button
-							onClick={() => window.location.reload()}
-							className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
-						>
+						</Button>
+						<Button onClick={() => window.location.reload()}>
 							{t("error.reload")}
-						</button>
+						</Button>
 					</div>
 				</div>
 			);
