@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	[Migration("20260802053751_AddVolunteerOpportunityAddressLengthCaps")]
+	[Migration("20260802140000_AddVolunteerOpportunityAddressLengthCaps")]
 	partial class AddVolunteerOpportunityAddressLengthCaps
 	{
 		/// <inheritdoc />
