@@ -756,7 +756,7 @@ function ReportHistoryModal({
 								<p className="mt-1 text-sm text-gray-600">{entry.details}</p>
 							)}
 							<div className="mt-2 flex items-center justify-between gap-2">
-								<p className="text-xs text-gray-400">
+								<p className="text-xs text-gray-500">
 									{formatDateTime(
 										entry.createdOn as unknown as string,
 										i18n.language,

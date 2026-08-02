@@ -172,6 +172,7 @@ Key conventions:
 - **SVG icons**: Decorative SVGs get `aria-hidden="true"`. Meaningful standalone SVGs need a `<title>` or `aria-label`.
 - **Form labels**: Every form control must have an associated `<label htmlFor="...">` or `aria-label`.
 - **`<a href="#">`**: Never use `href="#"`. Use a `<button>` if there is no navigation target.
+- **Color contrast**: `text-gray-400` (2.6:1 on white) fails the WCAG AA 4.5:1 floor for text - reserve it for decorative icons and input placeholders only, never for body copy, labels, timestamps, or other real content. Use `text-gray-500` (4.9:1) or darker for content; an interactive control's resting label needs to clear at least the 3:1 UI-component floor too.
 
 Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page and several stateful views (edit mode, modals, widget dialogs) - grep that file for `HasNoSeriousA11yViolations` for the current, authoritative list rather than trusting a copy of it here. Tests fail on any "serious" or "critical" axe violation. A new page/route needs a matching test in that file - `a11y-check` flags a missing one.
 
