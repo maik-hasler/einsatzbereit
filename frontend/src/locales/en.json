@@ -1131,6 +1131,7 @@
       },
       "VolunteerOpportunity": {
         "InvalidCheckInPin": "Check-in PIN must be 4 to 6 digits.",
+        "WeakCheckInPin": "This PIN is too easy to guess - choose a less predictable one.",
         "TitleTooLong": "Title must not exceed 200 characters.",
         "DescriptionTooLong": "Description must not exceed 5000 characters.",
         "ScheduledSlotsMustStartAsDraft": "A Scheduled slots opportunity must be created as a draft and published after adding at least one time slot.",

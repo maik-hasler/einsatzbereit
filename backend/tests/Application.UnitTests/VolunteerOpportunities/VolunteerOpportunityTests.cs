@@ -842,16 +842,56 @@ public class VolunteerOpportunityTests
 		result.Error.Description.Should().Be("Check-in PIN must be 4 to 6 digits.");
 	}
 
+	// --- CheckInPin triviality (#1176) ---
+
+	[Test]
+	[Arguments("0000")]
+	[Arguments("1111")]
+	[Arguments("9999")]
+	[Arguments("000000")]
+	[Arguments("555555")]
+	[Arguments("1234")]
+	[Arguments("4321")]
+	[Arguments("123456")]
+	[Arguments("654321")]
+	[Arguments("1212")]
+	[Arguments("6969")]
+	[Arguments("2000")]
+	[Arguments("1010")]
+	public void Create_ShouldFail_WhenPinIsTrivial(string pin)
+	{
+		var result = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, PinGenerator, checkInPin: pin);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("This PIN is too easy to guess - choose a less predictable one.");
+	}
+
+	[Test]
+	public void ChangeCheckInMethod_ShouldFail_WhenPinIsTrivial()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "4827", validUntil: Now.AddDays(30)).Value;
+
+		var result = opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator, checkInPin: "1111");
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("This PIN is too easy to guess - choose a less predictable one.");
+		opportunity.CheckInPin.Should().Be("4827");
+	}
+
 	[Test]
 	public void ChangeCheckInMethod_ShouldOverwritePin_WhenCustomPinGiven()
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111", validUntil: Now.AddDays(30)).Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "4827", validUntil: Now.AddDays(30)).Value;
 
-		opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator, checkInPin: "2222");
+		opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator, checkInPin: "6193");
 
-		opportunity.CheckInPin.Should().Be("2222");
+		opportunity.CheckInPin.Should().Be("6193");
 	}
 
 	[Test]
@@ -859,11 +899,11 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111", validUntil: Now.AddDays(30)).Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "4827", validUntil: Now.AddDays(30)).Value;
 
 		opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator);
 
-		opportunity.CheckInPin.Should().Be("1111");
+		opportunity.CheckInPin.Should().Be("4827");
 	}
 
 	[Test]
@@ -886,7 +926,7 @@ public class VolunteerOpportunityTests
 	{
 		var opportunity = VolunteerOpportunity.Create(
 			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
-			CheckInMethod.PINCode, PinGenerator, checkInPin: "1111", validUntil: Now.AddDays(30)).Value;
+			CheckInMethod.PINCode, PinGenerator, checkInPin: "4827", validUntil: Now.AddDays(30)).Value;
 
 		var result = opportunity.ChangeCheckInMethod(CheckInMethod.PINCode, PinGenerator, checkInPin: "abc");
 

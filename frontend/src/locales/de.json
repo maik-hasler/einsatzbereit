@@ -1131,6 +1131,7 @@
       },
       "VolunteerOpportunity": {
         "InvalidCheckInPin": "Die Check-in-PIN muss 4 bis 6 Ziffern haben.",
+        "WeakCheckInPin": "Diese PIN ist zu leicht zu erraten - wähle eine weniger vorhersehbare PIN.",
         "TitleTooLong": "Der Titel darf 200 Zeichen nicht überschreiten.",
         "DescriptionTooLong": "Die Beschreibung darf 5000 Zeichen nicht überschreiten.",
         "ScheduledSlotsMustStartAsDraft": "Ein Einsatz mit der Teilnahmeart Zeitslots muss zunächst als Entwurf angelegt werden und kann erst nach Hinzufügen mindestens eines Zeitslots veröffentlicht werden.",
