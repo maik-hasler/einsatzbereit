@@ -9,6 +9,7 @@ import ReportContentModal, {
 } from "../components/ReportContentModal";
 import Spinner from "../components/Spinner";
 import ErrorBanner from "../components/ErrorBanner";
+import EmptyState from "../components/EmptyState";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -107,7 +108,7 @@ export default function OrganizationProfilePage() {
 				</h2>
 
 				{profile.openOpportunities.length === 0 ? (
-					<p className="text-gray-500">{t("orgProfile.noOpportunities")}</p>
+					<EmptyState title={t("orgProfile.noOpportunities")} />
 				) : (
 					<ul className="space-y-3">
 						{profile.openOpportunities.map((opp) => (

@@ -1,10 +1,12 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Spinner from "../../../components/Spinner";
 import ErrorBanner from "../../../components/ErrorBanner";
+import EmptyState from "../../../components/EmptyState";
+import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -25,16 +27,19 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
 function UpcomingOpportunitiesWidget({
 	organizationId,
 	refreshKey,
 	size,
+	onOpportunityCreated,
 }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const locale = resolveDateLocale(i18n.language);
+	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	// Shared with QuickCheckInWidget, which fetches the same organization-wide
 	// opportunities on the same mount - see useSharedOrgFetch. Only one of the
@@ -90,9 +95,14 @@ function UpcomingOpportunitiesWidget({
 			)}
 			{error && <ErrorBanner message={t("orgDashboard.upcomingError")} />}
 			{items !== null && !error && items.length === 0 && (
-				<p className="text-sm text-gray-500">
-					{t("orgDashboard.upcomingEmpty")}
-				</p>
+				<EmptyState
+					compact
+					title={t("orgDashboard.upcomingEmpty")}
+					action={{
+						label: t("orgOverview.createOpportunity"),
+						onClick: () => setShowCreateModal(true),
+					}}
+				/>
 			)}
 			{items !== null && !error && items.length > 0 && (
 				<ul className="space-y-3">
@@ -153,6 +163,14 @@ function UpcomingOpportunitiesWidget({
 			>
 				{t("orgDashboard.upcomingViewAll")}
 			</Link>
+
+			{showCreateModal && (
+				<CreateVolunteerOpportunityModal
+					organizationId={organizationId}
+					onClose={() => setShowCreateModal(false)}
+					onSuccess={onOpportunityCreated}
+				/>
+			)}
 		</WidgetCard>
 	);
 }

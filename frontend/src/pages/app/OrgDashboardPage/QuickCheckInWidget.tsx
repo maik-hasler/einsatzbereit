@@ -7,7 +7,9 @@ import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
 import Dropdown from "../../../components/Dropdown";
 import ErrorBanner from "../../../components/ErrorBanner";
+import EmptyState from "../../../components/EmptyState";
 import ModalLoadingFallback from "../../../components/ModalLoadingFallback";
+import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -22,12 +24,18 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
 // Lets an organizer jump straight to the QR scanner for any of their
 // published opportunities, instead of navigating to that opportunity's
 // engagement management page first.
-function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
+function QuickCheckInWidget({
+	organizationId,
+	refreshKey,
+	size,
+	onOpportunityCreated,
+}: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -47,6 +55,7 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 	);
 	const [selectedId, setSelectedId] = useState("");
 	const [scannerOpen, setScannerOpen] = useState(false);
+	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	useEffect(() => {
 		if (opportunities === null) return;
@@ -68,9 +77,14 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 			)}
 			{error && <ErrorBanner message={error} />}
 			{opportunities !== null && !error && opportunities.length === 0 && (
-				<p className="text-sm text-gray-500">
-					{t("orgDashboard.quickCheckInNoOpportunities")}
-				</p>
+				<EmptyState
+					compact
+					title={t("orgDashboard.quickCheckInNoOpportunities")}
+					action={{
+						label: t("orgOverview.createOpportunity"),
+						onClick: () => setShowCreateModal(true),
+					}}
+				/>
 			)}
 			{opportunities !== null && !error && opportunities.length > 0 && (
 				// Side by side once there's enough width for both to stay
@@ -123,6 +137,14 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 						onClose={() => setScannerOpen(false)}
 					/>
 				</Suspense>
+			)}
+
+			{showCreateModal && (
+				<CreateVolunteerOpportunityModal
+					organizationId={organizationId}
+					onClose={() => setShowCreateModal(false)}
+					onSuccess={onOpportunityCreated}
+				/>
 			)}
 		</WidgetCard>
 	);
