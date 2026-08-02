@@ -5,6 +5,7 @@ import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
 import Spinner from "../../../components/Spinner";
 import Button from "../../../components/Button";
+import Dropdown from "../../../components/Dropdown";
 import ErrorBanner from "../../../components/ErrorBanner";
 import ModalLoadingFallback from "../../../components/ModalLoadingFallback";
 import WidgetCard from "./WidgetCard";
@@ -87,18 +88,16 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 						<label htmlFor="quick-checkin-opportunity" className="sr-only">
 							{t("orgDashboard.quickCheckInSelectOpportunity")}
 						</label>
-						<select
+						<Dropdown
 							id="quick-checkin-opportunity"
 							value={selectedId}
-							onChange={(e) => setSelectedId(e.target.value)}
-							className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
-						>
-							{opportunities.map((o) => (
-								<option key={o.id} value={o.id}>
-									{o.title || t("orgDashboard.unnamedDraft")}
-								</option>
-							))}
-						</select>
+							onChange={setSelectedId}
+							className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+							options={opportunities.map((o) => ({
+								value: o.id,
+								label: o.title || t("orgDashboard.unnamedDraft"),
+							}))}
+						/>
 					</div>
 					<Button
 						type="button"
