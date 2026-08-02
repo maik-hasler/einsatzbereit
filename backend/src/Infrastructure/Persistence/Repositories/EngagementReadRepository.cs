@@ -153,7 +153,7 @@ internal sealed class EngagementReadRepository(
 					x.CancellationReason,
 				})
 			.OrderByDescending(x => x.CreatedOn)
-			.ThenBy(x => x.Id.Value)
+			.ThenBy(x => x.Id)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.ToListAsync(cancellationToken);
@@ -259,8 +259,8 @@ internal sealed class EngagementReadRepository(
 		// order; entries with no time slot sort last. Both branches add the primary
 		// key as a tiebreaker (#1161) so ties can't repeat/skip rows across pages.
 		var orderedQuery = upcoming
-			? scopedQuery.OrderBy(x => x.TimeSlotStart ?? DateTimeOffset.MaxValue).ThenBy(x => x.Engagement.Id.Value)
-			: scopedQuery.OrderByDescending(x => x.Engagement.CreatedOn).ThenBy(x => x.Engagement.Id.Value);
+			? scopedQuery.OrderBy(x => x.TimeSlotStart ?? DateTimeOffset.MaxValue).ThenBy(x => x.Engagement.Id)
+			: scopedQuery.OrderByDescending(x => x.Engagement.CreatedOn).ThenBy(x => x.Engagement.Id);
 
 		var engagements = await orderedQuery
 			.Select(x => x.Engagement)
@@ -453,7 +453,7 @@ internal sealed class EngagementReadRepository(
 
 		var items = await scopedQuery
 			.OrderByDescending(e => e.FeedbackSubmittedAt)
-			.ThenBy(e => e.Id.Value)
+			.ThenBy(e => e.Id)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.Select(e => new FeedbackItemDto(

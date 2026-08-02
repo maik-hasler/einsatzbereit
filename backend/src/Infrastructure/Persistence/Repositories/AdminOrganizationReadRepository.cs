@@ -16,7 +16,7 @@ internal sealed class AdminOrganizationReadRepository(
 	{
 		var paged = await dbContext.OrganizationsQuery
 			.OrderBy(o => o.Name)
-			.ThenBy(o => o.Id.Value)
+			.ThenBy(o => o.Id)
 			.ToPagedListAsync(pageNumber, pageSize, cancellationToken);
 
 		return paged.Map(o => new AdminOrganizationSummary(o.Id.Value, o.Name, o.LogoUrl));
