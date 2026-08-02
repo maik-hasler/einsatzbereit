@@ -22,6 +22,7 @@ import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
 import { formatDateTime } from "../../../lib/format";
+import { brandColor } from "../../../lib/brandColor";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -45,8 +46,6 @@ const localizer = dateFnsLocalizer({
 	getDay,
 	locales: rbcLocales,
 });
-
-const DEFAULT_EVENT_COLOR = "#226947";
 
 interface CalEvent {
 	id: string;
@@ -115,12 +114,12 @@ function CalEventChip({
 
 function calendarEventPropGetter(event: object) {
 	const e = event as CalEvent;
-	const bg = e.color ?? DEFAULT_EVENT_COLOR;
+	const bg = e.color ?? brandColor("700");
 	return {
 		style: {
 			backgroundColor: bg,
 			borderColor: bg,
-			color: "#ffffff",
+			color: "white",
 		},
 	};
 }
@@ -227,7 +226,9 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	);
 	const calLoading = calData === null && !calError;
 	const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
-	const [pickerColor, setPickerColor] = useState(DEFAULT_EVENT_COLOR);
+	const [pickerColor, setPickerColor] = useState<string>(() =>
+		brandColor("700"),
+	);
 	const [savingColor, setSavingColor] = useState(false);
 	const [colorSaveError, setColorSaveError] = useState<string | null>(null);
 	const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -282,7 +283,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 		const e = event as CalEvent;
 		if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
 		setSelectedEvent(e);
-		setPickerColor(e.color ?? DEFAULT_EVENT_COLOR);
+		setPickerColor(e.color ?? brandColor("700"));
 		setColorSaveError(null);
 	}, []);
 

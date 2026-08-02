@@ -122,7 +122,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .rbc-btn-group button:focus-visible {
-	outline: 2px solid #226947;
+	outline: 2px solid var(--color-brand-700);
 	outline-offset: -1px;
 	z-index: 1;
 	position: relative;
@@ -130,17 +130,17 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Active view button */
 .rbc-btn-group button.rbc-active {
-	background: #226947;
+	background: var(--color-brand-700);
 	color: white;
-	border-color: #226947;
+	border-color: var(--color-brand-700);
 }
 
 .rbc-btn-group button.rbc-active + button {
-	border-left-color: #1a3c2b;
+	border-left-color: var(--color-brand-800);
 }
 
 .rbc-btn-group button.rbc-active:hover {
-	background: #1a3c2b;
+	background: var(--color-brand-800);
 }
 
 /* Grid borders */
@@ -202,14 +202,14 @@ overflow-y-auto already handles vertical scrolling. */
 }
 
 .rbc-event:focus-visible {
-	outline: 2px solid #226947;
+	outline: 2px solid var(--color-brand-700);
 	outline-offset: 1px;
 }
 
 .rbc-event.rbc-selected {
 	box-shadow:
 		0 0 0 2px white,
-		0 0 0 4px #226947;
+		0 0 0 4px var(--color-brand-700);
 }
 
 /* Off-range days */
@@ -230,7 +230,7 @@ overflow-y-auto already handles vertical scrolling. */
 
 .rbc-date-cell.rbc-now {
 	font-weight: 700;
-	color: #226947;
+	color: var(--color-brand-700);
 }
 
 /* Time gutter */
@@ -280,13 +280,13 @@ overflow-y-auto already handles vertical scrolling. */
 .rbc-show-more {
 	font-size: 0.75rem;
 	font-weight: 500;
-	color: #226947;
+	color: var(--color-brand-700);
 	background: transparent;
 	padding: 0.125rem 0.375rem;
 }
 
 .rbc-show-more:hover {
-	color: #1a3c2b;
+	color: var(--color-brand-800);
 }
 
 /* Mobile: stack toolbar vertically */
@@ -386,7 +386,7 @@ over Tailwind's layered focus-visible:outline-none/ring-* utilities
 regardless of specificity (see .rbc-btn-group/.rbc-event above for the
 same unlayered-override pattern already used in this file). */
 :root {
-	--focus-ring-color: #226947;
+	--focus-ring-color: var(--color-brand-700);
 }
 
 :focus-visible {
