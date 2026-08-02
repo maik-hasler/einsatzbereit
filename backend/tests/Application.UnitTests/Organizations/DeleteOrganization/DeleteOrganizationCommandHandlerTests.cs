@@ -1,6 +1,8 @@
+using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
+using Application.Engagements;
 using Application.Organizations.DeleteOrganization.v1;
 using AwesomeAssertions;
 using Domain.Organizations;
@@ -17,7 +19,14 @@ public class DeleteOrganizationCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<Organization, OrganizationId> _organizationRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
+	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
+		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IKeycloakOrganizationService _keycloakService = Substitute.For<IKeycloakOrganizationService>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
+	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
+	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly DeleteOrganizationCommandHandler _sut;
 
@@ -26,13 +35,24 @@ public class DeleteOrganizationCommandHandlerTests
 	public DeleteOrganizationCommandHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_organizationRepo);
+		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext
 			.GetBlockingOpportunitiesForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<VolunteerOpportunity>());
 		_dbContext
+			.GetOpportunitiesForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>())
+			.Returns(new List<VolunteerOpportunity>());
+		_dbContext
 			.GetOpenReportsForTargetAsync(Arg.Any<ReportTargetType>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Report>());
-		_sut = new DeleteOrganizationCommandHandler(_dbContext, _keycloakService);
+		_dbContext
+			.GetActiveEngagementsForOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Domain.Engagements.Engagement>());
+		_engagementReadRepository
+			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
+			.Returns(new List<Guid>());
+		_sut = new DeleteOrganizationCommandHandler(
+			_dbContext, _keycloakService, _keycloakUserService, _engagementReadRepository, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
 	}
 
 	private void AllowRequestingUserInOrg(Guid orgId) =>
@@ -163,6 +183,36 @@ public class DeleteOrganizationCommandHandlerTests
 			.WithMessage("*sole remaining member*");
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
 		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldDeleteTheOrganizationsFinishedOpportunities_SoNoneSurviveAsOrphanRows(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1153: there is no FK from volunteer_opportunities to
+		// organizations, so without this cleanup a fully-lapsed opportunity (past
+		// the blocking check above, which only stops future slots/active
+		// engagements) would survive the organization's deletion as an orphan row.
+		var orgId = Guid.NewGuid();
+		var organization = CreateOrganization(orgId);
+		_organizationRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(organization);
+		AllowRequestingUserInOrg(orgId);
+		SetMembers(orgId, DefaultRequestingUserId.Value);
+		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
+		var finishedOpportunity = VolunteerOpportunity.Create(
+			organizationId, "Finished Opportunity", "Beschreibung", true, null, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Published, validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
+		_dbContext
+			.GetOpportunitiesForOrganizationAsync(organizationId, cancellationToken)
+			.Returns([finishedOpportunity]);
+		var command = new DeleteOrganizationCommand(orgId, DefaultRequestingUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		_opportunityRepo.Received(1).Delete(finishedOpportunity);
 	}
 
 	[Test]

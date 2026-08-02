@@ -1,7 +1,6 @@
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
-using Domain.Users;
 
 namespace Application.Users.UploadUserAvatar.v1;
 
@@ -16,14 +15,10 @@ internal sealed class UploadUserAvatarCommandHandler(
 	{
 		var contentType = ImageUploadValidator.EnsureValid(request.Content, request.ContentType, "Avatar");
 
-		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
-		var previousAvatarUrl = user?.AvatarUrl;
-
-		if (user is null)
-		{
-			user = User.Create(request.UserId);
-			await dbContext.Users.AddAsync(user, cancellationToken);
-		}
+		// #1148: idempotent get-or-create instead of a check-then-Add that could
+		// race a concurrent first-time call for the same user.
+		var user = await dbContext.GetOrCreateUserAsync(request.UserId, preferredLanguage: null, cancellationToken);
+		var previousAvatarUrl = user.AvatarUrl;
 
 		var ext = ImageUploadValidator.GetExtension(contentType);
 		// Random suffix, not just "{userId}{ext}" - the user id is a public

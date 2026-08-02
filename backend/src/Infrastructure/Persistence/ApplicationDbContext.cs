@@ -446,6 +446,24 @@ internal sealed class ApplicationDbContext(
 		return [.. existing, .. created];
 	}
 
+	public async Task<User> GetOrCreateUserAsync(
+		UserId userId,
+		string? preferredLanguage,
+		CancellationToken cancellationToken = default)
+	{
+		var existing = await Users.FindAsync(userId, cancellationToken);
+		if (existing is not null)
+			return existing;
+
+		await Database.ExecuteSqlInterpolatedAsync($@"
+			INSERT INTO ""user"" (id, languages, skills, preferred_language)
+			VALUES ({userId.Value}, '[]', '[]', {preferredLanguage})
+			ON CONFLICT (id) DO NOTHING", cancellationToken);
+
+		return await Users.FindAsync(userId, cancellationToken)
+			?? throw new InvalidOperationException($"User '{userId.Value}' was not found immediately after being inserted.");
+	}
+
 	public async Task<Engagement?> GetTerminalEngagementAsync(
 		UserId volunteerId,
 		VolunteerOpportunityId opportunityId,

@@ -13,15 +13,18 @@ namespace Application.UnitTests.Users.UploadUserAvatar;
 public class UploadUserAvatarCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-	private readonly IAggregateRepository<User, UserId> _usersRepo = Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IFileStorageService _fileStorage = Substitute.For<IFileStorageService>();
 	private readonly UploadUserAvatarCommandHandler _sut;
 
-	private static byte[] PngBytes => [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00];
+	private static readonly UserId DefaultUserId = UserId.New();
+
+	// Minimal valid PNG signature - ImageUploadValidator detects content type from
+	// the actual magic bytes, not the client-declared header.
+	private static readonly byte[] PngBytes =
+		[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00];
 
 	public UploadUserAvatarCommandHandlerTests()
 	{
-		_dbContext.Users.Returns(_usersRepo);
 		_fileStorage
 			.UploadAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns("https://example.com/user-avatars/avatar.png");
@@ -35,7 +38,7 @@ public class UploadUserAvatarCommandHandlerTests
 		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
@@ -45,7 +48,6 @@ public class UploadUserAvatarCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		user.AvatarUrl.Should().Be("https://example.com/user-avatars/avatar.png");
-		await _usersRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -55,8 +57,11 @@ public class UploadUserAvatarCommandHandlerTests
 		// Arrange: RecordActivity/UploadUserAvatar can be the very first write for a
 		// user who has only ever authenticated via Keycloak - there is no
 		// registration step that creates the local User row up front.
+		// #1148: the row is fetched-or-created via the idempotent GetOrCreateUserAsync
+		// rather than a check-then-Add the handler used to do itself.
 		var userId = UserId.New();
-		_usersRepo.FindAsync(userId, cancellationToken).Returns((User?)null);
+		var user = User.Create(userId);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
@@ -65,9 +70,7 @@ public class UploadUserAvatarCommandHandlerTests
 
 		// Assert
 		result.Should().BeTrue();
-		await _usersRepo.Received(1).AddAsync(
-			Arg.Is<User>(u => u!.Id == userId && u.AvatarUrl == "https://example.com/user-avatars/avatar.png"),
-			cancellationToken);
+		user.AvatarUrl.Should().Be("https://example.com/user-avatars/avatar.png");
 	}
 
 	[Test]
@@ -79,7 +82,7 @@ public class UploadUserAvatarCommandHandlerTests
 		// public-profile endpoints.
 		var userId = UserId.New();
 		var user = User.Create(userId);
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
 		// Act
@@ -103,7 +106,7 @@ public class UploadUserAvatarCommandHandlerTests
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/old-key/old.png");
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		_fileStorage
 			.GetObjectKeyFromPublicUrl("https://example.com/user-avatars/old-key/old.png")
 			.Returns("user-avatars/old-key/old.png");
@@ -124,7 +127,7 @@ public class UploadUserAvatarCommandHandlerTests
 		// Arrange
 		var userId = UserId.New();
 		var user = User.Create(userId);
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = new UploadUserAvatarCommand(userId, PngBytes, "image/png");
 
 		// Act
@@ -143,7 +146,7 @@ public class UploadUserAvatarCommandHandlerTests
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetAvatarUrl("https://example.com/user-avatars/old-key/old.png");
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		_fileStorage
 			.GetObjectKeyFromPublicUrl("https://example.com/user-avatars/old-key/old.png")
 			.Returns("user-avatars/old-key/old.png");
@@ -175,7 +178,6 @@ public class UploadUserAvatarCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Validation);
 		await _fileStorage.DidNotReceive().UploadAsync(
 			Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-		await _usersRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

@@ -2,14 +2,12 @@ using Application.Common.Keycloak;
 using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
-using Domain.Users;
 
 namespace Application.Users.GetUserProfile.v1;
 
 internal sealed class GetUserProfileQueryHandler(
 	IKeycloakUserService keycloakUserService,
-	IApplicationDbContext dbContext,
-	IUnitOfWork unitOfWork)
+	IApplicationDbContext dbContext)
 	: IQueryHandler<GetUserProfileQuery, MyProfileResponse>
 {
 	public async ValueTask<MyProfileResponse> Handle(
@@ -20,15 +18,11 @@ internal sealed class GetUserProfileQueryHandler(
 			request.UserId.Value,
 			cancellationToken);
 
-		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
-
-		if (user is null)
-		{
-			user = User.Create(request.UserId);
-			user.SetPreferredLanguage(SupportedLanguages.Resolve(request.RequestLanguage));
-			await dbContext.Users.AddAsync(user, cancellationToken);
-			await unitOfWork.SaveChangesAsync(cancellationToken);
-		}
+		// A query handler runs with no ambient transaction (TransactionPipelineBehavior
+		// only wraps ICommand<T>), so lazily seeding this user's row must be atomic and
+		// idempotent on its own rather than relying on a rollback that will never happen (#1148).
+		var user = await dbContext.GetOrCreateUserAsync(
+			request.UserId, SupportedLanguages.Resolve(request.RequestLanguage), cancellationToken);
 
 		return new MyProfileResponse(
 			keycloakUser.Id,

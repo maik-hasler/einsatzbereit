@@ -49,8 +49,8 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 		if (request.CenterLongitude is < -180 or > 180)
 			return Results.Problem("CenterLongitude must be between -180 and 180.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.RadiusKm is <= 0)
-			return Results.Problem("RadiusKm must be greater than zero.", statusCode: StatusCodes.Status400BadRequest);
+		if (request.RadiusKm is <= 0 or > 500)
+			return Results.Problem("RadiusKm must be between 1 and 500.", statusCode: StatusCodes.Status400BadRequest);
 
 		if (!string.IsNullOrWhiteSpace(request.Occurrence)
 			&& (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence) || !Enum.IsDefined(occurrence)))
