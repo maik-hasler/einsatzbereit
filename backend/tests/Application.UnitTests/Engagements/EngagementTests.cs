@@ -277,4 +277,58 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*withdrawn or cancelled*");
 	}
+
+	[Test]
+	public void Reactivate_ShouldIncrementReactivationCount()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.ReactivationCount.Should().Be(1);
+	}
+
+	// --- Reactivate: reactivation cap (#1174) ---
+	//
+	// Engagement.Reactivate lets a withdrawn/cancelled row be reused instead of
+	// inserting a new one, which is what lets a volunteer loop create/withdraw
+	// against the same opportunity - and every cycle mails the volunteer plus
+	// every organizer of the org. This caps how many times any single
+	// engagement can be recycled.
+
+	[Test]
+	public void Reactivate_ShouldFail_WhenReactivationLimitReached()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		for (var i = 0; i < 5; i++)
+		{
+			engagement.Withdraw();
+			engagement.Reactivate(AnyTimeSlotId(), message: null).IsSuccess.Should().BeTrue();
+		}
+
+		engagement.Withdraw();
+		var result = engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*too many times*");
+	}
+
+	[Test]
+	public void Reactivate_ShouldNotIncrementReactivationCount_WhenReactivationLimitReached()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		for (var i = 0; i < 5; i++)
+		{
+			engagement.Withdraw();
+			engagement.Reactivate(AnyTimeSlotId(), message: null);
+		}
+
+		engagement.Withdraw();
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.ReactivationCount.Should().Be(5);
+	}
 }

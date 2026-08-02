@@ -33,7 +33,6 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IAggregateRepository<User, UserId> _userRepo =
 		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly CreateEngagementCommandHandler _sut;
 
 	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
@@ -95,7 +94,7 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(new EmailContent("Test Subject", "Test Body"));
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
 	private void SetupOpportunityExists(
@@ -453,61 +452,36 @@ public class CreateEngagementCommandHandlerTests
 			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 
-	// --- Organizer email notification preferences (#1055) ---
+	// --- Organizer notifications moved off the request path (#1174) ---
+	//
+	// The organizer "New sign-up" email (subscription-gated per #1055) is no
+	// longer sent by this handler - it moves onto the outbox, delivered by
+	// EngagementCreatedDomainEventHandler/EngagementReactivatedDomainEventHandler.
+	// See those handlers' tests for the subscription-preference coverage that
+	// used to live here.
 
 	[Test]
-	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToNewSignUp(
+	public async Task Handle_ShouldNotEmailOrganizersSynchronously_RegardlessOfHowManyExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - a rapid create/withdraw loop must no longer hold this
+		// request's DB transaction open across one synchronous SMTP send per
+		// organizer.
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
-		var organizerId = Guid.NewGuid();
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
+			.Returns([
+				new KeycloakOrganizationMember(Guid.NewGuid(), "olaf", "Olaf", "Organizer", "olaf@example.com", true),
+				new KeycloakOrganizationMember(Guid.NewGuid(), "petra", "Petra", "Organizer", "petra@example.com", true),
+			]);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
+		// Assert - exactly one email goes out synchronously: the volunteer's own
+		// receipt (#1055).
 		await _emailService.Received(1).SendAsync(
-			"olaf@example.com",
-			Arg.Any<string>(),
-			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
-			Arg.Any<string>(),
-			cancellationToken);
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = VolunteerOpportunityId.New();
-		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		var organizerUserId = UserId.Create(organizerId).GetValueOrThrow();
-		var optedOutOrganizer = User.Create(organizerUserId);
-		optedOutOrganizer.UpdateNotificationPreferences(
-			notifyOnNewSignUp: false,
-			notifyOnWithdrawal: true,
-			notifyOnEngagementConfirmed: true,
-			notifyOnEngagementCancelled: true,
-			notifyOnEngagementReminder: true);
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([optedOutOrganizer]);
-		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		await _emailService.DidNotReceive().SendAsync(
-			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }

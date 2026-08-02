@@ -45,6 +45,10 @@ internal sealed class EngagementConfiguration
 			.IsRequired()
 			.HasDefaultValue(false);
 
+		builder.Property(e => e.ReactivationCount)
+			.IsRequired()
+			.HasDefaultValue(0);
+
 		builder.Property(e => e.ReminderSentAt);
 
 		builder.Property(e => e.FeedbackRating);
