@@ -19,6 +19,8 @@ function SettingsWidget({ org, size }: Props) {
 		<img
 			src={org.logoUrl}
 			alt=""
+			width={48}
+			height={48}
 			className="h-12 w-12 shrink-0 rounded-lg object-contain ring-1 ring-gray-200"
 		/>
 	) : (

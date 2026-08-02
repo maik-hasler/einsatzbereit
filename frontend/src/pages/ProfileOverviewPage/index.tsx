@@ -13,6 +13,7 @@ import Dropdown from "../../components/Dropdown";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
+import ImageCropModal from "../../components/ImageCropModal";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
@@ -311,6 +312,8 @@ export default function ProfileOverviewPage() {
 									<img
 										src={avatarUrl}
 										alt=""
+										width={64}
+										height={64}
 										className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-brand-100"
 									/>
 								) : (
@@ -399,6 +402,8 @@ export default function ProfileOverviewPage() {
 													<img
 														src={avatarUrl}
 														alt=""
+														width={64}
+														height={64}
 														className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
 													/>
 												) : (
@@ -604,6 +609,19 @@ export default function ProfileOverviewPage() {
 			<NotificationPreferencesSection />
 
 			<DangerZoneCard />
+
+			{avatarUpload.croppingFile && (
+				<ImageCropModal
+					file={avatarUpload.croppingFile}
+					aspectRatio={1}
+					shape="circle"
+					outputWidth={320}
+					outputHeight={320}
+					title={t("profile.avatarUpload")}
+					onCancel={avatarUpload.handleCropCancel}
+					onCropped={(f) => void avatarUpload.handleCropped(f)}
+				/>
+			)}
 		</>
 	);
 }

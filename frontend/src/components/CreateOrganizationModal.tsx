@@ -14,6 +14,7 @@ import type { OrganizationFormValues } from "../lib/organizationFormSchema";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
+import ImageCropModal from "./ImageCropModal";
 
 interface Props {
 	onClose: () => void;
@@ -42,6 +43,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = useState<string | null>(null);
 	const [logoError, setLogoError] = useState<string | null>(null);
+	const [croppingLogoFile, setCroppingLogoFile] = useState<File | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const nameFieldRef = useRef<HTMLDivElement>(null);
 	const [loading, setLoading] = useState(false);
@@ -66,8 +68,13 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			return;
 		}
 		setLogoError(null);
-		setLogoFile(file);
-		setLogoPreview(URL.createObjectURL(file));
+		setCroppingLogoFile(file);
+	}
+
+	function handleLogoCropped(croppedFile: File) {
+		setCroppingLogoFile(null);
+		setLogoFile(croppedFile);
+		setLogoPreview(URL.createObjectURL(croppedFile));
 	}
 
 	const onSubmit = async (values: OrganizationFormValues) => {
@@ -124,6 +131,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			maxWidth="max-w-md"
 			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-card bg-white shadow-modal"
 			initialFocusRef={nameFieldRef}
+			suspended={croppingLogoFile !== null}
 		>
 			<h2
 				id="create-org-dialog-title"
@@ -144,6 +152,8 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 								<img
 									src={logoPreview}
 									alt=""
+									width={56}
+									height={56}
 									className="h-14 w-14 rounded-lg object-contain ring-1 ring-gray-200"
 								/>
 							) : (
@@ -449,6 +459,19 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					</Button>
 				</div>
 			</form>
+
+			{croppingLogoFile && (
+				<ImageCropModal
+					file={croppingLogoFile}
+					aspectRatio={1}
+					shape="circle"
+					outputWidth={320}
+					outputHeight={320}
+					title={t("orgSettings.logoUpload")}
+					onCancel={() => setCroppingLogoFile(null)}
+					onCropped={handleLogoCropped}
+				/>
+			)}
 		</Modal>
 	);
 }

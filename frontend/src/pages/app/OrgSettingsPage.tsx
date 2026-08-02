@@ -12,6 +12,7 @@ import type { OrganizationFormValues } from "../../lib/organizationFormSchema";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
+import ImageCropModal from "../../components/ImageCropModal";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -73,6 +74,7 @@ export default function OrgSettingsPage() {
 	const [uploadingLogo, setUploadingLogo] = useState(false);
 	const [removingLogo, setRemovingLogo] = useState(false);
 	const [logoError, setLogoError] = useState<string | null>(null);
+	const [croppingLogoFile, setCroppingLogoFile] = useState<File | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -103,21 +105,27 @@ export default function OrgSettingsPage() {
 		setEditing(false);
 	}
 
-	async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		if (!LOGO_TYPES.includes(file.type) || file.size > MAX_LOGO_BYTES) {
 			setLogoError(t("orgSettings.logoHint"));
+			if (logoInputRef.current) logoInputRef.current.value = "";
 			return;
 		}
-		setUploadingLogo(true);
 		setLogoError(null);
+		setCroppingLogoFile(file);
+	}
+
+	async function handleLogoCropped(croppedFile: File) {
+		setCroppingLogoFile(null);
+		setUploadingLogo(true);
 		try {
 			await api.uploadOrganizationLogo(org.id, {
-				data: file,
-				fileName: file.name,
+				data: croppedFile,
+				fileName: croppedFile.name,
 			});
-			setLogoUrl(URL.createObjectURL(file));
+			setLogoUrl(URL.createObjectURL(croppedFile));
 		} catch {
 			setLogoError(t("orgSettings.logoUploadError"));
 		} finally {
@@ -266,6 +274,8 @@ export default function OrgSettingsPage() {
 										<img
 											src={logoUrl}
 											alt=""
+											width={64}
+											height={64}
 											className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
 										/>
 									) : (
@@ -555,6 +565,19 @@ export default function OrgSettingsPage() {
 					onConfirm={handleDeleteOrganization}
 					onClose={() => setShowDeleteConfirm(false)}
 					loading={deleting}
+				/>
+			)}
+
+			{croppingLogoFile && (
+				<ImageCropModal
+					file={croppingLogoFile}
+					aspectRatio={1}
+					shape="circle"
+					outputWidth={320}
+					outputHeight={320}
+					title={t("orgSettings.logoUpload")}
+					onCancel={() => setCroppingLogoFile(null)}
+					onCropped={(f) => void handleLogoCropped(f)}
 				/>
 			)}
 		</div>
