@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
+import Chip from "./Chip";
 
 interface Props {
 	id: string;
@@ -58,33 +59,14 @@ export default function TagsInput({
 			</label>
 			<div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-400/30">
 				{value.map((tag) => (
-					<span
+					<Chip
 						key={tag}
-						className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-3 py-0.5 text-xs font-medium text-brand-800"
+						tone="neutral"
+						onRemove={() => removeTag(tag)}
+						removeLabel={t("createOpportunity.removeTag", { tag })}
 					>
 						{tag}
-						<button
-							type="button"
-							onClick={() => removeTag(tag)}
-							aria-label={t("createOpportunity.removeTag", { tag })}
-							className="rounded-full text-brand-600 hover:text-brand-900"
-						>
-							<svg
-								aria-hidden="true"
-								className="h-3 w-3"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth={2.5}
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M6 18L18 6M6 6l12 12"
-								/>
-							</svg>
-						</button>
-					</span>
+					</Chip>
 				))}
 				<input
 					id={id}

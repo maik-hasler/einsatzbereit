@@ -9,6 +9,7 @@ import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, textareaClass } from "../../lib/formClasses";
 import { pageTitleClass } from "../../lib/headingClasses";
+import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
@@ -66,6 +67,7 @@ function ChipInput({
 	onAdd,
 	onRemove,
 	removeLabel,
+	tone = "brand",
 }: {
 	inputRef: React.RefObject<HTMLInputElement | null>;
 	inputId: string;
@@ -76,6 +78,7 @@ function ChipInput({
 	onAdd: (v: string) => void;
 	onRemove: (v: string) => void;
 	removeLabel: string;
+	tone?: ChipTone;
 }) {
 	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
 		if (e.key === "Enter") {
@@ -89,20 +92,14 @@ function ChipInput({
 			{chips.length > 0 && (
 				<div className="mb-2 flex flex-wrap gap-2">
 					{chips.map((chip) => (
-						<span
+						<Chip
 							key={chip}
-							className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700"
+							tone={tone}
+							onRemove={() => onRemove(chip)}
+							removeLabel={`${removeLabel} ${chip}`}
 						>
 							{chip}
-							<button
-								type="button"
-								aria-label={`${removeLabel} ${chip}`}
-								onClick={() => onRemove(chip)}
-								className="ml-1 text-brand-400 hover:text-brand-700"
-							>
-								&times;
-							</button>
-						</span>
+						</Chip>
 					))}
 				</div>
 			)}
@@ -527,6 +524,7 @@ export default function ProfileOverviewPage() {
 											onAdd={form.addLanguage}
 											onRemove={form.removeLanguage}
 											removeLabel={t("profile.removeChip")}
+											tone="neutral"
 										/>
 									</Field>
 

@@ -5,6 +5,7 @@ import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
 import { getOpportunityCategoryBannerClassName } from "../../lib/opportunityCategoryTheme";
 import { useApiClient } from "../../hooks/useApiClient";
+import Chip from "../Chip";
 import ReportFlagButton from "../ReportFlagButton";
 import { CalendarIcon, CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
 
@@ -76,31 +77,31 @@ export default function OpportunityListItem({
 				{/* Content */}
 				<div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
 					<div className="mb-2 flex items-center gap-2">
-						<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+						<Chip tone="neutral" size="sm" className="shrink-0">
 							{formatOccurrence(item.occurrence, t)}
-						</span>
+						</Chip>
 						{isUnlimited ? (
-							<span className="ml-auto shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">
+							<Chip tone="brand" size="sm" className="ml-auto shrink-0">
 								{t("opportunities.unlimitedSpots")}
-							</span>
+							</Chip>
 						) : (
 							spotsLeft !== null &&
 							(spotsLeft <= 0 ? (
-								<span className="ml-auto shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+								<Chip tone="danger" size="sm" className="ml-auto shrink-0">
 									{t("opportunities.full")}
-								</span>
+								</Chip>
 							) : spotsLeft <= 3 ? (
-								<span className="ml-auto shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+								<Chip tone="warning" size="sm" className="ml-auto shrink-0">
 									{t("opportunities.spotsLeft", {
 										count: spotsLeft,
 									})}
-								</span>
+								</Chip>
 							) : (
-								<span className="ml-auto shrink-0 rounded-full bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+								<Chip tone="neutral" size="sm" className="ml-auto shrink-0">
 									{t("opportunities.spotsLeft", {
 										count: spotsLeft,
 									})}
-								</span>
+								</Chip>
 							))
 						)}
 						{auth.isAuthenticated && (

@@ -15,6 +15,7 @@ import { pageTitleClass } from "../lib/headingClasses";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
+import Chip from "../components/Chip";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
@@ -312,9 +313,9 @@ function UsersSection() {
 												<p className="truncate font-medium text-gray-900">
 													{displayName}
 													{isAdmin && (
-														<span className="ml-2 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-normal text-amber-700">
+														<Chip tone="warning" size="sm" className="ml-2">
 															{t("administration.users.adminBadge")}
-														</span>
+														</Chip>
 													)}
 												</p>
 												<p className="truncate text-xs text-gray-500">
@@ -322,17 +323,15 @@ function UsersSection() {
 												</p>
 											</td>
 											<td className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
-												<span
-													className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-														row.enabled
-															? "bg-green-50 text-green-700"
-															: "bg-red-50 text-red-700"
-													}`}
+												<Chip
+													tone={row.enabled ? "success" : "danger"}
+													size="sm"
+													className="shrink-0"
 												>
 													{row.enabled
 														? t("administration.users.statusActive")
 														: t("administration.users.statusBlocked")}
-												</span>
+												</Chip>
 												<div className="flex shrink-0 items-center gap-2">
 													{isSelf ? (
 														<span
@@ -558,20 +557,14 @@ function ReportsSection() {
 											{row.targetTitle ||
 												t("administration.reports.unknownTarget")}
 										</Link>
-										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+										<Chip tone="neutral" size="sm">
 											{t(`administration.reports.targetType.${row.targetType}`)}
-										</span>
-										<span
-											className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-												row.isDeleted
-													? "bg-red-50 text-red-600"
-													: "bg-green-50 text-green-700"
-											}`}
-										>
+										</Chip>
+										<Chip tone={row.isDeleted ? "danger" : "success"} size="sm">
 											{row.isDeleted
 												? t("administration.reports.statusDeleted")
 												: t("administration.reports.statusActive")}
-										</span>
+										</Chip>
 									</div>
 									<p className="mt-1 text-xs text-gray-500">
 										{t("administration.reports.openFlags", {
@@ -748,9 +741,9 @@ function ReportHistoryModal({
 								<span className="text-sm font-medium text-gray-900">
 									{t(`administration.reports.reason.${entry.reason}`)}
 								</span>
-								<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+								<Chip tone="neutral" size="sm" className="shrink-0">
 									{t(`administration.reports.status.${entry.status}`)}
-								</span>
+								</Chip>
 							</div>
 							{entry.details && (
 								<p className="mt-1 text-sm text-gray-600">{entry.details}</p>
