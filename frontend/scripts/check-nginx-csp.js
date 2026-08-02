@@ -47,6 +47,12 @@ if (!mapMatch) {
 				"are served from the MinIO storage origin and will be blocked by the browser without it.",
 		);
 	}
+	if (!imgSrcMatch || !imgSrcMatch[1].split(" ").includes("blob:")) {
+		fail(
+			"img-src directive is missing blob: - avatar/org-logo/opportunity-banner previews are rendered from " +
+				"URL.createObjectURL() before upload and will be blocked by the browser without it.",
+		);
+	}
 }
 
 // 2. Every add_header Content-Security-Policy line must reference the

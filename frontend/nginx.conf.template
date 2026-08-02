@@ -12,7 +12,7 @@ gzip_vary on;
 # location still has to re-emit this header, but from one definition
 # instead of four copies that can drift out of sync.
 map $host $csp_header {
-	default "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' ${CSP_API_ORIGIN} ${CSP_STORAGE_ORIGIN}; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN}; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+	default "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: ${CSP_API_ORIGIN} ${CSP_STORAGE_ORIGIN}; font-src 'self'; connect-src 'self' ${CSP_API_ORIGIN} ${CSP_KEYCLOAK_ORIGIN}; frame-src ${CSP_KEYCLOAK_ORIGIN}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 }
 
 server {
