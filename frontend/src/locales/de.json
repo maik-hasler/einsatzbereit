@@ -426,6 +426,7 @@
       "fieldCity": "Stadt",
       "fieldRequired": "Erforderlich",
       "zipInvalid": "Die PLZ muss genau 5 Zeichen lang sein.",
+      "websiteInvalid": "Die Website muss eine gültige http:// oder https:// URL sein.",
       "savedSuccess": "Änderungen gespeichert.",
       "saveError": "Speichern fehlgeschlagen.",
       "noMembers": "Noch keine Mitglieder.",

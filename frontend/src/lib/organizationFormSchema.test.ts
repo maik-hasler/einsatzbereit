@@ -116,6 +116,30 @@ describe("buildOrganizationFormSchema", () => {
 		);
 		expect(result.success).toBe(true);
 	});
+
+	it("accepts an empty website", () => {
+		const result = schema.safeParse(values({ name: "Org", website: "" }));
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts an absolute https website", () => {
+		const result = schema.safeParse(
+			values({ name: "Org", website: "https://example.org" }),
+		);
+		expect(result.success).toBe(true);
+	});
+
+	it.each(["not-a-url", "javascript:alert(1)", "ftp://example.org"])(
+		"rejects a website that is not an absolute http(s) URL: %s",
+		(website) => {
+			const result = schema.safeParse(values({ name: "Org", website }));
+			expect(result.success).toBe(false);
+			const websiteIssue = result.error?.issues.find(
+				(issue) => issue.path[0] === "website",
+			);
+			expect(websiteIssue?.message).toBe("orgSettings.websiteInvalid");
+		},
+	);
 });
 
 describe("ORGANIZATION_FORM_DEFAULT_VALUES", () => {

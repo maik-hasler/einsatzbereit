@@ -426,6 +426,7 @@
       "fieldCity": "City",
       "fieldRequired": "Required",
       "zipInvalid": "ZIP code must be exactly 5 characters.",
+      "websiteInvalid": "Website must be a valid http:// or https:// URL.",
       "savedSuccess": "Changes saved.",
       "saveError": "Failed to save.",
       "noMembers": "No members yet.",
