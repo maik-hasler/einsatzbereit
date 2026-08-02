@@ -573,7 +573,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// widgetCatalog.ts), so a fresh org's dashboard scan above never
 		// renders them for real - only AddWidgetModal's static mockup preview
 		// gets scanned incidentally as part of that dialog. Add both here so
-		// their actual rendered content (the opportunity <select> + scan
+		// their actual rendered content (the opportunity dropdown + scan
 		// button, and the settings shortcut tile) gets its own axe pass.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
