@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import { buildOrganizationFormSchema } from "../../lib/organizationFormSchema";
 import type { OrganizationFormValues } from "../../lib/organizationFormSchema";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import DangerZonePanel from "../../components/DangerZonePanel";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
@@ -237,22 +238,14 @@ export default function OrgSettingsPage() {
 							</>
 						}
 					>
-						<div className="mt-8 rounded-card border border-red-100 bg-red-50 px-4 py-4">
-							<h2 className="text-sm font-semibold text-red-800">
-								{t("orgSettings.dangerZone")}
-							</h2>
-							<p className="mt-1 text-xs text-red-700">
-								{t("orgSettings.deleteOrganizationHint")}
-							</p>
-							<button
-								type="button"
-								onClick={() => setShowDeleteConfirm(true)}
-								disabled={!isSoleMember}
-								className="mt-3 rounded-xl border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
-							>
-								{t("orgSettings.deleteOrganization")}
-							</button>
-						</div>
+						<DangerZonePanel
+							className="mt-8"
+							title={t("orgSettings.dangerZone")}
+							description={t("orgSettings.deleteOrganizationHint")}
+							actionLabel={t("orgSettings.deleteOrganization")}
+							onAction={() => setShowDeleteConfirm(true)}
+							disabled={!isSoleMember}
+						/>
 					</OrganizationProfileView>
 				)}
 

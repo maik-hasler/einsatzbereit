@@ -438,12 +438,14 @@ export default function ActivitySection() {
 									)}
 								{(e.status === "Pending" || e.status === "Confirmed") &&
 									!e.isCheckedIn && (
-										<button
+										<Button
+											type="button"
+											variant="dangerOutline"
+											size="sm"
 											onClick={() => setConfirmWithdrawId(e.id)}
-											className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
 										>
 											{t("myEngagements.withdraw")}
-										</button>
+										</Button>
 									)}
 							</div>
 						</li>

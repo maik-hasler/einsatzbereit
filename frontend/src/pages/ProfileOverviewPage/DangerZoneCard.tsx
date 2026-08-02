@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import DangerZonePanel from "../../components/DangerZonePanel";
 import ErrorBanner from "../../components/ErrorBanner";
 
 // Self-contained account-deletion card, split out of ProfileOverviewPage -
@@ -80,21 +81,12 @@ export default function DangerZoneCard() {
 				{exportError && <ErrorBanner message={exportError} className="mt-2" />}
 			</div>
 
-			<div className="rounded-lg border border-red-200 bg-red-50 p-6">
-				<h2 className="mb-1 text-base font-semibold text-red-800">
-					{t("account.dangerZoneTitle")}
-				</h2>
-				<p className="mb-4 text-sm text-red-700">
-					{t("account.dangerZoneDescription")}
-				</p>
-				<button
-					type="button"
-					onClick={() => setShowDeleteDialog(true)}
-					className="rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-				>
-					{t("account.deleteAccountButton")}
-				</button>
-			</div>
+			<DangerZonePanel
+				title={t("account.dangerZoneTitle")}
+				description={t("account.dangerZoneDescription")}
+				actionLabel={t("account.deleteAccountButton")}
+				onAction={() => setShowDeleteDialog(true)}
+			/>
 
 			{showDeleteDialog && (
 				<ConfirmDialog
