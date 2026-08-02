@@ -71,11 +71,22 @@ public sealed class Organization
 		Description = description;
 	}
 
-	public void ChangeContactInfo(string? contactEmail, string? contactPhone, string? website)
+	public Result ChangeContactInfo(string? contactEmail, string? contactPhone, string? website)
 	{
+		if (!string.IsNullOrWhiteSpace(website))
+		{
+			if (website.Length > 500)
+				return Result.Failure(Error.Validation("Organization.WebsiteTooLong", "Website must not exceed 500 characters."));
+
+			if (!Uri.TryCreate(website, UriKind.Absolute, out var uri)
+				|| (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+				return Result.Failure(Error.Validation("Organization.WebsiteInvalid", "Website must be a valid http or https URL."));
+		}
+
 		ContactEmail = contactEmail;
 		ContactPhone = contactPhone;
 		Website = website;
+		return Result.Success();
 	}
 
 	public void Relocate(Address? address)
