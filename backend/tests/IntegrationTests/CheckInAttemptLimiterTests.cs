@@ -1,109 +1,158 @@
 using AwesomeAssertions;
-using Domain.Engagements;
+using Infrastructure.Persistence;
+using Infrastructure.Persistence.RateLimiting;
 using Infrastructure.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
 
-// Pure in-memory logic - no database needed - but CheckInAttemptLimiter is
-// internal to Infrastructure (InternalsVisibleTo only grants IntegrationTests,
-// see Infrastructure.csproj), so this has to live here rather than in a
-// project that can't see it.
-public class CheckInAttemptLimiterTests
+// Exercises Infrastructure.RateLimiting.CheckInAttemptLimiter's static core
+// directly (InternalsVisibleTo, see Infrastructure.csproj) against the real
+// integration Postgres - the persisted replacement for the old in-memory
+// ConcurrentDictionary-backed lockout (#1176). CheckInWithPinCommandHandlerTests
+// (Application.UnitTests) covers the handler's orchestration against a mocked
+// ICheckInAttemptLimiter; this covers the lockout arithmetic and persistence
+// itself.
+[ClassDataSource<IntegrationTestFixture>(Shared = SharedType.PerTestSession)]
+[NotInParallel("IntegrationDb")]
+public class CheckInAttemptLimiterTests(IntegrationTestFixture fixture)
 {
+	[Before(Test)]
+	public Task ResetAsync() => fixture.ResetAsync();
+
 	[Test]
 	public async Task IsLockedOutAsync_ShouldReturnFalse_ForEngagementWithNoAttempts(
 		CancellationToken cancellationToken)
 	{
-		var sut = new CheckInAttemptLimiter(new FakeTimeProvider());
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var now = DateTimeOffset.UtcNow;
 
-		var isLockedOut = await sut.IsLockedOutAsync(EngagementId.New(), cancellationToken);
-
-		isLockedOut.Should().BeFalse();
-	}
-
-	[Test]
-	public async Task IsLockedOutAsync_ShouldReturnFalse_WhenFailedAttemptsAreBelowMax(
-		CancellationToken cancellationToken)
-	{
-		var sut = new CheckInAttemptLimiter(new FakeTimeProvider());
-		var engagementId = EngagementId.New();
-
-		for (var i = 0; i < 4; i++)
-			await sut.RegisterFailedAttemptAsync(engagementId, cancellationToken);
-
-		var isLockedOut = await sut.IsLockedOutAsync(engagementId, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, Guid.NewGuid(), now, cancellationToken);
 
 		isLockedOut.Should().BeFalse();
 	}
 
 	[Test]
-	public async Task IsLockedOutAsync_ShouldReturnTrue_WhenFailedAttemptsReachMax(
+	public async Task RegisterFailedAttemptAsync_FewerThanMaxAttempts_DoesNotLockOut(
 		CancellationToken cancellationToken)
 	{
-		var sut = new CheckInAttemptLimiter(new FakeTimeProvider());
-		var engagementId = EngagementId.New();
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
 
-		for (var i = 0; i < 5; i++)
-			await sut.RegisterFailedAttemptAsync(engagementId, cancellationToken);
+		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts - 1; i++)
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
 
-		var isLockedOut = await sut.IsLockedOutAsync(engagementId, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken);
+
+		isLockedOut.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task RegisterFailedAttemptAsync_ReachingMaxAttempts_LocksOut(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
+
+		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
+
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken);
 
 		isLockedOut.Should().BeTrue();
 	}
 
 	[Test]
-	public async Task ResetAsync_ShouldClearLockout(
+	public async Task IsLockedOutAsync_AfterLockoutWindowElapses_IsNoLongerLockedOut(
 		CancellationToken cancellationToken)
 	{
-		var sut = new CheckInAttemptLimiter(new FakeTimeProvider());
-		var engagementId = EngagementId.New();
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
 
-		for (var i = 0; i < 5; i++)
-			await sut.RegisterFailedAttemptAsync(engagementId, cancellationToken);
+		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
 
-		await sut.ResetAsync(engagementId, cancellationToken);
+		var afterLockoutWindow = now.Add(CheckInAttemptLimiter.LockoutDuration).AddSeconds(1);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, afterLockoutWindow, cancellationToken);
 
-		var isLockedOut = await sut.IsLockedOutAsync(engagementId, cancellationToken);
 		isLockedOut.Should().BeFalse();
 	}
 
 	[Test]
-	public async Task RegisterFailedAttemptAsync_ShouldForgetStaleAttempts_OnceLockoutDurationElapses(
+	public async Task ResetAsync_ClearsFailedAttempts_SoSubsequentAttemptsStartFresh(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1185: an engagement that never succeeds (ResetAsync only
-		// runs on a correct PIN) must not keep its failed-attempt count forever -
-		// otherwise the underlying dictionary grows without bound for the
-		// container's lifetime. Four failed attempts is below the five-attempt
-		// lockout threshold, so if the stale entry is never evicted, a single
-		// additional attempt after LockoutDuration has passed would still push the
-		// (never-reset) count to five and lock the engagement out immediately.
-		var timeProvider = new FakeTimeProvider();
-		var sut = new CheckInAttemptLimiter(timeProvider);
-		var staleEngagementId = EngagementId.New();
-		var otherEngagementId = EngagementId.New();
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
 
-		for (var i = 0; i < 4; i++)
-			await sut.RegisterFailedAttemptAsync(staleEngagementId, cancellationToken);
+		for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
+			await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
 
-		timeProvider.Advance(TimeSpan.FromMinutes(16));
+		await CheckInAttemptLimiter.ResetAsync(dbContext, engagementId, cancellationToken);
+		await CheckInAttemptLimiter.RegisterFailedAttemptAsync(dbContext, engagementId, now, cancellationToken);
 
-		// Any write sweeps stale entries - use an unrelated engagement so this
-		// doesn't itself contribute to staleEngagementId's attempt count.
-		await sut.RegisterFailedAttemptAsync(otherEngagementId, cancellationToken);
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(dbContext, engagementId, now, cancellationToken);
 
-		await sut.RegisterFailedAttemptAsync(staleEngagementId, cancellationToken);
-
-		var isLockedOut = await sut.IsLockedOutAsync(staleEngagementId, cancellationToken);
-		isLockedOut.Should().BeFalse("the stale 4-attempt count should have been evicted, leaving only this one fresh attempt");
+		isLockedOut.Should().BeFalse("Reset must clear the prior failure count, not just the lock");
 	}
 
-	private sealed class FakeTimeProvider : TimeProvider
+	[Test]
+	public async Task RegisterFailedAttemptAsync_PersistsAcrossIndependentDbContexts(
+		CancellationToken cancellationToken)
 	{
-		private DateTimeOffset _utcNow = DateTimeOffset.UtcNow;
+		// Regression for #1176: the old ConcurrentDictionary-backed limiter lost
+		// all state on a process restart. Using two independent
+		// ApplicationDbContexts (separate connections, like CheckInAttemptLimiter's
+		// own per-call scope) proves the state actually round-trips through
+		// Postgres rather than surviving only in a shared in-process dictionary.
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
 
-		public override DateTimeOffset GetUtcNow() => _utcNow;
+		await using (var writeContext = fixture.CreateApplicationDbContext())
+		{
+			for (var i = 0; i < CheckInAttemptLimiter.MaxFailedAttempts; i++)
+				await CheckInAttemptLimiter.RegisterFailedAttemptAsync(writeContext, engagementId, now, cancellationToken);
+		}
 
-		public void Advance(TimeSpan by) => _utcNow += by;
+		await using var readContext = fixture.CreateApplicationDbContext();
+		var isLockedOut = await CheckInAttemptLimiter.IsLockedOutAsync(readContext, engagementId, now, cancellationToken);
+
+		isLockedOut.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task RegisterFailedAttemptAsync_TwoConcurrentFirstAttemptsForTheSameEngagement_BothCount(
+		CancellationToken cancellationToken)
+	{
+		// Two independent ApplicationDbContexts (separate connections), like two
+		// near-simultaneous wrong PIN guesses for the same engagement (a
+		// double-click, or an attacker racing the lockout) would each get from
+		// CheckInAttemptLimiter's own per-call scope. Both find no existing row
+		// and race to insert one; the loser must recover from the primary key
+		// conflict and still record its attempt instead of throwing or being
+		// silently dropped.
+		var engagementId = Guid.NewGuid();
+		var now = DateTimeOffset.UtcNow;
+
+		await using var contextA = fixture.CreateApplicationDbContext();
+		await using var contextB = fixture.CreateApplicationDbContext();
+
+		await Task.WhenAll(
+			CheckInAttemptLimiter.RegisterFailedAttemptAsync(contextA, engagementId, now, cancellationToken),
+			CheckInAttemptLimiter.RegisterFailedAttemptAsync(contextB, engagementId, now, cancellationToken));
+
+		await using var readContext = fixture.CreateApplicationDbContext();
+		var failedAttempts = await readContext.Set<CheckInAttempt>()
+			.AsNoTracking()
+			.Where(a => a.EngagementId == engagementId)
+			.Select(a => a.FailedAttempts)
+			.SingleAsync(cancellationToken);
+
+		failedAttempts.Should().Be(2, "neither concurrent attempt should be lost to the insert race");
 	}
 }

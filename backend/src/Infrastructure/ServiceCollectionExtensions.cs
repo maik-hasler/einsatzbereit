@@ -118,6 +118,8 @@ public static class ServiceCollectionExtensions
 		services.AddHostedService<OrganizationMembershipBackfillJob>();
 		services.ConfigureOptions<InvitationExpiryOptionsSetup>();
 		services.AddHostedService<InvitationExpiryJob>();
+		services.ConfigureOptions<CheckInAttemptPruneOptionsSetup>();
+		services.AddHostedService<CheckInAttemptPruneJob>();
 
 
 		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see

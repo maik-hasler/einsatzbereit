@@ -126,7 +126,7 @@ public class CheckInPinOrganizerSetTests(AspireFixture fixture) : VisualTestBase
 
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Generate random" }).ClickAsync();
 		var generatedPin = await pinInput.InputValueAsync();
-		generatedPin.Should().MatchRegex(@"^\d{4}$", "Generate random must fill in a 4-digit PIN");
+		generatedPin.Should().MatchRegex(@"^\d{6}$", "Generate random must fill in a 6-digit PIN");
 		generatedPin.Should().NotBe("135790");
 
 		await Page.GetByTestId("wizard-stepper-4").ClickAsync();

@@ -114,6 +114,9 @@ public sealed class VolunteerOpportunity
 		if (pin.Length is < 4 or > 6 || !pin.All(char.IsAsciiDigit))
 			return Result.Failure(Error.Validation("VolunteerOpportunity.InvalidCheckInPin", "Check-in PIN must be 4 to 6 digits."));
 
+		if (CheckInPinPolicy.IsTrivial(pin))
+			return Result.Failure(Error.Validation("VolunteerOpportunity.WeakCheckInPin", "This PIN is too easy to guess - choose a less predictable one."));
+
 		return Result.Success();
 	}
 
