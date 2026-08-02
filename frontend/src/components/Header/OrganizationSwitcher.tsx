@@ -8,6 +8,7 @@ import type {
 import { orgTabPath } from "../../lib/orgTabs";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import CreateOrganizationModal from "../CreateOrganizationModal";
+import Skeleton from "../Skeleton";
 
 export default function OrganizationSwitcher({
 	currentOrgId,
@@ -49,7 +50,7 @@ export default function OrganizationSwitcher({
 	}
 
 	if (loading) {
-		return <div className="h-9 w-48 animate-pulse rounded-lg bg-gray-100" />;
+		return <Skeleton className="h-9 w-48 rounded-lg" />;
 	}
 
 	return (

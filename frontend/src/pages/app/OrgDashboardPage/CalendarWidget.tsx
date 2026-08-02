@@ -15,7 +15,7 @@ import { enUS, de } from "date-fns/locale";
 import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Modal from "../../../components/Modal";
-import Spinner from "../../../components/Spinner";
+import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
@@ -345,8 +345,18 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 			[] run found a null ref and never got a second chance to attach. */}
 			<div ref={calendarContainerRef} className="contents">
 				{calLoading && (
-					<div className="flex items-center justify-center py-16">
-						<Spinner label={t("orgOverview.calendarLoading")} />
+					<div role="status" className="space-y-3">
+						<span className="sr-only">{t("orgOverview.calendarLoading")}</span>
+						<div
+							aria-hidden="true"
+							className="flex items-center justify-between gap-2"
+						>
+							<Skeleton className="h-6 w-32" />
+							<Skeleton className="h-6 w-24" />
+						</div>
+						{Array.from({ length: 3 }).map((_, i) => (
+							<Skeleton key={i} className="h-10 w-full" />
+						))}
 					</div>
 				)}
 				{calError && (

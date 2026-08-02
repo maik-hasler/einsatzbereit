@@ -3,7 +3,7 @@ import type {
 	AchievementSummary,
 	BadgeCatalogEntry,
 } from "../client/api-client";
-import Spinner from "./Spinner";
+import Skeleton from "./Skeleton";
 import { resolveDateLocale } from "../lib/format";
 
 const TYPE_ICON: Record<string, string> = {
@@ -127,8 +127,14 @@ export default function BadgeGrid({
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-6">
-				<Spinner label={t("achievements.loading")} size="sm" />
+			<div
+				role="status"
+				className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
+			>
+				<span className="sr-only">{t("achievements.loading")}</span>
+				{Array.from({ length: 6 }).map((_, i) => (
+					<Skeleton key={i} className="h-28 w-full" />
+				))}
 			</div>
 		);
 	}

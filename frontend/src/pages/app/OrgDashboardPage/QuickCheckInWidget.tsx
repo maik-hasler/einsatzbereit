@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
-import Spinner from "../../../components/Spinner";
+import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import Dropdown from "../../../components/Dropdown";
 import ErrorBanner from "../../../components/ErrorBanner";
@@ -64,7 +64,20 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 			title={t("orgDashboard.quickCheckInWidgetTitle")}
 		>
 			{opportunities === null && !error && (
-				<Spinner label={t("orgDashboard.loading")} size="sm" />
+				<div
+					role="status"
+					className={
+						size !== "compact" ? "flex items-center gap-3" : "space-y-3"
+					}
+				>
+					<span className="sr-only">{t("orgDashboard.loading")}</span>
+					<Skeleton
+						className={`h-9 rounded-xl ${size !== "compact" ? "min-w-0 flex-1" : "w-full"}`}
+					/>
+					<Skeleton
+						className={`h-9 rounded-lg ${size !== "compact" ? "w-24 shrink-0" : "w-full"}`}
+					/>
+				</div>
 			)}
 			{error && <ErrorBanner message={error} />}
 			{opportunities !== null && !error && opportunities.length === 0 && (

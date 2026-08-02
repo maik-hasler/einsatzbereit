@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
-import Spinner from "../../../components/Spinner";
+import Skeleton from "../../../components/Skeleton";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
@@ -86,7 +86,19 @@ function UpcomingOpportunitiesWidget({
 			title={t("orgDashboard.upcomingWidgetTitle")}
 		>
 			{items === null && !error && (
-				<Spinner label={t("orgDashboard.upcomingLoading")} />
+				<div role="status" className="space-y-3">
+					<span className="sr-only">{t("orgDashboard.upcomingLoading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							aria-hidden="true"
+							className="rounded-xl border border-gray-100 p-3"
+						>
+							<Skeleton className="h-4 w-2/3" />
+							{size !== "compact" && <Skeleton className="mt-2 h-3 w-1/2" />}
+						</div>
+					))}
+				</div>
 			)}
 			{error && <ErrorBanner message={t("orgDashboard.upcomingError")} />}
 			{items !== null && !error && items.length === 0 && (
