@@ -7,6 +7,12 @@ public static class ImageUploadValidator
 {
 	public const long MaxFileSizeBytes = 2 * 1024 * 1024;
 
+	// Multipart form-data adds a boundary marker and per-part headers on top of the raw file
+	// bytes; this small allowance is for the Kestrel-level request body limit (see
+	// RequestSizeLimitMiddleware) so well-formed uploads at the cap don't get rejected by
+	// Kestrel before EnsureValid gets a chance to return its own, more specific error (#1177).
+	public const long MaxRequestBodySizeBytes = MaxFileSizeBytes + 4096;
+
 	public static readonly string[] AllowedContentTypes =
 		["image/jpeg", "image/png", "image/webp"];
 

@@ -221,6 +221,13 @@ app.MapDefaultEndpoints();
 // only these known networks are trusted to set X-Forwarded-For (#1332).
 app.UseForwardedHeaders();
 
+// Bridges RequestSizeLimitAttribute metadata (set per-endpoint via .WithMetadata()) to
+// Kestrel's IHttpMaxRequestBodySizeFeature - see RequestSizeLimitMiddleware for why minimal
+// API endpoints need this explicitly. Placed before anything that could read the request
+// body; endpoint metadata is already resolved this early since UseRouting() is never called
+// explicitly, so WebApplication runs routing at the very start of the pipeline (#1177).
+app.UseMiddleware<RequestSizeLimitMiddleware>();
+
 app.UseHttpLogging();
 app.UseResponseCompression();
 
