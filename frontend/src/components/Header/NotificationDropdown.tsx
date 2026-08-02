@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { NotificationSummary } from "../../client/api-client";
+import EmptyState from "../EmptyState";
 import NotificationItem from "./NotificationItem";
 
 // Single notification bell + dropdown panel, rendered twice: once inside
@@ -122,8 +123,8 @@ export default function NotificationDropdown({
 					</div>
 					<ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
 						{notifications.length === 0 ? (
-							<li className="px-4 py-6 text-center text-sm text-gray-500">
-								{t("notifications.empty")}
+							<li className="px-4">
+								<EmptyState compact title={t("notifications.empty")} />
 							</li>
 						) : (
 							<>

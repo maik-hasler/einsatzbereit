@@ -373,6 +373,7 @@
       "upcomingError": "Failed to load opportunities.",
       "upcomingEmpty": "No upcoming opportunities.",
       "upcomingViewAll": "View all opportunities →",
+      "emptyStateCreateAction": "Create one",
       "settingsWidgetTitle": "Organization",
       "settingsWidgetDesc": "Your organization's identity, member count and a link to settings.",
       "settingsMemberCount": "{{count}} members",

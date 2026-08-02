@@ -373,6 +373,7 @@
       "upcomingError": "Einsätze konnten nicht geladen werden.",
       "upcomingEmpty": "Keine bevorstehenden Einsätze.",
       "upcomingViewAll": "Alle Einsätze anzeigen →",
+      "emptyStateCreateAction": "Einen erstellen",
       "settingsWidgetTitle": "Organisation",
       "settingsWidgetDesc": "Identität deiner Organisation, Mitgliederzahl und ein Link zu den Einstellungen.",
       "settingsMemberCount": "{{count}} Mitglieder",
