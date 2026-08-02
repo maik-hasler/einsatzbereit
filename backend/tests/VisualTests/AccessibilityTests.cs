@@ -596,6 +596,88 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_EmptyOpportunitiesCreateOpportunityCta_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1122: UpcomingOpportunitiesWidget and QuickCheckInWidget's empty
+		// states gained a "Create opportunity" CTA (EmptyState's new
+		// compact variant) that opens CreateVolunteerOpportunityModal
+		// directly from the widget. Olaf's seeded org (used by
+		// NavigateToOrgAppDashboardAsOlafAsync above) almost certainly
+		// already has opportunities by the time this suite runs - a fresh,
+		// otherwise-untouched org is the only deterministic way to reach
+		// this branch.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"EmptyDashA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = Guid.Parse(org.GetProperty("id").GetProperty("value").GetString()!);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, organizationId);
+
+		var upcomingWidget = Page.GetByTestId("widget-tile-UpcomingOpportunities");
+		await Expect(upcomingWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var upcomingCreateButton = upcomingWidget.GetByRole(
+			AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(upcomingCreateButton).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+
+		await upcomingCreateButton.ClickAsync();
+		var upcomingDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(upcomingDialog).ToBeVisibleAsync();
+
+		var upcomingDialogResult = await Page.RunAxe();
+		AssertNoViolations(upcomingDialogResult);
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(upcomingDialog).Not.ToBeVisibleAsync();
+
+		// QuickCheckIn isn't in DEFAULT_LAYOUT (see widgetCatalog.ts) - add it
+		// via the picker, save to leave edit mode (widget content is inert
+		// while editing - see EditableWidgetTile), then reach its own,
+		// separately-wired empty-state CTA.
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var addWidgetDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(addWidgetDialog).ToBeVisibleAsync();
+		await addWidgetDialog.GetByTestId("add-widget-option-QuickCheckIn").ClickAsync();
+		await addWidgetDialog.GetByTestId("add-widget-done").ClickAsync();
+		await Expect(addWidgetDialog).Not.ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var quickCheckInWidget = Page.GetByTestId("widget-tile-QuickCheckIn");
+		await Expect(quickCheckInWidget).ToBeVisibleAsync();
+
+		var quickCheckInCreateButton = quickCheckInWidget.GetByRole(
+			AriaRole.Button, new() { Name = "Create opportunity" });
+		await Expect(quickCheckInCreateButton).ToBeVisibleAsync();
+
+		await quickCheckInCreateButton.ClickAsync();
+		var quickCheckInDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(quickCheckInDialog).ToBeVisibleAsync();
+
+		var quickCheckInDialogResult = await Page.RunAxe();
+		AssertNoViolations(quickCheckInDialogResult);
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(quickCheckInDialog).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Engagement management is nested in the org app (#751) - reachable

@@ -42,6 +42,7 @@ export default function EmptyState({
 			)}
 			{action && (
 				<Button
+					type="button"
 					onClick={action.onClick}
 					size={compact ? "sm" : "md"}
 					className={compact ? "mt-3" : "mt-4"}
