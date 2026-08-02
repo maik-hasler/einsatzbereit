@@ -77,6 +77,22 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 			"instead of leaving the previous (stale) response cached for ShortPublicReadSeconds");
 	}
 
+	// Regression coverage for #1172: /health ran a DB connect + an outbound Keycloak
+	// HTTP call on every single hit with no result caching, so a flood of requests
+	// (even one spread across many IPs, which per-IP rate limiting alone wouldn't
+	// bound) could exhaust the Npgsql pool and starve Keycloak.
+	[Test]
+	public async Task GetHealth_ShouldBeServedFromOutputCache_OnASecondRequest(
+		CancellationToken cancellationToken)
+	{
+		using var httpClient = fixture.CreateHttpClient();
+
+		await httpClient.GetAsync("/health", cancellationToken);
+		var second = await httpClient.GetAsync("/health", cancellationToken);
+
+		second.Headers.TryGetValues("Age", out _).Should().BeTrue();
+	}
+
 	// The default output cache key is method + path + query string with no per-route-parameter
 	// awareness beyond that, so this also proves two different organizations don't collide on
 	// (or get served) each other's cached profile response.
