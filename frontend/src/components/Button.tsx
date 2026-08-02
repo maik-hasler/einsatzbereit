@@ -33,7 +33,7 @@ const VARIANT_CLASSES = {
 	secondary: "text-gray-600 hover:bg-gray-100",
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
 	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
-	dangerOutline: "border border-red-200 text-red-600 hover:bg-red-50",
+	dangerOutline: "border border-red-200 text-red-700 hover:bg-red-50",
 } as const;
 
 type Variant = keyof typeof VARIANT_CLASSES;
