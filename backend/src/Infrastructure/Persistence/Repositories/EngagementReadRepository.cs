@@ -348,7 +348,8 @@ internal sealed class EngagementReadRepository(
 		CancellationToken cancellationToken = default)
 	{
 		var engagement = await dbContext.EngagementsQuery
-			.Where(e => e.Id == engagementId)
+			.Where(e => e.Id == engagementId &&
+				(e.Status == EngagementStatus.Pending || e.Status == EngagementStatus.Confirmed))
 			.Select(e => new { e.OpportunityId, e.TimeSlotId })
 			.FirstOrDefaultAsync(cancellationToken);
 
@@ -356,7 +357,7 @@ internal sealed class EngagementReadRepository(
 			return null;
 
 		var opportunity = await dbContext.VolunteerOpportunitiesQuery
-			.Where(o => o.Id == engagement.OpportunityId)
+			.Where(o => o.Id == engagement.OpportunityId && o.Status == OpportunityStatus.Published)
 			.Select(o => new { o.Id, o.Title, o.Description, o.IsRemote, o.Address })
 			.FirstOrDefaultAsync(cancellationToken);
 
