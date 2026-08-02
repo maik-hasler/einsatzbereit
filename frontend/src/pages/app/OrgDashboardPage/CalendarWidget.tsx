@@ -153,33 +153,51 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const api = useApiClient();
 	const calendarContainerRef = useRef<HTMLDivElement | null>(null);
 
-	// Month/Week views wrap each week's strip of overlaid event chips in a
-	// container with role="row" (node_modules/react-big-calendar/lib/
-	// DateContentRow.js), but that container's only children are the
-	// heading cells (Month only) and the event chips themselves - never a
-	// cell/gridcell/columnheader, because it isn't a second row of the day
-	// grid at all: it's a decorative overlay sitting on top of the real day
-	// cells (BackgroundCells' .rbc-row-bg), which already carry their own
-	// correct roles. axe-core's aria-required-children rule correctly flags
-	// role="row" with no such children; each event chip already exposes its
-	// own accessible <button> (CalEventChip below), so the fix is to drop
-	// the incorrect role rather than fabricate fake gridcells. Unlike
-	// .rbc-event (see calendarComponents below), RBC doesn't thread a
-	// components seam through DateContentRow for this wrapper, so a
-	// MutationObserver is the only way to correct it without patching the
+	// Month view's per-week wrapper (node_modules/react-big-calendar/lib/
+	// DateContentRow.js) puts role="row" on the wrong element. The real
+	// structure per week is:
+	//   .rbc-month-row[role=rowgroup]
+	//     .rbc-row-bg              (no role - decorative day backgrounds)
+	//     .rbc-row-content[role=row]   <- the wrong element
+	//       .rbc-row                  (no role - the *actual* date-number
+	//                                  cells live here, one .rbc-date-cell
+	//                                  [role=cell] per day)
+	//       event-chip overlay rows    (no role - decorative)
+	// role="row" belongs on the inner, role-less .rbc-row (whose direct
+	// children genuinely are cells), not on .rbc-row-content (whose direct
+	// children are that heading row and the event overlay, neither a
+	// cell/gridcell/columnheader) - axe-core's aria-required-children rule
+	// correctly flags the latter. But .rbc-row-content[role=row] was also
+	// the *only* thing satisfying .rbc-month-row[rowgroup]'s own
+	// requirement for a row child and .rbc-date-cell[role=cell]'s
+	// requirement for a row ancestor, so simply removing the role (demoting
+	// it to role="presentation", which is otherwise correct - it stops
+	// contributing empty rows to the accessibility tree; role=presentation
+	// is transparent to ancestor/descendant role relationships, so its
+	// descendants still connect to .rbc-month-row above) without also
+	// promoting the inner .rbc-row traded that violation for two others
+	// (aria-required-children on the rowgroup, aria-required-parent on
+	// every date cell). Each event chip already exposes its own accessible
+	// <button> (CalEventChip below), so nothing needs a role there. RBC
+	// doesn't thread a components seam through DateContentRow for either of
+	// these elements (unlike .rbc-event, see calendarComponents below), so
+	// a MutationObserver is the only way to correct it without patching the
 	// library itself.
 	useEffect(() => {
 		const container = calendarContainerRef.current;
 		if (!container) return;
 
-		function stripInvalidRowRole() {
+		function fixRowRoles() {
 			container
 				?.querySelectorAll('.rbc-row-content[role="row"]')
-				.forEach((el) => el.setAttribute("role", "presentation"));
+				.forEach((el) => {
+					el.setAttribute("role", "presentation");
+					el.querySelector(":scope > .rbc-row")?.setAttribute("role", "row");
+				});
 		}
 
-		stripInvalidRowRole();
-		const observer = new MutationObserver(stripInvalidRowRole);
+		fixRowRoles();
+		const observer = new MutationObserver(fixRowRoles);
 		observer.observe(container, { childList: true, subtree: true });
 		return () => observer.disconnect();
 	}, []);
