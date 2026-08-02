@@ -75,19 +75,21 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
-	public async Task AdministrationPage_ShowsSpinnerForOrganizationsSection_WhileOrganizationsFetch()
+	public async Task AdministrationPage_ShowsLoadingSkeletonForOrganizationsSection_WhileOrganizationsFetch()
 	{
-		// Covers the shared Spinner component's contract (role="status", a
-		// visible label, an aria-hidden spin icon) used by every other
-		// converted loading spot in this diff (ProtectedRoute, OrgAppLayout,
-		// EngagementManagementPage, etc.) - they all render the exact same
-		// component, so exercising it once here is representative.
+		// Covers the shared Skeleton component's contract (role="status", a
+		// sr-only visible label, aria-hidden animate-pulse placeholder rows)
+		// used by every other converted loading spot in #1121 (BadgeGrid,
+		// OrgOpportunitiesPage, EngagementManagementPage, dashboard widgets,
+		// etc.) - they all render the same shape, so exercising it once here
+		// is representative. This test used to assert a Spinner here; #1121
+		// replaced it with a Skeleton since this list has a known shape.
 		//
 		// /admin/organizations was consolidated into /administration (single
 		// page, Organizations + Users sections stacked) after this test was
 		// written, backed by a real admin-wide GET /v1/admin/organizations
 		// instead of the old caller-scoped GET /v1/organizations - only the
-		// route/URL changed here, the Spinner contract being tested has not.
+		// route/URL changed here, the loading contract being tested has not.
 		var frontend = Fixture.GetEndpoint("frontend");
 
 		await AuthHelper.LoginAsync(Page, frontend, "admin", "admin123");
@@ -101,12 +103,17 @@ public class LoadingStateTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/administration");
 
-		// The Organizations section renders before the Users section, so its
-		// Spinner (the one actually delayed above) is the first [role='status'].
-		var loadingStatus = Page.Locator("[role='status']").First;
+		// See the comment in HomePage_ShowsLoadingSkeleton_WhileOpportunitiesFetch
+		// above on why this is scoped to ":has(.animate-pulse)" - AdministrationPage
+		// is lazy-loaded (#1403), so AppLayout's own Suspense fallback (a spinner,
+		// also role="status") briefly races this one for "first role='status' on
+		// the page". The Organizations section renders before the Users section,
+		// so its skeleton (the one actually delayed above) is the first match once
+		// that race resolves.
+		var loadingStatus = Page.Locator("[role='status']:has(.animate-pulse)").First;
 		await Expect(loadingStatus).ToBeVisibleAsync();
 		await Expect(loadingStatus).ToContainTextAsync("Loading");
-		await Expect(loadingStatus.Locator("svg.animate-spin")).ToBeVisibleAsync();
+		await Expect(loadingStatus.Locator(".animate-pulse")).Not.ToHaveCountAsync(0);
 
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 		await Expect(loadingStatus).Not.ToBeVisibleAsync(new() { Timeout = 5_000 });
