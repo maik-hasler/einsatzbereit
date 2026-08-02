@@ -678,6 +678,8 @@
       }
     },
     "language": {
+      "de": "Deutsch",
+      "en": "English",
       "switchLanguage": "Sprache wechseln"
     },
     "auth": {
