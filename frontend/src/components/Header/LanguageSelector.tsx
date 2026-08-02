@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 
 const LANGUAGES = [
-	{ code: "en", flag: "🇬🇧", label: "English" },
-	{ code: "de", flag: "🇩🇪", label: "Deutsch" },
+	{ code: "en", flag: "🇬🇧" },
+	{ code: "de", flag: "🇩🇪" },
 ] as const;
 
 type LangCode = (typeof LANGUAGES)[number]["code"];
@@ -34,7 +34,7 @@ export default function LanguageSelector({
 				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
 				<span>{current.flag}</span>
-				<span className="font-medium">{current.label}</span>
+				<span className="font-medium">{t(`language.${current.code}`)}</span>
 				<svg
 					className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
 					fill="none"
@@ -66,6 +66,10 @@ export default function LanguageSelector({
 								type="button"
 								onClick={() => {
 									void i18n.changeLanguage(lang.code);
+									localStorage.setItem(
+										"einsatzbereit:language-explicit",
+										"true",
+									);
 									setOpen(false);
 								}}
 								className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
@@ -79,7 +83,7 @@ export default function LanguageSelector({
 								}`}
 							>
 								<span>{lang.flag}</span>
-								<span>{lang.label}</span>
+								<span>{t(`language.${lang.code}`)}</span>
 								{lang.code === currentCode && (
 									<span
 										className={`ml-auto h-1.5 w-1.5 rounded-full ${transparent ? "bg-white/60" : "bg-brand-500"}`}

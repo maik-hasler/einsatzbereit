@@ -174,6 +174,42 @@ public class EngagementReminderDueHandlerTests
 			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 
+	[Test]
+	public async Task Handle_ShouldFormatStartTime_InEuropeBerlinTimeZone_NotServerLocalTime(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - #1252: the container has no TZ set (server-local == UTC), so
+		// formatting via .ToLocalTime() silently announced the wrong hour. A
+		// winter instant is used so Europe/Berlin is deterministically UTC+1
+		// (CET, no DST) regardless of when this test runs.
+		var opportunity = VolunteerOpportunity.Create(
+			DefaultOrgId, "Beach Cleanup", "Help clean the beach", true, null,
+			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
+			status: OpportunityStatus.Draft).Value;
+		var artificialNow = new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		var startUtc = new DateTimeOffset(2027, 1, 15, 12, 0, 0, TimeSpan.Zero);
+		var timeSlot = opportunity.AddTimeSlot(startUtc, startUtc.AddHours(2), 10, artificialNow).Value;
+
+		var volunteerId = UserId.New();
+		var domainEvent = new EngagementReminderDueDomainEvent(
+			EngagementId.New(), volunteerId, opportunity.Id, timeSlot.Id);
+
+		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
+		_keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken)
+			.Returns(new KeycloakUserProfile(volunteerId.Value, "vera", "Vera", "Volunteer", "vera@example.com"));
+		_emailService.SendBatchAsync(Arg.Any<IReadOnlyList<EmailMessage>>(), cancellationToken)
+			.Returns([true]);
+
+		// Act
+		await _sut.Handle(domainEvent, cancellationToken);
+
+		// Assert - 12:00 UTC on a winter date is 13:00 in Europe/Berlin (CET, UTC+1).
+		_emailTemplateRenderer.Received(1).Render(
+			EmailTemplateKind.EngagementReminder,
+			Arg.Any<string>(),
+			Arg.Is<IReadOnlyDictionary<string, string>>(d => d!["StartFormatted"].Contains("13:00")));
+	}
+
 	// --- Volunteer email notification preferences (#1055) ---
 
 	[Test]

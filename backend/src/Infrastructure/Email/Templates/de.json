@@ -4,8 +4,8 @@
     "body": "Hallo {VolunteerName},\n\ndeine Anfrage zur Teilnahme an \"{OpportunityTitle}\" ist eingegangen. Der Organisator wird sich bei dir melden.\n\nEinsatzbereit"
   },
   "EngagementWaitlisted": {
-    "subject": "Du stehst auf der Warteliste für \"{OpportunityTitle}\"",
-    "body": "Hallo {VolunteerName},\n\ndu stehst jetzt auf der Warteliste für \"{OpportunityTitle}\". Ein Organisator wird deine Anmeldung prüfen und bald bestätigen.\n\nEinsatzbereit"
+    "subject": "Deine Anmeldung für \"{OpportunityTitle}\" ist eingegangen",
+    "body": "Hallo {VolunteerName},\n\ndeine Anmeldung für \"{OpportunityTitle}\" ist eingegangen. Ein Organisator wird deinen Zeitslot prüfen und bald bestätigen.\n\nEinsatzbereit"
   },
   "EngagementSignupNotifyOrganizer": {
     "subject": "Neue Anmeldung: {VolunteerName} für \"{OpportunityTitle}\"",

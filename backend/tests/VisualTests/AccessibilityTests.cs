@@ -105,7 +105,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
-		// into a single page - Profile Details, Badges, and My Engagements all
+		// into a single page - Profile Details, Badges, and My Sign-ups all
 		// render together here.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -122,7 +122,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #794: Edit/Save/Cancel moved from inline buttons into the header's
 		// quick actions - the read-only scan above never opens the edit form,
-		// so scan it separately here. Also asserts the Badges/My Engagements
+		// so scan it separately here. Also asserts the Badges/My Sign-ups
 		// sections stay mounted and visible alongside the open edit form,
 		// since they no longer live behind a separate tab.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -135,7 +135,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Engagements" })).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" })).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -599,7 +599,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Engagement management is nested in the org app (#751) - reachable
-		// from the Opportunities page's "Manage applications" link, not from
+		// from the Opportunities page's "Manage sign-ups" link, not from
 		// the public opportunity detail page anymore.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
@@ -608,7 +608,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" });
 		try
 		{
 			await manageLink.First.WaitForAsync(new() { Timeout = 10_000 });

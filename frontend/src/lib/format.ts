@@ -29,10 +29,19 @@ export function isSlotFull(
 	return spotsLeft !== null && spotsLeft <= 0;
 }
 
+/** i18n's UI language ("de"/"en") -> the Intl/date-fns locale used for date
+ * formatting. The app only ever runs with i18n.language "de" or "en" (see
+ * i18n.ts's supportedLngs), so this always maps to a fixed regional variant
+ * rather than trying to infer the viewer's actual region - single source of
+ * truth for every call site that used to duplicate this ternary (#1267). */
+export function resolveDateLocale(lng: string): string {
+	return lng === "de" ? "de-DE" : "en-GB";
+}
+
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function getDateTimeFormatter(locale: string): Intl.DateTimeFormat {
-	const resolvedLocale = locale === "de" ? "de-DE" : "en-GB";
+function getDateTimeFormatter(lng: string): Intl.DateTimeFormat {
+	const resolvedLocale = resolveDateLocale(lng);
 	let formatter = dateTimeFormatters.get(resolvedLocale);
 	if (!formatter) {
 		formatter = new Intl.DateTimeFormat(resolvedLocale, {
@@ -44,14 +53,17 @@ function getDateTimeFormatter(locale: string): Intl.DateTimeFormat {
 	return formatter;
 }
 
-export function formatDateTime(dt: string, locale: string = "en"): string {
-	return getDateTimeFormatter(locale).format(new Date(dt));
+/** `lng` is i18n.language ("de"/"en"), not an Intl locale - required rather
+ * than defaulted so a call site that forgets to pass it is a compile error
+ * instead of silently rendering en-GB (#1267). */
+export function formatDateTime(dt: string, lng: string): string {
+	return getDateTimeFormatter(lng).format(new Date(dt));
 }
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function getDateFormatter(locale: string): Intl.DateTimeFormat {
-	const resolvedLocale = locale === "de" ? "de-DE" : "en-GB";
+function getDateFormatter(lng: string): Intl.DateTimeFormat {
+	const resolvedLocale = resolveDateLocale(lng);
 	let formatter = dateFormatters.get(resolvedLocale);
 	if (!formatter) {
 		formatter = new Intl.DateTimeFormat(resolvedLocale, {
@@ -63,9 +75,10 @@ function getDateFormatter(locale: string): Intl.DateTimeFormat {
 }
 
 /** Date-only formatting (no time-of-day) - for deadlines like ValidUntil,
- * where the time component isn't meaningful to the viewer. */
-export function formatDate(dt: string, locale: string = "en"): string {
-	return getDateFormatter(locale).format(new Date(dt));
+ * where the time component isn't meaningful to the viewer. `lng` is
+ * i18n.language ("de"/"en"), not an Intl locale (see formatDateTime). */
+export function formatDate(dt: string, lng: string): string {
+	return getDateFormatter(lng).format(new Date(dt));
 }
 
 export function formatPostedAgo(dt: string, t: TFunction): string {

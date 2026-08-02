@@ -6,7 +6,7 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Coverage for #1046: the organizer's "Manage applications" page gained a
+/// Coverage for #1046: the organizer's "Manage sign-ups" page gained a
 /// status filter (mirroring the volunteer-side scope toggle in
 /// ActivitySection) on top of the pagination added by #1456. This asserts
 /// the status dropdown actually narrows the visible rows instead of just
@@ -33,7 +33,7 @@ public class EngagementManagementFiltersTests(AspireFixture fixture) : VisualTes
 		var statusFilter = Page.Locator("#engagement-status-filter");
 		await statusFilter.SelectOptionAsync(new SelectOptionValue { Label = "Pending" });
 
-		await Expect(Page.GetByText("No applications match your filters.")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("No sign-ups match your filters.")).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Vera Volunteer")).Not.ToBeVisibleAsync();
 
 		await statusFilter.SelectOptionAsync(new SelectOptionValue { Label = "Confirmed" });

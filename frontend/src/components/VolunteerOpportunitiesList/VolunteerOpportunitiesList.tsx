@@ -11,6 +11,7 @@ import MiniCalendar, { fmtShortDate } from "./MiniCalendar";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { useVolunteerOpportunitiesData } from "./useVolunteerOpportunitiesData";
 import { useCitySuggestions, type CitySuggestion } from "./useCitySuggestions";
+import { resolveDateLocale } from "../../lib/format";
 import {
 	BroomIcon,
 	CalendarIcon,
@@ -40,7 +41,7 @@ const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const occurrence = searchParams.get("occurrence") ?? "";

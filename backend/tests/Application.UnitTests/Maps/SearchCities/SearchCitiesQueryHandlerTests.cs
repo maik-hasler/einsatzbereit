@@ -26,10 +26,10 @@ public sealed class SearchCitiesQueryHandlerTests : IDisposable
 			new("Bern", 46.948, 7.4474),
 		};
 		_geocodingService
-			.SearchCitiesAsync("Ber", Arg.Any<CancellationToken>())
+			.SearchCitiesAsync("Ber", "en", Arg.Any<CancellationToken>())
 			.Returns(suggestions);
 
-		var result = await _sut.Handle(new SearchCitiesQuery("Ber"), CancellationToken.None);
+		var result = await _sut.Handle(new SearchCitiesQuery("Ber", "en"), CancellationToken.None);
 
 		result.Should().BeEquivalentTo(suggestions);
 	}
@@ -38,24 +38,24 @@ public sealed class SearchCitiesQueryHandlerTests : IDisposable
 	public async Task Handle_ShouldReturnEmptyList_WhenGeocodingServiceFindsNoMatches()
 	{
 		_geocodingService
-			.SearchCitiesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.SearchCitiesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(new List<CitySuggestion>());
 
-		var result = await _sut.Handle(new SearchCitiesQuery("Xyzzyxyzzy"), CancellationToken.None);
+		var result = await _sut.Handle(new SearchCitiesQuery("Xyzzyxyzzy", "en"), CancellationToken.None);
 
 		result.Should().BeEmpty();
 	}
 
 	[Test]
-	public async Task Handle_ShouldForwardQueryText_ToGeocodingService()
+	public async Task Handle_ShouldForwardQueryTextAndLanguage_ToGeocodingService()
 	{
 		_geocodingService
-			.SearchCitiesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.SearchCitiesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(new List<CitySuggestion>());
 
-		await _sut.Handle(new SearchCitiesQuery("Hamburg"), CancellationToken.None);
+		await _sut.Handle(new SearchCitiesQuery("Hamburg", "de"), CancellationToken.None);
 
-		await _geocodingService.Received(1).SearchCitiesAsync("Hamburg", Arg.Any<CancellationToken>());
+		await _geocodingService.Received(1).SearchCitiesAsync("Hamburg", "de", Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -63,12 +63,12 @@ public sealed class SearchCitiesQueryHandlerTests : IDisposable
 	{
 		using var cts = new CancellationTokenSource();
 		_geocodingService
-			.SearchCitiesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.SearchCitiesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(new List<CitySuggestion>());
 
-		await _sut.Handle(new SearchCitiesQuery("Hamburg"), cts.Token);
+		await _sut.Handle(new SearchCitiesQuery("Hamburg", "en"), cts.Token);
 
-		await _geocodingService.Received(1).SearchCitiesAsync("Hamburg", cts.Token);
+		await _geocodingService.Received(1).SearchCitiesAsync("Hamburg", "en", cts.Token);
 	}
 
 	[Test]
@@ -76,15 +76,15 @@ public sealed class SearchCitiesQueryHandlerTests : IDisposable
 	{
 		var suggestions = new List<CitySuggestion> { new("Hamburg", 53.5511, 9.9937) };
 		_geocodingService
-			.SearchCitiesAsync("Hamburg", Arg.Any<CancellationToken>())
+			.SearchCitiesAsync("Hamburg", "en", Arg.Any<CancellationToken>())
 			.Returns(suggestions);
 
-		var first = await _sut.Handle(new SearchCitiesQuery("Hamburg"), CancellationToken.None);
-		var second = await _sut.Handle(new SearchCitiesQuery("Hamburg"), CancellationToken.None);
+		var first = await _sut.Handle(new SearchCitiesQuery("Hamburg", "en"), CancellationToken.None);
+		var second = await _sut.Handle(new SearchCitiesQuery("Hamburg", "en"), CancellationToken.None);
 
 		first.Should().BeEquivalentTo(suggestions);
 		second.Should().BeEquivalentTo(suggestions);
-		await _geocodingService.Received(1).SearchCitiesAsync("Hamburg", Arg.Any<CancellationToken>());
+		await _geocodingService.Received(1).SearchCitiesAsync("Hamburg", "en", Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -92,27 +92,52 @@ public sealed class SearchCitiesQueryHandlerTests : IDisposable
 	{
 		var suggestions = new List<CitySuggestion> { new("Hamburg", 53.5511, 9.9937) };
 		_geocodingService
-			.SearchCitiesAsync("Hamburg", Arg.Any<CancellationToken>())
+			.SearchCitiesAsync("Hamburg", "en", Arg.Any<CancellationToken>())
 			.Returns(suggestions);
 
-		await _sut.Handle(new SearchCitiesQuery("Hamburg"), CancellationToken.None);
-		var second = await _sut.Handle(new SearchCitiesQuery("  HAMBURG  "), CancellationToken.None);
+		await _sut.Handle(new SearchCitiesQuery("Hamburg", "en"), CancellationToken.None);
+		var second = await _sut.Handle(new SearchCitiesQuery("  HAMBURG  ", "en"), CancellationToken.None);
 
 		second.Should().BeEquivalentTo(suggestions);
-		await _geocodingService.Received(1).SearchCitiesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await _geocodingService.Received(1).SearchCitiesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
 	public async Task Handle_ShouldNotCacheEmptyResult_SoARetryCanStillFindMatches()
 	{
 		_geocodingService
-			.SearchCitiesAsync("Hamburg", Arg.Any<CancellationToken>())
+			.SearchCitiesAsync("Hamburg", "en", Arg.Any<CancellationToken>())
 			.Returns(new List<CitySuggestion>());
 
-		await _sut.Handle(new SearchCitiesQuery("Hamburg"), CancellationToken.None);
-		await _sut.Handle(new SearchCitiesQuery("Hamburg"), CancellationToken.None);
+		await _sut.Handle(new SearchCitiesQuery("Hamburg", "en"), CancellationToken.None);
+		await _sut.Handle(new SearchCitiesQuery("Hamburg", "en"), CancellationToken.None);
 
-		await _geocodingService.Received(2).SearchCitiesAsync("Hamburg", Arg.Any<CancellationToken>());
+		await _geocodingService.Received(2).SearchCitiesAsync("Hamburg", "en", Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotShareCache_BetweenDifferentLanguagesForTheSameQuery()
+	{
+		// #1277: an English and a German request for the same city text must
+		// resolve independently, since Nominatim returns different exonyms
+		// per requested language (e.g. "Munich" vs "Munchen") - sharing a
+		// cache entry would leak one language's result into the other's.
+		var englishResult = new List<CitySuggestion> { new("Munich", 48.1372, 11.5755) };
+		var germanResult = new List<CitySuggestion> { new("Munchen", 48.1372, 11.5755) };
+		_geocodingService
+			.SearchCitiesAsync("Munich", "en", Arg.Any<CancellationToken>())
+			.Returns(englishResult);
+		_geocodingService
+			.SearchCitiesAsync("Munich", "de", Arg.Any<CancellationToken>())
+			.Returns(germanResult);
+
+		var english = await _sut.Handle(new SearchCitiesQuery("Munich", "en"), CancellationToken.None);
+		var german = await _sut.Handle(new SearchCitiesQuery("Munich", "de"), CancellationToken.None);
+
+		english.Should().BeEquivalentTo(englishResult);
+		german.Should().BeEquivalentTo(germanResult);
+		await _geocodingService.Received(1).SearchCitiesAsync("Munich", "en", Arg.Any<CancellationToken>());
+		await _geocodingService.Received(1).SearchCitiesAsync("Munich", "de", Arg.Any<CancellationToken>());
 	}
 
 	public void Dispose() => _cache.Dispose();

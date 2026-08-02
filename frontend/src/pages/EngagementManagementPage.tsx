@@ -17,7 +17,7 @@ import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
-import { formatDateTime } from "../lib/format";
+import { formatDateTime, resolveDateLocale } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
@@ -52,7 +52,7 @@ export default function EngagementManagementPage() {
 		Withdrawn: t("engagementManagement.status.Withdrawn"),
 	};
 
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	const timeSlotsById = useMemo(() => {
 		const map = new Map<string, TimeSlotDetail>();
@@ -660,7 +660,11 @@ export default function EngagementManagementPage() {
 						<>
 							<p className="mb-4 text-sm text-gray-700">
 								{t("feedback.averageRating", {
-									rating: feedbackStats.averageRating?.toFixed(1) ?? "-",
+									rating:
+										feedbackStats.averageRating?.toLocaleString(locale, {
+											minimumFractionDigits: 1,
+											maximumFractionDigits: 1,
+										}) ?? "-",
 									count: feedbackStats.feedbackCount,
 								})}
 							</p>

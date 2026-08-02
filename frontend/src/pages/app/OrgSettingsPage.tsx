@@ -14,6 +14,7 @@ import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
+import { resolveDateLocale } from "../../lib/format";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -42,7 +43,7 @@ export default function OrgSettingsPage() {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const navigate = useNavigate();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	function organizationToFormValues(): OrganizationFormValues {
 		return {

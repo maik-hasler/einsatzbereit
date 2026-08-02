@@ -14,6 +14,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
+import { resolveDateLocale } from "../../lib/format";
 
 export default function OrgMembersPage() {
 	const { org } = useOutletContext<OrgAppContext>();
@@ -21,7 +22,7 @@ export default function OrgMembersPage() {
 	const api = useApiClient();
 	const auth = useAuth();
 	const navigate = useNavigate();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 	const currentUserId = auth.user?.profile?.sub;
 
 	const [members, setMembers] = useState(org.members);

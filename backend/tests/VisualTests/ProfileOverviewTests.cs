@@ -23,7 +23,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Engagements" }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" }))
 			.ToBeVisibleAsync(new() { Timeout = 20_000 });
 
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Profile", Exact = true }))

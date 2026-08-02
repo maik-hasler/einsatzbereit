@@ -122,7 +122,7 @@ builder.Services.AddOpenApi("v1", options =>
 		{
 			Title = "Einsatzbereit API",
 			Version = "v1",
-			Description = "API für die Einsatzbereit-Anwendung"
+			Description = "API for the Einsatzbereit application"
 		};
 
 		// Inline the IFormFile binary schema instead of a $ref so NSwag emits

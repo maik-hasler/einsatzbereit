@@ -44,7 +44,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("Your application")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByText("Your sign-up")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
 	}
@@ -86,7 +86,7 @@ public class OpportunityApplicationStateTests(AspireFixture fixture) : VisualTes
 		await Page.GotoAsync(detailUrl);
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByText("Your application")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(Page.GetByText("Your sign-up")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Express interest" }))
 			.Not.ToBeVisibleAsync();
 	}

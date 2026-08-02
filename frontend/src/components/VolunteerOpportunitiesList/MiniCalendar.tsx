@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { addDays, addMonths, endOfWeek, startOfWeek } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
+import { resolveDateLocale } from "../../lib/format";
 
 export function fmtIso(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -26,7 +27,7 @@ export default function MiniCalendar({
 	onChange: (from: string, to: string) => void;
 }) {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	const todayMidnight = (() => {
 		const d = new Date();

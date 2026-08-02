@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Einsatzbereit API",
-    "description": "API für die Einsatzbereit-Anwendung",
+    "description": "API for the Einsatzbereit application",
     "version": "v1"
   },
   "paths": {

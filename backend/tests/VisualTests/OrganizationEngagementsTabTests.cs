@@ -14,7 +14,7 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 	/// - GetOpportunityFeedback must not 500 (previously an EF Core query
 	///   ordered results after projecting into a DTO, which failed
 	///   translation on every call, regardless of engagement data).
-	/// - The published row's "Manage applications" link must show exactly one
+	/// - The published row's "Manage sign-ups" link must show exactly one
 	///   arrow (the SVG icon), not a doubled arrow from a literal "→" baked
 	///   into the translation string plus the adjacent icon.
 	/// </summary>
@@ -75,14 +75,14 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 
 		// The org "Engagements" tab became the unified "Opportunities" hub. A
 		// published opportunity is listed under the Published section with a
-		// single-arrow "Manage applications" link.
+		// single-arrow "Manage sign-ups" link.
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var row = Page.GetByTestId("published-section").Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var manageLink = row.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
+		var manageLink = row.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" });
 		await Expect(manageLink).ToBeVisibleAsync();
 
 		var linkText = (await manageLink.InnerTextAsync()).Trim();

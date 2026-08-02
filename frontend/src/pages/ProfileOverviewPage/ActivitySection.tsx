@@ -9,7 +9,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
-import { formatDateTime } from "../../lib/format";
+import { formatDateTime, resolveDateLocale } from "../../lib/format";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -30,7 +30,7 @@ export default function ActivitySection() {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),

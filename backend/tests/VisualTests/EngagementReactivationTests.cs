@@ -12,7 +12,7 @@ namespace VisualTests;
 /// via Engagement.Reactivate(...) instead of inserting a new one, and
 /// AuditableEntityInterceptor only stamps CreatedOn on EntityState.Added -
 /// never on the Modified state a reactivation produces. Both the volunteer's
-/// "My Profile -> Engagements" tab and the organizer's "Manage applications"
+/// "My Profile -> Engagements" tab and the organizer's "Manage sign-ups"
 /// page kept showing the stale original date.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]

@@ -615,7 +615,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await CreateOrganizationAsync("Visual766 Settings", pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger Zone" }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await AssertMaxWidthContentLeftAlignedAsync("Organization settings page");

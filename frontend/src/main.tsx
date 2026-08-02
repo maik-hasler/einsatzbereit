@@ -27,10 +27,26 @@ const oidcConfig = {
 	automaticSilentRenew: true,
 	// Use localStorage so Playwright storageState captures the session
 	userStore: new WebStorageStateStore({ store: window.localStorage }),
-	onSigninCallback: (user: User | undefined) => {
+	onSigninCallback: async (user: User | undefined) => {
+		// Only fall back to the Keycloak login page's locale on a browser
+		// that has never had an explicit in-app language choice - otherwise a
+		// user who picked German via the header's LanguageSelector would have
+		// it silently reverted to whatever locale their Keycloak login
+		// session carries on every subsequent signin (#1253). This is a
+		// dedicated flag (set only by LanguageSelector's onClick) rather than
+		// i18next's own "i18nextLng" localStorage cache, since the language
+		// detector populates that cache from the browser's Accept-Language on
+		// first load too - which would make nearly every session look like it
+		// already had a "choice" and defeat this guard.
+		const hasExplicitLanguageChoice =
+			localStorage.getItem("einsatzbereit:language-explicit") === "true";
 		const keycloakLocale = user?.profile?.locale;
-		if (keycloakLocale && keycloakLocale !== i18n.language) {
-			void i18n.changeLanguage(keycloakLocale);
+		if (
+			!hasExplicitLanguageChoice &&
+			keycloakLocale &&
+			keycloakLocale !== i18n.language
+		) {
+			await i18n.changeLanguage(keycloakLocale);
 		}
 		const returnTo = (user?.state as { returnTo?: string })?.returnTo ?? "/";
 		window.location.replace(returnTo);
