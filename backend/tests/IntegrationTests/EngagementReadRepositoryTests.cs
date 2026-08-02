@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.VolunteerOpportunities;
 using TUnit.Core.Interfaces;
@@ -143,6 +144,107 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	private sealed class NoOpPinGenerator : IPinGenerator
 	{
 		public string GeneratePin() => "0000";
+	}
+
+	// Regression for #1184: the anonymous .ics calendar feed (AllowAnonymous,
+	// engagementId as capability token) must not leak title/description/address
+	// for an opportunity the organizer has taken off Published, nor keep serving
+	// a withdrawn/cancelled engagement's feed - both must 404 via a null return.
+	//
+	// ScheduledSlots opportunities can't be created directly as Published (Create()
+	// requires at least one time slot to exist first), so every case here starts as
+	// Draft, adds a slot, then Publish()es before being driven to the case's status.
+	private async Task<(VolunteerOpportunity Opportunity, TimeSlot Slot)> CreatePublishedOpportunityWithSlotAsync(
+		ApplicationDbContext dbContext,
+		CancellationToken cancellationToken)
+	{
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"CalendarOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		opportunity.Publish().ThrowIfFailure();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		return (opportunity, slot);
+	}
+
+	[Test]
+	public async Task GetCalendarInfoAsync_ShouldReturnInfo_WhenOpportunityPublishedAndEngagementConfirmed(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var (opportunity, slot) = await CreatePublishedOpportunityWithSlotAsync(dbContext, cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var info = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		info.Should().NotBeNull();
+		info!.OpportunityTitle.Should().Be("Titel");
+	}
+
+	[Test]
+	[Arguments(OpportunityStatus.Unpublished)]
+	[Arguments(OpportunityStatus.Cancelled)]
+	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenOpportunityNotPublished(
+		OpportunityStatus status,
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var (opportunity, slot) = await CreatePublishedOpportunityWithSlotAsync(dbContext, cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		if (status == OpportunityStatus.Unpublished)
+			opportunity.Unpublish().ThrowIfFailure();
+		else
+			opportunity.Cancel().ThrowIfFailure();
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var info = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		info.Should().BeNull();
+	}
+
+	[Test]
+	[Arguments(EngagementStatus.Cancelled)]
+	[Arguments(EngagementStatus.Withdrawn)]
+	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenEngagementInTerminalStatus(
+		EngagementStatus terminalStatus,
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var (opportunity, slot) = await CreatePublishedOpportunityWithSlotAsync(dbContext, cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		if (terminalStatus == EngagementStatus.Cancelled)
+			engagement.Cancel().ThrowIfFailure();
+		else
+			engagement.Withdraw().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var info = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		info.Should().BeNull();
 	}
 
 	// Regression for #1051: EngagementSummary never carried CancellationReason,
