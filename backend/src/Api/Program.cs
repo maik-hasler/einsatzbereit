@@ -34,10 +34,11 @@ builder.AddServiceDefaults();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// .NET 10 minimal-API opt-in (#1146): without this, every [MaxLength] on a
-// request DTO only affects the generated OpenAPI/NSwag client - ASP.NET Core
-// never evaluates DataAnnotations on minimal-API parameters unless this is
-// registered, so the server itself accepted unbounded text on every endpoint.
+// .NET 10 minimal-API opt-in (#1146, #1173): without this, every
+// [MaxLength]/[Required]/etc. DataAnnotation on a request DTO only affects the
+// generated OpenAPI/NSwag client - ASP.NET Core never evaluates DataAnnotations
+// on minimal-API parameters unless this is registered, so the server itself
+// accepted unbounded/missing values on every endpoint.
 builder.Services.AddValidation();
 
 builder.Services.AddApiVersioning(options =>
@@ -97,12 +98,6 @@ builder.Services.AddHealthChecks()
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);
 builder.Services.AddOutputCachingPolicies(builder.Configuration);
-
-// Minimal APIs never evaluate [MaxLength]/[Required]/etc. DataAnnotations on
-// request records unless validation is explicitly registered (#1173) - this
-// wires the built-in .NET 10 validation pipeline so every endpoint's request
-// type is checked before its handler runs.
-builder.Services.AddValidation();
 
 // EnableForHttps is safe here: this API is a pure JSON/token (Bearer, not cookie) API,
 // so there's no session secret reflected back into a compressible response body that a
