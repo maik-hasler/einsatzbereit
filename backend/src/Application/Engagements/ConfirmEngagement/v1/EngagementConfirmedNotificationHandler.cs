@@ -60,6 +60,7 @@ internal sealed class EngagementConfirmedNotificationHandler(
 			volunteer.Email,
 			content.Subject,
 			EmailFooter.Append(content.Body, unsubscribeUrl),
+			notification.EngagementId.Value.ToString(),
 			cancellationToken);
 	}
 }

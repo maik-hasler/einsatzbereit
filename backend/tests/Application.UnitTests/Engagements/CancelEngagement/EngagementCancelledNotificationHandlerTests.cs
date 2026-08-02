@@ -70,6 +70,7 @@ public class EngagementCancelledNotificationHandlerTests
 			"vera@example.com",
 			"Test Subject",
 			Arg.Is<string>(body => body!.StartsWith("Test Body")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
@@ -114,6 +115,7 @@ public class EngagementCancelledNotificationHandlerTests
 			"user@example.com",
 			Arg.Any<string>(),
 			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
+			Arg.Any<string>(),
 			cancellationToken);
 	}
 
@@ -176,7 +178,7 @@ public class EngagementCancelledNotificationHandlerTests
 
 		// Assert
 		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -218,6 +220,6 @@ public class EngagementCancelledNotificationHandlerTests
 
 		// Assert
 		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }
