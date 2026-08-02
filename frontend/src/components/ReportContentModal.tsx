@@ -72,7 +72,7 @@ export default function ReportContentModal({
 						id="report-reason"
 						value={reason}
 						onChange={(e) => setReason(e.target.value as ReportReason)}
-						className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
+						className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 					>
 						{REPORT_REASONS.map((r) => (
 							<option key={r} value={r}>
@@ -96,7 +96,7 @@ export default function ReportContentModal({
 						value={details}
 						onChange={(e) => setDetails(e.target.value)}
 						placeholder={t("report.detailsPlaceholder")}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{details.length}/1000

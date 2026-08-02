@@ -57,7 +57,7 @@ export default function TagsInput({
 			>
 				{label}
 			</label>
-			<div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-400/30">
+			<div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition focus-within:border-brand-400">
 				{value.map((tag) => (
 					<Chip
 						key={tag}
@@ -68,6 +68,10 @@ export default function TagsInput({
 						{tag}
 					</Chip>
 				))}
+				{/* The pill wrapper above shows the focus-within border; suppress
+				the browser's own default focus box on this borderless, transparent
+				input so it doesn't double up. The global :focus-visible ring
+				(global.css, issue #992) still outlines the pill on keyboard focus. */}
 				<input
 					id={id}
 					type="text"

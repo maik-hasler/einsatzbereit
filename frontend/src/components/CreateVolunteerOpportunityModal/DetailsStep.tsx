@@ -88,10 +88,10 @@ const CATEGORY_VALUES = [
 ] as const;
 
 const selectClass =
-	"w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
+	"w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm transition focus:border-brand-400";
 
 const dateInputClass =
-	"w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30";
+	"w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400";
 
 export default function DetailsStep({
 	control,
@@ -314,7 +314,7 @@ export default function DetailsStep({
 																	parseInt(e.target.value, 10) || 1,
 															})
 														}
-														className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
+														className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 disabled:bg-gray-100 disabled:text-gray-400"
 													/>
 													<label
 														htmlFor={`edit-slot-unlimited-${slot.id}`}
@@ -330,7 +330,7 @@ export default function DetailsStep({
 																	maxParticipants: e.target.checked ? null : 1,
 																})
 															}
-															className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-400"
+															className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600"
 														/>
 														{t("timeSlots.unlimited")}
 													</label>
@@ -501,7 +501,7 @@ export default function DetailsStep({
 											maxParticipants: parseInt(e.target.value, 10) || 1,
 										})
 									}
-									className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
+									className="w-24 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 disabled:bg-gray-100 disabled:text-gray-400"
 								/>
 								<label
 									htmlFor="slot-unlimited"
@@ -517,7 +517,7 @@ export default function DetailsStep({
 												maxParticipants: e.target.checked ? null : 1,
 											})
 										}
-										className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-400"
+										className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600"
 									/>
 									{t("timeSlots.unlimited")}
 								</label>
@@ -570,7 +570,7 @@ export default function DetailsStep({
 												),
 											)
 										}
-										className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none"
+										className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
 									/>
 								</div>
 							</div>
