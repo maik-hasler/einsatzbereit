@@ -15,6 +15,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import ImageCropModal from "./ImageCropModal";
+import FileUploadButton from "./FileUploadButton";
 
 interface Props {
 	onClose: () => void;
@@ -162,19 +163,12 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 								</span>
 							)}
 							<div>
-								<label
-									htmlFor="create-org-logo-upload"
-									className="cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-								>
-									{t("orgSettings.logoUpload")}
-								</label>
-								<input
-									ref={logoInputRef}
+								<FileUploadButton
 									id="create-org-logo-upload"
-									type="file"
+									label={t("orgSettings.logoUpload")}
 									accept="image/jpeg,image/png,image/webp"
-									className="sr-only"
 									onChange={handleLogoChange}
+									inputRef={logoInputRef}
 								/>
 								<p className="mt-1 text-xs text-gray-500">
 									{t("orgSettings.logoHint")}

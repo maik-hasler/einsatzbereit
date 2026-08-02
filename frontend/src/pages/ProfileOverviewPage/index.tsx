@@ -14,6 +14,7 @@ import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
+import FileUploadButton from "../../components/FileUploadButton";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
@@ -412,22 +413,17 @@ export default function ProfileOverviewPage() {
 													</span>
 												)}
 												<div>
-													<label
-														htmlFor="avatar-upload"
-														className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${avatarUpload.uploading ? "opacity-50 pointer-events-none" : ""}`}
-													>
-														{avatarUpload.uploading
-															? t("profile.avatarUploading")
-															: t("profile.avatarUpload")}
-													</label>
-													<input
-														ref={avatarUpload.inputRef}
+													<FileUploadButton
 														id="avatar-upload"
-														type="file"
+														label={
+															avatarUpload.uploading
+																? t("profile.avatarUploading")
+																: t("profile.avatarUpload")
+														}
 														accept="image/jpeg,image/png,image/webp"
-														className="sr-only"
 														onChange={avatarUpload.handleChange}
 														disabled={avatarUpload.uploading}
+														inputRef={avatarUpload.inputRef}
 													/>
 													<p className="mt-1 text-xs text-gray-500">
 														{t("profile.avatarHint")}
