@@ -72,7 +72,14 @@ internal sealed class CreateTimeSlotCommandHandler(
 			_ => localOrigin
 		};
 
-		return new DateTimeOffset(advancedLocal, timeZone.GetUtcOffset(advancedLocal));
+		// Npgsql only accepts a DateTimeOffset with Offset == TimeSpan.Zero for a
+		// "timestamp with time zone" column (this project doesn't opt into
+		// Npgsql's legacy timestamp behavior) - re-resolving the *local* UTC
+		// offset above is what makes the recurrence DST-safe, but the
+		// DateTimeOffset that carries that non-zero offset can never reach
+		// SaveChanges. ToUniversalTime() only changes the representation, not
+		// the instant, so the DST-correct point in time is preserved.
+		return new DateTimeOffset(advancedLocal, timeZone.GetUtcOffset(advancedLocal)).ToUniversalTime();
 	}
 
 	private static TimeZoneInfo ResolveTimeZone(string? ianaId)
