@@ -60,7 +60,7 @@ public class CreateEngagementCommandHandlerTests
 		// Create's ScheduledSlotsMustStartAsDraft guard) - add a throwaway slot
 		// so Publish()'s own ScheduledSlotsRequiresTimeSlot check is satisfied,
 		// then walk to the requested terminal status the same way real code would.
-		opportunity.AddTimeSlot(
+		_ = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
 			maxParticipants: 10,
