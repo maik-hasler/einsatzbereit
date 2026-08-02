@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
 	[DbContext(typeof(ApplicationDbContext))]
-	partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+	[Migration("20260802130000_AddEngagementReactivationCount")]
+	partial class AddEngagementReactivationCount
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		/// <inheritdoc />
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 #pragma warning disable 612, 618
 			modelBuilder
@@ -230,13 +233,11 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("id");
 
 					b.Property<string>("ContactEmail")
-						.HasMaxLength(254)
-						.HasColumnType("character varying(254)")
+						.HasColumnType("text")
 						.HasColumnName("contact_email");
 
 					b.Property<string>("ContactPhone")
-						.HasMaxLength(30)
-						.HasColumnType("character varying(30)")
+						.HasColumnType("text")
 						.HasColumnName("contact_phone");
 
 					b.Property<DateTimeOffset>("CreatedOn")
@@ -248,8 +249,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("deleted_on");
 
 					b.Property<string>("Description")
-						.HasMaxLength(1000)
-						.HasColumnType("character varying(1000)")
+						.HasColumnType("text")
 						.HasColumnName("description");
 
 					b.Property<bool>("IsDeleted")
@@ -268,13 +268,11 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.Property<string>("Name")
 						.IsRequired()
-						.HasMaxLength(100)
-						.HasColumnType("character varying(100)")
+						.HasColumnType("text")
 						.HasColumnName("name");
 
 					b.Property<string>("Website")
-						.HasMaxLength(500)
-						.HasColumnType("character varying(500)")
+						.HasColumnType("text")
 						.HasColumnName("website");
 
 					b.HasKey("Id")
@@ -492,8 +490,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("avatar_url");
 
 					b.Property<string>("Bio")
-						.HasMaxLength(1000)
-						.HasColumnType("character varying(1000)")
+						.HasColumnType("text")
 						.HasColumnName("bio");
 
 					b.Property<DateTimeOffset?>("DeletedOn")
@@ -542,8 +539,7 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnName("notify_on_withdrawal");
 
 					b.Property<string>("Phone")
-						.HasMaxLength(30)
-						.HasColumnType("character varying(30)")
+						.HasColumnType("text")
 						.HasColumnName("phone");
 
 					b.Property<string>("PreferredContact")
@@ -871,14 +867,12 @@ namespace Infrastructure.Persistence.Migrations
 
 							b1.Property<string>("City")
 								.IsRequired()
-								.HasMaxLength(100)
-								.HasColumnType("character varying(100)")
+								.HasColumnType("text")
 								.HasColumnName("address_city");
 
 							b1.Property<string>("HouseNumber")
 								.IsRequired()
-								.HasMaxLength(20)
-								.HasColumnType("character varying(20)")
+								.HasColumnType("text")
 								.HasColumnName("address_house_number");
 
 							b1.Property<double?>("Latitude")
@@ -891,8 +885,7 @@ namespace Infrastructure.Persistence.Migrations
 
 							b1.Property<string>("Street")
 								.IsRequired()
-								.HasMaxLength(200)
-								.HasColumnType("character varying(200)")
+								.HasColumnType("text")
 								.HasColumnName("address_street");
 
 							b1.Property<string>("ZipCode")

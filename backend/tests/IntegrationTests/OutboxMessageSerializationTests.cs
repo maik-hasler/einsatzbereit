@@ -65,6 +65,8 @@ public class OutboxMessageSerializationTests
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementConfirmedDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		yield return new EngagementCreatedDomainEvent(
+			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		yield return new EngagementFeedbackSubmittedDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), 5);
 		yield return new EngagementReactivatedDomainEvent(

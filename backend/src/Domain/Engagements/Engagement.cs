@@ -20,6 +20,8 @@ public sealed class Engagement
 
 	public string? CancellationReason { get; private set; }
 
+	public int ReactivationCount { get; private set; }
+
 	public bool IsCheckedIn { get; private set; }
 
 	public DateTimeOffset? ReminderSentAt { get; private set; }
@@ -37,6 +39,12 @@ public sealed class Engagement
 	public DateTimeOffset? ModifiedOn { get; private set; }
 
 	private bool IsTerminated => Status is EngagementStatus.Withdrawn or EngagementStatus.Cancelled;
+
+	// Bounds how many times a single withdrawn/cancelled engagement can be
+	// reused via Reactivate: without a cap, a volunteer could loop create/withdraw
+	// indefinitely against the same opportunity, and every cycle mails the
+	// volunteer plus every organizer of the org (einsatzbereit#1174).
+	private const int MaxReactivationCount = 5;
 
 #pragma warning disable CS8618
 	private Engagement() : base(default) { }
@@ -63,13 +71,16 @@ public sealed class Engagement
 		UserId volunteerId,
 		TimeSlotId timeSlotId)
 	{
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId,
 			message: null,
 			EngagementStatus.Pending);
+
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public static Result<Engagement> CreateIndividualContact(
@@ -82,13 +93,16 @@ public sealed class Engagement
 				"Engagement.MessageRequired",
 				"A message is required when expressing interest via individual contact."));
 
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId: null,
 			message,
 			EngagementStatus.Pending);
+
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public Result Confirm()
@@ -130,6 +144,11 @@ public sealed class Engagement
 		if (!IsTerminated)
 			return Result.Failure(Error.Conflict("Engagement.NotTerminated", "Only withdrawn or cancelled engagements can be reactivated."));
 
+		if (ReactivationCount >= MaxReactivationCount)
+			return Result.Failure(Error.Conflict(
+				"Engagement.ReactivationLimitReached",
+				"This engagement has been withdrawn and re-applied for too many times. Please contact the organizer directly."));
+
 		if (timeSlotId is null && string.IsNullOrWhiteSpace(message))
 			return Result.Failure(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."));
 
@@ -143,6 +162,7 @@ public sealed class Engagement
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
 		CreatedOn = DateTimeOffset.UtcNow;
+		ReactivationCount++;
 		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
 		return Result.Success();
 	}

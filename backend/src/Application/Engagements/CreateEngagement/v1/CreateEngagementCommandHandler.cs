@@ -17,8 +17,7 @@ internal sealed class CreateEngagementCommandHandler(
 	IKeycloakOrganizationService keycloakOrganizationService,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder)
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<CreateEngagementCommand, Engagement>
 {
 	public async ValueTask<Engagement> Handle(
@@ -104,47 +103,15 @@ internal sealed class CreateEngagementCommandHandler(
 		// response to the volunteer's own just-submitted action, not a repeatable
 		// notification about someone else's activity - equivalent to an order
 		// receipt, which platforms conventionally don't let users opt out of.
+		//
+		// The organizer "New sign-up" email is NOT sent here (#1174): it moves
+		// off this request's DB transaction onto the outbox, delivered by
+		// EngagementCreatedDomainEventHandler/EngagementReactivatedDomainEventHandler
+		// once EngagementCreatedDomainEvent/EngagementReactivatedDomainEvent (raised
+		// above by Engagement.CreateSlotSignUp/CreateIndividualContact/Reactivate)
+		// is dispatched - see EngagementOrganizerNotificationHelper.
 		await emailService.SendAsync(
 			volunteer.Email, volunteerContent.Subject, volunteerContent.Body, engagement.Id.Value.ToString(), cancellationToken);
-
-		var organizerIds = members
-			.Where(m => m.IsOrganisator)
-			.Select(m => UserId.Create(m.UserId).GetValueOrThrow())
-			.ToList();
-		var organizerUsersById = (await dbContext.GetOrCreateUsersAsync(organizerIds, cancellationToken))
-			.ToDictionary(u => u.Id);
-
-		foreach (var organizer in members.Where(m => m.IsOrganisator))
-		{
-			var organizerId = UserId.Create(organizer.UserId).GetValueOrThrow();
-			var organizerUser = organizerUsersById[organizerId];
-
-			if (!organizerUser.IsSubscribedTo(EmailNotificationType.NewSignUp))
-				continue;
-
-			var organizerName = organizer.FirstName ?? organizer.Username;
-			var organizerLanguage = SupportedLanguages.Resolve(organizerUser.PreferredLanguage);
-
-			var organizerContent = emailTemplateRenderer.Render(
-				EmailTemplateKind.EngagementSignupNotifyOrganizer,
-				organizerLanguage,
-				new Dictionary<string, string>
-				{
-					["OrganizerName"] = organizerName,
-					["VolunteerName"] = volunteerName,
-					["OpportunityTitle"] = opportunity.Title,
-				});
-
-			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
-				organizerId, organizerUser.UnsubscribeToken, EmailNotificationType.NewSignUp);
-
-			await emailService.SendAsync(
-				organizer.Email,
-				organizerContent.Subject,
-				EmailFooter.Append(organizerContent.Body, unsubscribeUrl),
-				engagement.Id.Value.ToString(),
-				cancellationToken);
-		}
 
 		return engagement;
 	}
