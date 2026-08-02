@@ -92,7 +92,7 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 							id="quick-checkin-opportunity"
 							value={selectedId}
 							onChange={setSelectedId}
-							className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+							className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none"
 							options={opportunities.map((o) => ({
 								value: o.id,
 								label: o.title || t("orgDashboard.unnamedDraft"),

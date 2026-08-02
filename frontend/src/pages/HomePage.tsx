@@ -177,7 +177,7 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="full-bleed relative mb-20 -mt-[var(--header-offset)] overflow-hidden bg-brand-800"
+				className="full-bleed relative -mt-[var(--header-offset)] mb-20 overflow-hidden bg-brand-800"
 			>
 				{/* Decorative glow blobs */}
 				<div
