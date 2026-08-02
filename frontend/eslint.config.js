@@ -21,6 +21,26 @@ export default tseslint.config(
 		rules: jsxA11y.flatConfigs.recommended.rules,
 	},
 	{
+		// #1124: arbitrary Tailwind text sizes (text-[10px], text-[11px], ...)
+		// bypass the @theme type scale, so nothing stops the ramp below 14px
+		// (text-xs, currently 12px) from fragmenting into one-off pixel values
+		// per component. Round to the nearest scale step instead; add a named
+		// @theme step (e.g. --text-2xs) if a size below text-xs is genuinely
+		// needed somewhere.
+		files: ["src/**/*.{ts,tsx}"],
+		rules: {
+			"no-restricted-syntax": [
+				"error",
+				{
+					selector:
+						":matches(Literal[value=/text-\\[/], TemplateElement[value.raw=/text-\\[/])",
+					message:
+						"Arbitrary Tailwind text size (text-[...]) bypasses the type scale defined in @theme - use a scale step (text-xs, text-sm, ...) instead, or add a named step to @theme if the scale genuinely needs one.",
+				},
+			],
+		},
+	},
+	{
 		files: ["src/**/*.{ts,tsx}"],
 		plugins: { i18next },
 		rules: {
