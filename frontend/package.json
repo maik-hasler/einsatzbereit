@@ -26,6 +26,7 @@
     "check:pwa-precache": "node scripts/check-pwa-precache.js"
   },
   "dependencies": {
+    "@fontsource-variable/source-sans-3": "5.3.0",
     "@hookform/resolvers": "5.5.7",
     "date-fns": "4.4.0",
     "i18next": "26.3.6",

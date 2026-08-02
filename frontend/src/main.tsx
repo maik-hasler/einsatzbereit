@@ -16,6 +16,7 @@ import { runtimeConfig } from "./lib/runtimeConfig";
 // wins, and a lazy-chunk-scoped import made that order load-timing-
 // dependent instead of fixed.
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import "@fontsource-variable/source-sans-3";
 import "./styles/global.css";
 
 const oidcConfig = {
