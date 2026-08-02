@@ -35,7 +35,7 @@ export default function LanguageSelector({
 			>
 				<span
 					aria-hidden="true"
-					className={`rounded border px-1 py-0.5 text-xs font-bold leading-none tracking-wide ${transparent ? "border-white/30 text-white" : "border-gray-300 text-gray-600"}`}
+					className={`rounded border px-1 py-0.5 text-xs leading-none font-bold tracking-wide ${transparent ? "border-white/30 text-white" : "border-gray-300 text-gray-600"}`}
 				>
 					{current.short}
 				</span>
@@ -89,7 +89,7 @@ export default function LanguageSelector({
 							>
 								<span
 									aria-hidden="true"
-									className={`rounded border px-1 py-0.5 text-xs font-bold leading-none tracking-wide ${
+									className={`rounded border px-1 py-0.5 text-xs leading-none font-bold tracking-wide ${
 										transparent
 											? lang.code === currentCode
 												? "border-white/50 text-white"
