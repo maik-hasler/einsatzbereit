@@ -9,6 +9,7 @@ import { orgTabPath } from "../../lib/orgTabs";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import CreateOrganizationModal from "../CreateOrganizationModal";
 import Skeleton from "../Skeleton";
+import { ChevronDownIcon, PlusIcon } from "../icons";
 
 export default function OrganizationSwitcher({
 	currentOrgId,
@@ -84,20 +85,10 @@ export default function OrganizationSwitcher({
 					>
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
-					<svg
-						className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="2"
-						stroke="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="m19.5 8.25-7.5 7.5-7.5-7.5"
-						/>
-					</svg>
+					<ChevronDownIcon
+						open={open}
+						className="h-3.5 w-3.5 shrink-0 text-gray-400"
+					/>
 				</button>
 
 				{open && (
@@ -147,20 +138,7 @@ export default function OrganizationSwitcher({
 								}}
 								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-brand-700 transition-colors hover:bg-brand-50"
 							>
-								<svg
-									className="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-									aria-hidden="true"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M12 4.5v15m7.5-7.5h-15"
-									/>
-								</svg>
+								<PlusIcon className="h-4 w-4" />
 								{t("organization.create")}
 							</button>
 						</div>

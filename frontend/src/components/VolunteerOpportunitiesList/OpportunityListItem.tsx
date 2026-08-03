@@ -7,7 +7,8 @@ import { getOpportunityCategoryBannerClassName } from "../../lib/opportunityCate
 import { useApiClient } from "../../hooks/useApiClient";
 import Chip from "../Chip";
 import ReportFlagButton from "../ReportFlagButton";
-import { CalendarIcon, CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
+import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
+import { CategoryGlyph } from "./CategoryGlyph";
 
 function orgInitials(name: string): string {
 	const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -189,7 +190,7 @@ export default function OpportunityListItem({
 									</>
 								) : (
 									<>
-										<PinIcon className="h-3.5 w-3.5 shrink-0" />
+										<MapPinIcon className="h-3.5 w-3.5 shrink-0" />
 										<span>{item.city}</span>
 									</>
 								)}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import { ChevronDownIcon } from "../icons";
 
 const LANGUAGES = [
 	{ code: "en", short: "EN" },
@@ -40,19 +41,10 @@ export default function LanguageSelector({
 					{current.short}
 				</span>
 				<span className="font-medium">{t(`language.${current.code}`)}</span>
-				<svg
-					className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2.5"
-					stroke="currentColor"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="m19.5 8.25-7.5 7.5-7.5-7.5"
-					/>
-				</svg>
+				<ChevronDownIcon
+					open={open}
+					className={`h-3.5 w-3.5 ${transparent ? "text-white/70" : "text-gray-400"}`}
+				/>
 			</button>
 
 			{open && (

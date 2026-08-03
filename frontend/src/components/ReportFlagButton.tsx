@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ReportContentModal, { type ReportReason } from "./ReportContentModal";
 import { dispatchToast } from "../lib/toastBus";
+import { FlagIcon } from "./icons";
 
 interface ReportFlagButtonProps {
 	targetLabel: string;
@@ -46,20 +47,7 @@ export default function ReportFlagButton({
 					"relative z-20 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
 				}
 			>
-				<svg
-					className="h-3.5 w-3.5"
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="M3 3v18M3 4.5h13.5l-2.25 3.75 2.25 3.75H3"
-					/>
-				</svg>
+				<FlagIcon className="h-3.5 w-3.5" />
 			</button>
 			{showReport && (
 				<ReportContentModal

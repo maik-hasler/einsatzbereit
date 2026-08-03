@@ -13,65 +13,15 @@ import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
-
-// ── Icons ────────────────────────────────────────────────────────────────────
-
-function BrowseIcon() {
-	return (
-		<svg
-			className="h-6 w-6"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-			/>
-		</svg>
-	);
-}
-
-function HandRaiseIcon() {
-	return (
-		<svg
-			className="h-6 w-6"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M10.05 4.575a1.575 1.575 0 1 0-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 0 1 3.15 0v1.5m-3.15 0 .075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 0 1 3.15 0V15M6.9 7.575a1.575 1.575 0 1 0-3.15 0v8.175a6.75 6.75 0 0 0 6.75 6.75h2.018a5.25 5.25 0 0 0 3.712-1.538l1.732-1.732a5.25 5.25 0 0 0 1.538-3.712l.003-2.024a.668.668 0 0 1 .198-.471 1.575 1.575 0 1 0-2.228-2.228 3.818 3.818 0 0 0-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0 1 16.35 15m.002 0h-.002"
-			/>
-		</svg>
-	);
-}
-
-function SparklesIcon() {
-	return (
-		<svg
-			className="h-6 w-6"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-			/>
-		</svg>
-	);
-}
+import {
+	BuildingOfficeIcon,
+	CheckIcon,
+	ClockIcon,
+	HandRaisedIcon,
+	MagnifyingGlassIcon,
+	MapPinIcon,
+	SparklesIcon,
+} from "../components/icons";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -136,19 +86,19 @@ export default function HomePage() {
 	const steps = [
 		{
 			step: 1,
-			icon: <BrowseIcon />,
+			icon: <MagnifyingGlassIcon className="h-6 w-6" />,
 			title: t("landing.step1Title"),
 			desc: t("landing.step1Desc"),
 		},
 		{
 			step: 2,
-			icon: <HandRaiseIcon />,
+			icon: <HandRaisedIcon className="h-6 w-6" />,
 			title: t("landing.step2Title"),
 			desc: t("landing.step2Desc"),
 		},
 		{
 			step: 3,
-			icon: <SparklesIcon />,
+			icon: <SparklesIcon className="h-6 w-6" />,
 			title: t("landing.step3Title"),
 			desc: t("landing.step3Desc"),
 		},
@@ -202,19 +152,7 @@ export default function HomePage() {
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								<svg
-									className="h-4 w-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-									/>
-								</svg>
+								<ClockIcon className="h-4 w-4 text-white" />
 							</div>
 							<div>
 								<p className="text-sm font-semibold text-white">
@@ -230,24 +168,7 @@ export default function HomePage() {
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								<svg
-									className="h-4 w-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-									/>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-									/>
-								</svg>
+								<MapPinIcon className="h-4 w-4 text-white" />
 							</div>
 							<div>
 								<p className="text-sm font-semibold text-white">
@@ -263,19 +184,7 @@ export default function HomePage() {
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								<svg
-									className="h-4 w-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="m4.5 12.75 6 6 9-13.5"
-									/>
-								</svg>
+								<CheckIcon className="h-4 w-4 text-white" />
 							</div>
 							<div>
 								<p className="text-sm font-semibold text-white">
@@ -348,20 +257,7 @@ export default function HomePage() {
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
 						<div className="rounded-card border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
 							<div className="mb-3 flex items-center gap-2">
-								<svg
-									aria-hidden="true"
-									className="h-4 w-4 text-brand-200"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21"
-									/>
-								</svg>
+								<BuildingOfficeIcon className="h-4 w-4 text-brand-200" />
 								<p className="text-sm font-semibold text-white">
 									{t("landing.heroRightCardTitle")}
 								</p>

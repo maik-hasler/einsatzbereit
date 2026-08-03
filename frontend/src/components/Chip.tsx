@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { CloseIcon } from "./icons";
 
 // Shared pill primitive for tags, categories, and status indicators - see
 // issue #1125: the same "tag" concept previously had a different
@@ -63,20 +64,7 @@ export default function Chip({
 					aria-label={removeLabel}
 					className="rounded-full opacity-70 hover:opacity-100"
 				>
-					<svg
-						aria-hidden="true"
-						className="h-3 w-3"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth={2.5}
-						viewBox="0 0 24 24"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M6 18L18 6M6 6l12 12"
-						/>
-					</svg>
+					<CloseIcon className="h-3 w-3" />
 				</button>
 			)}
 		</span>

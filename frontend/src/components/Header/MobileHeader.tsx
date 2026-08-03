@@ -2,6 +2,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import NotificationDropdown from "./NotificationDropdown";
+import { MenuToggleIcon } from "../icons";
 
 // Mobile-width-only strip (notification bell + burger button), grouped so
 // they stay flush-right of <header>. Rendered alongside MobileMenu, which
@@ -47,35 +48,7 @@ export default function MobileHeader({
 				aria-label={t("nav.openMenu")}
 				aria-expanded={mobileOpen}
 			>
-				{mobileOpen ? (
-					<svg
-						className="h-6 w-6"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M6 18 18 6M6 6l12 12"
-						/>
-					</svg>
-				) : (
-					<svg
-						className="h-6 w-6"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="1.5"
-						stroke="currentColor"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-						/>
-					</svg>
-				)}
+				<MenuToggleIcon className="h-6 w-6" open={mobileOpen} />
 			</button>
 		</div>
 	);

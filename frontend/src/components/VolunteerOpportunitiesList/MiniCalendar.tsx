@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { addDays, addMonths, endOfWeek, startOfWeek } from "date-fns";
-import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "../icons";
 import { resolveDateLocale } from "../../lib/format";
 
 function fmtIso(d: Date): string {

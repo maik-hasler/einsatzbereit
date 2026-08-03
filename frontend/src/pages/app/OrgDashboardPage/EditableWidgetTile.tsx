@@ -5,42 +5,12 @@ import {
 	type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { TrashIcon } from "../../../components/QuickActionIcons";
+import {
+	GripDotsIcon,
+	ResizeHandleIcon,
+	TrashIcon,
+} from "../../../components/icons";
 import { WIDGET_CATALOG, type WidgetKey } from "./widgetCatalog";
-
-function GripIcon() {
-	return (
-		<svg
-			className="h-4 w-4"
-			viewBox="0 0 16 16"
-			fill="currentColor"
-			aria-hidden="true"
-		>
-			<circle cx="5" cy="3" r="1.25" />
-			<circle cx="11" cy="3" r="1.25" />
-			<circle cx="5" cy="8" r="1.25" />
-			<circle cx="11" cy="8" r="1.25" />
-			<circle cx="5" cy="13" r="1.25" />
-			<circle cx="11" cy="13" r="1.25" />
-		</svg>
-	);
-}
-
-function ResizeHandleIcon() {
-	return (
-		<svg
-			className="h-3.5 w-3.5"
-			viewBox="0 0 16 16"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.5"
-			strokeLinecap="round"
-			aria-hidden="true"
-		>
-			<path d="M13 3 3 13M13 8 8 13" />
-		</svg>
-	);
-}
 
 export default function EditableWidgetTile({
 	widgetKey,
@@ -180,7 +150,7 @@ export default function EditableWidgetTile({
 							className={`absolute top-2 left-1/2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
-							<GripIcon />
+							<GripDotsIcon />
 						</button>
 					)}
 					{showPlacementControls && !isPlacing && (

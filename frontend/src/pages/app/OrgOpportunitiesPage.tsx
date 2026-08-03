@@ -18,6 +18,7 @@ import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import { PlusIcon } from "../../components/QuickActionIcons";
+import { ArrowRightIcon } from "../../components/icons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
@@ -442,20 +443,7 @@ export default function OrgOpportunitiesPage() {
 							className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
 						>
 							{t("orgOpportunities.manageApplications")}
-							<svg
-								className="h-3.5 w-3.5"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="2"
-								stroke="currentColor"
-								aria-hidden="true"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-								/>
-							</svg>
+							<ArrowRightIcon className="h-3.5 w-3.5" />
 						</Link>
 					)}
 				</div>
