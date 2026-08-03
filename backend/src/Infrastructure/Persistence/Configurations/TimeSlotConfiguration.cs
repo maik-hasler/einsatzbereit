@@ -32,5 +32,7 @@ internal sealed class TimeSlotConfiguration
 		builder.Property(ts => ts.RecurrenceCount);
 
 		builder.HasIndex(ts => ts.SeriesId);
+
+		builder.HasIndex(ts => ts.StartDateTime);
 	}
 }
