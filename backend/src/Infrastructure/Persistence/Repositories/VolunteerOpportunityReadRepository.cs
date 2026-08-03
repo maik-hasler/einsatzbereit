@@ -37,6 +37,11 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		if (!string.IsNullOrWhiteSpace(filter.City))
 		{
+			// Translates to "lower(address_city) LIKE '%x%'" - a leading wildcard a
+			// plain btree index can't use. Backed by a trigram GIN index on
+			// lower(address_city) added via raw SQL in the
+			// AddHotFilterAndSortIndexes migration (#1200) instead of an EF Core
+			// HasIndex, since expression + gin_trgm_ops indexes have no Fluent API.
 			var city = filter.City.ToLower();
 			query = query.Where(vo => vo.Address != null && vo.Address.City.ToLower().Contains(city));
 		}

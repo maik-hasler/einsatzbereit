@@ -18,14 +18,6 @@ internal sealed class AwardAchievementCommandHandler(
 		if (definition is null)
 			return null;
 
-		var alreadyAwarded = await dbContext.HasAchievementAsync(
-			request.UserId,
-			definition.Name,
-			cancellationToken);
-
-		if (alreadyAwarded)
-			return Guid.Empty;
-
 		var achievement = Achievement.Create(
 			request.UserId,
 			definition.Type,
@@ -34,8 +26,8 @@ internal sealed class AwardAchievementCommandHandler(
 			definition.Description,
 			DateTimeOffset.UtcNow);
 
-		await dbContext.Achievements.AddAsync(achievement, cancellationToken);
+		var awarded = await dbContext.TryAwardAchievementAsync(achievement, cancellationToken);
 
-		return achievement.Id.Value;
+		return awarded ? achievement.Id.Value : Guid.Empty;
 	}
 }

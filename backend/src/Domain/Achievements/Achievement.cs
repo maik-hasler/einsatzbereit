@@ -11,7 +11,7 @@ public sealed class Achievement
 
 	public AchievementType Type { get; private set; }
 
-	public string? Key { get; private set; }
+	public string Key { get; private set; }
 
 	public string Name { get; private set; }
 
@@ -31,7 +31,7 @@ public sealed class Achievement
 		AchievementId id,
 		UserId userId,
 		AchievementType type,
-		string? key,
+		string key,
 		string name,
 		string description,
 		DateTimeOffset unlockedAt)
@@ -48,7 +48,7 @@ public sealed class Achievement
 	public static Achievement Create(
 		UserId userId,
 		AchievementType type,
-		string? key,
+		string key,
 		string name,
 		string description,
 		DateTimeOffset unlockedAt) =>

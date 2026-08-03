@@ -9,13 +9,10 @@ namespace Application.UnitTests.Users.RecordActivity;
 public class RecordActivityCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-	private readonly IAggregateRepository<UserStreak, UserStreakId> _userStreaksRepo =
-		Substitute.For<IAggregateRepository<UserStreak, UserStreakId>>();
 	private readonly RecordActivityCommandHandler _sut;
 
 	public RecordActivityCommandHandlerTests()
 	{
-		_dbContext.UserStreaks.Returns(_userStreaksRepo);
 		_sut = new RecordActivityCommandHandler(_dbContext);
 	}
 
@@ -25,7 +22,8 @@ public class RecordActivityCommandHandlerTests
 	{
 		// Arrange
 		var userId = UserId.New();
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		var streak = UserStreak.Create(userId);
+		_dbContext.GetOrCreateUserStreakAsync(userId, cancellationToken).Returns(streak);
 
 		var command = new RecordActivityCommand(userId, IsoYear: 2026, IsoWeek: 10);
 
@@ -34,9 +32,7 @@ public class RecordActivityCommandHandlerTests
 
 		// Assert
 		result.Should().BeTrue();
-		await _userStreaksRepo.Received(1).AddAsync(
-			Arg.Is<UserStreak>(s => s!.UserId == userId && s.ActivityStreak == 1),
-			cancellationToken);
+		streak.ActivityStreak.Should().Be(1);
 	}
 
 	[Test]
@@ -47,7 +43,7 @@ public class RecordActivityCommandHandlerTests
 		var userId = UserId.New();
 		var streak = UserStreak.Create(userId);
 		streak.RecordActivity(2026, 9);
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(userId, cancellationToken).Returns(streak);
 
 		var command = new RecordActivityCommand(userId, IsoYear: 2026, IsoWeek: 10);
 
@@ -56,7 +52,6 @@ public class RecordActivityCommandHandlerTests
 
 		// Assert
 		streak.ActivityStreak.Should().Be(2);
-		await _userStreaksRepo.DidNotReceive().AddAsync(Arg.Any<UserStreak>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -68,7 +63,7 @@ public class RecordActivityCommandHandlerTests
 		var streak = UserStreak.Create(userId);
 		streak.RecordActivity(2026, 5);
 		streak.RecordActivity(2026, 6);
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(userId, cancellationToken).Returns(streak);
 
 		// Week 8 is not consecutive to week 6 - week 7 was skipped entirely.
 		var command = new RecordActivityCommand(userId, IsoYear: 2026, IsoWeek: 8);
@@ -89,7 +84,7 @@ public class RecordActivityCommandHandlerTests
 		var userId = UserId.New();
 		var streak = UserStreak.Create(userId);
 		streak.RecordActivity(2026, 53);
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(userId, cancellationToken).Returns(streak);
 
 		var command = new RecordActivityCommand(userId, IsoYear: 2027, IsoWeek: 1);
 
@@ -109,7 +104,7 @@ public class RecordActivityCommandHandlerTests
 		var userId = UserId.New();
 		var streak = UserStreak.Create(userId);
 		streak.RecordActivity(2026, 10);
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(userId, cancellationToken).Returns(streak);
 
 		var command = new RecordActivityCommand(userId, IsoYear: 2026, IsoWeek: 10);
 

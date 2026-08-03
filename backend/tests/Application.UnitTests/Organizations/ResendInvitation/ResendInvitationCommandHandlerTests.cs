@@ -21,6 +21,8 @@ public class ResendInvitationCommandHandlerTests
 	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> _invitationRepo =
 		Substitute.For<IAggregateRepository<OrganizationInvitation, OrganizationInvitationId>>();
+	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
+		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
 	private readonly ResendInvitationCommandHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
@@ -30,6 +32,9 @@ public class ResendInvitationCommandHandlerTests
 	public ResendInvitationCommandHandlerTests()
 	{
 		_dbContext.OrganizationInvitations.Returns(_invitationRepo);
+		_dbContext.Organizations.Returns(_orgRepo);
+		_orgRepo.FindAsync(DefaultOrgId, Arg.Any<CancellationToken>())
+			.Returns(Organization.Create(DefaultOrgId, "Test Org").Value);
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultRequestingUserId, Arg.Any<CancellationToken>())
 			.Returns(true);
@@ -49,14 +54,14 @@ public class ResendInvitationCommandHandlerTests
 	{
 		var now = DateTimeOffset.UtcNow;
 		var invitation = OrganizationInvitation.Create(
-			orgId, "Test Org", DefaultInviteeId, "Vera", UserId.New(), OrganizationMemberRole.Organizer, now);
+			orgId, DefaultInviteeId, UserId.New(), OrganizationMemberRole.Organizer, now);
 		invitation.Expire(now.AddDays(OrganizationInvitation.ExpiryWindowDays)).ThrowIfFailure();
 		return invitation;
 	}
 
 	private static OrganizationInvitation CreatePendingInvitation(OrganizationId orgId) =>
 		OrganizationInvitation.Create(
-			orgId, "Test Org", DefaultInviteeId, "Vera", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+			orgId, DefaultInviteeId, UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotMemberOfTheOrganization(

@@ -67,6 +67,11 @@ internal sealed class VolunteerOpportunityConfiguration
 			address.Property(a => a.City).HasMaxLength(100).IsRequired();
 			address.Property(a => a.Latitude);
 			address.Property(a => a.Longitude);
+
+			// Supports the bounding-box WHERE clause the radius/box search filters
+			// run before falling back to an in-memory Haversine pass (#1199) -
+			// without it that predicate was always a sequential scan.
+			address.HasIndex(a => new { a.Latitude, a.Longitude });
 		});
 
 		builder.Property(vo => vo.AddressGeocodingFailed)
@@ -125,6 +130,18 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.HasIndex(vo => vo.OrganizationId);
 
+		// Was an unconstrained uuid (#1191) - only 2 FKs existed in the entire
+		// schema. DeleteOrganizationCommandHandler already deletes every
+		// opportunity for an organization (via VolunteerOpportunityDeletionHelper)
+		// before deleting the organization row itself, so this is a
+		// defense-in-depth backstop for any other deletion path, not a behavior
+		// change in the normal flow. engagement.opportunity_id deliberately gets
+		// no equivalent FK - see EngagementConfiguration.
+		builder.HasOne<Organization>()
+			.WithMany()
+			.HasForeignKey(vo => vo.OrganizationId)
+			.OnDelete(DeleteBehavior.Cascade);
+
 		// Covers GetPagedSummariesAsync's landing-page query: filters on Status,
 		// sorts by CreatedOn (#1385).
 		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
@@ -132,6 +149,13 @@ internal sealed class VolunteerOpportunityConfiguration
 		// Supports the Tags.Contains(filter.Tag) array-containment filter (#1385).
 		builder.HasIndex(vo => vo.Tags)
 			.HasMethod("gin");
+
+		// Two organizers editing the same opportunity at once currently
+		// last-write-wins with no error, one organizer's changes silently vanish
+		// (#1196). See EngagementConfiguration for why this is a plain
+		// IsRowVersion() uint rather than the removed UseXminAsConcurrencyToken()
+		// helper.
+		builder.Property<uint>("Version").IsRowVersion();
 
 		builder.Ignore(vo => vo.Events);
 	}

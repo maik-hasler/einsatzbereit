@@ -35,6 +35,7 @@ internal sealed class AchievementConfiguration
 			.IsRequired();
 
 		builder.Property(a => a.Key)
+			.IsRequired()
 			.HasMaxLength(100);
 
 		builder.Property(a => a.Name)
@@ -56,6 +57,9 @@ internal sealed class AchievementConfiguration
 
 		builder.HasIndex(a => a.UserId);
 
-		builder.HasIndex(a => new { a.UserId, a.Name }).IsUnique();
+		// Keyed on the stable catalog Key rather than the display Name (#1198) - a
+		// badge rename in appsettings.json must not defeat award idempotency or
+		// let the same badge be earned twice under two different Name snapshots.
+		builder.HasIndex(a => new { a.UserId, a.Key }).IsUnique();
 	}
 }

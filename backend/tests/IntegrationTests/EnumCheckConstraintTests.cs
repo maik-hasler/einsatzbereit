@@ -130,7 +130,7 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var invitation = OrganizationInvitation.Create(
-			DomainOrganizationId.New(), "Org", UserId.New(), "Invitee", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+			DomainOrganizationId.New(), UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 
 		await using var writeContext = fixture.CreateApplicationDbContext();
 		await writeContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
@@ -149,7 +149,7 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var invitation = OrganizationInvitation.Create(
-			DomainOrganizationId.New(), "Org", UserId.New(), "Invitee", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+			DomainOrganizationId.New(), UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 
 		await using var writeContext = fixture.CreateApplicationDbContext();
 		await writeContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
@@ -164,7 +164,7 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 		CancellationToken cancellationToken)
 	{
 		var invitation = OrganizationInvitation.Create(
-			DomainOrganizationId.New(), "Org", UserId.New(), "Invitee", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+			DomainOrganizationId.New(), UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 
 		await using var writeContext = fixture.CreateApplicationDbContext();
 		await writeContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);

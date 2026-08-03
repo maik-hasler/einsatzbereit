@@ -1,4 +1,5 @@
 using Application.Common.Exceptions;
+using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Organizations.GetOrgInvitations.v1;
 using AwesomeAssertions;
@@ -13,6 +14,7 @@ namespace Application.UnitTests.Organizations.GetOrgInvitations;
 public class GetOrgInvitationsQueryHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly GetOrgInvitationsQueryHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
@@ -23,7 +25,7 @@ public class GetOrgInvitationsQueryHandlerTests
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultRequestingUserId, Arg.Any<CancellationToken>())
 			.Returns(true);
-		_sut = new GetOrgInvitationsQueryHandler(_dbContext);
+		_sut = new GetOrgInvitationsQueryHandler(_dbContext, _keycloakUserService);
 	}
 
 	[Test]
@@ -50,10 +52,14 @@ public class GetOrgInvitationsQueryHandlerTests
 		CancellationToken cancellationToken)
 	{
 		// Arrange
+		var inviteeId = UserId.New();
 		var invitation = OrganizationInvitation.Create(
-			DefaultOrgId, "Test Org", UserId.New(), "Vera", UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+			DefaultOrgId, inviteeId, UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 		_dbContext.GetInvitationsForOrganizationAsync(DefaultOrgId, cancellationToken)
 			.Returns([invitation]);
+		_keycloakUserService
+			.GetDisplayNamesAsync(Arg.Is<IReadOnlyList<Guid>>(ids => ids != null && ids.Contains(inviteeId.Value)), Arg.Any<CancellationToken>())
+			.Returns(new Dictionary<Guid, string> { [inviteeId.Value] = "Vera" });
 		var query = new GetOrgInvitationsQuery(DefaultOrgId, DefaultRequestingUserId);
 
 		// Act

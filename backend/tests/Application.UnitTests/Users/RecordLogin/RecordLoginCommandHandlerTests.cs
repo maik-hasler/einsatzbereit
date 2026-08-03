@@ -11,22 +11,25 @@ namespace Application.UnitTests.Users.RecordLogin;
 public class RecordLoginCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-	private readonly IAggregateRepository<UserStreak, UserStreakId> _streakRepo =
-		Substitute.For<IAggregateRepository<UserStreak, UserStreakId>>();
 	private readonly ISender _sender = Substitute.For<ISender>();
 	private readonly RecordLoginCommandHandler _sut;
 
 	public RecordLoginCommandHandlerTests()
 	{
-		_dbContext.UserStreaks.Returns(_streakRepo);
 		_sut = new RecordLoginCommandHandler(_dbContext, _sender);
+	}
+
+	private void ArrangeNoExistingStreak(UserId userId, CancellationToken cancellationToken)
+	{
+		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		_dbContext.GetOrCreateUserStreakAsync(userId, cancellationToken).Returns(UserStreak.Create(userId));
 	}
 
 	[Test]
 	public async Task Handle_ShouldReturnTrue(CancellationToken cancellationToken)
 	{
 		var userId = UserId.New();
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		ArrangeNoExistingStreak(userId, cancellationToken);
 
 		var result = await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
 
@@ -37,18 +40,18 @@ public class RecordLoginCommandHandlerTests
 	public async Task Handle_ShouldCreateNewStreak_WhenNoStreakExists(CancellationToken cancellationToken)
 	{
 		var userId = UserId.New();
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		ArrangeNoExistingStreak(userId, cancellationToken);
 
 		await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
 
-		await _streakRepo.Received(1).AddAsync(Arg.Any<UserStreak>(), cancellationToken);
+		await _dbContext.Received(1).GetOrCreateUserStreakAsync(userId, cancellationToken);
 	}
 
 	[Test]
 	public async Task Handle_ShouldSendEarlyAdopterAward_WhenUserIsAmongFirst100(CancellationToken cancellationToken)
 	{
 		var userId = UserId.New();
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		ArrangeNoExistingStreak(userId, cancellationToken);
 		_dbContext.CountUserStreaksAsync(cancellationToken).Returns(99);
 
 		await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
@@ -62,7 +65,7 @@ public class RecordLoginCommandHandlerTests
 	public async Task Handle_ShouldNotSendEarlyAdopterAward_WhenUserIsThe101stToLogIn(CancellationToken cancellationToken)
 	{
 		var userId = UserId.New();
-		_dbContext.GetUserStreakAsync(userId, cancellationToken).Returns((UserStreak?)null);
+		ArrangeNoExistingStreak(userId, cancellationToken);
 		_dbContext.CountUserStreaksAsync(cancellationToken).Returns(100);
 
 		await _sut.Handle(new RecordLoginCommand(userId, DateOnly.FromDateTime(DateTime.UtcNow)), cancellationToken);
@@ -83,6 +86,7 @@ public class RecordLoginCommandHandlerTests
 		await _sut.Handle(new RecordLoginCommand(userId, nextDay), cancellationToken);
 
 		await _dbContext.DidNotReceive().CountUserStreaksAsync(Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().GetOrCreateUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		await _sender.DidNotReceive().Send(
 			Arg.Is<AwardAchievementCommand>(c => c!.BadgeKey == "early-adopter"),
 			Arg.Any<CancellationToken>());

@@ -348,8 +348,13 @@ internal sealed class EngagementReadRepository(
 				e.IsCheckedIn,
 				e.FeedbackSubmittedAt.HasValue,
 				e.CreatedOn,
-				TimeSlotStartDateTime: timeSlot?.StartDateTime,
-				TimeSlotEndDateTime: timeSlot?.EndDateTime,
+				// Prefer the live TimeSlot join (freshest - reflects a legitimate
+				// reschedule) but fall back to the engagement's own snapshot once the
+				// slot is gone (opportunity/time slot hard-deleted nulls TimeSlotId via
+				// ON DELETE SET NULL) - otherwise a preserved past engagement would show
+				// no date at all for the shift it was for (#1203).
+				TimeSlotStartDateTime: timeSlot?.StartDateTime ?? e.TimeSlotStartDateTime,
+				TimeSlotEndDateTime: timeSlot?.EndDateTime ?? e.TimeSlotEndDateTime,
 				Location: location,
 				CancellationReason: e.CancellationReason);
 		}).ToList();

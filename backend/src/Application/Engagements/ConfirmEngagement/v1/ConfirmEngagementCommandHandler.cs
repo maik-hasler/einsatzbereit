@@ -74,12 +74,7 @@ internal sealed class ConfirmEngagementCommandHandler(
 		int isoWeek,
 		CancellationToken cancellationToken)
 	{
-		var streak = await dbContext.GetUserStreakAsync(volunteerId, cancellationToken);
-		if (streak is null)
-		{
-			streak = UserStreak.Create(volunteerId);
-			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
-		}
+		var streak = await dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken);
 		streak.RecordActivity(isoYear, isoWeek);
 		streak.RecordConfirmedEngagement();
 

@@ -42,5 +42,11 @@ internal sealed class TimeSlotConfiguration
 		builder.HasIndex(ts => ts.SeriesId);
 
 		builder.HasIndex(ts => ts.StartDateTime);
+
+		// Supports the expiry filter (ts.EndDateTime >= now) used by the public
+		// opportunity list, GetCalendarInfoAsync and EngagementReminderJob's
+		// window filter (#1200) - StartDateTime alone doesn't cover a predicate
+		// on EndDateTime.
+		builder.HasIndex(ts => ts.EndDateTime);
 	}
 }

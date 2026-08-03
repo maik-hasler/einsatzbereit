@@ -34,7 +34,10 @@ internal sealed class OutboxMessage
 		DateTime occurredOnUtc) =>
 		new()
 		{
-			Id = Guid.NewGuid(),
+			// Guid.CreateVersion7() (time-ordered), not Guid.NewGuid() (v4, random)
+			// - matches every other entity's id generation and avoids random
+			// B-tree inserts on the fastest-growing table in the schema (#1201).
+			Id = Guid.CreateVersion7(),
 			Type = domainEvent.GetType().FullName!,
 			Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions),
 			OccurredOnUtc = occurredOnUtc,

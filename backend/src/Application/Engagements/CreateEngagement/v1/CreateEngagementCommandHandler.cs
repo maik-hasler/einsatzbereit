@@ -45,9 +45,10 @@ internal sealed class CreateEngagementCommandHandler(
 		if (alreadySignedUp)
 			throw new ResultFailureException(Error.Conflict("Engagement.AlreadySignedUp", "Conflict: you are already signed up for this opportunity."));
 
+		TimeSlot? timeSlot = null;
 		if (request.TimeSlotId is not null)
 		{
-			var timeSlot = opportunity.TimeSlots.FirstOrDefault(ts => ts.Id == request.TimeSlotId);
+			timeSlot = opportunity.TimeSlots.FirstOrDefault(ts => ts.Id == request.TimeSlotId);
 			if (timeSlot is null)
 				throw new ResultFailureException(Error.Validation("Engagement.TimeSlotNotInOpportunity", "The selected time slot does not belong to this opportunity."));
 
@@ -71,13 +72,13 @@ internal sealed class CreateEngagementCommandHandler(
 		Engagement engagement;
 		if (existingTerminal is not null)
 		{
-			existingTerminal.Reactivate(request.TimeSlotId, request.Message).ThrowIfFailure();
+			existingTerminal.Reactivate(request.TimeSlotId, request.Message, timeSlot?.StartDateTime, timeSlot?.EndDateTime).ThrowIfFailure();
 			engagement = existingTerminal;
 		}
 		else
 		{
 			engagement = request.TimeSlotId is not null
-				? Engagement.CreateSlotSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value)
+				? Engagement.CreateSlotSignUp(request.OpportunityId, request.VolunteerId, request.TimeSlotId.Value, timeSlot?.StartDateTime, timeSlot?.EndDateTime)
 				: Engagement.CreateIndividualContact(request.OpportunityId, request.VolunteerId, request.Message
 					?? throw new ResultFailureException(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."))).GetValueOrThrow();
 

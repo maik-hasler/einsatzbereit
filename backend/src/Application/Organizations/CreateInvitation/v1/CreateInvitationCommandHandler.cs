@@ -40,26 +40,21 @@ internal sealed class CreateInvitationCommandHandler(
 		if (members.Any(m => m.UserId == request.InviteeId.Value))
 			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyMember", "User is already a member of this organization."));
 
-		var alreadyInvited = await dbContext.HasPendingInvitationAsync(
-			request.OrganizationId, request.InviteeId, cancellationToken);
-		if (alreadyInvited)
-			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyInvited", "A pending invitation already exists for this user."));
-
-		var inviteeName = inviteeProfile.FirstName is not null && inviteeProfile.LastName is not null
-			? $"{inviteeProfile.FirstName} {inviteeProfile.LastName}"
-			: inviteeProfile.Username;
-
 		var now = DateTimeOffset.UtcNow;
 		var invitation = OrganizationInvitation.Create(
 			request.OrganizationId,
-			org.Name,
 			request.InviteeId,
-			inviteeName,
 			request.InvitedById,
 			request.Role,
 			now);
 
-		await dbContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
+		// Atomic insert-if-none-pending (#1202) instead of a separate
+		// HasPendingInvitationAsync check followed by an unconditional add - two
+		// concurrent invites for the same (org, invitee) used to both pass the
+		// check and both insert a Pending row, relying on nothing to stop it.
+		var created = await dbContext.TryCreateInvitationAsync(invitation, cancellationToken);
+		if (!created)
+			throw new ResultFailureException(Error.Conflict("OrganizationInvitation.AlreadyInvited", "A pending invitation already exists for this user."));
 
 		var notification = Notification.Create(
 			request.InviteeId,

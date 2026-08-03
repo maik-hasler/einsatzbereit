@@ -28,7 +28,7 @@ public class DeclineInvitationCommandHandlerTests
 	}
 
 	private static OrganizationInvitation CreatePendingInvitation() =>
-		OrganizationInvitation.Create(OrgId, "Test Org", InviteeId, "Invitee Name", InviterId, OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+		OrganizationInvitation.Create(OrgId, InviteeId, InviterId, OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldDeclineInvitationAndSaveChanges_WhenPending(

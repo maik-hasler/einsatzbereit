@@ -126,8 +126,12 @@ internal sealed class NotificationReadRepository(
 			var invitationIdVOs = invitationIds.Select(id => OrganizationInvitationId.Create(id).GetValueOrThrow()).ToList();
 			invitationOrganizationNames = await dbContext.OrganizationInvitationsQuery
 				.Where(i => invitationIdVOs.Contains(i.Id))
-				.Select(i => new { i.Id, i.OrganizationName })
-				.ToDictionaryAsync(x => x.Id.Value, x => x.OrganizationName, cancellationToken);
+				.Join(
+					dbContext.OrganizationsQuery,
+					i => i.OrganizationId,
+					org => org.Id,
+					(i, org) => new { i.Id, org.Name })
+				.ToDictionaryAsync(x => x.Id.Value, x => x.Name, cancellationToken);
 		}
 
 		// Batch-fetch engagements and compute opportunity IDs from them

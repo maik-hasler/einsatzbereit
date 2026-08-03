@@ -12,13 +12,7 @@ internal sealed class RecordActivityCommandHandler(
 		RecordActivityCommand request,
 		CancellationToken cancellationToken = default)
 	{
-		var streak = await dbContext.GetUserStreakAsync(request.UserId, cancellationToken);
-
-		if (streak is null)
-		{
-			streak = UserStreak.Create(request.UserId);
-			await dbContext.UserStreaks.AddAsync(streak, cancellationToken);
-		}
+		var streak = await dbContext.GetOrCreateUserStreakAsync(request.UserId, cancellationToken);
 
 		streak.RecordActivity(request.IsoYear, request.IsoWeek);
 		return true;

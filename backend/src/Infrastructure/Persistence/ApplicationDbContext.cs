@@ -220,12 +220,25 @@ internal sealed class ApplicationDbContext(
 			.ToList();
 	}
 
-	public async Task<bool> HasAchievementAsync(
-		UserId userId,
-		string badgeName,
-		CancellationToken cancellationToken = default) =>
-		await Set<Achievement>()
-			.AnyAsync(a => a.UserId == userId && a.Name == badgeName, cancellationToken);
+	public async Task<bool> TryAwardAchievementAsync(
+		Achievement achievement,
+		CancellationToken cancellationToken = default)
+	{
+		var rows = await Database.ExecuteSqlInterpolatedAsync($@"
+			INSERT INTO achievement (id, user_id, type, key, name, description, unlocked_at, created_on)
+			VALUES (
+				{achievement.Id.Value},
+				{achievement.UserId.Value},
+				{achievement.Type.ToString()},
+				{achievement.Key},
+				{achievement.Name},
+				{achievement.Description},
+				{achievement.UnlockedAt},
+				{DateTimeOffset.UtcNow})
+			ON CONFLICT (user_id, key) DO NOTHING", cancellationToken);
+
+		return rows > 0;
+	}
 
 	public async Task DeleteAchievementsForUserAsync(
 		UserId userId,
@@ -259,6 +272,24 @@ internal sealed class ApplicationDbContext(
 		CancellationToken cancellationToken = default) =>
 		await Set<UserStreak>()
 			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+
+	public async Task<UserStreak> GetOrCreateUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default)
+	{
+		var existing = await Set<UserStreak>()
+			.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+		if (existing is not null)
+			return existing;
+
+		await Database.ExecuteSqlInterpolatedAsync($@"
+			INSERT INTO user_streak (id, user_id, login_streak, activity_streak, total_confirmed_engagements, created_on)
+			VALUES ({UserStreakId.New().Value}, {userId.Value}, 0, 0, 0, {DateTimeOffset.UtcNow})
+			ON CONFLICT (user_id) DO NOTHING", cancellationToken);
+
+		return await Set<UserStreak>().FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken)
+			?? throw new InvalidOperationException($"UserStreak for user '{userId.Value}' was not found immediately after being inserted.");
+	}
 
 	public async Task<int> CountUserStreaksAsync(
 		CancellationToken cancellationToken = default) =>
@@ -476,12 +507,34 @@ internal sealed class ApplicationDbContext(
 				&& (e.Status == EngagementStatus.Withdrawn || e.Status == EngagementStatus.Cancelled),
 				cancellationToken);
 
-	public async Task<bool> HasPendingInvitationAsync(
-		OrganizationId organizationId,
-		UserId inviteeId,
+	public async Task<bool> TryCreateInvitationAsync(
+		OrganizationInvitation invitation,
+		CancellationToken cancellationToken = default)
+	{
+		var rows = await Database.ExecuteSqlInterpolatedAsync($@"
+			INSERT INTO organization_invitation
+				(id, organization_id, invitee_id, invited_by_id, intended_role, status, expires_on, created_on)
+			VALUES (
+				{invitation.Id.Value},
+				{invitation.OrganizationId.Value},
+				{invitation.InviteeId.Value},
+				{invitation.InvitedById.Value},
+				{invitation.IntendedRole.ToString()},
+				{invitation.Status.ToString()},
+				{invitation.ExpiresOn},
+				{DateTimeOffset.UtcNow})
+			ON CONFLICT (organization_id, invitee_id) WHERE status = 'Pending' DO NOTHING", cancellationToken);
+
+		return rows > 0;
+	}
+
+	public async Task<Dictionary<Guid, string>> GetOrganizationNamesAsync(
+		IReadOnlyCollection<OrganizationId> organizationIds,
 		CancellationToken cancellationToken = default) =>
-		await Set<OrganizationInvitation>()
-			.AnyAsync(i => i.OrganizationId == organizationId && i.InviteeId == inviteeId && i.Status == InvitationStatus.Pending, cancellationToken);
+		await Set<Organization>()
+			.Where(o => organizationIds.Contains(o.Id))
+			.Select(o => new { o.Id, o.Name })
+			.ToDictionaryAsync(x => x.Id.Value, x => x.Name, cancellationToken);
 
 	public async Task<List<OrganizationInvitation>> GetInvitationsForOrganizationAsync(
 		OrganizationId organizationId,

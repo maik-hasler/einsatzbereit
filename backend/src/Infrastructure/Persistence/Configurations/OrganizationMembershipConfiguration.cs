@@ -43,6 +43,15 @@ internal sealed class OrganizationMembershipConfiguration : IEntityTypeConfigura
 
 		builder.HasIndex(m => new { m.OrganizationId, m.UserId }).IsUnique();
 
+		// Was an unconstrained uuid (#1191) - DeleteOrganizationCommandHandler
+		// already removes memberships before deleting the organization, so this
+		// is a defense-in-depth backstop for any other deletion path, not a
+		// behavior change in the normal flow.
+		builder.HasOne<Organization>()
+			.WithMany()
+			.HasForeignKey(m => m.OrganizationId)
+			.OnDelete(DeleteBehavior.Cascade);
+
 		builder.Ignore(m => m.Events);
 	}
 }

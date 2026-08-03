@@ -12,8 +12,6 @@ public class AwardAchievementCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IBadgeCatalogService _catalogService = Substitute.For<IBadgeCatalogService>();
-	private readonly IAggregateRepository<Achievement, AchievementId> _achievementRepo =
-		Substitute.For<IAggregateRepository<Achievement, AchievementId>>();
 	private readonly AwardAchievementCommandHandler _sut;
 
 	private static readonly BadgeCatalogEntry TestBadge = new(
@@ -25,7 +23,6 @@ public class AwardAchievementCommandHandlerTests
 
 	public AwardAchievementCommandHandlerTests()
 	{
-		_dbContext.Achievements.Returns(_achievementRepo);
 		_sut = new AwardAchievementCommandHandler(_dbContext, _catalogService);
 	}
 
@@ -42,7 +39,7 @@ public class AwardAchievementCommandHandlerTests
 
 		// Assert
 		result.Should().BeNull();
-		await _achievementRepo.DidNotReceive().AddAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().TryAwardAchievementAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -52,8 +49,8 @@ public class AwardAchievementCommandHandlerTests
 		// Arrange
 		var userId = UserId.New();
 		_catalogService.FindByKey(TestBadge.Key).Returns(TestBadge);
-		_dbContext.HasAchievementAsync(userId, TestBadge.Name, Arg.Any<CancellationToken>())
-			.Returns(false);
+		_dbContext.TryAwardAchievementAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>())
+			.Returns(true);
 		var command = new AwardAchievementCommand(userId, TestBadge.Key);
 
 		// Act
@@ -61,7 +58,9 @@ public class AwardAchievementCommandHandlerTests
 
 		// Assert
 		result.Should().NotBeNull().And.NotBe(Guid.Empty);
-		await _achievementRepo.Received(1).AddAsync(Arg.Any<Achievement>(), cancellationToken);
+		await _dbContext.Received(1).TryAwardAchievementAsync(
+			Arg.Is<Achievement>(a => a != null && a.UserId == userId && a.Key == TestBadge.Key),
+			cancellationToken);
 	}
 
 	[Test]
@@ -71,8 +70,8 @@ public class AwardAchievementCommandHandlerTests
 		// Arrange
 		var userId = UserId.New();
 		_catalogService.FindByKey(TestBadge.Key).Returns(TestBadge);
-		_dbContext.HasAchievementAsync(userId, TestBadge.Name, Arg.Any<CancellationToken>())
-			.Returns(true);
+		_dbContext.TryAwardAchievementAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>())
+			.Returns(false);
 		var command = new AwardAchievementCommand(userId, TestBadge.Key);
 
 		// Act
@@ -80,32 +79,29 @@ public class AwardAchievementCommandHandlerTests
 
 		// Assert
 		result.Should().Be(Guid.Empty);
-		await _achievementRepo.DidNotReceive().AddAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
 	public async Task Handle_ShouldRemainIdempotent_WhenAwardedTwiceInSequence(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - the database, not a prior existence check, is what makes the
+		// second call a no-op (#1205): both calls build a fresh Achievement and
+		// let ON CONFLICT decide.
 		var userId = UserId.New();
 		_catalogService.FindByKey(TestBadge.Key).Returns(TestBadge);
-		_dbContext.HasAchievementAsync(userId, TestBadge.Name, Arg.Any<CancellationToken>())
-			.Returns(false);
+		_dbContext.TryAwardAchievementAsync(Arg.Any<Achievement>(), Arg.Any<CancellationToken>())
+			.Returns(true, false);
 		var firstCommand = new AwardAchievementCommand(userId, TestBadge.Key);
+		var secondCommand = new AwardAchievementCommand(userId, TestBadge.Key);
 
 		// Act
 		var firstResult = await _sut.Handle(firstCommand, cancellationToken);
-
-		// Simulate the achievement now existing after the first award persisted.
-		_dbContext.HasAchievementAsync(userId, TestBadge.Name, Arg.Any<CancellationToken>())
-			.Returns(true);
-		var secondCommand = new AwardAchievementCommand(userId, TestBadge.Key);
 		var secondResult = await _sut.Handle(secondCommand, cancellationToken);
 
 		// Assert
 		firstResult.Should().NotBeNull().And.NotBe(Guid.Empty);
 		secondResult.Should().Be(Guid.Empty);
-		await _achievementRepo.Received(1).AddAsync(Arg.Any<Achievement>(), cancellationToken);
+		await _dbContext.Received(2).TryAwardAchievementAsync(Arg.Any<Achievement>(), cancellationToken);
 	}
 }
