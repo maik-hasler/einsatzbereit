@@ -21,6 +21,7 @@ import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
+import LoadMoreButton from "../components/LoadMoreButton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
 
@@ -60,30 +61,6 @@ export default function AdministrationPage() {
 				<ReportsSection />
 			</section>
 		</>
-	);
-}
-
-function LoadMoreButton({
-	loading,
-	label,
-	onClick,
-}: {
-	loading: boolean;
-	label: string;
-	onClick: () => void;
-}) {
-	const { t } = useTranslation();
-	return (
-		<div className="mt-4 flex justify-center">
-			<button
-				type="button"
-				onClick={onClick}
-				disabled={loading}
-				className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-			>
-				{loading ? t("administration.loadingMore") : label}
-			</button>
-		</div>
 	);
 }
 
@@ -159,6 +136,7 @@ function OrganizationsSection() {
 					<LoadMoreButton
 						loading={loadingMore}
 						label={t("administration.organizations.loadMore")}
+						loadingLabel={t("administration.loadingMore")}
 						onClick={loadMore}
 					/>
 				))}
@@ -424,6 +402,7 @@ function UsersSection() {
 							<LoadMoreButton
 								loading={loadingMore}
 								label={t("administration.users.loadMore")}
+								loadingLabel={t("administration.loadingMore")}
 								onClick={loadMore}
 							/>
 						))}
@@ -676,6 +655,7 @@ function ReportsSection() {
 					<LoadMoreButton
 						loading={loadingMore}
 						label={t("administration.reports.loadMore")}
+						loadingLabel={t("administration.loadingMore")}
 						onClick={loadMore}
 					/>
 				))}

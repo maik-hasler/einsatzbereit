@@ -18,6 +18,7 @@ import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
+import LoadMoreButton from "../../components/LoadMoreButton";
 import { PlusIcon } from "../../components/QuickActionIcons";
 import { ArrowRightIcon } from "../../components/icons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
@@ -482,17 +483,12 @@ export default function OrgOpportunitiesPage() {
 							onRetry={onRetryLoadMore}
 						/>
 					) : (
-						<div className="mt-4 flex justify-center">
-							<button
-								onClick={onLoadMore}
-								disabled={loadingMore}
-								className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-							>
-								{loadingMore
-									? t("orgOpportunities.loading")
-									: t("orgOpportunities.loadMore")}
-							</button>
-						</div>
+						<LoadMoreButton
+							loading={loadingMore}
+							label={t("orgOpportunities.loadMore")}
+							loadingLabel={t("orgOpportunities.loading")}
+							onClick={onLoadMore}
+						/>
 					))}
 			</section>
 		);
