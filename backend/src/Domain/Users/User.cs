@@ -151,6 +151,11 @@ public sealed class User
 		return Result.Success();
 	}
 
+	// Raises UserDeletedDomainEvent (#1218) so the Keycloak account deletion -
+	// irreversible and external - runs only after the local hard-delete commits,
+	// via the outbox, instead of racing an early return from this handler call.
+	public void Delete() => AddEvent(new UserDeletedDomainEvent(Id));
+
 	public Result Restore()
 	{
 		if (!IsDeleted)

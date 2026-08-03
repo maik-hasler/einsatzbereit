@@ -1,5 +1,4 @@
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Common.Storage;
 using Application.Users.DeleteMyAccount.v1;
@@ -18,7 +17,7 @@ public class DeleteMyAccountCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<User, UserId> _usersRepo = Substitute.For<IAggregateRepository<User, UserId>>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
+	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IFileStorageService _fileStorage = Substitute.For<IFileStorageService>();
 	private readonly DeleteMyAccountCommandHandler _sut;
 
@@ -33,7 +32,7 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Organization>());
-		_sut = new DeleteMyAccountCommandHandler(_dbContext, _keycloakUserService, _fileStorage);
+		_sut = new DeleteMyAccountCommandHandler(_dbContext, _unitOfWork, _fileStorage);
 	}
 
 	private static Engagement CreateEngagementFor(UserId volunteerId) =>
@@ -117,10 +116,12 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldSkipAvatarDeletionAndUserRowDelete_ButStillDeleteKeycloakAccount_WhenLocalUserRowIsMissing(
+	public async Task Handle_ShouldQueueUserDeletedDomainEventOnAPlaceholder_WhenLocalUserRowIsMissing(
 		CancellationToken cancellationToken)
 	{
 		// Arrange - FindAsync is unconfigured and defaults to null, simulating a missing local user row.
+		User? placeholder = null;
+		await _usersRepo.AddAsync(Arg.Do<User>(u => placeholder = u), cancellationToken);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -128,13 +129,19 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
-		// The Keycloak deletion runs unconditionally, unlike the avatar cleanup and user-row delete above.
-		await _keycloakUserService.Received(1).DeleteUserAsync(DefaultUserId.Value, cancellationToken);
+		// Issue #1218: the Keycloak deletion (raised here as UserDeletedDomainEvent, dispatched
+		// post-commit via the outbox) still runs unconditionally, unlike the avatar cleanup above -
+		// but since there is no local User row to carry the event, a throw-away placeholder is
+		// added and immediately queued for removal so it nets to zero rows in `users`.
+		placeholder.Should().NotBeNull();
+		placeholder!.Id.Should().Be(DefaultUserId);
+		placeholder.Events.Should().ContainSingle(e => e is UserDeletedDomainEvent);
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
+		_usersRepo.Received(1).Delete(placeholder);
 	}
 
 	[Test]
-	public async Task Handle_ShouldDeleteTheKeycloakAccount_AsTheFinalStep(
+	public async Task Handle_ShouldRaiseUserDeletedDomainEvent_AfterAllOtherMutations(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -145,8 +152,10 @@ public class DeleteMyAccountCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
-		await _keycloakUserService.Received(1).DeleteUserAsync(DefaultUserId.Value, cancellationToken);
+		// Assert - #1218: the command handler no longer calls Keycloak directly; it raises the
+		// domain event that UserDeletedDomainEventHandler consumes post-commit instead.
+		user.Events.Should().ContainSingle(e => e is UserDeletedDomainEvent);
+		((UserDeletedDomainEvent)user.Events.Single()).UserId.Should().Be(DefaultUserId);
 	}
 
 	[Test]
@@ -247,7 +256,7 @@ public class DeleteMyAccountCommandHandlerTests
 		await _dbContext.DidNotReceive().DeleteUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-		await _keycloakUserService.DidNotReceive().DeleteUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _usersRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -293,6 +302,6 @@ public class DeleteMyAccountCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _dbContext.Received(1).RemoveMembershipsForUserAsync(DefaultUserId, cancellationToken);
-		await _keycloakUserService.Received(1).DeleteUserAsync(DefaultUserId.Value, cancellationToken);
+		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 }

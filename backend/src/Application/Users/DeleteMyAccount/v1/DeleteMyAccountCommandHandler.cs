@@ -1,5 +1,4 @@
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
@@ -10,7 +9,7 @@ namespace Application.Users.DeleteMyAccount.v1;
 
 internal sealed class DeleteMyAccountCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakUserService keycloakUserService,
+	IUnitOfWork unitOfWork,
 	IFileStorageService fileStorage)
 	: ICommandHandler<DeleteMyAccountCommand, bool>
 {
@@ -50,10 +49,28 @@ internal sealed class DeleteMyAccountCommandHandler(
 				}
 			}
 
+			user.Delete();
 			dbContext.Users.Delete(user);
 		}
-
-		await keycloakUserService.DeleteUserAsync(request.UserId.Value, cancellationToken);
+		else
+		{
+			// No local profile row exists - User.Create() only runs lazily, from the
+			// first profile-touching endpoint (avatar/bio/notification-prefs/...), so a
+			// Keycloak-only account can reach here with nothing to find. The Keycloak
+			// deletion (#1218) still must run, and still only after this transaction
+			// commits - but there is no tracked User to carry UserDeletedDomainEvent
+			// through ConvertDomainEventsToOutboxMessagesInterceptor. Add()-then-Delete()
+			// in one tick would just detach the entry before the interceptor ever sees it
+			// (EF collapses Added+Removed straight to Detached), so this placeholder is
+			// persisted long enough - one explicit SaveChangesAsync - for the interceptor
+			// to queue the event, then removed; net rows in `users` is still zero, all
+			// inside the one transaction TransactionPipelineBehavior wraps this command in.
+			var placeholder = User.Create(request.UserId);
+			placeholder.Delete();
+			await dbContext.Users.AddAsync(placeholder, cancellationToken);
+			await unitOfWork.SaveChangesAsync(cancellationToken);
+			dbContext.Users.Delete(placeholder);
+		}
 
 		return true;
 	}
