@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronIcon, ChipXIcon, CheckMiniIcon } from "./icons";
+import { useLayoutEffect, useRef, useState } from "react";
+import {
+	CheckIcon,
+	CheckIconSolid,
+	ChevronDownIcon,
+	CloseIcon,
+} from "../icons";
+
+const EDGE_MARGIN = 8;
 
 export function DropdownOption({
 	label,
@@ -19,18 +26,7 @@ export function DropdownOption({
 			}`}
 		>
 			{selected && (
-				<svg
-					className="h-4 w-4 shrink-0 text-brand-600"
-					viewBox="0 0 20 20"
-					fill="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						fillRule="evenodd"
-						d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-						clipRule="evenodd"
-					/>
-				</svg>
+				<CheckIconSolid className="h-4 w-4 shrink-0 text-brand-600" />
 			)}
 			{label}
 		</button>
@@ -62,7 +58,7 @@ export function MultiDropdownOption({
 						: "border-gray-300 bg-white"
 				}`}
 			>
-				{selected && <CheckMiniIcon />}
+				{selected && <CheckIcon className="h-2.5 w-2.5 text-white" />}
 			</span>
 			{label}
 		</button>
@@ -92,13 +88,30 @@ export default function FilterDropdown({
 }) {
 	const active = !!displayValue;
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [alignRight, setAlignRight] = useState(false);
+	const panelRef = useRef<HTMLDivElement>(null);
+	const [panelLeft, setPanelLeft] = useState(0);
 
-	useEffect(() => {
-		if (isOpen && containerRef.current) {
-			const rect = containerRef.current.getBoundingClientRect();
-			setAlignRight(rect.left + 300 > window.innerWidth - 8);
-		}
+	useLayoutEffect(() => {
+		const container = containerRef.current;
+		const panel = panelRef.current;
+		if (!isOpen || !container || !panel) return;
+
+		const containerRect = container.getBoundingClientRect();
+		const panelWidth = panel.getBoundingClientRect().width;
+
+		// Prefer aligning the panel's left edge with the trigger's left edge,
+		// flipping to the trigger's right edge only if that would overflow the
+		// viewport - then clamp so neither edge can end up off-screen.
+		const leftAligned = 0;
+		const rightAligned = containerRect.width - panelWidth;
+		const overflowsRight =
+			containerRect.left + panelWidth > window.innerWidth - EDGE_MARGIN;
+		const preferred = overflowsRight ? rightAligned : leftAligned;
+
+		const minLeft = EDGE_MARGIN - containerRect.left;
+		const maxLeft =
+			window.innerWidth - EDGE_MARGIN - panelWidth - containerRect.left;
+		setPanelLeft(Math.min(Math.max(preferred, minLeft), maxLeft));
 	}, [isOpen]);
 
 	return (
@@ -117,9 +130,9 @@ export default function FilterDropdown({
 					data-testid={testId}
 					onClick={onToggle}
 					aria-expanded={isOpen}
-					className={`flex items-center gap-1.5 whitespace-nowrap py-1.5 text-sm transition-colors ${
+					className={`flex items-center gap-1.5 py-1.5 text-sm whitespace-nowrap transition-colors ${
 						active
-							? "pl-3 pr-1.5 font-medium text-brand-700"
+							? "pr-1.5 pl-3 font-medium text-brand-700"
 							: "px-3 text-gray-600 hover:bg-gray-50"
 					}`}
 				>
@@ -131,9 +144,7 @@ export default function FilterDropdown({
 					</span>
 					<span>{active ? displayValue : label}</span>
 					{!active && (
-						<ChevronIcon
-							className={`h-3 w-3 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
-						/>
+						<ChevronDownIcon open={isOpen} className="h-3 w-3 text-gray-400" />
 					)}
 				</button>
 				{active && (
@@ -143,13 +154,19 @@ export default function FilterDropdown({
 						aria-label={clearAriaLabel}
 						className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
 					>
-						<ChipXIcon />
+						<CloseIcon className="h-3 w-3" />
 					</button>
 				)}
 			</div>
 			{isOpen && (
 				<div
-					className={`absolute ${alignRight ? "right-0" : "left-0"} top-full z-[200] mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal`}
+					ref={panelRef}
+					style={{ left: panelLeft }}
+					// Below Header.tsx's sticky z-40 - this panel's ancestors (the
+					// filter bar, <main>) are all unpositioned, so its z-index
+					// competes with the header directly at the document root instead
+					// of nesting inside it (#1119).
+					className="absolute top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-modal"
 				>
 					{children}
 				</div>

@@ -319,7 +319,7 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 	// Mints a real Keycloak token via direct grant (ROPC), bypassing the
 	// interactive login UI - see AuthHelper.FastSignInAsync, which seeds this
-	// into the browser's localStorage instead of driving Keycloak's login form.
+	// into the browser's sessionStorage instead of driving Keycloak's login form.
 	public async Task<KeycloakSession> SignInAsync(string username, string password)
 	{
 		using var client = _app.CreateHttpClient("keycloak");

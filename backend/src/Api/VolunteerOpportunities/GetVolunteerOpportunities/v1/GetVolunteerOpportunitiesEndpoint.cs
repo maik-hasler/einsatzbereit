@@ -1,10 +1,12 @@
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Messaging;
 using Application.Common.Pagination;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 
@@ -21,6 +23,7 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.VolunteerOpportunityListing)
 			.MapToApiVersion(1);
 	}
 
@@ -46,8 +49,8 @@ internal sealed class GetVolunteerOpportunitiesEndpoint
 		if (request.CenterLongitude is < -180 or > 180)
 			return Results.Problem("CenterLongitude must be between -180 and 180.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.RadiusKm is <= 0)
-			return Results.Problem("RadiusKm must be greater than zero.", statusCode: StatusCodes.Status400BadRequest);
+		if (request.RadiusKm is <= 0 or > 500)
+			return Results.Problem("RadiusKm must be between 1 and 500.", statusCode: StatusCodes.Status400BadRequest);
 
 		if (!string.IsNullOrWhiteSpace(request.Occurrence)
 			&& (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence) || !Enum.IsDefined(occurrence)))

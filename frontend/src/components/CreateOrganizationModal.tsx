@@ -14,6 +14,8 @@ import type { OrganizationFormValues } from "../lib/organizationFormSchema";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
+import ImageCropModal from "./ImageCropModal";
+import FileUploadButton from "./FileUploadButton";
 
 interface Props {
 	onClose: () => void;
@@ -42,6 +44,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = useState<string | null>(null);
 	const [logoError, setLogoError] = useState<string | null>(null);
+	const [croppingLogoFile, setCroppingLogoFile] = useState<File | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const nameFieldRef = useRef<HTMLDivElement>(null);
 	const [loading, setLoading] = useState(false);
@@ -66,8 +69,13 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			return;
 		}
 		setLogoError(null);
-		setLogoFile(file);
-		setLogoPreview(URL.createObjectURL(file));
+		setCroppingLogoFile(file);
+	}
+
+	function handleLogoCropped(croppedFile: File) {
+		setCroppingLogoFile(null);
+		setLogoFile(croppedFile);
+		setLogoPreview(URL.createObjectURL(croppedFile));
 	}
 
 	const onSubmit = async (values: OrganizationFormValues) => {
@@ -124,6 +132,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 			maxWidth="max-w-md"
 			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-card bg-white shadow-modal"
 			initialFocusRef={nameFieldRef}
+			suspended={croppingLogoFile !== null}
 		>
 			<h2
 				id="create-org-dialog-title"
@@ -144,6 +153,8 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 								<img
 									src={logoPreview}
 									alt=""
+									width={56}
+									height={56}
 									className="h-14 w-14 rounded-lg object-contain ring-1 ring-gray-200"
 								/>
 							) : (
@@ -152,19 +163,12 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 								</span>
 							)}
 							<div>
-								<label
-									htmlFor="create-org-logo-upload"
-									className="cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-								>
-									{t("orgSettings.logoUpload")}
-								</label>
-								<input
-									ref={logoInputRef}
+								<FileUploadButton
 									id="create-org-logo-upload"
-									type="file"
+									label={t("orgSettings.logoUpload")}
 									accept="image/jpeg,image/png,image/webp"
-									className="sr-only"
 									onChange={handleLogoChange}
+									inputRef={logoInputRef}
 								/>
 								<p className="mt-1 text-xs text-gray-500">
 									{t("orgSettings.logoHint")}
@@ -449,6 +453,19 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					</Button>
 				</div>
 			</form>
+
+			{croppingLogoFile && (
+				<ImageCropModal
+					file={croppingLogoFile}
+					aspectRatio={1}
+					shape="circle"
+					outputWidth={320}
+					outputHeight={320}
+					title={t("orgSettings.logoUpload")}
+					onCancel={() => setCroppingLogoFile(null)}
+					onCropped={handleLogoCropped}
+				/>
+			)}
 		</Modal>
 	);
 }

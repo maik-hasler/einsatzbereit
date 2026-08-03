@@ -39,8 +39,24 @@ public class MyEngagementsScopeTabsTests(AspireFixture fixture) : VisualTestBase
 
 		// Default "Current & Upcoming" scope: the still-pending engagement is
 		// visible, the withdrawn one is not.
-		await Expect(Page.GetByText("ScopeTabsUpcoming").First)
-			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		//
+		// The pending engagement has no time slot (IndividualContact), and
+		// EngagementReadRepository.GetByVolunteerAsync orders the "Current &
+		// Upcoming" scope by time-slot start (entries with none sort last) - so on
+		// a shared session where other concurrently-running tests have already
+		// given vera their own time-slotted upcoming engagements, it can land past
+		// the first (10-item) page. Click "Load more" until it shows up or there
+		// is nothing left to load - see MyEngagementsTests.cs.
+		var upcomingText = Page.GetByText("ScopeTabsUpcoming").First;
+		var loadMoreButton = Page.Locator("#activity").GetByRole(AriaRole.Button, new() { Name = "Load more" });
+		var loadMoreDeadline = DateTimeOffset.UtcNow.AddSeconds(60);
+		while (!await upcomingText.IsVisibleAsync() && await loadMoreButton.IsVisibleAsync() && DateTimeOffset.UtcNow < loadMoreDeadline)
+		{
+			await loadMoreButton.ClickAsync();
+			await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		}
+
+		await Expect(upcomingText).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(Page.GetByText("ScopeTabsPast")).Not.ToBeVisibleAsync();
 
 		// Switching to "Past" flips which one is visible.

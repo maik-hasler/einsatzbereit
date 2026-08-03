@@ -1,7 +1,6 @@
 using Application.Common.Authorization;
 using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -11,19 +10,16 @@ using Domain.Common;
 using Domain.Notifications;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging;
 
 namespace Application.VolunteerOpportunities.UpdateVolunteerOpportunity.v1;
 
 internal sealed class UpdateVolunteerOpportunityCommandHandler(
 	IApplicationDbContext dbContext,
 	IEngagementReadRepository engagementReadRepository,
-	IGeocodingService geocodingService,
 	IPinGenerator pinGenerator,
 	IKeycloakUserService keycloakUserService,
 	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	ILogger<UpdateVolunteerOpportunityCommandHandler> logger)
+	IEmailTemplateRenderer emailTemplateRenderer)
 	: ICommandHandler<UpdateVolunteerOpportunityCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -47,26 +43,16 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 			var engagements = await engagementReadRepository.GetByOpportunityAsync(
 				opportunityId, cancellationToken);
 
-			var hasActiveEngagements = engagements.Any(e =>
-				e.Status is "Pending" or "Confirmed");
-
-			if (hasActiveEngagements)
+			// Widened from "Pending or Confirmed" to any engagement at all (#1145):
+			// switching away from ScheduledSlots clears every time slot
+			// (VolunteerOpportunity.SwitchParticipationType), which cascade-deletes
+			// the slot rows and sets Withdrawn/Cancelled/checked-in-and-completed
+			// engagements' TimeSlotId to null too, silently erasing their date -
+			// not just the active ones the old guard checked.
+			if (engagements.Count > 0)
 				throw new ResultFailureException(Error.Conflict(
 					"VolunteerOpportunity.ParticipationTypeLocked",
-					"ParticipationType cannot be changed while active engagements exist."));
-		}
-
-		var address = request.Address;
-
-		// Only re-geocode when the address text actually changed (or is newly added
-		// after switching away from remote) - re-running it on every unrelated edit
-		// would re-block a save on a legacy address that was already accepted before
-		// NotFound became a hard validation error.
-		if (!request.IsRemote && address is not null)
-		{
-			address = AddressTextChanged(opportunity.Address, address)
-				? (await GeocodingHelper.EnrichAsync(address, geocodingService, logger, cancellationToken)).GetValueOrThrow()
-				: opportunity.Address;
+					"ParticipationType cannot be changed while any engagement exists for this opportunity."));
 		}
 
 		// Snapshot material fields before mutation to detect meaningful changes.
@@ -76,7 +62,13 @@ internal sealed class UpdateVolunteerOpportunityCommandHandler(
 
 		opportunity.Rename(request.Title).ThrowIfFailure();
 		opportunity.ChangeDescription(request.Description).ThrowIfFailure();
-		opportunity.Relocate(request.IsRemote, address).ThrowIfFailure();
+
+		// Relocate raises VolunteerOpportunityGeocodingRequestedDomainEvent itself
+		// when the address text actually changed (or is newly added after
+		// switching away from remote), and skips re-resolving an unchanged
+		// address (see GeocodeVolunteerOpportunityAddressHandler for the
+		// out-of-band geocoding attempt this triggers - #1388).
+		opportunity.Relocate(request.IsRemote, request.Address).ThrowIfFailure();
 		opportunity.Reschedule(request.Occurrence);
 		opportunity.Recategorize(request.Category, request.Tags);
 		opportunity.ChangeCheckInMethod(request.CheckInMethod, pinGenerator, request.CheckInPin).ThrowIfFailure();

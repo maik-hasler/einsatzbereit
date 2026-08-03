@@ -73,7 +73,7 @@ internal static class OpportunityNotificationHelper
 					["OpportunityTitle"] = opportunityTitle ?? string.Empty,
 				});
 
-			messages.Add(new EmailMessage(volunteer.Email, content.Subject, content.Body));
+			messages.Add(new EmailMessage(volunteer.Email, content.Subject, content.Body, volunteerId.ToString()));
 		}
 
 		await emailService.SendBatchAsync(messages, cancellationToken);

@@ -76,7 +76,7 @@ public class UserDataExportTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task ExportMyData_ShouldReturnEmptyCollectionsAndNoActivity_ForABrandNewUser(
+	public async Task ExportMyData_ShouldReturnNoActivityButAnEarlyAdopterAchievement_ForABrandNewUser(
 		CancellationToken cancellationToken)
 	{
 		var (_, ephemeralUsername, ephemeralPassword) =
@@ -88,9 +88,12 @@ public class UserDataExportTests(IntegrationTestFixture fixture)
 		export.Profile.Username.Should().Be(ephemeralUsername);
 		export.Profile.Bio.Should().BeNull();
 		export.Engagements.Should().BeEmpty();
-		export.Achievements.Should().BeEmpty();
 		// This is the first ever authenticated request for this brand new username, so
-		// LoginStreakMiddleware's once-per-day dedup is guaranteed not to have fired for it yet.
+		// LoginStreakMiddleware's once-per-day dedup is guaranteed not to have fired for it yet,
+		// and Respawn wiped user_streak before this test - meaning this user is deterministically
+		// among the first 100 to log in against this reset DB, so the "early-adopter" achievement
+		// (#1000) is deterministically awarded rather than flaky.
+		export.Achievements.Should().ContainSingle(a => a.Key == "early-adopter");
 		export.Streak.LoginStreak.Should().Be(1);
 		export.Streak.ActivityStreak.Should().Be(0);
 		export.OrganizationMemberships.Should().BeEmpty();

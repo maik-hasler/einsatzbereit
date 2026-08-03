@@ -14,6 +14,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
+import { resolveDateLocale } from "../../lib/format";
 
 export default function OrgMembersPage() {
 	const { org } = useOutletContext<OrgAppContext>();
@@ -21,7 +22,7 @@ export default function OrgMembersPage() {
 	const api = useApiClient();
 	const auth = useAuth();
 	const navigate = useNavigate();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 	const currentUserId = auth.user?.profile?.sub;
 
 	const [members, setMembers] = useState(org.members);
@@ -62,7 +63,7 @@ export default function OrgMembersPage() {
 	function handleMemberSearchChange(value: string) {
 		setMemberSearch(value);
 		if (memberSearchTimer.current) clearTimeout(memberSearchTimer.current);
-		if (value.length < 2) {
+		if (value.length < 4) {
 			setMemberCandidates([]);
 			return;
 		}
@@ -278,9 +279,11 @@ export default function OrgMembersPage() {
 												? `${candidate.firstName} ${candidate.lastName}`
 												: candidate.username}
 										</p>
-										<p className="truncate text-xs text-gray-500">
-											{candidate.email}
-										</p>
+										{candidate.firstName && candidate.lastName && (
+											<p className="truncate text-xs text-gray-500">
+												@{candidate.username}
+											</p>
+										)}
 									</div>
 									<Button
 										type="button"
@@ -295,7 +298,7 @@ export default function OrgMembersPage() {
 							))}
 						</ul>
 					)}
-					{memberSearch.length >= 2 &&
+					{memberSearch.length >= 4 &&
 						!memberSearchLoading &&
 						memberCandidates.length === 0 && (
 							<p className="mt-1 text-xs text-gray-500">

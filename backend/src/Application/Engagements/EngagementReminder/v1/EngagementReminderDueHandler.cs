@@ -84,24 +84,31 @@ internal sealed class EngagementReminderDueHandler(
 		// SendBatchAsync with a single message (rather than SendAsync) so a failed send
 		// is observable as a bool - SendAsync never throws and never reports outcome,
 		// which would make it impossible to know whether to let the outbox retry.
-		var results = await emailService.SendBatchAsync([new EmailMessage(user.Email, subject, body)], cancellationToken);
+		var results = await emailService.SendBatchAsync(
+			[new EmailMessage(user.Email, subject, body, notification.EngagementId.Value.ToString())], cancellationToken);
 		if (!results[0])
 			throw new InvalidOperationException(
 				$"Failed to send 24h reminder email for engagement {notification.EngagementId.Value}");
 
 		logger.LogInformation(
-			"Sent 24h reminder to {Email} for engagement {EngagementId}",
-			user.Email,
+			"Sent 24h reminder for engagement {EngagementId}",
 			notification.EngagementId.Value);
 	}
 
 	// Mirrors the frontend's own locale mapping (frontend/src/lib/format.ts:
 	// "de" -> "de-DE", else "en-GB") so reminder emails read naturally in
 	// either language instead of leaking an English day/month name.
+	//
+	// No per-opportunity timezone is stored (see ConfirmEngagementCommandHandler's
+	// own ResolveTimeZone), so - like every other server-side fallback in this
+	// codebase - this defaults to Europe/Berlin rather than .ToLocalTime(), which
+	// would resolve against the container's clock (UTC, since no TZ is set in the
+	// API's Dockerfile) and announce the wrong hour to the volunteer.
 	private static string FormatStart(DateTimeOffset startDateTime, string language)
 	{
+		var berlinTime = TimeZoneInfo.ConvertTime(startDateTime, TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin"));
 		var culture = CultureInfo.GetCultureInfo(language == "de" ? "de-DE" : "en-GB");
 		var pattern = language == "de" ? "dddd, d. MMMM yyyy 'um' HH:mm" : "dddd, d. MMMM yyyy 'at' HH:mm";
-		return startDateTime.ToLocalTime().ToString(pattern, culture);
+		return berlinTime.ToString(pattern, culture);
 	}
 }

@@ -105,7 +105,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher
-		// into a single page - Profile Details, Badges, and My Engagements all
+		// into a single page - Profile Details, Badges, and My Sign-ups all
 		// render together here.
 		var frontend = Fixture.GetEndpoint("frontend");
 
@@ -122,7 +122,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #794: Edit/Save/Cancel moved from inline buttons into the header's
 		// quick actions - the read-only scan above never opens the edit form,
-		// so scan it separately here. Also asserts the Badges/My Engagements
+		// so scan it separately here. Also asserts the Badges/My Sign-ups
 		// sections stay mounted and visible alongside the open edit form,
 		// since they no longer live behind a separate tab.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -135,7 +135,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
 
 		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Badges" })).ToBeVisibleAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Engagements" })).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "My Sign-ups" })).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);
@@ -182,10 +182,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var userId = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.profile?.sub) return entry.profile.sub;
 				}
 			}
@@ -212,10 +212,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
 
 		var userId = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.profile?.sub) return entry.profile.sub;
 				}
 			}
@@ -496,16 +496,16 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	private async Task<string> GetAccessTokenAsync()
 	{
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 		return token!;
 	}
 
@@ -573,7 +573,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// widgetCatalog.ts), so a fresh org's dashboard scan above never
 		// renders them for real - only AddWidgetModal's static mockup preview
 		// gets scanned incidentally as part of that dialog. Add both here so
-		// their actual rendered content (the opportunity <select> + scan
+		// their actual rendered content (the opportunity dropdown + scan
 		// button, and the settings shortcut tile) gets its own axe pass.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
@@ -596,10 +596,94 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_EmptyOpportunitiesCreateOpportunityCta_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1122: UpcomingOpportunitiesWidget and QuickCheckInWidget's empty
+		// states gained a "Create one" CTA (EmptyState's new compact
+		// variant) that opens CreateVolunteerOpportunityModal directly from
+		// the widget - worded distinctly from CreateOpportunityWidget's own
+		// "Create opportunity" button (also on this dashboard by default)
+		// so the two don't collide as duplicate accessible names. Olaf's
+		// seeded org (used by NavigateToOrgAppDashboardAsOlafAsync above)
+		// almost certainly already has opportunities by the time this suite
+		// runs - a fresh, otherwise-untouched org is the only deterministic
+		// way to reach this branch.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"EmptyDashA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = Guid.Parse(org.GetProperty("id").GetProperty("value").GetString()!);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, organizationId);
+
+		var upcomingWidget = Page.GetByTestId("widget-tile-UpcomingOpportunities");
+		await Expect(upcomingWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var upcomingCreateButton = upcomingWidget.GetByRole(
+			AriaRole.Button, new() { Name = "Create one" });
+		await Expect(upcomingCreateButton).ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+
+		await upcomingCreateButton.ClickAsync();
+		var upcomingDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(upcomingDialog).ToBeVisibleAsync();
+
+		var upcomingDialogResult = await Page.RunAxe();
+		AssertNoViolations(upcomingDialogResult);
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(upcomingDialog).Not.ToBeVisibleAsync();
+
+		// QuickCheckIn isn't in DEFAULT_LAYOUT (see widgetCatalog.ts) - add it
+		// via the picker, save to leave edit mode (widget content is inert
+		// while editing - see EditableWidgetTile), then reach its own,
+		// separately-wired empty-state CTA.
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Page.GetByTestId("quick-action-add-widget").ClickAsync();
+		var addWidgetDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(addWidgetDialog).ToBeVisibleAsync();
+		await addWidgetDialog.GetByTestId("add-widget-option-QuickCheckIn").ClickAsync();
+		await addWidgetDialog.GetByTestId("add-widget-done").ClickAsync();
+		await Expect(addWidgetDialog).Not.ToBeVisibleAsync();
+
+		await Page.GetByTestId("quick-action-save").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-edit")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var quickCheckInWidget = Page.GetByTestId("widget-tile-QuickCheckIn");
+		await Expect(quickCheckInWidget).ToBeVisibleAsync();
+
+		var quickCheckInCreateButton = quickCheckInWidget.GetByRole(
+			AriaRole.Button, new() { Name = "Create one" });
+		await Expect(quickCheckInCreateButton).ToBeVisibleAsync();
+
+		await quickCheckInCreateButton.ClickAsync();
+		var quickCheckInDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(quickCheckInDialog).ToBeVisibleAsync();
+
+		var quickCheckInDialogResult = await Page.RunAxe();
+		AssertNoViolations(quickCheckInDialogResult);
+
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(quickCheckInDialog).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// Engagement management is nested in the org app (#751) - reachable
-		// from the Opportunities page's "Manage applications" link, not from
+		// from the Opportunities page's "Manage sign-ups" link, not from
 		// the public opportunity detail page anymore.
 		var frontend = Fixture.GetEndpoint("frontend");
 		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
@@ -608,7 +692,7 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" });
 		try
 		{
 			await manageLink.First.WaitForAsync(new() { Timeout = 10_000 });

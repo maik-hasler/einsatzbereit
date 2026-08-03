@@ -68,7 +68,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 	public async Task HomeCta_ZeroOrgs_CreatingOrgEntersItsDashboardDirectly()
 	{
 		// Vera organizes nothing in seed data - the home page's "Create an
-		// organisation" CTA opens org creation in place (#747: there is no
+		// organization" CTA opens org creation in place (#747: there is no
 		// /app entry point to route through anymore), and submitting it must
 		// still land her directly in the new org's dashboard.
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -92,7 +92,7 @@ public class OrgAppRestructureTests(AspireFixture fixture) : VisualTestBase(fixt
 		// the dashboard overview link.
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
+		var createBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organization" });
 		await Expect(createBtn.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await createBtn.First.ClickAsync();
 

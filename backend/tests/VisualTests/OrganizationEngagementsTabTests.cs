@@ -14,7 +14,7 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 	/// - GetOpportunityFeedback must not 500 (previously an EF Core query
 	///   ordered results after projecting into a DTO, which failed
 	///   translation on every call, regardless of engagement data).
-	/// - The published row's "Manage applications" link must show exactly one
+	/// - The published row's "Manage sign-ups" link must show exactly one
 	///   arrow (the SVG icon), not a doubled arrow from a literal "→" baked
 	///   into the translation string plus the adjacent icon.
 	/// </summary>
@@ -29,16 +29,16 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
@@ -75,14 +75,14 @@ public class OrganizationEngagementsTabTests(AspireFixture fixture) : VisualTest
 
 		// The org "Engagements" tab became the unified "Opportunities" hub. A
 		// published opportunity is listed under the Published section with a
-		// single-arrow "Manage applications" link.
+		// single-arrow "Manage sign-ups" link.
 		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard/opportunities");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		var row = Page.GetByTestId("published-section").Locator("li", new() { HasText = oppTitle });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		var manageLink = row.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
+		var manageLink = row.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" });
 		await Expect(manageLink).ToBeVisibleAsync();
 
 		var linkText = (await manageLink.InnerTextAsync()).Trim();

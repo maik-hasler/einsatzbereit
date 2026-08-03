@@ -26,6 +26,7 @@ internal sealed class UploadUserAvatarEndpoint
 			.RequireAuthorization(AuthorizationPolicies.EinsatzbereitDefaultUserPolicy)
 			.RequireRateLimiting(RateLimitingPolicies.Write)
 			.DisableAntiforgery()
+			.WithMetadata(new RequestSizeLimitAttribute(ImageUploadValidator.MaxRequestBodySizeBytes))
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> UploadUserAvatarAsync(

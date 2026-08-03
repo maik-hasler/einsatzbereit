@@ -31,7 +31,7 @@ export default function AchievementsSection() {
 
 	return (
 		<section id="achievements" className="mb-6">
-			<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+			<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 				{t("achievements.badgesTitle")}
 			</h2>
 			{error ? (

@@ -1,13 +1,16 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
-import Spinner from "../../../components/Spinner";
+import Skeleton from "../../../components/Skeleton";
 import ErrorBanner from "../../../components/ErrorBanner";
+import EmptyState from "../../../components/EmptyState";
+import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
+import { resolveDateLocale } from "../../../lib/format";
 
 const MAX_ITEMS = 5;
 const OPPORTUNITY_PAGE_SIZE = 100;
@@ -24,16 +27,19 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
 function UpcomingOpportunitiesWidget({
 	organizationId,
 	refreshKey,
 	size,
+	onOpportunityCreated,
 }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
+	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	// Shared with QuickCheckInWidget, which fetches the same organization-wide
 	// opportunities on the same mount - see useSharedOrgFetch. Only one of the
@@ -85,13 +91,30 @@ function UpcomingOpportunitiesWidget({
 			title={t("orgDashboard.upcomingWidgetTitle")}
 		>
 			{items === null && !error && (
-				<Spinner label={t("orgDashboard.upcomingLoading")} />
+				<div role="status" className="space-y-3">
+					<span className="sr-only">{t("orgDashboard.upcomingLoading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							aria-hidden="true"
+							className="rounded-xl border border-gray-100 p-3"
+						>
+							<Skeleton className="h-4 w-2/3" />
+							{size !== "compact" && <Skeleton className="mt-2 h-3 w-1/2" />}
+						</div>
+					))}
+				</div>
 			)}
 			{error && <ErrorBanner message={t("orgDashboard.upcomingError")} />}
 			{items !== null && !error && items.length === 0 && (
-				<p className="text-sm text-gray-500">
-					{t("orgDashboard.upcomingEmpty")}
-				</p>
+				<EmptyState
+					compact
+					title={t("orgDashboard.upcomingEmpty")}
+					action={{
+						label: t("orgDashboard.emptyStateCreateAction"),
+						onClick: () => setShowCreateModal(true),
+					}}
+				/>
 			)}
 			{items !== null && !error && items.length > 0 && (
 				<ul className="space-y-3">
@@ -106,7 +129,7 @@ function UpcomingOpportunitiesWidget({
 					{items.map((item) => (
 						<li
 							key={item.id}
-							className="relative rounded-xl border border-gray-100 p-3 transition hover:bg-gray-50"
+							className="relative rounded-xl border border-gray-100 bg-white p-3 shadow-resting transition-shadow hover:shadow-raised"
 						>
 							<Link
 								to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
@@ -152,6 +175,14 @@ function UpcomingOpportunitiesWidget({
 			>
 				{t("orgDashboard.upcomingViewAll")}
 			</Link>
+
+			{showCreateModal && (
+				<CreateVolunteerOpportunityModal
+					organizationId={organizationId}
+					onClose={() => setShowCreateModal(false)}
+					onSuccess={onOpportunityCreated}
+				/>
+			)}
 		</WidgetCard>
 	);
 }

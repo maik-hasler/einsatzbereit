@@ -10,7 +10,6 @@ namespace Application.UnitTests.Users.UpdateUserProfile;
 public class UpdateUserProfileCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
-	private readonly IAggregateRepository<User, UserId> _usersRepo = Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly UpdateUserProfileCommandHandler _sut;
@@ -19,7 +18,6 @@ public class UpdateUserProfileCommandHandlerTests
 
 	public UpdateUserProfileCommandHandlerTests()
 	{
-		_dbContext.Users.Returns(_usersRepo);
 		_sut = new UpdateUserProfileCommandHandler(_keycloakUserService, _dbContext, _unitOfWork);
 	}
 
@@ -32,7 +30,7 @@ public class UpdateUserProfileCommandHandlerTests
 	{
 		var userId = UserId.New();
 		var user = User.Create(userId);
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new UpdateUserProfileCommand(
 			userId, "Vera", "Volunteer", "Bio", "+49 30 1234567", [], [], null, "de");
@@ -49,7 +47,7 @@ public class UpdateUserProfileCommandHandlerTests
 		var userId = UserId.New();
 		var user = User.Create(userId);
 		user.SetPhone("+49 30 1234567");
-		_usersRepo.FindAsync(userId, cancellationToken).Returns(user);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new UpdateUserProfileCommand(
 			userId, "Vera", "Volunteer", "Bio", null, [], [], null, "de");
@@ -60,37 +58,38 @@ public class UpdateUserProfileCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldSetPhone_OnNewlyCreatedUserRow(
+	public async Task Handle_ShouldSetPhone_OnALazilyCreatedUserRow(
 		CancellationToken cancellationToken)
 	{
+		// #1148: the row is fetched-or-created via the idempotent GetOrCreateUserAsync
+		// rather than a check-then-Add the handler used to do itself - the handler
+		// doesn't know or care whether the returned row was just created.
 		var userId = UserId.New();
-		_usersRepo.FindAsync(userId, cancellationToken).Returns((User?)null);
-
-		User? added = null;
-		await _usersRepo.AddAsync(Arg.Do<User>(u => added = u), cancellationToken);
+		var user = User.Create(userId);
+		_dbContext.GetOrCreateUserAsync(userId, Arg.Any<string?>(), cancellationToken).Returns(user);
 
 		var command = new UpdateUserProfileCommand(
 			userId, "Vera", "Volunteer", "Bio", "+49 30 1234567", [], [], null, "de");
 
 		await _sut.Handle(command, cancellationToken);
 
-		added.Should().NotBeNull();
-		added!.Phone.Should().Be("+49 30 1234567");
+		user.Phone.Should().Be("+49 30 1234567");
 	}
 
 	[Test]
-	public async Task Handle_ShouldSetPreferredLanguage_OnANewUserRow(
+	public async Task Handle_ShouldSetPreferredLanguage_OnALazilyCreatedUserRow(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - FindAsync unconfigured, defaults to null: no local row exists yet.
+		// Arrange
+		var user = User.Create(DefaultUserId);
+		_dbContext.GetOrCreateUserAsync(DefaultUserId, Arg.Any<string?>(), cancellationToken).Returns(user);
 		var command = CreateCommand("en");
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _usersRepo.Received(1).AddAsync(
-			Arg.Is<User>(u => u!.PreferredLanguage == "en"), cancellationToken);
+		user.PreferredLanguage.Should().Be("en");
 	}
 
 	[Test]
@@ -101,7 +100,7 @@ public class UpdateUserProfileCommandHandlerTests
 		// creation-time seed in GetUserProfileQueryHandler.
 		var existingUser = User.Create(DefaultUserId);
 		existingUser.SetPreferredLanguage("de");
-		_usersRepo.FindAsync(DefaultUserId, Arg.Any<CancellationToken>()).Returns(existingUser);
+		_dbContext.GetOrCreateUserAsync(DefaultUserId, Arg.Any<string?>(), cancellationToken).Returns(existingUser);
 		var command = CreateCommand("en");
 
 		// Act

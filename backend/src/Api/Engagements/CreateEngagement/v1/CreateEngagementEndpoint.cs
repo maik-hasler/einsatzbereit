@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.Engagements.CreateEngagement.v1;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Engagements.CreateEngagement.v1;
 
@@ -30,6 +32,7 @@ internal sealed class CreateEngagementEndpoint
 		[FromRoute] Guid opportunityId,
 		[FromBody] CreateEngagementRequest request,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		HttpContext httpContext,
 		CancellationToken cancellationToken)
 	{
@@ -53,6 +56,9 @@ internal sealed class CreateEngagementEndpoint
 			request.Message);
 
 		var engagement = await sender.Send(command, cancellationToken);
+
+		// A new engagement changes CurrentParticipantCount on the public listing.
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		var response = new CreateEngagementResponse(
 			engagement.Id.Value,

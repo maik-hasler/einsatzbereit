@@ -194,7 +194,6 @@ internal sealed class NotificationReadRepository(
 			return new NotificationSummary(
 				n.Id.Value,
 				n.Kind.ToString(),
-				n.RelatedEntityId,
 				relatedTitle,
 				actionUrl,
 				n.IsRead,

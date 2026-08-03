@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import Modal from "../../../components/Modal";
 import Button from "../../../components/Button";
+import EmptyState from "../../../components/EmptyState";
 import { WIDGET_CATALOG, type WidgetKey } from "./widgetCatalog";
 
 const WIDGET_DESC_KEY: Record<WidgetKey, string> = {
@@ -24,7 +25,7 @@ function Bar({ className = "" }: { className?: string }) {
 // OrgDashboardPage's drag overlay (see EditableWidgetTile) for the same
 // reason: the floating clone shown while dragging must not mount a second
 // live instance of the widget (double data fetch, duplicate side effects).
-export function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
+function WidgetPreview({ widgetKey }: { widgetKey: WidgetKey }) {
 	switch (widgetKey) {
 		case "ToDo":
 			return (
@@ -129,9 +130,7 @@ export default function AddWidgetModal({
 
 			<div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
 				{availableKeys.length === 0 ? (
-					<p className="py-8 text-center text-sm text-gray-500">
-						{t("orgDashboard.addWidgetAllAdded")}
-					</p>
+					<EmptyState compact title={t("orgDashboard.addWidgetAllAdded")} />
 				) : (
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						{availableKeys.map((key) => {

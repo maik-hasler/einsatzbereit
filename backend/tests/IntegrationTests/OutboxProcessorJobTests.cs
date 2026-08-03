@@ -41,7 +41,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher();
 		var processed = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		processed.Should().Be(1);
 		dispatcher.DispatchedEvents.Should().ContainSingle();
@@ -63,7 +63,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher { ThrowOnDispatch = true };
 		var attempted = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		attempted.Should().Be(1, "the message was selected and attempted even though dispatch failed");
 
@@ -71,6 +71,75 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
 		message.ProcessedOnUtc.Should().BeNull("a failed dispatch must leave the message unprocessed so the next poll cycle retries it");
 		message.Error.Should().NotBeNullOrEmpty();
+		message.AttemptCount.Should().Be(1);
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_PoisonMessage_StillDispatchesTheOtherMessagesInTheBatch(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1317: before the attempt cap, a message whose Type can't be
+		// resolved (a renamed/removed domain event) would throw on every single poll
+		// forever - but critically it was never the *only* thing that mattered here,
+		// since ORDER BY occurred_on_utc means a poison row at the head of the batch
+		// must not prevent healthy rows behind it from being dispatched.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		await SeedPoisonOutboxMessageAsync(dbContext, cancellationToken);
+		var healthyEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, healthyEvent, cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var dispatcher = new RecordingDispatcher();
+		var attempted = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
+
+		attempted.Should().Be(2);
+		dispatcher.DispatchedEvents.Should().ContainSingle().Subject.Should().BeOfType<EngagementConfirmedDomainEvent>();
+
+		var poisonMessage = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == PoisonMessageType, cancellationToken);
+		poisonMessage.ProcessedOnUtc.Should().BeNull("one failed attempt must not yet exceed the default max attempts");
+		poisonMessage.AttemptCount.Should().Be(1);
+		poisonMessage.Error.Should().NotBeNullOrEmpty();
+
+		var healthyMessage = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == typeof(EngagementConfirmedDomainEvent).FullName, cancellationToken);
+		healthyMessage.ProcessedOnUtc.Should().NotBeNull();
+		healthyMessage.Error.Should().BeNull();
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_MessageExceedingMaxAttempts_MovesToDeadLetterStateAndStopsBeingRetried(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		await SeedPoisonOutboxMessageAsync(dbContext, cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new OutboxMetrics(meterFactory);
+
+		const int maxAttempts = 3;
+		for (var attempt = 1; attempt <= maxAttempts; attempt++)
+		{
+			await OutboxProcessorJob.ProcessBatchAsync(
+				dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
+				batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
+		}
+
+		var message = await dbContext.Set<OutboxMessage>()
+			.SingleAsync(m => m.Type == PoisonMessageType, cancellationToken);
+		message.AttemptCount.Should().Be(maxAttempts);
+		message.ProcessedOnUtc.Should().NotBeNull(
+			"a message that has exhausted its retry budget must move to a terminal dead-letter state");
+		message.Error.Should().NotBeNullOrEmpty(
+			"the populated Error distinguishes a dead-lettered message from a genuinely successful dispatch");
+
+		// One more poll cycle must not re-select the now-terminal poison row.
+		var processedOnNextPoll = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
+			batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
+
+		processedOnNextPoll.Should().Be(0, "a dead-lettered message must not stall every message behind it forever");
 	}
 
 	[Test]
@@ -91,7 +160,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher();
 		await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		var redispatched = dispatcher.DispatchedEvents.Should().ContainSingle().Subject
 			.Should().BeOfType<EngagementConfirmedDomainEvent>().Subject;
@@ -119,7 +188,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var metrics = new OutboxMetrics(meterFactory);
 
 		var taskA = OutboxProcessorJob.ProcessBatchAsync(
-			contextA, gatedDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken);
+			contextA, gatedDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		// Wait until A's transaction has actually reached the dispatcher - meaning its
 		// SELECT ... FOR UPDATE SKIP LOCKED already committed the row lock - before
@@ -129,7 +198,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		var recordingDispatcher = new RecordingDispatcher();
 		var selectedByB = await OutboxProcessorJob.ProcessBatchAsync(
-			contextB, recordingDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken);
+			contextB, recordingDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		selectedByB.Should().Be(0, "the only pending message is locked by A's still-open transaction, so B's SKIP LOCKED query must skip it rather than dispatch it a second time");
 		recordingDispatcher.DispatchedEvents.Should().BeEmpty();
@@ -162,7 +231,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		var dispatcher = new RecordingDispatcher();
 		await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		recorded.Should().ContainSingle(m => m.Instrument == "outbox.dispatch" && m.Status == "succeeded" && m.Value == 1);
 		recorded.Should().ContainSingle(m => m.Instrument == "outbox.pending" && m.Value == 0,
@@ -183,7 +252,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		var dispatcher = new RecordingDispatcher { ThrowOnDispatch = true };
 		await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		recorded.Should().ContainSingle(m => m.Instrument == "outbox.dispatch" && m.Status == "failed" && m.Value == 1);
 		recorded.Should().ContainSingle(m => m.Instrument == "outbox.pending" && m.Value == 1,
@@ -202,7 +271,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		var dispatcher = new RecordingDispatcher();
 		var processed = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		processed.Should().Be(0);
 		recorded.Should().NotContain(m => m.Instrument == "outbox.dispatch");
@@ -210,6 +279,8 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 	}
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
+
+	private const string PoisonMessageType = "Domain.NoLongerExists.RenamedOrRemovedDomainEvent";
 
 	private static List<(string Instrument, string? Status, long Value)> RecordOutboxMeasurements(IMeterFactory meterFactory)
 	{
@@ -255,6 +326,22 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		ApplicationDbContext dbContext, CoreDomainEvent domainEvent, CancellationToken cancellationToken)
 	{
 		dbContext.Set<OutboxMessage>().Add(OutboxMessage.FromDomainEvent(domainEvent, DateTime.UtcNow));
+		await dbContext.SaveChangesAsync(cancellationToken);
+	}
+
+	// Simulates the poison-message scenario from #1317 - a Type that OutboxMessage.ToDomainEvent()
+	// can never resolve (e.g. a domain event class that was since renamed or removed) - without
+	// needing an actual removed type to reference.
+	private static async Task SeedPoisonOutboxMessageAsync(
+		ApplicationDbContext dbContext, CancellationToken cancellationToken)
+	{
+		dbContext.Set<OutboxMessage>().Add(new OutboxMessage
+		{
+			Id = Guid.NewGuid(),
+			Type = PoisonMessageType,
+			Content = "{}",
+			OccurredOnUtc = DateTime.UtcNow,
+		});
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 

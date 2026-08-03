@@ -151,22 +151,22 @@ public class AchievementsTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		// Read inside PollUntilAsync (rather than a single raw EvaluateAsync)
-		// so a slow post-mount localStorage write can't race this check.
+		// so a slow post-mount sessionStorage write can't race this check.
 		string? token = null;
 		await PollUntilAsync(async () =>
 		{
 			token = await Page.EvaluateAsync<string?>(@"() => {
-				for (let i = 0; i < localStorage.length; i++) {
-					const key = localStorage.key(i);
+				for (let i = 0; i < sessionStorage.length; i++) {
+					const key = sessionStorage.key(i);
 					if (key && key.includes('oidc.user')) {
-						const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+						const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 						if (entry?.access_token) return entry.access_token;
 					}
 				}
 				return null;
 			}");
 			return token is not null;
-		}, () => "OIDC access token must be available in localStorage after login");
+		}, () => "OIDC access token must be available in sessionStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");

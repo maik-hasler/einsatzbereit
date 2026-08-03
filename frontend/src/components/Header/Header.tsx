@@ -113,9 +113,9 @@ export default function Header({
 								: "border-b border-gray-200 bg-white"
 				}`}
 			>
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 					<div
-						className={`flex items-center justify-between h-16 ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
+						className={`flex h-16 items-center justify-between ${orgSwitcher ? "gap-3 sm:gap-4" : ""}`}
 					>
 						{/* Brand. When the org switcher is present, the wordmark is
 						cropped to just its icon mark below the `sm` breakpoint - the

@@ -1,37 +1,54 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-export default function Footer() {
+export default function Footer({ compact = false }: { compact?: boolean }) {
 	const { t } = useTranslation();
 	const currentYear = new Date().getFullYear();
 
+	// Logged-in app shells (e.g. OrgAppLayout) use this utility variant instead
+	// of the full marketing footer - same legal links, one implementation, so
+	// they can't drift out of sync (#1126).
+	if (compact) {
+		return (
+			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
+				<Link to="/imprint" className="hover:text-gray-600">
+					{t("footer.imprint")}
+				</Link>
+				<span className="mx-2">&middot;</span>
+				<Link to="/privacy-policy" className="hover:text-gray-600">
+					{t("footer.privacy")}
+				</Link>
+			</footer>
+		);
+	}
+
 	return (
 		<footer className="bg-brand-800 text-brand-200">
-			<div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+			<div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+				<div className="grid grid-cols-1 gap-8 md:grid-cols-3">
 					{/* Brand */}
 					<div>
-						<img src="/logo.svg" alt={t("brand.name")} className="h-8 mb-4" />
-						<p className="text-sm leading-relaxed max-w-xs">
+						<img src="/logo.svg" alt={t("brand.name")} className="mb-4 h-8" />
+						<p className="max-w-xs text-sm leading-relaxed">
 							{t("brand.description")}
 						</p>
 					</div>
 
 					{/* Links */}
 					<div>
-						<h2 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
+						<h2 className="mb-4 text-xs font-semibold tracking-wider text-white uppercase">
 							{t("footer.platform")}
 						</h2>
 						<ul className="space-y-2 text-sm">
 							<li>
-								<Link to="/" className="hover:text-white transition-colors">
+								<Link to="/" className="transition-colors hover:text-white">
 									{t("footer.findOpportunities")}
 								</Link>
 							</li>
 							<li>
 								<Link
 									to="/#opportunities"
-									className="hover:text-white transition-colors"
+									className="transition-colors hover:text-white"
 								>
 									{t("footer.participate")}
 								</Link>
@@ -39,21 +56,21 @@ export default function Footer() {
 							<li>
 								<Link
 									to="/organizations"
-									className="hover:text-white transition-colors"
+									className="transition-colors hover:text-white"
 								>
 									{t("footer.browseOrganizations")}
 								</Link>
 							</li>
 						</ul>
 
-						<h2 className="text-white font-semibold mb-4 mt-6 uppercase text-xs tracking-wider">
+						<h2 className="mt-6 mb-4 text-xs font-semibold tracking-wider text-white uppercase">
 							{t("footer.legal")}
 						</h2>
 						<ul className="space-y-2 text-sm">
 							<li>
 								<Link
 									to="/imprint"
-									className="hover:text-white transition-colors"
+									className="transition-colors hover:text-white"
 								>
 									{t("footer.imprint")}
 								</Link>
@@ -61,7 +78,7 @@ export default function Footer() {
 							<li>
 								<Link
 									to="/terms-of-use"
-									className="hover:text-white transition-colors"
+									className="transition-colors hover:text-white"
 								>
 									{t("footer.terms")}
 								</Link>
@@ -69,7 +86,7 @@ export default function Footer() {
 							<li>
 								<Link
 									to="/privacy-policy"
-									className="hover:text-white transition-colors"
+									className="transition-colors hover:text-white"
 								>
 									{t("footer.privacy")}
 								</Link>
@@ -77,7 +94,7 @@ export default function Footer() {
 							<li>
 								<Link
 									to="/contact"
-									className="hover:text-white transition-colors"
+									className="transition-colors hover:text-white"
 								>
 									{t("footer.contact")}
 								</Link>
@@ -87,7 +104,7 @@ export default function Footer() {
 
 					{/* Social */}
 					<div>
-						<h2 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">
+						<h2 className="mb-4 text-xs font-semibold tracking-wider text-white uppercase">
 							{t("footer.followUs")}
 						</h2>
 						<div className="flex space-x-4">
@@ -96,11 +113,11 @@ export default function Footer() {
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="GitHub"
-								className="text-brand-200 hover:text-white transition-colors"
+								className="text-brand-200 transition-colors hover:text-white"
 							>
 								{/* simple-icons: github */}
 								<svg
-									className="w-6 h-6"
+									className="h-6 w-6"
 									fill="currentColor"
 									viewBox="0 0 24 24"
 									aria-hidden="true"
@@ -113,7 +130,7 @@ export default function Footer() {
 				</div>
 
 				{/* Bottom Bar */}
-				<div className="mt-12 pt-8 border-t border-brand-700 text-center text-xs">
+				<div className="mt-12 border-t border-brand-700 pt-8 text-center text-xs">
 					<p>{t("footer.copyright", { year: currentYear })}</p>
 				</div>
 			</div>

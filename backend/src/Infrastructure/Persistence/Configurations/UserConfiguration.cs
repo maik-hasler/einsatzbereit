@@ -23,9 +23,11 @@ internal sealed class UserConfiguration
 
 		builder.Property(u => u.AvatarUrl);
 
-		builder.Property(u => u.Bio);
+		builder.Property(u => u.Bio)
+			.HasMaxLength(1000);
 
-		builder.Property(u => u.Phone);
+		builder.Property(u => u.Phone)
+			.HasMaxLength(30);
 
 		var listComparer = new ValueComparer<IReadOnlyList<string>>(
 			(a, b) => a != null && b != null && a.SequenceEqual(b),

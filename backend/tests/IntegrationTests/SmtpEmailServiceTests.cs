@@ -6,7 +6,9 @@ using Application.Common.Email;
 using AwesomeAssertions;
 using Infrastructure.Email;
 using Microsoft.Extensions.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 namespace IntegrationTests;
@@ -39,7 +41,7 @@ public class SmtpEmailServiceTests
 		var recorded = RecordEmailSendMeasurements(meterFactory);
 
 		var sut = CreateService(server.Port, metrics);
-		var act = () => sut.SendAsync("volunteer@example.com", "Test subject", "Test body");
+		var act = () => sut.SendAsync("volunteer@example.com", "Test subject", "Test body", "test-correlation-id");
 
 		await act.Should().NotThrowAsync();
 
@@ -55,11 +57,34 @@ public class SmtpEmailServiceTests
 		var recorded = RecordEmailSendMeasurements(meterFactory);
 
 		var sut = CreateService(unusedPort, metrics);
-		var act = () => sut.SendAsync("volunteer@example.com", "Test subject", "Test body");
+		var act = () => sut.SendAsync("volunteer@example.com", "Test subject", "Test body", "test-correlation-id");
 
 		await act.Should().NotThrowAsync();
 
 		recorded.Should().ContainSingle(m => m.Status == "failed" && m.Value == 1);
+	}
+
+	// Regression coverage for einsatzbereit#1189: a failed send used to log the
+	// recipient's raw email address plus the subject line (which can itself carry
+	// a volunteer's name), landing real PII in container logs and the OTLP sink on
+	// every misconfigured-SMTP send. The failure log must now carry only the
+	// correlation id the caller supplied, never the address or subject.
+	[Test]
+	public async Task SendAsync_ServerUnreachable_LogsCorrelationIdWithoutRecipientOrSubject()
+	{
+		var unusedPort = GetUnusedLoopbackPort();
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new EmailMetrics(meterFactory);
+		var logger = new FakeLogger<SmtpEmailService>();
+
+		var sut = CreateService(unusedPort, metrics, logger);
+		await sut.SendAsync("volunteer@example.com", "New sign-up: Vera joined \"Beach Cleanup\"", "Test body", "engagement-correlation-id");
+
+		var record = logger.Collector.GetSnapshot().Should().ContainSingle(r => r.Level == LogLevel.Error).Subject;
+		record.Message.Should().Contain("engagement-correlation-id");
+		record.Message.Should().NotContain("volunteer@example.com");
+		record.Message.Should().NotContain("Vera");
+		record.Message.Should().NotContain("Beach Cleanup");
 	}
 
 	// Regression coverage for #1400: SendBatchAsync must share one SMTP connection
@@ -79,9 +104,9 @@ public class SmtpEmailServiceTests
 		var sut = CreateService(server.Port, metrics);
 		var messages = new[]
 		{
-			new EmailMessage("vera@example.com", "Reminder 1", "Body 1"),
-			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2"),
-			new EmailMessage("admin@example.com", "Reminder 3", "Body 3"),
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1", "corr-1"),
+			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2", "corr-2"),
+			new EmailMessage("admin@example.com", "Reminder 3", "Body 3", "corr-3"),
 		};
 
 		var results = await sut.SendBatchAsync(messages);
@@ -102,9 +127,9 @@ public class SmtpEmailServiceTests
 		var sut = CreateService(server.Port, metrics);
 		var messages = new[]
 		{
-			new EmailMessage("vera@example.com", "Reminder 1", "Body 1"),
-			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2"),
-			new EmailMessage("admin@example.com", "Reminder 3", "Body 3"),
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1", "corr-1"),
+			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2", "corr-2"),
+			new EmailMessage("admin@example.com", "Reminder 3", "Body 3", "corr-3"),
 		};
 
 		var results = await sut.SendBatchAsync(messages);
@@ -112,6 +137,31 @@ public class SmtpEmailServiceTests
 		results.Should().Equal(true, false, true);
 		recorded.Count(m => m.Status == "succeeded").Should().Be(2);
 		recorded.Count(m => m.Status == "failed").Should().Be(1);
+	}
+
+	[Test]
+	public async Task SendBatchAsync_ServerRejectsOneRecipient_LogsCorrelationIdWithoutRecipientOrSubject()
+	{
+		await using var server = await FakeSmtpServer.StartAsync(rejectRecipient: "olaf@example.com");
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new EmailMetrics(meterFactory);
+		var logger = new FakeLogger<SmtpEmailService>();
+
+		var sut = CreateService(server.Port, metrics, logger);
+		var messages = new[]
+		{
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1", "corr-1"),
+			new EmailMessage("olaf@example.com", "New sign-up: Vera joined \"Beach Cleanup\"", "Body 2", "corr-2-rejected"),
+			new EmailMessage("admin@example.com", "Reminder 3", "Body 3", "corr-3"),
+		};
+
+		await sut.SendBatchAsync(messages);
+
+		var record = logger.Collector.GetSnapshot().Should().ContainSingle(r => r.Level == LogLevel.Error).Subject;
+		record.Message.Should().Contain("corr-2-rejected");
+		record.Message.Should().NotContain("olaf@example.com");
+		record.Message.Should().NotContain("Vera");
+		record.Message.Should().NotContain("Beach Cleanup");
 	}
 
 	[Test]
@@ -125,8 +175,8 @@ public class SmtpEmailServiceTests
 		var sut = CreateService(unusedPort, metrics);
 		var messages = new[]
 		{
-			new EmailMessage("vera@example.com", "Reminder 1", "Body 1"),
-			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2"),
+			new EmailMessage("vera@example.com", "Reminder 1", "Body 1", "corr-1"),
+			new EmailMessage("olaf@example.com", "Reminder 2", "Body 2", "corr-2"),
 		};
 
 		var results = await sut.SendBatchAsync(messages);
@@ -152,7 +202,7 @@ public class SmtpEmailServiceTests
 		recorded.Should().BeEmpty();
 	}
 
-	private static SmtpEmailService CreateService(int port, EmailMetrics metrics) =>
+	private static SmtpEmailService CreateService(int port, EmailMetrics metrics, ILogger<SmtpEmailService>? logger = null) =>
 		new(
 			Options.Create(new SmtpOptions
 			{
@@ -162,7 +212,7 @@ public class SmtpEmailServiceTests
 				FromName = "Test",
 				EnableSsl = false,
 			}),
-			NullLogger<SmtpEmailService>.Instance,
+			logger ?? NullLogger<SmtpEmailService>.Instance,
 			metrics);
 
 	private static List<(string Status, long Value)> RecordEmailSendMeasurements(IMeterFactory meterFactory)

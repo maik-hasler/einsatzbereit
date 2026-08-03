@@ -41,12 +41,6 @@ internal sealed class UpdateOrganizationEndpoint
 		if (string.IsNullOrWhiteSpace(request.Name))
 			return Results.Problem("Name is required.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.Name.Length > 100)
-			return Results.Problem("Name must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
-
-		if (request.Description is { Length: > 1000 })
-			return Results.Problem("Description must not exceed 1000 characters.", statusCode: StatusCodes.Status400BadRequest);
-
 		var addressCommand = request.Address is null
 			? null
 			: new UpdateAddressCommand(

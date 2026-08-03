@@ -10,7 +10,7 @@ export default function NotFoundPage() {
 
 	return (
 		<div className="relative flex min-h-[70vh] items-center justify-center overflow-hidden px-4 text-center">
-			<PageEaten className="absolute top-1/2 text-brand-500 w-85 translate-y-[-60%] opacity-35 sm:w-105" />
+			<PageEaten className="absolute top-1/2 w-85 translate-y-[-60%] text-brand-500 opacity-35 sm:w-105" />
 
 			{/* Content */}
 			<div className="relative z-10 max-w-md">

@@ -41,6 +41,6 @@ internal sealed class CheckInWithPinEndpoint
 
 		var command = new CheckInWithPinCommand(EngagementId.Create(engagementId).GetValueOrThrow(), request.Pin, userId);
 		var engagement = await sender.Send(command, cancellationToken);
-		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
+		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
 	}
 }

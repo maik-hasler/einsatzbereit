@@ -91,7 +91,7 @@ public class CreateInvitationCommandHandlerTests
 			cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 		await _emailService.Received(1).SendAsync(
-			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
+			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
 	}
 
 	[Test]

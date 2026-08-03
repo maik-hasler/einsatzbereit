@@ -72,11 +72,8 @@ public class GetOrganizationDashboardQueryHandlerTests
 	{
 		// Arrange
 		var kpis = new OrganizationDashboardResponse(
-			OpenOpportunities: 3,
 			PendingEngagements: 2,
-			ConfirmedEngagementsNext7Days: 1,
-			ConfirmedEngagementsTotal: 5,
-			CancelledEngagements: 4);
+			ConfirmedEngagementsTotal: 5);
 		_readRepository.GetKpisAsync(DefaultOrgId, cancellationToken).Returns(kpis);
 		var query = new GetOrganizationDashboardQuery(DefaultOrgId, DefaultRequestingUserId);
 

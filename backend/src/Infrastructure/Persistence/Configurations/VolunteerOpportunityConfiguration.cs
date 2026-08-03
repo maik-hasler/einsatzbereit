@@ -39,13 +39,19 @@ internal sealed class VolunteerOpportunityConfiguration
 
 		builder.OwnsOne(vo => vo.Address, address =>
 		{
-			address.Property(a => a.Street).IsRequired();
-			address.Property(a => a.HouseNumber).IsRequired();
+			// Matches the [MaxLength] already declared on Create/UpdateVolunteerOpportunityRequest's
+			// address fields (#1146) - previously only inert on the request DTO, since
+			// nothing evaluated it server-side and the DB column was unbounded text.
+			address.Property(a => a.Street).HasMaxLength(200).IsRequired();
+			address.Property(a => a.HouseNumber).HasMaxLength(20).IsRequired();
 			address.Property(a => a.ZipCode).HasMaxLength(5).IsRequired();
-			address.Property(a => a.City).IsRequired();
+			address.Property(a => a.City).HasMaxLength(100).IsRequired();
 			address.Property(a => a.Latitude);
 			address.Property(a => a.Longitude);
 		});
+
+		builder.Property(vo => vo.AddressGeocodingFailed)
+			.HasDefaultValue(false);
 
 		builder.Property(vo => vo.Occurrence)
 			.HasConversion<string>()
@@ -99,6 +105,14 @@ internal sealed class VolunteerOpportunityConfiguration
 			.IsRequired();
 
 		builder.HasIndex(vo => vo.OrganizationId);
+
+		// Covers GetPagedSummariesAsync's landing-page query: filters on Status,
+		// sorts by CreatedOn (#1385).
+		builder.HasIndex(vo => new { vo.Status, vo.CreatedOn });
+
+		// Supports the Tags.Contains(filter.Tag) array-containment filter (#1385).
+		builder.HasIndex(vo => vo.Tags)
+			.HasMethod("gin");
 
 		builder.Ignore(vo => vo.Events);
 	}

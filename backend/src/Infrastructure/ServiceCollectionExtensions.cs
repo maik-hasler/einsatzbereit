@@ -115,10 +115,13 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<OutboxOptionsSetup>();
 		services.AddSingleton<OutboxMetrics>();
 		services.AddHostedService<OutboxProcessorJob>();
+		services.AddHostedService<OutboxRetentionJob>();
 		services.AddHostedService<GeocodingRetryJob>();
 		services.AddHostedService<OrganizationMembershipBackfillJob>();
 		services.ConfigureOptions<InvitationExpiryOptionsSetup>();
 		services.AddHostedService<InvitationExpiryJob>();
+		services.ConfigureOptions<CheckInAttemptPruneOptionsSetup>();
+		services.AddHostedService<CheckInAttemptPruneJob>();
 
 
 		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see
@@ -143,12 +146,13 @@ public static class ServiceCollectionExtensions
 				})
 				// ServiceDefaults.AddServiceDefaults applies AddStandardResilienceHandler
 				// (3 retries, exponential backoff, ~30s worst case) to every HttpClient by
-				// default. Geocoding already has its own retry story - GeocodingHelper's
-				// Found/NotFound/TransientFailure classification plus the hourly
-				// GeocodingRetryJob - so stacking Polly's retries on top would make a
-				// single create/update call block for tens of seconds on any hiccup
-				// instead of failing fast to TransientFailure. 1 is the minimum
-				// MaxRetryAttempts accepts (0 fails options validation on startup).
+				// default. Geocoding already has its own retry story -
+				// GeocodeVolunteerOpportunityAddressHandler's Found/NotFound/
+				// TransientFailure classification plus the hourly GeocodingRetryJob
+				// backstop - so stacking Polly's retries on top would make a single
+				// geocoding attempt block for tens of seconds on any hiccup instead of
+				// failing fast to TransientFailure. 1 is the minimum MaxRetryAttempts
+				// accepts (0 fails options validation on startup).
 				.AddStandardResilienceHandler(options => options.Retry.MaxRetryAttempts = 1);
 		}
 

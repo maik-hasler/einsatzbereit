@@ -62,6 +62,7 @@ internal sealed class NominatimGeocodingService(
 
 	public async Task<IReadOnlyList<CitySuggestion>> SearchCitiesAsync(
 		string query,
+		string language,
 		CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < MinCitySearchQueryLength)
@@ -75,8 +76,14 @@ internal sealed class NominatimGeocodingService(
 				async () =>
 				{
 					using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-					request.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue("de"));
-					request.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue("en"));
+					// Built from the caller's active UI language instead of a
+					// hardcoded "de" first, so an English-speaking volunteer typing
+					// "Munich" gets "Munich" back rather than the German exonym
+					// "Munchen" (#1277).
+					var primary = language == "de" ? "de" : "en";
+					var secondary = language == "de" ? "en" : "de";
+					request.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue(primary));
+					request.Headers.AcceptLanguage.Add(new StringWithQualityHeaderValue(secondary, 0.5));
 
 					using var response = await httpClient.SendAsync(request, cancellationToken);
 					if (!response.IsSuccessStatusCode)

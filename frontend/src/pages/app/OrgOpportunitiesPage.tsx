@@ -9,24 +9,26 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
+import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
-import Spinner from "../../components/Spinner";
+import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import { PlusIcon } from "../../components/QuickActionIcons";
+import { ArrowRightIcon } from "../../components/icons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 
 const OPPORTUNITIES_PAGE_SIZE = 10;
 
-const STATUS_BADGE_CLASSES: Record<string, string> = {
-	Draft: "bg-amber-100 text-amber-800",
-	Published: "bg-green-100 text-green-800",
-	Unpublished: "bg-gray-200 text-gray-700",
-	Cancelled: "bg-red-100 text-red-800",
+const STATUS_BADGE_TONE: Record<string, ChipTone> = {
+	Draft: "warning",
+	Published: "success",
+	Unpublished: "neutral",
+	Cancelled: "danger",
 };
 
 export default function OrgOpportunitiesPage() {
@@ -323,7 +325,7 @@ export default function OrgOpportunitiesPage() {
 				ref={isHighlighted ? highlightRef : null}
 				data-highlighted={isHighlighted ? "true" : undefined}
 				data-testid="opportunity-row"
-				className={`flex h-full scroll-mt-24 flex-col gap-3 rounded-card border bg-white p-4 shadow-resting transition ${
+				className={`flex h-full scroll-mt-24 flex-col gap-3 rounded-card border bg-white p-4 shadow-resting transition-shadow hover:shadow-raised ${
 					isHighlighted
 						? "border-brand-400 ring-2 ring-brand-500 ring-offset-2"
 						: "border-gray-100"
@@ -337,14 +339,14 @@ export default function OrgOpportunitiesPage() {
 						>
 							{item.title || t("orgDashboard.unnamedDraft")}
 						</Link>
-						<span
+						<Chip
 							data-testid="opportunity-status-badge"
-							className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-								STATUS_BADGE_CLASSES[status] ?? "bg-gray-100 text-gray-700"
-							}`}
+							tone={STATUS_BADGE_TONE[status] ?? "neutral"}
+							size="sm"
+							className="shrink-0"
 						>
 							{badgeLabel}
-						</span>
+						</Chip>
 					</div>
 					{item.description && (
 						<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
@@ -382,17 +384,18 @@ export default function OrgOpportunitiesPage() {
 								: t("opportunities.edit")}
 						</button>
 					)}
-					<button
+					<Button
 						type="button"
+						variant="dangerOutline"
+						size="sm"
 						onClick={() => {
 							setDeleteTargetId(item.id);
 							setDeleteError(null);
 						}}
 						data-testid="opportunity-delete"
-						className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
 					>
 						{t("opportunities.delete")}
-					</button>
+					</Button>
 					{(status === "Draft" || status === "Unpublished") && (
 						<Button
 							type="button"
@@ -420,18 +423,19 @@ export default function OrgOpportunitiesPage() {
 						</button>
 					)}
 					{(status === "Published" || status === "Unpublished") && (
-						<button
+						<Button
 							type="button"
+							variant="dangerOutline"
+							size="sm"
 							onClick={() => {
 								setCancelTargetId(item.id);
 								setCancelReason("");
 								setCancelError(null);
 							}}
 							data-testid="opportunity-cancel"
-							className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
 						>
 							{t("opportunities.cancel")}
-						</button>
+						</Button>
 					)}
 					{status !== "Draft" && (
 						<Link
@@ -439,20 +443,7 @@ export default function OrgOpportunitiesPage() {
 							className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
 						>
 							{t("orgOpportunities.manageApplications")}
-							<svg
-								className="h-3.5 w-3.5"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="2"
-								stroke="currentColor"
-								aria-hidden="true"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-								/>
-							</svg>
+							<ArrowRightIcon className="h-3.5 w-3.5" />
 						</Link>
 					)}
 				</div>
@@ -515,8 +506,22 @@ export default function OrgOpportunitiesPage() {
 	return (
 		<div>
 			{initialLoading && !anyError && (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("orgOpportunities.loading")} />
+				<div
+					role="status"
+					className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+				>
+					<span className="sr-only">{t("orgOpportunities.loading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							aria-hidden="true"
+							className="space-y-2 rounded-card border border-gray-100 bg-white p-4 shadow-resting"
+						>
+							<Skeleton className="h-4 w-2/3" />
+							<Skeleton className="h-3 w-1/2" />
+							<Skeleton className="h-3 w-1/3" />
+						</div>
+					))}
 				</div>
 			)}
 
@@ -682,7 +687,7 @@ export default function OrgOpportunitiesPage() {
 						onChange={(e) => setCancelReason(e.target.value)}
 						placeholder={t("confirmDialog.cancelOpportunity.reasonPlaceholder")}
 						disabled={cancelling}
-						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+						className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{cancelReason.length}/500

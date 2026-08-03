@@ -173,9 +173,9 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		// "Manage applications" only appears for published opportunities on the
+		// "Manage sign-ups" only appears for published opportunities on the
 		// Opportunities hub.
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" }).First;
 		try
 		{
 			await manageLink.WaitForAsync(new() { Timeout = 10_000 });
@@ -216,7 +216,7 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage applications" }).First;
+		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" }).First;
 		try
 		{
 			await manageLink.WaitForAsync(new() { Timeout = 10_000 });

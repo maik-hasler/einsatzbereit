@@ -13,5 +13,4 @@ public sealed record MemberCandidateDto(
 	Guid UserId,
 	string Username,
 	string? FirstName,
-	string? LastName,
-	string Email);
+	string? LastName);

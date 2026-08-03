@@ -8,6 +8,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { type ToastEvent, subscribeToasts } from "../lib/toastBus";
 import { runtimeConfig } from "../lib/runtimeConfig";
+import { CloseIcon } from "../components/icons";
 
 interface ToastContextValue {
 	toasts: ToastEvent[];
@@ -80,7 +81,7 @@ function ToastList() {
 		<div
 			role="region"
 			aria-label={t("error.toastRegionLabel")}
-			className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2"
+			className="fixed right-4 bottom-4 z-9999 flex flex-col gap-2"
 		>
 			{toasts.map((toast) => (
 				<div
@@ -103,20 +104,7 @@ function ToastList() {
 						onClick={() => dismiss(toast.id)}
 						className="ml-2 text-white/80 hover:text-white"
 					>
-						<svg
-							aria-hidden="true"
-							className="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
+						<CloseIcon className="h-4 w-4" />
 					</button>
 				</div>
 			))}

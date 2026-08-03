@@ -1,4 +1,5 @@
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Achievements;
 using Application.Achievements.GetUserAchievements.v1;
@@ -6,6 +7,7 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Api.Achievements.GetUserAchievements.v1;
 
@@ -20,6 +22,7 @@ internal sealed class GetUserAchievementsEndpoint
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.AllowAnonymous()
 			.RequireRateLimiting(RateLimitingPolicies.Read)
+			.CacheOutput(OutputCachingPolicies.ShortPublicRead)
 			.MapToApiVersion(1);
 
 	private static async Task<IResult> GetUserAchievementsAsync(

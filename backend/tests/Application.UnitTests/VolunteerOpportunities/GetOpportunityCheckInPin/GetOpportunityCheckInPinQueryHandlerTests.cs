@@ -33,7 +33,7 @@ public class GetOpportunityCheckInPinQueryHandlerTests
 	private VolunteerOpportunity CreateOpportunityWithPin() =>
 		VolunteerOpportunity.Create(
 			DefaultOrgId, "Titel", "Beschreibung", true, null, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.PINCode, _pinGenerator,
-			status: OpportunityStatus.Draft, checkInPin: "12345").Value;
+			status: OpportunityStatus.Draft, checkInPin: "48213").Value;
 
 	[Test]
 	public async Task Handle_ShouldReturnCheckInPin_WhenOrganizer(
@@ -49,7 +49,7 @@ public class GetOpportunityCheckInPinQueryHandlerTests
 		var result = await _sut.Handle(query, cancellationToken);
 
 		// Assert
-		result.Should().Be("12345");
+		result.Should().Be("48213");
 	}
 
 	[Test]

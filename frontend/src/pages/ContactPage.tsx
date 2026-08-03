@@ -17,7 +17,7 @@ export default function ContactPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("contact.reportSectionTitle")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					<Trans
 						i18nKey="contact.reportSectionBody"
 						components={{
@@ -39,7 +39,7 @@ export default function ContactPage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("contact.otherSectionTitle")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("contact.otherSectionBody")}
 				</p>
 			</section>

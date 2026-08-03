@@ -53,7 +53,13 @@ export function useAchievementNotifier() {
 					newOnes.forEach((a) =>
 						dispatchToast(
 							"success",
-							t("achievements.newBadge", { name: a.name }),
+							t("achievements.newBadge", {
+								name: a.key
+									? t(`achievements.badges.${a.key}.name`, {
+											defaultValue: a.name,
+										})
+									: a.name,
+							}),
 						),
 					);
 				}

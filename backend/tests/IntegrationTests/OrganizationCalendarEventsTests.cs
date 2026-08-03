@@ -79,6 +79,7 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 				RecurrenceCount = 1,
 			},
 			cancellationToken)).Single().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		// Pending engagement counts toward bookedCount.
 		await veraClient.CreateEngagementAsync(

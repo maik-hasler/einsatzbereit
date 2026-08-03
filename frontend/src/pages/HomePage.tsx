@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { OrganizationSummaryDto } from "../client/api-client";
 import VolunteerOpportunitiesList from "../components/VolunteerOpportunitiesList/VolunteerOpportunitiesList";
 import CreateOrganizationModal from "../components/CreateOrganizationModal";
@@ -13,65 +13,15 @@ import { useSharedOrgFetch } from "../hooks/useSharedOrgFetch";
 import { signinLocaleArgs } from "../lib/authLocale";
 import { signinRedirectForRegistration } from "../lib/keycloakRegistration";
 import { getActiveOrgId, resolveOrgAppPath } from "../lib/activeOrg";
-
-// ── Icons ────────────────────────────────────────────────────────────────────
-
-function BrowseIcon() {
-	return (
-		<svg
-			className="h-6 w-6"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-			/>
-		</svg>
-	);
-}
-
-function HandRaiseIcon() {
-	return (
-		<svg
-			className="h-6 w-6"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M10.05 4.575a1.575 1.575 0 1 0-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 0 1 3.15 0v1.5m-3.15 0 .075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 0 1 3.15 0V15M6.9 7.575a1.575 1.575 0 1 0-3.15 0v8.175a6.75 6.75 0 0 0 6.75 6.75h2.018a5.25 5.25 0 0 0 3.712-1.538l1.732-1.732a5.25 5.25 0 0 0 1.538-3.712l.003-2.024a.668.668 0 0 1 .198-.471 1.575 1.575 0 1 0-2.228-2.228 3.818 3.818 0 0 0-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0 1 16.35 15m.002 0h-.002"
-			/>
-		</svg>
-	);
-}
-
-function SparklesIcon() {
-	return (
-		<svg
-			className="h-6 w-6"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth="1.5"
-			stroke="currentColor"
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-			/>
-		</svg>
-	);
-}
+import {
+	BuildingOfficeIcon,
+	CheckIcon,
+	ClockIcon,
+	HandRaisedIcon,
+	MagnifyingGlassIcon,
+	MapPinIcon,
+	SparklesIcon,
+} from "../components/icons";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -136,19 +86,19 @@ export default function HomePage() {
 	const steps = [
 		{
 			step: 1,
-			icon: <BrowseIcon />,
+			icon: <MagnifyingGlassIcon className="h-6 w-6" />,
 			title: t("landing.step1Title"),
 			desc: t("landing.step1Desc"),
 		},
 		{
 			step: 2,
-			icon: <HandRaiseIcon />,
+			icon: <HandRaisedIcon className="h-6 w-6" />,
 			title: t("landing.step2Title"),
 			desc: t("landing.step2Desc"),
 		},
 		{
 			step: 3,
-			icon: <SparklesIcon />,
+			icon: <SparklesIcon className="h-6 w-6" />,
 			title: t("landing.step3Title"),
 			desc: t("landing.step3Desc"),
 		},
@@ -177,25 +127,24 @@ export default function HomePage() {
 			{/* Hero */}
 			<section
 				aria-labelledby={heroTitleId}
-				className="relative mb-20 -mt-[5.5rem] overflow-hidden bg-brand-800 sm:-mt-[6.5rem] lg:-mt-32"
-				style={{ left: "50%", width: "100vw", marginLeft: "-50vw" }}
+				className="full-bleed relative -mt-[var(--header-offset)] mb-20 overflow-hidden bg-brand-800"
 			>
 				{/* Decorative glow blobs */}
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-brand-700 opacity-60 blur-3xl"
+					className="pointer-events-none absolute -top-40 -left-40 h-120 w-120 rounded-full bg-brand-700 opacity-60 blur-3xl"
 				/>
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute -right-32 top-0 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
+					className="pointer-events-none absolute top-0 -right-32 h-80 w-80 rounded-full bg-brand-600 opacity-40 blur-3xl"
 				/>
 				<div
 					aria-hidden="true"
-					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-[500px] -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
+					className="pointer-events-none absolute bottom-12 left-1/2 h-56 w-125 -translate-x-1/2 rounded-full bg-accent-400 opacity-10 blur-3xl"
 				/>
 
 				{/* Content grid */}
-				<div className="relative mx-auto max-w-7xl px-4 pb-16 pt-[5.5rem] sm:px-6 sm:pb-20 sm:pt-28 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
+				<div className="relative mx-auto max-w-7xl px-4 pt-22 pb-16 sm:px-6 sm:pt-28 sm:pb-20 lg:px-8 lg:pt-32 xl:grid xl:grid-cols-[200px_1fr_200px] xl:items-center xl:gap-8">
 					{/* Left feature cards - xl+ only */}
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
 						<div className="flex items-center gap-3 rounded-card border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
@@ -203,19 +152,7 @@ export default function HomePage() {
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								<svg
-									className="h-4 w-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-									/>
-								</svg>
+								<ClockIcon className="h-4 w-4 text-white" />
 							</div>
 							<div>
 								<p className="text-sm font-semibold text-white">
@@ -231,24 +168,7 @@ export default function HomePage() {
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								<svg
-									className="h-4 w-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-									/>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-									/>
-								</svg>
+								<MapPinIcon className="h-4 w-4 text-white" />
 							</div>
 							<div>
 								<p className="text-sm font-semibold text-white">
@@ -264,19 +184,7 @@ export default function HomePage() {
 								aria-hidden="true"
 								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
 							>
-								<svg
-									className="h-4 w-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="m4.5 12.75 6 6 9-13.5"
-									/>
-								</svg>
+								<CheckIcon className="h-4 w-4 text-white" />
 							</div>
 							<div>
 								<p className="text-sm font-semibold text-white">
@@ -308,29 +216,38 @@ export default function HomePage() {
 							{t("landing.heroSubtitle")}
 						</p>
 						<div className="animate-fade-up-d3 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-							<a
+							<Button
 								href="#opportunities"
-								className="w-full rounded-xl bg-white px-8 py-3 text-base font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50 sm:w-auto sm:py-3.5"
+								variant="onDark"
+								size="lg"
+								fullWidth
+								className="shadow-lg sm:w-auto"
 							>
 								{t("landing.heroCta")}
-							</a>
+							</Button>
 							{auth.isAuthenticated && orgAppPath ? (
-								<Link
+								<Button
 									to={orgAppPath}
-									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+									variant="outlineOnDark"
+									size="lg"
+									fullWidth
+									className="sm:w-auto"
 								>
 									{t("landing.heroCtaOrgOverview")}
-								</Link>
+								</Button>
 							) : orgsLoading ? (
-								<Skeleton className="h-[52px] w-full rounded-xl sm:w-56" />
+								<Skeleton className="h-13 w-full rounded-xl sm:w-56" />
 							) : orgsFailed ? null : (
-								<button
+								<Button
 									type="button"
 									onClick={handleOrgCta}
-									className="w-full rounded-xl border border-white/50 px-8 py-3 text-base font-semibold text-white transition-colors hover:border-white hover:bg-brand-700 sm:w-auto sm:py-3.5"
+									variant="outlineOnDark"
+									size="lg"
+									fullWidth
+									className="sm:w-auto"
 								>
 									{t("landing.heroCtaOrg")}
-								</button>
+								</Button>
 							)}
 						</div>
 						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
@@ -349,20 +266,7 @@ export default function HomePage() {
 					<div className="hidden xl:flex xl:flex-col xl:gap-3">
 						<div className="rounded-card border border-white/15 bg-white/8 p-5 backdrop-blur-sm">
 							<div className="mb-3 flex items-center gap-2">
-								<svg
-									aria-hidden="true"
-									className="h-4 w-4 text-brand-200"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21"
-									/>
-								</svg>
+								<BuildingOfficeIcon className="h-4 w-4 text-brand-200" />
 								<p className="text-sm font-semibold text-white">
 									{t("landing.heroRightCardTitle")}
 								</p>
@@ -398,7 +302,7 @@ export default function HomePage() {
 				</div>
 
 				{/* Wave bottom edge */}
-				<div aria-hidden="true" className="absolute bottom-0 left-0 right-0">
+				<div aria-hidden="true" className="absolute right-0 bottom-0 left-0">
 					<svg
 						viewBox="0 0 1440 56"
 						preserveAspectRatio="none"
@@ -431,7 +335,7 @@ export default function HomePage() {
 						>
 							<div className="relative mb-5">
 								<span
-									className="select-none text-8xl font-black leading-none text-brand-100"
+									className="text-8xl leading-none font-black text-brand-100 select-none"
 									aria-hidden="true"
 								>
 									{"0" + step}
@@ -454,7 +358,7 @@ export default function HomePage() {
 			{/* Mission */}
 			<section aria-labelledby={missionTitleId} className="mb-20">
 				<div className="animate-fade-up overflow-hidden rounded-card bg-brand-800 px-8 py-12 text-center sm:px-16">
-					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-200">
+					<p className="mb-3 text-xs font-semibold tracking-widest text-brand-200 uppercase">
 						{t("landing.missionLabel")}
 					</p>
 					<h2
@@ -466,12 +370,13 @@ export default function HomePage() {
 					<p className="mx-auto max-w-2xl text-base leading-relaxed text-brand-100">
 						{t("landing.missionText")}
 					</p>
-					<a
+					<Button
 						href="#opportunities"
-						className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-semibold text-brand-800 shadow-lg transition-colors hover:bg-brand-50"
+						variant="onDark"
+						className="mt-8 shadow-lg"
 					>
 						{t("landing.missionCta")}
-					</a>
+					</Button>
 				</div>
 			</section>
 
@@ -493,7 +398,7 @@ export default function HomePage() {
 						to="/organizations"
 						data-testid="organizations-teaser-cta"
 						size="lg"
-						className="shadow-sm shrink-0"
+						className="shrink-0 shadow-sm"
 					>
 						{t("landing.orgsTeaserCta")}
 					</Button>

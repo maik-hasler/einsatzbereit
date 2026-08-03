@@ -122,7 +122,16 @@ public static class ServiceDefaultsExtensions
 	private static bool TryGetMetricsPort(IConfiguration configuration, out int port) =>
 		int.TryParse(configuration["Metrics:Port"], out port);
 
-	public static WebApplication MapDefaultEndpoints(this WebApplication app)
+	// configureHealthEndpoint/configureAliveEndpoint let the Api layer (which owns
+	// RateLimitingPolicies/OutputCachingPolicies) opt these anonymous, unauthenticated
+	// endpoints into its rate limiting and output caching conventions without this
+	// shared project taking a reference back onto Api - ServiceDefaults is also
+	// referenced standalone (MetricsPortListenerTests.cs), where both stay null and
+	// behavior is unchanged (#1172).
+	public static WebApplication MapDefaultEndpoints(
+		this WebApplication app,
+		Action<IEndpointConventionBuilder>? configureHealthEndpoint = null,
+		Action<IEndpointConventionBuilder>? configureAliveEndpoint = null)
 	{
 		// Exposed in all environments so deployment health checks and live smoke
 		// tests have a target.
@@ -131,14 +140,17 @@ public static class ServiceDefaultsExtensions
 		//            reachable. Returns non-200 when a dependency is down so uptime
 		//            monitors and the docker-compose healthcheck see the real state.
 		// /alive   = liveness: the process is up. Stays 200 regardless of deps.
-		app.MapHealthChecks("/health", new HealthCheckOptions
+		var healthEndpoint = app.MapHealthChecks("/health", new HealthCheckOptions
 		{
 			Predicate = r => r.Tags.Contains("ready")
 		});
-		app.MapHealthChecks("/alive", new HealthCheckOptions
+		var aliveEndpoint = app.MapHealthChecks("/alive", new HealthCheckOptions
 		{
 			Predicate = r => r.Tags.Contains("live")
 		});
+
+		configureHealthEndpoint?.Invoke(healthEndpoint);
+		configureAliveEndpoint?.Invoke(aliveEndpoint);
 
 		if (TryGetMetricsPort(app.Configuration, out var metricsPort))
 		{

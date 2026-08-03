@@ -9,7 +9,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
-import { formatDateTime } from "../../lib/format";
+import { formatDateTime, resolveDateLocale } from "../../lib/format";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -19,6 +19,7 @@ import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
+import { CheckIconSolid } from "../../components/icons";
 
 const ENGAGEMENTS_PAGE_SIZE = 10;
 
@@ -30,7 +31,7 @@ export default function ActivitySection() {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
@@ -106,10 +107,20 @@ export default function ActivitySection() {
 		setWithdrawError(null);
 		try {
 			const updated = await api.withdrawEngagement(confirmWithdrawId);
+			// Withdrawing moves the engagement out of the "upcoming" scope (a
+			// Withdrawn engagement is never returned by the server's upcoming
+			// filter), so patching its status in place would leave it stuck in
+			// the currently-viewed Upcoming list. Remove it there instead; in
+			// the "past" scope (e.g. an engagement whose opportunity was
+			// deleted, still withdrawable but already bucketed as past) it
+			// stays visible with its updated status like the other in-place
+			// patches below.
 			setEngagements((prev) =>
-				prev.map((e) =>
-					e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
-				),
+				engagementsScope === "upcoming"
+					? prev.filter((e) => e.id !== confirmWithdrawId)
+					: prev.map((e) =>
+							e.id === confirmWithdrawId ? { ...e, status: updated.status } : e,
+						),
 			);
 			setConfirmWithdrawId(null);
 		} catch (err) {
@@ -181,7 +192,7 @@ export default function ActivitySection() {
 			)}
 			{!invitationsLoading && invitations.length > 0 && (
 				<div className="mb-6">
-					<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+					<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 						{t("profileOverview.invitationsHeading")}
 					</h2>
 					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -228,7 +239,7 @@ export default function ActivitySection() {
 				</div>
 			)}
 
-			<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+			<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 				{t("myEngagements.title")}
 			</h2>
 
@@ -328,7 +339,7 @@ export default function ActivitySection() {
 											{e.opportunityTitle}
 										</Link>
 									) : (
-										<span className="text-sm font-semibold italic text-gray-500">
+										<span className="text-sm font-semibold text-gray-500 italic">
 											{t("myEngagements.deletedOpportunityTitle")}
 										</span>
 									)}
@@ -343,7 +354,7 @@ export default function ActivitySection() {
 										</p>
 									)}
 									{e.message && (
-										<p className="mt-1 truncate text-sm italic text-gray-500">
+										<p className="mt-1 truncate text-sm text-gray-500 italic">
 											&ldquo;{e.message}&rdquo;
 										</p>
 									)}
@@ -368,24 +379,13 @@ export default function ActivitySection() {
 									</p>
 									{e.isCheckedIn && (
 										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-											<svg
-												className="h-3 w-3"
-												fill="currentColor"
-												viewBox="0 0 20 20"
-												aria-hidden="true"
-											>
-												<path
-													fillRule="evenodd"
-													d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-													clipRule="evenodd"
-												/>
-											</svg>
+											<CheckIconSolid className="h-3 w-3" />
 											{t("checkIn.checkedInLabel")}
 										</span>
 									)}
 								</div>
 								<span
-									className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+									className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
 								>
 									{STATUS_LABELS[e.status] ?? e.status}
 								</span>
@@ -428,12 +428,14 @@ export default function ActivitySection() {
 									)}
 								{(e.status === "Pending" || e.status === "Confirmed") &&
 									!e.isCheckedIn && (
-										<button
+										<Button
+											type="button"
+											variant="dangerOutline"
+											size="sm"
 											onClick={() => setConfirmWithdrawId(e.id)}
-											className="rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
 										>
 											{t("myEngagements.withdraw")}
-										</button>
+										</Button>
 									)}
 							</div>
 						</li>

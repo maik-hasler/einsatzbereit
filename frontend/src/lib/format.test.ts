@@ -8,6 +8,7 @@ import {
 	formatDateTime,
 	formatPostedAgo,
 	isSlotFull,
+	resolveDateLocale,
 } from "./format";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -84,16 +85,27 @@ describe("isSlotFull", () => {
 	});
 });
 
+describe("resolveDateLocale", () => {
+	it("maps de to de-DE", () => {
+		expect(resolveDateLocale("de")).toBe("de-DE");
+	});
+
+	it("maps en (and anything else) to en-GB", () => {
+		expect(resolveDateLocale("en")).toBe("en-GB");
+		expect(resolveDateLocale("fr")).toBe("en-GB");
+	});
+});
+
 describe("formatDateTime", () => {
 	// Compares against the identical Intl call rather than a hardcoded string
 	// so the assertion doesn't depend on the host's local timezone offset.
-	it("formats using en-GB style by default", () => {
+	it("formats using en-GB style for en", () => {
 		const iso = "2024-03-15T14:30:00Z";
 		const expected = new Date(iso).toLocaleString("en-GB", {
 			dateStyle: "medium",
 			timeStyle: "short",
 		});
-		expect(formatDateTime(iso)).toBe(expected);
+		expect(formatDateTime(iso, "en")).toBe(expected);
 	});
 
 	it("formats using de-DE style when locale is de", () => {
@@ -114,12 +126,12 @@ describe("formatDateTime", () => {
 describe("formatDate", () => {
 	// Compares against the identical Intl call rather than a hardcoded string
 	// so the assertion doesn't depend on the host's local timezone offset.
-	it("formats using en-GB style by default, with no time-of-day", () => {
+	it("formats using en-GB style for en, with no time-of-day", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
 		const expected = new Date(iso).toLocaleDateString("en-GB", {
 			dateStyle: "medium",
 		});
-		expect(formatDate(iso)).toBe(expected);
+		expect(formatDate(iso, "en")).toBe(expected);
 	});
 
 	it("formats using de-DE style when locale is de", () => {
@@ -132,8 +144,10 @@ describe("formatDate", () => {
 
 	it("omits the time-of-day that formatDateTime includes", () => {
 		const iso = "2026-08-15T23:59:59.999Z";
-		expect(formatDate(iso)).not.toBe(formatDateTime(iso));
-		expect(formatDate(iso).length).toBeLessThan(formatDateTime(iso).length);
+		expect(formatDate(iso, "en")).not.toBe(formatDateTime(iso, "en"));
+		expect(formatDate(iso, "en").length).toBeLessThan(
+			formatDateTime(iso, "en").length,
+		);
 	});
 });
 

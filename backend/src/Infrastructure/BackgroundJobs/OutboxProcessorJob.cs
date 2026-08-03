@@ -87,7 +87,7 @@ internal sealed class OutboxProcessorJob(
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 		var dispatcher = scope.ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
 
-		await ProcessBatchAsync(dbContext, dispatcher, logger, metrics, _options.BatchSize, ct);
+		await ProcessBatchAsync(dbContext, dispatcher, logger, metrics, _options.BatchSize, _options.MaxAttempts, ct);
 	}
 
 	// Exposed so IntegrationTests can exercise the row-claiming behavior directly
@@ -99,6 +99,7 @@ internal sealed class OutboxProcessorJob(
 		ILogger logger,
 		OutboxMetrics metrics,
 		int batchSize,
+		int maxAttempts = 5,
 		CancellationToken cancellationToken = default)
 	{
 		// EnableRetryOnFailure (ServiceCollectionExtensions.cs) requires a
@@ -124,7 +125,7 @@ internal sealed class OutboxProcessorJob(
 
 			var messages = await dbContext.Set<OutboxMessage>()
 				.FromSqlInterpolated($@"
-					SELECT id, type, content, occurred_on_utc, processed_on_utc, error
+					SELECT id, type, content, occurred_on_utc, processed_on_utc, error, attempt_count
 					FROM outbox_message
 					WHERE processed_on_utc IS NULL
 					ORDER BY occurred_on_utc
@@ -146,13 +147,36 @@ internal sealed class OutboxProcessorJob(
 				catch (Exception ex)
 				{
 					message.Error = ex.Message;
+					message.AttemptCount++;
 					metrics.RecordFailed();
 
 					logger.LogError(
 						ex,
-						"Failed to dispatch outbox message {OutboxMessageId} of type {OutboxMessageType}",
+						"Failed to dispatch outbox message {OutboxMessageId} of type {OutboxMessageType} (attempt {AttemptCount}/{MaxAttempts})",
 						message.Id,
-						message.Type);
+						message.Type,
+						message.AttemptCount,
+						maxAttempts);
+
+					if (message.AttemptCount >= maxAttempts)
+					{
+						// Dead-letter: stamping ProcessedOnUtc stops the WHERE processed_on_utc IS
+						// NULL query above from ever re-selecting this row again, so one poison
+						// message can no longer stall every message behind it in the batch
+						// forever. Error stays populated so this is distinguishable from a
+						// genuinely successful dispatch (which clears it). Recorded as its own
+						// metric status (not just another "failed") since a dead letter is a
+						// terminal give-up an operator should alert on differently than a
+						// transient failure that will simply retry next tick (#1008).
+						message.ProcessedOnUtc = DateTime.UtcNow;
+						metrics.RecordDeadLettered();
+
+						logger.LogError(
+							"Outbox message {OutboxMessageId} of type {OutboxMessageType} exceeded {MaxAttempts} attempts and was moved to dead-letter state",
+							message.Id,
+							message.Type,
+							maxAttempts);
+					}
 				}
 			}
 
