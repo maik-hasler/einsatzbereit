@@ -230,6 +230,42 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task ProfileOverviewPage_EditModeWithAvatar_HasNoSeriousA11yViolations()
+	{
+		// #1063: the "Remove" button next to the avatar only renders once the
+		// user has an avatar. Vera's seeded account has none, so the edit-mode
+		// scan above never renders it - seed an avatar via the upload endpoint
+		// here instead of mutating Vera's shared seed data further.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await GetAccessTokenAsync();
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		using var content = new MultipartFormDataContent();
+		using var fileContent = new ByteArrayContent(TinyPng);
+		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+		content.Add(fileContent, "file", "avatar.png");
+
+		(await http.PutAsync("/v1/users/me/avatar", content)).EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Remove" })).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task OrganizationProfilePage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
