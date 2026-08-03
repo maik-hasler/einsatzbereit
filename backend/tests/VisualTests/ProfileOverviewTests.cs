@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.Playwright;
 
@@ -387,5 +389,140 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 
 		await Expect(Page.Locator("#bio")).ToHaveValueAsync(draftBio);
 		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true })).ToBeVisibleAsync();
+	}
+
+	// einsatzbereit#1069: seeds a checked-in engagement with feedback already
+	// submitted (via raw HTTP, same pattern as AccessibilityTests's
+	// SeedConfirmedEngagementAsync) so the Edit/Delete tests below don't have to
+	// drive the initial "Leave feedback" submission through the UI first.
+	private async Task<string> SeedCheckedInEngagementWithFeedbackAsync(int rating, string comment)
+	{
+		var backend = Fixture.GetEndpoint("backend");
+		var suffix = Guid.NewGuid().ToString("N");
+
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
+
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"FeedbackEdit Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString()
+			?? throw new InvalidOperationException("Created organization had no id.");
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"FeedbackEdit Opportunity {suffix}",
+			description = "Created by ProfileOverviewTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "Manual",
+			isDraft = false,
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString()
+			?? throw new InvalidOperationException("Created opportunity had no id.");
+
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "FeedbackEdit application." });
+		applyResponse.EnsureSuccessStatusCode();
+		var engagement = await applyResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var engagementId = engagement.GetProperty("id").GetString()
+			?? throw new InvalidOperationException("Created engagement had no id.");
+
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/confirm", null)).EnsureSuccessStatusCode();
+		(await olafHttp.PostAsync($"/v1/engagements/{engagementId}/check-in", null)).EnsureSuccessStatusCode();
+		(await veraHttp.PostAsJsonAsync($"/v1/engagements/{engagementId}/feedback", new { rating, comment }))
+			.EnsureSuccessStatusCode();
+
+		return engagementId;
+	}
+
+	[Test]
+	public async Task ActivitySection_EditFeedback_PersistsUpdatedRatingAndComment()
+	{
+		var originalComment = $"Original comment {Guid.NewGuid():N}";
+		var engagementId = await SeedCheckedInEngagementWithFeedbackAsync(3, originalComment);
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		// einsatzbereit#675: a checked-in Confirmed engagement is classified as
+		// Past, not "Current & Upcoming".
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(card.GetByText("Feedback given")).ToBeVisibleAsync();
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Edit" }).ClickAsync();
+		var dialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(dialog).ToBeVisibleAsync();
+		await Expect(dialog.GetByRole(AriaRole.Heading, new() { Name = "Edit your feedback" })).ToBeVisibleAsync();
+		await Expect(dialog.Locator("#feedback-comment")).ToHaveValueAsync(originalComment);
+
+		var updatedComment = $"Updated comment {Guid.NewGuid():N}";
+		await dialog.Locator("#feedback-comment").FillAsync(updatedComment);
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "5 stars" }).ClickAsync();
+		await dialog.GetByRole(AriaRole.Button, new() { Name = "Save changes" }).ClickAsync();
+		await Expect(dialog).Not.ToBeVisibleAsync();
+
+		// Reload so the page re-fetches from the server, proving the edit
+		// actually persisted rather than only updating local UI state.
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
+		var reloadedCard = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(reloadedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await reloadedCard.GetByRole(AriaRole.Button, new() { Name = "Edit" }).ClickAsync();
+		await Expect(Page.Locator("#feedback-comment")).ToHaveValueAsync(updatedComment);
+	}
+
+	[Test]
+	public async Task ActivitySection_DeleteFeedback_ReturnsEngagementToLeaveFeedbackState()
+	{
+		var engagementId = await SeedCheckedInEngagementWithFeedbackAsync(4, "To be deleted");
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
+		var card = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await card.GetByRole(AriaRole.Button, new() { Name = "Delete" }).ClickAsync();
+		var confirmDialog = Page.GetByRole(AriaRole.Dialog);
+		await Expect(confirmDialog).ToBeVisibleAsync();
+		await Expect(confirmDialog.GetByRole(AriaRole.Heading, new() { Name = "Delete feedback?" })).ToBeVisibleAsync();
+		await confirmDialog.GetByRole(AriaRole.Button, new() { Name = "Yes, delete" }).ClickAsync();
+		await Expect(confirmDialog).Not.ToBeVisibleAsync();
+
+		await Expect(card.GetByText("Feedback given")).Not.ToBeVisibleAsync();
+		await Expect(card.GetByRole(AriaRole.Button, new() { Name = "Leave feedback" })).ToBeVisibleAsync();
+
+		// Reload to prove the delete persisted server-side, not just locally.
+		await Page.ReloadAsync();
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		await Page.GetByTestId("engagements-scope-past").ClickAsync();
+
+		var reloadedCard = Page.Locator($"[data-engagement-id='{engagementId}']");
+		await Expect(reloadedCard).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(reloadedCard.GetByRole(AriaRole.Button, new() { Name = "Leave feedback" })).ToBeVisibleAsync();
 	}
 }

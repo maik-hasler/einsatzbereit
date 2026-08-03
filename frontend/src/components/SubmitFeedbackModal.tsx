@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../hooks/useApiClient";
 import { textareaClass } from "../lib/formClasses";
+import { getApiErrorMessage } from "../lib/apiError";
 import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
@@ -11,8 +12,12 @@ import { labelClass } from "../lib/formClasses";
 interface SubmitFeedbackModalProps {
 	engagementId: string;
 	opportunityTitle: string;
-	onSubmitted: () => void;
+	onSubmitted: (rating: number, comment: string | null) => void;
 	onClose: () => void;
+	/** Pre-fills the form and switches submit/cancel wording to editing an
+	 * existing rating (PUT) instead of creating a new one (POST). */
+	initialRating?: number;
+	initialComment?: string | null;
 }
 
 export default function SubmitFeedbackModal({
@@ -20,12 +25,15 @@ export default function SubmitFeedbackModal({
 	opportunityTitle,
 	onSubmitted,
 	onClose,
+	initialRating,
+	initialComment,
 }: SubmitFeedbackModalProps) {
 	const api = useApiClient();
 	const { t } = useTranslation();
-	const [rating, setRating] = useState(0);
+	const isEditing = initialRating !== undefined;
+	const [rating, setRating] = useState(initialRating ?? 0);
 	const [hovered, setHovered] = useState(0);
-	const [comment, setComment] = useState("");
+	const [comment, setComment] = useState(initialComment ?? "");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -34,15 +42,23 @@ export default function SubmitFeedbackModal({
 		if (rating === 0) return;
 		setSubmitting(true);
 		setError(null);
+		const trimmedComment = comment.trim() || null;
 		try {
-			await api.submitFeedback(engagementId, {
-				rating,
-				comment: comment.trim() || undefined,
-			});
-			onSubmitted();
+			if (isEditing) {
+				await api.updateFeedback(engagementId, {
+					rating,
+					comment: trimmedComment ?? undefined,
+				});
+			} else {
+				await api.submitFeedback(engagementId, {
+					rating,
+					comment: trimmedComment ?? undefined,
+				});
+			}
+			onSubmitted(rating, trimmedComment);
 			onClose();
-		} catch {
-			setError(t("feedback.submitError"));
+		} catch (err) {
+			setError(getApiErrorMessage(err, t("feedback.submitError")));
 		} finally {
 			setSubmitting(false);
 		}
@@ -56,7 +72,7 @@ export default function SubmitFeedbackModal({
 				id="feedback-title"
 				className="mb-1 text-lg font-semibold text-gray-900"
 			>
-				{t("feedback.title")}
+				{isEditing ? t("feedback.editTitle") : t("feedback.title")}
 			</h2>
 			<p className="mb-5 text-sm text-gray-500">{opportunityTitle}</p>
 
@@ -121,7 +137,11 @@ export default function SubmitFeedbackModal({
 						disabled={submitting || rating === 0}
 						className="flex-1"
 					>
-						{submitting ? t("feedback.submitting") : t("feedback.submit")}
+						{submitting
+							? t("feedback.submitting")
+							: isEditing
+								? t("feedback.saveChanges")
+								: t("feedback.submit")}
 					</Button>
 				</div>
 			</form>

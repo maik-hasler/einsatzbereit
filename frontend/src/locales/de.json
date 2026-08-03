@@ -525,7 +525,12 @@
       "loadMore": "Mehr laden",
       "starLabel_one": "{{count}} Stern",
       "starLabel_other": "{{count}} Sterne",
-      "averageRating_one": "{{rating}} von 5 ({{count}} Bewertung)"
+      "averageRating_one": "{{rating}} von 5 ({{count}} Bewertung)",
+      "editTitle": "Feedback bearbeiten",
+      "saveChanges": "Änderungen speichern",
+      "editButtonLabel": "Bearbeiten",
+      "deleteButtonLabel": "Löschen",
+      "deleteError": "Feedback konnte nicht gelöscht werden. Bitte versuche es erneut."
     },
     "checkIn": {
       "buttonLabel": "Einchecken",
@@ -831,6 +836,11 @@
       "clearReadNotifications": {
         "title": "Gelesene Benachrichtigungen löschen?",
         "message": "Dadurch werden alle gelesenen Benachrichtigungen dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+        "confirm": "Ja, löschen"
+      },
+      "deleteFeedback": {
+        "title": "Feedback löschen?",
+        "message": "Dies entfernt deine Bewertung und deinen Kommentar von diesem Engagement. Du kannst danach neues Feedback abgeben.",
         "confirm": "Ja, löschen"
       }
     },
@@ -1269,6 +1279,8 @@
         "NotCheckedIn": "Feedback kann nur für eingecheckte Engagements abgegeben werden.",
         "CheckInNotActive": "Der Check-in kann nur für eingecheckte Engagements rückgängig gemacht werden.",
         "FeedbackAlreadySubmitted": "Für dieses Engagement wurde bereits Feedback abgegeben.",
+        "FeedbackNotSubmitted": "Es wurde noch kein Feedback abgegeben.",
+        "FeedbackEditWindowExpired": "Feedback kann nicht mehr bearbeitet werden, wenn es vor mehr als 14 Tagen abgegeben wurde.",
         "RatingOutOfRange": "Die Bewertung muss zwischen 1 und 5 liegen.",
         "CommentTooLong": "Der Kommentar darf 500 Zeichen nicht überschreiten.",
         "NotFound": "Engagement nicht gefunden.",

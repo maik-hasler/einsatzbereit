@@ -58,6 +58,12 @@ public sealed class Engagement
 	// volunteer plus every organizer of the org (einsatzbereit#1174).
 	private const int MaxReactivationCount = 5;
 
+	// Reasonable window (#1069) for a volunteer to reconsider a submitted rating
+	// or comment. Measured from the original FeedbackSubmittedAt rather than
+	// reset by each edit, so editing repeatedly can't keep the window open
+	// indefinitely.
+	public const int FeedbackEditWindowDays = 14;
+
 #pragma warning disable CS8618
 	private Engagement() : base(default) { }
 #pragma warning restore CS8618
@@ -263,6 +269,47 @@ public sealed class Engagement
 		FeedbackComment = comment;
 		FeedbackSubmittedAt = now;
 		AddEvent(new EngagementFeedbackSubmittedDomainEvent(Id, VolunteerId!.Value, OpportunityId, rating));
+		return Result.Success();
+	}
+
+	public Result UpdateFeedback(int rating, string? comment, DateTimeOffset now)
+	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
+		if (!FeedbackSubmittedAt.HasValue)
+			return Result.Failure(Error.Conflict("Engagement.FeedbackNotSubmitted", "Feedback has not been submitted yet."));
+
+		if (now > FeedbackSubmittedAt.Value.AddDays(FeedbackEditWindowDays))
+			return Result.Failure(Error.Conflict("Engagement.FeedbackEditWindowExpired", $"Feedback can no longer be edited more than {FeedbackEditWindowDays} days after it was submitted."));
+
+		if (rating is < 1 or > 5)
+			return Result.Failure(Error.Validation("Engagement.RatingOutOfRange", "Rating must be between 1 and 5."));
+
+		if (comment is not null && comment.Length > 500)
+			return Result.Failure(Error.Validation("Engagement.CommentTooLong", "Comment must not exceed 500 characters."));
+
+		FeedbackRating = rating;
+		FeedbackComment = comment;
+		AddEvent(new EngagementFeedbackUpdatedDomainEvent(Id, VolunteerId!.Value, OpportunityId, rating));
+		return Result.Success();
+	}
+
+	public Result DeleteFeedback(DateTimeOffset now)
+	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
+		if (!FeedbackSubmittedAt.HasValue)
+			return Result.Failure(Error.Conflict("Engagement.FeedbackNotSubmitted", "Feedback has not been submitted yet."));
+
+		if (now > FeedbackSubmittedAt.Value.AddDays(FeedbackEditWindowDays))
+			return Result.Failure(Error.Conflict("Engagement.FeedbackEditWindowExpired", $"Feedback can no longer be edited more than {FeedbackEditWindowDays} days after it was submitted."));
+
+		FeedbackRating = null;
+		FeedbackComment = null;
+		FeedbackSubmittedAt = null;
+		AddEvent(new EngagementFeedbackDeletedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
 		return Result.Success();
 	}
 

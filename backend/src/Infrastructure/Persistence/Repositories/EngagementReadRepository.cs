@@ -356,7 +356,10 @@ internal sealed class EngagementReadRepository(
 				TimeSlotStartDateTime: timeSlot?.StartDateTime ?? e.TimeSlotStartDateTime,
 				TimeSlotEndDateTime: timeSlot?.EndDateTime ?? e.TimeSlotEndDateTime,
 				Location: location,
-				CancellationReason: e.CancellationReason);
+				CancellationReason: e.CancellationReason,
+				FeedbackRating: e.FeedbackRating,
+				FeedbackComment: e.FeedbackComment,
+				FeedbackSubmittedAt: e.FeedbackSubmittedAt);
 		}).ToList();
 	}
 

@@ -24,6 +24,8 @@ public sealed class OwnershipConventionTests
 		// Ownership is checked against engagement.VolunteerId - a per-user
 		// resource, not an organization.
 		"Application.Engagements.SubmitFeedback.v1.SubmitFeedbackCommandHandler",
+		"Application.Engagements.UpdateFeedback.v1.UpdateFeedbackCommandHandler",
+		"Application.Engagements.DeleteFeedback.v1.DeleteFeedbackCommandHandler",
 		"Application.Engagements.CheckInWithPin.v1.CheckInWithPinCommandHandler",
 	};
 

@@ -525,7 +525,12 @@
       "loadMore": "Load more",
       "starLabel_one": "{{count}} star",
       "starLabel_other": "{{count}} stars",
-      "averageRating_one": "{{rating}} out of 5 ({{count}} rating)"
+      "averageRating_one": "{{rating}} out of 5 ({{count}} rating)",
+      "editTitle": "Edit your feedback",
+      "saveChanges": "Save changes",
+      "editButtonLabel": "Edit",
+      "deleteButtonLabel": "Delete",
+      "deleteError": "Could not delete feedback. Please try again."
     },
     "checkIn": {
       "buttonLabel": "Check in",
@@ -832,6 +837,11 @@
         "title": "Clear read notifications?",
         "message": "This permanently deletes all read notifications. This cannot be undone.",
         "confirm": "Yes, clear"
+      },
+      "deleteFeedback": {
+        "title": "Delete feedback?",
+        "message": "This removes your rating and comment from this engagement. You can leave new feedback afterwards.",
+        "confirm": "Yes, delete"
       }
     },
     "imageCrop": {
@@ -1269,6 +1279,8 @@
         "NotCheckedIn": "Feedback can only be submitted for checked-in engagements.",
         "CheckInNotActive": "Only checked-in engagements can have their check-in undone.",
         "FeedbackAlreadySubmitted": "Feedback has already been submitted for this engagement.",
+        "FeedbackNotSubmitted": "Feedback has not been submitted yet.",
+        "FeedbackEditWindowExpired": "Feedback can no longer be edited more than 14 days after it was submitted.",
         "RatingOutOfRange": "Rating must be between 1 and 5.",
         "CommentTooLong": "Comment must not exceed 500 characters.",
         "NotFound": "Engagement not found.",
