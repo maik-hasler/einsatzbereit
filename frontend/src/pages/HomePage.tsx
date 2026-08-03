@@ -72,6 +72,19 @@ export default function HomePage() {
 		}
 	}, [searchParams, auth.isAuthenticated, setSearchParams]);
 
+	// A cross-page "/#opportunities" link (Footer, #1031) triggers a full
+	// browser navigation into this CSR SPA, whose initial HTML has no
+	// #opportunities element yet - it only exists once React has mounted.
+	// The browser's native scroll-to-fragment pass can fire before that
+	// mount completes (a real race, worse under load), silently giving up
+	// rather than retrying. Do it ourselves once mounted, when the element
+	// is guaranteed to be there.
+	useEffect(() => {
+		if (window.location.hash === "#opportunities") {
+			document.getElementById("opportunities")?.scrollIntoView();
+		}
+	}, []);
+
 	function handleOrgCta() {
 		if (auth.isAuthenticated) {
 			setShowCreateOrgModal(true);
