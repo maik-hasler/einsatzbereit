@@ -1,7 +1,9 @@
 using Application.Common.Authorization;
+using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.Organizations;
 
 namespace Application.Organizations.SearchMemberCandidates.v1;
 
@@ -30,8 +32,20 @@ internal sealed class SearchMemberCandidatesQueryHandler(
 
 		var memberIds = currentMembers.Select(m => m.UserId).ToHashSet();
 
+		// Excluded alongside existing members (#1062) - a candidate with a
+		// pending invitation would otherwise still show up in search, and
+		// selecting them fails with a 409 the search results gave no hint of.
+		var invitations = await dbContext.GetInvitationsForOrganizationAsync(
+			OrganizationId.Create(query.OrganizationId).GetValueOrThrow(),
+			cancellationToken);
+
+		var pendingInviteeIds = invitations
+			.Where(i => i.Status == InvitationStatus.Pending)
+			.Select(i => i.InviteeId.Value)
+			.ToHashSet();
+
 		return allResults
-			.Where(u => !memberIds.Contains(u.UserId))
+			.Where(u => !memberIds.Contains(u.UserId) && !pendingInviteeIds.Contains(u.UserId))
 			.Select(u => new MemberCandidateDto(
 				u.UserId,
 				u.Username,

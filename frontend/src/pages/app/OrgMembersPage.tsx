@@ -145,9 +145,9 @@ export default function OrgMembersPage() {
 			setMemberSearch("");
 			setSettingsError(null);
 			setSuccessMessage(t("orgSettings.inviteSent"));
-		} catch {
+		} catch (err) {
 			setSuccessMessage(null);
-			setSettingsError(t("orgSettings.inviteError"));
+			setSettingsError(getApiErrorMessage(err, t("orgSettings.inviteError")));
 		} finally {
 			setInvitingUserId(null);
 		}
