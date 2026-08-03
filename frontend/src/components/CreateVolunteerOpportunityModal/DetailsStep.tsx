@@ -6,7 +6,7 @@ import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
 import ErrorBanner from "../ErrorBanner";
 import { formatDateTime } from "../../lib/format";
-import { labelClass } from "../../lib/formClasses";
+import { inputSurfaceClass, labelClass } from "../../lib/formClasses";
 import type { OpportunityFormValues } from "./schema";
 
 export type SeriesEditScope = "Only" | "ThisAndFollowing" | "EntireSeries";
@@ -88,12 +88,6 @@ const CATEGORY_VALUES = [
 	"Other",
 ] as const;
 
-const selectClass =
-	"w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm transition focus:border-brand-400";
-
-const dateInputClass =
-	"w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400";
-
 export default function DetailsStep({
 	control,
 	isScheduledSlots,
@@ -157,7 +151,7 @@ export default function DetailsStep({
 							id="create-category"
 							value={field.value ?? ""}
 							onChange={(v) => field.onChange(v || undefined)}
-							className={selectClass}
+							className={inputSurfaceClass}
 							options={[
 								{
 									value: "",
@@ -266,7 +260,7 @@ export default function DetailsStep({
 																	startDateTime: e.target.value,
 																})
 															}
-															className={dateInputClass}
+															className={inputSurfaceClass}
 														/>
 													</div>
 													<div>
@@ -286,7 +280,7 @@ export default function DetailsStep({
 																	endDateTime: e.target.value,
 																})
 															}
-															className={dateInputClass}
+															className={inputSurfaceClass}
 														/>
 													</div>
 												</div>
@@ -455,7 +449,7 @@ export default function DetailsStep({
 											startDateTime: e.target.value,
 										})
 									}
-									className={dateInputClass}
+									className={inputSurfaceClass}
 								/>
 							</div>
 							<div>
@@ -475,7 +469,7 @@ export default function DetailsStep({
 											endDateTime: e.target.value,
 										})
 									}
-									className={dateInputClass}
+									className={inputSurfaceClass}
 								/>
 							</div>
 						</div>
@@ -534,7 +528,7 @@ export default function DetailsStep({
 										id="slot-recurrence-frequency"
 										value={recurrenceFrequency}
 										onChange={onRecurrenceFrequencyChange}
-										className={selectClass}
+										className={inputSurfaceClass}
 										options={[
 											{
 												value: "Weekly",
@@ -568,7 +562,7 @@ export default function DetailsStep({
 												),
 											)
 										}
-										className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
+										className={inputSurfaceClass}
 									/>
 								</div>
 							</div>
@@ -606,7 +600,7 @@ export default function DetailsStep({
 								value={field.value}
 								min={todayDateInputValue}
 								onChange={(e) => field.onChange(e.target.value)}
-								className={dateInputClass}
+								className={inputSurfaceClass}
 							/>
 						)}
 					/>

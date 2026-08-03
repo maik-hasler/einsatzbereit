@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
+import { inputSurfaceClass } from "../../../lib/formClasses";
 import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import Dropdown from "../../../components/Dropdown";
@@ -119,7 +120,7 @@ function QuickCheckInWidget({
 							id="quick-checkin-opportunity"
 							value={selectedId}
 							onChange={setSelectedId}
-							className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
+							className={inputSurfaceClass}
 							options={opportunities.map((o) => ({
 								value: o.id,
 								label: o.title || t("orgDashboard.unnamedDraft"),
