@@ -104,6 +104,7 @@
       "clearLocation": "Standortfilter löschen",
       "clearCategory": "Kategoriefilter löschen",
       "clearTag": "Schlagwort-Filter löschen",
+      "filterByTag": "Nach Schlagwort filtern: {{tag}}",
       "all": "Alle",
       "filterLabelCity": "Stadt",
       "filterLabelCategory": "Kategorie",

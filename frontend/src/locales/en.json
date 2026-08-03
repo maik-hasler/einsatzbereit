@@ -104,6 +104,7 @@
       "clearLocation": "Clear location filter",
       "clearCategory": "Clear category filter",
       "clearTag": "Clear tag filter",
+      "filterByTag": "Filter by tag: {{tag}}",
       "all": "All",
       "filterLabelCity": "City",
       "filterLabelCategory": "Category",

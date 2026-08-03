@@ -973,4 +973,137 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.GetByTestId("opportunity-detail-edit")).Not.ToBeVisibleAsync();
 		await Expect(Page.GetByTestId("opportunity-detail-publish")).Not.ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task DetailPage_TagChip_IsClickableLink_FiltersHomeList()
+	{
+		// Regression for #1021: tag chips used to render as plain,
+		// non-interactive <span> elements - nothing in the UI could ever
+		// produce a `?tag=` URL, so organizers tagging opportunities was a
+		// dead feature nobody could act on. The chip must now be a real link
+		// that both navigates to and actually filters the home list by tag.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Tag Chip Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var tag = $"tagchip-{suffix}";
+		var title = $"Tag Chip Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Created by DetailPage_TagChip_IsClickableLink_FiltersHomeList",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+			tags = new[] { tag },
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var tagChip = Page.GetByRole(AriaRole.Link, new() { Name = $"Filter by tag: {tag}" });
+		await Expect(tagChip).ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await tagChip.ClickAsync();
+
+		// Explicit timeout (default is 5s): switching the URL also re-queries
+		// the filtered list, which can outrun the default under CI load.
+		await Expect(Page).ToHaveURLAsync($"{origin}/?tag={Uri.EscapeDataString(tag)}", new() { Timeout = 15_000 });
+
+		// It's not just a link to the right URL - the home list actually
+		// applies the filter and still shows the matching opportunity.
+		await Expect(Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])").Filter(new() { HasText = title }))
+			.ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// The tag now also shows as an active, clearable filter pill in the bar.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Clear tag filter" })).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters()
+	{
+		// Companion to DetailPage_TagChip_IsClickableLink_FiltersHomeList
+		// (#1021): list cards must expose the same clickable tag chips, since
+		// that's where most volunteers actually browse before ever opening a
+		// detail page. Also covers two edge cases: an opportunity with more
+		// than one tag renders a distinct chip per tag, and a tag containing
+		// URL-unsafe characters (space, "&") round-trips correctly through
+		// encodeURIComponent on the frontend and the exact-match filter on
+		// the backend.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"List Tag Chip Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var tagA = $"listtagchip-{suffix}";
+		var tagB = $"list tag & chip {suffix}";
+		var title = $"List Tag Chip Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title,
+			description = "Created by ListCard_TagChips_AreClickableLinks_SwitchTagFilterAndSurviveSpecialCharacters",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+			tags = new[] { tagA, tagB },
+		});
+		oppResponse.EnsureSuccessStatusCode();
+
+		// Land on the list already filtered by tagA, so the card is visible
+		// without depending on how many other opportunities are seeded.
+		await Page.GotoAsync($"{origin}/?tag={Uri.EscapeDataString(tagA)}");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var card = Page.Locator("ul li:has(a[href*='/volunteer-opportunities/'])").Filter(new() { HasText = title });
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		// Both tags render as their own chip on the card.
+		await Expect(card.GetByRole(AriaRole.Link, new() { Name = $"Filter by tag: {tagA}" })).ToBeVisibleAsync();
+		var tagBChip = card.GetByRole(AriaRole.Link, new() { Name = $"Filter by tag: {tagB}" });
+		await Expect(tagBChip).ToBeVisibleAsync();
+
+		// Clicking the second tag switches the filter entirely (tagA drops
+		// out of the URL) and the special characters survive the round trip.
+		// A Regex (like every other ToHaveURLAsync in this file) rather than
+		// a plain string: the string overload kept failing this assertion
+		// even at a generous 15s timeout with an actual URL that printed
+		// identically to the expected one - some exact-match quirk specific
+		// to percent-encoded reserved characters (%20/%26) in this Playwright
+		// binding. The Regex path is what every passing URL assertion here
+		// already uses.
+		await tagBChip.ClickAsync();
+		await Expect(Page).ToHaveURLAsync(
+			new Regex($"^{Regex.Escape($"{origin}/?tag={Uri.EscapeDataString(tagB)}")}$"),
+			new() { Timeout = 15_000 });
+		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
+	}
 }
