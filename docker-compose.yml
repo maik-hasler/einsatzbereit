@@ -40,7 +40,10 @@ services:
       retries: 20
 
   keycloak:
-    image: ghcr.io/maik-hasler/einsatzbereit-keycloak:staging
+    # IMAGE_TAG lets publish.yml's deploy-staging and deploy-production jobs
+    # point the same compose file at different image tags (staging vs latest)
+    # on the same host without editing this file per deploy (#1344).
+    image: ghcr.io/maik-hasler/einsatzbereit-keycloak:${IMAGE_TAG:-staging}
     container_name: keycloak
     restart: unless-stopped
     networks:
@@ -246,7 +249,7 @@ services:
         target: /backup.sh
 
   backend:
-    image: ghcr.io/maik-hasler/einsatzbereit-backend:staging
+    image: ghcr.io/maik-hasler/einsatzbereit-backend:${IMAGE_TAG:-staging}
     # No container_name (#1392): a fixed name forbids `docker compose up --scale
     # backend=N`, since Compose can't give a second replica the same name. Traefik's
     # Docker provider merges multiple containers sharing the same
@@ -299,7 +302,7 @@ services:
       retries: 10
       start_period: 30s
     environment:
-      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Staging}
       Database__MigrateOnStartup: "true"
       # Defaults to false so a fresh non-staging deployment of this compose
       # file doesn't come up populated with the fictional "Fairview" demo
@@ -358,7 +361,7 @@ services:
       - traefik.http.services.backend.loadbalancer.server.port=8080
 
   frontend:
-    image: ghcr.io/maik-hasler/einsatzbereit-frontend:staging
+    image: ghcr.io/maik-hasler/einsatzbereit-frontend:${IMAGE_TAG:-staging}
     container_name: frontend
     restart: unless-stopped
     networks:

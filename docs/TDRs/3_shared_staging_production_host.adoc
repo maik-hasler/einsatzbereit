@@ -1,0 +1,54 @@
+== 3. Shared Staging/Production Host
+
+- *Author:* @maik-hasler
+- *Version:* v1.0.0 (pre-release)
+- *Date:* 2026-08-03
+- *Status:* Identified
+
+=== Description
+
+Einsatzbereit has exactly one deployed host (`einsatzbereit.maik-hasler.de` and its `*.maik-hasler.de` siblings), and it is deliberately staging/demo infrastructure rather than a hardened production box - shared `vera`/`olaf`/`admin` test credentials with full admin access are intentionally public on it (see root `AGENTS.md`'s Test Users note). There is no second, separate production host.
+
+Before issue #1344, `publish.yml` only had a `deploy-staging` job, gated on release-candidate tags. A stable (non-RC) tag published images to GHCR and moved the `latest` tag, but nothing ever deployed them - the architecture docs claimed deployment was "release-driven" for both staging and production, which was not true for stable tags.
+
+=== Links
+
+- Resolves the deploy gap from issue #1344.
+- ADR-3 (Keycloak): the shared realm/test-credential model this TDR's host-sharing builds on.
+
+=== Impact
+
+==== Technical Impact
+
+- *Environment separation:* Staging and production share compute, database, and object storage. A bad RC deploy and a bad stable deploy are both one `docker compose up -d` away from affecting the same running site - there is no isolation between "testing a release candidate" and "serving real traffic."
+- *Blast radius:* `reset-staging.yml`'s destructive Postgres/MinIO wipe, if ever run after real users exist, would delete real data, not just demo data - the workflow's current framing ("wipes staging test data") assumes no real production data has accumulated yet.
+- *Capacity:* The single host is sized for demo/QA load, not production traffic - see the host's own resource limits in `docker-compose.yml`.
+
+==== Business Impact
+
+- *Cost:* A second host is an ongoing hosting cost the project does not yet carry; deferring it keeps the project's infrastructure spend at its current (minimal) level while pre-1.0.
+- *Risk exposure:* Once the site carries real user data, an RC deploy problem (bad migration, crash-looping container) directly risks that data, not just disposable demo state.
+
+=== Symptoms
+
+- *Docs/reality mismatch (pre-#1344):* `07_deployment_view.adoc` described a single release-driven deployment path; the actual `publish.yml` silently skipped deployment for stable tags.
+- *Naming mismatch:* A GitHub Environment and job named `production` currently target the same secrets/host as `staging` - anyone reading the workflow in isolation could assume a real second environment exists.
+
+=== Severity
+
+Medium, rising to High once the project is generally available and carries real user data (issue #1344's report was filed pre-1.0, before any stable tag existed).
+
+=== Proposed Solution
+
+- *Short term (implemented, #1344):* Split `deploy-staging`/`deploy-production` into separate jobs and GitHub Environments now, both currently pointed at the one existing host, so the *workflow* shape doesn't need to change again later - only the `production` Environment's secrets need to change once a real second host exists.
+- *Medium term:* Before or shortly after a real stable v1.0.0 release accumulates real user data, provision a genuinely separate production host (or at minimum, separate its database/object storage from staging's), and repoint the `production` GitHub Environment's `PRODUCTION_SSH_*` secrets at it.
+- *Longer term:* Reassess whether `reset-staging.yml`'s destructive reset should remain scoped to a shared host once staging and production diverge, and whether staging needs its own smaller, cheaper host once production is real.
+
+=== Consequences of Delay
+
+Acceptable pre-1.0: no stable tag has been cut yet, so no real user data exists on the host to put at risk. Once a stable release genuinely goes out to real users, delaying the host split further means every subsequent RC deploy (testing the *next* release) runs directly against production data, with no isolation and no cheap way to test destructively.
+
+=== Dependencies
+
+- *Hosting budget/capacity:* A second host requires the repo owner to provision and pay for it - not something achievable from within the repository alone.
+- *GitHub Environment secrets:* `PRODUCTION_SSH_KEY`/`PRODUCTION_SSH_HOST_KEY`/`PRODUCTION_SSH_USER`/`PRODUCTION_SSH_HOST` need to be updated to the new host's values when it exists - see `.github/AGENTS.md`'s "`deploy-staging` vs `deploy-production`" section.

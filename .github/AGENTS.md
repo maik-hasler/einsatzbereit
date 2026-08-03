@@ -8,7 +8,7 @@
 ├── frontend.yml                Frontend: lint → build
 ├── docs.yml                    Docs: AsciiDoc build (push + PR) → GitHub Pages deploy (push only)
 ├── keycloak-realm-import.yml   Verifies the committed realm still imports on the production Keycloak version
-├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging
+├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging (RC tags) or deploy-production (stable tags)
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── reset-staging.yml           Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
 ├── lint.yml                    Ban em/en dashes + EditorConfig check
@@ -60,7 +60,7 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 
 **Release candidates:** `-rc.N` suffix (e.g., `v1.0.0-rc.1`). Image is published, tagged `staging` instead of `latest`, and `deploy-staging` runs.
 
-**Full release:** Tag without `-rc` suffix → image published + `latest` tag updated.
+**Full release:** Tag without `-rc` suffix → image published + `latest` tag updated, and `deploy-production` runs.
 
 ### Publish flow (backend/frontend/keycloak)
 1. Run full test suite - three parallel jobs (`backend-fast-tests`/`backend-integration-tests`/`backend-visual-tests`, same split as `dotnet.yml`) that `publish-backend`, `publish-frontend`, and `publish-keycloak` all wait on via `needs:` before building anything, so a test failure blocks every image, not just the backend's. Frontend additionally runs its own lint/type-check/unit-tests/build inline; keycloak has no additional test gate beyond the shared backend suite
@@ -68,6 +68,17 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 3. Extract version from tag (strips leading `v`)
 4. Build and push Docker image
 5. Tag with version + `latest` (if not RC) or `staging` (if RC)
+6. `deploy-staging` (RC tags) or `deploy-production` (stable tags) deploys - see below
+
+### `deploy-staging` vs `deploy-production` (#1344)
+
+Before #1344, only `deploy-staging` existed, gated on `prerelease == 'true'` - a stable tag published images and then did nothing, silently leaving whatever RC was last deployed running. `deploy-production` closes that gap, gated on `prerelease == 'false'`.
+
+**They are two separate jobs/GitHub Environments, but currently deploy to the exact same host and `/opt/einsatzbereit` directory** - see AGENTS.md/README.md's Test Users note: there is only one live host today (`einsatzbereit.maik-hasler.de`), and it is deliberately staging/demo infrastructure, not a hardened production box. The split exists so that whenever a genuinely separate production host is provisioned, pointing at it is only a matter of changing the `production` GitHub Environment's secrets - no workflow restructuring. Until then, a stable release simply replaces whatever RC was running on that one host with the `latest`-tagged images (`docker-compose.yml`'s `IMAGE_TAG` build arg selects `staging` vs `latest`; `deploy-staging` and `deploy-production` share a concurrency group precisely because they mutate the same host).
+
+`deploy-production` differs from `deploy-staging` in three deliberate ways beyond the image tag: it does not set `DATABASE_SEED_ON_STARTUP` (a stable release should not reseed demo data over whatever real data exists), it sets `ASPNETCORE_ENVIRONMENT=Production` instead of `Staging`, and its rollback/previous-image tagging uses `latest`/`latest-previous` instead of `staging`/`staging-previous`.
+
+**Required setup before the first stable release:** create a `production` GitHub Environment and add `PRODUCTION_SSH_KEY`, `PRODUCTION_SSH_HOST_KEY`, `PRODUCTION_SSH_USER`, and `PRODUCTION_SSH_HOST` secrets - for now, the same values as the `staging` Environment's `STAGING_SSH_*` equivalents, since it is the same host (see the `staging` Environment secrets below for how `STAGING_SSH_HOST_KEY` was captured; do the same capture once and reuse the result for both). All other secrets `deploy-production` uses (`POSTGRES_*`, `KEYCLOAK_*`, `MINIO_*`, `SMTP_*`, `GRAFANA_*`, `ALERT_NOTIFICATION_EMAIL`, `GHCR_USERNAME`, `GHCR_TOKEN`) are unprefixed and shared with `deploy-staging` - if any of those are currently scoped only to the `staging` Environment rather than the repository, they need to be added to `production` too before the first stable tag, or that job will fail rendering `.env`.
 
 ## Cutting a release from Claude Code on the web
 
@@ -104,8 +115,8 @@ A PAT (not the default `GITHUB_TOKEN`) is mandatory because tags pushed with `GI
 **After pushing the branch:**
 
 1. Poll the publish workflow's checks for the new tag (via `mcp__github__get_commit` → check_runs, or fetch `https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs`).
-2. Once `deploy-staging` reports success, smoke-test live: `curl https://api.maik-hasler.de/health`, then HEAD-check `https://einsatzbereit.maik-hasler.de`.
-3. If any publish job fails, diagnose from logs; if the deploy step itself fails, the SSH/GHCR secrets in the `staging` GitHub Environment are the most likely cause.
+2. Once `deploy-staging` (RC tag) or `deploy-production` (stable tag) reports success, smoke-test live: `curl https://api.maik-hasler.de/health`, then HEAD-check `https://einsatzbereit.maik-hasler.de`.
+3. If any publish job fails, diagnose from logs; if the deploy step itself fails, the SSH/GHCR secrets in the relevant GitHub Environment (`staging` or `production` - see "`deploy-staging` vs `deploy-production`" above) are the most likely cause.
 
 **Required `staging` Environment secret:** `KEYCLOAK_BACKEND_SECRET` - a randomly generated value (not a committed literal), used both as the `backend` Keycloak client's real secret (resolved into the `${KEYCLOAK_BACKEND_SECRET}` placeholder in `keycloak/realms/einsatzbereit-realm.json` at realm-import time) and as the backend app's `Keycloak__ClientSecret`. See `keycloak/AGENTS.md`. If unset, `deploy-staging` fails loudly (docker compose's `:?` guard in `docker-compose.yml`) rather than deploying with a weak default.
 
