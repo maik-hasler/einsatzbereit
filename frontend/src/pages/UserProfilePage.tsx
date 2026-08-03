@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import type {
@@ -130,15 +130,6 @@ export default function UserProfilePage() {
 				</h2>
 				<BadgeGrid earned={profile.badges} catalog={catalog} loading={false} />
 			</section>
-
-			<div className="mt-6">
-				<Link
-					to={`/users/${userId}/achievements`}
-					className="text-sm text-brand-700 hover:underline"
-				>
-					{t("userProfile.viewAllAchievements")}
-				</Link>
-			</div>
 		</>
 	);
 }

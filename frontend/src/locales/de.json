@@ -871,7 +871,6 @@
       "loadError": "Benachrichtigungseinstellungen konnten nicht geladen werden."
     },
     "achievements": {
-      "publicTitle": "Errungenschaften",
       "loading": "Wird geladen…",
       "error": "Fehler: {{message}}",
       "noAchievements": "Noch keine Errungenschaften. Beginne mit dem Ehrenamt, um Abzeichen zu verdienen!",
@@ -917,7 +916,6 @@
       "label": "Navigationspfad",
       "home": "Startseite",
       "profile": "Profil",
-      "userAchievements": "Errungenschaften",
       "organizations": "Organisationen"
     },
     "error": {
@@ -936,7 +934,6 @@
       "notFound": "Nutzer:in nicht gefunden.",
       "engagementCount": "{{count}} bestätigte Einsätze",
       "engagementCount_other": "{{count}} bestätigte Einsätze",
-      "viewAllAchievements": "Alle Abzeichen anzeigen",
       "reportUser": "Nutzer:in melden",
       "engagementCount_one": "{{count}} bestätigter Einsatz"
     },

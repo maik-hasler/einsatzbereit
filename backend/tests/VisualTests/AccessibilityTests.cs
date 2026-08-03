@@ -221,36 +221,6 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
-	[Test]
-	public async Task UserAchievementsPage_HasNoSeriousA11yViolations()
-	{
-		// #800: /users/{userId}/achievements was never visited by any a11y
-		// test, despite being a major user-facing page (BadgeGrid's badge
-		// cards + hover/focus tooltips).
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
-
-		var userId = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < sessionStorage.length; i++) {
-				const key = sessionStorage.key(i);
-				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
-					if (entry?.profile?.sub) return entry.profile.sub;
-				}
-			}
-			return null;
-		}");
-		Skip.When(userId is null, "could not resolve the logged-in user's id");
-
-		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var result = await Page.RunAxe();
-		AssertNoViolations(result);
-	}
-
 	// Olaf's seed data always organizes at least one org, so FastSignInAsync
 	// always resolves a pinned id for him to navigate straight to.
 	private async Task NavigateToOrgAppDashboardAsOlafAsync(Uri frontend)
