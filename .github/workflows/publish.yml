@@ -1100,3 +1100,108 @@ jobs:
             -d "$(echo "$REALM" | jq '.browserFlow = "einsatzbereit browser"')"
 
           echo "browserFlow bound to 'einsatzbereit browser'."
+
+  github-release:
+    name: GitHub Release
+    # Depends on the three publish-* jobs directly (not deploy-staging, which
+    # only runs for -rc.N tags) so a GitHub Release is created for stable
+    # tags too, and only after the images they describe actually published.
+    needs: [publish-backend, publish-frontend, publish-keycloak]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history + tags needed to find the previous tag and diff
+          # commit messages against it below.
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" == *-rc.* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Groups commit subjects since the previous tag by Conventional Commit
+      # type (enforced PR-title-side by pr-title.yml, so main's history is
+      # squash-merged commits in that format already) instead of relying on
+      # GitHub's own auto-generated notes, which group by PR label - a label
+      # this repo's PRs don't consistently set.
+      - name: Generate release notes from Conventional Commits
+        id: notes
+        run: |
+          CURRENT_TAG="${{ steps.version.outputs.tag }}"
+
+          # Previous tag = the one immediately before this one in semver
+          # order across both stable and rc tags - not the previous tag
+          # chronologically, since an rc for an already-released line could
+          # in principle be re-cut later.
+          PREV_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --list 'v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*' --sort=-v:refname \
+            | grep -A1 -x -F "$CURRENT_TAG" | tail -n1)
+          if [ "$PREV_TAG" = "$CURRENT_TAG" ]; then
+            PREV_TAG=""
+          fi
+
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="$CURRENT_TAG"
+          else
+            RANGE="$PREV_TAG..$CURRENT_TAG"
+          fi
+
+          {
+            echo "## What's Changed"
+            echo
+
+            breaking=$(git log "$RANGE" --pretty=format:'%s' | grep -E '^[a-z]+(\(.+\))?!:' || true)
+            if [ -n "$breaking" ]; then
+              echo "### Breaking Changes"
+              echo "$breaking" | sed 's/^/- /'
+              echo
+            fi
+
+            declare -A LABELS=( [feat]="Features" [fix]="Bug Fixes" [perf]="Performance" [refactor]="Refactoring" [docs]="Documentation" [revert]="Reverts" )
+            for type in feat fix perf refactor docs revert; do
+              commits=$(git log "$RANGE" --pretty=format:'%s' | grep -E "^${type}(\(.+\))?!?:" || true)
+              if [ -n "$commits" ]; then
+                echo "### ${LABELS[$type]}"
+                echo "$commits" | sed 's/^/- /'
+                echo
+              fi
+            done
+
+            if [ -z "$PREV_TAG" ]; then
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/commits/${CURRENT_TAG}"
+            else
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURRENT_TAG}"
+            fi
+          } > release-notes.md
+
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          FLAGS=()
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            FLAGS+=(--prerelease)
+          fi
+
+          # Idempotent: a re-run of this job (e.g. after an unrelated failure
+          # elsewhere in the workflow, retried via "Re-run failed jobs") would
+          # otherwise fail with "release already exists" - edit notes in place
+          # instead, mirroring the tag-idempotency check in release-rc.yml.
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Release $TAG already exists - updating notes instead."
+            gh release edit "$TAG" --repo "${{ github.repository }}" --notes-file release-notes.md "${FLAGS[@]}"
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}" --title "$TAG" --notes-file release-notes.md "${FLAGS[@]}"
+          fi
