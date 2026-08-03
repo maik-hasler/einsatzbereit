@@ -175,6 +175,18 @@ export default function EngagementManagementPage() {
 		});
 	}
 
+	// Repeated per row ("Confirm"/"Cancel"/"Revoke") with nothing distinguishing
+	// which applicant a given button acts on - mirrors the visible name shown
+	// in the row itself so the aria-label stays in sync with what's rendered.
+	function volunteerDisplayName(e: EngagementSummary): string {
+		if (e.volunteerName) return e.volunteerName;
+		if (e.volunteerId)
+			return t("engagementManagement.volunteer", {
+				id: e.volunteerId.slice(0, 8) + "...",
+			});
+		return t("engagementManagement.anonymizedVolunteer");
+	}
+
 	async function handleConfirm(engagementId: string) {
 		setConfirming(engagementId);
 		try {
@@ -499,6 +511,9 @@ export default function EngagementManagementPage() {
 											<button
 												onClick={() => handleConfirm(e.id)}
 												disabled={confirming === e.id}
+												aria-label={t("engagementManagement.confirmNamed", {
+													name: volunteerDisplayName(e),
+												})}
 												className="rounded-xl bg-green-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50"
 											>
 												{confirming === e.id
@@ -510,6 +525,9 @@ export default function EngagementManagementPage() {
 												variant="dangerOutline"
 												size="sm"
 												onClick={() => setConfirmCancelId(e.id)}
+												aria-label={t("engagementManagement.cancelNamed", {
+													name: volunteerDisplayName(e),
+												})}
 											>
 												{t("engagementManagement.cancel")}
 											</Button>
@@ -546,6 +564,9 @@ export default function EngagementManagementPage() {
 												size="sm"
 												data-testid={`engagement-revoke-${e.id}`}
 												onClick={() => setConfirmCancelId(e.id)}
+												aria-label={t("engagementManagement.revokeNamed", {
+													name: volunteerDisplayName(e),
+												})}
 											>
 												{t("engagementManagement.revoke")}
 											</Button>

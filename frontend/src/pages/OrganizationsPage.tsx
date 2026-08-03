@@ -100,6 +100,18 @@ export default function OrganizationsPage() {
 				/>
 			</div>
 
+			{/* Always mounted (not conditional on the message) so the live region
+			is registered before it ever gets content - see CheckInModal.tsx's
+			identical pattern for why. Silent during the initial loading
+			skeleton and on error; otherwise announces the settled result count
+			whenever the debounced search rewrites the directory - previously
+			nothing did. */}
+			<p role="status" className="sr-only">
+				{!loading && !error
+					? t("organizationsPage.resultCount", { count: items.length })
+					: ""}
+			</p>
+
 			<div className="mt-6">
 				{loading ? (
 					<div

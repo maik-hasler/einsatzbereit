@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
 	CheckIcon,
 	CheckIconSolid,
@@ -21,6 +21,7 @@ export function DropdownOption({
 		<button
 			type="button"
 			onClick={onClick}
+			aria-pressed={selected}
 			className={`flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
 				selected ? "font-medium text-brand-700" : "text-gray-700"
 			}`}
@@ -90,6 +91,7 @@ export default function FilterDropdown({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [panelLeft, setPanelLeft] = useState(0);
+	const panelId = useId();
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -130,6 +132,8 @@ export default function FilterDropdown({
 					data-testid={testId}
 					onClick={onToggle}
 					aria-expanded={isOpen}
+					aria-haspopup="dialog"
+					aria-controls={panelId}
 					className={`flex items-center gap-1.5 py-1.5 text-sm whitespace-nowrap transition-colors ${
 						active
 							? "pr-1.5 pl-3 font-medium text-brand-700"
@@ -152,7 +156,7 @@ export default function FilterDropdown({
 						type="button"
 						onClick={onClear}
 						aria-label={clearAriaLabel}
-						className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
+						className="flex items-center px-2 py-1.5 text-brand-700 transition-colors hover:bg-brand-100 hover:text-brand-800"
 					>
 						<CloseIcon className="h-3 w-3" />
 					</button>
@@ -160,6 +164,7 @@ export default function FilterDropdown({
 			</div>
 			{isOpen && (
 				<div
+					id={panelId}
 					ref={panelRef}
 					style={{ left: panelLeft }}
 					// Below Header.tsx's sticky z-40 - this panel's ancestors (the

@@ -3,7 +3,6 @@ import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
-import { usePageTitle } from "../hooks/usePageTitle";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import { statusTitleClass } from "../lib/headingClasses";
@@ -23,6 +22,7 @@ import {
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
+import SkipLink from "../components/SkipLink";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
 import NotFoundPage from "../pages/NotFoundPage";
@@ -89,6 +89,7 @@ function OrgAppShell({
 
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
+			<SkipLink />
 			<Header
 				orgSwitcher={{ currentOrgId: org.id, currentTab: activeTabKey }}
 				breadcrumb={{
@@ -98,7 +99,11 @@ function OrgAppShell({
 				}}
 			/>
 
-			<main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+			<main
+				id="main-content"
+				tabIndex={-1}
+				className="mx-auto w-full max-w-7xl flex-1 scroll-mt-24 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
+			>
 				<h1 className="mb-6 text-2xl font-bold text-gray-900">{pageTitle}</h1>
 				<Suspense
 					fallback={
@@ -171,7 +176,14 @@ export default function OrgAppLayout() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [organizationId]);
 
-	usePageTitle(org?.name ?? t("orgDashboard.title"));
+	// einsatzbereit#1308: no page-title effect here anymore - it used to set
+	// the org name unconditionally and never again (its dependency doesn't
+	// change across a tab switch), so every tab under this layout showed the
+	// exact same document title. Each of the four tab pages (plus
+	// EngagementManagementPage for the nested engagements route) now calls
+	// usePageTitle itself with its own tab label, the same fix
+	// EngagementManagementPage already had - this layout no longer needs a
+	// fallback since every route it renders covers its own title.
 
 	// #9: every tab now lives under /dashboard/... (App.tsx's pathless
 	// "dashboard" parent route), so the segment right after "dashboard" -

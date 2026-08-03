@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { dispatchToast } from "../../lib/toastBus";
+import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import FilterDropdown, {
 	DropdownOption,
 	MultiDropdownOption,
@@ -105,13 +106,22 @@ export default function VolunteerOpportunitiesList() {
 				break;
 			case "Escape":
 				e.preventDefault();
+				// Dismiss just the suggestions dropdown, not the whole location
+				// panel - without this, the keydown bubbles to document where
+				// the filter bar's own useDismissableOverlay listens for Escape
+				// too, closing both in one keystroke instead of the suggestions
+				// first, the panel on a second press.
+				e.stopPropagation();
 				setShowLocationSuggestions(false);
 				setActiveSuggestionIndex(-1);
 				break;
 		}
 	}
 
-	const filterBarRef = useRef<HTMLDivElement>(null);
+	const filterBarRef = useDismissableOverlay<HTMLDivElement>(
+		openFilter !== null,
+		() => setOpenFilter(null),
+	);
 
 	const {
 		items,
@@ -134,19 +144,6 @@ export default function VolunteerOpportunitiesList() {
 		lng,
 		radius,
 	});
-
-	useEffect(() => {
-		function handleOutside(e: MouseEvent) {
-			if (
-				filterBarRef.current &&
-				!filterBarRef.current.contains(e.target as Node)
-			) {
-				setOpenFilter(null);
-			}
-		}
-		document.addEventListener("mousedown", handleOutside);
-		return () => document.removeEventListener("mousedown", handleOutside);
-	}, []);
 
 	function updateFilter(key: string, value: string) {
 		const next = new URLSearchParams(window.location.search);
@@ -370,7 +367,7 @@ export default function VolunteerOpportunitiesList() {
 											resetLocationSuggestions();
 										}}
 										aria-label={t("opportunities.clearCity")}
-										className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+										className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-600 hover:text-gray-800"
 									>
 										&times;
 									</button>
@@ -439,6 +436,7 @@ export default function VolunteerOpportunitiesList() {
 										key={r}
 										type="button"
 										onClick={() => updateFilter("radius", String(r))}
+										aria-pressed={radius === String(r)}
 										className={`rounded-full border px-3 py-1 text-sm transition-colors ${
 											radius === String(r)
 												? "border-brand-500 bg-brand-50 font-medium text-brand-700"
@@ -648,7 +646,7 @@ export default function VolunteerOpportunitiesList() {
 								type="button"
 								onClick={() => updateFilter("tag", "")}
 								aria-label={t("opportunities.clearTag")}
-								className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
+								className="flex items-center px-2 py-1.5 text-brand-700 transition-colors hover:bg-brand-100 hover:text-brand-800"
 							>
 								<CloseIcon />
 							</button>
