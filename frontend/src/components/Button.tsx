@@ -24,11 +24,16 @@ const BASE_CLASSES =
 // this existed). tertiary: borderless brand-color action for a secondary CTA
 // alongside a primary one (e.g. "Save draft" next to "Publish") - distinct
 // from `secondary` since it needs to read as an action, not a dismissal.
+// danger: solid destructive action, for confirmation dialogs. dangerOutline:
+// bordered destructive action, for in-row/panel destructive actions (see
+// issue #1105: eight different visual treatments for delete/withdraw/
+// cancel/revoke actions before these two existed).
 const VARIANT_CLASSES = {
 	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	secondary: "text-gray-600 hover:bg-gray-100",
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
 	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
+	dangerOutline: "border border-red-200 text-red-700 hover:bg-red-50",
 } as const;
 
 type Variant = keyof typeof VARIANT_CLASSES;

@@ -383,17 +383,18 @@ export default function OrgOpportunitiesPage() {
 								: t("opportunities.edit")}
 						</button>
 					)}
-					<button
+					<Button
 						type="button"
+						variant="dangerOutline"
+						size="sm"
 						onClick={() => {
 							setDeleteTargetId(item.id);
 							setDeleteError(null);
 						}}
 						data-testid="opportunity-delete"
-						className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
 					>
 						{t("opportunities.delete")}
-					</button>
+					</Button>
 					{(status === "Draft" || status === "Unpublished") && (
 						<Button
 							type="button"
@@ -421,18 +422,19 @@ export default function OrgOpportunitiesPage() {
 						</button>
 					)}
 					{(status === "Published" || status === "Unpublished") && (
-						<button
+						<Button
 							type="button"
+							variant="dangerOutline"
+							size="sm"
 							onClick={() => {
 								setCancelTargetId(item.id);
 								setCancelReason("");
 								setCancelError(null);
 							}}
 							data-testid="opportunity-cancel"
-							className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
 						>
 							{t("opportunities.cancel")}
-						</button>
+						</Button>
 					)}
 					{status !== "Draft" && (
 						<Link

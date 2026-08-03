@@ -513,13 +513,16 @@ export default function VolunteerOpportunityDetailPage() {
 								{t(`myEngagements.status.${cue.status}`)}
 							</Chip>
 						</div>
-						<button
+						<Button
+							type="button"
+							variant="dangerOutline"
+							size="sm"
+							className="shrink-0"
 							onClick={() => setShowWithdrawConfirm(true)}
 							disabled={withdrawing}
-							className="shrink-0 text-xs text-red-600 hover:underline disabled:opacity-50"
 						>
 							{t("myEngagements.withdraw")}
-						</button>
+						</Button>
 					</div>
 				</div>
 			)}

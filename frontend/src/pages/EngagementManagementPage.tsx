@@ -533,12 +533,14 @@ export default function EngagementManagementPage() {
 													? t("engagementManagement.processing")
 													: t("engagementManagement.confirm")}
 											</button>
-											<button
+											<Button
+												type="button"
+												variant="dangerOutline"
+												size="sm"
 												onClick={() => setConfirmCancelId(e.id)}
-												className="rounded-xl border border-red-200 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-50"
 											>
 												{t("engagementManagement.cancel")}
-											</button>
+											</Button>
 										</div>
 									)}
 									{e.status === "Confirmed" && (
@@ -566,13 +568,15 @@ export default function EngagementManagementPage() {
 														: t("checkIn.undoCheckIn")}
 												</button>
 											)}
-											<button
+											<Button
+												type="button"
+												variant="dangerOutline"
+												size="sm"
 												data-testid={`engagement-revoke-${e.id}`}
 												onClick={() => setConfirmCancelId(e.id)}
-												className="text-xs text-red-600 hover:underline"
 											>
 												{t("engagementManagement.revoke")}
-											</button>
+											</Button>
 										</div>
 									)}
 								</div>
