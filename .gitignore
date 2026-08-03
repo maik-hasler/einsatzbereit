@@ -1,4 +1,7 @@
 .claude/settings.local.json
 
+# Claude Code agent worktrees (transient, per-session)
+.claude/worktrees/
+
 # Deployment secrets (server-side only, see .env.example)
 .env
