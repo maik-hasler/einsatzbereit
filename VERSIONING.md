@@ -62,3 +62,12 @@ Prerelease tags produce Docker images that are **not** tagged as `latest`.
 2. Set tag: `git tag v1.0.0`
 3. Push tag: `git push origin v1.0.0`
 4. GitHub Actions builds and pushes all three Docker images automatically
+
+## Release Notes
+
+Every tag (stable and `-rc.N`) gets a [GitHub Release](https://github.com/maik-hasler/einsatzbereit/releases)
+with auto-generated notes grouped by Conventional Commit type (Features, Bug
+Fixes, Performance, Refactoring, Documentation, Reverts, and any `!`-marked
+Breaking Changes) since the previous tag. Release candidates are marked as
+prereleases. This is the canonical human-readable record of what shipped in
+each version - there is no separate `CHANGELOG.md` file to keep in sync.

@@ -8,7 +8,7 @@
 ├── frontend.yml                Frontend: lint → build
 ├── docs.yml                    Docs: AsciiDoc build (push + PR) → GitHub Pages deploy (push only)
 ├── keycloak-realm-import.yml   Verifies the committed realm still imports on the production Keycloak version
-├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging (RC tags) or deploy-production (stable tags)
+├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, create a GitHub Release, then deploy-staging (RC tags) or deploy-production (stable tags)
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)
 ├── reset-staging.yml           Manual (workflow_dispatch): wipes staging Postgres + MinIO data, restarts with same images
 ├── lint.yml                    Ban em/en dashes + EditorConfig check
@@ -68,7 +68,8 @@ All images pushed to **GitHub Container Registry (GHCR)**.
 3. Extract version from tag (strips leading `v`)
 4. Build and push Docker image
 5. Tag with version + `latest` (if not RC) or `staging` (if RC)
-6. `deploy-staging` (RC tags) or `deploy-production` (stable tags) deploys - see below
+6. `github-release` job (`needs: [publish-backend, publish-frontend, publish-keycloak]`, so it runs for both stable and RC tags - unlike `deploy-staging`/`deploy-production`, which are gated on `prerelease`) creates a GitHub Release for the tag via `gh release create`, using the default `GITHUB_TOKEN` (job-scoped `permissions: contents: write`, no `RELEASE_TOKEN` needed - creating a release doesn't push a ref, so it doesn't hit the "tags pushed with `GITHUB_TOKEN` don't trigger workflows" restriction that `release-rc.yml` works around). Notes are generated from commit subjects since the previous tag (found by semver sort across both stable and RC tags, via `git tag --sort=-v:refname`), grouped by Conventional Commit type - a `!` after the type/scope (e.g. `feat!:`) surfaces under a "Breaking Changes" section. See [VERSIONING.md](../VERSIONING.md)'s "Release Notes" section - GitHub Releases is the canonical record, there is no `CHANGELOG.md` file.
+7. `deploy-staging` (RC tags) or `deploy-production` (stable tags) deploys - see below
 
 ### `deploy-staging` vs `deploy-production` (#1344)
 
