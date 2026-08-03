@@ -947,6 +947,7 @@ function AuditLogSection() {
 					<LoadMoreButton
 						loading={loadingMore}
 						label={t("administration.auditLog.loadMore")}
+						loadingLabel={t("administration.loadingMore")}
 						onClick={loadMore}
 					/>
 				))}
