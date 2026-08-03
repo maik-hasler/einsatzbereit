@@ -9,6 +9,7 @@ import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
 import { pageTitleClass } from "../../lib/headingClasses";
+import { cardSubtleClass } from "../../lib/surfaceClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
@@ -311,7 +312,7 @@ export default function ProfileOverviewPage() {
 
 			{profileLoading && (
 				<div
-					className="mb-6 flex items-center gap-4 rounded-card border border-gray-100 bg-gray-50 px-4 py-4"
+					className={`mb-6 flex items-center gap-4 ${cardSubtleClass}`}
 					role="status"
 				>
 					<span className="sr-only">{t("profile.loading")}</span>
@@ -337,7 +338,9 @@ export default function ProfileOverviewPage() {
 
 					{/* Identity + momentum hero */}
 					{!editing && (
-						<div className="mb-6 flex flex-col gap-4 rounded-card border border-gray-100 bg-gray-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+						<div
+							className={`mb-6 flex flex-col gap-4 ${cardSubtleClass} sm:flex-row sm:items-center sm:justify-between`}
+						>
 							<div className="flex items-center gap-4">
 								{avatarUrl ? (
 									<img

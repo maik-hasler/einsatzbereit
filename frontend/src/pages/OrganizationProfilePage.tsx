@@ -17,6 +17,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
+import { cardClass } from "../lib/surfaceClasses";
 import { FlagIcon } from "../components/icons";
 
 export default function OrganizationProfilePage() {
@@ -115,7 +116,7 @@ export default function OrganizationProfilePage() {
 						{profile.openOpportunities.map((opp) => (
 							<li
 								key={opp.id}
-								className="relative rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
+								className={`relative ${cardClass} transition-shadow hover:shadow-raised`}
 							>
 								<Link
 									to={`/volunteer-opportunities/${opp.id}`}

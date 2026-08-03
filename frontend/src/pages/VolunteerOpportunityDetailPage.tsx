@@ -31,6 +31,7 @@ import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
 import { getApiErrorMessage } from "../lib/apiError";
 import { signinLocaleArgs } from "../lib/authLocale";
+import { cardClass, cardSubtleClass } from "../lib/surfaceClasses";
 import {
 	CalendarIcon,
 	EnvelopeIcon,
@@ -370,7 +371,7 @@ export default function VolunteerOpportunityDetailPage() {
 			)}
 
 			{/* Info card */}
-			<div className="mb-6 space-y-3 rounded-card border border-gray-100 bg-gray-50 px-4 py-4">
+			<div className={`mb-6 space-y-3 ${cardSubtleClass}`}>
 				<div className="flex items-center gap-3 text-sm text-gray-700">
 					<CalendarIcon className="h-4 w-4 shrink-0 text-gray-400" />
 					<span>{formatOccurrence(opportunity.occurrence, t)}</span>
@@ -457,7 +458,7 @@ export default function VolunteerOpportunityDetailPage() {
 							{opportunity.timeSlots.map((ts) => (
 								<li
 									key={ts.id}
-									className="flex items-center justify-between rounded-card border border-gray-100 bg-white px-4 py-3 text-sm text-gray-700 shadow-resting"
+									className={`flex items-center justify-between ${cardClass} text-sm text-gray-700`}
 								>
 									<span>
 										{formatDateTime(
@@ -500,10 +501,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Your application status */}
 			{isAuthenticated && !isOwner && cue && !isDraft && (
-				<div
-					data-testid="application-status"
-					className="mb-6 rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting"
-				>
+				<div data-testid="application-status" className={`mb-6 ${cardClass}`}>
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<p className="mb-1 text-xs text-gray-500">
@@ -608,7 +606,9 @@ export default function VolunteerOpportunityDetailPage() {
 							orgProfile.contactPhone ||
 							orgProfile.website ||
 							orgProfile.address) && (
-							<div className="space-y-2.5 rounded-card border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+							<div
+								className={`space-y-2.5 ${cardSubtleClass} text-sm text-gray-700`}
+							>
 								{orgProfile.contactEmail && (
 									<div className="flex items-center gap-3">
 										<EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400" />
@@ -669,7 +669,7 @@ export default function VolunteerOpportunityDetailPage() {
 						{otherOrgOpportunities.map((opp) => (
 							<li
 								key={opp.id}
-								className="relative flex h-full flex-col rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
+								className={`relative flex h-full flex-col ${cardClass} transition-shadow hover:shadow-raised`}
 							>
 								<Link
 									to={`/volunteer-opportunities/${opp.id}`}

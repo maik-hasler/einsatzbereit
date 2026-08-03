@@ -10,6 +10,7 @@ import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
 import { formatDate, formatDateTime } from "../../lib/format";
+import { cardClass } from "../../lib/surfaceClasses";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -200,7 +201,7 @@ export default function ActivitySection() {
 						{invitations.map((inv) => (
 							<li
 								key={inv.id}
-								className="flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
+								className={`flex h-full flex-col gap-3 ${cardClass}`}
 							>
 								<div>
 									<p className="text-sm font-semibold text-gray-900">
@@ -283,11 +284,7 @@ export default function ActivitySection() {
 				>
 					<span className="sr-only">{t("myEngagements.loading")}</span>
 					{Array.from({ length: 3 }).map((_, i) => (
-						<div
-							key={i}
-							aria-hidden="true"
-							className="rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting"
-						>
+						<div key={i} aria-hidden="true" className={cardClass}>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0 flex-1 space-y-2">
 									<Skeleton className="h-4 w-2/3" />
@@ -329,7 +326,7 @@ export default function ActivitySection() {
 							key={e.id}
 							data-testid="engagement-card"
 							data-engagement-id={e.id}
-							className="flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white px-4 py-4 shadow-resting transition-shadow hover:shadow-raised"
+							className={`flex h-full flex-col gap-3 ${cardClass} transition-shadow hover:shadow-raised`}
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="min-w-0">

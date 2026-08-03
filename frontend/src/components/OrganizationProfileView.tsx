@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { EnvelopeIcon, GlobeIcon, MapPinIcon, PhoneIcon } from "./icons";
+import { cardSubtleClass } from "../lib/surfaceClasses";
 
 interface OrganizationAddress {
 	street: string;
@@ -81,7 +82,9 @@ export default function OrganizationProfileView({
 				)}
 
 				{hasContactInfo && (
-					<div className="mb-6 space-y-2.5 rounded-card border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700">
+					<div
+						className={`mb-6 space-y-2.5 ${cardSubtleClass} text-sm text-gray-700`}
+					>
 						{contactEmail && (
 							<div className="flex items-center gap-3">
 								<EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400" />

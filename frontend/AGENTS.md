@@ -173,8 +173,9 @@ Shared UI primitives live in `src/components/` and `src/lib/` (no separate desig
 | `EmptyState`  | `components/EmptyState.tsx`  | "Nothing here yet" placeholder with an optional CTA button                                                                           |
 | `Skeleton`    | `components/Skeleton.tsx`    | Loading placeholders (`animate-pulse` block)                                                                                         |
 | `Modal`       | `components/Modal.tsx`       | Every dialog - backdrop-button a11y pattern (see Accessibility below), focus trap, Escape-to-close, portals out of `inert` ancestors |
+| `surfaceClasses` | `lib/surfaceClasses.ts`   | `cardClass`, `cardSubtleClass` for every bordered content panel (list items, result cards, widget panels, info panels) - not media cards whose padding lives on an inner wrapper around an edge-to-edge image/map |
 
-**Tokens:** the brand color scale (`brand-50`...`brand-900`) and `accent-400` are defined once in `src/styles/global.css`'s `@theme` block - use them instead of ad hoc hex values or arbitrary colors. `rounded-xl` is the default corner radius for interactive surfaces (buttons, inputs, cards, modals); `rounded-md` is reserved for `Skeleton` loading blocks.
+**Tokens:** the brand color scale (`brand-50`...`brand-900`) and `accent-400` are defined once in `src/styles/global.css`'s `@theme` block - use them instead of ad hoc hex values or arbitrary colors. `rounded-xl` is the default corner radius for interactive surfaces (buttons, inputs); cards, panels and modals use the separate `rounded-card` (16px) token instead - see `surfaceClasses.ts` and `Modal.tsx`. `rounded-md` is reserved for `Skeleton` loading blocks.
 
 ## Accessibility (a11y)
 

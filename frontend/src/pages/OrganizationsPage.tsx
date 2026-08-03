@@ -11,6 +11,7 @@ import { getApiErrorMessage } from "../lib/apiError";
 import { avatarColorClasses } from "../lib/avatarColor";
 import { inputClass } from "../lib/formClasses";
 import { pageTitleClass } from "../lib/headingClasses";
+import { cardClass } from "../lib/surfaceClasses";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
@@ -135,7 +136,7 @@ export default function OrganizationsPage() {
 							<div
 								key={i}
 								aria-hidden="true"
-								className="flex flex-col gap-3 rounded-card border border-gray-100 bg-white p-4 shadow-resting"
+								className={`flex flex-col gap-3 ${cardClass}`}
 							>
 								<div className="flex items-center gap-3">
 									<Skeleton className="h-12 w-12 shrink-0 rounded-full" />
@@ -175,7 +176,7 @@ export default function OrganizationsPage() {
 								return (
 									<li
 										key={org.id}
-										className="relative flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
+										className={`relative flex h-full flex-col gap-3 ${cardClass} transition-shadow hover:shadow-raised`}
 									>
 										<Link
 											to={`/organizations/${org.id}`}

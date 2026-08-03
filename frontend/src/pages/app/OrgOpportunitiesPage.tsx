@@ -11,6 +11,7 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { labelClass, textareaClass } from "../../lib/formClasses";
+import { cardClass } from "../../lib/surfaceClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -532,7 +533,7 @@ export default function OrgOpportunitiesPage() {
 						<div
 							key={i}
 							aria-hidden="true"
-							className="space-y-2 rounded-card border border-gray-100 bg-white p-4 shadow-resting"
+							className={`space-y-2 ${cardClass}`}
 						>
 							<Skeleton className="h-4 w-2/3" />
 							<Skeleton className="h-3 w-1/2" />
