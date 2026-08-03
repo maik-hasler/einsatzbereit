@@ -371,6 +371,34 @@ public class EngagementTests
 		result.Error.Description.Should().Match("*already checked in*");
 	}
 
+	// --- Anonymize ---
+
+	[Test]
+	public void Anonymize_ShouldSetVolunteerIdToNull()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		engagement.Anonymize();
+
+		engagement.IsAnonymized.Should().BeTrue();
+	}
+
+	[Test]
+	public void Anonymize_ShouldClearMessageAndFeedback()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.SubmitFeedback(5, "Great!", DateTimeOffset.UtcNow);
+
+		engagement.Anonymize();
+
+		engagement.Message.Should().BeNull();
+		engagement.FeedbackComment.Should().BeNull();
+		engagement.FeedbackRating.Should().BeNull();
+		engagement.FeedbackSubmittedAt.Should().BeNull();
+	}
+
 	// --- Anonymized guard (#1140) ---
 	// DeleteMyAccountCommandHandler anonymizes an engagement (VolunteerId = null) when its
 	// volunteer deletes their account. Every subsequent state transition must refuse to run
