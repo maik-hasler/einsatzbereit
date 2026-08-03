@@ -6,6 +6,7 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import Button from "../../components/Button";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
+import SuccessBanner from "../../components/SuccessBanner";
 
 type PreferenceKey =
 	| "notifyOnNewSignUp"
@@ -120,9 +121,10 @@ export default function NotificationPreferencesSection() {
 				<form onSubmit={handleSave} className="space-y-4">
 					{saveError && <ErrorBanner message={saveError} className="mb-2" />}
 					{savedSuccess && (
-						<div className="mb-2 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-							{t("notificationPreferences.savedSuccess")}
-						</div>
+						<SuccessBanner
+							message={t("notificationPreferences.savedSuccess")}
+							className="mb-2"
+						/>
 					)}
 
 					<div className="space-y-3">

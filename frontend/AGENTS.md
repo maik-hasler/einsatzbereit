@@ -169,6 +169,7 @@ Shared UI primitives live in `src/components/` and `src/lib/` (no separate desig
 | `Button`      | `components/Button.tsx`      | Every clickable action, button or link - `variant` (`primary`/`secondary`), `size` (`sm`/`md`/`lg`), `fullWidth`                     |
 | `formClasses` | `lib/formClasses.ts`         | `inputClass`, `textareaClass`, `labelClass` for every form control                                                                   |
 | `ErrorBanner` | `components/ErrorBanner.tsx` | Inline "action failed" message - the one boxed style every page's error state should share                                          |
+| `SuccessBanner` | `components/SuccessBanner.tsx` | Inline "action succeeded" message - the `ErrorBanner` twin, same box style in green                                                |
 | `EmptyState`  | `components/EmptyState.tsx`  | "Nothing here yet" placeholder with an optional CTA button                                                                           |
 | `Skeleton`    | `components/Skeleton.tsx`    | Loading placeholders (`animate-pulse` block)                                                                                         |
 | `Modal`       | `components/Modal.tsx`       | Every dialog - backdrop-button a11y pattern (see Accessibility below), focus trap, Escape-to-close, portals out of `inert` ancestors |

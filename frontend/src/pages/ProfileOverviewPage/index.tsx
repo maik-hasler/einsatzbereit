@@ -15,6 +15,7 @@ import EmptyState from "../../components/EmptyState";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
+import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
@@ -328,17 +329,10 @@ export default function ProfileOverviewPage() {
 					)}
 					{/* Always mounted (not conditional on `successMessage`) so the live
 					region is registered before it ever gets content - see
-					CheckInModal.tsx's identical pattern for why. */}
-					<div
-						role="status"
-						className={
-							successMessage
-								? "mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
-								: "sr-only"
-						}
-					>
-						{successMessage}
-					</div>
+					CheckInModal.tsx's identical pattern for why. SuccessBanner itself
+					collapses to sr-only when `message` is empty, so this stays mounted
+					across the toggle. */}
+					<SuccessBanner message={successMessage} className="mb-4" />
 
 					{/* Identity + momentum hero */}
 					{!editing && (
