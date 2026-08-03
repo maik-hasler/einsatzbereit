@@ -50,4 +50,9 @@ public sealed class Notification
 	{
 		IsRead = true;
 	}
+
+	public void MarkUnread()
+	{
+		IsRead = false;
+	}
 }

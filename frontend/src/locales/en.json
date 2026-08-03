@@ -707,10 +707,16 @@
       "bellLabelWithCount_one": "Notifications, {{count}} unread notification",
       "bellLabelWithCount_other": "Notifications, {{count}} unread notifications",
       "markAllRead": "Mark all as read",
+      "clearRead": "Clear read",
+      "clearReadError": "Failed to clear read notifications.",
       "empty": "No notifications.",
       "loadMore": "Load more",
       "loadingMore": "Loading…",
       "markReadError": "Failed to mark notification as read.",
+      "markUnreadNamed": "Mark as unread: {{notification}}",
+      "markUnreadError": "Failed to mark notification as unread.",
+      "deleteNamed": "Delete: {{notification}}",
+      "deleteError": "Failed to delete notification.",
       "deletedOpportunityPlaceholder": "a deleted opportunity",
       "kinds": {
         "EngagementCreated": "New sign-up received for {{title}}",
@@ -819,6 +825,11 @@
         "title": "Restore this content?",
         "message": "Are you sure you want to restore \"{{name}}\"? It will become visible again.",
         "confirm": "Yes, restore"
+      },
+      "clearReadNotifications": {
+        "title": "Clear read notifications?",
+        "message": "This permanently deletes all read notifications. This cannot be undone.",
+        "confirm": "Yes, clear"
       }
     },
     "imageCrop": {
