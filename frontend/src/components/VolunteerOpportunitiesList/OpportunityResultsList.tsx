@@ -30,9 +30,22 @@ export default function OpportunityResultsList({
 	onRetryLoadMore: () => void;
 }) {
 	const { t } = useTranslation();
+	const isInitialLoad = loading && items.length === 0;
 
 	return (
 		<>
+			{/* Always mounted (not conditional on the message) so the live region
+			is registered before it ever gets content - see CheckInModal.tsx's
+			identical pattern for why. Silent during the initial full-page
+			loading skeleton and on error; otherwise announces the settled
+			result count whenever a filter change, search, or "Load more"
+			rewrites the list - previously nothing did, so a screen-reader user
+			had no way to tell whether anything changed. */}
+			<p role="status" className="sr-only">
+				{!error && !isInitialLoad
+					? t("opportunities.resultCount", { count: items.length })
+					: ""}
+			</p>
 			{loading && items.length === 0 && (
 				<div
 					role="status"

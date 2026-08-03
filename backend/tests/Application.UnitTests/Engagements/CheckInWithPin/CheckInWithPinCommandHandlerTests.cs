@@ -61,6 +61,29 @@ public class CheckInWithPinCommandHandlerTests
 		await _attemptLimiter.DidNotReceive().RegisterFailedAttemptAsync(Arg.Any<EngagementId>(), Arg.Any<CancellationToken>());
 	}
 
+	// Regression for #1217: the ownership check below runs before CheckIn()'s
+	// own IsAnonymized guard (#1140), so it used to dereference the null
+	// VolunteerId directly and crash with a 500 instead of returning a 409.
+	[Test]
+	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
+		CancellationToken cancellationToken)
+	{
+		var opportunityId = VolunteerOpportunityId.New();
+		var engagementId = EngagementId.New();
+		var engagement = Engagement.CreateSlotSignUp(opportunityId, UserId.New(), TimeSlotId.New());
+		engagement.Confirm();
+		engagement.Anonymize();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var command = new CheckInWithPinCommand(engagementId, CorrectPin, UserId.New());
+
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+		await _opportunityRepo.DidNotReceive().FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>());
+	}
+
 	[Test]
 	public async Task Handle_ShouldThrowCheckInLocked_BeforeComparingPin_WhenEngagementIsLockedOut(
 		CancellationToken cancellationToken)

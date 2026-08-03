@@ -12,6 +12,16 @@ internal sealed class OrganizationInvitationConfiguration : IEntityTypeConfigura
 	{
 		builder.HasKey(i => i.Id);
 
+		builder.ToTable(t =>
+		{
+			t.HasCheckConstraint(
+				"ck_organization_invitation_intended_role_valid",
+				"intended_role IN ('Member', 'Organizer')");
+			t.HasCheckConstraint(
+				"ck_organization_invitation_status_valid",
+				"status IN ('Pending', 'Accepted', 'Declined', 'Expired')");
+		});
+
 		builder.Property(i => i.Id)
 			.HasConversion(
 				id => id.Value,

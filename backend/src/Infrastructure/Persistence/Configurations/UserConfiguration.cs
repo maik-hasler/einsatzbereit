@@ -15,6 +15,10 @@ internal sealed class UserConfiguration
 	{
 		builder.HasKey(u => u.Id);
 
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_user_preferred_contact_valid",
+			"preferred_contact IN ('Email', 'Phone')"));
+
 		builder.Property(u => u.Id)
 			.HasConversion(
 				id => id.Value,

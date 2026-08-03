@@ -12,6 +12,10 @@ internal sealed class OrganizationMembershipConfiguration : IEntityTypeConfigura
 	{
 		builder.HasKey(m => m.Id);
 
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_organization_membership_role_valid",
+			"role IN ('Member', 'Organizer')"));
+
 		builder.Property(m => m.Id)
 			.HasConversion(
 				id => id.Value,

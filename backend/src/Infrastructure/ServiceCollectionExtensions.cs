@@ -113,6 +113,7 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<AutomaticCheckInOptionsSetup>();
 		services.AddHostedService<AutomaticCheckInJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();
+		services.AddSingleton<OutboxMetrics>();
 		services.AddHostedService<OutboxProcessorJob>();
 		services.AddHostedService<OutboxRetentionJob>();
 		services.AddHostedService<GeocodingRetryJob>();
@@ -121,6 +122,8 @@ public static class ServiceCollectionExtensions
 		services.AddHostedService<InvitationExpiryJob>();
 		services.ConfigureOptions<CheckInAttemptPruneOptionsSetup>();
 		services.AddHostedService<CheckInAttemptPruneJob>();
+		services.ConfigureOptions<NotificationRetentionOptionsSetup>();
+		services.AddHostedService<NotificationRetentionJob>();
 
 
 		// IntegrationTests/VisualTests set Geocoding__UseFakeService=true (see
