@@ -157,11 +157,18 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 	}
 
 	[Test]
-	public async Task PublicUserProfile_ShowsBioSkillsLanguagesAndPreferredContact()
+	public async Task PublicUserProfile_ShowsBioSkillsAndLanguagesButNotPreferredContact()
 	{
-		// #576: bio/skills/languages/preferredContact were captured on the owner's
-		// own profile but never exposed on the public /users/{userId} page. Set
-		// them on vera's own profile, then verify they appear on her public page.
+		// #576: bio/skills/languages were captured on the owner's own profile but
+		// never exposed on the public /users/{userId} page. Set them on vera's own
+		// profile, then verify they appear on her public page.
+		//
+		// #1028: PreferredContact (and Phone) are deliberately excluded from this
+		// page - it's reachable by anonymous visitors, and showing a contact
+		// preference with no way to actually reach the volunteer was decorative/
+		// misleading. Contact info only ever reaches an organizer through an
+		// actual engagement, not a cold view of the public profile - so this test
+		// now asserts the opposite of what #576 asserted.
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 
@@ -209,7 +216,7 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		// this specific fetch fans out further than most.
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 30_000 });
 		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
-		await Expect(Page.GetByText("Preferred contact channel")).ToBeVisibleAsync();
+		await Expect(Page.GetByText("Preferred contact channel")).Not.ToBeVisibleAsync();
 
 		// Regression for #766: this bio/skills/contact wrapper had `mx-auto`,
 		// centering it independently of the left-aligned avatar/name row

@@ -196,7 +196,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	{
 		// #576: the public /users/{userId} page previously showed only avatar,
 		// name, engagement count, and badges - it now also renders bio/skills/
-		// languages/preferredContact via the shared ProfileFieldsView component.
+		// languages via the shared ProfileFieldsView component (preferredContact
+		// is deliberately excluded from this page, see #1028).
 		var frontend = Fixture.GetEndpoint("frontend");
 		var origin = frontend.GetLeftPart(UriPartial.Authority);
 

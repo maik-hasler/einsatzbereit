@@ -26,7 +26,7 @@ public class GetPublicUserProfileQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnBioSkillsLanguagesAndPreferredContact_WhenUserRowExists(
+	public async Task Handle_ShouldReturnBioSkillsAndLanguages_WhenUserRowExists(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -39,7 +39,6 @@ public class GetPublicUserProfileQueryHandlerTests
 		user.ChangeBio("Loves helping out");
 		user.UpdateSkills(["First aid"]);
 		user.UpdateLanguages(["German", "English"]);
-		user.SetPreferredContact(PreferredContact.Phone);
 		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
 
 		// Act
@@ -50,7 +49,33 @@ public class GetPublicUserProfileQueryHandlerTests
 		result!.Bio.Should().Be("Loves helping out");
 		result.Skills.Should().ContainSingle().Which.Should().Be("First aid");
 		result.Languages.Should().BeEquivalentTo(["German", "English"]);
-		result.PreferredContact.Should().Be("Phone");
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotExposePreferredContactOrPhone_EvenWhenSet(
+		CancellationToken cancellationToken)
+	{
+		// #1028: this endpoint is AllowAnonymous() - PreferredContact/Phone must
+		// never leak to an anonymous visitor, regardless of what the volunteer
+		// has set on their own profile. Contact info only ever reaches an
+		// organizer through an actual engagement (EngagementSummary).
+		var userId = UserId.New();
+		_keycloakUserService
+			.GetUserAsync(userId.Value, cancellationToken)
+			.Returns(new KeycloakUserProfile(userId.Value, "vera", "Vera", "Volunteer", "vera@test.de"));
+
+		var user = User.Create(userId);
+		user.SetPreferredContact(PreferredContact.Phone);
+		user.SetPhone("+49 555 1234567");
+		_userRepo.FindAsync(userId, cancellationToken).Returns(user);
+
+		// Act
+		var result = await _sut.Handle(new GetPublicUserProfileQuery(userId), cancellationToken);
+
+		// Assert
+		result.Should().NotBeNull();
+		result!.GetType().GetProperty("PreferredContact").Should().BeNull();
+		result!.GetType().GetProperty("Phone").Should().BeNull();
 	}
 
 	[Test]
@@ -73,6 +98,5 @@ public class GetPublicUserProfileQueryHandlerTests
 		result!.Bio.Should().BeNull();
 		result.Skills.Should().BeEmpty();
 		result.Languages.Should().BeEmpty();
-		result.PreferredContact.Should().BeNull();
 	}
 }

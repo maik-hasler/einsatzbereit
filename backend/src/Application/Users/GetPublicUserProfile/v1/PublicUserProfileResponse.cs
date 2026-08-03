@@ -9,5 +9,4 @@ public sealed record PublicUserProfileResponse(
 	string? AvatarUrl,
 	string? Bio,
 	IReadOnlyList<string> Skills,
-	IReadOnlyList<string> Languages,
-	string? PreferredContact);
+	IReadOnlyList<string> Languages);
