@@ -308,7 +308,17 @@ export default function OrgOpportunitiesPage() {
 		}
 	}
 
-	function renderRow(item: VolunteerOpportunitySummary) {
+	// The Published section's own heading and description already say
+	// "Published" - a per-row badge repeating the same word inside a section
+	// that's already grouped by status carried no information (#984). Draft/
+	// Unpublished/Cancelled keep their badge: those sections' rows can be
+	// the direct result of an action the organizer just took (publish,
+	// unpublish, cancel), so the badge doubles as visible confirmation of
+	// that status change.
+	function renderRow(
+		item: VolunteerOpportunitySummary,
+		showStatusBadge = true,
+	) {
 		const status = item.status;
 		const isHighlighted = item.id === highlightedId;
 		const badgeLabel =
@@ -341,14 +351,16 @@ export default function OrgOpportunitiesPage() {
 						>
 							{item.title || t("orgDashboard.unnamedDraft")}
 						</Link>
-						<Chip
-							data-testid="opportunity-status-badge"
-							tone={STATUS_BADGE_TONE[status] ?? "neutral"}
-							size="sm"
-							className="shrink-0"
-						>
-							{badgeLabel}
-						</Chip>
+						{showStatusBadge && (
+							<Chip
+								data-testid="opportunity-status-badge"
+								tone={STATUS_BADGE_TONE[status] ?? "neutral"}
+								size="sm"
+								className="shrink-0"
+							>
+								{badgeLabel}
+							</Chip>
+						)}
 					</div>
 					{item.description && (
 						<p className="mt-0.5 line-clamp-1 text-xs text-gray-500">
@@ -465,6 +477,7 @@ export default function OrgOpportunitiesPage() {
 		loadingMore: boolean,
 		onLoadMore: () => void,
 		onRetryLoadMore: () => void,
+		showStatusBadge = true,
 	) {
 		if (loading || error || items.length === 0) return null;
 		return (
@@ -472,7 +485,7 @@ export default function OrgOpportunitiesPage() {
 				<h2 className="text-lg font-semibold text-gray-900">{heading}</h2>
 				<p className="mt-1 text-sm text-gray-500">{description}</p>
 				<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{items.map(renderRow)}
+					{items.map((item) => renderRow(item, showStatusBadge))}
 				</ul>
 				{hasMore &&
 					(loadMoreError ? (
@@ -586,6 +599,7 @@ export default function OrgOpportunitiesPage() {
 						publishedLoadingMore,
 						loadMorePublished,
 						retryLoadMorePublished,
+						false,
 					)}
 					{renderSection(
 						"unpublished-section",

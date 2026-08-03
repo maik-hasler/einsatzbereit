@@ -32,7 +32,6 @@ export function visibleCalendarRange(
 				to: endOfWeek(endOfMonth(date)),
 			};
 		case "week":
-		case "work_week":
 			return { from: startOfWeek(date), to: endOfWeek(date) };
 		case "agenda":
 			return {

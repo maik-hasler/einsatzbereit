@@ -17,7 +17,7 @@ import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
-import { resolveDateLocale } from "../../lib/format";
+import { formatDateLong } from "../../lib/format";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -46,7 +46,6 @@ export default function OrgSettingsPage() {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const navigate = useNavigate();
-	const locale = resolveDateLocale(i18n.language);
 	usePageTitle(`${t("orgOverview.tabSettings")} - ${org.name}`);
 
 	function organizationToFormValues(): OrganizationFormValues {
@@ -219,11 +218,10 @@ export default function OrgSettingsPage() {
 						subtitle={
 							<p className="text-xs text-gray-500">
 								{t("orgSettings.createdOn", {
-									date: new Date(org.createdOn).toLocaleDateString(locale, {
-										day: "2-digit",
-										month: "long",
-										year: "numeric",
-									}),
+									date: formatDateLong(
+										org.createdOn as unknown as string,
+										i18n.language,
+									),
 								})}
 							</p>
 						}

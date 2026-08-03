@@ -227,6 +227,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 		() => api.getOrganizationCalendarEvents(organizationId, rangeFrom, rangeTo),
 	);
 	const calLoading = calData === null && !calError;
+
 	const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
 	const [pickerColor, setPickerColor] = useState<string>(() =>
 		brandColor("700"),
@@ -258,6 +259,22 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 		[calData],
 	);
 
+	// #983: opening on the current month whenever the organizer happens to
+	// have no events scheduled in it wastes ~800px on an empty grid and,
+	// since `calDate` also starts on today, defaults to showing exactly
+	// nothing. The one-shot flag is consumed on the *first* load to
+	// complete, regardless of which view that happens to be (medium/compact
+	// widgets default to week/agenda, not month) - gating it behind
+	// `calView === "month"` instead would leave the flag unconsumed for
+	// those sizes and keep re-firing on every later view change, silently
+	// overriding a month view the organizer switched to deliberately.
+	const [hasCheckedInitialView, setHasCheckedInitialView] = useState(false);
+	useEffect(() => {
+		if (hasCheckedInitialView || calLoading) return;
+		setHasCheckedInitialView(true);
+		if (calView === "month" && calEvents.length === 0) setCalView("agenda");
+	}, [calLoading, calView, calEvents, hasCheckedInitialView]);
+
 	const calendarMessages = useMemo(
 		() => ({
 			today: t("orgOverview.calendarToday"),
@@ -265,7 +282,6 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 			next: t("orgOverview.calendarNext"),
 			month: t("orgOverview.calendarMonth"),
 			week: t("orgOverview.calendarWeek"),
-			work_week: t("orgOverview.calendarWorkWeek"),
 			day: t("orgOverview.calendarDay"),
 			agenda: t("orgOverview.calendarAgenda"),
 			noEventsInRange: t("orgOverview.calendarNoEvents"),
@@ -378,7 +394,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 							onView={(v: View) => setCalView(v)}
 							date={calDate}
 							onNavigate={(d: Date) => setCalDate(d)}
-							views={["month", "week", "work_week", "day", "agenda"]}
+							views={["month", "week", "day", "agenda"]}
 							style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
 							components={calendarComponents}
 							eventPropGetter={calendarEventPropGetter}

@@ -38,9 +38,10 @@
       "privacy": "Privacy Policy",
       "contact": "Contact",
       "followUs": "Follow us",
-      "copyright": "© {{year}} Einsatzbereit. All rights reserved."
+      "copyright": "© {{year}} Einsatzbereit. Licensed under <licenseLink>AGPL-3.0</licenseLink>."
     },
     "landing": {
+      "pageTitle": "Find volunteer opportunities near you",
       "heroTagline": "Micro-volunteering · Free · Open Source",
       "heroTitle": "Volunteering doesn't have to be hard.",
       "heroSubtitle": "Fewer people volunteer each year - due to time pressure, effort, and bureaucracy. Einsatzbereit makes micro-volunteering possible: a few hours, real impact, zero overhead.",
@@ -318,9 +319,6 @@
       "submit": "Sign up",
       "cancel": "Cancel",
       "unknownError": "Unknown error",
-      "spotsLeft": "({{count}} left)",
-      "slotFull": "(Full)",
-      "unlimitedSpots": "(Unlimited)",
       "selectTimeSlotRequired": "Please select a time slot."
     },
     "organization": {
@@ -365,6 +363,8 @@
       "loading": "Loading…",
       "layoutLoadError": "Couldn't confirm your saved dashboard layout. What's shown below may not match it, and editing is disabled until this loads successfully.",
       "pendingEngagements": "Pending Sign-ups",
+      "pendingEngagements_one": "Pending Sign-up",
+      "pendingEngagements_other": "Pending Sign-ups",
       "viewOpportunities": "View opportunities →",
       "unnamedDraft": "Unnamed Draft",
       "signedUpVolunteers": "Signed-up Volunteers",
@@ -827,6 +827,9 @@
     "profile": {
       "title": "My Profile",
       "sectionDetails": "Profile Details",
+      "emptyStateTitle": "Your profile is still empty",
+      "emptyStateMessage": "Add a bio, skills, or contact preferences so organizations know a bit about you.",
+      "emptyStateCta": "Complete your profile",
       "fieldAvatar": "Profile picture",
       "avatarUpload": "Upload picture",
       "avatarHint": "JPEG, PNG or WebP, max 2 MB.",
@@ -1060,7 +1063,6 @@
       "calendarNext": "Next",
       "calendarMonth": "Month",
       "calendarWeek": "Week",
-      "calendarWorkWeek": "Work week",
       "calendarDay": "Day",
       "calendarAgenda": "Agenda",
       "eventFillState": "{{booked}} / {{max}} booked",

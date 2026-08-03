@@ -81,10 +81,12 @@ export default function SignUpModal({
 			<form onSubmit={handleSubmit} className="space-y-4">
 				{isScheduledSlots && (
 					<div>
-						<label
-							htmlFor="sign-up-time-slot"
-							className="mb-1 block text-sm font-medium text-gray-700"
-						>
+						{/* Visually hidden, not removed - the dialog title just above
+						("Select a slot") already conveys this on screen, so showing it
+						again here read as a duplicated label (#987); the dropdown still
+						needs its own accessible name for screen reader users landing on
+						it directly. */}
+						<label htmlFor="sign-up-time-slot" className="sr-only">
 							{t("signUp.selectTimeSlot")}
 						</label>
 						{timeSlots.length === 0 ? (
@@ -116,10 +118,10 @@ export default function SignUpModal({
 											i18n.language,
 										)} ${
 											spotsLeft === null
-												? t("signUp.unlimitedSpots")
+												? t("opportunities.unlimitedSpots")
 												: slotFull
-													? t("signUp.slotFull")
-													: t("signUp.spotsLeft", { count: spotsLeft })
+													? t("opportunities.full")
+													: t("opportunities.spotsLeft", { count: spotsLeft })
 										}`,
 									};
 								})}

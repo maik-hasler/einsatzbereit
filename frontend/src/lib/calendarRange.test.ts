@@ -36,13 +36,6 @@ describe("visibleCalendarRange", () => {
 		expect(day(to)).toBe("2026-03-14");
 	});
 
-	it("returns the same range for work_week as for week", () => {
-		const week = visibleCalendarRange(new Date(2026, 2, 11), "week");
-		const workWeek = visibleCalendarRange(new Date(2026, 2, 11), "work_week");
-
-		expect(workWeek).toEqual(week);
-	});
-
 	it("returns just the single day for day view", () => {
 		const { from, to } = visibleCalendarRange(new Date(2026, 2, 11), "day");
 
@@ -63,7 +56,6 @@ describe("visibleCalendarRange", () => {
 		const views: Array<Parameters<typeof visibleCalendarRange>[1]> = [
 			"month",
 			"week",
-			"work_week",
 			"day",
 			"agenda",
 		];

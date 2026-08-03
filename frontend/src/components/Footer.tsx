@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 export default function Footer({ compact = false }: { compact?: boolean }) {
 	const { t } = useTranslation();
@@ -131,7 +131,27 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 
 				{/* Bottom Bar */}
 				<div className="mt-12 border-t border-brand-700 pt-8 text-center text-xs">
-					<p>{t("footer.copyright", { year: currentYear })}</p>
+					<p>
+						<Trans
+							i18nKey="footer.copyright"
+							values={{ year: currentYear }}
+							components={{
+								// Self-closing, matching the contactLink/privacyLink/imprintLink
+								// convention in TermsOfUsePage.tsx - Trans fills this from
+								// footer.copyright's <licenseLink> tag content in en.json/de.json,
+								// not from children written here, so no fallback text is needed.
+								licenseLink: (
+									// eslint-disable-next-line jsx-a11y/anchor-has-content
+									<a
+										href="https://github.com/maik-hasler/einsatzbereit/blob/main/LICENSE"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="underline hover:text-white"
+									/>
+								),
+							}}
+						/>
+					</p>
 				</div>
 			</div>
 		</footer>
