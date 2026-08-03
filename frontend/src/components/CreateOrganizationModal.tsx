@@ -13,6 +13,7 @@ import {
 import type { OrganizationFormValues } from "../lib/organizationFormSchema";
 import Modal from "./Modal";
 import Button from "./Button";
+import ConfirmDialog from "./ConfirmDialog";
 import ErrorBanner from "./ErrorBanner";
 import ImageCropModal from "./ImageCropModal";
 import FileUploadButton from "./FileUploadButton";
@@ -33,7 +34,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 		register,
 		handleSubmit,
 		watch,
-		formState: { errors },
+		formState: { errors, isDirty },
 	} = useForm<OrganizationFormValues>({
 		resolver: zodResolver(schema),
 		mode: "onBlur",
@@ -49,12 +50,21 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 	const nameFieldRef = useRef<HTMLDivElement>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
 	useEffect(() => {
 		return () => {
 			if (logoPreview) URL.revokeObjectURL(logoPreview);
 		};
 	}, [logoPreview]);
+
+	// react-hook-form's isDirty alone would miss a picked (but not yet
+	// uploaded) logo - without this, a fully filled form was discarded with no
+	// prompt on Escape, a backdrop click, or Cancel (#1238).
+	function requestClose() {
+		if (isDirty || logoFile !== null) setShowDiscardConfirm(true);
+		else onClose();
+	}
 
 	function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
@@ -127,12 +137,12 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 
 	return (
 		<Modal
-			onClose={onClose}
+			onClose={requestClose}
 			labelledBy="create-org-dialog-title"
 			maxWidth="max-w-md"
 			className="flex max-h-[min(85vh,720px)] flex-col overflow-hidden rounded-card bg-white shadow-modal"
 			initialFocusRef={nameFieldRef}
-			suspended={croppingLogoFile !== null}
+			suspended={croppingLogoFile !== null || showDiscardConfirm}
 		>
 			<h2
 				id="create-org-dialog-title"
@@ -443,7 +453,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					<Button
 						type="button"
 						variant="secondary"
-						onClick={onClose}
+						onClick={requestClose}
 						data-testid="modal-cancel"
 					>
 						{t("organization.cancel")}
@@ -464,6 +474,19 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					title={t("orgSettings.logoUpload")}
 					onCancel={() => setCroppingLogoFile(null)}
 					onCropped={handleLogoCropped}
+				/>
+			)}
+
+			{showDiscardConfirm && (
+				<ConfirmDialog
+					title={t("organization.unsavedChangesTitle")}
+					message={t("organization.unsavedChangesMessage")}
+					confirmLabel={t("organization.discardChanges")}
+					onConfirm={() => {
+						setShowDiscardConfirm(false);
+						onClose();
+					}}
+					onClose={() => setShowDiscardConfirm(false)}
 				/>
 			)}
 		</Modal>

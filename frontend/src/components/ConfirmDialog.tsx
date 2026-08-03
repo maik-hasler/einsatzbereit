@@ -66,6 +66,7 @@ export default function ConfirmDialog({
 					variant="danger"
 					onClick={onConfirm}
 					disabled={loading}
+					aria-busy={loading}
 				>
 					{loading ? t("common.saving") : confirmLabel}
 				</Button>

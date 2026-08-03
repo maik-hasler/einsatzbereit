@@ -125,6 +125,9 @@
       "radiusKmValue": "{{count}} km",
       "nearMe": "In meiner Nähe",
       "nearMeDenied": "Standortzugriff verweigert - bitte manuell suchen.",
+      "citySearching": "Wird gesucht…",
+      "cityNoMatch": "Keine passende Stadt gefunden.",
+      "cityError": "Suche nach dieser Stadt fehlgeschlagen. Bitte erneut versuchen.",
       "category": {
         "Social": "Soziales",
         "Environment": "Umwelt",
@@ -330,7 +333,10 @@
       "creating": "Wird erstellt…",
       "submit": "Erstellen",
       "cancel": "Abbrechen",
-      "unknownError": "Unbekannter Fehler"
+      "unknownError": "Unbekannter Fehler",
+      "unsavedChangesTitle": "Nicht gespeicherte Änderungen verwerfen?",
+      "unsavedChangesMessage": "Du hast nicht gespeicherte Änderungen an dieser Organisation. Wenn du jetzt schließt, gehen sie verloren.",
+      "discardChanges": "Änderungen verwerfen"
     },
     "orgApp": {
       "backToSite": "Zurück zu Einsatzbereit",
@@ -362,6 +368,7 @@
     "orgDashboard": {
       "loading": "Wird geladen…",
       "layoutLoadError": "Dein gespeichertes Dashboard-Layout konnte nicht bestätigt werden. Die Ansicht unten stimmt damit möglicherweise nicht überein - Bearbeiten ist deaktiviert, bis dies erfolgreich geladen wurde.",
+      "widgetError": "Dieses Widget konnte nicht angezeigt werden. Bitte die Seite neu laden.",
       "pendingEngagements": "Ausstehende Anmeldungen",
       "pendingEngagements_one": "Ausstehende Anmeldung",
       "pendingEngagements_other": "Ausstehende Anmeldungen",
@@ -525,7 +532,7 @@
       "pinLabel": "PIN",
       "pinPlaceholder": "4-stellige PIN",
       "submitPin": "Bestätigen",
-      "submitting": "…",
+      "submitting": "Wird gesendet…",
       "success": "Erfolgreich eingecheckt!",
       "invalidPin": "Falsche PIN. Bitte erneut versuchen.",
       "manualInstruction": "Der:die Organisator:in wird dich manuell einchecken.",
@@ -536,9 +543,10 @@
       "organizerPinHint": "Teile diese PIN mit deinen Freiwilligen, damit sie einchecken können.",
       "markCheckedIn": "Als eingecheckt markieren",
       "markCheckedInSuccess": "Freiwilliger als eingecheckt markiert.",
-      "markingCheckedIn": "…",
+      "markingCheckedIn": "Wird als eingecheckt markiert…",
+      "manualCheckInError": "Dieser Freiwillige konnte nicht als eingecheckt markiert werden. Bitte erneut versuchen.",
       "undoCheckIn": "Check-in rückgängig machen",
-      "undoingCheckIn": "…",
+      "undoingCheckIn": "Wird rückgängig gemacht…",
       "undoCheckInError": "Fehler beim Rückgängigmachen des Check-ins",
       "qrScanButton": "QR-Code scannen",
       "qrScanTitle": "Freiwilligen-QR-Code scannen",

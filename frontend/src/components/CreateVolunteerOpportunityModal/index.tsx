@@ -342,7 +342,17 @@ export default function CreateVolunteerOpportunityModal({
 	}, [bannerPreview]);
 
 	function requestClose() {
-		if (isDirty) setShowDiscardConfirm(true);
+		// isDirty only tracks react-hook-form's own fields - time slots, the
+		// banner file and its removal all live in separate useState outside the
+		// form, so a wizard that only touched those (e.g. added slots on step 4
+		// without editing a text field) needs its own check too, or the discard
+		// guard fails to guard the very thing it exists for (#1233).
+		const hasUnsavedChanges =
+			isDirty ||
+			pendingSlots.length > 0 ||
+			bannerFile !== null ||
+			bannerRemoved;
+		if (hasUnsavedChanges) setShowDiscardConfirm(true);
 		else onClose();
 	}
 
@@ -452,6 +462,10 @@ export default function CreateVolunteerOpportunityModal({
 						recurrenceCount: r.recurrenceCount,
 					})),
 				]);
+				// Only cleared on success (#1241) - on failure the organizer would
+				// otherwise have to re-enter the whole slot, recurrence included,
+				// to retry.
+				setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 			} catch {
 				setSlotError(t("timeSlots.addError"));
 			} finally {
@@ -481,8 +495,8 @@ export default function CreateVolunteerOpportunityModal({
 				},
 			);
 			setPendingSlots((prev) => [...prev, ...newSlots]);
+			setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 		}
-		setNewSlot({ startDateTime: "", endDateTime: "", maxParticipants: 1 });
 	}
 
 	function handleRemovePendingSlot(id: string) {

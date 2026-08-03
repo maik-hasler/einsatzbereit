@@ -224,7 +224,7 @@ export default function EngagementManagementPage() {
 		} catch (err) {
 			dispatchToast(
 				"error",
-				err instanceof Error ? err.message : t("checkIn.markCheckedIn"),
+				getApiErrorMessage(err, t("checkIn.manualCheckInError")),
 			);
 		} finally {
 			setCheckingIn(null);

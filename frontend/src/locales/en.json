@@ -125,6 +125,9 @@
       "radiusKmValue": "{{count}} km",
       "nearMe": "Near me",
       "nearMeDenied": "Location access denied - please search manually.",
+      "citySearching": "Searching…",
+      "cityNoMatch": "No matching city found.",
+      "cityError": "Couldn't search for that city. Please try again.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",
@@ -330,7 +333,10 @@
       "creating": "Creating…",
       "submit": "Create",
       "cancel": "Cancel",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "unsavedChangesTitle": "Discard unsaved changes?",
+      "unsavedChangesMessage": "You have unsaved changes to this organization. If you close now, they will be lost.",
+      "discardChanges": "Discard changes"
     },
     "orgApp": {
       "backToSite": "Back to Einsatzbereit",
@@ -362,6 +368,7 @@
     "orgDashboard": {
       "loading": "Loading…",
       "layoutLoadError": "Couldn't confirm your saved dashboard layout. What's shown below may not match it, and editing is disabled until this loads successfully.",
+      "widgetError": "This widget couldn't be displayed. Try reloading the page.",
       "pendingEngagements": "Pending Sign-ups",
       "pendingEngagements_one": "Pending Sign-up",
       "pendingEngagements_other": "Pending Sign-ups",
@@ -525,7 +532,7 @@
       "pinLabel": "PIN",
       "pinPlaceholder": "4-digit PIN",
       "submitPin": "Submit",
-      "submitting": "…",
+      "submitting": "Submitting…",
       "success": "Checked in successfully!",
       "invalidPin": "Invalid PIN. Please try again.",
       "manualInstruction": "The organizer will check you in manually.",
@@ -536,9 +543,10 @@
       "organizerPinHint": "Share this PIN with your volunteers so they can check in.",
       "markCheckedIn": "Mark as checked in",
       "markCheckedInSuccess": "Volunteer marked as checked in.",
-      "markingCheckedIn": "…",
+      "markingCheckedIn": "Marking as checked in…",
+      "manualCheckInError": "Could not mark this volunteer as checked in. Please try again.",
       "undoCheckIn": "Undo check-in",
-      "undoingCheckIn": "…",
+      "undoingCheckIn": "Undoing…",
       "undoCheckInError": "Error undoing check-in",
       "qrScanButton": "Scan QR code",
       "qrScanTitle": "Scan volunteer QR code",

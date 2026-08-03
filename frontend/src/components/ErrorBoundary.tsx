@@ -5,6 +5,10 @@ import Button from "./Button";
 
 interface Props {
 	children: ReactNode;
+	/** Renders in place of the default full-page fallback - for a boundary
+	 * scoped to a smaller region (e.g. a single dashboard widget) where the
+	 * full-page "Something went wrong" UI would break the surrounding layout. */
+	fallback?: ReactNode;
 }
 
 interface State {
@@ -37,6 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
 	render() {
 		if (this.state.hasError) {
+			if (this.props.fallback) return this.props.fallback;
 			const t = i18next.t.bind(i18next);
 			return (
 				<div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">

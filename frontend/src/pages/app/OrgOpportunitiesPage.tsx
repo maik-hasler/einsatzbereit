@@ -257,9 +257,7 @@ export default function OrgOpportunitiesPage() {
 			setDeleteTargetId(null);
 			reloadAll();
 		} catch (err) {
-			setDeleteError(
-				err instanceof Error ? err.message : t("opportunities.deleteError"),
-			);
+			setDeleteError(getApiErrorMessage(err, t("opportunities.deleteError")));
 		} finally {
 			setDeleting(false);
 		}

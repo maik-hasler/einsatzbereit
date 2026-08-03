@@ -1,4 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import i18n from "../i18n";
+import { getApiErrorMessage } from "../lib/apiError";
 
 // Module-level registry of in-flight requests, keyed by a caller-supplied
 // string (typically `${resource}:${organizationId}:${refreshKey}`, or just
@@ -42,7 +44,7 @@ export function useSharedOrgFetch<T>(
 				if (alive) setData(result);
 			})
 			.catch((e: unknown) => {
-				if (alive) setError(e instanceof Error ? e.message : String(e));
+				if (alive) setError(getApiErrorMessage(e, i18n.t("error.serverError")));
 			});
 
 		return () => {

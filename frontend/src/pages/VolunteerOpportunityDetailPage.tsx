@@ -127,8 +127,13 @@ export default function VolunteerOpportunityDetailPage() {
 		// organizationId effect below notices it changed.
 		setOrgProfile(null);
 		load();
+		// `api` is deliberately excluded (matches every other effect in this
+		// codebase, e.g. ProfileOverviewPage) - useApiClient() memoizes on
+		// user.access_token, which automaticSilentRenew replaces every ~4
+		// minutes, so listing it here reran this effect (and its setLoading(true)
+		// skeleton swap) on every silent token renewal (#1237).
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [opportunityId, api]);
+	}, [opportunityId]);
 
 	function load() {
 		if (!opportunityId) return;
