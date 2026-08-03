@@ -408,7 +408,12 @@ export default function VolunteerOpportunityDetailPage() {
 					)}
 					{opportunity.tags &&
 						opportunity.tags.map((tag) => (
-							<Chip key={tag} tone="neutral">
+							<Chip
+								key={tag}
+								tone="neutral"
+								to={`/?tag=${encodeURIComponent(tag)}`}
+								aria-label={t("opportunities.filterByTag", { tag })}
+							>
 								{tag}
 							</Chip>
 						))}

@@ -155,6 +155,21 @@ export default function OpportunityListItem({
 							{item.description}
 						</p>
 					)}
+					{item.tags.length > 0 && (
+						<div className="relative z-20 mt-2 flex flex-wrap gap-1.5">
+							{item.tags.map((tag) => (
+								<Chip
+									key={tag}
+									tone="neutral"
+									size="sm"
+									to={`/?tag=${encodeURIComponent(tag)}`}
+									aria-label={t("opportunities.filterByTag", { tag })}
+								>
+									{tag}
+								</Chip>
+							))}
+						</div>
+					)}
 					<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-100 pt-3">
 						<Link
 							to={`/organizations/${item.organizationId}`}

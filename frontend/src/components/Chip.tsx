@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
+import { Link } from "react-router";
 import { CloseIcon } from "./icons";
 
 // Shared pill primitive for tags, categories, and status indicators - see
@@ -32,8 +33,9 @@ type ChipProps = CommonProps &
 	Omit<HTMLAttributes<HTMLSpanElement>, "className" | "children"> & {
 		className?: string;
 	} & (
-		| { onRemove?: undefined; removeLabel?: undefined }
-		| { onRemove: () => void; removeLabel: string }
+		| { onRemove?: undefined; removeLabel?: undefined; to?: undefined }
+		| { onRemove: () => void; removeLabel: string; to?: undefined }
+		| { to: string; onRemove?: undefined; removeLabel?: undefined }
 	);
 
 export default function Chip({
@@ -43,16 +45,26 @@ export default function Chip({
 	children,
 	onRemove,
 	removeLabel,
+	to,
 	...rest
 }: ChipProps) {
 	const classes = [
 		"inline-flex items-center gap-1 rounded-full font-medium",
 		TONE_CLASSES[tone],
 		SIZE_CLASSES[size],
+		to ? "transition-colors hover:brightness-95" : "",
 		className,
 	]
 		.filter(Boolean)
 		.join(" ");
+
+	if (to) {
+		return (
+			<Link to={to} className={classes} {...rest}>
+				{children}
+			</Link>
+		);
+	}
 
 	return (
 		<span className={classes} {...rest}>
