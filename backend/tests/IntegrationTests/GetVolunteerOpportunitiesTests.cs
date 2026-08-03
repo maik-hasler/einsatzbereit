@@ -651,24 +651,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetVolunteerOpportunities_ShouldFilterByCity(
-		CancellationToken cancellationToken)
-	{
-		var authenticatedClient = await CreateAuthenticatedClientAsync(cancellationToken);
-		var orgId = await CreateOrganizationAsync(authenticatedClient, cancellationToken);
-
-		await CreateOpportunityInCityAsync(authenticatedClient, orgId, "Munich Opportunity", "Munich", cancellationToken);
-		await CreateOpportunityInCityAsync(authenticatedClient, orgId, "Hamburg Opportunity", "Hamburg", cancellationToken);
-
-		var sut = new EinsatzbereitApi(fixture.CreateHttpClient());
-
-		var result = await sut.GetVolunteerOpportunitiesAsync(1, 10, city: "munich", cancellationToken: cancellationToken);
-
-		result.TotalItems.Should().Be(1);
-		result.Items.Single().Title.Should().Be("Munich Opportunity");
-	}
-
-	[Test]
 	public async Task GetVolunteerOpportunities_ShouldFilterByTag(
 		CancellationToken cancellationToken)
 	{
@@ -870,23 +852,6 @@ public class GetVolunteerOpportunitiesTests(IntegrationTestFixture fixture)
 
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
-
-	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityInCityAsync(
-		EinsatzbereitApi client, Guid orgId, string title, string city, CancellationToken cancellationToken) =>
-		client.CreateVolunteerOpportunityAsync(new CreateVolunteerOpportunityRequest
-		{
-			Title = title,
-			Description = "Description",
-			OrganizationId = orgId,
-			Street = "Sample Street",
-			HouseNumber = "1",
-			ZipCode = "12345",
-			City = city,
-			Occurrence = "OneTime",
-			ParticipationType = "IndividualContact",
-			CheckInMethod = "None",
-			ValidUntil = DateTimeOffset.UtcNow.AddDays(30),
-		}, cancellationToken);
 
 	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityWithTagsAsync(
 		EinsatzbereitApi client, Guid orgId, string title, string[] tags, CancellationToken cancellationToken) =>
