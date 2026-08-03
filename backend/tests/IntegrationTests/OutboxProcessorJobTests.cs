@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Application.Common;
 using AwesomeAssertions;
 using Domain.Engagements;
@@ -7,6 +8,7 @@ using Infrastructure.BackgroundJobs;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging.Abstractions;
 using TUnit.Core.Interfaces;
 // ApiClient.cs (generated, same "IntegrationTests" namespace) also declares a
@@ -36,9 +38,10 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
 
+		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher();
 		var processed = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, batchSize: 20, cancellationToken: cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		processed.Should().Be(1);
 		dispatcher.DispatchedEvents.Should().ContainSingle();
@@ -57,9 +60,10 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
 
+		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher { ThrowOnDispatch = true };
 		var attempted = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, batchSize: 20, cancellationToken: cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		attempted.Should().Be(1, "the message was selected and attempted even though dispatch failed");
 
@@ -84,9 +88,10 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var healthyEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(dbContext, healthyEvent, cancellationToken);
 
+		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher();
 		var attempted = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, batchSize: 20, cancellationToken: cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		attempted.Should().Be(2);
 		dispatcher.DispatchedEvents.Should().ContainSingle().Subject.Should().BeOfType<EngagementConfirmedDomainEvent>();
@@ -110,11 +115,14 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		await SeedPoisonOutboxMessageAsync(dbContext, cancellationToken);
 
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new OutboxMetrics(meterFactory);
+
 		const int maxAttempts = 3;
 		for (var attempt = 1; attempt <= maxAttempts; attempt++)
 		{
 			await OutboxProcessorJob.ProcessBatchAsync(
-				dbContext, new RecordingDispatcher(), NullLogger.Instance,
+				dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
 				batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
 		}
 
@@ -128,7 +136,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		// One more poll cycle must not re-select the now-terminal poison row.
 		var processedOnNextPoll = await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, new RecordingDispatcher(), NullLogger.Instance,
+			dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
 			batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
 
 		processedOnNextPoll.Should().Be(0, "a dead-lettered message must not stall every message behind it forever");
@@ -149,9 +157,10 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
 		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
 
+		using var meterFactory = new TestMeterFactory();
 		var dispatcher = new RecordingDispatcher();
 		await OutboxProcessorJob.ProcessBatchAsync(
-			dbContext, dispatcher, NullLogger.Instance, batchSize: 20, cancellationToken: cancellationToken);
+			dbContext, dispatcher, NullLogger.Instance, new OutboxMetrics(meterFactory), batchSize: 20, cancellationToken: cancellationToken);
 
 		var redispatched = dispatcher.DispatchedEvents.Should().ContainSingle().Subject
 			.Should().BeOfType<EngagementConfirmedDomainEvent>().Subject;
@@ -175,9 +184,11 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		await using var contextA = fixture.CreateApplicationDbContext();
 		await using var contextB = fixture.CreateApplicationDbContext();
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new OutboxMetrics(meterFactory);
 
 		var taskA = OutboxProcessorJob.ProcessBatchAsync(
-			contextA, gatedDispatcher, NullLogger.Instance, batchSize: 20, cancellationToken: cancellationToken);
+			contextA, gatedDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		// Wait until A's transaction has actually reached the dispatcher - meaning its
 		// SELECT ... FOR UPDATE SKIP LOCKED already committed the row lock - before
@@ -187,7 +198,7 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 
 		var recordingDispatcher = new RecordingDispatcher();
 		var selectedByB = await OutboxProcessorJob.ProcessBatchAsync(
-			contextB, recordingDispatcher, NullLogger.Instance, batchSize: 20, cancellationToken: cancellationToken);
+			contextB, recordingDispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
 
 		selectedByB.Should().Be(0, "the only pending message is locked by A's still-open transaction, so B's SKIP LOCKED query must skip it rather than dispatch it a second time");
 		recordingDispatcher.DispatchedEvents.Should().BeEmpty();
@@ -203,9 +214,113 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		message.ProcessedOnUtc.Should().NotBeNull();
 	}
 
+	// #1008: OutboxMessage.Error was persisted but never surfaced anywhere an operator
+	// could see it - these prove the outbox.dispatch/outbox.pending metrics (recorded in
+	// OutboxProcessorJob.ProcessBatchAsync) give that visibility instead.
+	[Test]
+	public async Task ProcessBatchAsync_DispatchSucceeds_RecordsDispatchedMetricAndClearsPendingBacklog(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new OutboxMetrics(meterFactory);
+		var recorded = RecordOutboxMeasurements(meterFactory);
+
+		var dispatcher = new RecordingDispatcher();
+		await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
+
+		recorded.Should().ContainSingle(m => m.Instrument == "outbox.dispatch" && m.Status == "succeeded" && m.Value == 1);
+		recorded.Should().ContainSingle(m => m.Instrument == "outbox.pending" && m.Value == 0,
+			"the only pending message was dispatched successfully, leaving no backlog");
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_DispatchFails_RecordsFailedMetricAndKeepsMessageInPendingBacklog(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var domainEvent = new EngagementConfirmedDomainEvent(EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		await SeedOutboxMessageAsync(dbContext, domainEvent, cancellationToken);
+
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new OutboxMetrics(meterFactory);
+		var recorded = RecordOutboxMeasurements(meterFactory);
+
+		var dispatcher = new RecordingDispatcher { ThrowOnDispatch = true };
+		await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
+
+		recorded.Should().ContainSingle(m => m.Instrument == "outbox.dispatch" && m.Status == "failed" && m.Value == 1);
+		recorded.Should().ContainSingle(m => m.Instrument == "outbox.pending" && m.Value == 1,
+			"the failed message stays unprocessed, still counting toward the backlog");
+	}
+
+	[Test]
+	public async Task ProcessBatchAsync_NoPendingMessages_RecordsZeroPendingBacklogAndNoDispatchMeasurements(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		using var meterFactory = new TestMeterFactory();
+		var metrics = new OutboxMetrics(meterFactory);
+		var recorded = RecordOutboxMeasurements(meterFactory);
+
+		var dispatcher = new RecordingDispatcher();
+		var processed = await OutboxProcessorJob.ProcessBatchAsync(
+			dbContext, dispatcher, NullLogger.Instance, metrics, batchSize: 20, cancellationToken: cancellationToken);
+
+		processed.Should().Be(0);
+		recorded.Should().NotContain(m => m.Instrument == "outbox.dispatch");
+		recorded.Should().ContainSingle(m => m.Instrument == "outbox.pending" && m.Value == 0);
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private const string PoisonMessageType = "Domain.NoLongerExists.RenamedOrRemovedDomainEvent";
+
+	private static List<(string Instrument, string? Status, long Value)> RecordOutboxMeasurements(IMeterFactory meterFactory)
+	{
+		var recorded = new List<(string, string?, long)>();
+
+		var listener = new MeterListener
+		{
+			InstrumentPublished = (instrument, l) =>
+			{
+				if (instrument.Meter.Name == OutboxMetrics.MeterName)
+					l.EnableMeasurementEvents(instrument);
+			},
+		};
+		listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
+		{
+			var status = tags.ToArray().FirstOrDefault(t => t.Key == "status").Value?.ToString();
+			recorded.Add((instrument.Name, status, measurement));
+		});
+		listener.Start();
+
+		return recorded;
+	}
+
+	private sealed class TestMeterFactory : IMeterFactory
+	{
+		private readonly List<Meter> _meters = [];
+
+		public Meter Create(MeterOptions options)
+		{
+			var meter = new Meter(options);
+			_meters.Add(meter);
+			return meter;
+		}
+
+		public void Dispose()
+		{
+			foreach (var meter in _meters)
+				meter.Dispose();
+		}
+	}
 
 	private static async Task SeedOutboxMessageAsync(
 		ApplicationDbContext dbContext, CoreDomainEvent domainEvent, CancellationToken cancellationToken)

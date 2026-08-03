@@ -113,6 +113,7 @@ public static class ServiceCollectionExtensions
 		services.ConfigureOptions<AutomaticCheckInOptionsSetup>();
 		services.AddHostedService<AutomaticCheckInJob>();
 		services.ConfigureOptions<OutboxOptionsSetup>();
+		services.AddSingleton<OutboxMetrics>();
 		services.AddHostedService<OutboxProcessorJob>();
 		services.AddHostedService<OutboxRetentionJob>();
 		services.AddHostedService<GeocodingRetryJob>();
