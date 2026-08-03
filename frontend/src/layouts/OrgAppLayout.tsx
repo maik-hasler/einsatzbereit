@@ -26,6 +26,7 @@ import Spinner from "../components/Spinner";
 import SkipLink from "../components/SkipLink";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
+import ErrorBoundary from "../components/ErrorBoundary";
 import NotFoundPage from "../pages/NotFoundPage";
 
 export interface OrgAppContext {
@@ -57,6 +58,7 @@ function OrgAppShell({
 	// for newly-unlocked badges and never saw the unlock toast.
 	useAchievementNotifier();
 	const { t } = useTranslation();
+	const location = useLocation();
 	const extra = useOrgBreadcrumbExtra();
 	const quickActions = useQuickActionsList();
 
@@ -110,19 +112,50 @@ function OrgAppShell({
 				className="mx-auto w-full max-w-7xl flex-1 scroll-mt-24 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
 			>
 				<h1 className="mb-6 text-2xl font-bold text-gray-900">{pageTitle}</h1>
-				<Suspense
+				{/* Scoped to this route (remounts, clearing any caught error, whenever
+				the location changes) so a render crash in a single tab replaces just
+				the content below Header/Footer instead of the whole app - see the
+				top-level ErrorBoundary in main.tsx for the last-resort fallback this
+				can't catch (e.g. a crash in Header itself). A custom `fallback` is
+				required here (unlike AppLayout's equivalent boundary) - the default
+				one renders its own <h1>, which would collide with `pageTitle` above,
+				and its min-h-screen centering would break out of this Header/Footer
+				shell it's nested in. */}
+				<ErrorBoundary
+					key={location.pathname}
 					fallback={
-						<div className="flex justify-center py-16">
-							<Spinner label={t("common.pageLoading")} size="lg" />
+						<div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+							<p className="max-w-md text-gray-500">
+								{t("error.boundaryMessage")}
+							</p>
+							<div className="flex gap-3">
+								<Button
+									variant="secondary"
+									onClick={() => window.history.back()}
+								>
+									{t("error.goBack")}
+								</Button>
+								<Button onClick={() => window.location.reload()}>
+									{t("error.reload")}
+								</Button>
+							</div>
 						</div>
 					}
 				>
-					<Outlet
-						context={{ org, reloadOrg: load } satisfies OrgAppContext}
-						// Outlet re-mounts children on org identity change so per-tab state resets cleanly
-						key={org.id}
-					/>
-				</Suspense>
+					<Suspense
+						fallback={
+							<div className="flex justify-center py-16">
+								<Spinner label={t("common.pageLoading")} size="lg" />
+							</div>
+						}
+					>
+						<Outlet
+							context={{ org, reloadOrg: load } satisfies OrgAppContext}
+							// Outlet re-mounts children on org identity change so per-tab state resets cleanly
+							key={org.id}
+						/>
+					</Suspense>
+				</ErrorBoundary>
 			</main>
 
 			<Footer compact />

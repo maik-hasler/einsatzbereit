@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
+import { notifyAvatarChanged } from "../../lib/avatarBus";
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -15,6 +16,16 @@ export function useAvatarUpload(onUploaded: (url: string) => void) {
 	const [error, setError] = useState<string | null>(null);
 	const [croppingFile, setCroppingFile] = useState<File | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
+	// Tracks the blob: URL handed to `onUploaded` so a later upload (or
+	// unmount) can revoke it - unrevoked, each upload pinned the whole
+	// previewed image file in memory for the rest of the tab's life (#1245).
+	const objectUrlRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+		};
+	}, []);
 
 	function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
@@ -40,7 +51,13 @@ export function useAvatarUpload(onUploaded: (url: string) => void) {
 				data: croppedFile,
 				fileName: croppedFile.name,
 			});
-			onUploaded(URL.createObjectURL(croppedFile));
+			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+			const url = URL.createObjectURL(croppedFile);
+			objectUrlRef.current = url;
+			onUploaded(url);
+			// The header fetched its own copy of avatarUrl independently and has
+			// no other way to learn it just changed (#1245).
+			notifyAvatarChanged();
 		} catch {
 			setError(t("profile.avatarUploadError"));
 		} finally {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
@@ -29,6 +29,16 @@ export default function OrganizationsPage() {
 	const search = searchParams.get("search") ?? "";
 	const [searchInput, setSearchInput] = useState(search);
 	const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Without this, typing then navigating away within the debounce window
+	// (SEARCH_DEBOUNCE_MS) still fires commitSearch after the route change,
+	// rewriting whatever page the user navigated to with a stray ?search=
+	// param (#1239).
+	useEffect(() => {
+		return () => {
+			if (searchTimer.current) clearTimeout(searchTimer.current);
+		};
+	}, []);
 
 	const {
 		items,

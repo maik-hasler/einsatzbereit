@@ -6,6 +6,7 @@ import { useApiClient } from "./useApiClient";
 import { useDismissableOverlay } from "./useDismissableOverlay";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
+import { subscribeAvatarChanged } from "../lib/avatarBus";
 import type { NotificationSummary } from "../client/api-client";
 
 export interface AccountMenuState {
@@ -121,6 +122,20 @@ export function useAccountMenu(
 			}
 		})();
 		return () => controller.abort();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isLoggedIn]);
+
+	// ProfileOverviewPage's avatar upload has no direct reference to this
+	// hook's own copy of avatarUrl, fetched independently above - without this,
+	// the header kept showing the pre-upload image until a full reload (#1245).
+	useEffect(() => {
+		if (!isLoggedIn) return;
+		return subscribeAvatarChanged(() => {
+			void api
+				.getUserProfile()
+				.then((profile) => setAvatarUrl(profile.avatarUrl ?? null))
+				.catch(() => {});
+		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoggedIn]);
 

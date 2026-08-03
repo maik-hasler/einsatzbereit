@@ -112,6 +112,8 @@ export default function QRScannerModal({
 						alive = false;
 						try {
 							await api.checkInEngagement(raw);
+							streamRef.current?.getTracks().forEach((tr) => tr.stop());
+							streamRef.current = null;
 							setSuccess(true);
 							onCheckedIn(raw);
 						} catch (err) {

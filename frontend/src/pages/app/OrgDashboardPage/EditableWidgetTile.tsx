@@ -10,6 +10,8 @@ import {
 	ResizeHandleIcon,
 	TrashIcon,
 } from "../../../components/icons";
+import ErrorBoundary from "../../../components/ErrorBoundary";
+import ErrorBanner from "../../../components/ErrorBanner";
 import { WIDGET_CATALOG, type WidgetKey } from "./widgetCatalog";
 
 export default function EditableWidgetTile({
@@ -103,7 +105,33 @@ export default function EditableWidgetTile({
 			} ${editing && isPlacing ? "ring-2 ring-brand-500" : ""}`}
 		>
 			<div inert={editing} className={`h-full ${editing ? "opacity-60" : ""}`}>
-				{children}
+				{/* A crash inside a single widget shouldn't blank the whole dashboard
+				(#1243) - the default full-page ErrorBoundary fallback would break
+				this tile's grid layout, so a small inline one is used instead. It
+				keeps the same landmark-region-plus-heading shape WidgetCard renders
+				in the non-error case (see WidgetCard.tsx) so a screen-reader user
+				navigating by region/heading still finds this widget - by name - and
+				isn't left with just an anonymous error paragraph. */}
+				<ErrorBoundary
+					fallback={
+						<section
+							aria-labelledby={`widget-error-title-${widgetKey}`}
+							className="flex h-full flex-col rounded-card border border-gray-100 bg-white p-5 shadow-resting"
+						>
+							<h2
+								id={`widget-error-title-${widgetKey}`}
+								className="mb-4 text-base font-semibold text-gray-900"
+							>
+								{title}
+							</h2>
+							<div className="flex flex-1 items-center justify-center">
+								<ErrorBanner message={t("orgDashboard.widgetError")} />
+							</div>
+						</section>
+					}
+				>
+					{children}
+				</ErrorBoundary>
 			</div>
 			{editing && (
 				<>

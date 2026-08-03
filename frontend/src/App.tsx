@@ -9,7 +9,9 @@ import {
 import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import { useSessionExpiryHandler } from "./hooks/useSessionExpiryHandler";
+import { signinLocaleArgs } from "./lib/authLocale";
 import ErrorBanner from "./components/ErrorBanner";
+import Button from "./components/Button";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./layouts/ProtectedRoute";
 import OrgAppLayout, { type OrgAppContext } from "./layouts/OrgAppLayout";
@@ -79,6 +81,15 @@ function CallbackPage() {
 				<ErrorBanner
 					message={t("auth.authError", { message: auth.error.message })}
 				/>
+				<div className="flex gap-3">
+					<Button
+						variant="secondary"
+						onClick={() => void auth.signinRedirect(signinLocaleArgs())}
+					>
+						{t("orgApp.retry")}
+					</Button>
+					<Button to="/">{t("orgApp.backToSite")}</Button>
+				</div>
 			</main>
 		);
 	}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
 
 export interface CitySuggestion {
@@ -27,14 +28,19 @@ function cacheKeyFor(query: string) {
 // docs/ADRs/5_map_and_geocoding_request_proxying.adoc.
 export function useCitySuggestions(query: string) {
 	const api = useApiClient();
+	const { t } = useTranslation();
 	const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
 	const [show, setShow] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
 		if (query.length < 2) {
 			setSuggestions([]);
 			setShow(false);
+			setLoading(false);
+			setError(null);
 			return;
 		}
 
@@ -42,13 +48,17 @@ export function useCitySuggestions(query: string) {
 		if (cached) {
 			setSuggestions(cached);
 			setShow(cached.length > 0);
+			setLoading(false);
+			setError(null);
 			return;
 		}
 
 		abortRef.current?.abort();
 		const controller = new AbortController();
 		abortRef.current = controller;
+		setError(null);
 		const timer = setTimeout(async () => {
+			setLoading(true);
 			try {
 				const places = await api.searchCities(query, controller.signal);
 				const results: CitySuggestion[] = places.map((place) => ({
@@ -62,7 +72,15 @@ export function useCitySuggestions(query: string) {
 				setSuggestions(results);
 				setShow(results.length > 0);
 			} catch {
-				// AbortError or network - ignore
+				// A stale request's own abort (superseded by a newer keystroke, or
+				// the component unmounting) isn't a real failure - only a genuine
+				// rate-limit/network failure from Nominatim should surface (#1240).
+				if (controller.signal.aborted) return;
+				setSuggestions([]);
+				setShow(false);
+				setError(t("opportunities.cityError"));
+			} finally {
+				if (!controller.signal.aborted) setLoading(false);
 			}
 		}, 350);
 		return () => {
@@ -75,7 +93,9 @@ export function useCitySuggestions(query: string) {
 	function reset() {
 		setSuggestions([]);
 		setShow(false);
+		setLoading(false);
+		setError(null);
 	}
 
-	return { suggestions, show, setShow, reset };
+	return { suggestions, show, setShow, reset, loading, error };
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -81,6 +81,22 @@ export default function OrgSettingsPage() {
 	const [croppingLogoFile, setCroppingLogoFile] = useState<File | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const formRef = useRef<HTMLFormElement>(null);
+	// Tracks the blob: URL handed to setLogoUrl so it can be revoked once
+	// replaced - unrevoked, each upload pinned the previewed file in memory
+	// for the rest of the tab's life (#1245).
+	const logoObjectUrlRef = useRef<string | null>(null);
+
+	// Reconciles the local preview with the server once reloadOrg's refetch
+	// resolves (see handleLogoCropped/handleRemoveLogo below) - without this,
+	// `logoUrl` stayed on whatever blob: preview or null the upload/removal
+	// set locally, permanently out of sync with `org` (#1230).
+	useEffect(() => {
+		if (logoObjectUrlRef.current) {
+			URL.revokeObjectURL(logoObjectUrlRef.current);
+			logoObjectUrlRef.current = null;
+		}
+		setLogoUrl(org.logoUrl ?? null);
+	}, [org.logoUrl]);
 
 	const [editing, setEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -129,7 +145,16 @@ export default function OrgSettingsPage() {
 				data: croppedFile,
 				fileName: croppedFile.name,
 			});
-			setLogoUrl(URL.createObjectURL(croppedFile));
+			if (logoObjectUrlRef.current)
+				URL.revokeObjectURL(logoObjectUrlRef.current);
+			const url = URL.createObjectURL(croppedFile);
+			logoObjectUrlRef.current = url;
+			setLogoUrl(url);
+			// Refreshes `org` (and thus the effect above, once it resolves) so
+			// the preview is reconciled with the real server URL - without this,
+			// the org logo shown elsewhere (e.g. the org switcher) stayed stale
+			// until a full reload (#1230).
+			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoUploadError"));
 		} finally {
@@ -143,7 +168,12 @@ export default function OrgSettingsPage() {
 		setLogoError(null);
 		try {
 			await api.deleteOrganizationLogo(org.id);
+			if (logoObjectUrlRef.current) {
+				URL.revokeObjectURL(logoObjectUrlRef.current);
+				logoObjectUrlRef.current = null;
+			}
 			setLogoUrl(null);
+			reloadOrg();
 		} catch {
 			setLogoError(t("orgSettings.logoRemoveError"));
 		} finally {

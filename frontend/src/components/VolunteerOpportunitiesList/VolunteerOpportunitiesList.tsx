@@ -74,7 +74,20 @@ export default function VolunteerOpportunitiesList() {
 		show: showLocationSuggestions,
 		setShow: setShowLocationSuggestions,
 		reset: resetLocationSuggestions,
+		loading: locationSuggestionsLoading,
+		error: locationSuggestionsError,
 	} = useCitySuggestions(locationCityInput);
+
+	// Without this, a rate-limited/unreachable Nominatim just left the
+	// dropdown never appearing - indistinguishable from "this city doesn't
+	// exist" (#1240).
+	const cityStatusMessage = locationSuggestionsLoading
+		? t("opportunities.citySearching")
+		: locationSuggestionsError
+			? locationSuggestionsError
+			: locationCityInput.length >= 2 && locationSuggestions.length === 0
+				? t("opportunities.cityNoMatch")
+				: "";
 
 	// Keeps the roving highlight in bounds (and cleared) whenever the
 	// suggestion list itself changes - a stale index from the previous
@@ -411,6 +424,15 @@ export default function VolunteerOpportunitiesList() {
 									</ul>
 								)}
 							</div>
+
+							<p
+								role="status"
+								className={
+									cityStatusMessage ? "mb-3 text-xs text-gray-500" : "sr-only"
+								}
+							>
+								{cityStatusMessage}
+							</p>
 
 							<button
 								type="button"

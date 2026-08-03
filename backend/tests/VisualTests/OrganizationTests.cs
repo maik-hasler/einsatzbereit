@@ -563,7 +563,13 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// Blocked client-side - the dialog is still open, nothing was created.
 		await Expect(createDialog).ToBeVisibleAsync();
 
+		// Name/street were filled in above, so Cancel must ask for confirmation
+		// instead of silently discarding them (#1238).
 		await createDialog.GetByTestId("modal-cancel").ClickAsync();
+		var discardBtn = Page.GetByRole(AriaRole.Button, new() { Name = "Discard changes" });
+		await Expect(discardBtn).ToBeVisibleAsync();
+		await discardBtn.ClickAsync();
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]

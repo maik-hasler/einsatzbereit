@@ -18,7 +18,7 @@ import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
 
 export default function OrgMembersPage() {
-	const { org } = useOutletContext<OrgAppContext>();
+	const { org, reloadOrg } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const auth = useAuth();
@@ -59,24 +59,49 @@ export default function OrgMembersPage() {
 	const [changingRoleUserId, setChangingRoleUserId] = useState<string | null>(
 		null,
 	);
-	const memberSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const memberSearchAbortRef = useRef<AbortController | null>(null);
 
 	function handleMemberSearchChange(value: string) {
 		setMemberSearch(value);
-		if (memberSearchTimer.current) clearTimeout(memberSearchTimer.current);
-		if (value.length < 4) {
+	}
+
+	// Debounce moved into an effect (mirrors useCitySuggestions.ts) so cleanup
+	// runs on every keystroke and on unmount - the previous setTimeout-in-a-
+	// handler version had no cleanup at all, so a request could still land
+	// after the component unmounted, and had no way to tell a stale response
+	// apart from the latest one (#1232).
+	useEffect(() => {
+		if (memberSearch.length < 4) {
 			setMemberCandidates([]);
+			setMemberSearchLoading(false);
 			return;
 		}
-		memberSearchTimer.current = setTimeout(() => {
+		memberSearchAbortRef.current?.abort();
+		const controller = new AbortController();
+		memberSearchAbortRef.current = controller;
+		const timer = setTimeout(() => {
 			setMemberSearchLoading(true);
 			api
-				.searchMemberCandidates(org.id, value)
-				.then(setMemberCandidates)
-				.catch(() => setMemberCandidates([]))
-				.finally(() => setMemberSearchLoading(false));
+				.searchMemberCandidates(org.id, memberSearch, controller.signal)
+				.then((results) => {
+					if (controller.signal.aborted) return;
+					setMemberCandidates(results);
+				})
+				.catch(() => {
+					if (controller.signal.aborted) return;
+					setMemberCandidates([]);
+				})
+				.finally(() => {
+					if (controller.signal.aborted) return;
+					setMemberSearchLoading(false);
+				});
 		}, 300);
-	}
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [memberSearch]);
 
 	const [invitations, setInvitations] = useState<OrgInvitationDto[]>([]);
 	const [dismissingInvitationId, setDismissingInvitationId] = useState<
@@ -191,7 +216,12 @@ export default function OrgMembersPage() {
 		setRemoveMemberError(null);
 		try {
 			await api.removeMember(org.id, userId);
+			// Optimistic update for immediate feedback, plus a real refetch (#1230)
+			// - `org` (and thus `members`, synced from it above) only otherwise
+			// refreshes when `organizationId` changes, so navigating away and back
+			// without this would show the removed member again.
 			setMembers((prev) => prev.filter((m) => m.userId !== userId));
+			reloadOrg();
 			setRemoveTarget(null);
 		} catch (err) {
 			setRemoveMemberError(

@@ -265,17 +265,22 @@ export default function ProfileOverviewPage() {
 		setSaving(true);
 		setProfileError(null);
 		setSuccessMessage(null);
+		const savedValues = {
+			firstName: form.state.firstName || undefined,
+			lastName: form.state.lastName || undefined,
+			bio: form.state.bio || undefined,
+			phone: form.state.phone || undefined,
+			skills: form.state.skills,
+			languages: form.state.languages,
+			preferredContact: form.state.preferredContact || undefined,
+			preferredLanguage: form.state.preferredLanguage,
+		};
 		try {
-			await api.updateUserProfile({
-				firstName: form.state.firstName || undefined,
-				lastName: form.state.lastName || undefined,
-				bio: form.state.bio || undefined,
-				phone: form.state.phone || undefined,
-				skills: form.state.skills,
-				languages: form.state.languages,
-				preferredContact: form.state.preferredContact || undefined,
-				preferredLanguage: form.state.preferredLanguage,
-			});
+			await api.updateUserProfile(savedValues);
+			// Keeps `profile` (the source handleCancel's form.reset(profile) reads
+			// from) in sync with what was just saved - otherwise re-entering edit
+			// mode and cancelling would silently restore the pre-save values (#1247).
+			setProfile((prev) => (prev ? { ...prev, ...savedValues } : prev));
 			setSuccessMessage(t("profile.savedSuccess"));
 			setEditing(false);
 		} catch {

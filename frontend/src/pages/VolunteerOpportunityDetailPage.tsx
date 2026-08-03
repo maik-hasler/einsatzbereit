@@ -127,8 +127,18 @@ export default function VolunteerOpportunityDetailPage() {
 		// organizationId effect below notices it changed.
 		setOrgProfile(null);
 		load();
+		// `auth.isAuthenticated`, not `api` itself (#1237): useApiClient() memoizes
+		// on user.access_token, which automaticSilentRenew replaces every ~4
+		// minutes even though the user's actual auth status hasn't changed -
+		// depending on `api` directly reran this effect (and its setLoading(true)
+		// skeleton swap) on every one of those renewals. Unlike ProfileOverviewPage
+		// (behind ProtectedRoute, so always already-authenticated on mount), this
+		// page is public and can mount before auth has finished resolving - the
+		// anonymous-vs-authenticated fetch genuinely differs (draft visibility,
+		// currentUserEngagement), so a real `isAuthenticated` flip (once auth
+		// settles, or on sign-in/out) still needs to trigger a refetch.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [opportunityId, api]);
+	}, [opportunityId, isAuthenticated]);
 
 	function load() {
 		if (!opportunityId) return;

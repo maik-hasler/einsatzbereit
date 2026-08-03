@@ -8,6 +8,7 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./contexts/ToastContext";
 import { runtimeConfig } from "./lib/runtimeConfig";
+import { dispatchToast } from "./lib/toastBus";
 // Imported before global.css (not from CalendarWidget, which only lives on
 // the lazy-loaded OrgDashboardPage chunk) so react-big-calendar's default,
 // low-contrast stylesheet always ends up earlier than global.css's brand
@@ -58,6 +59,15 @@ const oidcConfig = {
 		window.location.replace(returnTo);
 	},
 };
+
+// Every floating promise in this codebase (signinRedirect/signoutRedirect
+// calls, ProtectedRoute's redirect, etc.) previously failed completely
+// invisibly to the user on rejection - this is the single, app-wide net that
+// makes an otherwise-silent failure at least visible as a toast (#1243).
+window.addEventListener("unhandledrejection", (event) => {
+	console.error("[unhandledrejection]", event.reason);
+	dispatchToast("error", i18n.t("error.serverError"));
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
