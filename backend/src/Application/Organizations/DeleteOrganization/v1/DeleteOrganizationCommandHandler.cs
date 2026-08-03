@@ -51,9 +51,6 @@ internal sealed class DeleteOrganizationCommandHandler(
 				$"Conflict: cannot delete organization while it has opportunities with future time slots or active engagements: {titles}. Resolve or cancel these first."));
 		}
 
-		await keycloakOrganizationService.DeleteOrganizationAsync(
-			request.OrganizationId, cancellationToken);
-
 		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForOrganizationAsync(organizationId, cancellationToken);
 
@@ -87,6 +84,7 @@ internal sealed class DeleteOrganizationCommandHandler(
 			report.MarkActioned(request.RequestingUserId, DateTimeOffset.UtcNow).ThrowIfFailure();
 		}
 
+		organization.Delete();
 		dbContext.Organizations.Delete(organization);
 
 		return true;
