@@ -24,6 +24,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import Button from "../components/Button";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
+import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { dispatchToast } from "../lib/toastBus";
@@ -44,6 +45,13 @@ import {
 // coordinates, so keep it out of this page's (and thus the shared home page
 // bundle's) initial chunk - #971.
 const SingleMarkerMap = lazy(() => import("../components/SingleMarkerMap"));
+
+// Lazy-loaded: the multi-step create/edit form is only ever needed by the
+// owning organizer editing their own draft, never by the public visitors who
+// make up the vast majority of this page's traffic.
+const CreateVolunteerOpportunityModal = lazy(
+	() => import("../components/CreateVolunteerOpportunityModal"),
+);
 
 export default function VolunteerOpportunityDetailPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
@@ -72,6 +80,8 @@ export default function VolunteerOpportunityDetailPage() {
 	const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
 	const [withdrawing, setWithdrawing] = useState(false);
 	const [withdrawError, setWithdrawError] = useState<string | null>(null);
+	const [showEditModal, setShowEditModal] = useState(false);
+	const [publishing, setPublishing] = useState(false);
 
 	const isAuthenticated = auth.isAuthenticated;
 	const roles = (
@@ -167,6 +177,20 @@ export default function VolunteerOpportunityDetailPage() {
 		dispatchToast("success", t("report.submitSuccess"));
 	}
 
+	async function handlePublish() {
+		if (!opportunity) return;
+		setPublishing(true);
+		try {
+			await api.publishVolunteerOpportunity(opportunity.id);
+			dispatchToast("success", t("opportunities.publishSuccess"));
+			load();
+		} catch (err) {
+			dispatchToast("error", getApiErrorMessage(err, t("error.serverError")));
+		} finally {
+			setPublishing(false);
+		}
+	}
+
 	async function handleWithdrawConfirm() {
 		if (!opportunity?.currentUserEngagement) return;
 		setWithdrawing(true);
@@ -254,12 +278,23 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Org chip + action buttons */}
 			<div className="mb-3 flex items-center justify-between gap-3">
-				<Link
-					to={`/organizations/${opportunity.organizationId}`}
-					className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
-				>
-					{opportunity.organizationName}
-				</Link>
+				<div className="flex min-w-0 items-center gap-2">
+					<Link
+						to={`/organizations/${opportunity.organizationId}`}
+						className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100"
+					>
+						{opportunity.organizationName}
+					</Link>
+					{isDraft && isOwner && (
+						<Chip
+							tone="warning"
+							size="sm"
+							data-testid="opportunity-detail-draft-badge"
+						>
+							{t("opportunities.draftBadge")}
+						</Chip>
+					)}
+				</div>
 				<div className="flex shrink-0 gap-2">
 					<button
 						onClick={handleShare}
@@ -282,6 +317,28 @@ export default function VolunteerOpportunityDetailPage() {
 								{t("opportunities.report")}
 							</span>
 						</button>
+					)}
+					{isDraft && isOwner && (
+						<>
+							<button
+								onClick={() => setShowEditModal(true)}
+								data-testid="opportunity-detail-edit"
+								className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+							>
+								{t("opportunities.edit")}
+							</button>
+							<Button
+								type="button"
+								size="sm"
+								onClick={() => void handlePublish()}
+								disabled={publishing}
+								data-testid="opportunity-detail-publish"
+							>
+								{publishing
+									? t("opportunities.publishing")
+									: t("opportunities.publish")}
+							</Button>
+						</>
 					)}
 				</div>
 			</div>
@@ -666,6 +723,24 @@ export default function VolunteerOpportunityDetailPage() {
 					onSubmit={handleReportSubmit}
 					onClose={() => setShowReport(false)}
 				/>
+			)}
+
+			{showEditModal && (
+				<Suspense
+					fallback={
+						<ModalLoadingFallback onClose={() => setShowEditModal(false)} />
+					}
+				>
+					<CreateVolunteerOpportunityModal
+						organizationId={opportunity.organizationId}
+						initialOpportunity={opportunity}
+						onClose={() => setShowEditModal(false)}
+						onSuccess={() => {
+							setShowEditModal(false);
+							load();
+						}}
+					/>
+				</Suspense>
 			)}
 		</div>
 	);
