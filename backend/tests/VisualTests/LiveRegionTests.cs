@@ -122,7 +122,13 @@ public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var successBanner = Page.Locator("[role='status'][aria-live='polite']");
 		await Expect(successBanner).ToBeAttachedAsync();
-		await Expect(successBanner).Not.ToBeVisibleAsync();
+		// Not a Not.ToBeVisibleAsync() check: SuccessBanner's hidden state uses
+		// Tailwind's sr-only technique (clip-based, ~1x1px), not display:none -
+		// deliberately, so the node stays in the accessibility tree the same way
+		// the #972 toast-live-region sentinel does. That still gives it a
+		// non-empty bounding box, so Playwright's visibility check considers it
+		// visible; assert on its (lack of) text content instead.
+		await Expect(successBanner).ToHaveTextAsync("");
 
 		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
 		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
