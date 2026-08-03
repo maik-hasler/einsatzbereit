@@ -182,7 +182,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 	public async Task ScheduledSlotsSignUpModal_ShowsPerSlotBookingCounts()
 	{
 		// #533: Slot options in the sign-up modal must include availability info,
-		// e.g. "(4 left)" when a slot has 4 remaining spots, or "(Full)" when full.
+		// e.g. "4 spots left" when a slot has 4 remaining spots, or "Full" when full.
 		//
 		// Create the ScheduledSlots opportunity (draft -> add slots -> publish) via the
 		// API rather than hunting for a seed card in the paginated public list.
@@ -218,7 +218,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		// A ScheduledSlots opportunity needs at least one time slot before it can be
 		// published; two slots with spare capacity give the picker options that
-		// each render a "(N left)" availability count.
+		// each render an "N spots left" availability count.
 		var start = DateTimeOffset.UtcNow.AddDays(7);
 		(await http.PostAsJsonAsync($"/v1/volunteer-opportunities/{opportunityId}/time-slots", new
 		{
@@ -267,12 +267,15 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 		{
 			options = await optionLocator.EvaluateAllAsync<string[]>(
 				"els => els.map(el => el.textContent ?? '')");
+			// #987: the slot dropdown now reuses the same opportunities.spotsLeft/
+			// full/unlimitedSpots strings the rest of the app uses for remaining
+			// capacity, instead of its own parenthetical signUp.* copies.
 			hasAvailabilityInfo = options.Any(o =>
-				Regex.IsMatch(o, @"\(.*left\)|\(Full\)|\(noch \d+\)|\(Ausgebucht\)", RegexOptions.IgnoreCase));
+				Regex.IsMatch(o, @"\d+ spots? left|\bFull\b|Unlimited spots", RegexOptions.IgnoreCase));
 			return options.Length > 0 && hasAvailabilityInfo;
 		}, () => options.Length == 0
 			? "slot options must be rendered, but none were found"
-			: "each slot option should include booking count info like '(4 left)'. "
+			: "each slot option should include booking count info like '4 spots left'. "
 				+ $"Actual options: [{string.Join(", ", options)}]");
 	}
 
@@ -349,7 +352,9 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		var optionLocator = Page.Locator("[role='option']");
 		await Expect(optionLocator.First).ToBeVisibleAsync();
-		await Expect(optionLocator.First).ToContainTextAsync("(Unlimited)");
+		// #987: the slot dropdown now reuses opportunities.unlimitedSpots ("Unlimited
+		// spots") instead of its own parenthetical signUp.unlimitedSpots ("(Unlimited)").
+		await Expect(optionLocator.First).ToContainTextAsync("Unlimited spots");
 		await Expect(optionLocator.First).Not.ToHaveAttributeAsync("aria-disabled", "true");
 	}
 }
