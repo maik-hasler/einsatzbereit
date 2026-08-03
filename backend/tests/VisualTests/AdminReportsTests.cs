@@ -71,7 +71,7 @@ public class AdminReportsTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Expect(Page.GetByText("Failed to load reports.")).Not.ToBeVisibleAsync();
 
-		var row = Page.Locator("tr").Filter(new() { HasTextString = title });
+		var row = Page.Locator("li").Filter(new() { HasTextString = title });
 		await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(row.GetByText("Opportunity", new() { Exact = true })).ToBeVisibleAsync();
 		await Expect(row.GetByText("Active", new() { Exact = true })).ToBeVisibleAsync();

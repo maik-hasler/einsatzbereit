@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "../../../components/Modal";
 import Button from "../../../components/Button";
@@ -108,6 +109,45 @@ export default function AddWidgetModal({
 	onClose,
 }: Props) {
 	const { t } = useTranslation();
+	const [announcement, setAnnouncement] = useState("");
+	const pendingFocusIndexRef = useRef<number | null>(null);
+
+	// Adding a widget unmounts the very button that was just pressed (it drops
+	// out of `availableKeys`), so focus needs somewhere deliberate to land
+	// instead of falling to <body> while the dialog is still open - mirrors
+	// EngagementManagementPage's focusEngagementRowControl for the same
+	// "pressed control disappears" shape. Runs one frame after the prop
+	// update so the replacement button (or the Done button, once the list
+	// empties) already exists in the DOM.
+	useEffect(() => {
+		if (pendingFocusIndexRef.current === null) return;
+		const index = pendingFocusIndexRef.current;
+		pendingFocusIndexRef.current = null;
+		requestAnimationFrame(() => {
+			if (availableKeys.length === 0) {
+				document
+					.querySelector<HTMLElement>('[data-testid="add-widget-done"]')
+					?.focus();
+				return;
+			}
+			const nextKey = availableKeys[Math.min(index, availableKeys.length - 1)];
+			document
+				.querySelector<HTMLElement>(
+					`[data-testid="add-widget-option-${nextKey}"]`,
+				)
+				?.focus();
+		});
+	}, [availableKeys]);
+
+	function handleAdd(key: WidgetKey, index: number) {
+		pendingFocusIndexRef.current = index;
+		setAnnouncement(
+			t("orgDashboard.addWidgetAnnounce", {
+				title: t(WIDGET_CATALOG[key].titleKey),
+			}),
+		);
+		onAdd(key);
+	}
 
 	return (
 		<Modal
@@ -128,12 +168,19 @@ export default function AddWidgetModal({
 				</p>
 			</div>
 
+			{/* Always mounted (not conditional on `announcement`) so the live
+			region is registered before it ever gets content - see
+			CheckInModal.tsx's identical pattern for why. */}
+			<p role="status" className="sr-only">
+				{announcement}
+			</p>
+
 			<div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
 				{availableKeys.length === 0 ? (
 					<EmptyState compact title={t("orgDashboard.addWidgetAllAdded")} />
 				) : (
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-						{availableKeys.map((key) => {
+						{availableKeys.map((key, index) => {
 							const entry = WIDGET_CATALOG[key];
 							const title = t(entry.titleKey);
 							return (
@@ -141,7 +188,7 @@ export default function AddWidgetModal({
 									key={key}
 									type="button"
 									data-testid={`add-widget-option-${key}`}
-									onClick={() => onAdd(key)}
+									onClick={() => handleAdd(key, index)}
 									className="flex flex-col gap-3 rounded-xl border border-gray-200 p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
 								>
 									<WidgetPreview widgetKey={key} />

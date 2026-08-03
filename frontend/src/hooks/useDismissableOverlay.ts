@@ -38,6 +38,18 @@ export function useDismissableOverlay<T extends HTMLElement = HTMLDivElement>(
 		const id = idRef.current;
 		openStack.push(id);
 
+		// Captured at open, restored on dismissal (mirrors Modal.tsx:43-51) -
+		// only if focus is still somewhere inside the overlay at that moment.
+		// Escape leaves focus inside (whatever was focused when dismissed), so
+		// that case always restores; an outside click that landed on its own
+		// focusable element moves focus there first (mousedown focuses before
+		// the "click" event this hook listens on ever fires), so that
+		// legitimate focus change is correctly left alone.
+		const triggerElement =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
+
 		function isInside(target: Node) {
 			return (
 				(containerRef.current?.contains(target) ?? false) ||
@@ -45,8 +57,27 @@ export function useDismissableOverlay<T extends HTMLElement = HTMLDivElement>(
 			);
 		}
 
+		// Decided and applied synchronously here, before onDismiss's resulting
+		// state update can unmount the container - a consumer whose panel
+		// unmounts together with dismissal (e.g. MobileMenu, "only ever
+		// mounted while open") would otherwise already have containerRef.current
+		// nulled out by the time an effect-cleanup-based check ran, since React
+		// detaches refs during the same unmount commit that runs before this
+		// hook's own passive-effect cleanup - silently defeating the check.
+		function restoreFocusIfStillInside() {
+			if (
+				triggerElement?.isConnected &&
+				document.activeElement instanceof HTMLElement &&
+				isInside(document.activeElement)
+			) {
+				triggerElement.focus();
+			}
+		}
+
 		function handleClick(e: MouseEvent) {
-			if (!isInside(e.target as Node)) onDismissRef.current();
+			if (isInside(e.target as Node)) return;
+			restoreFocusIfStillInside();
+			onDismissRef.current();
 		}
 
 		function handleKeyDown(e: KeyboardEvent) {
@@ -54,6 +85,7 @@ export function useDismissableOverlay<T extends HTMLElement = HTMLDivElement>(
 			// Only the topmost overlay reacts - an outer one gets its turn on
 			// the next Escape press, once this one has closed and popped off.
 			if (openStack[openStack.length - 1] !== id) return;
+			restoreFocusIfStillInside();
 			onDismissRef.current();
 		}
 

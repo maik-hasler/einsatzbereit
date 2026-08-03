@@ -23,6 +23,8 @@ import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
 import { formatDateTime } from "../../../lib/format";
 import { brandColor } from "../../../lib/brandColor";
+import { readableTextColor } from "../../../lib/colorContrast";
+import { getApiErrorMessage } from "../../../lib/apiError";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -119,7 +121,7 @@ function calendarEventPropGetter(event: object) {
 		style: {
 			backgroundColor: bg,
 			borderColor: bg,
-			color: "white",
+			color: readableTextColor(bg),
 		},
 	};
 }
@@ -324,8 +326,10 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 				),
 			);
 			setSelectedEvent(null);
-		} catch {
-			setColorSaveError(t("orgOverview.colorSaveError"));
+		} catch (err) {
+			setColorSaveError(
+				getApiErrorMessage(err, t("orgOverview.colorSaveError")),
+			);
 		} finally {
 			setSavingColor(false);
 		}

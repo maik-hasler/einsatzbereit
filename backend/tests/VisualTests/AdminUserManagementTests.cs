@@ -36,17 +36,22 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Page.Locator("#admin-user-search").FillAsync(username);
 			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
 
-			var row = Page.Locator("tr").Filter(new() { HasTextString = username });
+			// einsatzbereit#1294: Block/Promote carry a per-row aria-label (the
+			// user's name interpolated into the middle of the phrase, e.g.
+			// "Promote {name} to admin") so screen-reader users navigating a
+			// list of many identical-looking buttons can tell them apart -
+			// asserting the full accessible name here also proves that fix.
+			var row = Page.Locator("li").Filter(new() { HasTextString = username });
 			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 			await Expect(row.GetByText("Active")).ToBeVisibleAsync();
 
-			await row.GetByRole(AriaRole.Button, new() { Name = "Block" }).ClickAsync();
+			await row.GetByRole(AriaRole.Button, new() { Name = $"Block {username}" }).ClickAsync();
 			await Expect(row.GetByText("Blocked")).ToBeVisibleAsync();
-			await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Unblock" })).ToBeVisibleAsync();
+			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Unblock {username}" })).ToBeVisibleAsync();
 
-			await row.GetByRole(AriaRole.Button, new() { Name = "Promote to admin" }).ClickAsync();
+			await row.GetByRole(AriaRole.Button, new() { Name = $"Promote {username} to admin" }).ClickAsync();
 			await Expect(row.GetByText("Admin", new() { Exact = true })).ToBeVisibleAsync();
-			await Expect(row.GetByRole(AriaRole.Button, new() { Name = "Remove admin" })).ToBeVisibleAsync();
+			await Expect(row.GetByRole(AriaRole.Button, new() { Name = $"Remove admin from {username}" })).ToBeVisibleAsync();
 		}
 		finally
 		{
@@ -75,11 +80,11 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 			await Page.Locator("#admin-user-search").FillAsync(username);
 			await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
 
-			var row = Page.Locator("tr").Filter(new() { HasTextString = username });
+			var row = Page.Locator("li").Filter(new() { HasTextString = username });
 			await Expect(row).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 			var nameCell = row.Locator("p").First;
-			var blockButton = row.GetByRole(AriaRole.Button, new() { Name = "Block" });
+			var blockButton = row.GetByRole(AriaRole.Button, new() { Name = $"Block {username}" });
 			await Expect(blockButton).ToBeVisibleAsync();
 
 			// Regression #813: on narrow viewports the name/email cell used to shrink
@@ -129,7 +134,7 @@ public class AdminUserManagementTests(AspireFixture fixture) : VisualTestBase(fi
 		await Page.Locator("#admin-user-search").FillAsync("admin");
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).ClickAsync();
 
-		var ownRow = Page.Locator("tr").Filter(new() { HasTextString = "admin@example.com" });
+		var ownRow = Page.Locator("li").Filter(new() { HasTextString = "admin@example.com" });
 		await Expect(ownRow).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Expect(ownRow.GetByText("You cannot change your own account here.")).ToBeVisibleAsync();
 		await Expect(ownRow.GetByRole(AriaRole.Button)).Not.ToBeVisibleAsync();

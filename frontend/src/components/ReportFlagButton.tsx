@@ -44,7 +44,7 @@ export default function ReportFlagButton({
 				aria-label={ariaLabel}
 				className={
 					className ??
-					"relative z-20 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+					"relative z-20 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
 				}
 			>
 				<FlagIcon className="h-3.5 w-3.5" />

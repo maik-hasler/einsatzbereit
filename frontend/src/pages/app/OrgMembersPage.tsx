@@ -7,6 +7,7 @@ import type {
 	OrgInvitationDto,
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { inputClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
@@ -23,6 +24,7 @@ export default function OrgMembersPage() {
 	const auth = useAuth();
 	const navigate = useNavigate();
 	const locale = resolveDateLocale(i18n.language);
+	usePageTitle(`${t("orgOverview.tabMembers")} - ${org.name}`);
 	const currentUserId = auth.user?.profile?.sub;
 
 	const [members, setMembers] = useState(org.members);
@@ -262,7 +264,7 @@ export default function OrgMembersPage() {
 						<option value="Organizer">{t("orgSettings.organisator")}</option>
 					</select>
 					{memberSearchLoading && (
-						<p className="mt-1 text-xs text-gray-500">
+						<p role="status" className="mt-1 text-xs text-gray-500">
 							{t("orgSettings.searching")}
 						</p>
 					)}
@@ -301,7 +303,7 @@ export default function OrgMembersPage() {
 					{memberSearch.length >= 4 &&
 						!memberSearchLoading &&
 						memberCandidates.length === 0 && (
-							<p className="mt-1 text-xs text-gray-500">
+							<p role="status" className="mt-1 text-xs text-gray-500">
 								{t("orgSettings.noSearchResults")}
 							</p>
 						)}
@@ -345,6 +347,9 @@ export default function OrgMembersPage() {
 											type="button"
 											onClick={() => handleDismissInvitation(invitation.id)}
 											disabled={dismissingInvitationId === invitation.id}
+											aria-label={t("orgSettings.dismissInvitationNamed", {
+												name: invitation.inviteeName,
+											})}
 											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 										>
 											{t("orgSettings.dismissInvitation")}
@@ -377,6 +382,9 @@ export default function OrgMembersPage() {
 											type="button"
 											onClick={() => handleDismissInvitation(invitation.id)}
 											disabled={dismissingInvitationId === invitation.id}
+											aria-label={t("orgSettings.dismissInvitationNamed", {
+												name: invitation.inviteeName,
+											})}
 											className="ml-3 shrink-0 text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 										>
 											{t("orgSettings.dismissInvitation")}
@@ -413,6 +421,9 @@ export default function OrgMembersPage() {
 													resendingInvitationId === invitation.id ||
 													dismissingInvitationId === invitation.id
 												}
+												aria-label={t("orgSettings.resendInvitationNamed", {
+													name: invitation.inviteeName,
+												})}
 												className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 											>
 												{resendingInvitationId === invitation.id
@@ -426,6 +437,9 @@ export default function OrgMembersPage() {
 													dismissingInvitationId === invitation.id ||
 													resendingInvitationId === invitation.id
 												}
+												aria-label={t("orgSettings.dismissInvitationNamed", {
+													name: invitation.inviteeName,
+												})}
 												className="text-xs text-red-700 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
 											>
 												{t("orgSettings.dismissInvitation")}
@@ -478,44 +492,63 @@ export default function OrgMembersPage() {
 									</button>
 								) : (
 									<div className="flex shrink-0 items-center gap-3">
-										<button
-											type="button"
-											onClick={() =>
-												void handleChangeMemberRole(
-													member.userId,
-													member.isOrganisator ? "Member" : "Organizer",
-												)
-											}
-											disabled={
-												changingRoleUserId === member.userId ||
-												(member.isOrganisator && organizerCount <= 1)
-											}
-											title={
-												member.isOrganisator && organizerCount <= 1
-													? t("orgSettings.changeRoleLastOrganizerHint")
-													: undefined
-											}
-											className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
-										>
-											{member.isOrganisator
-												? t("orgSettings.demoteToMember")
-												: t("orgSettings.promoteToOrganizer")}
-										</button>
-										<button
-											type="button"
-											onClick={() =>
-												setRemoveTarget({
-													userId: member.userId,
-													name:
-														member.firstName && member.lastName
-															? `${member.firstName} ${member.lastName}`
-															: member.username,
-												})
-											}
-											className="text-xs text-red-700 hover:text-red-800"
-										>
-											{t("orgSettings.removeMember")}
-										</button>
+										{(() => {
+											const memberName =
+												member.firstName && member.lastName
+													? `${member.firstName} ${member.lastName}`
+													: member.username;
+											return (
+												<>
+													<button
+														type="button"
+														onClick={() =>
+															void handleChangeMemberRole(
+																member.userId,
+																member.isOrganisator ? "Member" : "Organizer",
+															)
+														}
+														disabled={
+															changingRoleUserId === member.userId ||
+															(member.isOrganisator && organizerCount <= 1)
+														}
+														title={
+															member.isOrganisator && organizerCount <= 1
+																? t("orgSettings.changeRoleLastOrganizerHint")
+																: undefined
+														}
+														aria-label={
+															member.isOrganisator
+																? t("orgSettings.demoteToMemberNamed", {
+																		name: memberName,
+																	})
+																: t("orgSettings.promoteToOrganizerNamed", {
+																		name: memberName,
+																	})
+														}
+														className="text-xs text-brand-700 hover:text-brand-800 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:text-gray-400"
+													>
+														{member.isOrganisator
+															? t("orgSettings.demoteToMember")
+															: t("orgSettings.promoteToOrganizer")}
+													</button>
+													<button
+														type="button"
+														onClick={() =>
+															setRemoveTarget({
+																userId: member.userId,
+																name: memberName,
+															})
+														}
+														aria-label={t("orgSettings.removeMemberNamed", {
+															name: memberName,
+														})}
+														className="text-xs text-red-700 hover:text-red-800"
+													>
+														{t("orgSettings.removeMember")}
+													</button>
+												</>
+											);
+										})()}
 									</div>
 								)}
 							</li>

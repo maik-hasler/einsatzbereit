@@ -7,6 +7,7 @@ import type {
 } from "../../client/api-client";
 import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
 import Chip, { type ChipTone } from "../../components/Chip";
@@ -36,6 +37,7 @@ export default function OrgOpportunitiesPage() {
 	const { t } = useTranslation();
 	const api = useApiClient();
 	const organizationId = org.id;
+	usePageTitle(`${t("orgOverview.tabOpportunities")} - ${org.name}`);
 
 	const {
 		items: drafts,

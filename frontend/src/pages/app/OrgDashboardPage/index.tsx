@@ -10,6 +10,7 @@ import { useNavigate, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrgAppContext } from "../../../layouts/OrgAppLayout";
 import { useApiClient } from "../../../hooks/useApiClient";
+import { usePageTitle } from "../../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../../hooks/useEditModeQuickActions";
 import { dispatchToast } from "../../../lib/toastBus";
 import { getApiErrorMessage } from "../../../lib/apiError";
@@ -66,6 +67,7 @@ export default function OrgDashboardPage() {
 	const api = useApiClient();
 	const organizationId = org.id;
 	const isLargeViewport = useIsLargeViewport();
+	usePageTitle(`${t("orgOverview.tabDashboard")} - ${org.name}`);
 
 	// Bumped after a published opportunity is created so the Calendar and
 	// Upcoming Opportunities widgets (which each own their own data) refetch.
