@@ -587,70 +587,83 @@ function ReportsSection() {
 	return (
 		<>
 			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
-				{rows.map((row) => (
-					<li
-						key={`${row.targetType}:${row.targetId}`}
-						className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
-					>
-						<div className="min-w-0 flex-1">
-							<div className="flex flex-wrap items-center gap-2">
-								<Link
-									to={targetHref(row.targetType, row.targetId)}
-									className="font-medium text-brand-700 hover:underline"
-								>
-									{row.targetTitle || t("administration.reports.unknownTarget")}
-								</Link>
-								<Chip tone="neutral" size="sm">
-									{t(`administration.reports.targetType.${row.targetType}`)}
-								</Chip>
-								<Chip tone={row.isDeleted ? "danger" : "success"} size="sm">
-									{row.isDeleted
-										? t("administration.reports.statusDeleted")
-										: t("administration.reports.statusActive")}
-								</Chip>
+				{rows.map((row) => {
+					const targetName =
+						row.targetTitle || t("administration.reports.unknownTarget");
+					return (
+						<li
+							key={`${row.targetType}:${row.targetId}`}
+							className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+						>
+							<div className="min-w-0 flex-1">
+								<div className="flex flex-wrap items-center gap-2">
+									<Link
+										to={targetHref(row.targetType, row.targetId)}
+										className="font-medium text-brand-700 hover:underline"
+									>
+										{targetName}
+									</Link>
+									<Chip tone="neutral" size="sm">
+										{t(`administration.reports.targetType.${row.targetType}`)}
+									</Chip>
+									<Chip tone={row.isDeleted ? "danger" : "success"} size="sm">
+										{row.isDeleted
+											? t("administration.reports.statusDeleted")
+											: t("administration.reports.statusActive")}
+									</Chip>
+								</div>
+								<p className="mt-1 text-xs text-gray-500">
+									{t("administration.reports.openFlags", {
+										count: row.openReportCount,
+									})}
+									{" · "}
+									{t("administration.reports.totalFlags", {
+										count: row.totalReportCount,
+									})}
+									{" · "}
+									{t("administration.reports.lastFlagged", {
+										date: formatDateTime(row.lastReportedOn, i18n.language),
+									})}
+								</p>
 							</div>
-							<p className="mt-1 text-xs text-gray-500">
-								{t("administration.reports.openFlags", {
-									count: row.openReportCount,
-								})}
-								{" · "}
-								{t("administration.reports.totalFlags", {
-									count: row.totalReportCount,
-								})}
-								{" · "}
-								{t("administration.reports.lastFlagged", {
-									date: formatDateTime(row.lastReportedOn, i18n.language),
-								})}
-							</p>
-						</div>
-						<div className="flex shrink-0 items-center gap-2">
-							<button
-								type="button"
-								onClick={() => setHistoryTarget(row)}
-								className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-							>
-								{t("administration.reports.viewHistory")}
-							</button>
-							{row.isDeleted ? (
+							<div className="flex shrink-0 items-center gap-2">
 								<button
 									type="button"
-									onClick={() => setConfirmAction({ row, kind: "restore" })}
+									onClick={() => setHistoryTarget(row)}
+									aria-label={t("administration.reports.viewHistoryNamed", {
+										name: targetName,
+									})}
 									className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 								>
-									{t("administration.reports.restore")}
+									{t("administration.reports.viewHistory")}
 								</button>
-							) : (
-								<button
-									type="button"
-									onClick={() => setConfirmAction({ row, kind: "delete" })}
-									className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
-								>
-									{t("administration.reports.shadowDelete")}
-								</button>
-							)}
-						</div>
-					</li>
-				))}
+								{row.isDeleted ? (
+									<button
+										type="button"
+										onClick={() => setConfirmAction({ row, kind: "restore" })}
+										aria-label={t("administration.reports.restoreNamed", {
+											name: targetName,
+										})}
+										className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+									>
+										{t("administration.reports.restore")}
+									</button>
+								) : (
+									<button
+										type="button"
+										onClick={() => setConfirmAction({ row, kind: "delete" })}
+										aria-label={t("administration.reports.shadowDeleteNamed", {
+											name: targetName,
+										})}
+										className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+									>
+										{t("administration.reports.shadowDelete")}
+									</button>
+								)}
+							</div>
+						</li>
+					);
+				})}
 			</ul>
 			{hasMore &&
 				(loadMoreError ? (

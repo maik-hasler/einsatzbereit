@@ -420,7 +420,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// force a refetch, same as OrganizationTests.cs's equivalent setup.
 		await Page.ReloadAsync();
 		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Promote to Organizer" }))
+		// einsatzbereit#1294: this button's accessible name now interpolates
+		// the member's own name in the middle ("Promote {name} to Organizer"),
+		// so match with a regex rather than the old literal substring.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var result = await Page.RunAxe();
