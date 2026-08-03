@@ -44,189 +44,190 @@ internal sealed class ApplicationDbContextInitializer(
 		}
 	}
 
+	// Exceptions are intentionally left to propagate (#1212) - the caller (Program.cs)
+	// decides whether that means logging and continuing (Development) or failing
+	// startup outright (everywhere else). Silently swallowing here used to mean a
+	// SaveChangesAsync failure after the Keycloak-dependent seeding below had already
+	// run left orphaned Keycloak organizations with nothing pointing at them locally,
+	// and re-seeding on the next boot (the AnyAsync guard below still sees an empty
+	// table) made it worse by risking creating a *second* orphaned set. SeedOrg1Async/
+	// SeedOrg2Async now look up an existing organization by name before creating one,
+	// so a retry after a partial failure reuses what already exists instead.
 	public async ValueTask SeedAsync(
 		CancellationToken cancellationToken = default)
 	{
-		try
-		{
-			if (await dbContext.Set<Organization>().AnyAsync(cancellationToken))
-				return;
+		if (await dbContext.Set<Organization>().AnyAsync(cancellationToken))
+			return;
 
-			var org1Id = await SeedOrg1Async(cancellationToken);
-			var org2Id = await SeedOrg2Async(cancellationToken);
+		var org1Id = await SeedOrg1Async(cancellationToken);
+		var org2Id = await SeedOrg2Async(cancellationToken);
 
-			var now = DateTimeOffset.UtcNow;
+		var now = DateTimeOffset.UtcNow;
 
-			var opp1 = VolunteerOpportunity.Create(
-				org1Id,
-				"First Aid Course",
-				"Learn life-saving first aid techniques in our hands-on one-day course.",
-				isRemote: false,
-				Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.OneTime,
-				ParticipationType.ScheduledSlots,
-				CheckInMethod.Manual,
-				pinGenerator,
-				category: Category.Health,
-				status: OpportunityStatus.Draft).GetValueOrThrow();
-			opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20, now).GetValueOrThrow();
-			opp1.Publish().ThrowIfFailure();
+		var opp1 = VolunteerOpportunity.Create(
+			org1Id,
+			"First Aid Course",
+			"Learn life-saving first aid techniques in our hands-on one-day course.",
+			isRemote: false,
+			Address.Create("Main Street", "1", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.OneTime,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.Manual,
+			pinGenerator,
+			category: Category.Health,
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		opp1.AddTimeSlot(now.AddDays(14), now.AddDays(14).AddHours(8), 20, now).GetValueOrThrow();
+		opp1.Publish().ThrowIfFailure();
 
-			var opp2 = VolunteerOpportunity.Create(
-				org1Id,
-				"Blood Donation Drive",
-				"Support our regular blood donation drive and help save lives.",
-				isRemote: false,
-				Address.Create("Town Hall Square", "1", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.Recurring,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Health,
-				validUntil: now.AddDays(60)).GetValueOrThrow();
+		var opp2 = VolunteerOpportunity.Create(
+			org1Id,
+			"Blood Donation Drive",
+			"Support our regular blood donation drive and help save lives.",
+			isRemote: false,
+			Address.Create("Town Hall Square", "1", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.Recurring,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Health,
+			validUntil: now.AddDays(60)).GetValueOrThrow();
 
-			var opp2b = VolunteerOpportunity.Create(
-				org1Id,
-				"Paramedic Service at the Town Festival",
-				"Join our paramedic team at the annual town festival and provide first aid on site.",
-				isRemote: false,
-				Address.Create("Market Square", "2", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.OneTime,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Health,
-				validUntil: now.AddDays(30)).GetValueOrThrow();
+		var opp2b = VolunteerOpportunity.Create(
+			org1Id,
+			"Paramedic Service at the Town Festival",
+			"Join our paramedic team at the annual town festival and provide first aid on site.",
+			isRemote: false,
+			Address.Create("Market Square", "2", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Health,
+			validUntil: now.AddDays(30)).GetValueOrThrow();
 
-			var opp2c = VolunteerOpportunity.Create(
-				org1Id,
-				"Clothing Collection for People in Need",
-				"Help sort and distribute donated clothing to people in need in the region.",
-				isRemote: false,
-				Address.Create("Warehouse Street", "10", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.Recurring,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Social,
-				validUntil: now.AddDays(90)).GetValueOrThrow();
+		var opp2c = VolunteerOpportunity.Create(
+			org1Id,
+			"Clothing Collection for People in Need",
+			"Help sort and distribute donated clothing to people in need in the region.",
+			isRemote: false,
+			Address.Create("Warehouse Street", "10", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.Recurring,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Social,
+			validUntil: now.AddDays(90)).GetValueOrThrow();
 
-			var opp2d = VolunteerOpportunity.Create(
-				org1Id,
-				"First Aid Training for Clubs and Associations",
-				"Teach clubs and volunteer groups the basics of first aid in online training sessions.",
-				isRemote: true,
-				address: null,
-				Occurrence.Recurring,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Education,
-				validUntil: now.AddDays(45)).GetValueOrThrow();
+		var opp2d = VolunteerOpportunity.Create(
+			org1Id,
+			"First Aid Training for Clubs and Associations",
+			"Teach clubs and volunteer groups the basics of first aid in online training sessions.",
+			isRemote: true,
+			address: null,
+			Occurrence.Recurring,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Education,
+			validUntil: now.AddDays(45)).GetValueOrThrow();
 
-			var opp3 = VolunteerOpportunity.Create(
-				org2Id,
-				"Animal Shelter Helpers Wanted",
-				"Help us care for and look after the animals in our shelter.",
-				isRemote: false,
-				Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.Recurring,
-				ParticipationType.ScheduledSlots,
-				CheckInMethod.QRCode,
-				pinGenerator,
-				category: Category.Animals,
-				status: OpportunityStatus.Draft).GetValueOrThrow();
-			opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5, now).GetValueOrThrow();
-			// Unlimited capacity - demonstrates the "no cap" option locally (#1066).
-			opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), null, now).GetValueOrThrow();
-			opp3.Publish().ThrowIfFailure();
+		var opp3 = VolunteerOpportunity.Create(
+			org2Id,
+			"Animal Shelter Helpers Wanted",
+			"Help us care for and look after the animals in our shelter.",
+			isRemote: false,
+			Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.Recurring,
+			ParticipationType.ScheduledSlots,
+			CheckInMethod.QRCode,
+			pinGenerator,
+			category: Category.Animals,
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		opp3.AddTimeSlot(now.AddDays(7), now.AddDays(7).AddHours(4), 5, now).GetValueOrThrow();
+		// Unlimited capacity - demonstrates the "no cap" option locally (#1066).
+		opp3.AddTimeSlot(now.AddDays(21), now.AddDays(21).AddHours(4), null, now).GetValueOrThrow();
+		opp3.Publish().ThrowIfFailure();
 
-			var opp4 = VolunteerOpportunity.Create(
-				org2Id,
-				"Online Fundraising Support",
-				"Support our online fundraising team from the comfort of your own home.",
-				isRemote: true,
-				address: null,
-				Occurrence.OneTime,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Social,
-				validUntil: now.AddDays(30)).GetValueOrThrow();
+		var opp4 = VolunteerOpportunity.Create(
+			org2Id,
+			"Online Fundraising Support",
+			"Support our online fundraising team from the comfort of your own home.",
+			isRemote: true,
+			address: null,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Social,
+			validUntil: now.AddDays(30)).GetValueOrThrow();
 
-			var opp4b = VolunteerOpportunity.Create(
-				org2Id,
-				"Dog Walking Service for Shelter Dogs",
-				"Take our shelter dogs for regular walks and give them the exercise they need.",
-				isRemote: false,
-				Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.Recurring,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Animals,
-				validUntil: now.AddDays(60)).GetValueOrThrow();
+		var opp4b = VolunteerOpportunity.Create(
+			org2Id,
+			"Dog Walking Service for Shelter Dogs",
+			"Take our shelter dogs for regular walks and give them the exercise they need.",
+			isRemote: false,
+			Address.Create("Animal Park Lane", "5", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.Recurring,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Animals,
+			validUntil: now.AddDays(60)).GetValueOrThrow();
 
-			var opp4c = VolunteerOpportunity.Create(
-				org2Id,
-				"Pet Food Donation Drive",
-				"Collect food and supply donations for our animals at a local drive.",
-				isRemote: false,
-				Address.Create("Field Lane", "3", "12345", "Fairview").GetValueOrThrow(),
-				Occurrence.OneTime,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Animals,
-				validUntil: now.AddDays(30)).GetValueOrThrow();
+		var opp4c = VolunteerOpportunity.Create(
+			org2Id,
+			"Pet Food Donation Drive",
+			"Collect food and supply donations for our animals at a local drive.",
+			isRemote: false,
+			Address.Create("Field Lane", "3", "12345", "Fairview").GetValueOrThrow(),
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Animals,
+			validUntil: now.AddDays(30)).GetValueOrThrow();
 
-			var opp4d = VolunteerOpportunity.Create(
-				org2Id,
-				"Foster Animal Sponsorships",
-				"Take on a sponsorship for a foster animal and support them through their placement.",
-				isRemote: true,
-				address: null,
-				Occurrence.Recurring,
-				ParticipationType.IndividualContact,
-				CheckInMethod.None,
-				pinGenerator,
-				category: Category.Animals,
-				validUntil: now.AddDays(90)).GetValueOrThrow();
+		var opp4d = VolunteerOpportunity.Create(
+			org2Id,
+			"Foster Animal Sponsorships",
+			"Take on a sponsorship for a foster animal and support them through their placement.",
+			isRemote: true,
+			address: null,
+			Occurrence.Recurring,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			pinGenerator,
+			category: Category.Animals,
+			validUntil: now.AddDays(90)).GetValueOrThrow();
 
-			dbContext.Set<VolunteerOpportunity>().AddRange(
-				opp1, opp2, opp2b, opp2c, opp2d, opp3, opp4, opp4b, opp4c, opp4d);
+		dbContext.Set<VolunteerOpportunity>().AddRange(
+			opp1, opp2, opp2b, opp2c, opp2d, opp3, opp4, opp4b, opp4c, opp4d);
 
-			var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
+		var veraUserId = UserId.Create(VeraId).GetValueOrThrow();
 
-			dbContext.Set<Engagement>().AddRange(
-				Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
-				Engagement.CreateIndividualContact(
-					opp2.Id,
-					veraUserId,
-					"I would love to help out as a volunteer at the next blood donation drive.").GetValueOrThrow(),
-				Engagement.CreateSlotSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
+		dbContext.Set<Engagement>().AddRange(
+			Engagement.CreateSlotSignUp(opp1.Id, veraUserId, opp1.TimeSlots.First().Id),
+			Engagement.CreateIndividualContact(
+				opp2.Id,
+				veraUserId,
+				"I would love to help out as a volunteer at the next blood donation drive.").GetValueOrThrow(),
+			Engagement.CreateSlotSignUp(opp3.Id, veraUserId, opp3.TimeSlots.First().Id));
 
-			await dbContext.SaveChangesAsync(cancellationToken);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(
-				ex,
-				"An exception occurred while seeding the database");
-		}
+		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
 	private async Task<OrganizationId> SeedOrg1Async(CancellationToken cancellationToken)
 	{
-		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
-			"Fairview Red Cross",
-			cancellationToken);
+		const string name = "Fairview Red Cross";
 
-		await keycloakOrganizationService.AddMemberAsync(keycloakId, OlafId, cancellationToken);
-		await keycloakOrganizationService.AssignOrganizerRoleAsync(OlafId, cancellationToken);
-		await keycloakOrganizationService.AddMemberAsync(keycloakId, VeraId, cancellationToken);
+		var keycloakId = await keycloakOrganizationService.FindOrganizationByNameAsync(name, cancellationToken)
+			?? await keycloakOrganizationService.CreateOrganizationAsync(name, cancellationToken);
 
-		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Fairview Red Cross")
+		await EnsureMemberAsync(keycloakId, OlafId, cancellationToken);
+		await EnsureOrganizerRoleAsync(OlafId, cancellationToken);
+		await EnsureMemberAsync(keycloakId, VeraId, cancellationToken);
+
+		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), name)
 			.GetValueOrThrow();
 		org.ChangeDescription("Your local Red Cross chapter - we help people in need.");
 		org.ChangeContactInfo("info@fairview-redcross.org", "+1 555 0100", "https://www.fairview-redcross.example");
@@ -242,14 +243,15 @@ internal sealed class ApplicationDbContextInitializer(
 
 	private async Task<OrganizationId> SeedOrg2Async(CancellationToken cancellationToken)
 	{
-		var keycloakId = await keycloakOrganizationService.CreateOrganizationAsync(
-			"Fairview Animal Welfare Association",
-			cancellationToken);
+		const string name = "Fairview Animal Welfare Association";
 
-		await keycloakOrganizationService.AddMemberAsync(keycloakId, OlafId, cancellationToken);
-		await keycloakOrganizationService.AssignOrganizerRoleAsync(OlafId, cancellationToken);
+		var keycloakId = await keycloakOrganizationService.FindOrganizationByNameAsync(name, cancellationToken)
+			?? await keycloakOrganizationService.CreateOrganizationAsync(name, cancellationToken);
 
-		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), "Fairview Animal Welfare Association")
+		await EnsureMemberAsync(keycloakId, OlafId, cancellationToken);
+		await EnsureOrganizerRoleAsync(OlafId, cancellationToken);
+
+		var org = Organization.Create(OrganizationId.Create(keycloakId).GetValueOrThrow(), name)
 			.GetValueOrThrow();
 		org.ChangeDescription("We are committed to the wellbeing of animals in Fairview and the surrounding area.");
 		org.ChangeContactInfo("info@fairview-animalwelfare.org", "+1 555 0101", null);
@@ -261,5 +263,29 @@ internal sealed class ApplicationDbContextInitializer(
 			OrganizationMembership.Create(org.Id, UserId.Create(OlafId).GetValueOrThrow(), OrganizationMemberRole.Organizer));
 
 		return org.Id;
+	}
+
+	// Checked-before-added rather than a bare AddMemberAsync call, so re-running
+	// seeding after a partial failure (the organization was already reused via
+	// FindOrganizationByNameAsync, but a prior attempt had already added this member
+	// too) doesn't depend on Keycloak's add-member endpoint tolerating a duplicate
+	// add - we just never call it a second time for the same member.
+	private async Task EnsureMemberAsync(Guid organizationId, Guid userId, CancellationToken cancellationToken)
+	{
+		var members = await keycloakOrganizationService.GetMembersAsync(organizationId, cancellationToken);
+		if (members.Any(m => m.UserId == userId))
+			return;
+
+		await keycloakOrganizationService.AddMemberAsync(organizationId, userId, cancellationToken);
+	}
+
+	// Same reasoning as EnsureMemberAsync above, for the realm-wide organisator role.
+	private async Task EnsureOrganizerRoleAsync(Guid userId, CancellationToken cancellationToken)
+	{
+		var organisatorIds = await keycloakOrganizationService.GetRealmOrganisatorUserIdsAsync(cancellationToken);
+		if (organisatorIds.Contains(userId))
+			return;
+
+		await keycloakOrganizationService.AssignOrganizerRoleAsync(userId, cancellationToken);
 	}
 }

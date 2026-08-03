@@ -205,7 +205,21 @@ if (app.Environment.IsDevelopment())
 	var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbContextInitializer>();
 
 	await initializer.MigrateAsync();
-	await initializer.SeedAsync();
+
+	try
+	{
+		await initializer.SeedAsync();
+	}
+	catch (Exception ex)
+	{
+		// Dev-only convenience (#1212): don't fail local startup over a seed hiccup
+		// (e.g. a transient Keycloak call). ApplicationDbContextInitializer.SeedAsync's
+		// Keycloak-dependent seeding is idempotent by organization name, so the next
+		// restart's retry reuses whatever was already created instead of piling up
+		// duplicates - unlike the SeedOnStartup path below, which lets the same
+		// exception crash startup instead of logging it.
+		app.Logger.LogError(ex, "An exception occurred while seeding the database");
+	}
 
 	app.MapOpenApi();
 }
@@ -217,6 +231,10 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 
 	await initializer.MigrateAsync();
 
+	// Unlike the Development branch above, a seed failure here is left to propagate
+	// and crash startup (#1212) - this only runs outside Development when explicitly
+	// opted into via config, so a broken seed should be surfaced immediately rather
+	// than leaving the environment half-seeded with nothing logging it as broken.
 	if (app.Configuration.GetValue<bool>("Database:SeedOnStartup"))
 		await initializer.SeedAsync();
 }
