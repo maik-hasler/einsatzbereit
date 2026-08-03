@@ -49,8 +49,9 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		var withdrawn = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Withdrawn").GetValueOrThrow();
 		withdrawn.Withdraw().ThrowIfFailure();
 		// A pending engagement whose volunteer account was later deleted (#829) -
-		// VolunteerId is null even though Status is still Pending, so there is no
-		// one left to notify and it must not show up in the result.
+		// Anonymize() moves Status to Cancelled and nulls VolunteerId (#1217), so
+		// this is excluded by both the status and null-VolunteerId filters below;
+		// there is no one left to notify and it must not show up in the result.
 		var anonymizedPending = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Anonymized").GetValueOrThrow();
 		anonymizedPending.Anonymize();
 

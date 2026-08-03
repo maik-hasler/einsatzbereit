@@ -114,6 +114,29 @@ public class SubmitFeedbackCommandHandlerTests
 		engagement.FeedbackSubmittedAt.Should().BeNull();
 	}
 
+	// Regression for #1217: Anonymize() used to leave an anonymized engagement's
+	// Status as Pending/Confirmed, so the ownership check below dereferenced the
+	// now-null VolunteerId and crashed with a 500 instead of returning a 409.
+	[Test]
+	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var (engagement, _) = CreateCheckedInEngagementWithVolunteer();
+		engagement.Anonymize();
+		var engagementId = EngagementId.New();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var command = new SubmitFeedbackCommand(engagementId, UserId.New(), 4, "Great experience");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+	}
+
 	[Test]
 	public async Task Handle_ShouldThrow_WhenEngagementIsNotCheckedIn(
 		CancellationToken cancellationToken)

@@ -277,4 +277,111 @@ public class EngagementTests
 		result.IsFailure.Should().BeTrue();
 		result.Error.Description.Should().Match("*withdrawn or cancelled*");
 	}
+
+	// --- Anonymize ---
+
+	[Test]
+	public void Anonymize_ShouldSetVolunteerIdToNull()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		engagement.Anonymize();
+
+		engagement.IsAnonymized.Should().BeTrue();
+	}
+
+	[Test]
+	public void Anonymize_ShouldClearMessageAndFeedback()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.SubmitFeedback(5, "Great!", DateTimeOffset.UtcNow);
+
+		engagement.Anonymize();
+
+		engagement.Message.Should().BeNull();
+		engagement.FeedbackComment.Should().BeNull();
+		engagement.FeedbackRating.Should().BeNull();
+		engagement.FeedbackSubmittedAt.Should().BeNull();
+	}
+
+	[Test]
+	public void Anonymize_ShouldSetStatusToCancelled_WhenPending()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		engagement.Anonymize();
+
+		engagement.Status.Should().Be(EngagementStatus.Cancelled);
+	}
+
+	[Test]
+	public void Anonymize_ShouldSetStatusToCancelled_WhenConfirmed()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+
+		engagement.Anonymize();
+
+		engagement.Status.Should().Be(EngagementStatus.Cancelled);
+	}
+
+	[Test]
+	public void Anonymize_ShouldNotChangeStatus_WhenAlreadyWithdrawn()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+
+		engagement.Anonymize();
+
+		engagement.Status.Should().Be(EngagementStatus.Withdrawn);
+	}
+
+	[Test]
+	public void Anonymize_ShouldNotChangeStatus_WhenAlreadyCancelled()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Cancel();
+
+		engagement.Anonymize();
+
+		engagement.Status.Should().Be(EngagementStatus.Cancelled);
+	}
+
+	// Regression for #1217: Anonymize() used to leave Status as Pending/Confirmed,
+	// so every later transition dereferenced the now-null VolunteerId and crashed
+	// instead of returning a normal Result.Failure.
+	[Test]
+	public void Confirm_ShouldFail_WithoutThrowing_WhenEngagementIsAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Anonymize();
+
+		var result = engagement.Confirm();
+
+		result.IsFailure.Should().BeTrue();
+	}
+
+	[Test]
+	public void Cancel_ShouldFail_WithoutThrowing_WhenEngagementIsAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Anonymize();
+
+		var result = engagement.Cancel();
+
+		result.IsFailure.Should().BeTrue();
+	}
+
+	[Test]
+	public void Withdraw_ShouldFail_WithoutThrowing_WhenEngagementIsAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Anonymize();
+
+		var result = engagement.Withdraw();
+
+		result.IsFailure.Should().BeTrue();
+	}
 }

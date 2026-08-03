@@ -62,6 +62,30 @@ public class DeleteMyAccountCommandHandlerTests
 		engagementTwo.IsAnonymized.Should().BeTrue();
 	}
 
+	// Regression for #1217: Anonymize() used to leave Status as Pending/Confirmed,
+	// so a later Confirm/Cancel/Withdraw on these rows dereferenced the now-null
+	// VolunteerId and crashed with a 500 instead of returning a 409 Conflict.
+	[Test]
+	public async Task Handle_ShouldCancelActiveEngagements_WhenAnonymizing(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var pendingEngagement = CreateEngagementFor(DefaultUserId);
+		var confirmedEngagement = CreateEngagementFor(DefaultUserId);
+		confirmedEngagement.Confirm();
+		_dbContext
+			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
+			.Returns([pendingEngagement, confirmedEngagement]);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		pendingEngagement.Status.Should().Be(EngagementStatus.Cancelled);
+		confirmedEngagement.Status.Should().Be(EngagementStatus.Cancelled);
+	}
+
 	[Test]
 	public async Task Handle_ShouldDeleteNotificationsForRecipient(
 		CancellationToken cancellationToken)

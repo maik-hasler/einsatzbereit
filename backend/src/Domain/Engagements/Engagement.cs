@@ -193,6 +193,9 @@ public sealed class Engagement
 
 	public void Anonymize()
 	{
+		if (Status is EngagementStatus.Pending or EngagementStatus.Confirmed)
+			Status = EngagementStatus.Cancelled;
+
 		VolunteerId = null;
 		Message = null;
 		FeedbackComment = null;
