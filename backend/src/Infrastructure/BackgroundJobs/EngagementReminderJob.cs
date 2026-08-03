@@ -62,20 +62,34 @@ internal sealed class EngagementReminderJob(
 	{
 		if (_timer is null) return;
 
+		// PeriodicTimer.WaitForNextTickAsync only completes after a full
+		// PollIntervalHours - without an eager first run, every restart (deploy,
+		// crash, rolling update) opens an hourly window where no engagement is
+		// ever checked for a due reminder (#1097). Ticking once up front closes
+		// that gap; the 23-25h scan window still covers a single missed hour, but
+		// not several restarts in quick succession.
+		if (!ct.IsCancellationRequested)
+			await RunTickWithErrorHandlingAsync(ct).ConfigureAwait(false);
+
 		while (!ct.IsCancellationRequested && await _timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
 		{
-			try
-			{
-				await TickAsync(ct).ConfigureAwait(false);
-			}
-			catch (Exception ex) when (ex is not OperationCanceledException)
-			{
-				// Mirrors OutboxProcessorJob's tick-level catch: a failure here (e.g. a
-				// transient DB error) must not stop the PeriodicTimer from ever being
-				// awaited again. Any due engagement still has ReminderSentAt == null,
-				// so it is simply picked up again on the next tick.
-				logger.LogError(ex, "Engagement reminder tick failed; will retry on the next poll interval");
-			}
+			await RunTickWithErrorHandlingAsync(ct).ConfigureAwait(false);
+		}
+	}
+
+	private async Task RunTickWithErrorHandlingAsync(CancellationToken ct)
+	{
+		try
+		{
+			await TickAsync(ct).ConfigureAwait(false);
+		}
+		catch (Exception ex) when (ex is not OperationCanceledException)
+		{
+			// Mirrors OutboxProcessorJob's tick-level catch: a failure here (e.g. a
+			// transient DB error) must not stop the PeriodicTimer from ever being
+			// awaited again. Any due engagement still has ReminderSentAt == null,
+			// so it is simply picked up again on the next tick.
+			logger.LogError(ex, "Engagement reminder tick failed; will retry on the next poll interval");
 		}
 	}
 
