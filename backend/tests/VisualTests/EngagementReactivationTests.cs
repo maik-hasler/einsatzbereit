@@ -6,20 +6,20 @@ using Microsoft.Playwright;
 namespace VisualTests;
 
 /// <summary>
-/// Regression for #648: re-applying to an opportunity after withdrawing kept
-/// the original application's CreatedOn timestamp, because
-/// CreateEngagementCommandHandler reuses the existing terminal Engagement row
-/// via Engagement.Reactivate(...) instead of inserting a new one, and
-/// AuditableEntityInterceptor only stamps CreatedOn on EntityState.Added -
-/// never on the Modified state a reactivation produces. Both the volunteer's
-/// "My Profile -> Engagements" tab and the organizer's "Manage sign-ups"
-/// page kept showing the stale original date.
+/// Regression for #1215: Engagement.Reactivate(...) used to overwrite
+/// CreatedOn with the re-application time, breaking the audit-trail
+/// invariant that CreatedOn reflects when a row was first created. This
+/// deliberately supersedes #648's fix, which refreshed CreatedOn on
+/// reactivation so the volunteer's "My Profile -> Engagements" tab and the
+/// organizer's "Manage sign-ups" page would show the latest activity date -
+/// #1215 accepts that those views again show the original application date
+/// after a withdraw + reapply, in exchange for an immutable CreatedOn.
 /// </summary>
 [ClassDataSource<AspireFixture>(Shared = SharedType.PerTestSession)]
 public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase(fixture)
 {
 	[Test]
-	public async Task Reactivate_RefreshesCreatedOn_AfterWithdrawThenReapply()
+	public async Task Reactivate_DoesNotChangeCreatedOn_AfterWithdrawThenReapply()
 	{
 		var backend = Fixture.GetEndpoint("backend");
 		var keycloak = Fixture.GetEndpoint("keycloak");
@@ -35,9 +35,6 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 		var withdrawResponse = await http.PostAsync($"/v1/engagements/{firstEngagement}/withdraw", content: null);
 		withdrawResponse.EnsureSuccessStatusCode();
 
-		// Ensure the reactivation happens measurably later than the original
-		// application, so a frozen CreatedOn (the bug) is trivially
-		// distinguishable from a refreshed one.
 		await Task.Delay(2000);
 
 		var secondEngagement = await ApplyAsync(http, opportunityId, "Re-application after withdrawal.");
@@ -45,8 +42,8 @@ public class EngagementReactivationTests(AspireFixture fixture) : VisualTestBase
 
 		var secondCreatedOn = await GetCreatedOnAsync(http, opportunityId);
 
-		secondCreatedOn.Should().BeAfter(firstCreatedOn,
-			"Engagement.Reactivate must refresh CreatedOn to the re-application time, not leave it frozen at the original application's date");
+		secondCreatedOn.Should().Be(firstCreatedOn,
+			"Engagement.Reactivate must not change CreatedOn - it must stay pinned to the original application time");
 
 		// Leave vera's account clean for the rest of this shared Aspire session.
 		var cleanupResponse = await http.PostAsync($"/v1/engagements/{secondEngagement}/withdraw", content: null);

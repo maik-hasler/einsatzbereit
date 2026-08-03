@@ -80,6 +80,15 @@ internal sealed class UserConfiguration
 
 		builder.Property(u => u.DeletedOn);
 
+		// now() backfills existing rows when this column is added by migration;
+		// the AuditableEntityInterceptor supplies an explicit value on every
+		// insert, so the DB default never fires for new rows (same pattern as
+		// UnsubscribeToken above).
+		builder.Property(u => u.CreatedOn)
+			.HasDefaultValueSql("now()");
+
+		builder.Property(u => u.ModifiedOn);
+
 		builder.HasQueryFilter(u => !u.IsDeleted);
 
 		builder.Ignore(u => u.Events);
