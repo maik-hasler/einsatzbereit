@@ -30,6 +30,9 @@ public class SearchMemberCandidatesQueryHandlerTests
 		_keycloakService
 			.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
+		_dbContext
+			.GetInvitationsForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>())
+			.Returns([]);
 		_sut = new SearchMemberCandidatesQueryHandler(_dbContext, _keycloakService);
 	}
 
@@ -61,6 +64,76 @@ public class SearchMemberCandidatesQueryHandlerTests
 
 		// Assert
 		result.Should().ContainSingle(c => c.UserId == candidate);
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnCandidates_ExcludingUsersWithPendingInvitation(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var pendingInvitee = Guid.NewGuid();
+		var candidate = Guid.NewGuid();
+		_keycloakService
+			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns((IReadOnlyList<KeycloakOrganizationMember>)
+			[
+				new KeycloakOrganizationMember(pendingInvitee, "olaf", "Olaf", "Miller", "olaf@test.de", false),
+				new KeycloakOrganizationMember(candidate, "vera", "Vera", "Smith", "vera@test.de", false),
+			]);
+
+		var organizationId = OrganizationId.Create(DefaultOrgId).GetValueOrThrow();
+		var pendingInvitation = OrganizationInvitation.Create(
+			organizationId,
+			UserId.Create(pendingInvitee).GetValueOrThrow(),
+			DefaultRequestingUserId,
+			OrganizationMemberRole.Member,
+			DateTimeOffset.UtcNow);
+		_dbContext
+			.GetInvitationsForOrganizationAsync(organizationId, cancellationToken)
+			.Returns([pendingInvitation]);
+
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(query, cancellationToken);
+
+		// Assert
+		result.Should().ContainSingle(c => c.UserId == candidate);
+	}
+
+	[Test]
+	public async Task Handle_ShouldReturnCandidate_WhenInvitationIsNotPending(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: a Declined invitation shouldn't block the invitee from
+		// being re-invited via search.
+		var declinedInvitee = Guid.NewGuid();
+		_keycloakService
+			.SearchUsersAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns((IReadOnlyList<KeycloakOrganizationMember>)
+			[
+				new KeycloakOrganizationMember(declinedInvitee, "olaf", "Olaf", "Miller", "olaf@test.de", false),
+			]);
+
+		var organizationId = OrganizationId.Create(DefaultOrgId).GetValueOrThrow();
+		var declinedInvitation = OrganizationInvitation.Create(
+			organizationId,
+			UserId.Create(declinedInvitee).GetValueOrThrow(),
+			DefaultRequestingUserId,
+			OrganizationMemberRole.Member,
+			DateTimeOffset.UtcNow);
+		declinedInvitation.Decline();
+		_dbContext
+			.GetInvitationsForOrganizationAsync(organizationId, cancellationToken)
+			.Returns([declinedInvitation]);
+
+		var query = new SearchMemberCandidatesQuery(DefaultOrgId, "v", DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(query, cancellationToken);
+
+		// Assert
+		result.Should().ContainSingle(c => c.UserId == declinedInvitee);
 	}
 
 	[Test]
