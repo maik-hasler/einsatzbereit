@@ -11,6 +11,10 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 	if (compact) {
 		return (
 			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
+				<Link to="/help" className="hover:text-gray-600">
+					{t("footer.help")}
+				</Link>
+				<span className="mx-2">&middot;</span>
 				<Link to="/imprint" className="hover:text-gray-600">
 					{t("footer.imprint")}
 				</Link>
@@ -97,6 +101,11 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 									className="transition-colors hover:text-white"
 								>
 									{t("footer.contact")}
+								</Link>
+							</li>
+							<li>
+								<Link to="/help" className="transition-colors hover:text-white">
+									{t("footer.help")}
 								</Link>
 							</li>
 						</ul>

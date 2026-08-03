@@ -33,6 +33,7 @@ const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ImprintPage = lazy(() => import("./pages/ImprintPage"));
 const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 const VolunteerOpportunityDetailPage = lazy(
 	() => import("./pages/VolunteerOpportunityDetailPage"),
 );
@@ -138,6 +139,7 @@ export default function App() {
 				<Route path="/imprint" element={<ImprintPage />} />
 				<Route path="/terms-of-use" element={<TermsOfUsePage />} />
 				<Route path="/contact" element={<ContactPage />} />
+				<Route path="/help" element={<HelpPage />} />
 				<Route
 					path="/volunteer-opportunities/:opportunityId"
 					element={<VolunteerOpportunityDetailPage />}
