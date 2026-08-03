@@ -255,16 +255,15 @@ public class EngagementTests
 	}
 
 	[Test]
-	public void Reactivate_ShouldRefreshCreatedOn_ToTheReactivationTime()
+	public void Reactivate_ShouldNotChangeCreatedOn()
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Withdraw();
+		var originalCreatedOn = engagement.CreatedOn;
 
-		var before = DateTimeOffset.UtcNow;
 		engagement.Reactivate(AnyTimeSlotId(), message: null);
-		var after = DateTimeOffset.UtcNow;
 
-		engagement.CreatedOn.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+		engagement.CreatedOn.Should().Be(originalCreatedOn);
 	}
 
 	[Test]

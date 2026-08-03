@@ -4,7 +4,8 @@ namespace Domain.Users;
 
 public sealed class User
 	: AggregateRoot<UserId>,
-		ISoftDeletableEntity
+		ISoftDeletableEntity,
+		IAuditableEntity
 {
 	private List<string> _skills = [];
 
@@ -43,6 +44,10 @@ public sealed class User
 	public bool NotifyOnEngagementCancelled { get; private set; } = true;
 
 	public bool NotifyOnEngagementReminder { get; private set; } = true;
+
+	public DateTimeOffset CreatedOn { get; private set; }
+
+	public DateTimeOffset? ModifiedOn { get; private set; }
 
 #pragma warning disable CS8618
 	private User() : base(default) { }

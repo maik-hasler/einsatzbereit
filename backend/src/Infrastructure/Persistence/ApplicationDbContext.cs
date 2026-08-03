@@ -311,7 +311,7 @@ internal sealed class ApplicationDbContext(
 		CancellationToken cancellationToken = default) =>
 		await Set<TimeSlot>()
 			.FromSqlInterpolated($@"
-				SELECT id, end_date_time, max_participants, recurrence_count, recurrence_frequency, series_id, start_date_time, volunteer_opportunity_id
+				SELECT id, created_on, modified_on, end_date_time, max_participants, recurrence_count, recurrence_frequency, series_id, start_date_time, volunteer_opportunity_id
 				FROM time_slot
 				WHERE id = {timeSlotId.Value}
 				FOR UPDATE")

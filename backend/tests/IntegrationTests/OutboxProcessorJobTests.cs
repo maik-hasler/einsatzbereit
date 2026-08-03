@@ -119,12 +119,24 @@ public class OutboxProcessorJobTests(IntegrationTestFixture fixture)
 		var metrics = new OutboxMetrics(meterFactory);
 
 		const int maxAttempts = 3;
-		for (var attempt = 1; attempt <= maxAttempts; attempt++)
+
+		// The fixture boots the real app, whose own OutboxProcessorJob hosted service
+		// is concurrently polling this same table on its 5s timer (unfiltered - it
+		// claims any unprocessed row, including this one). Its FOR UPDATE SKIP LOCKED
+		// query can occasionally win the race against one of the calls below, which
+		// then silently claims zero rows that round instead of incrementing. Retry a
+		// round that claimed nothing rather than assuming exactly `maxAttempts` calls
+		// always means `maxAttempts` real attempts.
+		var realAttempts = 0;
+		for (var round = 0; round < maxAttempts * 5 && realAttempts < maxAttempts; round++)
 		{
-			await OutboxProcessorJob.ProcessBatchAsync(
+			var claimed = await OutboxProcessorJob.ProcessBatchAsync(
 				dbContext, new RecordingDispatcher(), NullLogger.Instance, metrics,
 				batchSize: 20, maxAttempts: maxAttempts, cancellationToken: cancellationToken);
+			if (claimed > 0)
+				realAttempts++;
 		}
+		realAttempts.Should().Be(maxAttempts, "the retry budget above should comfortably absorb the live job's occasional interference");
 
 		var message = await dbContext.Set<OutboxMessage>()
 			.SingleAsync(m => m.Type == PoisonMessageType, cancellationToken);

@@ -31,6 +31,14 @@ internal sealed class TimeSlotConfiguration
 
 		builder.Property(ts => ts.RecurrenceCount);
 
+		// now() backfills existing rows when this column is added by migration;
+		// the AuditableEntityInterceptor supplies an explicit value on every
+		// insert, so the DB default never fires for new rows.
+		builder.Property(ts => ts.CreatedOn)
+			.HasDefaultValueSql("now()");
+
+		builder.Property(ts => ts.ModifiedOn);
+
 		builder.HasIndex(ts => ts.SeriesId);
 
 		builder.HasIndex(ts => ts.StartDateTime);

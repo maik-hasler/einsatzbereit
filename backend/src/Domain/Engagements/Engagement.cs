@@ -177,7 +177,6 @@ public sealed class Engagement
 		FeedbackSubmittedAt = null;
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
-		CreatedOn = DateTimeOffset.UtcNow;
 		ReactivationCount++;
 		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
 		return Result.Success();

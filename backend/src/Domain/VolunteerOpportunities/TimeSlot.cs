@@ -2,7 +2,9 @@ using Domain.Primitives;
 
 namespace Domain.VolunteerOpportunities;
 
-public sealed class TimeSlot : Entity<TimeSlotId>
+public sealed class TimeSlot
+	: Entity<TimeSlotId>,
+		IAuditableEntity
 {
 	public DateTimeOffset StartDateTime { get; private set; }
 
@@ -22,6 +24,10 @@ public sealed class TimeSlot : Entity<TimeSlotId>
 	public string? RecurrenceFrequency { get; private set; }
 
 	public int? RecurrenceCount { get; private set; }
+
+	public DateTimeOffset CreatedOn { get; private set; }
+
+	public DateTimeOffset? ModifiedOn { get; private set; }
 
 #pragma warning disable CS8618
 	private TimeSlot() : base(default) { }
