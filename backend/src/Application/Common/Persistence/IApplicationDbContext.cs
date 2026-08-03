@@ -88,9 +88,17 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
-	Task<bool> HasPendingInvitationAsync(
-		OrganizationId organizationId,
-		UserId inviteeId,
+	// Atomically inserts the invitation only if no Pending invitation already
+	// exists for (OrganizationId, InviteeId) - backed by a partial unique index
+	// on exactly that predicate, so this can't lose a race the way a separate
+	// existence check followed by an unconditional insert could (#1202).
+	// Returns false (nothing inserted) when a Pending invitation already exists.
+	Task<bool> TryCreateInvitationAsync(
+		OrganizationInvitation invitation,
+		CancellationToken cancellationToken = default);
+
+	Task<Dictionary<Guid, string>> GetOrganizationNamesAsync(
+		IReadOnlyCollection<OrganizationId> organizationIds,
 		CancellationToken cancellationToken = default);
 
 	Task<List<OrganizationInvitation>> GetInvitationsForOrganizationAsync(
@@ -101,9 +109,16 @@ public interface IApplicationDbContext
 		UserId inviteeId,
 		CancellationToken cancellationToken = default);
 
-	Task<bool> HasAchievementAsync(
-		UserId userId,
-		string badgeName,
+	// Atomically awards the badge only if the user doesn't already have it, via a
+	// single "INSERT ... ON CONFLICT (user_id, key) DO NOTHING" instead of a
+	// separate existence check followed by a tracked insert - two concurrent
+	// awards of the same badge (e.g. two engagements confirmed for the same
+	// volunteer at once) would otherwise both pass the existence check and race
+	// on the unique index, surfacing as a 500 that rolls back the whole
+	// triggering command (#1205). Returns true if this call actually inserted
+	// the row, false if it already existed.
+	Task<bool> TryAwardAchievementAsync(
+		Achievement achievement,
 		CancellationToken cancellationToken = default);
 
 	Task DeleteAchievementsForUserAsync(
@@ -119,6 +134,17 @@ public interface IApplicationDbContext
 	IAggregateRepository<UserStreak, UserStreakId> UserStreaks { get; }
 
 	Task<UserStreak?> GetUserStreakAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	// Atomic get-or-create (#1204): the naive "read, then Create+Add if null"
+	// pattern used to race two concurrent first-touches for the same user (e.g.
+	// ConfirmEngagement racing LoginStreakMiddleware's out-of-band RecordLogin) -
+	// both would see no row, both insert, and the loser's whole SaveChangesAsync
+	// died on ix_user_streak_user_id with a 500. This resolves the race with a
+	// single "INSERT ... ON CONFLICT (user_id) DO NOTHING" instead, mirroring
+	// GetOrCreateUserAsync below.
+	Task<UserStreak> GetOrCreateUserStreakAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
 

@@ -34,6 +34,9 @@ internal sealed class ResendInvitationCommandHandler(
 		if (invitation.OrganizationId != request.OrganizationId)
 			throw new ResultFailureException(Error.Validation("OrganizationInvitation.WrongOrganization", "Invitation does not belong to this organization."));
 
+		var organization = await dbContext.Organizations.FindAsync(invitation.OrganizationId, cancellationToken)
+			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", "Organization not found."));
+
 		var invitee = await keycloakUserService.GetUserAsync(invitation.InviteeId.Value, cancellationToken);
 
 		invitation.Resend(DateTimeOffset.UtcNow).ThrowIfFailure();
@@ -58,7 +61,7 @@ internal sealed class ResendInvitationCommandHandler(
 			new Dictionary<string, string>
 			{
 				["InviteeName"] = invitee.FirstName ?? invitee.Username,
-				["OrganizationName"] = invitation.OrganizationName,
+				["OrganizationName"] = organization.Name,
 			});
 
 		await emailService.SendAsync(

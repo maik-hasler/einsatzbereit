@@ -29,12 +29,15 @@ public class AcceptInvitationCommandHandlerTests
 	{
 		_dbContext.OrganizationInvitations.Returns(_invitationRepo);
 		_dbContext.OrganizationMemberships.Returns(_membershipRepo);
+		_dbContext
+			.GetMembershipAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns((OrganizationMembership?)null);
 		_sut = new AcceptInvitationCommandHandler(_dbContext, _unitOfWork, _keycloakService);
 	}
 
 	private static OrganizationInvitation CreatePendingInvitation(
 		OrganizationMemberRole intendedRole = OrganizationMemberRole.Organizer) =>
-		OrganizationInvitation.Create(OrgId, "Test Org", InviteeId, "Invitee Name", InviterId, intendedRole, DateTimeOffset.UtcNow);
+		OrganizationInvitation.Create(OrgId, InviteeId, InviterId, intendedRole, DateTimeOffset.UtcNow);
 
 	[Test]
 	public async Task Handle_ShouldGrantOrganizerCapability_OnAccept(
@@ -136,6 +139,31 @@ public class AcceptInvitationCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>();
+		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldBeIdempotentNoOp_WhenMembershipAlreadyExists(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1202: a double-accept (two in-flight requests for the
+		// same invitation) must not surface the second request's unique-index
+		// violation on organization_membership as a 500 - it should observe that
+		// the invitee is already a member and return successfully without
+		// re-inserting or re-calling Keycloak.
+		var invitation = CreatePendingInvitation();
+		_invitationRepo.FindAsync(invitation.Id, cancellationToken).Returns(invitation);
+		_dbContext
+			.GetMembershipAsync(OrgId, InviteeId, cancellationToken)
+			.Returns(OrganizationMembership.Create(OrgId, InviteeId, OrganizationMemberRole.Organizer));
+		var command = new AcceptInvitationCommand(invitation.Id, InviteeId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
 		await _keycloakService.DidNotReceive().AddMemberAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationMembership>(), Arg.Any<CancellationToken>());
 	}

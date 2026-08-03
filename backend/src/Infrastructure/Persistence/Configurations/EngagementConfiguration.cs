@@ -25,6 +25,16 @@ internal sealed class EngagementConfiguration
 				guid => EngagementId.Create(guid).GetValueOrThrow())
 			.ValueGeneratedNever();
 
+		// Deliberately left as an unconstrained uuid, not a real FK (#1191): a
+		// volunteer's engagement history is meant to survive the opportunity it
+		// was for being hard-deleted (#667, #1203 - the deletion helpers cancel
+		// engagements but never delete them, and read repositories look up
+		// opportunity/organization data separately with a graceful null
+		// fallback instead of an inner join). OpportunityId is also
+		// non-nullable and read directly in dozens of call sites, so an
+		// ON DELETE SET NULL FK (the only delete behavior that wouldn't
+		// contradict that design) isn't a small change to introduce. Same
+		// reasoning applies to VolunteerId (#667) further below.
 		builder.Property(e => e.OpportunityId)
 			.HasConversion(
 				id => id.Value,
@@ -40,6 +50,10 @@ internal sealed class EngagementConfiguration
 			.HasConversion(
 				id => id.HasValue ? id.Value.Value : (Guid?)null,
 				guid => guid.HasValue ? TimeSlotId.Create(guid.Value).GetValueOrThrow() : null);
+
+		builder.Property(e => e.TimeSlotStartDateTime);
+
+		builder.Property(e => e.TimeSlotEndDateTime);
 
 		builder.Property(e => e.Message);
 
@@ -99,6 +113,19 @@ internal sealed class EngagementConfiguration
 			.HasForeignKey(e => e.TimeSlotId)
 			.IsRequired(false)
 			.OnDelete(DeleteBehavior.SetNull);
+
+		// Every state transition (Confirm/Cancel/Withdraw/Reactivate/CheckIn) is a
+		// read-then-write guard with nothing backing it at the DB level under
+		// READ COMMITTED - two concurrent Confirm calls would otherwise both read
+		// Status=Pending, both pass the guard and both commit (#1196). Mapped to
+		// a 409 by ConcurrencyExceptionHandler. A uint property configured with
+		// IsRowVersion() auto-maps to Postgres's xmin system column
+		// (UseXminAsConcurrencyToken() was removed in Npgsql.EntityFrameworkCore.
+		// PostgreSQL 7+ in favour of this) - the scaffolded migration still emits
+		// an AddColumn/DropColumn("xmin", ...) op for it, but NpgsqlMigrationsSqlGenerator
+		// recognizes "xmin" as a system column and generates no actual SQL for
+		// those ops, so no real column is added.
+		builder.Property<uint>("Version").IsRowVersion();
 
 		builder.Ignore(e => e.Events);
 	}

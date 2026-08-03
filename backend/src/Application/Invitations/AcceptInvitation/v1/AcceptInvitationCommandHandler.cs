@@ -23,6 +23,21 @@ internal sealed class AcceptInvitationCommandHandler(
 		if (invitation.InviteeId != request.UserId)
 			throw new ResultFailureException(Error.Forbidden("OrganizationInvitation.NotRecipient", "You are not the recipient of this invitation."));
 
+		// A double-accept (two in-flight requests for the same invitation) races
+		// on organization_membership's unique index - without this check both
+		// pass invitation.Accept() and both try to insert a membership row, and
+		// the loser previously surfaced a raw 23505 as an unhandled 500 even
+		// though the invitee ends up a member either way (#1202). The first
+		// request through still wins the race on invitation.Accept() itself
+		// (Status guard below), which - combined with OrganizationInvitation's
+		// concurrency token (#1196) - is what makes the second request observe
+		// either an existing membership here or a 409 from the concurrency check
+		// on save, never a 500.
+		var existingMembership = await dbContext.GetMembershipAsync(
+			invitation.OrganizationId, invitation.InviteeId, cancellationToken);
+		if (existingMembership is not null)
+			return true;
+
 		invitation.Accept().ThrowIfFailure();
 
 		await keycloakOrganizationService.AddMemberAsync(

@@ -10,6 +10,17 @@ namespace Infrastructure.Persistence.Migrations
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
 		{
+			// #1194: idempotent pre-check so a pre-existing overlong value can't
+			// make the AlterColumn below fail and crash-loop the backend on
+			// every startup (Database__MigrateOnStartup) - see the identical
+			// rationale in AddVolunteerOpportunityTitleDescriptionMaxLength.
+			migrationBuilder.Sql(
+				"UPDATE volunteer_opportunity SET address_street = left(address_street, 200) WHERE length(address_street) > 200;");
+			migrationBuilder.Sql(
+				"UPDATE volunteer_opportunity SET address_house_number = left(address_house_number, 20) WHERE length(address_house_number) > 20;");
+			migrationBuilder.Sql(
+				"UPDATE volunteer_opportunity SET address_city = left(address_city, 100) WHERE length(address_city) > 100;");
+
 			migrationBuilder.AlterColumn<string>(
 				name: "address_street",
 				table: "volunteer_opportunity",

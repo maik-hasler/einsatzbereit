@@ -47,6 +47,9 @@ public class ConfirmEngagementCommandHandlerTests
 		_dbContext
 			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
+		_dbContext
+			.GetOrCreateUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => UserStreak.Create(callInfo.Arg<UserId>()));
 		_sut = new ConfirmEngagementCommandHandler(_dbContext, _sender);
 	}
 
@@ -173,7 +176,7 @@ public class ConfirmEngagementCommandHandlerTests
 
 		// Streak at 3 consecutive weeks; next activity takes it to 4
 		var streak = BuildActivityStreakOf(volunteerId, 3);
-		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
@@ -197,7 +200,7 @@ public class ConfirmEngagementCommandHandlerTests
 
 		// Streak at 1; next activity takes it to 2 - no badge yet
 		var streak = BuildActivityStreakOf(volunteerId, 1);
-		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
@@ -218,7 +221,7 @@ public class ConfirmEngagementCommandHandlerTests
 			TimeSlotId.New());
 
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns((UserStreak?)null);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(UserStreak.Create(volunteerId));
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
@@ -245,7 +248,7 @@ public class ConfirmEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 4);
-		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
@@ -268,7 +271,7 @@ public class ConfirmEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 2);
-		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 
@@ -291,7 +294,7 @@ public class ConfirmEngagementCommandHandlerTests
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
 
 		var streak = BuildStreakWithTotalConfirmedEngagementsOf(volunteerId, 99);
-		_dbContext.GetUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
+		_dbContext.GetOrCreateUserStreakAsync(volunteerId, cancellationToken).Returns(streak);
 
 		await _sut.Handle(new ConfirmEngagementCommand(engagementId, DefaultRequestingUserId), cancellationToken);
 

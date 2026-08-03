@@ -210,10 +210,7 @@ export default function BadgeGrid({
 		);
 	}
 
-	const earnedByKey = new Map(
-		earned.filter((a) => a.key != null).map((a) => [a.key as string, a]),
-	);
-	const earnedByName = new Map(earned.map((a) => [a.name, a]));
+	const earnedByKey = new Map(earned.map((a) => [a.key, a]));
 
 	return (
 		<div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
@@ -221,7 +218,7 @@ export default function BadgeGrid({
 				<BadgeCard
 					key={entry.key}
 					catalog={entry}
-					earned={earnedByKey.get(entry.key) ?? earnedByName.get(entry.name)}
+					earned={earnedByKey.get(entry.key)}
 				/>
 			))}
 			{catalog.length === 0 && earned.length === 0 && (

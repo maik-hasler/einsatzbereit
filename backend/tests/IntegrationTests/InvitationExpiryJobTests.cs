@@ -98,7 +98,7 @@ public class InvitationExpiryJobTests(IntegrationTestFixture fixture)
 		dbContext.Set<DomainOrganization>().Add(organization);
 
 		var invitation = OrganizationInvitation.Create(
-			organization.Id, organization.Name, UserId.New(), "Invitee", UserId.New(), OrganizationMemberRole.Organizer, createdAt);
+			organization.Id, UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, createdAt);
 		if (accept)
 			invitation.Accept().ThrowIfFailure();
 		dbContext.Set<OrganizationInvitation>().Add(invitation);

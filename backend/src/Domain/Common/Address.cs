@@ -11,6 +11,17 @@ public sealed record Address : IValueObject
 	public double? Latitude { get; }
 	public double? Longitude { get; }
 
+	// A second, narrower constructor (rather than default parameter values) so
+	// EF Core's owned-type materialization can bind it for an owner
+	// (Organization, #1206) that deliberately doesn't map Latitude/Longitude -
+	// EF picks whichever constructor's parameters are all bindable to that
+	// owner's mapped properties. Create/WithCoordinates below always call the
+	// 6-arg constructor explicitly regardless.
+	private Address(string street, string houseNumber, string zipCode, string city)
+		: this(street, houseNumber, zipCode, city, latitude: null, longitude: null)
+	{
+	}
+
 	private Address(string street, string houseNumber, string zipCode, string city, double? latitude, double? longitude)
 	{
 		Street = street;

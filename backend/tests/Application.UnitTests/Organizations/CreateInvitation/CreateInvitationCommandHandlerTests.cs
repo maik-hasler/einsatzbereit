@@ -22,8 +22,6 @@ public class CreateInvitationCommandHandlerTests
 	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<Organization, OrganizationId> _orgRepo =
 		Substitute.For<IAggregateRepository<Organization, OrganizationId>>();
-	private readonly IAggregateRepository<OrganizationInvitation, OrganizationInvitationId> _invitationRepo =
-		Substitute.For<IAggregateRepository<OrganizationInvitation, OrganizationInvitationId>>();
 	private readonly CreateInvitationCommandHandler _sut;
 
 	private static readonly OrganizationId DefaultOrgId = OrganizationId.New();
@@ -33,11 +31,13 @@ public class CreateInvitationCommandHandlerTests
 	public CreateInvitationCommandHandlerTests()
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
-		_dbContext.OrganizationInvitations.Returns(_invitationRepo);
 		_orgRepo.FindAsync(DefaultOrgId, Arg.Any<CancellationToken>())
 			.Returns(Organization.Create(DefaultOrgId, "Test Org").Value);
 		_dbContext
 			.IsOrganizerAsync(DefaultOrgId, DefaultInvitedById, Arg.Any<CancellationToken>())
+			.Returns(true);
+		_dbContext
+			.TryCreateInvitationAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_keycloakOrgService
 			.GetMembersAsync(DefaultOrgId.Value, Arg.Any<CancellationToken>())
@@ -71,7 +71,7 @@ public class CreateInvitationCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*permission*");
 		await _keycloakUserService.DidNotReceive().GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
-		await _invitationRepo.DidNotReceive().AddAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>());
+		await _dbContext.DidNotReceive().TryCreateInvitationAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -86,12 +86,35 @@ public class CreateInvitationCommandHandlerTests
 
 		// Assert
 		result.Should().NotBeNull();
-		await _invitationRepo.Received(1).AddAsync(
+		await _dbContext.Received(1).TryCreateInvitationAsync(
 			Arg.Is<OrganizationInvitation>(i => i != null && i.IntendedRole == OrganizationMemberRole.Member),
 			cancellationToken);
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 		await _emailService.Received(1).SendAsync(
 			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrowConflict_WhenAPendingInvitationAlreadyExists(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1202: TryCreateInvitationAsync returning false (the
+		// partial unique index rejected the insert) must surface as the same
+		// Conflict error the old non-atomic pre-check used to throw, not a raw
+		// unhandled failure.
+		_dbContext
+			.TryCreateInvitationAsync(Arg.Any<OrganizationInvitation>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+		var command = new CreateInvitationCommand(DefaultOrgId, DefaultInviteeId, OrganizationMemberRole.Member, DefaultInvitedById);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*pending invitation*");
+		await _emailService.DidNotReceive().SendAsync(
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

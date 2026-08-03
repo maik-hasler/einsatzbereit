@@ -14,6 +14,18 @@ public sealed class Engagement
 
 	public TimeSlotId? TimeSlotId { get; private set; }
 
+	// Snapshotted from the TimeSlot at sign-up/reactivation time (#1203) so a
+	// volunteer's past-engagement history keeps showing when a shift was, even
+	// after the opportunity/time slot it pointed at is later hard-deleted -
+	// which nulls TimeSlotId out via engagement.time_slot_id's ON DELETE SET
+	// NULL and would otherwise erase the date along with it. Read code should
+	// still prefer a live join to TimeSlot when TimeSlotId is present (it may
+	// have been legitimately rescheduled since), falling back to these only
+	// once the slot is gone.
+	public DateTimeOffset? TimeSlotStartDateTime { get; private set; }
+
+	public DateTimeOffset? TimeSlotEndDateTime { get; private set; }
+
 	public string? Message { get; private set; }
 
 	public EngagementStatus Status { get; private set; }
@@ -55,6 +67,8 @@ public sealed class Engagement
 		VolunteerOpportunityId opportunityId,
 		UserId volunteerId,
 		TimeSlotId? timeSlotId,
+		DateTimeOffset? timeSlotStartDateTime,
+		DateTimeOffset? timeSlotEndDateTime,
 		string? message,
 		EngagementStatus status)
 		: base(id)
@@ -62,6 +76,8 @@ public sealed class Engagement
 		OpportunityId = opportunityId;
 		VolunteerId = volunteerId;
 		TimeSlotId = timeSlotId;
+		TimeSlotStartDateTime = timeSlotStartDateTime;
+		TimeSlotEndDateTime = timeSlotEndDateTime;
 		Message = message;
 		Status = status;
 	}
@@ -69,13 +85,17 @@ public sealed class Engagement
 	public static Engagement CreateSlotSignUp(
 		VolunteerOpportunityId opportunityId,
 		UserId volunteerId,
-		TimeSlotId timeSlotId)
+		TimeSlotId timeSlotId,
+		DateTimeOffset? timeSlotStartDateTime = null,
+		DateTimeOffset? timeSlotEndDateTime = null)
 	{
 		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId,
+			timeSlotStartDateTime,
+			timeSlotEndDateTime,
 			message: null,
 			EngagementStatus.Pending);
 		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
@@ -97,6 +117,8 @@ public sealed class Engagement
 			opportunityId,
 			volunteerId,
 			timeSlotId: null,
+			timeSlotStartDateTime: null,
+			timeSlotEndDateTime: null,
 			message,
 			EngagementStatus.Pending);
 		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
@@ -152,7 +174,11 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	public Result Reactivate(TimeSlotId? timeSlotId, string? message)
+	public Result Reactivate(
+		TimeSlotId? timeSlotId,
+		string? message,
+		DateTimeOffset? timeSlotStartDateTime = null,
+		DateTimeOffset? timeSlotEndDateTime = null)
 	{
 		if (IsAnonymized)
 			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
@@ -169,6 +195,8 @@ public sealed class Engagement
 			return Result.Failure(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."));
 
 		TimeSlotId = timeSlotId;
+		TimeSlotStartDateTime = timeSlotId is null ? null : timeSlotStartDateTime;
+		TimeSlotEndDateTime = timeSlotId is null ? null : timeSlotEndDateTime;
 		Message = message;
 		CancellationReason = null;
 		IsCheckedIn = false;

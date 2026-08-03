@@ -9,11 +9,7 @@ public sealed class OrganizationInvitation
 {
 	public OrganizationId OrganizationId { get; private set; }
 
-	public string OrganizationName { get; private set; }
-
 	public UserId InviteeId { get; private set; }
-
-	public string InviteeName { get; private set; }
 
 	public UserId InvitedById { get; private set; }
 
@@ -39,38 +35,34 @@ public sealed class OrganizationInvitation
 	private OrganizationInvitation(
 		OrganizationInvitationId id,
 		OrganizationId organizationId,
-		string organizationName,
 		UserId inviteeId,
-		string inviteeName,
 		UserId invitedById,
 		OrganizationMemberRole intendedRole,
 		DateTimeOffset now)
 		: base(id)
 	{
 		OrganizationId = organizationId;
-		OrganizationName = organizationName;
 		InviteeId = inviteeId;
-		InviteeName = inviteeName;
 		InvitedById = invitedById;
 		IntendedRole = intendedRole;
 		Status = InvitationStatus.Pending;
 		ExpiresOn = now.AddDays(ExpiryWindowDays);
 	}
 
+	// Deliberately does not take an organization/invitee display name (#1207) -
+	// both are looked up fresh at read time (a join to organization, a Keycloak
+	// lookup for the invitee) instead of being frozen here, so a later rename
+	// doesn't leave a stale label on an outstanding invitation.
 	public static OrganizationInvitation Create(
 		OrganizationId organizationId,
-		string organizationName,
 		UserId inviteeId,
-		string inviteeName,
 		UserId invitedById,
 		OrganizationMemberRole intendedRole,
 		DateTimeOffset now) =>
 		new(
 			OrganizationInvitationId.New(),
 			organizationId,
-			organizationName,
 			inviteeId,
-			inviteeName,
 			invitedById,
 			intendedRole,
 			now);

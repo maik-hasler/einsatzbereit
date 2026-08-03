@@ -14,11 +14,14 @@ internal sealed class GetMyInvitationsQueryHandler(
 		var invitations = await dbContext.GetPendingInvitationsForUserAsync(
 			request.UserId, cancellationToken);
 
+		var organizationIds = invitations.Select(i => i.OrganizationId).Distinct().ToList();
+		var organizationNames = await dbContext.GetOrganizationNamesAsync(organizationIds, cancellationToken);
+
 		return invitations
 			.Select(i => new MyInvitationDto(
 				i.Id.Value,
 				i.OrganizationId.Value,
-				i.OrganizationName,
+				organizationNames.GetValueOrDefault(i.OrganizationId.Value, "(unknown organization)"),
 				i.CreatedOn))
 			.ToList();
 	}

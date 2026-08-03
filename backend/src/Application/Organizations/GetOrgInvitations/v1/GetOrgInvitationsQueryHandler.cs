@@ -1,11 +1,13 @@
 using Application.Common.Authorization;
+using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 
 namespace Application.Organizations.GetOrgInvitations.v1;
 
 internal sealed class GetOrgInvitationsQueryHandler(
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	IKeycloakUserService keycloakUserService)
 	: IQueryHandler<GetOrgInvitationsQuery, List<OrgInvitationDto>>
 {
 	public async ValueTask<List<OrgInvitationDto>> Handle(
@@ -21,11 +23,14 @@ internal sealed class GetOrgInvitationsQueryHandler(
 		var invitations = await dbContext.GetInvitationsForOrganizationAsync(
 			request.OrganizationId, cancellationToken);
 
+		var inviteeIds = invitations.Select(i => i.InviteeId.Value).Distinct().ToList();
+		var displayNames = await keycloakUserService.GetDisplayNamesAsync(inviteeIds, cancellationToken);
+
 		return invitations
 			.Select(i => new OrgInvitationDto(
 				i.Id.Value,
 				i.InviteeId.Value,
-				i.InviteeName,
+				displayNames.GetValueOrDefault(i.InviteeId.Value, "(unknown user)"),
 				i.IntendedRole.ToString(),
 				i.Status.ToString(),
 				i.CreatedOn))
