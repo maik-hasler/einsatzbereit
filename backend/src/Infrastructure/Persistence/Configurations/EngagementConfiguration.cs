@@ -57,6 +57,10 @@ internal sealed class EngagementConfiguration
 
 		builder.Property(e => e.FeedbackRating);
 
+		builder.ToTable(t => t.HasCheckConstraint(
+			"CK_engagement_feedback_rating_range",
+			"feedback_rating IS NULL OR feedback_rating BETWEEN 1 AND 5"));
+
 		builder.Property(e => e.FeedbackComment)
 			.HasMaxLength(500);
 

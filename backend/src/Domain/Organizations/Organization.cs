@@ -132,4 +132,9 @@ public sealed class Organization
 		DeletedOn = null;
 		return Result.Success();
 	}
+
+	// Raises OrganizationDeletedDomainEvent (#1218) so the Keycloak organization
+	// deletion - irreversible and external - runs only after the local hard-delete
+	// commits, via the outbox, instead of racing an early return from this handler call.
+	public void Delete() => AddEvent(new OrganizationDeletedDomainEvent(Id));
 }

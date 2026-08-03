@@ -127,9 +127,29 @@ public class IntegrationTestFixture
 
 	public async Task ResetDatabaseAsync()
 	{
-		await using var conn = new NpgsqlConnection(_connectionString);
-		await conn.OpenAsync();
-		await _respawner.ResetAsync(conn);
+		const int maxAttempts = 3;
+
+		for (var attempt = 1; ; attempt++)
+		{
+			try
+			{
+				await using var conn = new NpgsqlConnection(_connectionString);
+				await conn.OpenAsync();
+				await _respawner.ResetAsync(conn);
+				return;
+			}
+			catch (NpgsqlException) when (attempt < maxAttempts)
+			{
+				// Respawn.ResetAsync occasionally hits a transient read timeout under
+				// CI resource contention (runner under load, a background job briefly
+				// touching a table it's resetting) - a fresh connection and a short
+				// backoff clears it. The app's real ApplicationDbContext already
+				// retries transient Postgres errors via EnableRetryOnFailure; this
+				// fixture talks to Postgres over a raw NpgsqlConnection instead, so
+				// that execution strategy doesn't cover it.
+				await Task.Delay(TimeSpan.FromSeconds(attempt));
+			}
+		}
 	}
 
 	// Test-only escape hatch to simulate an opportunity row removed without

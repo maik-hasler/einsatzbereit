@@ -75,6 +75,7 @@ public class OutboxMessageSerializationTests
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), TimeSlotId.New());
 		yield return new EngagementWithdrawnDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		yield return new OrganizationDeletedDomainEvent(CoreOrganizationId.New());
 		yield return new OrganizationInvitationAcceptedDomainEvent(
 			OrganizationInvitationId.New(), CoreOrganizationId.New(), UserId.New());
 		yield return new OrganizationInvitationDeclinedDomainEvent(

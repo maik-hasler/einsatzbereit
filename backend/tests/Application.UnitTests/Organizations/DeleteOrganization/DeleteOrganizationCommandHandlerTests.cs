@@ -73,7 +73,7 @@ public class DeleteOrganizationCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldDeleteOrganizationAndCallKeycloak_WhenSoleMemberAndNoBlockingOpportunities(
+	public async Task Handle_ShouldDeleteOrganizationAndRaiseDeletedDomainEvent_WhenSoleMemberAndNoBlockingOpportunities(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -90,7 +90,13 @@ public class DeleteOrganizationCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		_organizationRepo.Received(1).Delete(organization);
-		await _keycloakService.Received(1).DeleteOrganizationAsync(orgId, cancellationToken);
+		// Issue #1218: the Keycloak call is no longer made directly here - it's deferred to
+		// OrganizationDeletedDomainEventHandler, dispatched via the outbox after this command's
+		// transaction commits, so a failed commit can no longer leave Keycloak's copy deleted
+		// while the local rollback restores everything.
+		organization.Events.Should().ContainSingle(e => e is OrganizationDeletedDomainEvent);
+		((OrganizationDeletedDomainEvent)organization.Events.Single()).OrganizationId.Should().Be(organization.Id);
+		await _keycloakService.DidNotReceive().DeleteOrganizationAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
 		await _dbContext.Received(1).RemoveDashboardLayoutsForOrganizationAsync(
 			OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken);
 	}
