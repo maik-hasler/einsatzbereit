@@ -3,6 +3,7 @@ import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
+import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
 import { setActiveOrgId } from "../lib/activeOrg";
 import { ORG_TABS, orgTabPath } from "../lib/orgTabs";
 import { statusTitleClass } from "../lib/headingClasses";
@@ -51,6 +52,10 @@ function OrgAppShell({
 	activeTabLabel: string;
 	load: () => void;
 }) {
+	// #1034: this hook was previously only mounted in AppLayout (the public
+	// site layout), so users working inside the org app shell never polled
+	// for newly-unlocked badges and never saw the unlock toast.
+	useAchievementNotifier();
 	const { t } = useTranslation();
 	const extra = useOrgBreadcrumbExtra();
 	const quickActions = useQuickActionsList();
