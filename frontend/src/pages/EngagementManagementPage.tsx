@@ -633,10 +633,7 @@ export default function EngagementManagementPage() {
 					loading={cancelling}
 					error={cancelError}
 				>
-					<label
-						htmlFor="cancel-reason"
-						className="block text-xs font-medium text-gray-700"
-					>
+					<label htmlFor="cancel-reason" className={labelClass}>
 						{t("confirmDialog.cancel.reasonLabel")}
 					</label>
 					<textarea

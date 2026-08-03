@@ -191,10 +191,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					</div>
 
 					<div ref={nameFieldRef}>
-						<label
-							htmlFor="create-org-name"
-							className="mb-1 block text-sm font-medium"
-						>
+						<label htmlFor="create-org-name" className={`mb-1 ${labelClass}`}>
 							{t("organization.nameLabel")}
 						</label>
 						<input
@@ -224,7 +221,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					<div>
 						<label
 							htmlFor="create-org-description"
-							className="mb-1 block text-sm font-medium"
+							className={`mb-1 ${labelClass}`}
 						>
 							{t("orgSettings.fieldDescription")}
 						</label>
@@ -253,7 +250,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					<div>
 						<label
 							htmlFor="create-org-contact-email"
-							className="mb-1 block text-sm font-medium"
+							className={`mb-1 ${labelClass}`}
 						>
 							{t("orgSettings.fieldContactEmail")}
 						</label>
@@ -282,10 +279,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					</div>
 
 					<div>
-						<label
-							htmlFor="create-org-phone"
-							className="mb-1 block text-sm font-medium"
-						>
+						<label htmlFor="create-org-phone" className={`mb-1 ${labelClass}`}>
 							{t("orgSettings.fieldPhone")}
 						</label>
 						<input
@@ -313,7 +307,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: Props) {
 					<div>
 						<label
 							htmlFor="create-org-website"
-							className="mb-1 block text-sm font-medium"
+							className={`mb-1 ${labelClass}`}
 						>
 							{t("orgSettings.fieldWebsite")}
 						</label>

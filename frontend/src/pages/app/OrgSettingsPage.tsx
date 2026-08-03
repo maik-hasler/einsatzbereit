@@ -16,30 +16,12 @@ import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
+import Field from "../../components/Field";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-function Field({
-	label,
-	id,
-	children,
-}: {
-	label: string;
-	id?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div>
-			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
-				{label}
-			</label>
-			{children}
-		</div>
-	);
-}
 
 export default function OrgSettingsPage() {
 	const { org, reloadOrg } = useOutletContext<OrgAppContext>();
@@ -291,7 +273,7 @@ export default function OrgSettingsPage() {
 							className="space-y-5"
 						>
 							<div>
-								<p className="mb-1 block text-sm font-medium text-gray-700">
+								<p className={`mb-1 ${labelClass}`}>
 									{t("orgSettings.fieldLogo")}
 								</p>
 								<div className="flex items-center gap-4">

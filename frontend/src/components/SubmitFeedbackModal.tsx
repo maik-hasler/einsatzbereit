@@ -5,6 +5,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import { StarIcon } from "./icons";
+import { labelClass } from "../lib/formClasses";
 
 interface SubmitFeedbackModalProps {
 	engagementId: string;
@@ -60,9 +61,7 @@ export default function SubmitFeedbackModal({
 
 			<form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
 				<div>
-					<p className="mb-2 text-sm font-medium text-gray-700">
-						{t("feedback.ratingLabel")}
-					</p>
+					<p className={`mb-2 ${labelClass}`}>{t("feedback.ratingLabel")}</p>
 					<div
 						className="flex gap-1"
 						role="group"
@@ -88,10 +87,7 @@ export default function SubmitFeedbackModal({
 				</div>
 
 				<div>
-					<label
-						htmlFor="feedback-comment"
-						className="block text-sm font-medium text-gray-700"
-					>
+					<label htmlFor="feedback-comment" className={labelClass}>
 						{t("feedback.commentLabel")}
 					</label>
 					<textarea

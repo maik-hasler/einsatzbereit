@@ -25,6 +25,7 @@ import { formatDateTime } from "../../../lib/format";
 import { brandColor } from "../../../lib/brandColor";
 import { readableTextColor } from "../../../lib/colorContrast";
 import { getApiErrorMessage } from "../../../lib/apiError";
+import { labelClass } from "../../../lib/formClasses";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -436,10 +437,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 							)
 						)}
 						<div>
-							<label
-								htmlFor="event-color-picker"
-								className="block text-sm font-medium text-gray-700"
-							>
+							<label htmlFor="event-color-picker" className={labelClass}>
 								{t("orgOverview.eventColorLabel")}
 							</label>
 							<div className="mt-1 flex items-center gap-3">

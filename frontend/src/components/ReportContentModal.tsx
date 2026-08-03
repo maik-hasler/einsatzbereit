@@ -4,6 +4,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import ErrorBanner from "./ErrorBanner";
 import { getApiErrorMessage } from "../lib/apiError";
+import { labelClass } from "../lib/formClasses";
 
 const REPORT_REASONS = [
 	"Spam",
@@ -62,10 +63,7 @@ export default function ReportContentModal({
 
 			<form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
 				<div>
-					<label
-						htmlFor="report-reason"
-						className="block text-sm font-medium text-gray-700"
-					>
+					<label htmlFor="report-reason" className={labelClass}>
 						{t("report.reasonLabel")}
 					</label>
 					<select
@@ -83,10 +81,7 @@ export default function ReportContentModal({
 				</div>
 
 				<div>
-					<label
-						htmlFor="report-details"
-						className="block text-sm font-medium text-gray-700"
-					>
+					<label htmlFor="report-details" className={labelClass}>
 						{t("report.detailsLabel")}
 					</label>
 					<textarea

@@ -9,7 +9,7 @@ import type {
 import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiErrorMessage } from "../../lib/apiError";
-import { inputClass } from "../../lib/formClasses";
+import { inputClass, labelClass } from "../../lib/formClasses";
 import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
@@ -261,10 +261,7 @@ export default function OrgMembersPage() {
 				)}
 
 				<div className="mb-6">
-					<label
-						htmlFor="member-search"
-						className="block text-sm font-medium text-gray-700"
-					>
+					<label htmlFor="member-search" className={labelClass}>
 						{t("orgSettings.inviteLabel")}
 					</label>
 					<input
@@ -275,10 +272,7 @@ export default function OrgMembersPage() {
 						placeholder={t("orgSettings.invitePlaceholder")}
 						className={inputClass}
 					/>
-					<label
-						htmlFor="invite-role"
-						className="mt-2 block text-xs font-medium text-gray-700"
-					>
+					<label htmlFor="invite-role" className={`mt-2 ${labelClass}`}>
 						{t("orgSettings.inviteRoleLabel")}
 					</label>
 					<select

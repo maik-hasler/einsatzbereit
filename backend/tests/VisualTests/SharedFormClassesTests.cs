@@ -19,6 +19,19 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	private const string ExpectedInputClass =
 		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-brand-400";
 
+	// Regression: ProfileOverviewPage and OrgSettingsPage also used to each
+	// define their own local "Field" helper component, each with its own
+	// hardcoded label style ("text-sm font-medium text-gray-700") that
+	// diverged from lib/formClasses.ts's "labelClass" ("text-xs font-medium
+	// text-gray-600") used by every other field on the very same forms -
+	// e.g. OrgSettingsPage's address block switched size/colour partway
+	// down the form. einsatzbereit#1109 consolidated both local "Field"
+	// components into a single shared components/Field.tsx built on
+	// "labelClass". Assert both pages' field labels still carry that exact
+	// class attribute, so a future edit can't silently reintroduce a
+	// second label style without touching the shared module.
+	private const string ExpectedLabelClass = "block text-xs font-medium text-gray-600";
+
 	[Test]
 	public async Task ProfilePageInput_UsesSharedInputClass()
 	{
@@ -38,6 +51,11 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		var profileInputClass = await profileInput.GetAttributeAsync("class");
 
 		profileInputClass.Should().Be(ExpectedInputClass);
+
+		var profileLabel = Page.Locator("label[for='first-name']");
+		var profileLabelClass = await profileLabel.GetAttributeAsync("class");
+
+		profileLabelClass.Should().Be(ExpectedLabelClass);
 	}
 
 	[Test]
@@ -61,5 +79,19 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 		var orgInputClass = await orgInput.GetAttributeAsync("class");
 
 		orgInputClass.Should().Be(ExpectedInputClass);
+
+		var orgLabel = Page.Locator("label[for='org-name']");
+		var orgLabelClass = await orgLabel.GetAttributeAsync("class");
+
+		orgLabelClass.Should().Be(ExpectedLabelClass);
+
+		// einsatzbereit#1109: the address block used to be the only part of
+		// this form already on "labelClass" - assert the upper field (above)
+		// and this lower one now match, so the form doesn't switch label
+		// styles partway down.
+		var orgStreetLabel = Page.Locator("label[for='org-street']");
+		var orgStreetLabelClass = await orgStreetLabel.GetAttributeAsync("class");
+
+		orgStreetLabelClass.Should().Be(ExpectedLabelClass);
 	}
 }

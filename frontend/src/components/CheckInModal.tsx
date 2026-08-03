@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunityDetails } from "../client/api-client";
 import { getApiErrorMessage } from "../lib/apiError";
+import { labelClass } from "../lib/formClasses";
 import { useApiClient } from "../hooks/useApiClient";
 import Modal from "./Modal";
 import Spinner from "./Spinner";
@@ -110,10 +111,7 @@ export default function CheckInModal({
 					</p>
 					<form onSubmit={(e) => void handlePinSubmit(e)} className="space-y-3">
 						<div>
-							<label
-								htmlFor="pin-input"
-								className="block text-sm font-medium text-gray-700"
-							>
+							<label htmlFor="pin-input" className={labelClass}>
 								{t("checkIn.pinLabel")}
 							</label>
 							<input

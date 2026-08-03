@@ -10,7 +10,7 @@ import { useApiClient } from "../hooks/useApiClient";
 import { useLoadMore } from "../hooks/useLoadMore";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
-import { inputClass } from "../lib/formClasses";
+import { inputClass, labelClass } from "../lib/formClasses";
 import { pageTitleClass } from "../lib/headingClasses";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -246,10 +246,7 @@ function UsersSection() {
 		<>
 			<form onSubmit={handleSearchSubmit} className="mb-6 flex items-end gap-3">
 				<div className="flex-1">
-					<label
-						htmlFor="admin-user-search"
-						className="block text-xs text-gray-600"
-					>
+					<label htmlFor="admin-user-search" className={labelClass}>
 						{t("administration.users.searchLabel")}
 					</label>
 					<input
