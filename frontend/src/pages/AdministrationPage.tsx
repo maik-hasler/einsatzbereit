@@ -16,6 +16,7 @@ import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import Chip from "../components/Chip";
+import PageSectionHeading from "../components/PageSectionHeading";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
@@ -43,21 +44,21 @@ export default function AdministrationPage() {
 				{t("administration.title")}
 			</h1>
 			<section className="mb-10">
-				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+				<PageSectionHeading>
 					{t("administration.organizationsHeading")}
-				</h2>
+				</PageSectionHeading>
 				<OrganizationsSection />
 			</section>
 			<section className="mb-10">
-				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+				<PageSectionHeading>
 					{t("administration.usersHeading")}
-				</h2>
+				</PageSectionHeading>
 				<UsersSection />
 			</section>
 			<section className="mb-10">
-				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+				<PageSectionHeading>
 					{t("administration.reportsHeading")}
-				</h2>
+				</PageSectionHeading>
 				<ReportsSection />
 			</section>
 			<section>

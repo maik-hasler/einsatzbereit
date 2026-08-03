@@ -13,6 +13,7 @@ import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import EmptyState from "../../components/EmptyState";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
+import SectionHeading from "../../components/SectionHeading";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
@@ -407,9 +408,7 @@ export default function ProfileOverviewPage() {
 
 					{/* Profile details */}
 					<section className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-							{t("profile.sectionDetails")}
-						</h2>
+						<SectionHeading>{t("profile.sectionDetails")}</SectionHeading>
 
 						{!editing &&
 							(isProfileFieldsEmpty ? (

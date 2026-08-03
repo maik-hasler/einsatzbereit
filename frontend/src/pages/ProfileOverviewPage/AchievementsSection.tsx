@@ -8,6 +8,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { getApiErrorMessage } from "../../lib/apiError";
 import BadgeGrid from "../../components/BadgeGrid";
 import ErrorBanner from "../../components/ErrorBanner";
+import SectionHeading from "../../components/SectionHeading";
 
 export default function AchievementsSection() {
 	const api = useApiClient();
@@ -31,9 +32,7 @@ export default function AchievementsSection() {
 
 	return (
 		<section id="achievements" className="mb-6">
-			<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-				{t("achievements.badgesTitle")}
-			</h2>
+			<SectionHeading>{t("achievements.badgesTitle")}</SectionHeading>
 			{error ? (
 				<ErrorBanner message={t("achievements.error", { message: error })} />
 			) : (

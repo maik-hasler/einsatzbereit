@@ -17,6 +17,7 @@ import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
 import LoadMoreButton from "../components/LoadMoreButton";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
+import PageSectionHeading from "../components/PageSectionHeading";
 import NotFoundPage from "./NotFoundPage";
 import { formatDate, formatDateTime, resolveDateLocale } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -654,9 +655,7 @@ export default function EngagementManagementPage() {
 
 			{feedbackStats !== null && (
 				<section className="mt-8">
-					<h2 className="mb-4 text-lg font-semibold text-gray-900">
-						{t("feedback.organizerTab")}
-					</h2>
+					<PageSectionHeading>{t("feedback.organizerTab")}</PageSectionHeading>
 					{feedbackStats.feedbackCount === 0 ? (
 						<p className="text-sm text-gray-500">{t("feedback.noFeedback")}</p>
 					) : (

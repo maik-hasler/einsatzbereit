@@ -14,6 +14,7 @@ import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import EmptyState from "../../components/EmptyState";
+import SectionHeading from "../../components/SectionHeading";
 import SubmitFeedbackModal from "../../components/SubmitFeedbackModal";
 import Skeleton from "../../components/Skeleton";
 import Button from "../../components/Button";
@@ -192,9 +193,9 @@ export default function ActivitySection() {
 			)}
 			{!invitationsLoading && invitations.length > 0 && (
 				<div className="mb-6">
-					<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+					<SectionHeading>
 						{t("profileOverview.invitationsHeading")}
-					</h2>
+					</SectionHeading>
 					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 						{invitations.map((inv) => (
 							<li
@@ -242,9 +243,7 @@ export default function ActivitySection() {
 				</div>
 			)}
 
-			<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-				{t("myEngagements.title")}
-			</h2>
+			<SectionHeading>{t("myEngagements.title")}</SectionHeading>
 
 			<div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
 				<button
