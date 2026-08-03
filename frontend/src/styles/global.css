@@ -13,11 +13,14 @@ is intentionally light-only, so it renders as authored instead of guessing. */
 }
 
 html {
-	scroll-behavior: smooth;
 	overflow-x: clip;
 }
 
 @media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+
 	@keyframes fade-up {
 		from {
 			opacity: 0;
@@ -230,7 +233,7 @@ overflow-y-auto already handles vertical scrolling. */
 }
 
 .rbc-off-range {
-	color: rgb(156 163 175);
+	color: rgb(107 114 128);
 }
 
 /* Date cell numbers */

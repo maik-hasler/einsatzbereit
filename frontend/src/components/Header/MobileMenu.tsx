@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -58,6 +59,17 @@ export default function MobileMenu({
 	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose, [
 		triggerRef,
 	]);
+
+	// Move focus into the panel on open, mirroring Modal.tsx's initial-focus
+	// behavior - without this, a keyboard user who opens the menu stays
+	// focused on the (now expanded) hamburger button and has to Tab past it
+	// again to reach the first item.
+	useEffect(() => {
+		rootRef.current
+			?.querySelector<HTMLElement>("a[href], button:not([disabled])")
+			?.focus();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	return (
 		<div

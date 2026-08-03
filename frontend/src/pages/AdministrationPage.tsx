@@ -139,21 +139,15 @@ function OrganizationsSection() {
 
 	return (
 		<>
-			<div className="overflow-hidden rounded-card border border-gray-200">
-				<table className="w-full text-sm">
-					<tbody className="divide-y divide-gray-100">
-						{rows.map((row) => (
-							<tr key={row.id} className="flex items-center gap-4 px-4 py-3">
-								<td className="min-w-0 flex-1">
-									<p className="truncate font-medium text-gray-900">
-										{row.name}
-									</p>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+				{rows.map((row) => (
+					<li key={row.id} className="flex items-center gap-4 px-4 py-3">
+						<div className="min-w-0 flex-1">
+							<p className="truncate font-medium text-gray-900">{row.name}</p>
+						</div>
+					</li>
+				))}
+			</ul>
 			{hasMore &&
 				(loadMoreError ? (
 					<LoadMoreError
@@ -321,92 +315,104 @@ function UsersSection() {
 				<EmptyState title={t("administration.users.noUsers")} />
 			) : (
 				<>
-					<div className="overflow-hidden rounded-card border border-gray-200">
-						<table className="w-full text-sm">
-							<tbody className="divide-y divide-gray-100">
-								{rows.map((row) => {
-									const isSelf = row.id === currentUserId;
-									const isAdmin = row.realmRoles.includes("admin");
-									const isPending = pendingUserId === row.id;
-									const displayName =
-										row.firstName && row.lastName
-											? `${row.firstName} ${row.lastName}`
-											: row.username;
+					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+						{rows.map((row) => {
+							const isSelf = row.id === currentUserId;
+							const isAdmin = row.realmRoles.includes("admin");
+							const isPending = pendingUserId === row.id;
+							const displayName =
+								row.firstName && row.lastName
+									? `${row.firstName} ${row.lastName}`
+									: row.username;
 
-									return (
-										<tr
-											key={row.id}
-											className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
-										>
-											<td className="min-w-0 flex-1">
-												<p className="truncate font-medium text-gray-900">
-													{displayName}
-													{isAdmin && (
-														<Chip tone="warning" size="sm" className="ml-2">
-															{t("administration.users.adminBadge")}
-														</Chip>
-													)}
-												</p>
-												<p className="truncate text-xs text-gray-500">
-													{row.username} &middot; {row.email}
-												</p>
-											</td>
-											<td className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
-												<Chip
-													tone={row.enabled ? "success" : "danger"}
-													size="sm"
-													className="shrink-0"
-												>
-													{row.enabled
-														? t("administration.users.statusActive")
-														: t("administration.users.statusBlocked")}
+							return (
+								<li
+									key={row.id}
+									className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center"
+								>
+									<div className="min-w-0 flex-1">
+										<p className="truncate font-medium text-gray-900">
+											{displayName}
+											{isAdmin && (
+												<Chip tone="warning" size="sm" className="ml-2">
+													{t("administration.users.adminBadge")}
 												</Chip>
-												<div className="flex shrink-0 items-center gap-2">
-													{isSelf ? (
-														<span
-															className="text-xs text-gray-500"
-															title={t(
-																"administration.users.selfActionDisabledHint",
-															)}
-														>
-															{t("administration.users.selfActionDisabledHint")}
-														</span>
-													) : (
-														<>
-															<button
-																type="button"
-																disabled={isPending}
-																onClick={() =>
-																	void toggleEnabled(row.id, !row.enabled)
-																}
-																className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-															>
-																{row.enabled
-																	? t("administration.users.block")
-																	: t("administration.users.unblock")}
-															</button>
-															<button
-																type="button"
-																disabled={isPending}
-																onClick={() =>
-																	void toggleAdmin(row.id, !isAdmin)
-																}
-																className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-															>
-																{isAdmin
-																	? t("administration.users.demote")
-																	: t("administration.users.promote")}
-															</button>
-														</>
+											)}
+										</p>
+										<p className="truncate text-xs text-gray-500">
+											{row.username} &middot; {row.email}
+										</p>
+									</div>
+									<div className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
+										<Chip
+											tone={row.enabled ? "success" : "danger"}
+											size="sm"
+											className="shrink-0"
+										>
+											{row.enabled
+												? t("administration.users.statusActive")
+												: t("administration.users.statusBlocked")}
+										</Chip>
+										<div className="flex shrink-0 items-center gap-2">
+											{isSelf ? (
+												<span
+													className="text-xs text-gray-500"
+													title={t(
+														"administration.users.selfActionDisabledHint",
 													)}
-												</div>
-											</td>
-										</tr>
-									);
-								})}
-							</tbody>
-						</table>
-					</div>
+												>
+													{t("administration.users.selfActionDisabledHint")}
+												</span>
+											) : (
+												<>
+													<button
+														type="button"
+														disabled={isPending}
+														onClick={() =>
+															void toggleEnabled(row.id, !row.enabled)
+														}
+														aria-label={
+															row.enabled
+																? t("administration.users.blockNamed", {
+																		name: displayName,
+																	})
+																: t("administration.users.unblockNamed", {
+																		name: displayName,
+																	})
+														}
+														className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+													>
+														{row.enabled
+															? t("administration.users.block")
+															: t("administration.users.unblock")}
+													</button>
+													<button
+														type="button"
+														disabled={isPending}
+														onClick={() => void toggleAdmin(row.id, !isAdmin)}
+														aria-label={
+															isAdmin
+																? t("administration.users.demoteNamed", {
+																		name: displayName,
+																	})
+																: t("administration.users.promoteNamed", {
+																		name: displayName,
+																	})
+														}
+														className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+													>
+														{isAdmin
+															? t("administration.users.demote")
+															: t("administration.users.promote")}
+													</button>
+												</>
+											)}
+										</div>
+									</div>
+								</li>
+							);
+						})}
+					</ul>
 					{hasMore &&
 						(loadMoreError ? (
 							<LoadMoreError
@@ -580,77 +586,85 @@ function ReportsSection() {
 
 	return (
 		<>
-			<div className="overflow-hidden rounded-card border border-gray-200">
-				<table className="w-full text-sm">
-					<tbody className="divide-y divide-gray-100">
-						{rows.map((row) => (
-							<tr
-								key={`${row.targetType}:${row.targetId}`}
-								className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
-							>
-								<td className="min-w-0 flex-1">
-									<div className="flex flex-wrap items-center gap-2">
-										<Link
-											to={targetHref(row.targetType, row.targetId)}
-											className="font-medium text-brand-700 hover:underline"
-										>
-											{row.targetTitle ||
-												t("administration.reports.unknownTarget")}
-										</Link>
-										<Chip tone="neutral" size="sm">
-											{t(`administration.reports.targetType.${row.targetType}`)}
-										</Chip>
-										<Chip tone={row.isDeleted ? "danger" : "success"} size="sm">
-											{row.isDeleted
-												? t("administration.reports.statusDeleted")
-												: t("administration.reports.statusActive")}
-										</Chip>
-									</div>
-									<p className="mt-1 text-xs text-gray-500">
-										{t("administration.reports.openFlags", {
-											count: row.openReportCount,
-										})}
-										{" · "}
-										{t("administration.reports.totalFlags", {
-											count: row.totalReportCount,
-										})}
-										{" · "}
-										{t("administration.reports.lastFlagged", {
-											date: formatDateTime(row.lastReportedOn, i18n.language),
-										})}
-									</p>
-								</td>
-								<td className="flex shrink-0 items-center gap-2">
+			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+				{rows.map((row) => {
+					const targetName =
+						row.targetTitle || t("administration.reports.unknownTarget");
+					return (
+						<li
+							key={`${row.targetType}:${row.targetId}`}
+							className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+						>
+							<div className="min-w-0 flex-1">
+								<div className="flex flex-wrap items-center gap-2">
+									<Link
+										to={targetHref(row.targetType, row.targetId)}
+										className="font-medium text-brand-700 hover:underline"
+									>
+										{targetName}
+									</Link>
+									<Chip tone="neutral" size="sm">
+										{t(`administration.reports.targetType.${row.targetType}`)}
+									</Chip>
+									<Chip tone={row.isDeleted ? "danger" : "success"} size="sm">
+										{row.isDeleted
+											? t("administration.reports.statusDeleted")
+											: t("administration.reports.statusActive")}
+									</Chip>
+								</div>
+								<p className="mt-1 text-xs text-gray-500">
+									{t("administration.reports.openFlags", {
+										count: row.openReportCount,
+									})}
+									{" · "}
+									{t("administration.reports.totalFlags", {
+										count: row.totalReportCount,
+									})}
+									{" · "}
+									{t("administration.reports.lastFlagged", {
+										date: formatDateTime(row.lastReportedOn, i18n.language),
+									})}
+								</p>
+							</div>
+							<div className="flex shrink-0 items-center gap-2">
+								<button
+									type="button"
+									onClick={() => setHistoryTarget(row)}
+									aria-label={t("administration.reports.viewHistoryNamed", {
+										name: targetName,
+									})}
+									className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+								>
+									{t("administration.reports.viewHistory")}
+								</button>
+								{row.isDeleted ? (
 									<button
 										type="button"
-										onClick={() => setHistoryTarget(row)}
+										onClick={() => setConfirmAction({ row, kind: "restore" })}
+										aria-label={t("administration.reports.restoreNamed", {
+											name: targetName,
+										})}
 										className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 									>
-										{t("administration.reports.viewHistory")}
+										{t("administration.reports.restore")}
 									</button>
-									{row.isDeleted ? (
-										<button
-											type="button"
-											onClick={() => setConfirmAction({ row, kind: "restore" })}
-											className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-										>
-											{t("administration.reports.restore")}
-										</button>
-									) : (
-										<button
-											type="button"
-											onClick={() => setConfirmAction({ row, kind: "delete" })}
-											className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
-										>
-											{t("administration.reports.shadowDelete")}
-										</button>
-									)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+								) : (
+									<button
+										type="button"
+										onClick={() => setConfirmAction({ row, kind: "delete" })}
+										aria-label={t("administration.reports.shadowDeleteNamed", {
+											name: targetName,
+										})}
+										className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+									>
+										{t("administration.reports.shadowDelete")}
+									</button>
+								)}
+							</div>
+						</li>
+					);
+				})}
+			</ul>
 			{hasMore &&
 				(loadMoreError ? (
 					<LoadMoreError

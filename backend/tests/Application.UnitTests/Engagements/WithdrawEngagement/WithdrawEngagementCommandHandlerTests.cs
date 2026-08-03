@@ -177,6 +177,29 @@ public class WithdrawEngagementCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
+	// Regression for #1217: the ownership check below runs before Withdraw()'s
+	// own IsAnonymized guard (#1140), so it used to dereference the null
+	// VolunteerId directly and crash with a 500 instead of returning a 409.
+	[Test]
+	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var (engagement, _) = CreatePendingEngagementWithVolunteer();
+		engagement.Anonymize();
+		var engagementId = EngagementId.New();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		var command = new WithdrawEngagementCommand(engagementId, Guid.NewGuid());
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+	}
+
 	[Test]
 	public async Task Handle_ShouldThrow_WhenEngagementIsCheckedIn(
 		CancellationToken cancellationToken)

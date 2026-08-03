@@ -4,21 +4,21 @@
 
 title Deployment View - Staging / Production
 
-Deployment_Node(host, "Staging Host (VM)", "Docker Compose") {
+Deployment_Node(host, "Staging / Production Host (VM)", "Docker Compose - one host serves both today, see deploy-staging/deploy-production in 07_deployment_view.adoc") {
 
 	Deployment_Node(traefik_node, "Traefik (host-level, shared)", "Reverse proxy, TLS via ACME / Let's Encrypt") {
 		Container(traefik, "Traefik", "Routes *.maik-hasler.de")
 	}
 
-	Deployment_Node(fe_node, "frontend", "einsatzbereit-frontend:staging") {
+	Deployment_Node(fe_node, "frontend", "einsatzbereit-frontend:staging or :latest") {
 		Container(fe, "Single Page Application", "static assets", "einsatzbereit.maik-hasler.de")
 	}
 
-	Deployment_Node(be_node, "backend", "einsatzbereit-backend:staging") {
+	Deployment_Node(be_node, "backend", "einsatzbereit-backend:staging or :latest") {
 		Container(be, "Backend API", "ASP.NET Core (.NET 10)", "api.maik-hasler.de")
 	}
 
-	Deployment_Node(kc_node, "keycloak", "einsatzbereit-keycloak:staging") {
+	Deployment_Node(kc_node, "keycloak", "einsatzbereit-keycloak:staging or :latest") {
 		Container(kc, "Identity Provider", "Keycloak", "login.maik-hasler.de")
 	}
 

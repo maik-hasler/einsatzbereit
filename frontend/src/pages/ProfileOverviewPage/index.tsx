@@ -477,6 +477,7 @@ export default function ProfileOverviewPage() {
 												<input
 													id="username"
 													disabled
+													autoComplete="username"
 													value={profile?.username ?? ""}
 													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
 												/>
@@ -487,6 +488,7 @@ export default function ProfileOverviewPage() {
 													id="email"
 													disabled
 													type="email"
+													autoComplete="email"
 													value={profile?.email ?? ""}
 													className={`${inputClass} cursor-not-allowed bg-gray-50 text-gray-500`}
 												/>
@@ -501,6 +503,7 @@ export default function ProfileOverviewPage() {
 											>
 												<input
 													id="first-name"
+													autoComplete="given-name"
 													value={form.state.firstName}
 													onChange={(e) => form.setFirstName(e.target.value)}
 													className={inputClass}
@@ -510,6 +513,7 @@ export default function ProfileOverviewPage() {
 											<Field label={t("account.fieldLastName")} id="last-name">
 												<input
 													id="last-name"
+													autoComplete="family-name"
 													value={form.state.lastName}
 													onChange={(e) => form.setLastName(e.target.value)}
 													className={inputClass}
@@ -566,6 +570,7 @@ export default function ProfileOverviewPage() {
 										<input
 											id="phone"
 											type="tel"
+											autoComplete="tel"
 											value={form.state.phone}
 											placeholder={t("profile.phonePlaceholder")}
 											onChange={(e) => form.setPhone(e.target.value)}

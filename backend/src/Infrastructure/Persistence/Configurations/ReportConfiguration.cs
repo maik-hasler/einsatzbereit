@@ -15,6 +15,19 @@ internal sealed class ReportConfiguration
 	{
 		builder.HasKey(r => r.Id);
 
+		builder.ToTable(t =>
+		{
+			t.HasCheckConstraint(
+				"ck_report_target_type_valid",
+				"target_type IN ('VolunteerOpportunity', 'Organization', 'User')");
+			t.HasCheckConstraint(
+				"ck_report_reason_valid",
+				"reason IN ('Spam', 'IllegalContent', 'Fraud', 'Harassment', 'Other')");
+			t.HasCheckConstraint(
+				"ck_report_status_valid",
+				"status IN ('Open', 'Dismissed', 'Actioned')");
+		});
+
 		builder.Property(r => r.Id)
 			.HasConversion(
 				id => id.Value,

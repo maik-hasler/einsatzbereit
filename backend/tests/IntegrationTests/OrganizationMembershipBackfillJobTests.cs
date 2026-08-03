@@ -224,6 +224,9 @@ public class OrganizationMembershipBackfillJobTests(IntegrationTestFixture fixtu
 		public Task<Guid> CreateOrganizationAsync(string name, CancellationToken cancellationToken = default) =>
 			throw new NotSupportedException();
 
+		public Task<Guid?> FindOrganizationByNameAsync(string name, CancellationToken cancellationToken = default) =>
+			throw new NotSupportedException();
+
 		public Task AddMemberAsync(Guid organizationId, Guid userId, CancellationToken cancellationToken = default) =>
 			throw new NotSupportedException();
 

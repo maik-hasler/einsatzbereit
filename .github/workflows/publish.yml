@@ -431,12 +431,15 @@ jobs:
     environment: staging
     # Job-level (not workflow-level), so image builds for a later tag can
     # still run concurrently with an in-progress deploy - only the actual
-    # SSH/compose mutation of the shared staging host is serialized. Without
-    # this, two RC tags pushed minutes apart (routine in this repo's release
-    # flow) can both scp the same .env and both `docker compose up -d`
-    # against the same host at once.
+    # SSH/compose mutation of the shared host is serialized. Without this, two
+    # RC tags pushed minutes apart (routine in this repo's release flow) can
+    # both scp the same .env and both `docker compose up -d` against the same
+    # host at once. Shares its group name with deploy-production below on
+    # purpose - both currently deploy to the same single host (#1344), so an
+    # RC deploy and a stable-release deploy landing minutes apart must also
+    # serialize against each other, not just against their own kind.
     concurrency:
-      group: deploy-staging
+      group: einsatzbereit-host-deploy
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -774,6 +777,322 @@ jobs:
           fi
 
           # Always re-bind - Keycloak organizations override this after every import
+          REALM=$(curl -sf -H "Authorization: Bearer $TOKEN" "$KC_URL/admin/realms/$KC_REALM")
+          curl -sf -X PUT \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            "$KC_URL/admin/realms/$KC_REALM" \
+            -d "$(echo "$REALM" | jq '.browserFlow = "einsatzbereit browser"')"
+
+          echo "browserFlow bound to 'einsatzbereit browser'."
+
+  # Stable (non-RC) tags previously published images and stopped - nothing
+  # ever deployed them (#1344). This job closes that gap. It is a separate
+  # job/GitHub Environment from deploy-staging above, not a tweaked condition
+  # on that job, so that once a genuinely separate production host exists,
+  # switching to it is only a matter of pointing the "production" Environment's
+  # secrets at the new box - no workflow restructuring. Today there is only
+  # one live host (see AGENTS.md/README.md - it is staging/demo infrastructure,
+  # not a hardened production box), so this deploys to the exact same host and
+  # /opt/einsatzbereit directory as deploy-staging: a stable release simply
+  # replaces whatever RC was previously running there with the `latest`-tagged
+  # images. That is why the concurrency group above is shared between the two
+  # jobs, and why IMAGE_TAG (see docker-compose.yml) is the only meaningful
+  # difference in what gets deployed.
+  deploy-production:
+    name: Deploy to Production
+    needs: [publish-backend, publish-frontend, publish-keycloak]
+    if: needs.publish-backend.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    concurrency:
+      group: einsatzbereit-host-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Pinned host key from a secret, not ssh-keyscan's live result - see
+          # the matching step in deploy-staging above and .github/AGENTS.md
+          # for how STAGING_SSH_HOST_KEY was captured; PRODUCTION_SSH_HOST_KEY
+          # follows the same recipe (today, against the same host).
+          echo "${{ secrets.PRODUCTION_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
+
+      - name: Render .env
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          KEYCLOAK_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          KEYCLOAK_BACKEND_SECRET: ${{ secrets.KEYCLOAK_BACKEND_SECRET }}
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          MINIO_APP_ACCESS_KEY: ${{ secrets.MINIO_APP_ACCESS_KEY }}
+          MINIO_APP_SECRET_KEY: ${{ secrets.MINIO_APP_SECRET_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_ADDRESS: ${{ secrets.SMTP_FROM_ADDRESS }}
+          SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          ALERT_NOTIFICATION_EMAIL: ${{ secrets.ALERT_NOTIFICATION_EMAIL }}
+        run: |
+          umask 077
+          escape() {
+            local v="$1"
+            v="${v//\\/\\\\}"
+            v="${v//\"/\\\"}"
+            printf '%s' "$v"
+          }
+          {
+            printf 'POSTGRES_USER="%s"\n' "$(escape "$POSTGRES_USER")"
+            printf 'POSTGRES_PASSWORD="%s"\n' "$(escape "$POSTGRES_PASSWORD")"
+            printf 'KEYCLOAK_ADMIN_USER="%s"\n' "$(escape "$KEYCLOAK_ADMIN_USER")"
+            printf 'KEYCLOAK_ADMIN_PASSWORD="%s"\n' "$(escape "$KEYCLOAK_ADMIN_PASSWORD")"
+            printf 'KEYCLOAK_BACKEND_SECRET="%s"\n' "$(escape "$KEYCLOAK_BACKEND_SECRET")"
+            printf 'MINIO_ROOT_USER="%s"\n' "$(escape "$MINIO_ROOT_USER")"
+            printf 'MINIO_APP_ACCESS_KEY="%s"\n' "$(escape "$MINIO_APP_ACCESS_KEY")"
+            printf 'MINIO_APP_SECRET_KEY="%s"\n' "$(escape "$MINIO_APP_SECRET_KEY")"
+            printf 'MINIO_ROOT_PASSWORD="%s"\n' "$(escape "$MINIO_ROOT_PASSWORD")"
+            printf 'SMTP_HOST="%s"\n' "$(escape "$SMTP_HOST")"
+            printf 'SMTP_PORT="%s"\n' "$(escape "$SMTP_PORT")"
+            printf 'SMTP_USERNAME="%s"\n' "$(escape "$SMTP_USERNAME")"
+            printf 'SMTP_PASSWORD="%s"\n' "$(escape "$SMTP_PASSWORD")"
+            printf 'SMTP_FROM_ADDRESS="%s"\n' "$(escape "$SMTP_FROM_ADDRESS")"
+            printf 'SMTP_FROM_NAME="%s"\n' "$(escape "$SMTP_FROM_NAME")"
+            printf 'GRAFANA_ADMIN_USER="%s"\n' "$(escape "$GRAFANA_ADMIN_USER")"
+            printf 'GRAFANA_ADMIN_PASSWORD="%s"\n' "$(escape "$GRAFANA_ADMIN_PASSWORD")"
+            printf 'ALERT_NOTIFICATION_EMAIL="%s"\n' "$(escape "$ALERT_NOTIFICATION_EMAIL")"
+            # Selects the `latest`-tagged images in docker-compose.yml instead
+            # of deploy-staging's floating `staging` tag (see publish-backend's
+            # Docker meta step: stable tags get `latest`, RC tags get `staging`).
+            printf 'IMAGE_TAG="latest"\n'
+            printf 'ASPNETCORE_ENVIRONMENT="Production"\n'
+            # Deliberately no DATABASE_SEED_ON_STARTUP override here - unlike
+            # deploy-staging, a stable release should not reseed demo data
+            # over real users' data. docker-compose.yml already defaults this
+            # to "false" (#1375).
+          } > .env
+
+      - name: Copy compose file and .env
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" \
+            "mkdir -p /opt/einsatzbereit && chmod 700 /opt/einsatzbereit"
+          scp -i ~/.ssh/id_ed25519 docker-compose.yml .env \
+            "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}:/opt/einsatzbereit/"
+
+      - name: Add backend audience mapper to Keycloak (pre-deploy)
+        env:
+          KC_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KC_ADMIN_PASS: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+        run: |
+          set -uo pipefail
+          KC_URL="https://login.maik-hasler.de"
+          KC_REALM="einsatzbereit"
+
+          TOKEN=$(curl -sf -X POST \
+            "$KC_URL/realms/master/protocol/openid-connect/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "client_id=admin-cli" \
+            --data-urlencode "grant_type=password" \
+            --data-urlencode "username=$KC_ADMIN_USER" \
+            --data-urlencode "password=$KC_ADMIN_PASS" \
+            | jq -r '.access_token' 2>/dev/null) || TOKEN=""
+
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Keycloak not reachable or admin auth failed - skipping (fresh deploy or realm not yet present)."
+            exit 0
+          fi
+
+          REALM_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $TOKEN" \
+            "$KC_URL/admin/realms/$KC_REALM" 2>/dev/null || echo "000")
+          if [ "$REALM_STATUS" != "200" ]; then
+            echo "Realm '$KC_REALM' not found (HTTP $REALM_STATUS) - fresh deploy; mapper in realm JSON will be imported."
+            exit 0
+          fi
+
+          FRONTEND_ID=$(curl -sf \
+            -H "Authorization: Bearer $TOKEN" \
+            "$KC_URL/admin/realms/$KC_REALM/clients?clientId=frontend" \
+            | jq -r '.[0].id')
+          if [ -z "$FRONTEND_ID" ] || [ "$FRONTEND_ID" = "null" ]; then
+            echo "::error::Could not find frontend client UUID."
+            exit 1
+          fi
+
+          EXISTING=$(curl -sf \
+            -H "Authorization: Bearer $TOKEN" \
+            "$KC_URL/admin/realms/$KC_REALM/clients/$FRONTEND_ID/protocol-mappers/models" \
+            | jq '[.[] | select(.name == "backend-audience")] | length')
+          if [ "$EXISTING" = "0" ]; then
+            echo "Adding backend-audience mapper to frontend client..."
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/clients/$FRONTEND_ID/protocol-mappers/models" \
+              -d '{"name":"backend-audience","protocol":"openid-connect","protocolMapper":"oidc-audience-mapper","config":{"included.client.audience":"backend","id.token.claim":"false","access.token.claim":"true"}}'
+            echo "Mapper added - new tokens will include \"backend\" in aud claim."
+          else
+            echo "Mapper already present - nothing to do."
+          fi
+
+      - name: Pull and restart
+        id: pull_and_restart
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" \
+            "docker login ghcr.io -u ${GHCR_USERNAME@Q} --password-stdin" <<< "$GHCR_TOKEN"
+
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<'EOF'
+            set -euo pipefail
+            cd /opt/einsatzbereit
+            chmod 600 .env
+            # Tag running images as latest-previous so we can roll back if the
+            # health gate fails after the deploy - same idea as deploy-staging's
+            # staging-previous, just for the `latest` tag this job deploys.
+            for svc in backend frontend keycloak; do
+              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
+              docker tag "${img}:latest" "${img}:latest-previous" 2>/dev/null || true
+            done
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune --force || true
+          EOF
+
+      - name: Capture container logs on deploy failure
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<'EOF'
+            set +e
+            cd /opt/einsatzbereit
+            for svc in backend keycloak postgres prometheus alertmanager node-exporter grafana loki alloy; do
+              echo "::group::docker inspect ${svc} (state)"
+              docker inspect -f 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}} Health={{if .State.Health}}{{.State.Health.Status}}{{end}}' "${svc}" 2>&1 || true
+              echo "::endgroup::"
+              echo "::group::docker logs ${svc} (tail 200)"
+              docker logs --tail 200 "${svc}" 2>&1 || true
+              echo "::endgroup::"
+            done
+          EOF
+
+      - name: Post-deploy health gate
+        run: |
+          set -uo pipefail
+          echo "Waiting for https://api.maik-hasler.de/health to report ready..."
+          for i in $(seq 1 30); do
+            code=$(curl -fsS -o /dev/null -w "%{http_code}" https://api.maik-hasler.de/health || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "API healthy (HTTP 200) after attempt $i."
+              exit 0
+            fi
+            echo "Attempt $i/30: /health -> $code; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::API did not report healthy within 5 minutes after deploy."
+          exit 1
+
+      - name: Rollback on unhealthy deploy
+        if: failure() && steps.pull_and_restart.outcome == 'success'
+        run: |
+          echo "::warning::Health gate failed - rolling back to latest-previous images."
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}" bash -s <<'EOF'
+            set -euo pipefail
+            cd /opt/einsatzbereit
+            for svc in backend frontend keycloak; do
+              img="ghcr.io/maik-hasler/einsatzbereit-${svc}"
+              if docker image inspect "${img}:latest-previous" &>/dev/null; then
+                docker tag "${img}:latest-previous" "${img}:latest"
+              fi
+            done
+            docker compose up -d --remove-orphans
+            echo "Rollback complete - previous images re-deployed."
+          EOF
+
+      - name: Bind single-step Keycloak browser flow
+        env:
+          KC_ADMIN_USER: ${{ secrets.KEYCLOAK_ADMIN_USER }}
+          KC_ADMIN_PASS: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KC_URL="https://login.maik-hasler.de"
+          KC_REALM="einsatzbereit"
+
+          TOKEN=$(curl -sf -X POST \
+            "$KC_URL/realms/master/protocol/openid-connect/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "client_id=admin-cli" \
+            --data-urlencode "grant_type=password" \
+            --data-urlencode "username=$KC_ADMIN_USER" \
+            --data-urlencode "password=$KC_ADMIN_PASS" \
+            | jq -r '.access_token')
+          [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ] && { echo "::error::Keycloak admin auth failed"; exit 1; }
+          echo "Admin token acquired."
+
+          FLOW_COUNT=$(curl -sf \
+            -H "Authorization: Bearer $TOKEN" \
+            "$KC_URL/admin/realms/$KC_REALM/authentication/flows" \
+            | jq '[.[] | select(.alias == "einsatzbereit browser")] | length')
+
+          if [ "$FLOW_COUNT" = "0" ]; then
+            echo "Creating einsatzbereit browser flow..."
+
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows" \
+              -d '{"alias":"einsatzbereit browser","providerId":"basic-flow","topLevel":true,"builtIn":false}'
+
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions/execution" \
+              -d '{"provider":"auth-cookie"}'
+            COOKIE_EXEC=$(curl -sf \
+              -H "Authorization: Bearer $TOKEN" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              | jq '.[] | select(.providerId == "auth-cookie")')
+            curl -sf -X PUT \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              -d "$(echo "$COOKIE_EXEC" | jq '.requirement = "ALTERNATIVE"')"
+
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions/flow" \
+              -d '{"alias":"einsatzbereit browser forms","type":"basic-flow","description":"Username+password form"}'
+            SUBFLOW_EXEC=$(curl -sf \
+              -H "Authorization: Bearer $TOKEN" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              | jq '.[] | select(.authenticationFlow == true and .displayName == "einsatzbereit browser forms")')
+            curl -sf -X PUT \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser/executions" \
+              -d "$(echo "$SUBFLOW_EXEC" | jq '.requirement = "ALTERNATIVE"')"
+
+            curl -sf -X POST \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions/execution" \
+              -d '{"provider":"auth-username-password-form"}'
+            FORM_EXEC=$(curl -sf \
+              -H "Authorization: Bearer $TOKEN" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions" \
+              | jq '.[] | select(.providerId == "auth-username-password-form")')
+            curl -sf -X PUT \
+              -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$KC_URL/admin/realms/$KC_REALM/authentication/flows/einsatzbereit%20browser%20forms/executions" \
+              -d "$(echo "$FORM_EXEC" | jq '.requirement = "REQUIRED"')"
+
+            echo "Flow created."
+          else
+            echo "Flow already exists."
+          fi
+
           REALM=$(curl -sf -H "Authorization: Bearer $TOKEN" "$KC_URL/admin/realms/$KC_REALM")
           curl -sf -X PUT \
             -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \

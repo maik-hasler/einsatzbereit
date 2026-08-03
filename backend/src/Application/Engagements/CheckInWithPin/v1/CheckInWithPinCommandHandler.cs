@@ -22,6 +22,9 @@ internal sealed class CheckInWithPinCommandHandler(
 		var engagement = await dbContext.Engagements.FindAsync(request.EngagementId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Engagement.NotFound", $"Engagement '{request.EngagementId.Value}' not found."));
 
+		if (engagement.IsAnonymized)
+			throw new ResultFailureException(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer account has been deleted."));
+
 		// Ownership must be checked before the PIN is ever compared - otherwise the
 		// "invalid PIN" vs "not owner" responses let any authenticated user tell
 		// whether a guessed PIN was correct without owning the engagement (#806).
