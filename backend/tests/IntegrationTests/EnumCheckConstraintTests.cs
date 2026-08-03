@@ -11,8 +11,10 @@ using Infrastructure.VolunteerOpportunities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using TUnit.Core.Interfaces;
-// OrganizationId collides with the generated ApiClient.cs DTO of the same name in this
-// same "IntegrationTests" namespace (see the same workaround in EngagementReadRepositoryTests.cs).
+// Organization/OrganizationId collide with the generated ApiClient.cs DTOs of the same
+// name in this same "IntegrationTests" namespace (see the same workaround in
+// EngagementReadRepositoryTests.cs).
+using DomainOrganization = Domain.Organizations.Organization;
 using DomainOrganizationId = Domain.Organizations.OrganizationId;
 
 namespace IntegrationTests;
@@ -129,10 +131,12 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task OrganizationInvitation_ShouldPersistAndReload_ValidIntendedRoleAndStatus(
 		CancellationToken cancellationToken)
 	{
-		var invitation = OrganizationInvitation.Create(
-			DomainOrganizationId.New(), UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var invitation = OrganizationInvitation.Create(
+			organization.Id, UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+
 		await writeContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -148,10 +152,12 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task OrganizationInvitation_IntendedRole_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var invitation = OrganizationInvitation.Create(
-			DomainOrganizationId.New(), UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var invitation = OrganizationInvitation.Create(
+			organization.Id, UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+
 		await writeContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -163,10 +169,12 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task OrganizationInvitation_Status_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var invitation = OrganizationInvitation.Create(
-			DomainOrganizationId.New(), UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var invitation = OrganizationInvitation.Create(
+			organization.Id, UserId.New(), UserId.New(), OrganizationMemberRole.Organizer, DateTimeOffset.UtcNow);
+
 		await writeContext.OrganizationInvitations.AddAsync(invitation, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -178,9 +186,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task OrganizationMembership_ShouldPersistAndReload_ValidRole(
 		CancellationToken cancellationToken)
 	{
-		var membership = OrganizationMembership.Create(DomainOrganizationId.New(), UserId.New(), OrganizationMemberRole.Member);
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var membership = OrganizationMembership.Create(organization.Id, UserId.New(), OrganizationMemberRole.Member);
+
 		await writeContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -195,9 +205,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task OrganizationMembership_Role_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var membership = OrganizationMembership.Create(DomainOrganizationId.New(), UserId.New(), OrganizationMemberRole.Member);
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var membership = OrganizationMembership.Create(organization.Id, UserId.New(), OrganizationMemberRole.Member);
+
 		await writeContext.OrganizationMemberships.AddAsync(membership, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -302,9 +314,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_ShouldPersistAndReload_ValidEnumValues(
 		CancellationToken cancellationToken)
 	{
-		var opportunity = CreateDraftOpportunity();
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var opportunity = CreateDraftOpportunity(organization.Id);
+
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -323,8 +337,12 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_Category_ShouldAllowNull(
 		CancellationToken cancellationToken)
 	{
+		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(),
+			organization.Id,
 			"Title",
 			"Description",
 			isRemote: true,
@@ -336,7 +354,6 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 			category: null,
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 
-		await using var writeContext = fixture.CreateApplicationDbContext();
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -351,9 +368,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_Occurrence_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var opportunity = CreateDraftOpportunity();
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var opportunity = CreateDraftOpportunity(organization.Id);
+
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -365,9 +384,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_ParticipationType_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var opportunity = CreateDraftOpportunity();
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var opportunity = CreateDraftOpportunity(organization.Id);
+
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -379,9 +400,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_CheckInMethod_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var opportunity = CreateDraftOpportunity();
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var opportunity = CreateDraftOpportunity(organization.Id);
+
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -393,9 +416,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_Category_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var opportunity = CreateDraftOpportunity();
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var opportunity = CreateDraftOpportunity(organization.Id);
+
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -407,9 +432,11 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 	public async Task VolunteerOpportunity_Status_ShouldReject_InvalidValue(
 		CancellationToken cancellationToken)
 	{
-		var opportunity = CreateDraftOpportunity();
-
 		await using var writeContext = fixture.CreateApplicationDbContext();
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		writeContext.Set<DomainOrganization>().Add(organization);
+		var opportunity = CreateDraftOpportunity(organization.Id);
+
 		await writeContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
 		await writeContext.SaveChangesAsync(cancellationToken);
 
@@ -419,9 +446,9 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 
 	// Draft sidesteps Create's Published-only validation (a deadline, at least one time
 	// slot for ScheduledSlots, etc.) - these tests only care about the enum columns.
-	private static VolunteerOpportunity CreateDraftOpportunity() =>
+	private static VolunteerOpportunity CreateDraftOpportunity(DomainOrganizationId organizationId) =>
 		VolunteerOpportunity.Create(
-			DomainOrganizationId.New(),
+			organizationId,
 			"Title",
 			"Description",
 			isRemote: true,

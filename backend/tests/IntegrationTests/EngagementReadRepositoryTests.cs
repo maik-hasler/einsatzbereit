@@ -77,8 +77,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slotA = opportunity.AddTimeSlot(
@@ -111,8 +114,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		// engagement id, matching what GetDetailsAsync already enforces.
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
@@ -137,8 +143,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	{
 		await using var dbContext = fixture.CreateApplicationDbContext();
 
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var slot = opportunity.AddTimeSlot(
@@ -395,8 +404,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
@@ -426,8 +438,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		var futureSlot = opportunity.AddTimeSlot(
@@ -454,8 +469,11 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		await using var dbContext = fixture.CreateApplicationDbContext();
 		var volunteerId = UserId.New();
 
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"TestOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
 		var opportunity = VolunteerOpportunity.Create(
-			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
 			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
 			status: OpportunityStatus.Draft).GetValueOrThrow();
 		// Added out of chronological order - CreatedOn (sign-up order) must not

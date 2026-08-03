@@ -151,7 +151,7 @@ namespace Infrastructure.Persistence.Migrations
 			// this is raw SQL rather than a CreateIndex call above.
 			migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
 			migrationBuilder.Sql(@"
-				CREATE INDEX ix_volunteer_opportunity_address_city_trgm
+				CREATE INDEX IF NOT EXISTS ix_volunteer_opportunity_address_city_trgm
 				ON volunteer_opportunity USING gin (lower(address_city) gin_trgm_ops);");
 
 			// #1191: clean up any existing orphans before constraining - an org

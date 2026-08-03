@@ -119,9 +119,12 @@ internal sealed class EngagementConfiguration
 		// READ COMMITTED - two concurrent Confirm calls would otherwise both read
 		// Status=Pending, both pass the guard and both commit (#1196). Mapped to
 		// a 409 by ConcurrencyExceptionHandler. A uint property configured with
-		// IsRowVersion() auto-maps to Postgres's xmin system column - no new
-		// column, no migration (UseXminAsConcurrencyToken() was removed in
-		// Npgsql.EntityFrameworkCore.PostgreSQL 7+ in favour of this).
+		// IsRowVersion() auto-maps to Postgres's xmin system column
+		// (UseXminAsConcurrencyToken() was removed in Npgsql.EntityFrameworkCore.
+		// PostgreSQL 7+ in favour of this) - the scaffolded migration still emits
+		// an AddColumn/DropColumn("xmin", ...) op for it, but NpgsqlMigrationsSqlGenerator
+		// recognizes "xmin" as a system column and generates no actual SQL for
+		// those ops, so no real column is added.
 		builder.Property<uint>("Version").IsRowVersion();
 
 		builder.Ignore(e => e.Events);
