@@ -427,7 +427,10 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Your application status */}
 			{isAuthenticated && !isOwner && cue && !isDraft && (
-				<div className="rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting">
+				<div
+					data-testid="application-status"
+					className="mb-6 rounded-card border border-gray-100 bg-white px-4 py-3 shadow-resting"
+				>
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<p className="mb-1 text-xs text-gray-500">
@@ -456,7 +459,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Sign-up CTA */}
 			{isAuthenticated && !isOwner && !cue && !isDraft && (
-				<div className="space-y-3">
+				<div data-testid="signup-cta" className="mb-6 space-y-3">
 					{hasUnlimitedSlot ? (
 						<p className="text-sm font-medium text-teal-700">
 							{t("opportunities.unlimitedSpots")}
@@ -497,7 +500,7 @@ export default function VolunteerOpportunityDetailPage() {
 
 			{/* Login prompt */}
 			{!isAuthenticated && !isDraft && (
-				<div className="space-y-3">
+				<div data-testid="login-prompt" className="mb-6 space-y-3">
 					<p className="text-sm text-gray-600">
 						{t("opportunities.loginPrompt")}
 					</p>
