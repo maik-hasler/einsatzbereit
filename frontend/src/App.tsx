@@ -43,7 +43,6 @@ const OrganizationProfilePage = lazy(
 	() => import("./pages/OrganizationProfilePage"),
 );
 const OrganizationsPage = lazy(() => import("./pages/OrganizationsPage"));
-const UserAchievementsPage = lazy(() => import("./pages/UserAchievementsPage"));
 const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
@@ -147,10 +146,6 @@ export default function App() {
 							<ProfileOverviewPage />
 						</ProtectedRoute>
 					}
-				/>
-				<Route
-					path="/users/:userId/achievements"
-					element={<UserAchievementsPage />}
 				/>
 				<Route path="/users/:userId" element={<UserProfilePage />} />
 				<Route

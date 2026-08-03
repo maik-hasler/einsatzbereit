@@ -64,42 +64,6 @@ public class HeaderBreadcrumbSharedImplementationTests(AspireFixture fixture) : 
 	}
 
 	[Test]
-	public async Task UserAchievementsPage_ActionBar_ShowsUserThenAchievementsSegment()
-	{
-		// Reconciled onto the shared mechanism alongside the four pages the
-		// issue names explicitly - a nested two-item trail (user profile link,
-		// then the current "Achievements" page) must still render correctly.
-		var frontend = Fixture.GetEndpoint("frontend");
-		var origin = frontend.GetLeftPart(UriPartial.Authority);
-
-		await AuthHelper.LoginAsync(Page, frontend, "vera", "vera123");
-
-		var userId = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < sessionStorage.length; i++) {
-				const key = sessionStorage.key(i);
-				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
-					if (entry?.profile?.sub) return entry.profile.sub;
-				}
-			}
-			return null;
-		}");
-		Skip.When(userId is null, "could not resolve the logged-in user's id");
-
-		await Page.GotoAsync($"{origin}/users/{userId}/achievements");
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-		var actionBar = Page.Locator("header + div nav[aria-label='Breadcrumb']");
-		await Expect(actionBar).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await Expect(actionBar.GetByRole(AriaRole.Link, new() { Name = "Home" }))
-			.ToBeVisibleAsync();
-		await Expect(actionBar.Locator($"a[href='/users/{userId}']"))
-			.ToBeVisibleAsync();
-		await Expect(actionBar.GetByText("Achievements", new() { Exact = true }))
-			.ToBeVisibleAsync();
-	}
-
-	[Test]
 	public async Task ImprintAndPrivacyPolicyPages_ShowActionBar_AtTheirNewEnglishSlugs()
 	{
 		// Follow-up to #758: the legal pages were missed in the initial rollout

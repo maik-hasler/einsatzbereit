@@ -868,7 +868,6 @@
       "loadError": "Could not load notification preferences."
     },
     "achievements": {
-      "publicTitle": "Achievements",
       "loading": "Loading…",
       "error": "Error: {{message}}",
       "noAchievements": "No achievements yet. Start volunteering to earn badges!",
@@ -914,7 +913,6 @@
       "label": "Breadcrumb",
       "home": "Home",
       "profile": "Profile",
-      "userAchievements": "Achievements",
       "organizations": "Organizations"
     },
     "error": {
@@ -933,7 +931,6 @@
       "notFound": "User not found.",
       "engagementCount": "{{count}} confirmed engagements",
       "engagementCount_other": "{{count}} confirmed engagements",
-      "viewAllAchievements": "View all achievements",
       "reportUser": "Report user",
       "engagementCount_one": "{{count}} confirmed engagement"
     },
