@@ -5,6 +5,7 @@ import type {
 } from "../client/api-client";
 import Skeleton from "./Skeleton";
 import { formatDate } from "../lib/format";
+import { achievementTypeLabel } from "../lib/achievementType";
 
 function AchievementTypeIcon({
 	type,
@@ -43,16 +44,6 @@ function AchievementTypeIcon({
 					/>
 				</svg>
 			);
-		case "Social":
-			return (
-				<svg {...svgProps}>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
-					/>
-				</svg>
-			);
 		case "Hidden":
 			return (
 				<svg {...svgProps}>
@@ -76,18 +67,6 @@ function AchievementTypeIcon({
 	}
 }
 
-const TYPE_NUM_MAP: Record<number, string> = {
-	0: "Milestone",
-	1: "Streak",
-	2: "Social",
-	3: "Hidden",
-};
-
-function typeLabel(type: string | number): string {
-	if (typeof type === "number") return TYPE_NUM_MAP[type] ?? "Milestone";
-	return type;
-}
-
 interface BadgeCardProps {
 	catalog: BadgeCatalogEntry;
 	earned?: AchievementSummary;
@@ -97,7 +76,9 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 	const { t, i18n } = useTranslation();
 	const isEarned = !!earned;
 	const isHidden = catalog.isHidden && !isEarned;
-	const typeName = isEarned ? typeLabel(earned.type) : typeLabel(catalog.type);
+	const typeName = isEarned
+		? achievementTypeLabel(earned.type)
+		: achievementTypeLabel(catalog.type);
 	const tooltipId = `badge-tooltip-${catalog.key}`;
 	const nameId = `badge-name-${catalog.key}`;
 
