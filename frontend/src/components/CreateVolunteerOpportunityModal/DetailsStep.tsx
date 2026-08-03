@@ -6,6 +6,7 @@ import Dropdown from "../Dropdown";
 import TagsInput from "../TagsInput";
 import ErrorBanner from "../ErrorBanner";
 import { formatDateTime } from "../../lib/format";
+import { labelClass } from "../../lib/formClasses";
 import type { OpportunityFormValues } from "./schema";
 
 export type SeriesEditScope = "Only" | "ThisAndFollowing" | "EntireSeries";
@@ -145,10 +146,7 @@ export default function DetailsStep({
 	return (
 		<div className="space-y-5" data-testid="wizard-step-4">
 			<div>
-				<label
-					htmlFor="create-category"
-					className="mb-1.5 block text-sm font-semibold text-gray-800"
-				>
+				<label htmlFor="create-category" className={`mb-1.5 ${labelClass}`}>
 					{t("createOpportunity.fieldCategory")}
 				</label>
 				<Controller
@@ -594,7 +592,7 @@ export default function DetailsStep({
 				<div className="rounded-card border border-gray-200 bg-gray-50 p-4">
 					<label
 						htmlFor="create-valid-until"
-						className="mb-1.5 block text-sm font-semibold text-gray-800"
+						className={`mb-1.5 ${labelClass}`}
 					>
 						{t("createOpportunity.fieldValidUntil")}
 					</label>

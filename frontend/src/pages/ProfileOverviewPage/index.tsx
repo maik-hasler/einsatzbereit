@@ -7,7 +7,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
-import { inputClass, textareaClass } from "../../lib/formClasses";
+import { inputClass, labelClass, textareaClass } from "../../lib/formClasses";
 import { pageTitleClass } from "../../lib/headingClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
@@ -17,6 +17,7 @@ import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
+import Field from "../../components/Field";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
@@ -75,25 +76,6 @@ function CalendarIcon({ className = "h-5 w-5" }: { className?: string }) {
 				d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
 			/>
 		</svg>
-	);
-}
-
-function Field({
-	label,
-	id,
-	children,
-}: {
-	label: string;
-	id?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div>
-			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
-				{label}
-			</label>
-			{children}
-		</div>
 	);
 }
 
@@ -453,7 +435,7 @@ export default function ProfileOverviewPage() {
 									</h3>
 									<div className="space-y-5">
 										<div>
-											<p className="mb-1 block text-sm font-medium text-gray-700">
+											<p className={`mb-1 ${labelClass}`}>
 												{t("profile.fieldAvatar")}
 											</p>
 											<div className="flex items-center gap-4">

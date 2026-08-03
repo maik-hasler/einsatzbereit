@@ -10,6 +10,7 @@ import { useLoadMore } from "../../hooks/useLoadMore";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { dispatchToast } from "../../lib/toastBus";
 import { getApiErrorMessage } from "../../lib/apiError";
+import { labelClass } from "../../lib/formClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import CreateVolunteerOpportunityModal from "../../components/CreateVolunteerOpportunityModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -689,10 +690,7 @@ export default function OrgOpportunitiesPage() {
 					loading={cancelling}
 					error={cancelError}
 				>
-					<label
-						htmlFor="cancel-opportunity-reason"
-						className="block text-xs font-medium text-gray-700"
-					>
+					<label htmlFor="cancel-opportunity-reason" className={labelClass}>
 						{t("confirmDialog.cancelOpportunity.reasonLabel")}
 					</label>
 					<textarea

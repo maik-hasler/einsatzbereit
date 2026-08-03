@@ -4,7 +4,7 @@ import type { TimeSlotDetail } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { computeSpotsLeft, formatDateTime, isSlotFull } from "../lib/format";
 import { getApiErrorMessage } from "../lib/apiError";
-import { textareaClass } from "../lib/formClasses";
+import { labelClass, textareaClass } from "../lib/formClasses";
 import Dropdown from "./Dropdown";
 import Modal from "./Modal";
 import Button from "./Button";
@@ -132,10 +132,7 @@ export default function SignUpModal({
 
 				{!isScheduledSlots && (
 					<div>
-						<label
-							htmlFor="sign-up-message"
-							className="mb-1 block text-sm font-medium text-gray-700"
-						>
+						<label htmlFor="sign-up-message" className={`mb-1 ${labelClass}`}>
 							{t("signUp.message")}
 						</label>
 						<textarea

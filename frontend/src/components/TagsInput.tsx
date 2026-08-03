@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import Chip from "./Chip";
+import { labelClass } from "../lib/formClasses";
 
 interface Props {
 	id: string;
@@ -63,10 +64,7 @@ export default function TagsInput({
 
 	return (
 		<div>
-			<label
-				htmlFor={id}
-				className="mb-1.5 block text-sm font-semibold text-gray-800"
-			>
+			<label htmlFor={id} className={`mb-1.5 ${labelClass}`}>
 				{label}
 			</label>
 			<div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm transition focus-within:border-brand-400">
