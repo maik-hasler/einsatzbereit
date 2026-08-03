@@ -47,5 +47,9 @@ internal sealed class NotificationConfiguration
 		builder.HasIndex(n => new { n.RecipientId, n.IsRead });
 
 		builder.HasIndex(n => new { n.RecipientId, n.CreatedOn });
+
+		// Supports NotificationRetentionJob's global prune scan (not scoped to a
+		// single recipient like the indexes above) - see einsatzbereit#1209.
+		builder.HasIndex(n => new { n.IsRead, n.CreatedOn });
 	}
 }
