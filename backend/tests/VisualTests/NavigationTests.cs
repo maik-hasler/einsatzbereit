@@ -455,6 +455,51 @@ public class NavigationTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task Footer_ParticipateLink_FromHomePage_ScrollsToOpportunitiesSection()
+	{
+		// #1031: the footer's "Get involved" link used a react-router Link,
+		// which navigates via the history API without triggering native
+		// browser fragment scrolling - clicking it from the home page did
+		// nothing visible. Now a plain <a href="/#opportunities"> like the
+		// hero CTA, so the browser handles the scroll itself.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var participateLink = Page.Locator("footer").GetByRole(
+			AriaRole.Link, new() { Name = "Get involved" });
+		await Expect(participateLink).ToHaveAttributeAsync("href", "/#opportunities");
+
+		await participateLink.ClickAsync();
+
+		await Page.WaitForURLAsync(new Regex(@"/#opportunities$"), new() { Timeout = 10_000 });
+		await Expect(Page.Locator("#opportunities")).ToBeInViewportAsync(new() { Timeout = 10_000 });
+	}
+
+	[Test]
+	public async Task Footer_ParticipateLink_FromAnotherPage_NavigatesHomeAndScrollsToOpportunitiesSection()
+	{
+		// #1031: from any page other than home, the old Link-based footer
+		// link navigated to "/" but stayed scrolled to the top. A plain
+		// anchor tag forces a full navigation to "/#opportunities", which
+		// the browser scrolls to once the home page has rendered.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync($"{frontend}organizations");
+		await Expect(Page.Locator("h1").First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var participateLink = Page.Locator("footer").GetByRole(
+			AriaRole.Link, new() { Name = "Get involved" });
+		await Expect(participateLink).ToHaveAttributeAsync("href", "/#opportunities");
+
+		await participateLink.ClickAsync();
+
+		await Page.WaitForURLAsync(new Regex(@"/#opportunities$"), new() { Timeout = 10_000 });
+		await Expect(Page.Locator("#opportunities")).ToBeInViewportAsync(new() { Timeout = 10_000 });
+	}
+
+	[Test]
 	public async Task AccountControls_UserMenu_ClosesOnEscape()
 	{
 		// #884: the account/notification dropdowns (useAccountMenu) only

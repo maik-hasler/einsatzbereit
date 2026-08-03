@@ -46,12 +46,12 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 								</Link>
 							</li>
 							<li>
-								<Link
-									to="/#opportunities"
+								<a
+									href="/#opportunities"
 									className="transition-colors hover:text-white"
 								>
 									{t("footer.participate")}
-								</Link>
+								</a>
 							</li>
 							<li>
 								<Link
