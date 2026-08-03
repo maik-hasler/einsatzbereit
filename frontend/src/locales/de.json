@@ -37,6 +37,7 @@
       "terms": "Nutzungsbedingungen",
       "privacy": "Datenschutz",
       "contact": "Kontakt",
+      "help": "Hilfe",
       "followUs": "Folge uns",
       "copyright": "© {{year}} Einsatzbereit. Lizenziert unter <licenseLink>AGPL-3.0</licenseLink>."
     },
@@ -654,6 +655,26 @@
       "reportSectionBody": "Wenn dir ein Einsatz oder eine Organisation auffällt, die wie Spam, Betrug oder anderweitig illegale Inhalte aussieht, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatz-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Unsere Administratoren prüfen jede Meldung und können die Inhalte entfernen.",
       "otherSectionTitle": "Andere Fragen oder Anliegen",
       "otherSectionBody": "Bei allen anderen Anliegen wende dich bitte direkt an die Organisation, bei der du dich engagierst, oder an den im Impressum genannten Betreiber der Plattform."
+    },
+    "help": {
+      "title": "Hilfe",
+      "intro": "Antworten auf häufige Fragen für Freiwillige und Organisationen auf Einsatzbereit. Nicht gefunden, was du suchst? Siehe „Noch Hilfe nötig?“ unten.",
+      "volunteersTitle": "Für Freiwillige",
+      "volunteersQ1": "Wie melde ich mich für einen Einsatz an?",
+      "volunteersA1": "Durchsuche die Einsätze auf der Startseite, öffne den gewünschten Einsatz und klicke auf „Anmelden“. Je nach Einsatz wählst du einen konkreten Zeitslot oder sendest eine kurze Nachricht mit deinem Interesse.",
+      "volunteersQ2": "Wie checke ich vor Ort ein?",
+      "volunteersA2": "Bei Einsätzen mit Check-in erscheint eine Schaltfläche „Einchecken“, sobald dein Zeitslot beginnt. Die Organisation kann dich vor Ort auch per QR-Code oder Namen einchecken.",
+      "volunteersQ3": "Wo sehe ich meine Anmeldungen?",
+      "volunteersA3": "Öffne dein Profil und wechsle zum Tab „Meine Anmeldungen“, um alle vergangenen und kommenden Anmeldungen zu sehen.",
+      "organizersTitle": "Für Organisationen",
+      "organizersQ1": "Wie starte ich als Organisation?",
+      "organizersA1": "Erstelle eine Organisation auf der Startseite und veröffentliche anschließend deinen ersten Einsatz über das Dashboard deiner Organisation.",
+      "organizersQ2": "Wie veröffentliche ich einen Einsatz?",
+      "organizersA2": "Gehe im Dashboard deiner Organisation zu „Einsätze“ und klicke auf „Einsatz erstellen“. Fülle die Details und Zeitslots aus und veröffentliche den Einsatz, damit sich Freiwillige anmelden können.",
+      "organizersQ3": "Wie verwalte ich Anmeldungen von Freiwilligen?",
+      "organizersA3": "Öffne einen Einsatz im Dashboard deiner Organisation, um alle Angemeldeten zu sehen, ihnen zu schreiben oder sie einzuchecken.",
+      "contactTitle": "Noch Hilfe nötig?",
+      "contactBody": "Wenn dir etwas wie Spam, Betrug oder anderweitig illegale Inhalte auffällt, nutze die Schaltfläche „Melden“ auf der jeweiligen <opportunitiesLink>Einsatz-</opportunitiesLink> oder <organizationsLink>Organisationsseite</organizationsLink>. Für alles andere besuche unsere <contactLink>Kontaktseite</contactLink> oder schreibe uns direkt an maikhslr@gmail.com - wir antworten in der Regel innerhalb von 24 Stunden."
     },
     "termsOfUse": {
       "title": "Nutzungsbedingungen",
