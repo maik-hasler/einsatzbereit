@@ -1093,11 +1093,17 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 
 		// Clicking the second tag switches the filter entirely (tagA drops
 		// out of the URL) and the special characters survive the round trip.
-		// Explicit timeout (default is 5s): switching an already-applied
-		// filter re-queries the list before the URL settles, which was
-		// occasionally slower than the default under CI load (flaky).
+		// A Regex (like every other ToHaveURLAsync in this file) rather than
+		// a plain string: the string overload kept failing this assertion
+		// even at a generous 15s timeout with an actual URL that printed
+		// identically to the expected one - some exact-match quirk specific
+		// to percent-encoded reserved characters (%20/%26) in this Playwright
+		// binding. The Regex path is what every passing URL assertion here
+		// already uses.
 		await tagBChip.ClickAsync();
-		await Expect(Page).ToHaveURLAsync($"{origin}/?tag={Uri.EscapeDataString(tagB)}", new() { Timeout = 15_000 });
+		await Expect(Page).ToHaveURLAsync(
+			new Regex($"^{Regex.Escape($"{origin}/?tag={Uri.EscapeDataString(tagB)}")}$"),
+			new() { Timeout = 15_000 });
 		await Expect(card).ToBeVisibleAsync(new() { Timeout = 15_000 });
 	}
 }
