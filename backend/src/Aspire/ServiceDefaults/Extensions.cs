@@ -19,6 +19,9 @@ public static class ServiceDefaultsExtensions
 	// Infrastructure (Aspire's AppHost also depends on this project).
 	private const string EmailMeterName = "Einsatzbereit.Email";
 
+	// Kept in sync with OutboxMetrics.MeterName (Infrastructure/BackgroundJobs/OutboxMetrics.cs).
+	private const string OutboxMeterName = "Einsatzbereit.Outbox";
+
 	public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
 	{
 		builder.ConfigureOpenTelemetry();
@@ -52,6 +55,7 @@ public static class ServiceDefaultsExtensions
 					.AddHttpClientInstrumentation()
 					.AddRuntimeInstrumentation()
 					.AddMeter(EmailMeterName)
+					.AddMeter(OutboxMeterName)
 					.AddPrometheusExporter();
 			})
 			.WithTracing(tracing =>

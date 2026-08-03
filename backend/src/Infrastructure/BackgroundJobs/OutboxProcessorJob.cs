@@ -18,7 +18,8 @@ namespace Infrastructure.BackgroundJobs;
 internal sealed class OutboxProcessorJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<OutboxProcessorJob> logger,
-	IOptions<OutboxOptions> options)
+	IOptions<OutboxOptions> options,
+	OutboxMetrics metrics)
 	: IHostedService, IAsyncDisposable
 {
 	private readonly OutboxOptions _options = options.Value;
@@ -86,7 +87,7 @@ internal sealed class OutboxProcessorJob(
 		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 		var dispatcher = scope.ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
 
-		await ProcessBatchAsync(dbContext, dispatcher, logger, _options.BatchSize, ct);
+		await ProcessBatchAsync(dbContext, dispatcher, logger, metrics, _options.BatchSize, ct);
 	}
 
 	// Exposed so IntegrationTests can exercise the row-claiming behavior directly
@@ -96,6 +97,7 @@ internal sealed class OutboxProcessorJob(
 		ApplicationDbContext dbContext,
 		IDomainEventDispatcher dispatcher,
 		ILogger logger,
+		OutboxMetrics metrics,
 		int batchSize,
 		CancellationToken cancellationToken = default)
 	{
@@ -130,12 +132,6 @@ internal sealed class OutboxProcessorJob(
 					FOR UPDATE SKIP LOCKED")
 				.ToListAsync(cancellationToken);
 
-			if (messages.Count == 0)
-			{
-				await transaction.CommitAsync(cancellationToken);
-				return 0;
-			}
-
 			foreach (var message in messages)
 			{
 				try
@@ -145,10 +141,12 @@ internal sealed class OutboxProcessorJob(
 
 					message.ProcessedOnUtc = DateTime.UtcNow;
 					message.Error = null;
+					metrics.RecordDispatched();
 				}
 				catch (Exception ex)
 				{
 					message.Error = ex.Message;
+					metrics.RecordFailed();
 
 					logger.LogError(
 						ex,
@@ -161,8 +159,19 @@ internal sealed class OutboxProcessorJob(
 			// A single SaveChangesAsync for the whole batch instead of one per message - the
 			// row locks from FOR UPDATE above are held for this transaction regardless, so
 			// batching the writes costs nothing extra.
-			await dbContext.SaveChangesAsync(cancellationToken);
+			if (messages.Count > 0)
+				await dbContext.SaveChangesAsync(cancellationToken);
+
 			await transaction.CommitAsync(cancellationToken);
+
+			// Total backlog remaining after this tick's batch, not just what this tick
+			// claimed - lets an operator alert on "outbox.pending" growing unbounded
+			// (dispatch is falling behind or stuck) independently of outbox.dispatch's
+			// per-attempt succeeded/failed counts (#1008).
+			var pendingCount = await dbContext.Set<OutboxMessage>()
+				.AsNoTracking()
+				.LongCountAsync(m => m.ProcessedOnUtc == null, cancellationToken);
+			metrics.RecordPending(pendingCount);
 
 			return messages.Count;
 		}, cancellationToken);
