@@ -15,7 +15,8 @@ import { pageTitleClass } from "../lib/headingClasses";
 import { formatDateTime } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
-import Spinner from "../components/Spinner";
+import Chip from "../components/Chip";
+import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
@@ -113,8 +114,20 @@ function OrganizationsSection() {
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("administration.organizations.loading")} />
+			<div
+				role="status"
+				className="overflow-hidden rounded-card border border-gray-200"
+			>
+				<span className="sr-only">
+					{t("administration.organizations.loading")}
+				</span>
+				<div className="divide-y divide-gray-100">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div key={i} aria-hidden="true" className="px-4 py-3">
+							<Skeleton className="h-4 w-1/3" />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
@@ -131,8 +144,10 @@ function OrganizationsSection() {
 					<tbody className="divide-y divide-gray-100">
 						{rows.map((row) => (
 							<tr key={row.id} className="flex items-center gap-4 px-4 py-3">
-								<td className="flex flex-1 items-center gap-2 font-medium text-gray-900">
-									{row.name}
+								<td className="min-w-0 flex-1">
+									<p className="truncate font-medium text-gray-900">
+										{row.name}
+									</p>
 								</td>
 							</tr>
 						))}
@@ -282,8 +297,23 @@ function UsersSection() {
 			</p>
 
 			{loading ? (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("administration.users.loading")} />
+				<div
+					role="status"
+					className="overflow-hidden rounded-card border border-gray-200"
+				>
+					<span className="sr-only">{t("administration.users.loading")}</span>
+					<div className="divide-y divide-gray-100">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div
+								key={i}
+								aria-hidden="true"
+								className="flex items-center gap-3 px-4 py-3"
+							>
+								<Skeleton className="h-4 w-1/3" />
+								<Skeleton className="h-4 w-16 rounded-full" />
+							</div>
+						))}
+					</div>
 				</div>
 			) : error ? (
 				<ErrorBanner message={error} />
@@ -312,9 +342,9 @@ function UsersSection() {
 												<p className="truncate font-medium text-gray-900">
 													{displayName}
 													{isAdmin && (
-														<span className="ml-2 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-normal text-amber-700">
+														<Chip tone="warning" size="sm" className="ml-2">
 															{t("administration.users.adminBadge")}
-														</span>
+														</Chip>
 													)}
 												</p>
 												<p className="truncate text-xs text-gray-500">
@@ -322,17 +352,15 @@ function UsersSection() {
 												</p>
 											</td>
 											<td className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
-												<span
-													className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-														row.enabled
-															? "bg-green-50 text-green-700"
-															: "bg-red-50 text-red-700"
-													}`}
+												<Chip
+													tone={row.enabled ? "success" : "danger"}
+													size="sm"
+													className="shrink-0"
 												>
 													{row.enabled
 														? t("administration.users.statusActive")
 														: t("administration.users.statusBlocked")}
-												</span>
+												</Chip>
 												<div className="flex shrink-0 items-center gap-2">
 													{isSelf ? (
 														<span
@@ -530,8 +558,19 @@ function ReportsSection() {
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("administration.reports.loading")} />
+			<div
+				role="status"
+				className="overflow-hidden rounded-card border border-gray-200"
+			>
+				<span className="sr-only">{t("administration.reports.loading")}</span>
+				<div className="divide-y divide-gray-100">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
+							<Skeleton className="h-4 w-1/2" />
+							<Skeleton className="h-3 w-2/3" />
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
@@ -558,20 +597,14 @@ function ReportsSection() {
 											{row.targetTitle ||
 												t("administration.reports.unknownTarget")}
 										</Link>
-										<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+										<Chip tone="neutral" size="sm">
 											{t(`administration.reports.targetType.${row.targetType}`)}
-										</span>
-										<span
-											className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-												row.isDeleted
-													? "bg-red-50 text-red-600"
-													: "bg-green-50 text-green-700"
-											}`}
-										>
+										</Chip>
+										<Chip tone={row.isDeleted ? "danger" : "success"} size="sm">
 											{row.isDeleted
 												? t("administration.reports.statusDeleted")
 												: t("administration.reports.statusActive")}
-										</span>
+										</Chip>
 									</div>
 									<p className="mt-1 text-xs text-gray-500">
 										{t("administration.reports.openFlags", {
@@ -734,8 +767,11 @@ function ReportHistoryModal({
 			{loadError ? (
 				<ErrorBanner message={loadError} />
 			) : entries === null ? (
-				<div className="flex justify-center py-8">
-					<Spinner label={t("administration.reports.loading")} />
+				<div role="status" className="space-y-3">
+					<span className="sr-only">{t("administration.reports.loading")}</span>
+					{Array.from({ length: 3 }).map((_, i) => (
+						<Skeleton key={i} className="h-14 w-full" />
+					))}
 				</div>
 			) : (
 				<ul className="max-h-96 space-y-3 overflow-y-auto">
@@ -748,15 +784,15 @@ function ReportHistoryModal({
 								<span className="text-sm font-medium text-gray-900">
 									{t(`administration.reports.reason.${entry.reason}`)}
 								</span>
-								<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+								<Chip tone="neutral" size="sm" className="shrink-0">
 									{t(`administration.reports.status.${entry.status}`)}
-								</span>
+								</Chip>
 							</div>
 							{entry.details && (
 								<p className="mt-1 text-sm text-gray-600">{entry.details}</p>
 							)}
 							<div className="mt-2 flex items-center justify-between gap-2">
-								<p className="text-xs text-gray-400">
+								<p className="text-xs text-gray-500">
 									{formatDateTime(
 										entry.createdOn as unknown as string,
 										i18n.language,

@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -8,6 +9,7 @@ using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.DeleteTimeSlot.v1;
@@ -33,6 +35,7 @@ internal sealed class DeleteTimeSlotEndpoint : IEndpoint
 		[FromRoute] Guid timeSlotId,
 		[FromQuery] string? scope,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -48,6 +51,7 @@ internal sealed class DeleteTimeSlotEndpoint : IEndpoint
 
 		var command = new DeleteTimeSlotCommand(opportunityId, timeSlotId, userId, seriesScope);
 		var result = await sender.Send(command, cancellationToken);
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 		return Results.Ok(new DeleteTimeSlotResponse(result.DeletedTimeSlotIds));
 	}
 }

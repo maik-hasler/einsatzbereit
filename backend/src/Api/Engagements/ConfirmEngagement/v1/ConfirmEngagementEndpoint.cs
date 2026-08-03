@@ -40,6 +40,6 @@ internal sealed class ConfirmEngagementEndpoint
 		var timezone = request.Headers["X-Timezone"].FirstOrDefault();
 		var command = new ConfirmEngagementCommand(EngagementId.Create(engagementId).GetValueOrThrow(), userId, timezone);
 		var engagement = await sender.Send(command, cancellationToken);
-		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString(), engagement.ModifiedOn));
+		return Results.Ok(new EngagementStatusResponse(engagement.Id.Value, engagement.Status.ToString()));
 	}
 }

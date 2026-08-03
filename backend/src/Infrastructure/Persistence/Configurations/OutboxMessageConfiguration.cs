@@ -20,6 +20,8 @@ internal sealed class OutboxMessageConfiguration
 
 		builder.Property(m => m.OccurredOnUtc).IsRequired();
 
+		builder.Property(m => m.AttemptCount).IsRequired().HasDefaultValue(0);
+
 		builder.HasIndex(m => m.ProcessedOnUtc);
 	}
 }

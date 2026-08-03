@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.AdminShadowDeleteVolunteerOpportunity.v1;
@@ -28,11 +26,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		Substitute.For<IAggregateRepository<Report, ReportId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly AdminShadowDeleteVolunteerOpportunityCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -53,15 +47,7 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new AdminShadowDeleteVolunteerOpportunityCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
 	private VolunteerOpportunity CreateOpportunity() =>
@@ -112,11 +98,13 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotifyAndEmailEachVolunteer_WhenActiveEngagementsAutoCancelled(
+	public async Task Handle_ShouldNotifyAndCancelEachVolunteer_WhenActiveEngagementsAutoCancelled(
 		CancellationToken cancellationToken)
 	{
 		// Arrange - same guarantee as the organizer-triggered delete (#1057): a
-		// shadow-delete's auto-cancelled engagements must notify+email too.
+		// shadow-delete's auto-cancelled engagements must in-app-notify the
+		// volunteer, and raise an event carrying the opportunity's title for
+		// EngagementCancelledNotificationHandler's post-commit email (#1150).
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreateOpportunity();
 		var timeSlotId = TimeSlotId.New();
@@ -140,11 +128,10 @@ public class AdminShadowDeleteVolunteerOpportunityCommandHandlerTests
 				&& n.Kind == NotificationKind.EngagementCancelled
 				&& n.RelatedEntityId == engagement.Id.Value),
 			cancellationToken);
-		await _emailService.Received(1).SendAsync(
-			"user@example.com",
-			"Test Subject",
-			Arg.Is<string>(body => body!.StartsWith("Test Body")),
-			cancellationToken);
+		engagement.Status.Should().Be(EngagementStatus.Cancelled);
+		engagement.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent)
+			.Which.Should().BeOfType<EngagementCancelledDomainEvent>()
+			.Which.OpportunityTitle.Should().Be("Titel");
 	}
 
 	[Test]

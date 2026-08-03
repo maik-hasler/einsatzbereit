@@ -2,7 +2,8 @@
 <@layout.registrationLayout
 	displayMessage=!messagesPerField.existsError("email","username","password","password-confirm")
 	displayRequiredFields=true
-	displayInfo=true; section>
+	displayInfo=true
+	pageTitle="registerTitle"; section>
 
 	<#if section = "header">
 		${msg("registerTitle")}

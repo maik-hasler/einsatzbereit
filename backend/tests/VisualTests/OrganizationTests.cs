@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using Microsoft.Playwright;
@@ -71,6 +73,35 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		await Expect(Page.GetByText("Invitation sent.")).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task MemberSearch_RequiresFourCharacters_AndNeverExposesCandidateEmail()
+	{
+		// Regression for #1170: any authenticated user could self-create an
+		// organization to become an organizer, then abuse this search - a
+		// 2-char minimum, each result carrying the candidate's email address -
+		// to enumerate the realm-wide user directory. Verifies a 3-char query
+		// returns nothing and a matching search never renders an email
+		// address in the results.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await CreateOrganizationAsync("Visual1170 MemberSearch", pinnedOrgId!.Value);
+
+		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
+
+		await Page.Locator("#member-search").FillAsync("ver");
+		await Page.WaitForTimeoutAsync(800);
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Invite" })).Not.ToBeVisibleAsync();
+
+		await Page.Locator("#member-search").FillAsync("vera");
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Invite" }))
+			.ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		await Expect(Page.GetByText("vera@example.com")).Not.ToBeVisibleAsync();
 	}
 
 	[Test]
@@ -372,6 +403,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var orgName = await CreateOrganizationAsync("Visual580 Delete", pinnedOrgId!.Value);
+		var orgId = Regex.Match(Page.Url, @"/app/([^/]+)/dashboard").Groups[1].Value;
 
 		// #771: reach Settings via the dashboard's Settings widget link, not a tab.
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
@@ -388,6 +420,24 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await dialog.GetByRole(AriaRole.Button, new() { Name = "Yes, delete" }).ClickAsync();
 
 		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 10_000 });
+
+		// Regression for #1331: the redirect alone proves nothing about whether
+		// DELETE actually deleted anything - a swallowed exception or a rolled-
+		// back transaction would redirect home just the same. Assert the org is
+		// actually gone via the backend directly: its public profile 404s, and
+		// it no longer appears in the public directory a volunteer would browse.
+		var backend = Fixture.GetEndpoint("backend");
+		using var http = new HttpClient { BaseAddress = backend };
+
+		var profileResponse = await http.GetAsync($"/v1/organizations/{orgId}/profile");
+		profileResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+
+		var directoryResponse = await http.GetAsync(
+			$"/v1/organizations/directory?pageNumber=1&pageSize=10&search={Uri.EscapeDataString(orgName)}");
+		directoryResponse.EnsureSuccessStatusCode();
+		var directory = await directoryResponse.Content.ReadFromJsonAsync<JsonElement>();
+		directory.GetProperty("totalItems").GetInt32().Should().Be(0,
+			"a deleted organization must not still be browsable in the public directory");
 	}
 
 	[Test]
@@ -615,7 +665,7 @@ public class OrganizationTests(AspireFixture fixture) : VisualTestBase(fixture)
 		await CreateOrganizationAsync("Visual766 Settings", pinnedOrgId!.Value);
 
 		await Page.GetByRole(AriaRole.Link, new() { Name = "Edit settings" }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger Zone" }))
+		await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Danger zone" }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		await AssertMaxWidthContentLeftAlignedAsync("Organization settings page");

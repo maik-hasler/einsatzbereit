@@ -23,6 +23,9 @@ internal sealed class VolunteerOpportunityReadRepository(
 	{
 		var now = DateTimeOffset.UtcNow;
 
+		// No Join to Organizations here - org name/logo are looked up separately below,
+		// for just the page actually returned, keeping this query focused on filtering
+		// and paging VolunteerOpportunity rows.
 		var query = dbContext.VolunteerOpportunitiesQuery
 			.Where(vo => vo.Status == OpportunityStatus.Published)
 			// ScheduledSlots opportunities expire once their last time slot ends.
@@ -30,36 +33,31 @@ internal sealed class VolunteerOpportunityReadRepository(
 			// VolunteerOpportunity.AddTimeSlot) and instead expire via ValidUntil -
 			// a null ValidUntil (a legacy row published before ValidUntil existed)
 			// is treated as already expired rather than kept forever (#1086).
-			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now))
-			.Join(
-				dbContext.OrganizationsQuery,
-				vo => vo.OrganizationId,
-				org => org.Id,
-				(vo, org) => new { vo, org });
+			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
 
 		if (!string.IsNullOrWhiteSpace(filter.City))
 		{
 			var city = filter.City.ToLower();
-			query = query.Where(x => x.vo.Address != null && x.vo.Address.City.ToLower().Contains(city));
+			query = query.Where(vo => vo.Address != null && vo.Address.City.ToLower().Contains(city));
 		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Occurrence) && Enum.TryParse<Occurrence>(filter.Occurrence, ignoreCase: true, out var occ))
-			query = query.Where(x => x.vo.Occurrence == occ);
+			query = query.Where(vo => vo.Occurrence == occ);
 
 		if (!string.IsNullOrWhiteSpace(filter.ParticipationType) && Enum.TryParse<ParticipationType>(filter.ParticipationType, ignoreCase: true, out var pt))
-			query = query.Where(x => x.vo.ParticipationType == pt);
+			query = query.Where(vo => vo.ParticipationType == pt);
 
 		if (filter.IsRemote is bool isRemote)
-			query = query.Where(x => x.vo.IsRemote == isRemote);
+			query = query.Where(vo => vo.IsRemote == isRemote);
 
 		// Opportunities without time slots (IndividualContact - see VolunteerOpportunity.AddTimeSlot)
 		// have no dates to compare against, so a date filter must not exclude them - matches the
 		// same "slot-less is never filtered out" convention already used for expiry above (#1059).
 		if (filter.DateFrom is DateTimeOffset dateFrom)
-			query = query.Where(x => !x.vo.TimeSlots.Any() || x.vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
+			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime >= dateFrom));
 
 		if (filter.DateTo is DateTimeOffset dateTo)
-			query = query.Where(x => !x.vo.TimeSlots.Any() || x.vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
+			query = query.Where(vo => !vo.TimeSlots.Any() || vo.TimeSlots.Any(ts => ts.StartDateTime <= dateTo));
 
 		if (filter.Categories is { Length: > 0 })
 		{
@@ -72,57 +70,62 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.ToList();
 
 			if (parsedCategories.Count > 0)
-				query = query.Where(x => x.vo.Category.HasValue && parsedCategories.Contains(x.vo.Category.Value));
+				query = query.Where(vo => vo.Category.HasValue && parsedCategories.Contains(vo.Category.Value));
 		}
 
 		if (!string.IsNullOrWhiteSpace(filter.Tag))
-			query = query.Where(x => x.vo.Tags.Contains(filter.Tag));
+			query = query.Where(vo => vo.Tags.Contains(filter.Tag));
 
 		var boundingBox = ResolveBoundingBox(filter);
 
 		if (boundingBox is GeoBoundingBox box)
-			query = query.Where(x =>
-				x.vo.Address != null &&
-				x.vo.Address.Latitude != null && x.vo.Address.Longitude != null &&
-				x.vo.Address.Latitude >= box.South && x.vo.Address.Latitude <= box.North &&
-				x.vo.Address.Longitude >= box.West && x.vo.Address.Longitude <= box.East);
+			query = query.Where(vo =>
+				vo.Address != null &&
+				vo.Address.Latitude != null && vo.Address.Longitude != null &&
+				vo.Address.Latitude >= box.South && vo.Address.Latitude <= box.North &&
+				vo.Address.Longitude >= box.West && vo.Address.Longitude <= box.East);
 
+		// Order on the entity itself, before the Select below - ordering by a
+		// value-object id's unwrapped .Value (whether accessed directly in the key
+		// selector or read back off an already-projected anonymous property) defeats
+		// the Npgsql provider's translation of the whole query ("could not be
+		// translated"). Ordering by the value object (vo.Id) instead translates
+		// cleanly, since EF already has a converter registered for it.
 		var baseQuery = query
-			.OrderByDescending(x => x.vo.CreatedOn)
-			.Select(x => new
+			.OrderByDescending(vo => vo.CreatedOn)
+			.ThenBy(vo => vo.Id)
+			.Select(vo => new
 			{
-				Id = x.vo.Id.Value,
-				x.vo.Title,
-				x.vo.Description,
-				OrganizationId = x.vo.OrganizationId.Value,
-				OrgName = x.org.Name,
-				OrgLogoUrl = x.org.LogoUrl,
-				Street = x.vo.Address != null ? x.vo.Address.Street : null,
-				HouseNumber = x.vo.Address != null ? x.vo.Address.HouseNumber : null,
-				ZipCode = x.vo.Address != null ? x.vo.Address.ZipCode : null,
-				City = x.vo.Address != null ? x.vo.Address.City : null,
-				Latitude = x.vo.Address != null ? x.vo.Address.Latitude : null,
-				Longitude = x.vo.Address != null ? x.vo.Address.Longitude : null,
-				x.vo.IsRemote,
-				x.vo.Occurrence,
-				x.vo.ParticipationType,
-				x.vo.CheckInMethod,
-				x.vo.Category,
-				x.vo.Tags,
-				x.vo.CreatedOn,
-				x.vo.ValidUntil,
-				NextTimeSlotStart = x.vo.TimeSlots
+				Id = vo.Id.Value,
+				vo.Title,
+				vo.Description,
+				OrganizationId = vo.OrganizationId.Value,
+				Street = vo.Address != null ? vo.Address.Street : null,
+				HouseNumber = vo.Address != null ? vo.Address.HouseNumber : null,
+				ZipCode = vo.Address != null ? vo.Address.ZipCode : null,
+				City = vo.Address != null ? vo.Address.City : null,
+				Latitude = vo.Address != null ? vo.Address.Latitude : null,
+				Longitude = vo.Address != null ? vo.Address.Longitude : null,
+				vo.IsRemote,
+				vo.Occurrence,
+				vo.ParticipationType,
+				vo.CheckInMethod,
+				vo.Category,
+				vo.Tags,
+				vo.CreatedOn,
+				vo.ValidUntil,
+				NextTimeSlotStart = vo.TimeSlots
 					.Where(ts => ts.EndDateTime >= now)
 					.OrderBy(ts => ts.StartDateTime)
 					.Select(ts => (DateTimeOffset?)ts.StartDateTime)
 					.FirstOrDefault(),
-				NextTimeSlotEnd = x.vo.TimeSlots
+				NextTimeSlotEnd = vo.TimeSlots
 					.Where(ts => ts.EndDateTime >= now)
 					.OrderBy(ts => ts.StartDateTime)
 					.Select(ts => (DateTimeOffset?)ts.EndDateTime)
 					.FirstOrDefault(),
-				x.vo.Status,
-				x.vo.BannerImageUrl,
+				vo.Status,
+				vo.BannerImageUrl,
 			});
 
 		if (filter.HasRadius)
@@ -137,6 +140,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				.Where(s => s.Latitude.HasValue && s.Longitude.HasValue &&
 					GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value) <= radiusKm)
 				.OrderBy(s => GeoMath.DistanceKm(centerLat, centerLon, s.Latitude!.Value, s.Longitude!.Value))
+				.ThenBy(s => s.Id)
 				.ToList();
 
 			var page = matched
@@ -146,13 +150,23 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 			var pageGuids = page.Select(x => x.Id).ToList();
 			var (maxPMap, partCountMap) = await LoadParticipantStatsAsync(pageGuids, cancellationToken);
+			var orgMap = await LoadOrganizationSummariesAsync(page.Select(x => x.OrganizationId), cancellationToken);
 
+			// Mirrors the inner-join semantics the previous single-query version had -
+			// an opportunity whose organization is gone (deleted between the two
+			// queries, or a data-integrity gap) is silently excluded rather than
+			// shown with a missing organization name.
 			var summaries = page
-				.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
-					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
-					x.Status, x.BannerImageUrl,
-					maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0)))
+				.Where(x => orgMap.ContainsKey(x.OrganizationId))
+				.Select(x =>
+				{
+					var (orgName, orgLogoUrl) = orgMap[x.OrganizationId];
+					return ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
+						x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+						x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+						x.Status, x.BannerImageUrl,
+						maxPMap.GetValueOrDefault(x.Id, 0), partCountMap.GetValueOrDefault(x.Id, 0));
+				})
 				.ToList();
 
 			return new PagedList<VolunteerOpportunitySummary>(summaries, matched.Count, filter.PageNumber, filter.PageSize);
@@ -169,16 +183,41 @@ internal sealed class VolunteerOpportunityReadRepository(
 
 		var guids = rows.Select(x => x.Id).ToList();
 		var (maxParticipantsMap, participantCountMap) = await LoadParticipantStatsAsync(guids, cancellationToken);
+		var organizationSummaries = await LoadOrganizationSummariesAsync(rows.Select(x => x.OrganizationId), cancellationToken);
 
+		// See the HasRadius branch above for why rows without a matching org are skipped.
 		var result = rows
-			.Select(x => ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, x.OrgName, x.OrgLogoUrl,
-				x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
-				x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
-				x.Status, x.BannerImageUrl,
-				maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0)))
+			.Where(x => organizationSummaries.ContainsKey(x.OrganizationId))
+			.Select(x =>
+			{
+				var (orgName, orgLogoUrl) = organizationSummaries[x.OrganizationId];
+				return ToSummary(x.Id, x.Title, x.Description, x.OrganizationId, orgName, orgLogoUrl,
+					x.Street, x.HouseNumber, x.ZipCode, x.City, x.Latitude, x.Longitude, x.IsRemote, x.Occurrence,
+					x.ParticipationType, x.CheckInMethod, x.Category, x.Tags, x.CreatedOn, x.ValidUntil, x.NextTimeSlotStart, x.NextTimeSlotEnd,
+					x.Status, x.BannerImageUrl,
+					maxParticipantsMap.GetValueOrDefault(x.Id, 0), participantCountMap.GetValueOrDefault(x.Id, 0));
+			})
 			.ToList();
 
 		return new PagedList<VolunteerOpportunitySummary>(result, total, filter.PageNumber, filter.PageSize);
+	}
+
+	private async Task<Dictionary<Guid, (string Name, string? LogoUrl)>> LoadOrganizationSummariesAsync(
+		IEnumerable<Guid> organizationGuids,
+		CancellationToken cancellationToken)
+	{
+		var organizationIds = organizationGuids
+			.Distinct()
+			.Select(g => OrganizationId.Create(g).GetValueOrThrow())
+			.ToList();
+
+		if (organizationIds.Count == 0)
+			return [];
+
+		return await dbContext.OrganizationsQuery
+			.Where(o => organizationIds.Contains(o.Id))
+			.Select(o => new { o.Id, o.Name, o.LogoUrl })
+			.ToDictionaryAsync(x => x.Id.Value, x => (x.Name, x.LogoUrl), cancellationToken);
 	}
 
 	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter)
@@ -501,6 +540,7 @@ internal sealed class VolunteerOpportunityReadRepository(
 				org => org.Id,
 				(vo, org) => new { vo, org })
 			.OrderByDescending(x => x.vo.CreatedOn)
+			.ThenBy(x => x.vo.Id)
 			.Skip((pageNumber - 1) * pageSize)
 			.Take(pageSize)
 			.Select(x => new

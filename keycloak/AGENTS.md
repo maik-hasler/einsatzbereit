@@ -30,14 +30,15 @@ Imported on container startup. This file IS the auth configuration - edit here, 
 **`frontend`** (public OIDC client)
 - Authorization Code + PKCE (S256 enforced) flow only
 - ROPC disabled (`directAccessGrantsEnabled: false`) - use `frontend-test` for integration tests
-- Redirect URIs: `http://localhost:*`, `https://einsatzbereit.maik-hasler.de/callback`
+- Redirect URIs / web origins / post-logout redirect URIs: `https://einsatzbereit.maik-hasler.de` only in the committed realm - the same file ships baked into the production Keycloak image (`Dockerfile`), so a `http://localhost:*` entry here would be live on `login.maik-hasler.de` (#1190). `AppHost.cs` overlays `http://localhost:*` (and `webOrigins: ["*"]`, since Aspire's dynamic port can't be matched by a fixed origin) back in for local Aspire/Playwright runs only - see its comment above the realm-patching block
 - Protocol mappers:
   - `realm-roles` - injects `roles: [...]` into id_token, access_token, userinfo
   - `realm-name` - injects hardcoded claim `realm: "einsatzbereit"` (used by backend auth policies)
   - `backend-audience` - adds `backend` client to audience in access tokens
 
 **`frontend-test`** (public OIDC client, integration tests only)
-- ROPC enabled (`directAccessGrantsEnabled: true`) - used by `IntegrationTestFixture.GetAccessTokenAsync`
+- `enabled: false` in the committed realm - it ships in the same realm baked into the staging/production image (#1167: a public client with ROPC enabled there turns credential stuffing into a single scriptable `grant_type=password` request, no browser, no PKCE, no redirect-URI constraint). `backend/src/Aspire/AppHost/AppHost.cs` flips it back to `enabled: true` in the dev-only realm copy it writes before import, since that's the only path that ever needs it live - see below
+- ROPC enabled (`directAccessGrantsEnabled: true`) - used by `IntegrationTestFixture.GetAccessTokenAsync` and `VisualTests/AspireFixture.SignInAsync`, both of which boot Keycloak through the Aspire AppHost, never the baked image
 - Redirect URIs: `http://localhost:*` only (never production)
 - Same protocol mappers as `frontend` (roles, realm-name, backend-audience)
 

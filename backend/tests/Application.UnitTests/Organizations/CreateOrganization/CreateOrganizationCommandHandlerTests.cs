@@ -221,6 +221,28 @@ public class CreateOrganizationCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldThrow_WhenWebsiteIsInvalid(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var keycloakId = Guid.NewGuid();
+		var userId = Guid.NewGuid();
+		var command = new CreateOrganizationCommand(
+			"Test Org", userId, null, null, null, "javascript:alert(1)", null);
+
+		_keycloakService
+			.CreateOrganizationAsync("Test Org", cancellationToken)
+			.Returns(keycloakId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*Website must be a valid http or https URL*");
+	}
+
+	[Test]
 	public async Task Handle_ShouldPropagateException_WhenAddMemberFails(
 		CancellationToken cancellationToken)
 	{

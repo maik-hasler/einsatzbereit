@@ -76,7 +76,7 @@ internal sealed class DeleteTimeSlotCommandHandler(
 		var engagementsToCancel = await dbContext.GetActiveEngagementsForTimeSlotsAsync(affectedIds, cancellationToken);
 		foreach (var engagement in engagementsToCancel)
 		{
-			engagement.Cancel("The recurring time slot series was cancelled.").ThrowIfFailure();
+			engagement.Cancel("The recurring time slot series was cancelled.", opportunity.Title).ThrowIfFailure();
 
 			var notification = Notification.Create(
 				engagement.VolunteerId!.Value,

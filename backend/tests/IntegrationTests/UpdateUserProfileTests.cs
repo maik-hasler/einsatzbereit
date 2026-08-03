@@ -55,6 +55,80 @@ public class UpdateUserProfileTests(
 		exception.Which.StatusCode.Should().Be(401);
 	}
 
+	// Regression for #1173: [MaxLength] attributes on request records were
+	// never enforced (no validation was registered), so oversized values used
+	// to reach the DB unbounded instead of being rejected.
+
+	[Test]
+	public async Task UpdateUserProfile_ShouldReturn400_WhenBioExceedsMaxLength(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => client.UpdateUserProfileAsync(
+			new UpdateUserProfileRequest { Bio = new string('a', 1001) },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task UpdateUserProfile_ShouldReturn400_WhenSkillsExceedMaxCount(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => client.UpdateUserProfileAsync(
+			new UpdateUserProfileRequest { Skills = Enumerable.Range(0, 51).Select(i => $"skill-{i}").ToList() },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task UpdateUserProfile_ShouldReturn400_WhenASkillExceedsMaxLength(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => client.UpdateUserProfileAsync(
+			new UpdateUserProfileRequest { Skills = [new string('a', 101)] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task UpdateUserProfile_ShouldReturn400_WhenLanguagesExceedMaxCount(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => client.UpdateUserProfileAsync(
+			new UpdateUserProfileRequest { Languages = Enumerable.Range(0, 21).Select(i => $"lang-{i}").ToList() },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task UpdateUserProfile_ShouldReturn400_WhenALanguageExceedsMaxLength(
+		CancellationToken cancellationToken)
+	{
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var act = () => client.UpdateUserProfileAsync(
+			new UpdateUserProfileRequest { Languages = [new string('a', 51)] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);

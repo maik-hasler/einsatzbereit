@@ -27,17 +27,6 @@ public record Result : IValueObject
 	public static Result<TValue> Success<TValue>(TValue value) => new(value, true, Error.None);
 
 	public static Result<TValue> Failure<TValue>(Error error) => new(default, false, error);
-
-	public static Result FirstFailureOrSuccess(params Result[] results)
-	{
-		foreach (var result in results)
-		{
-			if (result.IsFailure)
-				return result;
-		}
-
-		return Success();
-	}
 }
 
 public sealed record Result<TValue> : Result

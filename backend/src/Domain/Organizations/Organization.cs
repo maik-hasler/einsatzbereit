@@ -42,12 +42,15 @@ public sealed class Organization
 		Name = name;
 	}
 
+	public const int MaxNameLength = 100;
+
 	public static Result<Organization> Create(
 		OrganizationId id,
 		string name)
 	{
-		if (string.IsNullOrWhiteSpace(name))
-			return Result.Failure<Organization>(Error.Validation("Organization.NameRequired", "Name must not be empty."));
+		var validName = EnsureValidName(name);
+		if (validName.IsFailure)
+			return Result.Failure<Organization>(validName.Error);
 
 		return new Organization(id, name);
 	}
@@ -59,10 +62,26 @@ public sealed class Organization
 
 	public Result Rename(string name)
 	{
+		var validName = EnsureValidName(name);
+		if (validName.IsFailure)
+			return validName;
+
+		Name = name;
+		return Result.Success();
+	}
+
+	// #1158: Create enforced this length cap only in CreateOrganizationCommandHandler
+	// (deliberately, so the check runs before that handler's Keycloak call), but
+	// Rename had no equivalent cap at all - shared here so both go through the
+	// same rule regardless of caller.
+	private static Result EnsureValidName(string name)
+	{
 		if (string.IsNullOrWhiteSpace(name))
 			return Result.Failure(Error.Validation("Organization.NameRequired", "Name must not be empty."));
 
-		Name = name;
+		if (name.Length > MaxNameLength)
+			return Result.Failure(Error.Validation("Organization.NameTooLong", $"Organization name must not exceed {MaxNameLength} characters."));
+
 		return Result.Success();
 	}
 
@@ -71,11 +90,22 @@ public sealed class Organization
 		Description = description;
 	}
 
-	public void ChangeContactInfo(string? contactEmail, string? contactPhone, string? website)
+	public Result ChangeContactInfo(string? contactEmail, string? contactPhone, string? website)
 	{
+		if (!string.IsNullOrWhiteSpace(website))
+		{
+			if (website.Length > 500)
+				return Result.Failure(Error.Validation("Organization.WebsiteTooLong", "Website must not exceed 500 characters."));
+
+			if (!Uri.TryCreate(website, UriKind.Absolute, out var uri)
+				|| (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+				return Result.Failure(Error.Validation("Organization.WebsiteInvalid", "Website must be a valid http or https URL."));
+		}
+
 		ContactEmail = contactEmail;
 		ContactPhone = contactPhone;
 		Website = website;
+		return Result.Success();
 	}
 
 	public void Relocate(Address? address)

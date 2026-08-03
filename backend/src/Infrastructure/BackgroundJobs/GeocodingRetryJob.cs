@@ -9,12 +9,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.BackgroundJobs;
 
-// Backfills coordinates for opportunities whose address failed geocoding with a
-// GeocodingOutcome.TransientFailure at create/update time (see GeocodingHelper -
-// a confirmed NotFound is rejected synchronously there instead and never reaches
-// this state). Runs hourly and unconditionally retries every candidate found -
-// no attempt cap or notification, since by construction only genuine
-// infrastructure hiccups (not permanently-bad addresses) land here.
+// Backstops coordinate resolution for opportunities whose address is still
+// unresolved an hour after creation/update - normally
+// GeocodeVolunteerOpportunityAddressHandler resolves it within seconds via the
+// outbox pipeline, but a GeocodingOutcome.TransientFailure there (Nominatim
+// outage, timeout) leaves it for this job to retry. Rows with
+// AddressGeocodingFailed set (a confirmed NotFound) are excluded so a
+// permanently-bad address isn't retried every hour forever.
 internal sealed class GeocodingRetryJob(
 	IServiceScopeFactory scopeFactory,
 	ILogger<GeocodingRetryJob> logger)
@@ -70,7 +71,7 @@ internal sealed class GeocodingRetryJob(
 		var geocodingService = scope.ServiceProvider.GetRequiredService<IGeocodingService>();
 
 		var opportunities = await dbContext.Set<VolunteerOpportunity>()
-			.Where(o => !o.IsRemote && o.Address != null && o.Address.Latitude == null)
+			.Where(o => !o.IsRemote && !o.AddressGeocodingFailed && o.Address != null && o.Address.Latitude == null)
 			.ToListAsync(ct);
 
 		foreach (var opportunity in opportunities)
@@ -82,19 +83,34 @@ internal sealed class GeocodingRetryJob(
 				var result = await geocodingService.GeocodeAsync(
 					address.Street, address.HouseNumber, address.ZipCode, address.City, ct);
 
-				if (result.Outcome != GeocodingOutcome.Found)
-					continue;
+				switch (result.Outcome)
+				{
+					case GeocodingOutcome.Found:
+						var enriched = address.WithCoordinates(
+							result.Coordinates!.Latitude, result.Coordinates.Longitude).GetValueOrThrow();
 
-				var enriched = address.WithCoordinates(
-					result.Coordinates!.Latitude, result.Coordinates.Longitude).GetValueOrThrow();
+						opportunity.ApplyGeocodingResult(enriched);
 
-				opportunity.Relocate(opportunity.IsRemote, enriched).ThrowIfFailure();
+						await dbContext.SaveChangesAsync(ct);
 
-				await dbContext.SaveChangesAsync(ct);
+						logger.LogInformation(
+							"Backfilled coordinates for volunteer opportunity {OpportunityId} after a previously failed geocoding attempt.",
+							opportunity.Id.Value);
+						break;
 
-				logger.LogInformation(
-					"Backfilled coordinates for volunteer opportunity {OpportunityId} after a previously failed geocoding attempt.",
-					opportunity.Id.Value);
+					case GeocodingOutcome.NotFound:
+						opportunity.MarkAddressGeocodingFailed();
+
+						await dbContext.SaveChangesAsync(ct);
+
+						logger.LogWarning(
+							"Volunteer opportunity {OpportunityId}'s address could not be located; will not retry.",
+							opportunity.Id.Value);
+						break;
+
+					default:
+						break;
+				}
 			}
 			catch (Exception ex)
 			{

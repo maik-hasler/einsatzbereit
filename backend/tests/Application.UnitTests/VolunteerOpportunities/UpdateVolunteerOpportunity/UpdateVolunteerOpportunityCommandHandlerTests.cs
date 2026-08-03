@@ -1,6 +1,5 @@
 using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Geocoding;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -12,7 +11,6 @@ using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Application.UnitTests.VolunteerOpportunities.UpdateVolunteerOpportunity;
@@ -25,7 +23,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository = Substitute.For<IEngagementReadRepository>();
-	private readonly IGeocodingService _geocodingService = Substitute.For<IGeocodingService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
 	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
@@ -67,12 +64,10 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_sut = new UpdateVolunteerOpportunityCommandHandler(
 			_dbContext,
 			_engagementReadRepository,
-			_geocodingService,
 			_pinGenerator,
 			_keycloakUserService,
 			_emailService,
-			_emailTemplateRenderer,
-			NullLogger<UpdateVolunteerOpportunityCommandHandler>.Instance);
+			_emailTemplateRenderer);
 	}
 
 	private VolunteerOpportunity CreateOpportunity(string title = "Altes Thema", string description = "Alte Beschreibung") =>
@@ -128,10 +123,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
-
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.TransientFailure);
 
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.Manual, null, [], DefaultRequestingUserId);
@@ -271,10 +262,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldAllowParticipationTypeChange_WhenOnlyCancelledEngagementsExist(
+	public async Task Handle_ShouldThrow_WhenParticipationTypeChanges_AndOnlyCancelledEngagementsExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - issue #1145: switching away from ScheduledSlots clears every time
+		// slot, which cascade-sets even a Cancelled engagement's TimeSlotId to null,
+		// silently erasing its historical date. The guard must block on ANY engagement
+		// referencing this opportunity, not just Pending/Confirmed ones.
 		var opportunityId = Guid.CreateVersion7();
 		var opportunity = CreatePublishedScheduledSlotsOpportunity();
 
@@ -293,41 +287,15 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			opportunityId, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
-		var result = await _sut.Handle(command, cancellationToken);
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		result.Should().BeTrue();
-		opportunity.ParticipationType.Should().Be(ParticipationType.IndividualContact);
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*ParticipationType cannot be changed*");
 	}
 
 	[Test]
-	public async Task Handle_ShouldPersistCoordinates_WhenGeocodingSucceeds(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
 
-		_opportunityRepo
-			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
-			.Returns(opportunity);
-
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.Found(new GeoCoordinates(53.55, 9.99)));
-
-		var command = new UpdateVolunteerOpportunityCommand(
-			opportunityId, "Neues Thema", "Neue Beschreibung", false, Address.Create("Neue Straße", "99", "20095", "Hamburg").Value, Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, null, [], DefaultRequestingUserId);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		opportunity.Address!.Latitude.Should().Be(53.55);
-		opportunity.Address!.Longitude.Should().Be(9.99);
-	}
-
-	[Test]
 	public async Task Handle_ShouldAllowRemote_WithNullAddress(
 		CancellationToken cancellationToken)
 	{
@@ -435,10 +403,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.GetActiveVolunteerIdsByOpportunityAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), Arg.Any<TimeSlotId?>(), cancellationToken)
 			.Returns([activeVolunteer]);
 
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.TransientFailure);
-
 		// Material change: new address (city changed).
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -478,10 +442,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		activeVolunteer.SetPreferredLanguage("en");
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns([activeVolunteer]);
-
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.TransientFailure);
 
 		var newAddress = Address.Create("Neue Straße", "99", "20095", "Hamburg").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
@@ -582,37 +542,42 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrowValidationError_WhenGeocodingReturnsNotFound_ForChangedAddress(
+	public async Task Handle_ShouldRaiseGeocodingRequestedEvent_AndResetCoordinates_WhenAddressTextChanges(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange: geocoding itself now happens out of band (see
+		// GeocodeVolunteerOpportunityAddressHandler) - changing the address text
+		// just needs to reset any previously-resolved coordinates and raise the
+		// event that triggers re-resolution (#1388).
 		var opportunityId = Guid.CreateVersion7();
-		var opportunity = CreateOpportunity();
+		var geocodedAddress = DefaultAddress.WithCoordinates(52.52, 13.405).GetValueOrThrow();
+		var opportunity = VolunteerOpportunity.Create(
+			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, geocodedAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
+		opportunity.ClearEvents();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
-
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.NotFound);
 
 		var newAddress = Address.Create("Nirgendwostraße", "999", "99999", "Nirgendwo").Value;
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "Neue Beschreibung", false, newAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
 		// Act
-		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		(await act.Should().ThrowAsync<ResultFailureException>())
-			.Which.Error.Code.Should().Be("Address.NotFound");
-		opportunity.Title.Should().Be("Altes Thema");
-		opportunity.Address.Should().Be(DefaultAddress);
+		opportunity.Address.Should().Be(newAddress);
+		opportunity.Address!.Latitude.Should().BeNull();
+		opportunity.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>()
+			.Should().ContainSingle()
+			.Which.OpportunityId.Should().Be(opportunity.Id);
 	}
 
 	[Test]
-	public async Task Handle_ShouldNotReGeocode_AndShouldPreserveExistingCoordinates_WhenAddressTextUnchanged(
+	public async Task Handle_ShouldNotRaiseGeocodingRequestedEvent_AndShouldPreserveExistingCoordinates_WhenAddressTextUnchanged(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -622,6 +587,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			DefaultOrgId, "Altes Thema", "Alte Beschreibung", false, geocodedAddress, Occurrence.OneTime,
 			ParticipationType.IndividualContact, CheckInMethod.None, _pinGenerator,
 			validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
+		opportunity.ClearEvents();
 
 		_opportunityRepo
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
@@ -635,15 +601,13 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _geocodingService
-			.DidNotReceive()
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		opportunity.Events.Should().NotContain(e => e is VolunteerOpportunityGeocodingRequestedDomainEvent);
 		opportunity.Address!.Latitude.Should().Be(52.52);
 		opportunity.Address!.Longitude.Should().Be(13.405);
 	}
 
 	[Test]
-	public async Task Handle_ShouldReGeocode_WhenSwitchingFromRemoteToPhysicalAddress(
+	public async Task Handle_ShouldRaiseGeocodingRequestedEvent_WhenSwitchingFromRemoteToPhysicalAddress(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -657,10 +621,6 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 			.FindAsync(VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow(), cancellationToken)
 			.Returns(opportunity);
 
-		_geocodingService
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(GeocodingResult.Found(new GeoCoordinates(52.52, 13.405)));
-
 		var command = new UpdateVolunteerOpportunityCommand(
 			opportunityId, "Neues Thema", "Neue Beschreibung", false, DefaultAddress, Occurrence.OneTime, ParticipationType.IndividualContact, CheckInMethod.None, null, [], DefaultRequestingUserId);
 
@@ -668,9 +628,7 @@ public class UpdateVolunteerOpportunityCommandHandlerTests
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _geocodingService
-			.Received(1)
-			.GeocodeAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-		opportunity.Address!.Latitude.Should().Be(52.52);
+		opportunity.Address.Should().Be(DefaultAddress);
+		opportunity.Events.OfType<VolunteerOpportunityGeocodingRequestedDomainEvent>().Should().ContainSingle();
 	}
 }

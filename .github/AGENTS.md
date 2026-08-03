@@ -7,7 +7,6 @@
 ├── dotnet.yml                  Backend: build + test
 ├── frontend.yml                Frontend: lint → build
 ├── docs.yml                    Docs: AsciiDoc build (push + PR) → GitHub Pages deploy (push only)
-├── security.yml                Weekly (+ manual) NuGet/npm dependency vulnerability audit
 ├── keycloak-realm-import.yml   Verifies the committed realm still imports on the production Keycloak version
 ├── publish.yml                 Tag-triggered: build + push backend/frontend/keycloak to GHCR, then deploy-staging
 ├── release-rc.yml              Promotes a release/v* branch into a real tag (used by Claude Code on the web)

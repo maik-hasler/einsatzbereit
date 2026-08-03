@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
@@ -43,7 +45,7 @@ internal sealed class CheckInWithPinCommandHandler(
 		if (string.IsNullOrWhiteSpace(request.Pin))
 			throw new ResultFailureException(Error.Validation("Engagement.PinRequired", "PIN is required."));
 
-		if (!string.Equals(opportunity.CheckInPin, request.Pin, StringComparison.Ordinal))
+		if (!PinsMatch(opportunity.CheckInPin, request.Pin))
 		{
 			await attemptLimiter.RegisterFailedAttemptAsync(request.EngagementId, cancellationToken);
 			throw new ResultFailureException(Error.Validation("Engagement.InvalidPin", "Invalid PIN."));
@@ -54,5 +56,22 @@ internal sealed class CheckInWithPinCommandHandler(
 		engagement.CheckIn().ThrowIfFailure();
 
 		return engagement;
+	}
+
+	// CryptographicOperations.FixedTimeEquals instead of string.Equals/== (#1176)
+	// so a wrong guess can't be timed digit-by-digit to narrow down the real PIN.
+	// It requires equal-length spans, so a length mismatch is checked upfront -
+	// that alone leaks nothing an attacker doesn't already know (PIN length is
+	// public: EnsureValidPin only ever allows 4-6 digits).
+	private static bool PinsMatch(string? storedPin, string suppliedPin)
+	{
+		if (storedPin is null)
+			return false;
+
+		var storedBytes = Encoding.UTF8.GetBytes(storedPin);
+		var suppliedBytes = Encoding.UTF8.GetBytes(suppliedPin);
+
+		return storedBytes.Length == suppliedBytes.Length
+			&& CryptographicOperations.FixedTimeEquals(storedBytes, suppliedBytes);
 	}
 }

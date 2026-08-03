@@ -5,8 +5,10 @@ import type { VolunteerOpportunitySummary } from "../../client/api-client";
 import { formatDate, formatDateTime, formatOccurrence } from "../../lib/format";
 import { getOpportunityCategoryBannerClassName } from "../../lib/opportunityCategoryTheme";
 import { useApiClient } from "../../hooks/useApiClient";
+import Chip from "../Chip";
 import ReportFlagButton from "../ReportFlagButton";
-import { CalendarIcon, CategoryGlyph, GlobeIcon, PinIcon } from "./icons";
+import { CalendarIcon, GlobeIcon, MapPinIcon } from "../icons";
+import { CategoryGlyph } from "./CategoryGlyph";
 
 function orgInitials(name: string): string {
 	const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -30,7 +32,7 @@ export default function OpportunityListItem({
 			: null;
 
 	return (
-		<li className="group relative flex h-full flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised">
+		<li className="group relative flex h-full flex-col overflow-hidden rounded-card border border-gray-100 bg-white shadow-resting transition-shadow hover:shadow-raised">
 			<Link
 				to={`/volunteer-opportunities/${item.id}`}
 				className="absolute inset-0 z-10"
@@ -45,13 +47,16 @@ export default function OpportunityListItem({
 						<img
 							src={item.bannerImageUrl}
 							alt=""
+							width={1200}
+							height={480}
+							loading="lazy"
 							className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 						/>
 					) : (
 						<>
 							<div
 								aria-hidden="true"
-								className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl"
+								className="pointer-events-none absolute -top-8 -right-6 h-24 w-24 rounded-full bg-white/15 blur-xl"
 							/>
 							<div
 								aria-hidden="true"
@@ -61,7 +66,7 @@ export default function OpportunityListItem({
 								category={item.category}
 								className="h-11 w-11 text-white/90 transition-transform duration-300 group-hover:scale-110"
 							/>
-							<span className="absolute bottom-2 left-0 right-0 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80">
+							<span className="absolute right-0 bottom-2 left-0 px-2 text-center text-xs font-semibold tracking-wider text-white/80 uppercase">
 								{item.category
 									? t(`opportunities.category.${item.category}`)
 									: t("opportunities.category.Other")}
@@ -73,31 +78,31 @@ export default function OpportunityListItem({
 				{/* Content */}
 				<div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
 					<div className="mb-2 flex items-center gap-2">
-						<span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+						<Chip tone="neutral" size="sm" className="shrink-0">
 							{formatOccurrence(item.occurrence, t)}
-						</span>
+						</Chip>
 						{isUnlimited ? (
-							<span className="ml-auto shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">
+							<Chip tone="brand" size="sm" className="ml-auto shrink-0">
 								{t("opportunities.unlimitedSpots")}
-							</span>
+							</Chip>
 						) : (
 							spotsLeft !== null &&
 							(spotsLeft <= 0 ? (
-								<span className="ml-auto shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+								<Chip tone="danger" size="sm" className="ml-auto shrink-0">
 									{t("opportunities.full")}
-								</span>
+								</Chip>
 							) : spotsLeft <= 3 ? (
-								<span className="ml-auto shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+								<Chip tone="warning" size="sm" className="ml-auto shrink-0">
 									{t("opportunities.spotsLeft", {
 										count: spotsLeft,
 									})}
-								</span>
+								</Chip>
 							) : (
-								<span className="ml-auto shrink-0 rounded-full bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+								<Chip tone="neutral" size="sm" className="ml-auto shrink-0">
 									{t("opportunities.spotsLeft", {
 										count: spotsLeft,
 									})}
-								</span>
+								</Chip>
 							))
 						)}
 						{auth.isAuthenticated && (
@@ -110,11 +115,11 @@ export default function OpportunityListItem({
 										details: details || undefined,
 									});
 								}}
-								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null && !isUnlimited ? " ml-auto" : ""}`}
+								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null && !isUnlimited ? "ml-auto" : ""}`}
 							/>
 						)}
 					</div>
-					<h3 className="text-base font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
+					<h3 className="text-base leading-snug font-semibold text-gray-900 transition-colors group-hover:text-brand-700 sm:text-lg">
 						{item.title}
 					</h3>
 					{item.nextTimeSlotStart ? (
@@ -159,6 +164,9 @@ export default function OpportunityListItem({
 								<img
 									src={item.organizationLogoUrl}
 									alt=""
+									width={28}
+									height={28}
+									loading="lazy"
 									className="h-7 w-7 shrink-0 rounded-full object-cover"
 								/>
 							) : (
@@ -182,7 +190,7 @@ export default function OpportunityListItem({
 									</>
 								) : (
 									<>
-										<PinIcon className="h-3.5 w-3.5 shrink-0" />
+										<MapPinIcon className="h-3.5 w-3.5 shrink-0" />
 										<span>{item.city}</span>
 									</>
 								)}

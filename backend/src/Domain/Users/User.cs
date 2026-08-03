@@ -141,6 +141,15 @@ public sealed class User
 		return Result.Success();
 	}
 
+	// The Keycloak identity is deleted post-commit by a domain-event handler
+	// (see UserAccountDeletedDomainEvent), not inline in the deletion command -
+	// that call is irreversible, so it must only fire once the local deletion
+	// has actually committed (#1141).
+	public void MarkAccountDeleted()
+	{
+		AddEvent(new UserAccountDeletedDomainEvent(Id));
+	}
+
 	public Result MarkDeleted(DateTimeOffset deletedOn)
 	{
 		if (IsDeleted)
@@ -150,11 +159,6 @@ public sealed class User
 		DeletedOn = deletedOn;
 		return Result.Success();
 	}
-
-	// Raises UserDeletedDomainEvent (#1218) so the Keycloak account deletion -
-	// irreversible and external - runs only after the local hard-delete commits,
-	// via the outbox, instead of racing an early return from this handler call.
-	public void Delete() => AddEvent(new UserDeletedDomainEvent(Id));
 
 	public Result Restore()
 	{

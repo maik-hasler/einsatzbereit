@@ -154,10 +154,26 @@ Run lint before every commit. All errors must be fixed - zero warnings allowed (
 pnpm lint
 ```
 
-Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`, `jsx-a11y/recommended`.
+Rules enabled: `@typescript-eslint/strict`, `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`, `jsx-a11y/recommended`, `tailwindcss/classnames-order`, `tailwindcss/no-contradicting-classname`, `tailwindcss/no-unnecessary-arbitrary-value`, `tailwindcss/enforces-negative-arbitrary-values`.
 
 - No non-null assertions (`!`). Use `as Type` or type narrowing (`if (!x) return`).
 - If `api` is intentionally excluded from `exhaustive-deps`, suppress with `// eslint-disable-next-line react-hooks/exhaustive-deps` and keep it consistent with the existing pattern.
+- `prettier-plugin-tailwindcss` sorts `className` values automatically as part of `pnpm format:write` - don't hand-order classes. `eslint-plugin-tailwindcss` (`tailwindcss/*` rules above) is the CI-enforced backstop for anything that slips through unformatted, plus `no-contradicting-classname` (e.g. `mt-2 mt-4` on the same element) and `no-unnecessary-arbitrary-value`/`enforces-negative-arbitrary-values` (flags e.g. `w-[480px]` where the equivalent scale utility `w-120` exists). Both plugins resolve the theme from `src/styles/global.css` (`.prettierrc.json`'s `tailwindStylesheet`, `eslint.config.js`'s `settings.tailwindcss.cssConfigPath`), so custom tokens like `brand-700` are recognized.
+
+## Design System
+
+Shared UI primitives live in `src/components/` and `src/lib/` (no separate design-system package). Reuse these instead of re-deriving their markup/classes - each exists because the same visual pattern had drifted into 2-4 slightly different hand-rolled versions across pages (see the rationale comments in `Button.tsx` and `ErrorBanner.tsx` for two examples); the Tailwind lint rules above only catch class-order and arbitrary-value drift, not this kind of duplication.
+
+| Primitive     | File                          | Use for                                                                                                                               |
+| ------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`      | `components/Button.tsx`      | Every clickable action, button or link - `variant` (`primary`/`secondary`), `size` (`sm`/`md`/`lg`), `fullWidth`                     |
+| `formClasses` | `lib/formClasses.ts`         | `inputClass`, `textareaClass`, `labelClass` for every form control                                                                   |
+| `ErrorBanner` | `components/ErrorBanner.tsx` | Inline "action failed" message - the one boxed style every page's error state should share                                          |
+| `EmptyState`  | `components/EmptyState.tsx`  | "Nothing here yet" placeholder with an optional CTA button                                                                           |
+| `Skeleton`    | `components/Skeleton.tsx`    | Loading placeholders (`animate-pulse` block)                                                                                         |
+| `Modal`       | `components/Modal.tsx`       | Every dialog - backdrop-button a11y pattern (see Accessibility below), focus trap, Escape-to-close, portals out of `inert` ancestors |
+
+**Tokens:** the brand color scale (`brand-50`...`brand-900`) and `accent-400` are defined once in `src/styles/global.css`'s `@theme` block - use them instead of ad hoc hex values or arbitrary colors. `rounded-xl` is the default corner radius for interactive surfaces (buttons, inputs, cards, modals); `rounded-md` is reserved for `Skeleton` loading blocks.
 
 ## Accessibility (a11y)
 
@@ -172,11 +188,12 @@ Key conventions:
 - **SVG icons**: Decorative SVGs get `aria-hidden="true"`. Meaningful standalone SVGs need a `<title>` or `aria-label`.
 - **Form labels**: Every form control must have an associated `<label htmlFor="...">` or `aria-label`.
 - **`<a href="#">`**: Never use `href="#"`. Use a `<button>` if there is no navigation target.
+- **Color contrast**: `text-gray-400` (2.6:1 on white) fails the WCAG AA 4.5:1 floor for text - reserve it for decorative icons and input placeholders only, never for body copy, labels, timestamps, or other real content. Use `text-gray-500` (4.9:1) or darker for content; an interactive control's resting label needs to clear at least the 3:1 UI-component floor too.
 
 Automated axe-core checks run in the Playwright visual tests (`backend/tests/VisualTests/AccessibilityTests.cs`) on every major page and several stateful views (edit mode, modals, widget dialogs) - grep that file for `HasNoSeriousA11yViolations` for the current, authoritative list rather than trusting a copy of it here. Tests fail on any "serious" or "critical" axe violation. A new page/route needs a matching test in that file - `a11y-check` flags a missing one.
 
 ## Production
 
-Static files in `dist/` served by nginx. `nginx.conf.template` handles SPA routing via `try_files $uri /index.html`; `docker-entrypoint.d/99-runtime-config.sh` renders it (and `config.js`) into their final form at container start via `envsubst`, filling in the Content-Security-Policy's `connect-src`/`frame-src` origins from the same `VITE_API_URL`/`VITE_KEYCLOAK_AUTHORITY_URL` env vars used for runtime config, plus `img-src`'s MinIO storage origin from a separate `STORAGE_PUBLIC_URL` env var (matching the backend's `Storage__PublicEndpoint` - uploaded org logos/opportunity banners/avatars are served from there, not the API origin), so one image works across environments. The CSP string itself is defined once via an nginx `map` (`$csp_header`) and referenced from all four location blocks - `frontend/scripts/check-nginx-csp.js` (`pnpm check:nginx-csp`, wired into CI) guards against a location block silently falling out of sync with that definition.
+Static files in `dist/` served by nginx. `nginx.conf.template` handles SPA routing via `try_files $uri /index.html`; `docker-entrypoint.d/99-runtime-config.sh` renders it (and `config.js`) into their final form at container start via `envsubst`, filling in the Content-Security-Policy's `connect-src`/`frame-src` origins from the same `VITE_API_URL`/`VITE_KEYCLOAK_AUTHORITY_URL` env vars used for runtime config, plus `img-src`'s MinIO storage origin from a separate `STORAGE_PUBLIC_URL` env var (matching the backend's `Storage__PublicEndpoint` - uploaded org logos/opportunity banners/avatars are served from there, not the API origin), so one image works across environments. `img-src` also allows the `blob:` scheme unconditionally (no env var needed) since avatar/org-logo/opportunity-banner pickers preview the selected file via `URL.createObjectURL()` before it's ever uploaded. The CSP string itself is defined once via an nginx `map` (`$csp_header`) and referenced from all four location blocks - `frontend/scripts/check-nginx-csp.js` (`pnpm check:nginx-csp`, wired into CI) guards against a location block silently falling out of sync with that definition.
 
 **Important:** CORS must be configured on the backend to allow the frontend origin, since API calls are now cross-origin (no server-side proxy).

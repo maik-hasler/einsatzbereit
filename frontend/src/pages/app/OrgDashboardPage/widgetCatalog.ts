@@ -139,7 +139,7 @@ export function sanitizeWidgetKey(key: string): WidgetKey | null {
 	return key in WIDGET_CATALOG ? (key as WidgetKey) : null;
 }
 
-export function rectsOverlap(a: PlacedWidget, b: PlacedWidget): boolean {
+function rectsOverlap(a: PlacedWidget, b: PlacedWidget): boolean {
 	return (
 		a.x < b.x + b.width &&
 		b.x < a.x + a.width &&
@@ -185,7 +185,7 @@ export function isValidPlacement(rect: PlacedWidget): boolean {
 // pushing widget A down can newly overlap widget B, which then needs pushing
 // too, and so on down the stack. `others` must not itself contain `rect`
 // (callers pass the rest of the layout).
-export function resolveOverlaps(
+function resolveOverlaps(
 	rect: PlacedWidget,
 	others: PlacedWidget[],
 ): PlacedWidget[] {

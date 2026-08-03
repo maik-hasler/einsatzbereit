@@ -3,10 +3,13 @@ import { useTranslation } from "react-i18next";
 import type { VolunteerOpportunitySummary } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import { dispatchToast } from "../../../lib/toastBus";
-import Spinner from "../../../components/Spinner";
+import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
+import Dropdown from "../../../components/Dropdown";
 import ErrorBanner from "../../../components/ErrorBanner";
+import EmptyState from "../../../components/EmptyState";
 import ModalLoadingFallback from "../../../components/ModalLoadingFallback";
+import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteerOpportunityModal";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
@@ -21,12 +24,18 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
 // Lets an organizer jump straight to the QR scanner for any of their
 // published opportunities, instead of navigating to that opportunity's
 // engagement management page first.
-function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
+function QuickCheckInWidget({
+	organizationId,
+	refreshKey,
+	size,
+	onOpportunityCreated,
+}: Props) {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
@@ -46,6 +55,7 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 	);
 	const [selectedId, setSelectedId] = useState("");
 	const [scannerOpen, setScannerOpen] = useState(false);
+	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	useEffect(() => {
 		if (opportunities === null) return;
@@ -63,13 +73,31 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 			title={t("orgDashboard.quickCheckInWidgetTitle")}
 		>
 			{opportunities === null && !error && (
-				<Spinner label={t("orgDashboard.loading")} size="sm" />
+				<div
+					role="status"
+					className={
+						size !== "compact" ? "flex items-center gap-3" : "space-y-3"
+					}
+				>
+					<span className="sr-only">{t("orgDashboard.loading")}</span>
+					<Skeleton
+						className={`h-9 rounded-xl ${size !== "compact" ? "min-w-0 flex-1" : "w-full"}`}
+					/>
+					<Skeleton
+						className={`h-9 rounded-lg ${size !== "compact" ? "w-24 shrink-0" : "w-full"}`}
+					/>
+				</div>
 			)}
 			{error && <ErrorBanner message={error} />}
 			{opportunities !== null && !error && opportunities.length === 0 && (
-				<p className="text-sm text-gray-500">
-					{t("orgDashboard.quickCheckInNoOpportunities")}
-				</p>
+				<EmptyState
+					compact
+					title={t("orgDashboard.quickCheckInNoOpportunities")}
+					action={{
+						label: t("orgDashboard.emptyStateCreateAction"),
+						onClick: () => setShowCreateModal(true),
+					}}
+				/>
 			)}
 			{opportunities !== null && !error && opportunities.length > 0 && (
 				// Side by side once there's enough width for both to stay
@@ -87,18 +115,16 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 						<label htmlFor="quick-checkin-opportunity" className="sr-only">
 							{t("orgDashboard.quickCheckInSelectOpportunity")}
 						</label>
-						<select
+						<Dropdown
 							id="quick-checkin-opportunity"
 							value={selectedId}
-							onChange={(e) => setSelectedId(e.target.value)}
-							className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500"
-						>
-							{opportunities.map((o) => (
-								<option key={o.id} value={o.id}>
-									{o.title || t("orgDashboard.unnamedDraft")}
-								</option>
-							))}
-						</select>
+							onChange={setSelectedId}
+							className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
+							options={opportunities.map((o) => ({
+								value: o.id,
+								label: o.title || t("orgDashboard.unnamedDraft"),
+							}))}
+						/>
 					</div>
 					<Button
 						type="button"
@@ -124,6 +150,14 @@ function QuickCheckInWidget({ organizationId, refreshKey, size }: Props) {
 						onClose={() => setScannerOpen(false)}
 					/>
 				</Suspense>
+			)}
+
+			{showCreateModal && (
+				<CreateVolunteerOpportunityModal
+					organizationId={organizationId}
+					onClose={() => setShowCreateModal(false)}
+					onSuccess={onOpportunityCreated}
+				/>
 			)}
 		</WidgetCard>
 	);

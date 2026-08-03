@@ -5,42 +5,12 @@ import {
 	type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { TrashIcon } from "../../../components/QuickActionIcons";
+import {
+	GripDotsIcon,
+	ResizeHandleIcon,
+	TrashIcon,
+} from "../../../components/icons";
 import { WIDGET_CATALOG, type WidgetKey } from "./widgetCatalog";
-
-function GripIcon() {
-	return (
-		<svg
-			className="h-4 w-4"
-			viewBox="0 0 16 16"
-			fill="currentColor"
-			aria-hidden="true"
-		>
-			<circle cx="5" cy="3" r="1.25" />
-			<circle cx="11" cy="3" r="1.25" />
-			<circle cx="5" cy="8" r="1.25" />
-			<circle cx="11" cy="8" r="1.25" />
-			<circle cx="5" cy="13" r="1.25" />
-			<circle cx="11" cy="13" r="1.25" />
-		</svg>
-	);
-}
-
-function ResizeHandleIcon() {
-	return (
-		<svg
-			className="h-3.5 w-3.5"
-			viewBox="0 0 16 16"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.5"
-			strokeLinecap="round"
-			aria-hidden="true"
-		>
-			<path d="M13 3 3 13M13 8 8 13" />
-		</svg>
-	);
-}
 
 export default function EditableWidgetTile({
 	widgetKey,
@@ -177,10 +147,10 @@ export default function EditableWidgetTile({
 								onGripPointerDown(e);
 							}}
 							disabled={placingDisabled}
-							className={`absolute left-1/2 top-2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
+							className={`absolute top-2 left-1/2 z-30 -translate-x-1/2 cursor-pointer touch-none rounded-lg bg-white p-1.5 text-gray-600 shadow-md ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 ${isCornerFlowActive && !hasAnchor ? "pointer-events-none" : "pointer-events-auto"} ${isPlacing ? "ring-2 ring-brand-500" : ""}`}
 							aria-label={moveLabel}
 						>
-							<GripIcon />
+							<GripDotsIcon />
 						</button>
 					)}
 					{showPlacementControls && !isPlacing && (
@@ -223,7 +193,7 @@ export default function EditableWidgetTile({
 								onResizePointerDown(e);
 							}}
 							disabled={placingDisabled}
-							className="pointer-events-auto absolute bottom-2 right-2 z-20 cursor-nwse-resize touch-none rounded-lg bg-white/95 p-1 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
+							className="pointer-events-auto absolute right-2 bottom-2 z-20 cursor-nwse-resize touch-none rounded-lg bg-white/95 p-1 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30"
 						>
 							<ResizeHandleIcon />
 						</button>
@@ -233,7 +203,7 @@ export default function EditableWidgetTile({
 						onPointerDown={(e) => e.stopPropagation()}
 						onClick={onRemove}
 						disabled={placingDisabled}
-						className="pointer-events-auto absolute right-2 top-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+						className="pointer-events-auto absolute top-2 right-2 z-20 rounded-lg bg-white/95 p-1.5 text-gray-500 shadow-sm ring-1 ring-gray-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
 						aria-label={t("orgDashboard.removeWidget", { widget: title })}
 					>
 						<TrashIcon />

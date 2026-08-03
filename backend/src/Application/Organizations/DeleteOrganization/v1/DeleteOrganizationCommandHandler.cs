@@ -3,6 +3,8 @@ using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Application.Engagements;
+using Application.VolunteerOpportunities.Common;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Reports;
@@ -11,7 +13,8 @@ namespace Application.Organizations.DeleteOrganization.v1;
 
 internal sealed class DeleteOrganizationCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakOrganizationService keycloakOrganizationService)
+	IKeycloakOrganizationService keycloakOrganizationService,
+	IEngagementReadRepository engagementReadRepository)
 	: ICommandHandler<DeleteOrganizationCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -50,6 +53,27 @@ internal sealed class DeleteOrganizationCommandHandler(
 
 		await dbContext.RemoveMembershipsForOrganizationAsync(organizationId, cancellationToken);
 		await dbContext.RemoveDashboardLayoutsForOrganizationAsync(organizationId, cancellationToken);
+
+		// Without this, opportunities survive as orphan rows with a dangling
+		// organization_id - there is no FK to cascade the delete at the DB level
+		// (#1153). Only opportunities with no future slots and no active
+		// engagements can reach this point (the blocking check above), so the
+		// shared helper's engagement cascade is a no-op here; it still resolves
+		// any open abuse reports against each opportunity before deleting it.
+		var organizationOpportunities = await dbContext.GetOpportunitiesForOrganizationAsync(
+			organizationId, cancellationToken);
+		var now = DateTimeOffset.UtcNow;
+		foreach (var opportunity in organizationOpportunities)
+		{
+			await VolunteerOpportunityDeletionHelper.DeleteAsync(
+				dbContext,
+				engagementReadRepository,
+				opportunity,
+				opportunity.Id,
+				request.RequestingUserId,
+				now,
+				cancellationToken);
+		}
 
 		// Resolves any open abuse reports against the organization itself - it
 		// can't be reported-and-open once it no longer exists (#1075).

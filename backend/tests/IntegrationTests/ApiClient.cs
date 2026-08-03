@@ -11255,9 +11255,6 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Status { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTimeOffset? ModifiedOn { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("cancellationReason")]
         public string? CancellationReason { get; set; } = default!;
 
@@ -11437,10 +11434,6 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("lastName")]
         public string? LastName { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("email")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Email { get; set; } = default!;
-
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -11604,10 +11597,6 @@ namespace IntegrationTests
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Kind { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("relatedEntityId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid RelatedEntityId { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("relatedTitle")]
         public string? RelatedTitle { get; set; } = default!;
 
@@ -11748,30 +11737,15 @@ namespace IntegrationTests
     public partial class OrganizationDashboardResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("openOpportunities")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int OpenOpportunities { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("pendingEngagements")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
         public int PendingEngagements { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("confirmedEngagementsNext7Days")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int ConfirmedEngagementsNext7Days { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("confirmedEngagementsTotal")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
         public int ConfirmedEngagementsTotal { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("cancelledEngagements")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
-        public int CancelledEngagements { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -11817,9 +11791,6 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("createdOn")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset CreatedOn { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("modifiedOn")]
-        public System.DateTimeOffset? ModifiedOn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("members")]
         [System.ComponentModel.DataAnnotations.Required]

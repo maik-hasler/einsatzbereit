@@ -15,6 +15,7 @@ import { getApiErrorMessage, isApiErrorCode } from "../../lib/apiError";
 import ConfirmDialog from "../ConfirmDialog";
 import Modal from "../Modal";
 import Button from "../Button";
+import ImageCropModal from "../ImageCropModal";
 import { Stepper } from "./shared";
 import BasicsStep from "./BasicsStep";
 import LocationStep from "./LocationStep";
@@ -22,6 +23,7 @@ import FormatStep from "./FormatStep";
 import DetailsStep from "./DetailsStep";
 import type { SeriesEditScope } from "./DetailsStep";
 import DeleteSeriesSlotDialog from "./DeleteSeriesSlotDialog";
+import { CloseIcon } from "../icons";
 import {
 	buildOpportunityFormSchema,
 	errorStepsFromFieldErrors,
@@ -229,6 +231,9 @@ export default function CreateVolunteerOpportunityModal({
 	);
 	const [bannerError, setBannerError] = useState<string | null>(null);
 	const [bannerRemoved, setBannerRemoved] = useState(false);
+	const [croppingBannerFile, setCroppingBannerFile] = useState<File | null>(
+		null,
+	);
 
 	// Time slots: pending = not yet persisted (create mode); existing = already saved (edit mode)
 	const [pendingSlots, setPendingSlots] = useState<PendingTimeSlot[]>([]);
@@ -395,8 +400,13 @@ export default function CreateVolunteerOpportunityModal({
 			return;
 		}
 		setBannerError(null);
-		setBannerFile(file);
-		setBannerPreview(URL.createObjectURL(file));
+		setCroppingBannerFile(file);
+	}
+
+	function handleBannerCropped(croppedFile: File) {
+		setCroppingBannerFile(null);
+		setBannerFile(croppedFile);
+		setBannerPreview(URL.createObjectURL(croppedFile));
 	}
 
 	function removeBanner() {
@@ -904,11 +914,11 @@ export default function CreateVolunteerOpportunityModal({
 				labelledBy="create-opportunity-dialog-title"
 				maxWidth="max-w-xl"
 				className="flex min-w-0 flex-col overflow-hidden rounded-card bg-white shadow-modal"
-				backdropClassName="bg-black/60 backdrop-blur-sm"
 				suspended={
 					showDiscardConfirm ||
 					pendingSlotEdit !== null ||
-					pendingSeriesDelete !== null
+					pendingSeriesDelete !== null ||
+					croppingBannerFile !== null
 				}
 				initialFocusRef={bodyRef}
 			>
@@ -919,7 +929,7 @@ export default function CreateVolunteerOpportunityModal({
 				<div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-4">
 					<h2
 						id="create-opportunity-dialog-title"
-						className="text-lg font-bold text-gray-900"
+						className="text-lg font-semibold text-gray-900"
 					>
 						{isEditMode
 							? t("createOpportunity.editTitle")
@@ -931,25 +941,12 @@ export default function CreateVolunteerOpportunityModal({
 						aria-label={t("createOpportunity.cancel")}
 						className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
 					>
-						<svg
-							aria-hidden="true"
-							className="h-5 w-5"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth={2}
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
+						<CloseIcon className="h-5 w-5" />
 					</button>
 				</div>
 
 				{/* Stepper lives in its own row in the body, not the header. */}
-				<div className="border-b border-gray-100 px-6 pb-3 pt-3">
+				<div className="border-b border-gray-100 px-6 pt-3 pb-3">
 					<Stepper
 						current={step}
 						errorSteps={errorSteps}
@@ -1051,30 +1048,30 @@ export default function CreateVolunteerOpportunityModal({
 
 				{/* Footer navigation */}
 				<div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
-					<button
+					<Button
 						type="button"
+						variant="secondary"
 						data-testid="modal-cancel"
 						onClick={() => (step > 1 ? setStep((s) => s - 1) : requestClose())}
-						className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
 					>
 						{step === 1
 							? t("createOpportunity.cancel")
 							: t("createOpportunity.back")}
-					</button>
+					</Button>
 
 					<div className="flex items-center gap-2">
 						{canSaveDraft && (
-							<button
+							<Button
 								type="button"
+								variant="tertiary"
 								data-testid="modal-save-draft"
 								disabled={submitting !== null}
 								onClick={() => void submit(true)}
-								className="rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-40"
 							>
 								{submitting === "draft"
 									? t("createOpportunity.savingDraft")
 									: t("createOpportunity.saveDraft")}
-							</button>
+							</Button>
 						)}
 						{step < TOTAL_STEPS ? (
 							<Button
@@ -1137,6 +1134,19 @@ export default function CreateVolunteerOpportunityModal({
 					error={seriesDeleteError}
 					onConfirm={(scope) => void performSeriesDelete(scope)}
 					onClose={() => setPendingSeriesDelete(null)}
+				/>
+			)}
+
+			{croppingBannerFile && (
+				<ImageCropModal
+					file={croppingBannerFile}
+					aspectRatio={2.5}
+					shape="rect"
+					outputWidth={1200}
+					outputHeight={480}
+					title={t("createOpportunity.fieldBanner")}
+					onCancel={() => setCroppingBannerFile(null)}
+					onCropped={handleBannerCropped}
 				/>
 			)}
 		</>

@@ -109,4 +109,35 @@ public class OrgAppMobileResponsiveTests(AspireFixture fixture) : VisualTestBase
 			"the org name must keep enough width on mobile to show more than just its "
 			+ "first letter - it previously rendered at ~0px wide here");
 	}
+
+	[Test]
+	public async Task MobileHeader_OrgSwitcherDoesNotOverlapControls_At320pxViewport()
+	{
+		// #1117: the org name span's `min-w-[6rem]` floor didn't shrink with the
+		// rest of the row below ~342px, so on the narrowest viewports still
+		// shipped today (iPhone SE 1st gen, Galaxy Fold cover screen: 320px) the
+		// switcher overflowed its own button box and painted over the mobile
+		// bell/hamburger - the only navigation available at this width. Fixed by
+		// scoping the min-width floor to `sm:` so it only applies once there's
+		// room for it. 320px is narrower than OrgAppMobileResponsiveTests's other
+		// cases (375px), which the fix's math shows already had enough slack.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var pinnedOrgId = await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await AuthHelper.GoToOrgAppDashboardAsync(Page, frontend, pinnedOrgId!.Value);
+		await Page.SetViewportSizeAsync(320, 568);
+
+		var mobileBell = Page.GetByTestId("notification-bell-mobile");
+		await Expect(mobileBell).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var hamburger = Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" });
+		await Expect(hamburger).ToBeVisibleAsync();
+
+		// A click that lands here (rather than timing out on an intercepting
+		// element, e.g. the org switcher's overflowing name span) proves the
+		// switcher isn't painting over the hamburger at this width.
+		await hamburger.ClickAsync(new() { Timeout = 10_000 });
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Sign out" }))
+			.ToBeVisibleAsync();
+	}
 }

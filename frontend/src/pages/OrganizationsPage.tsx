@@ -161,6 +161,9 @@ export default function OrganizationsPage() {
 											<img
 												src={org.logoUrl}
 												alt=""
+												width={48}
+												height={48}
+												loading="lazy"
 												className="h-12 w-12 shrink-0 rounded-full object-cover"
 											/>
 										) : (

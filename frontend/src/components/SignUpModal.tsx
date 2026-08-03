@@ -95,7 +95,7 @@ export default function SignUpModal({
 								value={selectedTimeSlotId}
 								onChange={setSelectedTimeSlotId}
 								placeholder={t("signUp.selectPlaceholder")}
-								className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+								className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400"
 								options={timeSlots.map((ts) => {
 									const spotsLeft = computeSpotsLeft(
 										ts.maxParticipants,

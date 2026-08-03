@@ -14,7 +14,8 @@ public sealed class ArchitectureLayerTests
 			.NotHaveDependencyOn(AssemblyAnchors.ApplicationLayerAssemblyName)
 			.GetResult();
 
-		result.IsSuccessful.Should().BeTrue();
+		result.FailingTypeNames.Should().BeNullOrEmpty(
+			$"Domain must not depend on {AssemblyAnchors.ApplicationLayerAssemblyName}");
 	}
 
 	[Test]
@@ -26,7 +27,8 @@ public sealed class ArchitectureLayerTests
 			.NotHaveDependencyOn(AssemblyAnchors.InfrastructureLayerAssemblyName)
 			.GetResult();
 
-		result.IsSuccessful.Should().BeTrue();
+		result.FailingTypeNames.Should().BeNullOrEmpty(
+			$"Domain must not depend on {AssemblyAnchors.InfrastructureLayerAssemblyName}");
 	}
 
 	[Test]
@@ -38,7 +40,8 @@ public sealed class ArchitectureLayerTests
 			.NotHaveDependencyOn(AssemblyAnchors.PresentationLayerAssemblyName)
 			.GetResult();
 
-		result.IsSuccessful.Should().BeTrue();
+		result.FailingTypeNames.Should().BeNullOrEmpty(
+			$"Domain must not depend on {AssemblyAnchors.PresentationLayerAssemblyName}");
 	}
 
 	[Test]
@@ -50,7 +53,8 @@ public sealed class ArchitectureLayerTests
 			.NotHaveDependencyOn(AssemblyAnchors.InfrastructureLayerAssemblyName)
 			.GetResult();
 
-		result.IsSuccessful.Should().BeTrue();
+		result.FailingTypeNames.Should().BeNullOrEmpty(
+			$"Application must not depend on {AssemblyAnchors.InfrastructureLayerAssemblyName}");
 	}
 
 	[Test]
@@ -62,7 +66,8 @@ public sealed class ArchitectureLayerTests
 			.NotHaveDependencyOn(AssemblyAnchors.PresentationLayerAssemblyName)
 			.GetResult();
 
-		result.IsSuccessful.Should().BeTrue();
+		result.FailingTypeNames.Should().BeNullOrEmpty(
+			$"Application must not depend on {AssemblyAnchors.PresentationLayerAssemblyName}");
 	}
 
 	[Test]
@@ -74,6 +79,7 @@ public sealed class ArchitectureLayerTests
 			.NotHaveDependencyOn(AssemblyAnchors.PresentationLayerAssemblyName)
 			.GetResult();
 
-		result.IsSuccessful.Should().BeTrue();
+		result.FailingTypeNames.Should().BeNullOrEmpty(
+			$"Infrastructure must not depend on {AssemblyAnchors.PresentationLayerAssemblyName}");
 	}
 }

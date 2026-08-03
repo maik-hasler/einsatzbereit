@@ -127,4 +127,25 @@ public class UpdateOrganizationCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>()
 			.WithMessage("*Name must not be empty*");
 	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenWebsiteIsInvalid(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var orgId = DefaultOrgId;
+		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
+
+		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
+
+		var command = new UpdateOrganizationCommand(
+			orgId, "Org", null, null, null, "javascript:alert(1)", null, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>()
+			.WithMessage("*Website must be a valid http or https URL*");
+	}
 }

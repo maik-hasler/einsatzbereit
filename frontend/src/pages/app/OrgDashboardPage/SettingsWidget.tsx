@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../../../client/api-client";
 import WidgetCard from "./WidgetCard";
 import type { WidgetSizeClass } from "./widgetCatalog";
+import { resolveDateLocale } from "../../../lib/format";
 
 interface Props {
 	org: OrganizationDetailsResponse;
@@ -12,13 +13,15 @@ interface Props {
 
 function SettingsWidget({ org, size }: Props) {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 	const compact = size === "compact";
 
 	const logo = org.logoUrl ? (
 		<img
 			src={org.logoUrl}
 			alt=""
+			width={48}
+			height={48}
 			className="h-12 w-12 shrink-0 rounded-lg object-contain ring-1 ring-gray-200"
 		/>
 	) : (

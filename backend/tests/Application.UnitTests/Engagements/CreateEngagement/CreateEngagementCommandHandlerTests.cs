@@ -33,13 +33,18 @@ public class CreateEngagementCommandHandlerTests
 	private readonly IAggregateRepository<User, UserId> _userRepo =
 		Substitute.For<IAggregateRepository<User, UserId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly CreateEngagementCommandHandler _sut;
 
 	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
 
-	private VolunteerOpportunity CreateTestOpportunity(VolunteerOpportunityId id) =>
-		VolunteerOpportunity.Create(
+	// ScheduledSlots opportunities can only be created as Draft (Create() itself
+	// rejects a Published ScheduledSlots opportunity, since a time slot can only
+	// be added after construction) - callers that need a Published one must add a
+	// slot and call Publish() themselves.
+	private VolunteerOpportunity CreateTestOpportunity(
+		VolunteerOpportunityId id, OpportunityStatus status = OpportunityStatus.Published)
+	{
+		var opportunity = VolunteerOpportunity.Create(
 			OrganizationId.New(),
 			"Test Opportunity",
 			"Description",
@@ -50,6 +55,28 @@ public class CreateEngagementCommandHandlerTests
 			CheckInMethod.None,
 			_pinGenerator,
 			status: OpportunityStatus.Draft).Value;
+
+		if (status == OpportunityStatus.Draft)
+			return opportunity;
+
+		// Published is unreachable at construction time for ScheduledSlots (see
+		// Create's ScheduledSlotsMustStartAsDraft guard) - add a throwaway slot
+		// so Publish()'s own ScheduledSlotsRequiresTimeSlot check is satisfied,
+		// then walk to the requested terminal status the same way real code would.
+		_ = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1),
+			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
+			maxParticipants: 10,
+			DateTimeOffset.UtcNow).Value;
+		opportunity.Publish().ThrowIfFailure();
+
+		if (status == OpportunityStatus.Unpublished)
+			opportunity.Unpublish().ThrowIfFailure();
+		else if (status == OpportunityStatus.Cancelled)
+			opportunity.Cancel().ThrowIfFailure();
+
+		return opportunity;
+	}
 
 	public CreateEngagementCommandHandlerTests()
 	{
@@ -71,19 +98,47 @@ public class CreateEngagementCommandHandlerTests
 			.Returns(new EmailContent("Test Subject", "Test Body"));
 		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
 			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new CreateEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer);
 	}
 
-	private void SetupOpportunityExists(VolunteerOpportunityId opportunityId)
+	// Individual-contact opportunities never have time slots - this is the fixture
+	// for tests that sign up with TimeSlotId: null. Unlike ScheduledSlots, an
+	// IndividualContact opportunity can be created directly in any status (it has
+	// no "must have a time slot before publishing" constraint).
+	private void SetupOpportunityExists(
+		VolunteerOpportunityId opportunityId, OpportunityStatus status = OpportunityStatus.Published)
 	{
-		var opportunity = CreateTestOpportunity(opportunityId);
+		var opportunity = VolunteerOpportunity.Create(
+			OrganizationId.New(),
+			"Test Opportunity",
+			"Description",
+			false,
+			TestAddress,
+			Occurrence.OneTime,
+			ParticipationType.IndividualContact,
+			CheckInMethod.None,
+			_pinGenerator,
+			status: OpportunityStatus.Draft,
+			validUntil: DateTimeOffset.UtcNow.AddDays(30)).Value;
+
+		if (status != OpportunityStatus.Draft)
+		{
+			opportunity.Publish().ThrowIfFailure();
+
+			if (status == OpportunityStatus.Unpublished)
+				opportunity.Unpublish().ThrowIfFailure();
+			else if (status == OpportunityStatus.Cancelled)
+				opportunity.Cancel().ThrowIfFailure();
+		}
+
 		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>())
 			.Returns(opportunity);
 	}
 
-	private TimeSlotId SetupOpportunityExistsWithTimeSlot(VolunteerOpportunityId opportunityId, int? maxParticipants = 10)
+	private TimeSlotId SetupOpportunityExistsWithTimeSlot(
+		VolunteerOpportunityId opportunityId, int? maxParticipants = 10, OpportunityStatus status = OpportunityStatus.Published)
 	{
-		var opportunity = CreateTestOpportunity(opportunityId);
+		var opportunity = CreateTestOpportunity(opportunityId, status);
 		var timeSlot = opportunity.AddTimeSlot(
 			DateTimeOffset.UtcNow.AddDays(1),
 			DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
@@ -110,6 +165,92 @@ public class CreateEngagementCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*not found*");
+	}
+
+	// --- Missing validations (#1149) ---
+
+	// Regression coverage for #1182: a Draft opportunity is deliberately hidden
+	// from non-organizers on the read side; sign-up must refuse it too, and the
+	// same holds for an opportunity that was published and later taken down.
+	[Test]
+	[Arguments(OpportunityStatus.Draft)]
+	[Arguments(OpportunityStatus.Unpublished)]
+	[Arguments(OpportunityStatus.Cancelled)]
+	public async Task Handle_ShouldThrow_WhenOpportunityIsNotPublished(
+		OpportunityStatus status, CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		SetupOpportunityExists(opportunityId, status);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "Ich helfe gerne!");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenTimeSlotHasAlreadyEnded(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - the slot's start/end are in the past relative to real time, but
+		// still valid at TimeSlot.Create time thanks to an artificially-past `now`
+		// (TimeSlot rejects a past start otherwise - no real API path can create one).
+		var opportunityId = VolunteerOpportunityId.New();
+		var opportunity = CreateTestOpportunity(opportunityId, OpportunityStatus.Draft);
+		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
+		var timeSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(-10), DateTimeOffset.UtcNow.AddDays(-9), 10, pastNow).Value;
+		opportunity.Publish().ThrowIfFailure();
+		_opportunityRepo.FindAsync(opportunityId, Arg.Any<CancellationToken>()).Returns(opportunity);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlot.Id, Message: null);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		(await act.Should().ThrowAsync<ResultFailureException>())
+			.Which.Error.Type.Should().Be(ErrorType.Conflict);
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenScheduledSlotsOpportunityIsSignedUpWithoutATimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - previously fell into the individual-contact branch and produced
+		// a Pending engagement with no TimeSlotId, bypassing per-slot capacity entirely.
+		var opportunityId = VolunteerOpportunityId.New();
+		SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId: null, "I'd like to help");
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>();
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenIndividualContactOpportunityIsSignedUpWithATimeSlot(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var opportunityId = VolunteerOpportunityId.New();
+		SetupOpportunityExists(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), TimeSlotId.New(), Message: null);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>();
+		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -249,6 +390,26 @@ public class CreateEngagementCommandHandlerTests
 		(await act.Should().ThrowAsync<ResultFailureException>())
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _engagementRepo.DidNotReceive().AddAsync(Arg.Any<Engagement>(), Arg.Any<CancellationToken>());
+	}
+
+	// --- Time-slot row lock (#1142) ---
+
+	[Test]
+	public async Task Handle_ShouldLockTheTimeSlot_BeforeCountingActiveEngagements(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - held for the rest of this command's transaction so a concurrent
+		// sign-up for the same slot serializes behind this one instead of both
+		// reading the same stale count.
+		var opportunityId = VolunteerOpportunityId.New();
+		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
+		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _dbContext.Received(1).LockTimeSlotForUpdateAsync(timeSlotId, cancellationToken);
 	}
 
 	[Test]
@@ -404,60 +565,36 @@ public class CreateEngagementCommandHandlerTests
 			Arg.Any<IReadOnlyDictionary<string, string>>());
 	}
 
-	// --- Organizer email notification preferences (#1055) ---
+	// --- Organizer notifications moved off the request path (#1174) ---
+	//
+	// The organizer "New sign-up" email (subscription-gated per #1055) is no
+	// longer sent by this handler - it moves onto the outbox, delivered by
+	// EngagementCreatedDomainEventHandler/EngagementReactivatedDomainEventHandler.
+	// See those handlers' tests for the subscription-preference coverage that
+	// used to live here.
 
 	[Test]
-	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToNewSignUp(
+	public async Task Handle_ShouldNotEmailOrganizersSynchronously_RegardlessOfHowManyExist(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - a rapid create/withdraw loop must no longer hold this
+		// request's DB transaction open across one synchronous SMTP send per
+		// organizer.
 		var opportunityId = VolunteerOpportunityId.New();
 		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
-		var organizerId = Guid.NewGuid();
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
+			.Returns([
+				new KeycloakOrganizationMember(Guid.NewGuid(), "olaf", "Olaf", "Organizer", "olaf@example.com", true),
+				new KeycloakOrganizationMember(Guid.NewGuid(), "petra", "Petra", "Organizer", "petra@example.com", true),
+			]);
 		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
 
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert
+		// Assert - exactly one email goes out synchronously: the volunteer's own
+		// receipt (#1055).
 		await _emailService.Received(1).SendAsync(
-			"olaf@example.com",
-			Arg.Any<string>(),
-			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
-			cancellationToken);
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfNewSignUp(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunityId = VolunteerOpportunityId.New();
-		var timeSlotId = SetupOpportunityExistsWithTimeSlot(opportunityId);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		var organizerUserId = UserId.Create(organizerId).GetValueOrThrow();
-		var optedOutOrganizer = User.Create(organizerUserId);
-		optedOutOrganizer.UpdateNotificationPreferences(
-			notifyOnNewSignUp: false,
-			notifyOnWithdrawal: true,
-			notifyOnEngagementConfirmed: true,
-			notifyOnEngagementCancelled: true,
-			notifyOnEngagementReminder: true);
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([optedOutOrganizer]);
-		var command = new CreateEngagementCommand(opportunityId, UserId.New(), timeSlotId, Message: null);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		await _emailService.DidNotReceive().SendAsync(
-			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 }

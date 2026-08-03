@@ -20,6 +20,8 @@ public sealed class Engagement
 
 	public string? CancellationReason { get; private set; }
 
+	public int ReactivationCount { get; private set; }
+
 	public bool IsCheckedIn { get; private set; }
 
 	public DateTimeOffset? ReminderSentAt { get; private set; }
@@ -37,6 +39,12 @@ public sealed class Engagement
 	public DateTimeOffset? ModifiedOn { get; private set; }
 
 	private bool IsTerminated => Status is EngagementStatus.Withdrawn or EngagementStatus.Cancelled;
+
+	// Bounds how many times a single withdrawn/cancelled engagement can be
+	// reused via Reactivate: without a cap, a volunteer could loop create/withdraw
+	// indefinitely against the same opportunity, and every cycle mails the
+	// volunteer plus every organizer of the org (einsatzbereit#1174).
+	private const int MaxReactivationCount = 5;
 
 #pragma warning disable CS8618
 	private Engagement() : base(default) { }
@@ -63,13 +71,15 @@ public sealed class Engagement
 		UserId volunteerId,
 		TimeSlotId timeSlotId)
 	{
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId,
 			message: null,
 			EngagementStatus.Pending);
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public static Result<Engagement> CreateIndividualContact(
@@ -82,17 +92,22 @@ public sealed class Engagement
 				"Engagement.MessageRequired",
 				"A message is required when expressing interest via individual contact."));
 
-		return new Engagement(
+		var engagement = new Engagement(
 			EngagementId.New(),
 			opportunityId,
 			volunteerId,
 			timeSlotId: null,
 			message,
 			EngagementStatus.Pending);
+		engagement.AddEvent(new EngagementCreatedDomainEvent(engagement.Id, volunteerId, opportunityId));
+		return engagement;
 	}
 
 	public Result Confirm()
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (Status != EngagementStatus.Pending)
 			return Result.Failure(Error.Conflict("Engagement.NotPending", "Only pending engagements can be confirmed."));
 
@@ -101,19 +116,31 @@ public sealed class Engagement
 		return Result.Success();
 	}
 
-	public Result Cancel(string? reason = null)
+	// opportunityTitle is denormalized onto EngagementCancelledDomainEvent (#1150)
+	// rather than looked up from OpportunityId when the event is later dispatched -
+	// several callers cancel engagements as part of deleting the opportunity itself
+	// in the same transaction, so by dispatch time there would be nothing left to
+	// look up. Optional only so existing callers/tests that don't have a title
+	// handy (or don't care about the eventual notification) keep compiling.
+	public Result Cancel(string? reason = null, string? opportunityTitle = null)
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (IsTerminated)
 			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
 
 		CancellationReason = reason;
 		Status = EngagementStatus.Cancelled;
-		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason));
+		AddEvent(new EngagementCancelledDomainEvent(Id, VolunteerId!.Value, OpportunityId, reason, opportunityTitle));
 		return Result.Success();
 	}
 
 	public Result Withdraw()
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (IsTerminated)
 			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
 
@@ -127,8 +154,16 @@ public sealed class Engagement
 
 	public Result Reactivate(TimeSlotId? timeSlotId, string? message)
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (!IsTerminated)
 			return Result.Failure(Error.Conflict("Engagement.NotTerminated", "Only withdrawn or cancelled engagements can be reactivated."));
+
+		if (ReactivationCount >= MaxReactivationCount)
+			return Result.Failure(Error.Conflict(
+				"Engagement.ReactivationLimitReached",
+				"This engagement has been withdrawn and re-applied for too many times. Please contact the organizer directly."));
 
 		if (timeSlotId is null && string.IsNullOrWhiteSpace(message))
 			return Result.Failure(Error.Validation("Engagement.MessageRequired", "Message is required for individual contact."));
@@ -143,14 +178,21 @@ public sealed class Engagement
 		ReminderSentAt = null;
 		Status = EngagementStatus.Pending;
 		CreatedOn = DateTimeOffset.UtcNow;
+		ReactivationCount++;
 		AddEvent(new EngagementReactivatedDomainEvent(Id, VolunteerId!.Value, OpportunityId));
 		return Result.Success();
 	}
 
 	public Result CheckIn()
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (Status != EngagementStatus.Confirmed)
 			return Result.Failure(Error.Validation("Engagement.NotConfirmed", "Only confirmed engagements can be checked in."));
+
+		if (IsCheckedIn)
+			return Result.Failure(Error.Conflict("Engagement.AlreadyCheckedIn", "Engagement is already checked in."));
 
 		IsCheckedIn = true;
 		AddEvent(new EngagementCheckedInDomainEvent(Id, VolunteerId!.Value, OpportunityId));
@@ -159,6 +201,9 @@ public sealed class Engagement
 
 	public Result UndoCheckIn()
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (IsTerminated)
 			return Result.Failure(Error.Conflict("Engagement.AlreadyTerminated", "Engagement is already terminated."));
 
@@ -172,6 +217,9 @@ public sealed class Engagement
 
 	public Result SubmitFeedback(int rating, string? comment, DateTimeOffset now)
 	{
+		if (IsAnonymized)
+			return Result.Failure(Error.Conflict("Engagement.Anonymized", "This engagement's volunteer has deleted their account and can no longer be acted on."));
+
 		if (!IsCheckedIn)
 			return Result.Failure(Error.Conflict("Engagement.NotCheckedIn", "Feedback can only be submitted for checked-in engagements."));
 

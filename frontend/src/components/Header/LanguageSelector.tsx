@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
+import { ChevronDownIcon } from "../icons";
 
 const LANGUAGES = [
-	{ code: "en", flag: "🇬🇧", label: "English" },
-	{ code: "de", flag: "🇩🇪", label: "Deutsch" },
+	{ code: "en", short: "EN" },
+	{ code: "de", short: "DE" },
 ] as const;
 
 type LangCode = (typeof LANGUAGES)[number]["code"];
@@ -33,28 +34,24 @@ export default function LanguageSelector({
 				aria-label={t("language.switchLanguage")}
 				className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${transparent ? "border-white/30 text-white hover:bg-white/10" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
 			>
-				<span>{current.flag}</span>
-				<span className="font-medium">{current.label}</span>
-				<svg
-					className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""} ${transparent ? "text-white/70" : "text-gray-400"}`}
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2.5"
-					stroke="currentColor"
+				<span
+					aria-hidden="true"
+					className={`rounded border px-1 py-0.5 text-xs leading-none font-bold tracking-wide ${transparent ? "border-white/30 text-white" : "border-gray-300 text-gray-600"}`}
 				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="m19.5 8.25-7.5 7.5-7.5-7.5"
-					/>
-				</svg>
+					{current.short}
+				</span>
+				<span className="font-medium">{t(`language.${current.code}`)}</span>
+				<ChevronDownIcon
+					open={open}
+					className={`h-3.5 w-3.5 ${transparent ? "text-white/70" : "text-gray-400"}`}
+				/>
 			</button>
 
 			{open && (
 				<ul
 					role="listbox"
 					aria-label={t("language.switchLanguage")}
-					className={`absolute left-0 top-full z-50 mt-1 w-36 rounded-lg border py-1 shadow-modal ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
+					className={`absolute top-full left-0 z-50 mt-1 w-36 rounded-lg border py-1 shadow-modal ${transparent ? "border-white/20 bg-brand-800" : "border-gray-200 bg-white"}`}
 				>
 					{LANGUAGES.map((lang) => (
 						<li
@@ -66,6 +63,10 @@ export default function LanguageSelector({
 								type="button"
 								onClick={() => {
 									void i18n.changeLanguage(lang.code);
+									localStorage.setItem(
+										"einsatzbereit:language-explicit",
+										"true",
+									);
 									setOpen(false);
 								}}
 								className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
@@ -78,8 +79,21 @@ export default function LanguageSelector({
 											: "text-gray-700 hover:bg-gray-50"
 								}`}
 							>
-								<span>{lang.flag}</span>
-								<span>{lang.label}</span>
+								<span
+									aria-hidden="true"
+									className={`rounded border px-1 py-0.5 text-xs leading-none font-bold tracking-wide ${
+										transparent
+											? lang.code === currentCode
+												? "border-white/50 text-white"
+												: "border-white/30 text-white/80"
+											: lang.code === currentCode
+												? "border-brand-300 text-brand-700"
+												: "border-gray-300 text-gray-600"
+									}`}
+								>
+									{lang.short}
+								</span>
+								<span>{t(`language.${lang.code}`)}</span>
 								{lang.code === currentCode && (
 									<span
 										className={`ml-auto h-1.5 w-1.5 rounded-full ${transparent ? "bg-white/60" : "bg-brand-500"}`}

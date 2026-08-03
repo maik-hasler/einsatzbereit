@@ -7,8 +7,8 @@ namespace Infrastructure.Storage;
 
 internal sealed class MinioFileStorageService : IFileStorageService
 {
-	// Object keys are stable (e.g. "user-avatars/{UserId}{ext}"), so a long
-	// max-age would serve a stale image after re-upload. A moderate TTL plus
+	// Object keys are stable for some callers (e.g. "organization-logos/{OrganizationId}{ext}"),
+	// so a long max-age would serve a stale image after re-upload. A moderate TTL plus
 	// the "?v=" cache-busting query param below (which changes on every
 	// upload) keeps caching effective without that staleness risk.
 	internal const string CacheControlHeaderValue = "public, max-age=3600";
@@ -90,10 +90,24 @@ internal sealed class MinioFileStorageService : IFileStorageService
 			cancellationToken);
 	}
 
-	public string GetPublicUrl(string objectKey)
+	// Not on IFileStorageService (#1011 - no callers through the interface);
+	// internal rather than private so GetObjectKeyFromPublicUrl's inverse-of-this
+	// relationship stays directly testable from IntegrationTests.
+	internal string GetPublicUrl(string objectKey)
 	{
 		var baseUrl = (_settings.PublicEndpoint ?? _settings.Endpoint).TrimEnd('/');
 		return $"{baseUrl}/{_settings.BucketName}/{PublicPrefix}{objectKey}";
+	}
+
+	public string? GetObjectKeyFromPublicUrl(string publicUrl)
+	{
+		var prefix = GetPublicUrl(string.Empty);
+		if (!publicUrl.StartsWith(prefix, StringComparison.Ordinal))
+			return null;
+
+		var withoutPrefix = publicUrl[prefix.Length..];
+		var queryIndex = withoutPrefix.IndexOf('?');
+		return queryIndex >= 0 ? withoutPrefix[..queryIndex] : withoutPrefix;
 	}
 
 	// BucketExistsAsync's own bool result only distinguishes "bucket present"

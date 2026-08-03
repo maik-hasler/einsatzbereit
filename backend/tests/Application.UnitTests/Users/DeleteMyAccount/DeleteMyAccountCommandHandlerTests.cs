@@ -17,7 +17,6 @@ public class DeleteMyAccountCommandHandlerTests
 {
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IAggregateRepository<User, UserId> _usersRepo = Substitute.For<IAggregateRepository<User, UserId>>();
-	private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 	private readonly IFileStorageService _fileStorage = Substitute.For<IFileStorageService>();
 	private readonly DeleteMyAccountCommandHandler _sut;
 
@@ -32,7 +31,7 @@ public class DeleteMyAccountCommandHandlerTests
 		_dbContext
 			.GetOrganizerOrganizationsAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<Organization>());
-		_sut = new DeleteMyAccountCommandHandler(_dbContext, _unitOfWork, _fileStorage);
+		_sut = new DeleteMyAccountCommandHandler(_dbContext, _fileStorage);
 	}
 
 	private static Engagement CreateEngagementFor(UserId volunteerId) =>
@@ -62,6 +61,89 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
+	public async Task Handle_ShouldWithdrawPendingEngagement_BeforeAnonymizing_SoItStopsOccupyingCapacity(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - issue #1140: a stuck Pending/Confirmed row would otherwise occupy
+		// time-slot capacity forever once anonymized, since nothing else ever terminates it.
+		var engagement = CreateEngagementFor(DefaultUserId);
+		_dbContext
+			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
+			.Returns([engagement]);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		engagement.Status.Should().Be(EngagementStatus.Withdrawn);
+		engagement.IsAnonymized.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task Handle_ShouldWithdrawConfirmedNotCheckedInEngagement_BeforeAnonymizing(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagement = CreateEngagementFor(DefaultUserId);
+		engagement.Confirm().ThrowIfFailure();
+		_dbContext
+			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
+			.Returns([engagement]);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		engagement.Status.Should().Be(EngagementStatus.Withdrawn);
+		engagement.IsAnonymized.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task Handle_ShouldLeaveCheckedInEngagementConfirmed_ButStillAnonymizeIt(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - a checked-in engagement is historical record of a completed shift;
+		// Withdraw() refuses a checked-in engagement, so it stays Confirmed but anonymized.
+		var engagement = CreateEngagementFor(DefaultUserId);
+		engagement.Confirm().ThrowIfFailure();
+		engagement.CheckIn().ThrowIfFailure();
+		_dbContext
+			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
+			.Returns([engagement]);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		engagement.Status.Should().Be(EngagementStatus.Confirmed);
+		engagement.IsCheckedIn.Should().BeTrue();
+		engagement.IsAnonymized.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task Handle_ShouldLeaveAlreadyTerminatedEngagementAsIs_ButStillAnonymizeIt(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagement = CreateEngagementFor(DefaultUserId);
+		engagement.Cancel().ThrowIfFailure();
+		_dbContext
+			.GetEngagementsForVolunteerTrackingAsync(DefaultUserId, cancellationToken)
+			.Returns([engagement]);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		engagement.Status.Should().Be(EngagementStatus.Cancelled);
+		engagement.IsAnonymized.Should().BeTrue();
+	}
+
+	[Test]
 	public async Task Handle_ShouldDeleteNotificationsForRecipient(
 		CancellationToken cancellationToken)
 	{
@@ -76,14 +158,18 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldDeleteAvatarForEveryKnownExtension_AndSwallowFailures(
+	public async Task Handle_ShouldDeleteAvatarByItsExactObjectKey_AndSwallowFailures(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var user = User.Create(DefaultUserId);
+		user.SetAvatarUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png");
 		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
 		_fileStorage
-			.DeleteAsync($"user-avatars/{DefaultUserId.Value}.jpg", Arg.Any<CancellationToken>())
+			.GetObjectKeyFromPublicUrl($"https://example.com/user-avatars/{DefaultUserId.Value}/abc123.png")
+			.Returns($"user-avatars/{DefaultUserId.Value}/abc123.png");
+		_fileStorage
+			.DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("MinIO unavailable"));
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
@@ -92,11 +178,45 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		await act.Should().NotThrowAsync();
-		// Issue #829: a failure deleting one avatar extension is swallowed rather than rolled back -
-		// the remaining extensions are still attempted even though the .jpg deletion threw.
-		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}.jpg", cancellationToken);
-		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}.png", cancellationToken);
-		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}.webp", cancellationToken);
+		// Issue #829: a failure deleting the avatar is swallowed rather than rolled back.
+		await _fileStorage.Received(1).DeleteAsync($"user-avatars/{DefaultUserId.Value}/abc123.png", cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptAvatarDeletion_WhenUserHasNoAvatar(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var user = User.Create(DefaultUserId);
+		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Test]
+	public async Task Handle_ShouldNotAttemptAvatarDeletion_WhenStoredAvatarUrlDoesNotMatchAnyKnownObjectKey(
+		CancellationToken cancellationToken)
+	{
+		// Arrange: a malformed/legacy AvatarUrl that GetObjectKeyFromPublicUrl can't parse back
+		// into an object key. Explicitly configured to return null - NSubstitute's unconfigured
+		// default for a string-returning method is "", not null, even though this method's
+		// return type is string?.
+		var user = User.Create(DefaultUserId);
+		user.SetAvatarUrl("not-a-valid-storage-url");
+		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
+		_fileStorage.GetObjectKeyFromPublicUrl("not-a-valid-storage-url").Returns((string?)null);
+		var command = new DeleteMyAccountCommand(DefaultUserId);
+
+		// Act
+		await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -116,12 +236,10 @@ public class DeleteMyAccountCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldQueueUserDeletedDomainEventOnAPlaceholder_WhenLocalUserRowIsMissing(
+	public async Task Handle_ShouldSkipAvatarDeletionAndUserRowDelete_WhenLocalUserRowIsMissing(
 		CancellationToken cancellationToken)
 	{
 		// Arrange - FindAsync is unconfigured and defaults to null, simulating a missing local user row.
-		User? placeholder = null;
-		await _usersRepo.AddAsync(Arg.Do<User>(u => placeholder = u), cancellationToken);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
 
 		// Act
@@ -129,22 +247,17 @@ public class DeleteMyAccountCommandHandlerTests
 
 		// Assert
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-		// Issue #1218: the Keycloak deletion (raised here as UserDeletedDomainEvent, dispatched
-		// post-commit via the outbox) still runs unconditionally, unlike the avatar cleanup above -
-		// but since there is no local User row to carry the event, a throw-away placeholder is
-		// added and immediately queued for removal so it nets to zero rows in `users`.
-		placeholder.Should().NotBeNull();
-		placeholder!.Id.Should().Be(DefaultUserId);
-		placeholder.Events.Should().ContainSingle(e => e is UserDeletedDomainEvent);
-		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
-		_usersRepo.Received(1).Delete(placeholder);
+		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
 	}
 
 	[Test]
-	public async Task Handle_ShouldRaiseUserDeletedDomainEvent_AfterAllOtherMutations(
+	public async Task Handle_ShouldRaiseUserAccountDeletedEvent_OnlyAfterUserRowIsFoundAndMarkedForDeletion(
 		CancellationToken cancellationToken)
 	{
-		// Arrange
+		// Arrange - issue #1141: the Keycloak identity is irreversible, so its deletion must be
+		// deferred to a post-commit domain-event handler rather than called inline here (see
+		// UserAccountDeletedDomainEventHandler). The handler's only job is to raise that event
+		// on the aggregate once the local row is actually about to be deleted.
 		var user = User.Create(DefaultUserId);
 		_usersRepo.FindAsync(DefaultUserId, cancellationToken).Returns(user);
 		var command = new DeleteMyAccountCommand(DefaultUserId);
@@ -152,10 +265,10 @@ public class DeleteMyAccountCommandHandlerTests
 		// Act
 		await _sut.Handle(command, cancellationToken);
 
-		// Assert - #1218: the command handler no longer calls Keycloak directly; it raises the
-		// domain event that UserDeletedDomainEventHandler consumes post-commit instead.
-		user.Events.Should().ContainSingle(e => e is UserDeletedDomainEvent);
-		((UserDeletedDomainEvent)user.Events.Single()).UserId.Should().Be(DefaultUserId);
+		// Assert
+		user.Events.Should().ContainSingle()
+			.Which.Should().BeOfType<UserAccountDeletedDomainEvent>()
+			.Which.UserId.Should().Be(DefaultUserId);
 	}
 
 	[Test]
@@ -256,7 +369,6 @@ public class DeleteMyAccountCommandHandlerTests
 		await _dbContext.DidNotReceive().DeleteUserStreakAsync(Arg.Any<UserId>(), Arg.Any<CancellationToken>());
 		_usersRepo.DidNotReceive().Delete(Arg.Any<User>());
 		await _fileStorage.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-		await _usersRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]
@@ -302,6 +414,5 @@ public class DeleteMyAccountCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _dbContext.Received(1).RemoveMembershipsForUserAsync(DefaultUserId, cancellationToken);
-		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 	}
 }

@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* ── Document color-scheme guard (issue #1120) ────────────────────────────
+No dark theme exists yet - every surface is hard-coded light (bg-white,
+text-gray-900, etc.). Without an explicit color-scheme, browsers/OSes that
+auto-invert unstyled pages (e.g. Chromium's opt-in Android "force dark")
+treat this as fair game and algorithmically invert brand colors and
+overlays into something broken. Declaring light here (mirrored by the
+<meta name="color-scheme"> tag in index.html) tells the browser this page
+is intentionally light-only, so it renders as authored instead of guessing. */
+:root {
+	color-scheme: light;
+}
+
 html {
 	scroll-behavior: smooth;
 	overflow-x: clip;
@@ -122,7 +134,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .rbc-btn-group button:focus-visible {
-	outline: 2px solid #226947;
+	outline: 2px solid var(--color-brand-700);
 	outline-offset: -1px;
 	z-index: 1;
 	position: relative;
@@ -130,17 +142,17 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Active view button */
 .rbc-btn-group button.rbc-active {
-	background: #226947;
+	background: var(--color-brand-700);
 	color: white;
-	border-color: #226947;
+	border-color: var(--color-brand-700);
 }
 
 .rbc-btn-group button.rbc-active + button {
-	border-left-color: #1a3c2b;
+	border-left-color: var(--color-brand-800);
 }
 
 .rbc-btn-group button.rbc-active:hover {
-	background: #1a3c2b;
+	background: var(--color-brand-800);
 }
 
 /* Grid borders */
@@ -202,14 +214,14 @@ overflow-y-auto already handles vertical scrolling. */
 }
 
 .rbc-event:focus-visible {
-	outline: 2px solid #226947;
+	outline: 2px solid var(--color-brand-700);
 	outline-offset: 1px;
 }
 
 .rbc-event.rbc-selected {
 	box-shadow:
 		0 0 0 2px white,
-		0 0 0 4px #226947;
+		0 0 0 4px var(--color-brand-700);
 }
 
 /* Off-range days */
@@ -230,7 +242,7 @@ overflow-y-auto already handles vertical scrolling. */
 
 .rbc-date-cell.rbc-now {
 	font-weight: 700;
-	color: #226947;
+	color: var(--color-brand-700);
 }
 
 /* Time gutter */
@@ -280,13 +292,13 @@ overflow-y-auto already handles vertical scrolling. */
 .rbc-show-more {
 	font-size: 0.75rem;
 	font-weight: 500;
-	color: #226947;
+	color: var(--color-brand-700);
 	background: transparent;
 	padding: 0.125rem 0.375rem;
 }
 
 .rbc-show-more:hover {
-	color: #1a3c2b;
+	color: var(--color-brand-800);
 }
 
 /* Mobile: stack toolbar vertically */
@@ -340,6 +352,42 @@ overflow-y-auto already handles vertical scrolling. */
 	}
 }
 
+/* ── Header offset tokens (issue #1130) ───────────────────────────────────
+Header.tsx's header is `sticky`, not `fixed`, so it already occupies flow
+space above AppLayout's <main> - --main-top-padding is just <main>'s own
+breathing room below it, unchanged per breakpoint from before. --header-
+offset adds --header-height on top of that: the full distance a full-bleed
+section (the HomePage hero) must pull itself up by to cancel both <main>'s
+padding and the header's own height and reach the very top of the document,
+tucking under the sticky (and, on the hero, transparent) header. Both
+tokens are defined once here so AppLayout and the hero can no longer drift
+out of sync with each other or with Header's actual height. */
+:root {
+	--header-height: 4rem;
+	--main-top-padding: 1.5rem;
+	--header-offset: calc(var(--header-height) + var(--main-top-padding));
+}
+
+@media (min-width: 640px) {
+	:root {
+		--main-top-padding: 2.5rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	:root {
+		--main-top-padding: 3rem;
+	}
+}
+
+/* Full-bleed: break an element out of its centered max-w container to span
+the full viewport width, regardless of the container's own max-width. */
+.full-bleed {
+	left: 50%;
+	width: 100vw;
+	margin-left: -50vw;
+}
+
 /* ── Global focus-visible ring (issue #992) ──────────────────────────────
 A single shared token instead of the browser's inconsistent default outline
 or ad-hoc per-component ring utilities. Dual-tone (brand outline + white
@@ -350,7 +398,7 @@ over Tailwind's layered focus-visible:outline-none/ring-* utilities
 regardless of specificity (see .rbc-btn-group/.rbc-event above for the
 same unlayered-override pattern already used in this file). */
 :root {
-	--focus-ring-color: #226947;
+	--focus-ring-color: var(--color-brand-700);
 }
 
 :focus-visible {
@@ -362,6 +410,22 @@ same unlayered-override pattern already used in this file). */
 }
 
 @theme {
+	/* Source Sans 3 (self-hosted via @fontsource-variable/source-sans-3,
+	imported once in main.tsx) replaces Tailwind's default OS-UI-font stack
+	everywhere - Preflight derives html's font-family from --font-sans (see
+	tailwindcss/preflight.css), so this one override is enough. Adobe's
+	first open-source type family, purpose-built for legibility at small UI
+	sizes rather than display use - a deliberate fit for a form/table/modal-
+	dense app over a flashier display face. Its glyph widths track close to
+	(if anything, slightly narrower than) the OS-UI stack it replaces, which
+	matters here: several fixed-size surfaces (toasts, modals) sit close
+	enough to each other at common viewport sizes that a visibly wider
+	typeface can shift a toast's fitted width enough to newly overlap a
+	nearby control. Variable weight axis covers 200-900 in one file,
+	matching every font-weight utility already in use (font-medium through
+	font-black) without extra @font-face declarations. */
+	--font-sans: "Source Sans 3 Variable", ui-sans-serif, system-ui, sans-serif;
+
 	--color-brand-50: #f0faf5;
 	--color-brand-100: #d6f0e3;
 	--color-brand-200: #a8dfc3;

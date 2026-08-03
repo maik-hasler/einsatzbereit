@@ -8,6 +8,8 @@ import type {
 import { orgTabPath } from "../../lib/orgTabs";
 import { useDismissableOverlay } from "../../hooks/useDismissableOverlay";
 import CreateOrganizationModal from "../CreateOrganizationModal";
+import Skeleton from "../Skeleton";
+import { ChevronDownIcon, PlusIcon } from "../icons";
 
 export default function OrganizationSwitcher({
 	currentOrgId,
@@ -49,7 +51,7 @@ export default function OrganizationSwitcher({
 	}
 
 	if (loading) {
-		return <div className="h-9 w-48 animate-pulse rounded-lg bg-gray-100" />;
+		return <Skeleton className="h-9 w-48 rounded-lg" />;
 	}
 
 	return (
@@ -66,6 +68,8 @@ export default function OrganizationSwitcher({
 						<img
 							src={currentOrg.logoUrl}
 							alt=""
+							width={24}
+							height={24}
 							className="h-6 w-6 shrink-0 rounded-md object-cover"
 						/>
 					) : (
@@ -77,28 +81,18 @@ export default function OrganizationSwitcher({
 					)}
 					<span
 						data-testid="org-switcher-current-name"
-						className="min-w-[6rem] max-w-[200px] flex-1 truncate"
+						className="max-w-50 flex-1 truncate sm:min-w-24"
 					>
 						{currentOrg?.name ?? t("organization.selectPlaceholder")}
 					</span>
-					<svg
-						className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="2"
-						stroke="currentColor"
-						aria-hidden="true"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="m19.5 8.25-7.5 7.5-7.5-7.5"
-						/>
-					</svg>
+					<ChevronDownIcon
+						open={open}
+						className="h-3.5 w-3.5 shrink-0 text-gray-400"
+					/>
 				</button>
 
 				{open && (
-					<div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-modal">
+					<div className="absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-modal">
 						<ul className="max-h-60 overflow-y-auto py-1">
 							{orgs.map((org) => (
 								<li key={org.id}>
@@ -117,6 +111,9 @@ export default function OrganizationSwitcher({
 											<img
 												src={org.logoUrl}
 												alt=""
+												width={24}
+												height={24}
+												loading="lazy"
 												className="h-6 w-6 shrink-0 rounded-md object-cover"
 											/>
 										) : (
@@ -141,20 +138,7 @@ export default function OrganizationSwitcher({
 								}}
 								className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-brand-700 transition-colors hover:bg-brand-50"
 							>
-								<svg
-									className="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth="1.5"
-									stroke="currentColor"
-									aria-hidden="true"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M12 4.5v15m7.5-7.5h-15"
-									/>
-								</svg>
+								<PlusIcon className="h-4 w-4" />
 								{t("organization.create")}
 							</button>
 						</div>

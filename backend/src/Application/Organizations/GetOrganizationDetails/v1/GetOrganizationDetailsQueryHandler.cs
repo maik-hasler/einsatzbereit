@@ -49,7 +49,6 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 			organization.LogoUrl,
 			address,
 			organization.CreatedOn,
-			organization.ModifiedOn,
 			members
 				.Select(m => new OrganizationMemberDto(
 					m.UserId,

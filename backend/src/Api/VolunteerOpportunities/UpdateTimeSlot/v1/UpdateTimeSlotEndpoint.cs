@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -8,6 +9,7 @@ using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.UpdateTimeSlot.v1;
@@ -32,6 +34,7 @@ internal sealed class UpdateTimeSlotEndpoint : IEndpoint
 		[FromRoute] Guid timeSlotId,
 		[FromBody] UpdateTimeSlotRequest request,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -48,6 +51,7 @@ internal sealed class UpdateTimeSlotEndpoint : IEndpoint
 		var command = new UpdateTimeSlotCommand(
 			opportunityId, timeSlotId, request.StartDateTime, request.EndDateTime, request.MaxParticipants, userId, scope);
 		var result = await sender.Send(command, cancellationToken);
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 		return Results.Ok(new UpdateTimeSlotResponse(result.UpdatedCount, result.SkippedTimeSlotIds));
 	}
 }

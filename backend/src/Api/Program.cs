@@ -4,6 +4,8 @@ using Api.Common.Endpoints;
 using Api.Common.ExceptionHandlers;
 using Api.Common.Health;
 using Api.Common.Middleware;
+using Api.Common.Network;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application;
 using Application.Common.Startup;
@@ -12,6 +14,8 @@ using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -29,6 +33,13 @@ builder.AddServiceDefaults();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// .NET 10 minimal-API opt-in (#1146, #1173): without this, every
+// [MaxLength]/[Required]/etc. DataAnnotation on a request DTO only affects the
+// generated OpenAPI/NSwag client - ASP.NET Core never evaluates DataAnnotations
+// on minimal-API parameters unless this is registered, so the server itself
+// accepted unbounded/missing values on every endpoint.
+builder.Services.AddValidation();
 
 builder.Services.AddApiVersioning(options =>
 	{
@@ -86,6 +97,27 @@ builder.Services.AddHealthChecks()
 
 builder.Services.AddEndpoints();
 builder.Services.AddRateLimitingPolicies(builder.Configuration);
+builder.Services.AddOutputCachingPolicies(builder.Configuration);
+
+// EnableForHttps is safe here: this API is a pure JSON/token (Bearer, not cookie) API,
+// so there's no session secret reflected back into a compressible response body that a
+// BREACH-style attack could exploit (#1391).
+builder.Services.AddResponseCompression(options =>
+{
+	options.EnableForHttps = true;
+	options.Providers.Add<BrotliCompressionProvider>();
+	options.Providers.Add<GzipCompressionProvider>();
+	options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Append("application/json");
+});
+
+var trustedNetworks = builder.Configuration.GetSection("TrustedNetworks").Get<TrustedNetworksOptions>()
+	?? new TrustedNetworksOptions();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+	foreach (var cidr in trustedNetworks.Cidrs)
+		options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(cidr));
+});
 
 builder.Services.AddHttpLogging(logging =>
 {
@@ -108,7 +140,7 @@ builder.Services.AddOpenApi("v1", options =>
 		{
 			Title = "Einsatzbereit API",
 			Version = "v1",
-			Description = "API für die Einsatzbereit-Anwendung"
+			Description = "API for the Einsatzbereit application"
 		};
 
 		// Inline the IFormFile binary schema instead of a $ref so NSwag emits
@@ -189,29 +221,72 @@ else if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 		await initializer.SeedAsync();
 }
 
-app.MapDefaultEndpoints();
+// Both anonymous and previously exempt from every rate limiting/caching policy -
+// /health additionally ran a DB connect + an outbound Keycloak HTTP call on every
+// single hit, so a trivial unauthenticated flood could exhaust the Npgsql pool and
+// starve Keycloak (#1172). RequireRateLimiting caps the request rate itself;
+// CacheOutput on /health also bounds how often the underlying dependency checks run
+// at all, independent of how many distinct callers/IPs are behind a flood.
+app.MapDefaultEndpoints(
+	health => health
+		.RequireRateLimiting(RateLimitingPolicies.Read)
+		.CacheOutput(OutputCachingPolicies.HealthCheck),
+	alive => alive.RequireRateLimiting(RateLimitingPolicies.Read));
+
+// Must run before anything that reads Connection.RemoteIpAddress (HTTP logging,
+// the rate limiter's anonymous partition key) - see TrustedNetworksOptions for why
+// only these known networks are trusted to set X-Forwarded-For (#1332).
+app.UseForwardedHeaders();
+
+// Bridges RequestSizeLimitAttribute metadata (set per-endpoint via .WithMetadata()) to
+// Kestrel's IHttpMaxRequestBodySizeFeature - see RequestSizeLimitMiddleware for why minimal
+// API endpoints need this explicitly. Placed before anything that could read the request
+// body; endpoint metadata is already resolved this early since UseRouting() is never called
+// explicitly, so WebApplication runs routing at the very start of the pipeline (#1177).
+app.UseMiddleware<RequestSizeLimitMiddleware>();
 
 app.UseHttpLogging();
-
-app.Use(async (context, next) =>
-{
-	context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-	context.Response.Headers["X-Frame-Options"] = "DENY";
-	context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-
-	// Bearer tokens must never travel over a downgraded HTTP connection - skipped in
-	// Development since local dev runs over plain HTTP (#1370).
-	if (!app.Environment.IsDevelopment())
-		context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-
-	context.Response.Headers["X-Trace-Id"] =
-		Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
-	await next();
-});
-
+app.UseResponseCompression();
 app.UseExceptionHandler();
 app.UseCors();
 app.UseAuthentication();
+
+// Registered after UseAuthentication (Cache-Control needs context.User) and via
+// Response.OnStarting rather than set directly - ExceptionHandlerMiddleware calls
+// Response.Clear() before writing a caught exception's ProblemDetails body, which
+// wipes any header set directly before next() regardless of where in the pipeline
+// this middleware sits. OnStarting callbacks run right before the response is
+// actually sent, after that Clear(), so these headers decorate error responses too
+// (#1180).
+app.Use(async (context, next) =>
+{
+	context.Response.OnStarting(() =>
+	{
+		context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+		context.Response.Headers["X-Frame-Options"] = "DENY";
+		context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+		// Bearer tokens must never travel over a downgraded HTTP connection - skipped in
+		// Development since local dev runs over plain HTTP (#1370).
+		if (!app.Environment.IsDevelopment())
+			context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+
+		// PII-bearing authenticated responses (GET /v1/users/me, member search, the
+		// check-in PIN, etc.) must never be retained by a shared proxy or a browser's
+		// back/forward cache. AllowAnonymous endpoints are unaffected and opt into
+		// caching explicitly via OutputCachingPolicies instead (#1180).
+		if (context.User.Identity?.IsAuthenticated == true)
+			context.Response.Headers["Cache-Control"] = "no-store";
+
+		context.Response.Headers["X-Trace-Id"] =
+			Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+
+		return Task.CompletedTask;
+	});
+
+	await next();
+});
+
 app.UseRateLimiter();
 app.UseAuthorization();
 
@@ -228,6 +303,12 @@ app.Use(async (ctx, next) =>
 });
 
 app.UseMiddleware<LoginStreakMiddleware>();
+
+// Placed after LoginStreakMiddleware, not before: a cache hit short-circuits the
+// pipeline entirely (next() is never called), which would otherwise silently skip
+// that day's login-streak update for every authenticated request that happens to
+// land on a cached response (#1391).
+app.UseOutputCache();
 
 app.MapEndpoints();
 

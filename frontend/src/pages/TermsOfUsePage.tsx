@@ -19,7 +19,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section1Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("termsOfUse.section1Body")}
 				</p>
 			</section>
@@ -28,7 +28,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section2Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("termsOfUse.section2Body")}
 				</p>
 			</section>
@@ -37,7 +37,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section3Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("termsOfUse.section3Body")}
 				</p>
 			</section>
@@ -46,7 +46,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section4Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					<Trans
 						i18nKey="termsOfUse.section4Body"
 						components={{
@@ -60,7 +60,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section5Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					{t("termsOfUse.section5Body")}
 				</p>
 			</section>
@@ -69,7 +69,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section6Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					<Trans
 						i18nKey="termsOfUse.section6Body"
 						components={{
@@ -83,7 +83,7 @@ export default function TermsOfUsePage() {
 				<h2 className="mb-2 text-xl font-semibold">
 					{t("termsOfUse.section7Title")}
 				</h2>
-				<p className="text-gray-700 leading-relaxed">
+				<p className="leading-relaxed text-gray-700">
 					<Trans
 						i18nKey="termsOfUse.section7Body"
 						components={{

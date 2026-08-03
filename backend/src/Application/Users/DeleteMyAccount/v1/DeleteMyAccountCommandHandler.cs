@@ -2,6 +2,7 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
+using Domain.Engagements;
 using Domain.Primitives;
 using Domain.Users;
 
@@ -9,12 +10,9 @@ namespace Application.Users.DeleteMyAccount.v1;
 
 internal sealed class DeleteMyAccountCommandHandler(
 	IApplicationDbContext dbContext,
-	IUnitOfWork unitOfWork,
 	IFileStorageService fileStorage)
 	: ICommandHandler<DeleteMyAccountCommand, bool>
 {
-	private static readonly string[] AvatarExtensions = [".jpg", ".png", ".webp"];
-
 	public async ValueTask<bool> Handle(
 		DeleteMyAccountCommand request,
 		CancellationToken cancellationToken = default)
@@ -25,7 +23,15 @@ internal sealed class DeleteMyAccountCommandHandler(
 			request.UserId, cancellationToken);
 
 		foreach (var engagement in engagements)
+		{
+			// Terminate non-terminal engagements before anonymizing so they
+			// stop occupying time-slot capacity and organizers can act on
+			// them, instead of leaving a permanently-stuck nameless row (#1140).
+			if (!engagement.IsCheckedIn && engagement.Status is EngagementStatus.Pending or EngagementStatus.Confirmed)
+				engagement.Withdraw().ThrowIfFailure();
+
 			engagement.Anonymize();
+		}
 
 		await dbContext.DeleteNotificationsForRecipientAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteUserStreakAsync(request.UserId, cancellationToken);
@@ -37,39 +43,27 @@ internal sealed class DeleteMyAccountCommandHandler(
 		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
 		if (user is not null)
 		{
-			foreach (var ext in AvatarExtensions)
+			// The avatar's random object key (issue #1175) can't be reconstructed
+			// from the user id, so it has to come from the stored AvatarUrl instead
+			// of a guessed extension.
+			var avatarObjectKey = user.AvatarUrl is not null
+				? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
+				: null;
+
+			if (avatarObjectKey is not null)
 			{
 				try
 				{
-					await fileStorage.DeleteAsync($"user-avatars/{request.UserId.Value}{ext}", cancellationToken);
+					await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
 				}
 				catch
 				{
-					// Object may not exist for this extension; continue
+					// Object may already be gone or storage may be transiently unavailable; continue.
 				}
 			}
 
-			user.Delete();
+			user.MarkAccountDeleted();
 			dbContext.Users.Delete(user);
-		}
-		else
-		{
-			// No local profile row exists - User.Create() only runs lazily, from the
-			// first profile-touching endpoint (avatar/bio/notification-prefs/...), so a
-			// Keycloak-only account can reach here with nothing to find. The Keycloak
-			// deletion (#1218) still must run, and still only after this transaction
-			// commits - but there is no tracked User to carry UserDeletedDomainEvent
-			// through ConvertDomainEventsToOutboxMessagesInterceptor. Add()-then-Delete()
-			// in one tick would just detach the entry before the interceptor ever sees it
-			// (EF collapses Added+Removed straight to Detached), so this placeholder is
-			// persisted long enough - one explicit SaveChangesAsync - for the interceptor
-			// to queue the event, then removed; net rows in `users` is still zero, all
-			// inside the one transaction TransactionPipelineBehavior wraps this command in.
-			var placeholder = User.Create(request.UserId);
-			placeholder.Delete();
-			await dbContext.Users.AddAsync(placeholder, cancellationToken);
-			await unitOfWork.SaveChangesAsync(cancellationToken);
-			dbContext.Users.Delete(placeholder);
 		}
 
 		return true;

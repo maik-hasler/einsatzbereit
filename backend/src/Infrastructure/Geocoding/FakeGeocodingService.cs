@@ -21,6 +21,7 @@ internal sealed class FakeGeocodingService : IGeocodingService
 
 	public Task<IReadOnlyList<CitySuggestion>> SearchCitiesAsync(
 		string query,
+		string language,
 		CancellationToken cancellationToken = default) =>
 		Task.FromResult<IReadOnlyList<CitySuggestion>>([]);
 }

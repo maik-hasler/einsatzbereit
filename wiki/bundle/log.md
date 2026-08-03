@@ -10,6 +10,10 @@ dates and a bold action-word prefix, e.g. `**Added**`, `**Updated**`,
 - **Added** - <one-line description of what changed and why>
 ```
 
+## 2026-08-02
+
+- **Fixed** - `reference/keycloak-realm-config.md`: `frontend-test`'s ROPC access was documented as always-on, but #1167 found it shipping enabled in the same realm baked into the staging/production image, letting anyone mint a real `backend`-audience access token via a single `grant_type=password` HTTP call with no browser or PKCE. Fixed by shipping the client `enabled: false` in the committed realm and having `AppHost.cs` flip it back to `enabled: true` only in the dev-only realm copy it writes before import for local Aspire runs and the IntegrationTests/VisualTests fixtures, which both boot Keycloak through the AppHost rather than the baked image.
+
 ## 2026-07-24
 
 - **Fixed** - `reference/keycloak-realm-config.md`: the `backend` client secret and its service-account roles changed with #805 - `secret` is now the placeholder `${KEYCLOAK_BACKEND_SECRET}` (resolved via Keycloak's realm-import env var substitution, sourced from a GitHub Environment secret on staging) instead of the committed literal `backend-secret`, and the service account holds `view-realm` instead of `manage-realm`.

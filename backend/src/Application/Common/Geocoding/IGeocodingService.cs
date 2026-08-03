@@ -36,5 +36,6 @@ public interface IGeocodingService
 
 	Task<IReadOnlyList<CitySuggestion>> SearchCitiesAsync(
 		string query,
+		string language,
 		CancellationToken cancellationToken = default);
 }
