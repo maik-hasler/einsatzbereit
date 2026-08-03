@@ -102,7 +102,7 @@ public class JwtAudienceTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// bug looked like - the request "succeeded" with an always-empty result).
 		await Expect(Page.GetByText("Failed to load organizations.")).Not.ToBeVisibleAsync();
 		await Expect(Page.GetByText("No organizations found.")).Not.ToBeVisibleAsync();
-		await Expect(Page.Locator("table").First).ToBeVisibleAsync();
+		await Expect(Page.Locator("ul").First).ToBeVisibleAsync();
 
 		// The actual regression check: call the admin-wide endpoint directly as
 		// admin and confirm it returns the organization olaf just created (which

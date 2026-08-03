@@ -53,6 +53,27 @@ internal sealed class KeycloakOrganizationService(
 		return Guid.Parse(idString);
 	}
 
+	public async Task<Guid?> FindOrganizationByNameAsync(
+		string name,
+		CancellationToken cancellationToken = default)
+	{
+		await EnsureAuthenticatedAsync(cancellationToken);
+
+		var encoded = Uri.EscapeDataString(name);
+		var response = await httpClient.GetAsync(
+			$"/admin/realms/{_options.Realm}/organizations?search={encoded}&exact=true",
+			cancellationToken);
+
+		await EnsureSuccessAsync(response, cancellationToken);
+
+		var organizations = await response.Content.ReadFromJsonAsync<List<KeycloakOrganizationResponse>>(
+			JsonOptions, cancellationToken) ?? [];
+
+		var match = organizations.FirstOrDefault(o => o.Name == name);
+
+		return match is null ? null : Guid.Parse(match.Id);
+	}
+
 	public async Task AddMemberAsync(
 		Guid organizationId,
 		Guid userId,
@@ -320,6 +341,10 @@ internal sealed class KeycloakOrganizationService(
 			inner: null,
 			response.StatusCode);
 	}
+
+	private sealed record KeycloakOrganizationResponse(
+		string Id,
+		string Name);
 
 	private sealed record KeycloakRole(
 		string Id,

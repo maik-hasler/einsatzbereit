@@ -1,4 +1,8 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type {
+	AnchorHTMLAttributes,
+	ButtonHTMLAttributes,
+	ReactNode,
+} from "react";
 import { Link, type LinkProps } from "react-router";
 
 const SIZE_CLASSES = {
@@ -28,12 +32,23 @@ const BASE_CLASSES =
 // bordered destructive action, for in-row/panel destructive actions (see
 // issue #1105: eight different visual treatments for delete/withdraw/
 // cancel/revoke actions before these two existed).
+// outline: outlined, muted action for a light background - the
+// action-bar/breadcrumb secondary buttons (Cancel etc.) and header
+// sign-in/register pair. onDark/outlineOnDark: solid/outlined counterparts
+// of primary/outline for use on a brand-800 surface (hero, transparent
+// header) - see issue #1102: the header sign-in/register pair and the
+// hero/mission CTAs hand-rolled their own one-off classes instead of
+// routing through here, drifting to rounded-lg and font-medium.
 const VARIANT_CLASSES = {
 	primary: "bg-brand-700 font-semibold text-white hover:bg-brand-800",
 	secondary: "text-gray-600 hover:bg-gray-100",
 	danger: "bg-red-600 font-semibold text-white hover:bg-red-700",
 	tertiary: "font-semibold text-brand-700 hover:bg-brand-50",
 	dangerOutline: "border border-red-200 text-red-700 hover:bg-red-50",
+	outline: "border border-gray-200 font-medium text-gray-700 hover:bg-gray-50",
+	onDark: "bg-white font-semibold text-brand-800 hover:bg-brand-50",
+	outlineOnDark:
+		"border border-white/50 font-medium text-white hover:border-white hover:bg-white/10",
 } as const;
 
 type Variant = keyof typeof VARIANT_CLASSES;
@@ -49,11 +64,23 @@ interface CommonProps {
 type ButtonAsButton = CommonProps &
 	Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
 		to?: undefined;
+		href?: undefined;
 	};
 
-type ButtonAsLink = CommonProps & Omit<LinkProps, "className">;
+type ButtonAsLink = CommonProps &
+	Omit<LinkProps, "className"> & { href?: undefined };
 
-type ButtonProps = ButtonAsButton | ButtonAsLink;
+// Plain <a href>, not a router Link - for in-page hash anchors (e.g. the
+// hero CTA scrolling to #opportunities) and external URLs, where handing
+// navigation to react-router's Link would change how same-page hash
+// scrolling behaves.
+type ButtonAsAnchor = CommonProps &
+	Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "className"> & {
+		href: string;
+		to?: undefined;
+	};
+
+type ButtonProps = ButtonAsButton | ButtonAsLink | ButtonAsAnchor;
 
 export default function Button(props: ButtonProps) {
 	const {
@@ -79,6 +106,20 @@ export default function Button(props: ButtonProps) {
 			<Link className={classes} {...(rest as Omit<LinkProps, "className">)}>
 				{children}
 			</Link>
+		);
+	}
+
+	if ("href" in rest && rest.href !== undefined) {
+		return (
+			<a
+				className={classes}
+				{...(rest as Omit<
+					AnchorHTMLAttributes<HTMLAnchorElement>,
+					"className"
+				>)}
+			>
+				{children}
+			</a>
 		);
 	}
 

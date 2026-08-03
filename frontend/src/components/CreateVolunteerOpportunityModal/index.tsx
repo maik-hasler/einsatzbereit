@@ -939,7 +939,7 @@ export default function CreateVolunteerOpportunityModal({
 						type="button"
 						onClick={requestClose}
 						aria-label={t("createOpportunity.cancel")}
-						className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+						className="shrink-0 rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
 					>
 						<CloseIcon className="h-5 w-5" />
 					</button>

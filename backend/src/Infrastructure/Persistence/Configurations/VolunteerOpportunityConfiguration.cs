@@ -14,6 +14,25 @@ internal sealed class VolunteerOpportunityConfiguration
 	{
 		builder.HasKey(vo => vo.Id);
 
+		builder.ToTable(t =>
+		{
+			t.HasCheckConstraint(
+				"ck_volunteer_opportunity_occurrence_valid",
+				"occurrence IN ('OneTime', 'Recurring')");
+			t.HasCheckConstraint(
+				"ck_volunteer_opportunity_participation_type_valid",
+				"participation_type IN ('ScheduledSlots', 'IndividualContact')");
+			t.HasCheckConstraint(
+				"ck_volunteer_opportunity_check_in_method_valid",
+				"check_in_method IN ('None', 'QRCode', 'PINCode', 'Manual')");
+			t.HasCheckConstraint(
+				"ck_volunteer_opportunity_category_valid",
+				"category IN ('Social', 'Environment', 'Sport', 'Education', 'DisasterRelief', 'Health', 'Animals', 'Culture', 'Technology', 'Other')");
+			t.HasCheckConstraint(
+				"ck_volunteer_opportunity_status_valid",
+				"status IN ('Draft', 'Published', 'Unpublished', 'Cancelled')");
+		});
+
 		builder.Property(vo => vo.Id)
 			.HasConversion(
 				id => id.Value,

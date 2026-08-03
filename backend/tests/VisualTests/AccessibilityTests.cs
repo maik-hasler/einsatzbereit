@@ -73,6 +73,27 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task HomePage_SkipLink_MovesFocusToMainContent()
+	{
+		// einsatzbereit#1284: neither layout had a bypass mechanism - a keyboard
+		// user had to tab through the entire header (brand link, nav links,
+		// language selector, sign-in/register) on every single page before this.
+		// The skip link is the first child in the DOM (before <Header>), so it
+		// must also be the very first Tab stop.
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.Keyboard.PressAsync("Tab");
+		var skipLink = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+		await Expect(skipLink).ToBeFocusedAsync();
+
+		await Page.Keyboard.PressAsync("Enter");
+		await Expect(Page.Locator("#main-content")).ToBeFocusedAsync();
+	}
+
+	[Test]
 	public async Task VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -254,6 +275,25 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task OrgDashboardPage_AsOlaf_SkipLink_MovesFocusToMainContent()
+	{
+		// einsatzbereit#1284: same bypass gap as HomePage's skip link, but the
+		// org app shell's header (org switcher, notification bell, avatar menu,
+		// breadcrumb + quick actions) is a separate implementation from the
+		// public site's - this covers OrgAppLayout's own copy.
+		var frontend = Fixture.GetEndpoint("frontend");
+		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.Keyboard.PressAsync("Tab");
+		var skipLink = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+		await Expect(skipLink).ToBeFocusedAsync();
+
+		await Page.Keyboard.PressAsync("Enter");
+		await Expect(Page.Locator("#main-content")).ToBeFocusedAsync();
+	}
+
+	[Test]
 	public async Task OrgDashboardPage_LayoutLoadFailed_AsOlaf_HasNoSeriousA11yViolations()
 	{
 		// #1234: a failed dashboard-layout fetch now renders its own inline
@@ -380,7 +420,10 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// force a refetch, same as OrganizationTests.cs's equivalent setup.
 		await Page.ReloadAsync();
 		await Page.GetByRole(AriaRole.Link, new() { Name = "member" }).ClickAsync();
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Promote to Organizer" }))
+		// einsatzbereit#1294: this button's accessible name now interpolates
+		// the member's own name in the middle ("Promote {name} to Organizer"),
+		// so match with a regex rather than the old literal substring.
+		await Expect(Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Promote .* to Organizer") }))
 			.ToBeVisibleAsync(new() { Timeout = 10_000 });
 
 		var result = await Page.RunAxe();
@@ -682,27 +725,55 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	[Test]
 	public async Task EngagementManagementPage_AsOlaf_HasNoSeriousA11yViolations()
 	{
-		// Engagement management is nested in the org app (#751) - reachable
-		// from the Opportunities page's "Manage sign-ups" link, not from
-		// the public opportunity detail page anymore.
+		// einsatzbereit#1306: this used to reach the page via olaf's shared
+		// seed data and Skip.Test when no published opportunity with a
+		// pending applicant happened to exist, so the page's "Confirm"
+		// button (the finding's subject) had no guaranteed axe coverage -
+		// same gap the CancelDialog test below closed for the cancel/revoke
+		// dialog. Seed a fresh org/opportunity/engagement instead, mirroring
+		// that pattern, so this fails loudly on a regression rather than
+		// silently passing on an empty scan.
 		var frontend = Fixture.GetEndpoint("frontend");
-		await NavigateToOrgAppDashboardAsOlafAsync(frontend);
+		var backend = Fixture.GetEndpoint("backend");
 
-		// #771: the tab bar is gone - reach Opportunities via a dashboard widget link.
-		await Page.GetByRole(AriaRole.Link, new() { Name = "opportunities" }).First.ClickAsync();
-		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+		var olafSession = await Fixture.SignInAsync("olaf", "olaf123");
+		using var olafHttp = new HttpClient { BaseAddress = backend };
+		olafHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafSession.AccessToken}");
 
-		var manageLink = Page.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" });
-		try
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await olafHttp.PostAsJsonAsync(
+			"/v1/organizations", new { name = $"EngagementManagementA11y Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var oppResponse = await olafHttp.PostAsJsonAsync("/v1/volunteer-opportunities", new
 		{
-			await manageLink.First.WaitForAsync(new() { Timeout = 10_000 });
-		}
-		catch (TimeoutException)
-		{
-			Skip.Test("olaf has no published opportunity with the manage-applications action");
-		}
+			title = $"EngagementManagementA11y Opportunity {suffix}",
+			description = "Created by AccessibilityTests",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		await manageLink.First.ClickAsync();
+		var veraSession = await Fixture.SignInAsync("vera", "vera123");
+		using var veraHttp = new HttpClient { BaseAddress = backend };
+		veraHttp.DefaultRequestHeaders.Add("Authorization", $"Bearer {veraSession.AccessToken}");
+		var applyResponse = await veraHttp.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/engagements",
+			new { message = "For the a11y scan." });
+		applyResponse.EnsureSuccessStatusCode();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync(
+			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
 		// #973: on a nested route, the h1 must track the breadcrumb's trailing
@@ -712,6 +783,8 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		// could regress silently.
 		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Opportunities");
 		await Expect(Page.Locator("h1")).ToBeVisibleAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Confirm" })).ToBeVisibleAsync();
 
 		var result = await Page.RunAxe();
 		AssertNoViolations(result);

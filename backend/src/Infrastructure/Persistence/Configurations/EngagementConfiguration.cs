@@ -15,6 +15,10 @@ internal sealed class EngagementConfiguration
 	{
 		builder.HasKey(e => e.Id);
 
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_engagement_status_valid",
+			"status IN ('Pending', 'Confirmed', 'Cancelled', 'Withdrawn')"));
+
 		builder.Property(e => e.Id)
 			.HasConversion(
 				id => id.Value,

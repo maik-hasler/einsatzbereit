@@ -1,0 +1,41 @@
+// Organizers pick a raw calendar event color via an unconstrained OS color
+// picker (CalendarWidget.tsx) with no contrast check - a plausible pick like
+// #ffff00 renders unreadable white text at 1.07:1 (einsatzbereit#1286).
+// Mirrors backend/src/Domain/VolunteerOpportunities/EventColorContrast.cs's
+// formula (WCAG relative luminance) so client and server agree on what
+// "readable" means.
+const DARK_TEXT = "#111827";
+
+function toRgb(hex: string): { r: number; g: number; b: number } {
+	const normalized = hex.length === 4 ? expandShorthand(hex) : hex;
+	const int = parseInt(normalized.slice(1), 16);
+	return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
+}
+
+function expandShorthand(hex: string): string {
+	return `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+}
+
+function toLinear(channel: number): number {
+	const c = channel / 255;
+	return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(hex: string): number {
+	const { r, g, b } = toRgb(hex);
+	return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+function contrastRatio(luminanceA: number, luminanceB: number): number {
+	const lighter = Math.max(luminanceA, luminanceB);
+	const darker = Math.min(luminanceA, luminanceB);
+	return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Picks whichever of white/near-black clears more contrast against `backgroundHex`. */
+export function readableTextColor(backgroundHex: string): string {
+	const bgLuminance = relativeLuminance(backgroundHex);
+	const whiteContrast = contrastRatio(1, bgLuminance);
+	const darkContrast = contrastRatio(relativeLuminance(DARK_TEXT), bgLuminance);
+	return whiteContrast >= darkContrast ? "#ffffff" : DARK_TEXT;
+}

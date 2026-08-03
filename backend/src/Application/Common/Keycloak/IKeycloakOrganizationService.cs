@@ -14,6 +14,15 @@ public interface IKeycloakOrganizationService
 		string name,
 		CancellationToken cancellationToken = default);
 
+	// Exact-name lookup. Lets a caller make organization creation idempotent - retrying
+	// after a partial failure (e.g. ApplicationDbContextInitializer.SeedAsync's own
+	// SaveChangesAsync failing after the Keycloak call already succeeded, #1212) can
+	// look this up first and reuse the existing organization instead of creating a
+	// second, orphaned one. Returns null rather than throwing when nothing matches.
+	Task<Guid?> FindOrganizationByNameAsync(
+		string name,
+		CancellationToken cancellationToken = default);
+
 	Task AddMemberAsync(
 		Guid organizationId,
 		Guid userId,

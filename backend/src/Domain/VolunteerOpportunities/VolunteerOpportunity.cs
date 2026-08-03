@@ -330,9 +330,24 @@ public sealed class VolunteerOpportunity
 		BannerImageUrl = null;
 	}
 
-	public void SetColor(string? color)
+	public Result SetColor(string? color)
 	{
+		if (color is null)
+		{
+			Color = null;
+			return Result.Success();
+		}
+
+		if (!EventColorContrast.IsValidHex(color))
+			return Result.Failure(Error.Validation("VolunteerOpportunity.InvalidColor", "Color must be a #rrggbb hex value."));
+
+		if (EventColorContrast.ContrastAgainstWhite(color) < EventColorContrast.MinimumContrastRatio)
+			return Result.Failure(Error.Validation(
+				"VolunteerOpportunity.ColorContrastTooLow",
+				$"Color does not have enough contrast (at least {EventColorContrast.MinimumContrastRatio}:1 against white) to be usable as a calendar event color."));
+
 		Color = color;
+		return Result.Success();
 	}
 
 	public Result Rename(string title)

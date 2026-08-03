@@ -27,7 +27,7 @@ internal sealed class SetOpportunityColorCommandHandler(
 			request.RequestingUserId,
 			cancellationToken);
 
-		opportunity.SetColor(request.Color);
+		opportunity.SetColor(request.Color).ThrowIfFailure();
 
 		return true;
 	}

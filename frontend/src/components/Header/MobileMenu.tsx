@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import Button from "../Button";
 import LanguageSelector from "./LanguageSelector";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 import { ORG_TABS, orgTabPath } from "../../lib/orgTabs";
@@ -57,6 +59,17 @@ export default function MobileMenu({
 	const rootRef = useDismissableOverlay<HTMLDivElement>(true, onClose, [
 		triggerRef,
 	]);
+
+	// Move focus into the panel on open, mirroring Modal.tsx's initial-focus
+	// behavior - without this, a keyboard user who opens the menu stays
+	// focused on the (now expanded) hamburger button and has to Tab past it
+	// again to reach the first item.
+	useEffect(() => {
+		rootRef.current
+			?.querySelector<HTMLElement>("a[href], button:not([disabled])")
+			?.focus();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	return (
 		<div
@@ -166,20 +179,22 @@ export default function MobileMenu({
 					</div>
 				) : (
 					<div className="space-y-2">
-						<button
+						<Button
 							type="button"
 							onClick={onSignIn}
-							className={`block w-full rounded-lg px-4 py-2 text-center text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
+							variant={isTransparent ? "onDark" : "primary"}
+							fullWidth
 						>
 							{t("nav.signIn")}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
 							onClick={onRegister}
-							className={`block w-full rounded-lg border px-4 py-2 text-center text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
+							variant={isTransparent ? "outlineOnDark" : "outline"}
+							fullWidth
 						>
 							{t("nav.register")}
-						</button>
+						</Button>
 					</div>
 				)}
 			</div>

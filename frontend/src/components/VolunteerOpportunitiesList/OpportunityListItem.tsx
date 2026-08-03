@@ -115,7 +115,7 @@ export default function OpportunityListItem({
 										details: details || undefined,
 									});
 								}}
-								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600${spotsLeft === null && !isUnlimited ? "ml-auto" : ""}`}
+								className={`relative z-20 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800${spotsLeft === null && !isUnlimited ? "ml-auto" : ""}`}
 							/>
 						)}
 					</div>

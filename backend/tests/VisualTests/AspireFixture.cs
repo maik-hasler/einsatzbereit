@@ -194,22 +194,22 @@ public class AspireFixture : IAsyncInitializer, IAsyncDisposable
 
 		_pinnedOrganizerOrgByUserId = await ReadPinnedOrganizerOrgsAsync(conn);
 
-		// ApplicationDbContextInitializer.SeedAsync wraps its Keycloak-dependent
-		// org/membership seeding in a catch-and-log-only block with no retry
-		// (a transient Keycloak hiccup during backend startup silently leaves
-		// olaf's Organizer memberships un-seeded, no exception surfaced anywhere)
-		// - if that happened, every downstream test that dereferences
-		// FastSignInAsync's pinned-org id for olaf would fail with a nullref
-		// deep into the run, minutes later, with no obvious connection back to
-		// this. Fail loudly here instead, at fixture boot, with a message that
+		// Program.cs's Development branch (this AppHost forces backend into, see
+		// InitializeAsync above) catches and logs a SeedAsync failure rather than
+		// rethrowing (#1212) - a transient Keycloak hiccup during backend startup
+		// can still silently leave olaf's Organizer memberships un-seeded with no
+		// exception surfaced anywhere. If that happened, every downstream test that
+		// dereferences FastSignInAsync's pinned-org id for olaf would fail with a
+		// nullref deep into the run, minutes later, with no obvious connection back
+		// to this. Fail loudly here instead, at fixture boot, with a message that
 		// actually points at the cause.
 		if (!_pinnedOrganizerOrgByUserId.ContainsKey(OlafId))
 			throw new InvalidOperationException(
 				"Seed data has no Organizer-role organization membership for olaf "
 				+ $"(user id {OlafId}). ApplicationDbContextInitializer.SeedAsync likely "
-				+ "failed partway through (it swallows exceptions from its Keycloak-dependent "
-				+ "seed calls and logs rather than rethrowing) - check the backend resource's "
-				+ "startup logs for \"An exception occurred while seeding the database\".");
+				+ "failed partway through and Program.cs's Development branch logged "
+				+ "rather than rethrowing - check the backend resource's startup logs "
+				+ "for \"An exception occurred while seeding the database\".");
 	}
 
 	// Ordered by name so the first row seen per user is exactly the org

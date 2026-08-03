@@ -778,6 +778,62 @@ public class VolunteerOpportunityTests
 		result.Error.Description.Should().Be("Address is required for non-remote opportunities.");
 	}
 
+	// --- SetColor (einsatzbereit#1286) ---
+
+	[Test]
+	public void SetColor_ShouldSetValue_WhenHexHasSufficientContrast()
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.SetColor("#ff0000");
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Color.Should().Be("#ff0000");
+	}
+
+	[Test]
+	public void SetColor_ShouldClearValue_WhenGivenNull()
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+		opportunity.SetColor("#ff0000");
+
+		var result = opportunity.SetColor(null);
+
+		result.IsSuccess.Should().BeTrue();
+		opportunity.Color.Should().BeNull();
+	}
+
+	[Test]
+	[Arguments("ff0000")]
+	[Arguments("#ff00")]
+	[Arguments("#gggggg")]
+	[Arguments("red")]
+	public void SetColor_ShouldFail_WhenNotAValidHexColor(string color)
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.SetColor(color);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Be("Color must be a #rrggbb hex value.");
+		opportunity.Color.Should().BeNull();
+	}
+
+	[Test]
+	[Arguments("#ffff00")]
+	[Arguments("#ffffff")]
+	[Arguments("#5bbf8c")]
+	public void SetColor_ShouldFail_WhenContrastAgainstWhiteIsBelowMinimum(string color)
+	{
+		var opportunity = CreateDraftScheduledSlotsOpportunity();
+
+		var result = opportunity.SetColor(color);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*contrast*");
+		opportunity.Color.Should().BeNull();
+	}
+
 	private static VolunteerOpportunity CreateDraftScheduledSlotsOpportunity() =>
 		VolunteerOpportunity.Create(
 			TestOrganizationId, "Old title", "Old desc", false, TestAddress, Occurrence.OneTime, ParticipationType.ScheduledSlots,

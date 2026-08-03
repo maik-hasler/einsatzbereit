@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { useApiClient } from "../../hooks/useApiClient";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, labelClass } from "../../lib/formClasses";
 import { getApiErrorMessage } from "../../lib/apiError";
@@ -46,6 +47,7 @@ export default function OrgSettingsPage() {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const locale = resolveDateLocale(i18n.language);
+	usePageTitle(`${t("orgOverview.tabSettings")} - ${org.name}`);
 
 	function organizationToFormValues(): OrganizationFormValues {
 		return {
@@ -319,6 +321,7 @@ export default function OrgSettingsPage() {
 							<Field label={t("orgSettings.fieldName")} id="org-name">
 								<input
 									id="org-name"
+									autoComplete="off"
 									aria-invalid={errors.name ? true : undefined}
 									aria-describedby={errors.name ? "org-name-error" : undefined}
 									aria-required="true"
@@ -344,6 +347,7 @@ export default function OrgSettingsPage() {
 									id="org-description"
 									rows={3}
 									maxLength={1000}
+									autoComplete="off"
 									aria-invalid={errors.description ? true : undefined}
 									aria-describedby={
 										errors.description ? "org-description-error" : undefined
@@ -370,6 +374,7 @@ export default function OrgSettingsPage() {
 									id="org-contact-email"
 									type="email"
 									maxLength={254}
+									autoComplete="off"
 									aria-invalid={errors.contactEmail ? true : undefined}
 									aria-describedby={
 										errors.contactEmail ? "org-contact-email-error" : undefined
@@ -393,6 +398,7 @@ export default function OrgSettingsPage() {
 									id="org-phone"
 									type="tel"
 									maxLength={30}
+									autoComplete="off"
 									aria-invalid={errors.contactPhone ? true : undefined}
 									aria-describedby={
 										errors.contactPhone ? "org-phone-error" : undefined
@@ -417,6 +423,7 @@ export default function OrgSettingsPage() {
 									type="url"
 									maxLength={500}
 									placeholder="https://"
+									autoComplete="off"
 									aria-invalid={errors.website ? true : undefined}
 									aria-describedby={
 										errors.website ? "org-website-error" : undefined
@@ -447,6 +454,7 @@ export default function OrgSettingsPage() {
 										<input
 											id="org-street"
 											maxLength={200}
+											autoComplete="off"
 											aria-invalid={errors.street ? true : undefined}
 											aria-describedby={
 												errors.street ? "org-street-error" : undefined
@@ -471,6 +479,7 @@ export default function OrgSettingsPage() {
 										<input
 											id="org-house-number"
 											maxLength={20}
+											autoComplete="off"
 											aria-invalid={errors.houseNumber ? true : undefined}
 											aria-describedby={
 												errors.houseNumber
@@ -497,6 +506,7 @@ export default function OrgSettingsPage() {
 										<input
 											id="org-zip"
 											maxLength={5}
+											autoComplete="off"
 											aria-invalid={errors.zipCode ? true : undefined}
 											aria-describedby={
 												errors.zipCode ? "org-zip-error" : undefined
@@ -521,6 +531,7 @@ export default function OrgSettingsPage() {
 										<input
 											id="org-city"
 											maxLength={100}
+											autoComplete="off"
 											aria-invalid={errors.city ? true : undefined}
 											aria-describedby={
 												errors.city ? "org-city-error" : undefined

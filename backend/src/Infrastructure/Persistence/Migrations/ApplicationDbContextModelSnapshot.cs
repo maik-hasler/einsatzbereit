@@ -76,7 +76,10 @@ namespace Infrastructure.Persistence.Migrations
 						.IsUnique()
 						.HasDatabaseName("ix_achievement_user_id_name");
 
-					b.ToTable("achievement", (string)null);
+					b.ToTable("achievement", null, t =>
+						{
+							t.HasCheckConstraint("ck_achievement_type_valid", "type IN ('Milestone', 'Streak', 'Hidden')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Engagements.Engagement", b =>
@@ -174,7 +177,10 @@ namespace Infrastructure.Persistence.Migrations
 						.IsUnique()
 						.HasDatabaseName("ix_engagement_volunteer_id_time_slot_id");
 
-					b.ToTable("engagement", (string)null);
+					b.ToTable("engagement", null, t =>
+						{
+							t.HasCheckConstraint("ck_engagement_status_valid", "status IN ('Pending', 'Confirmed', 'Cancelled', 'Withdrawn')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Notifications.Notification", b =>
@@ -214,13 +220,19 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasIndex("RecipientId")
 						.HasDatabaseName("ix_notification_recipient_id");
 
+					b.HasIndex("IsRead", "CreatedOn")
+						.HasDatabaseName("ix_notification_is_read_created_on");
+
 					b.HasIndex("RecipientId", "CreatedOn")
 						.HasDatabaseName("ix_notification_recipient_id_created_on");
 
 					b.HasIndex("RecipientId", "IsRead")
 						.HasDatabaseName("ix_notification_recipient_id_is_read");
 
-					b.ToTable("notification", (string)null);
+					b.ToTable("notification", null, t =>
+						{
+							t.HasCheckConstraint("ck_notification_kind_valid", "kind IN ('EngagementCreated', 'EngagementConfirmed', 'EngagementCancelled', 'EngagementWithdrawn', 'OpportunityUpdated', 'OpportunityDeleted', 'OpportunityUnpublished', 'OpportunityCancelled', 'InvitationReceived')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Organizations.Organization", b =>
@@ -379,7 +391,12 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasIndex("OrganizationId")
 						.HasDatabaseName("ix_organization_invitation_organization_id");
 
-					b.ToTable("organization_invitation", (string)null);
+					b.ToTable("organization_invitation", null, t =>
+						{
+							t.HasCheckConstraint("ck_organization_invitation_intended_role_valid", "intended_role IN ('Member', 'Organizer')");
+
+							t.HasCheckConstraint("ck_organization_invitation_status_valid", "status IN ('Pending', 'Accepted', 'Declined', 'Expired')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Organizations.OrganizationMembership", b =>
@@ -416,7 +433,10 @@ namespace Infrastructure.Persistence.Migrations
 						.IsUnique()
 						.HasDatabaseName("ix_organization_membership_organization_id_user_id");
 
-					b.ToTable("organization_membership", (string)null);
+					b.ToTable("organization_membership", null, t =>
+						{
+							t.HasCheckConstraint("ck_organization_membership_role_valid", "role IN ('Member', 'Organizer')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Reports.Report", b =>
@@ -478,7 +498,14 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasIndex("TargetType", "TargetId")
 						.HasDatabaseName("ix_report_target_type_target_id");
 
-					b.ToTable("report", (string)null);
+					b.ToTable("report", null, t =>
+						{
+							t.HasCheckConstraint("ck_report_reason_valid", "reason IN ('Spam', 'IllegalContent', 'Fraud', 'Harassment', 'Other')");
+
+							t.HasCheckConstraint("ck_report_status_valid", "status IN ('Open', 'Dismissed', 'Actioned')");
+
+							t.HasCheckConstraint("ck_report_target_type_valid", "target_type IN ('VolunteerOpportunity', 'Organization', 'User')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Users.User", b =>
@@ -569,7 +596,10 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasKey("Id")
 						.HasName("pk_user");
 
-					b.ToTable("user", (string)null);
+					b.ToTable("user", null, t =>
+						{
+							t.HasCheckConstraint("ck_user_preferred_contact_valid", "preferred_contact IN ('Email', 'Phone')");
+						});
 				});
 
 			modelBuilder.Entity("Domain.Users.UserStreak", b =>
@@ -793,7 +823,18 @@ namespace Infrastructure.Persistence.Migrations
 					b.HasIndex("Status", "CreatedOn")
 						.HasDatabaseName("ix_volunteer_opportunity_status_created_on");
 
-					b.ToTable("volunteer_opportunity", (string)null);
+					b.ToTable("volunteer_opportunity", null, t =>
+						{
+							t.HasCheckConstraint("ck_volunteer_opportunity_category_valid", "category IN ('Social', 'Environment', 'Sport', 'Education', 'DisasterRelief', 'Health', 'Animals', 'Culture', 'Technology', 'Other')");
+
+							t.HasCheckConstraint("ck_volunteer_opportunity_check_in_method_valid", "check_in_method IN ('None', 'QRCode', 'PINCode', 'Manual')");
+
+							t.HasCheckConstraint("ck_volunteer_opportunity_occurrence_valid", "occurrence IN ('OneTime', 'Recurring')");
+
+							t.HasCheckConstraint("ck_volunteer_opportunity_participation_type_valid", "participation_type IN ('ScheduledSlots', 'IndividualContact')");
+
+							t.HasCheckConstraint("ck_volunteer_opportunity_status_valid", "status IN ('Draft', 'Published', 'Unpublished', 'Cancelled')");
+						});
 				});
 
 			modelBuilder.Entity("Infrastructure.Persistence.Outbox.OutboxMessage", b =>

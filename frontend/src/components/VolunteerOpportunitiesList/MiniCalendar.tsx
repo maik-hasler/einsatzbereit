@@ -186,7 +186,7 @@ export default function MiniCalendar({
 					type="button"
 					onClick={prevMonth}
 					aria-label={t("opportunities.prevMonth")}
-					className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+					className="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 				>
 					<ChevronLeftIcon />
 				</button>
@@ -204,7 +204,7 @@ export default function MiniCalendar({
 					type="button"
 					onClick={nextMonth}
 					aria-label={t("opportunities.nextMonth")}
-					className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+					className="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
 				>
 					<ChevronRightIcon />
 				</button>

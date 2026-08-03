@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import AccountControls from "./AccountControls";
 import LanguageSelector from "./LanguageSelector";
+import Button from "../Button";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { OrganizationSummaryDto } from "../../client/api-client";
 
@@ -51,20 +52,20 @@ export default function DesktopHeader({
 				/>
 			) : (
 				<div className="flex items-center gap-3">
-					<button
+					<Button
 						type="button"
 						onClick={onSignIn}
-						className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "bg-white text-brand-800 hover:bg-brand-50" : "bg-brand-700 text-white hover:bg-brand-800"}`}
+						variant={isTransparent ? "onDark" : "primary"}
 					>
 						{t("nav.signIn")}
-					</button>
-					<button
+					</Button>
+					<Button
 						type="button"
 						onClick={onRegister}
-						className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${isTransparent ? "border-white/50 text-white hover:border-white hover:bg-white/10" : "border-brand-700 text-brand-700 hover:bg-brand-50"}`}
+						variant={isTransparent ? "outlineOnDark" : "outline"}
 					>
 						{t("nav.register")}
-					</button>
+					</Button>
 				</div>
 			)}
 			<div
