@@ -123,6 +123,73 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task VolunteerOpportunityDetailPage_OwnerDraft_AsOlaf_HasNoSeriousA11yViolations()
+	{
+		// #1027: the draftBadge chip plus owner-only Edit/Publish actions
+		// (isDraft && isOwner) are new interactive elements this page never
+		// rendered before - VolunteerOpportunityDetailPage_HasNoSeriousA11yViolations
+		// above only ever reaches the anonymous/non-owner render path via a
+		// home-page card link, so it can never exercise this state.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"A11y Draft Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = $"A11y Draft Test {suffix}",
+			description = "Seeded draft for the owner-affordances a11y scan.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = true,
+		});
+		draftResponse.EnsureSuccessStatusCode();
+		var draft = await draftResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = draft.GetProperty("id").GetString();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.GetByTestId("opportunity-detail-draft-badge")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var closedResult = await Page.RunAxe();
+		AssertNoViolations(closedResult);
+
+		// The lazy-loaded Edit wizard is a distinct rendered state this page's
+		// own axe coverage has never seen - scan it too, not just the trigger.
+		await Page.GetByTestId("opportunity-detail-edit").ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 10_000 });
+
+		var editModalResult = await Page.RunAxe();
+		AssertNoViolations(editModalResult);
+	}
+
+	[Test]
 	public async Task ProfileOverviewPage_HasNoSeriousA11yViolations()
 	{
 		// #794: /profile was consolidated from a Profile/Activity tab switcher

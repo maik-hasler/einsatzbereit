@@ -845,4 +845,132 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("h1").First).ToHaveTextAsync(titleA, new() { Timeout = 15_000 });
 		await Expect(errorBanner).Not.ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task DetailPage_OwnerViewingOwnDraft_ShowsDraftBadgeAndCanEditAndPublish()
+	{
+		// Regression for #1027: a lens audit found that isDraft/isOwner were
+		// already computed on this page, and the draftBadge string already
+		// existed, but nothing rendered them here - an organizer opening their
+		// own draft's public detail page saw what looked like a published
+		// listing, with no indication it was a draft and no way to edit or
+		// publish it without navigating away to the Opportunities tab.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Detail Draft Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var draftTitle = $"Detail Draft Test {suffix}";
+		var draftResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = draftTitle,
+			description = "Seeded draft for the detail-page owner-affordances regression test.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = true,
+		});
+		draftResponse.EnsureSuccessStatusCode();
+		var draft = await draftResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = draft.GetProperty("id").GetString();
+
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(draftTitle, new() { Timeout = 15_000 });
+
+		var draftBadge = Page.GetByTestId("opportunity-detail-draft-badge");
+		var editBtn = Page.GetByTestId("opportunity-detail-edit");
+		var publishBtn = Page.GetByTestId("opportunity-detail-publish");
+		await Expect(draftBadge).ToBeVisibleAsync();
+		await Expect(draftBadge).ToHaveTextAsync("Draft");
+		await Expect(editBtn).ToBeVisibleAsync();
+		await Expect(publishBtn).ToBeVisibleAsync();
+
+		// Edit opens the (lazy-loaded) create/edit wizard pre-filled with this
+		// draft's own data, not a blank "create" form.
+		await editBtn.ClickAsync();
+		await Page.WaitForSelectorAsync("[role='dialog']", new() { Timeout = 10_000 });
+		await Expect(Page.Locator("#opportunity-title")).ToHaveValueAsync(draftTitle);
+		await Page.Keyboard.PressAsync("Escape");
+		await Expect(Page.Locator("[role='dialog']")).Not.ToBeVisibleAsync();
+
+		// Publishing directly from the detail page clears every draft-only
+		// affordance once the reload reflects the new status.
+		await publishBtn.ClickAsync();
+		await Expect(draftBadge).Not.ToBeVisibleAsync(new() { Timeout = 15_000 });
+		await Expect(editBtn).Not.ToBeVisibleAsync();
+		await Expect(publishBtn).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
+	public async Task DetailPage_OwnerViewingOwnPublishedOpportunity_HidesDraftBadgeAndPublishEditActions()
+	{
+		// Edge case for #1027: the new affordances are gated on isDraft &&
+		// isOwner, not isOwner alone - an organizer viewing their own already-
+		// published opportunity must not see the draft badge or the Edit/
+		// Publish actions this fix adds.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		var olafToken = (await Fixture.SignInAsync("olaf", "olaf123")).AccessToken;
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {olafToken}");
+
+		var suffix = Guid.NewGuid().ToString("N")[..8];
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Detail Published Org {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		var publishedTitle = $"Detail Published Test {suffix}";
+		var response = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = publishedTitle,
+			description = "Seeded published opportunity for the detail-page owner-affordances edge case.",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "IndividualContact",
+			checkInMethod = "None",
+			validUntil = DateTimeOffset.UtcNow.AddDays(30),
+			isDraft = false,
+		});
+		response.EnsureSuccessStatusCode();
+		var opportunity = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Page.GotoAsync($"{origin}/volunteer-opportunities/{opportunityId}");
+		await Expect(Page.Locator("h1").First).ToHaveTextAsync(publishedTitle, new() { Timeout = 15_000 });
+
+		await Expect(Page.GetByTestId("opportunity-detail-draft-badge")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("opportunity-detail-edit")).Not.ToBeVisibleAsync();
+		await Expect(Page.GetByTestId("opportunity-detail-publish")).Not.ToBeVisibleAsync();
+	}
 }
