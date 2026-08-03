@@ -4,6 +4,7 @@ import EmptyState from "../EmptyState";
 import Skeleton from "../Skeleton";
 import ErrorBanner from "../ErrorBanner";
 import LoadMoreError from "../LoadMoreError";
+import LoadMoreButton from "../LoadMoreButton";
 import OpportunityListItem from "./OpportunityListItem";
 
 export default function OpportunityResultsList({
@@ -109,17 +110,12 @@ export default function OpportunityResultsList({
 								onRetry={onRetryLoadMore}
 							/>
 						) : (
-							<div className="mt-8 flex justify-center">
-								<button
-									onClick={onLoadMore}
-									disabled={loadingMore}
-									className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-								>
-									{loadingMore
-										? t("opportunities.loading")
-										: t("opportunities.loadMore")}
-								</button>
-							</div>
+							<LoadMoreButton
+								loading={loadingMore}
+								label={t("opportunities.loadMore")}
+								loadingLabel={t("opportunities.loading")}
+								onClick={onLoadMore}
+							/>
 						))}
 				</>
 			)}

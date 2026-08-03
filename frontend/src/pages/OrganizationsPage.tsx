@@ -15,6 +15,7 @@ import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
+import LoadMoreButton from "../components/LoadMoreButton";
 import ReportFlagButton from "../components/ReportFlagButton";
 
 const PAGE_SIZE = 10;
@@ -248,17 +249,12 @@ export default function OrganizationsPage() {
 									onRetry={retryLoadMore}
 								/>
 							) : (
-								<div className="mt-8 flex justify-center">
-									<button
-										onClick={loadMore}
-										disabled={loadingMore}
-										className="rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-									>
-										{loadingMore
-											? t("organizationsPage.loading")
-											: t("organizationsPage.loadMore")}
-									</button>
-								</div>
+								<LoadMoreButton
+									loading={loadingMore}
+									label={t("organizationsPage.loadMore")}
+									loadingLabel={t("organizationsPage.loading")}
+									onClick={loadMore}
+								/>
 							))}
 					</>
 				)}

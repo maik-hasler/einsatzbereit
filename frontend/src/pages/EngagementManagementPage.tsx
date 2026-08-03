@@ -15,6 +15,7 @@ import Skeleton from "../components/Skeleton";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
+import LoadMoreButton from "../components/LoadMoreButton";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
 import { formatDate, formatDateTime, resolveDateLocale } from "../lib/format";
@@ -595,17 +596,12 @@ export default function EngagementManagementPage() {
 						onRetry={retryLoadMoreEngagements}
 					/>
 				) : (
-					<div className="mt-6 flex justify-center">
-						<button
-							onClick={loadMoreEngagements}
-							disabled={engagementsLoadingMore}
-							className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-						>
-							{engagementsLoadingMore
-								? t("engagementManagement.loading")
-								: t("engagementManagement.loadMore")}
-						</button>
-					</div>
+					<LoadMoreButton
+						loading={engagementsLoadingMore}
+						label={t("engagementManagement.loadMore")}
+						loadingLabel={t("engagementManagement.loading")}
+						onClick={loadMoreEngagements}
+					/>
 				))}
 
 			{qrScannerOpen && (
@@ -716,17 +712,12 @@ export default function EngagementManagementPage() {
 								!feedbackError &&
 								feedbackItems.length > 0 &&
 								hasMoreFeedback && (
-									<div className="mt-6 flex justify-center">
-										<button
-											onClick={loadMoreFeedback}
-											disabled={feedbackLoadingMore}
-											className="rounded-xl border border-brand-200 bg-brand-50 px-6 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 disabled:opacity-40"
-										>
-											{feedbackLoadingMore
-												? t("engagementManagement.loading")
-												: t("feedback.loadMore")}
-										</button>
-									</div>
+									<LoadMoreButton
+										loading={feedbackLoadingMore}
+										label={t("feedback.loadMore")}
+										loadingLabel={t("engagementManagement.loading")}
+										onClick={loadMoreFeedback}
+									/>
 								)}
 						</>
 					)}
