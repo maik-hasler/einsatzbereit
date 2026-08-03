@@ -14,6 +14,11 @@ internal sealed class NotificationConfiguration
 	{
 		builder.HasKey(n => n.Id);
 
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_notification_kind_valid",
+			"kind IN ('EngagementCreated', 'EngagementConfirmed', 'EngagementCancelled', 'EngagementWithdrawn', " +
+			"'OpportunityUpdated', 'OpportunityDeleted', 'OpportunityUnpublished', 'OpportunityCancelled', 'InvitationReceived')"));
+
 		builder.Property(n => n.Id)
 			.HasConversion(
 				id => id.Value,

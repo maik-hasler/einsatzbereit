@@ -14,6 +14,10 @@ internal sealed class AchievementConfiguration
 	{
 		builder.HasKey(a => a.Id);
 
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_achievement_type_valid",
+			"type IN ('Milestone', 'Streak', 'Hidden')"));
+
 		builder.Property(a => a.Id)
 			.HasConversion(
 				id => id.Value,
