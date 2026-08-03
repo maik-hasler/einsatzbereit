@@ -35,17 +35,6 @@ internal sealed class VolunteerOpportunityReadRepository(
 			// is treated as already expired rather than kept forever (#1086).
 			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now));
 
-		if (!string.IsNullOrWhiteSpace(filter.City))
-		{
-			// Translates to "lower(address_city) LIKE '%x%'" - a leading wildcard a
-			// plain btree index can't use. Backed by a trigram GIN index on
-			// lower(address_city) added via raw SQL in the
-			// AddHotFilterAndSortIndexes migration (#1200) instead of an EF Core
-			// HasIndex, since expression + gin_trgm_ops indexes have no Fluent API.
-			var city = filter.City.ToLower();
-			query = query.Where(vo => vo.Address != null && vo.Address.City.ToLower().Contains(city));
-		}
-
 		if (!string.IsNullOrWhiteSpace(filter.Occurrence) && Enum.TryParse<Occurrence>(filter.Occurrence, ignoreCase: true, out var occ))
 			query = query.Where(vo => vo.Occurrence == occ);
 
@@ -225,16 +214,10 @@ internal sealed class VolunteerOpportunityReadRepository(
 			.ToDictionaryAsync(x => x.Id.Value, x => (x.Name, x.LogoUrl), cancellationToken);
 	}
 
-	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter)
-	{
-		if (filter.HasRadius)
-			return GeoMath.BoundingBoxFor(filter.CenterLatitude!.Value, filter.CenterLongitude!.Value, filter.RadiusKm!.Value);
-
-		if (filter.HasBoundingBox)
-			return new GeoBoundingBox(filter.South!.Value, filter.North!.Value, filter.West!.Value, filter.East!.Value);
-
-		return null;
-	}
+	private static GeoBoundingBox? ResolveBoundingBox(VolunteerOpportunityFilter filter) =>
+		filter.HasRadius
+			? GeoMath.BoundingBoxFor(filter.CenterLatitude!.Value, filter.CenterLongitude!.Value, filter.RadiusKm!.Value)
+			: null;
 
 	private async Task<(Dictionary<Guid, int?> MaxParticipants, Dictionary<Guid, int> ParticipantCounts)>
 		LoadParticipantStatsAsync(

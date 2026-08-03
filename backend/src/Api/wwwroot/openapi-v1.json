@@ -911,13 +911,6 @@
             }
           },
           {
-            "name": "City",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "Occurrence",
             "in": "query",
             "schema": {
@@ -952,54 +945,6 @@
             "schema": {
               "type": "string",
               "format": "date-time"
-            }
-          },
-          {
-            "name": "North",
-            "in": "query",
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
-              "format": "double"
-            }
-          },
-          {
-            "name": "South",
-            "in": "query",
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
-              "format": "double"
-            }
-          },
-          {
-            "name": "East",
-            "in": "query",
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
-              "format": "double"
-            }
-          },
-          {
-            "name": "West",
-            "in": "query",
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
-              "format": "double"
             }
           },
           {
