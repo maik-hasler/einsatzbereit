@@ -11,6 +11,7 @@ import { inputClass, textareaClass } from "../../lib/formClasses";
 import { pageTitleClass } from "../../lib/headingClasses";
 import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
+import EmptyState from "../../components/EmptyState";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
@@ -301,6 +302,18 @@ export default function ProfileOverviewPage() {
 		onCancel: handleCancel,
 	});
 
+	// ProfileFieldsView renders nothing at all once every field below is
+	// empty (a fresh account has none of them set) - previously that left the
+	// "Profile Details" heading sitting over a blank gap on every new user's
+	// very first view of this page (#985).
+	const isProfileFieldsEmpty =
+		!form.state.bio &&
+		form.state.skills.length === 0 &&
+		form.state.languages.length === 0 &&
+		!form.state.preferredContact &&
+		!form.state.phone &&
+		!form.state.preferredLanguage;
+
 	return (
 		<>
 			<h1 className={`mb-6 text-gray-900 ${pageTitleClass}`}>
@@ -411,16 +424,26 @@ export default function ProfileOverviewPage() {
 							{t("profile.sectionDetails")}
 						</h2>
 
-						{!editing && (
-							<ProfileFieldsView
-								bio={form.state.bio}
-								skills={form.state.skills}
-								languages={form.state.languages}
-								preferredContact={form.state.preferredContact || null}
-								phone={form.state.phone || null}
-								preferredLanguage={form.state.preferredLanguage}
-							/>
-						)}
+						{!editing &&
+							(isProfileFieldsEmpty ? (
+								<EmptyState
+									title={t("profile.emptyStateTitle")}
+									message={t("profile.emptyStateMessage")}
+									action={{
+										label: t("profile.emptyStateCta"),
+										onClick: () => setEditing(true),
+									}}
+								/>
+							) : (
+								<ProfileFieldsView
+									bio={form.state.bio}
+									skills={form.state.skills}
+									languages={form.state.languages}
+									preferredContact={form.state.preferredContact || null}
+									phone={form.state.phone || null}
+									preferredLanguage={form.state.preferredLanguage}
+								/>
+							))}
 
 						{editing && (
 							<form ref={formRef} onSubmit={handleSave} className="space-y-6">

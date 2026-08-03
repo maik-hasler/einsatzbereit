@@ -82,7 +82,9 @@ function ToDoWidget({ organizationId, size }: Props) {
 							{kpis.pendingEngagements}
 						</p>
 						<p className="text-sm text-gray-500">
-							{t("orgDashboard.pendingEngagements")}
+							{t("orgDashboard.pendingEngagements", {
+								count: kpis.pendingEngagements,
+							})}
 						</p>
 					</div>
 					<div>

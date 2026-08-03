@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../../../client/api-client";
 import WidgetCard from "./WidgetCard";
 import type { WidgetSizeClass } from "./widgetCatalog";
-import { resolveDateLocale } from "../../../lib/format";
+import { formatDateLong } from "../../../lib/format";
 
 interface Props {
 	org: OrganizationDetailsResponse;
@@ -13,7 +13,6 @@ interface Props {
 
 function SettingsWidget({ org, size }: Props) {
 	const { t, i18n } = useTranslation();
-	const locale = resolveDateLocale(i18n.language);
 	const compact = size === "compact";
 
 	const logo = org.logoUrl ? (
@@ -72,11 +71,10 @@ function SettingsWidget({ org, size }: Props) {
 							<>
 								<span className="mx-1.5">&middot;</span>
 								{t("orgSettings.createdOn", {
-									date: new Date(org.createdOn).toLocaleDateString(locale, {
-										day: "2-digit",
-										month: "long",
-										year: "numeric",
-									}),
+									date: formatDateLong(
+										org.createdOn as unknown as string,
+										i18n.language,
+									),
 								})}
 							</>
 						)}

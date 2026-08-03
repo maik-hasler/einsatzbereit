@@ -8,6 +8,7 @@ import { useLoadMore } from "../hooks/useLoadMore";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
+import { avatarColorClasses } from "../lib/avatarColor";
 import { inputClass } from "../lib/formClasses";
 import { pageTitleClass } from "../lib/headingClasses";
 import EmptyState from "../components/EmptyState";
@@ -158,68 +159,73 @@ export default function OrganizationsPage() {
 				) : (
 					<>
 						<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-							{items.map((org) => (
-								<li
-									key={org.id}
-									className="relative flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
-								>
-									<Link
-										to={`/organizations/${org.id}`}
-										className="absolute inset-0 rounded-card"
-										aria-label={org.name}
-									/>
-									<div className="flex items-center gap-3">
-										{org.logoUrl ? (
-											<img
-												src={org.logoUrl}
-												alt=""
-												width={48}
-												height={48}
-												loading="lazy"
-												className="h-12 w-12 shrink-0 rounded-full object-cover"
-											/>
-										) : (
-											<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-700">
-												{org.name.charAt(0).toUpperCase()}
-											</span>
-										)}
-										<div className="flex min-w-0 flex-1 items-center gap-2">
-											<strong className="block truncate text-sm font-semibold text-gray-900">
-												{org.name}
-											</strong>
+							{items.map((org) => {
+								const avatarColor = avatarColorClasses(org.id);
+								return (
+									<li
+										key={org.id}
+										className="relative flex h-full flex-col gap-3 rounded-card border border-gray-100 bg-white p-4 shadow-resting transition-shadow hover:shadow-raised"
+									>
+										<Link
+											to={`/organizations/${org.id}`}
+											className="absolute inset-0 rounded-card"
+											aria-label={org.name}
+										/>
+										<div className="flex items-center gap-3">
+											{org.logoUrl ? (
+												<img
+													src={org.logoUrl}
+													alt=""
+													width={48}
+													height={48}
+													loading="lazy"
+													className="h-12 w-12 shrink-0 rounded-full object-cover"
+												/>
+											) : (
+												<span
+													className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${avatarColor.bg} ${avatarColor.text}`}
+												>
+													{org.name.charAt(0).toUpperCase()}
+												</span>
+											)}
+											<div className="flex min-w-0 flex-1 items-center gap-2">
+												<strong className="block truncate text-sm font-semibold text-gray-900">
+													{org.name}
+												</strong>
+											</div>
+											{auth.isAuthenticated && (
+												<ReportFlagButton
+													targetLabel={org.name}
+													ariaLabel={t("orgProfile.reportOrganization")}
+													onReport={async (reason, details) => {
+														await api.reportOrganization(org.id, {
+															reason,
+															details: details || undefined,
+														});
+													}}
+												/>
+											)}
 										</div>
-										{auth.isAuthenticated && (
-											<ReportFlagButton
-												targetLabel={org.name}
-												ariaLabel={t("orgProfile.reportOrganization")}
-												onReport={async (reason, details) => {
-													await api.reportOrganization(org.id, {
-														reason,
-														details: details || undefined,
-													});
-												}}
-											/>
-										)}
-									</div>
-									<div className="min-w-0 flex-1">
-										{org.description && (
-											<p className="line-clamp-2 text-sm text-gray-500">
-												{org.description}
-											</p>
-										)}
-										{org.city && (
-											<p className="mt-1 text-xs text-gray-500">{org.city}</p>
-										)}
-										{org.openOpportunityCount > 0 && (
-											<p className="mt-1 text-xs font-medium text-brand-700">
-												{t("organizationsPage.openOpportunities", {
-													count: org.openOpportunityCount,
-												})}
-											</p>
-										)}
-									</div>
-								</li>
-							))}
+										<div className="min-w-0 flex-1">
+											{org.description && (
+												<p className="line-clamp-2 text-sm text-gray-500">
+													{org.description}
+												</p>
+											)}
+											{org.city && (
+												<p className="mt-1 text-xs text-gray-500">{org.city}</p>
+											)}
+											{org.openOpportunityCount > 0 && (
+												<p className="mt-1 text-xs font-medium text-brand-700">
+													{t("organizationsPage.openOpportunities", {
+														count: org.openOpportunityCount,
+													})}
+												</p>
+											)}
+										</div>
+									</li>
+								);
+							})}
 						</ul>
 
 						{hasMore &&

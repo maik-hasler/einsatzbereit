@@ -9,7 +9,7 @@ import { useApiClient } from "../../hooks/useApiClient";
 import { useLoadMore } from "../../hooks/useLoadMore";
 import { getApiErrorMessage } from "../../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../../lib/engagementStatus";
-import { formatDateTime, resolveDateLocale } from "../../lib/format";
+import { formatDate, formatDateTime } from "../../lib/format";
 import AddToCalendarMenu from "../../components/AddToCalendarMenu";
 import CheckInModal from "../../components/CheckInModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
@@ -31,7 +31,6 @@ export default function ActivitySection() {
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
-	const locale = resolveDateLocale(i18n.language);
 
 	const STATUS_LABELS: Record<string, string> = {
 		Pending: t("myEngagements.status.Pending"),
@@ -207,7 +206,10 @@ export default function ActivitySection() {
 									</p>
 									<p className="mt-0.5 text-xs text-gray-500">
 										{t("invitations.invitedOn", {
-											date: new Date(inv.createdOn).toLocaleDateString(locale),
+											date: formatDate(
+												inv.createdOn as unknown as string,
+												i18n.language,
+											),
 										})}
 									</p>
 								</div>
@@ -374,7 +376,10 @@ export default function ActivitySection() {
 									)}
 									<p className="mt-1.5 text-xs text-gray-500">
 										{t("myEngagements.registeredOn", {
-											date: new Date(e.createdOn).toLocaleDateString(locale),
+											date: formatDate(
+												e.createdOn as unknown as string,
+												i18n.language,
+											),
 										})}
 									</p>
 									{e.isCheckedIn && (

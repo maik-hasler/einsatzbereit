@@ -5,6 +5,7 @@ import {
 	formatOccurrence,
 	formatParticipationType,
 	formatDate,
+	formatDateLong,
 	formatDateTime,
 	formatPostedAgo,
 	isSlotFull,
@@ -148,6 +149,35 @@ describe("formatDate", () => {
 		expect(formatDate(iso, "en").length).toBeLessThan(
 			formatDateTime(iso, "en").length,
 		);
+	});
+});
+
+describe("formatDateLong", () => {
+	// Compares against the identical Intl call rather than a hardcoded string
+	// so the assertion doesn't depend on the host's local timezone offset.
+	it("formats using en-GB style for en, spelling out the month", () => {
+		const iso = "2026-08-15T23:59:59.999Z";
+		const expected = new Date(iso).toLocaleDateString("en-GB", {
+			day: "2-digit",
+			month: "long",
+			year: "numeric",
+		});
+		expect(formatDateLong(iso, "en")).toBe(expected);
+	});
+
+	it("formats using de-DE style when locale is de", () => {
+		const iso = "2026-08-15T23:59:59.999Z";
+		const expected = new Date(iso).toLocaleDateString("de-DE", {
+			day: "2-digit",
+			month: "long",
+			year: "numeric",
+		});
+		expect(formatDateLong(iso, "de")).toBe(expected);
+	});
+
+	it("differs from the compact formatDate style", () => {
+		const iso = "2026-08-15T23:59:59.999Z";
+		expect(formatDateLong(iso, "de")).not.toBe(formatDate(iso, "de"));
 	});
 });
 

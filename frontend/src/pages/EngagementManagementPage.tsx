@@ -17,7 +17,7 @@ import ErrorBanner from "../components/ErrorBanner";
 import LoadMoreError from "../components/LoadMoreError";
 import ModalLoadingFallback from "../components/ModalLoadingFallback";
 import NotFoundPage from "./NotFoundPage";
-import { formatDateTime, resolveDateLocale } from "../lib/format";
+import { formatDate, formatDateTime, resolveDateLocale } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useSetOrgBreadcrumbExtra } from "../contexts/OrgBreadcrumbContext";
 import { dispatchToast } from "../lib/toastBus";
@@ -490,7 +490,10 @@ export default function EngagementManagementPage() {
 										})()}
 									<p className="mt-1 text-xs text-gray-500">
 										{t("engagementManagement.receivedOn", {
-											date: new Date(e.createdOn).toLocaleDateString(locale),
+											date: formatDate(
+												e.createdOn as unknown as string,
+												i18n.language,
+											),
 										})}
 									</p>
 									{e.isCheckedIn && (
@@ -695,7 +698,10 @@ export default function EngagementManagementPage() {
 												/>
 											))}
 											<span className="ml-1 text-xs text-gray-500">
-												{new Date(item.submittedAt).toLocaleDateString(locale)}
+												{formatDate(
+													item.submittedAt as unknown as string,
+													i18n.language,
+												)}
 											</span>
 										</div>
 										{item.comment && (

@@ -15,7 +15,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
-import { resolveDateLocale } from "../../lib/format";
+import { formatDateLong } from "../../lib/format";
 
 export default function OrgMembersPage() {
 	const { org } = useOutletContext<OrgAppContext>();
@@ -23,7 +23,6 @@ export default function OrgMembersPage() {
 	const api = useApiClient();
 	const auth = useAuth();
 	const navigate = useNavigate();
-	const locale = resolveDateLocale(i18n.language);
 	usePageTitle(`${t("orgOverview.tabMembers")} - ${org.name}`);
 	const currentUserId = auth.user?.profile?.sub;
 
@@ -333,13 +332,10 @@ export default function OrgMembersPage() {
 											</p>
 											<p className="truncate text-xs text-gray-500">
 												{t("orgSettings.invitationSentOn", {
-													date: new Date(
-														invitation.createdOn,
-													).toLocaleDateString(locale, {
-														day: "2-digit",
-														month: "long",
-														year: "numeric",
-													}),
+													date: formatDateLong(
+														invitation.createdOn as unknown as string,
+														i18n.language,
+													),
 												})}
 											</p>
 										</div>

@@ -81,6 +81,33 @@ export function formatDate(dt: string, lng: string): string {
 	return getDateFormatter(lng).format(new Date(dt));
 }
 
+const longDateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getLongDateFormatter(lng: string): Intl.DateTimeFormat {
+	const resolvedLocale = resolveDateLocale(lng);
+	let formatter = longDateFormatters.get(resolvedLocale);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(resolvedLocale, {
+			day: "2-digit",
+			month: "long",
+			year: "numeric",
+		});
+		longDateFormatters.set(resolvedLocale, formatter);
+	}
+	return formatter;
+}
+
+/** Long-form date-only formatting (e.g. "25. Juli 2026") - for lower-frequency
+ * "created on"/"sent on" timestamps where a spelled-out month reads better
+ * than the compact numeric style `formatDate` uses. `lng` is i18n.language
+ * ("de"/"en"), not an Intl locale (see formatDateTime). Previously each call
+ * site re-derived this with its own inline `toLocaleDateString(locale, {...})`
+ * options object, which is how it ended up coexisting with two other date
+ * formats across the app (#986) - centralizing it here is the fix. */
+export function formatDateLong(dt: string, lng: string): string {
+	return getLongDateFormatter(lng).format(new Date(dt));
+}
+
 export function formatPostedAgo(dt: string, t: TFunction): string {
 	const days = differenceInCalendarDays(new Date(), new Date(dt));
 	return days <= 0

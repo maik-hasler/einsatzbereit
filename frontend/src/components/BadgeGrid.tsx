@@ -4,7 +4,7 @@ import type {
 	BadgeCatalogEntry,
 } from "../client/api-client";
 import Skeleton from "./Skeleton";
-import { resolveDateLocale } from "../lib/format";
+import { formatDate } from "../lib/format";
 
 function AchievementTypeIcon({
 	type,
@@ -95,7 +95,6 @@ interface BadgeCardProps {
 
 function BadgeCard({ catalog, earned }: BadgeCardProps) {
 	const { t, i18n } = useTranslation();
-	const locale = resolveDateLocale(i18n.language);
 	const isEarned = !!earned;
 	const isHidden = catalog.isHidden && !isEarned;
 	const typeName = isEarned ? typeLabel(earned.type) : typeLabel(catalog.type);
@@ -145,7 +144,10 @@ function BadgeCard({ catalog, earned }: BadgeCardProps) {
 			{isEarned && (
 				<p className="mt-1 text-xs text-gray-500">
 					{t("achievements.unlockedOn", {
-						date: new Date(earned.unlockedAt).toLocaleDateString(locale),
+						date: formatDate(
+							earned.unlockedAt as unknown as string,
+							i18n.language,
+						),
 					})}
 				</p>
 			)}

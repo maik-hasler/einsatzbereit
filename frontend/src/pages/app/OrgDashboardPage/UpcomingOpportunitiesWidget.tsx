@@ -10,7 +10,7 @@ import CreateVolunteerOpportunityModal from "../../../components/CreateVolunteer
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import type { WidgetSizeClass } from "./widgetCatalog";
-import { resolveDateLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 
 const MAX_ITEMS = 5;
 const OPPORTUNITY_PAGE_SIZE = 100;
@@ -38,7 +38,6 @@ function UpcomingOpportunitiesWidget({
 }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
-	const locale = resolveDateLocale(i18n.language);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	// Shared with QuickCheckInWidget, which fetches the same organization-wide
@@ -145,10 +144,10 @@ function UpcomingOpportunitiesWidget({
 									item.maxParticipants > 0) && (
 									<p className="mt-0.5 text-xs text-gray-500">
 										{item.nextStart &&
-											item.nextStart.toLocaleString(locale, {
-												dateStyle: "medium",
-												timeStyle: "short",
-											})}
+											formatDateTime(
+												item.nextStart as unknown as string,
+												i18n.language,
+											)}
 										{item.nextStart &&
 											(item.maxParticipants === null ||
 												item.maxParticipants > 0) && (

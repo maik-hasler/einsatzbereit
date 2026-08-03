@@ -30,7 +30,7 @@ export default function HomePage() {
 	const api = useApiClient();
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	usePageTitle();
+	usePageTitle(t("landing.pageTitle"));
 
 	const heroTitleId = useId();
 	const howItWorksTitleId = useId();
@@ -249,6 +249,37 @@ export default function HomePage() {
 									{t("landing.heroCtaOrg")}
 								</Button>
 							)}
+						</div>
+
+						{/* Mobile/tablet feature chips - the left rail below is xl+ only,
+						which used to mean these three value props were invisible on
+						every viewport smaller than 1280px, including the phone-sized
+						audience this product's "sign up in seconds" pitch targets
+						(#988). Reflowed here as a compact row instead of duplicating
+						the full bordered cards. */}
+						<div className="animate-fade-up-d3 mt-8 flex flex-wrap items-center justify-center gap-3 xl:hidden">
+							{[
+								{
+									icon: <ClockIcon className="h-4 w-4" />,
+									label: t("landing.heroLeftCard1Label"),
+								},
+								{
+									icon: <MapPinIcon className="h-4 w-4" />,
+									label: t("landing.heroLeftCard2Label"),
+								},
+								{
+									icon: <CheckIcon className="h-4 w-4" />,
+									label: t("landing.heroLeftCard3Label"),
+								},
+							].map(({ icon, label }) => (
+								<span
+									key={label}
+									className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
+								>
+									<span aria-hidden="true">{icon}</span>
+									{label}
+								</span>
+							))}
 						</div>
 						<div className="animate-fade-up-d4 mt-8 hidden grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-12 sm:grid sm:pt-10">
 							{stats.map(({ id, value, label }) => (

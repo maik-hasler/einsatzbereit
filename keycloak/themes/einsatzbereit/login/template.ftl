@@ -1,6 +1,6 @@
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false pageTitle="loginTitle">
 <!DOCTYPE html>
-<html lang="${locale.current!'de'}" class="<#if locale.current?? && locale.current == 'de'>lang-de<#else>lang-en</#if>">
+<html lang="${locale.currentLanguageTag!'de'}" class="<#if locale.currentLanguageTag?? && locale.currentLanguageTag == 'de'>lang-de<#else>lang-en</#if>">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
