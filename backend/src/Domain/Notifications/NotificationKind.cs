@@ -10,5 +10,6 @@ public enum NotificationKind
 	OpportunityDeleted,
 	OpportunityUnpublished,
 	OpportunityCancelled,
-	InvitationReceived
+	InvitationReceived,
+	NewMatchingOpportunity
 }

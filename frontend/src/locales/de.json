@@ -130,6 +130,12 @@
       "citySearching": "Wird gesucht…",
       "cityNoMatch": "Keine passende Stadt gefunden.",
       "cityError": "Suche nach dieser Stadt fehlgeschlagen. Bitte erneut versuchen.",
+      "searchAlertActivate": "Bei neuen Treffern benachrichtigen",
+      "searchAlertActive": "Benachrichtigung aktiv",
+      "searchAlertDeactivate": "Benachrichtigung deaktivieren",
+      "searchAlertActivated": "Du wirst über neue Angebote benachrichtigt, die zu dieser Suche passen.",
+      "searchAlertDeactivated": "Benachrichtigung deaktiviert.",
+      "searchAlertError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
       "category": {
         "Social": "Soziales",
         "Environment": "Umwelt",

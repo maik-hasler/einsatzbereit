@@ -299,7 +299,7 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.ToTable("notification", null, t =>
 						{
-							t.HasCheckConstraint("ck_notification_kind_valid", "kind IN ('EngagementCreated', 'EngagementConfirmed', 'EngagementCancelled', 'EngagementWithdrawn', 'OpportunityUpdated', 'OpportunityDeleted', 'OpportunityUnpublished', 'OpportunityCancelled', 'InvitationReceived')");
+							t.HasCheckConstraint("ck_notification_kind_valid", "kind IN ('EngagementCreated', 'EngagementConfirmed', 'EngagementCancelled', 'EngagementWithdrawn', 'OpportunityUpdated', 'OpportunityDeleted', 'OpportunityUnpublished', 'OpportunityCancelled', 'InvitationReceived', 'NewMatchingOpportunity')");
 						});
 				});
 
@@ -583,6 +583,79 @@ namespace Infrastructure.Persistence.Migrations
 							t.HasCheckConstraint("ck_report_status_valid", "status IN ('Open', 'Dismissed', 'Actioned')");
 
 							t.HasCheckConstraint("ck_report_target_type_valid", "target_type IN ('VolunteerOpportunity', 'Organization', 'User')");
+						});
+				});
+
+			modelBuilder.Entity("Domain.SearchAlerts.SearchAlert", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.PrimitiveCollection<string[]>("Categories")
+						.IsRequired()
+						.HasColumnType("text[]")
+						.HasColumnName("categories");
+
+					b.Property<double?>("CenterLatitude")
+						.HasColumnType("double precision")
+						.HasColumnName("center_latitude");
+
+					b.Property<double?>("CenterLongitude")
+						.HasColumnType("double precision")
+						.HasColumnName("center_longitude");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<bool?>("IsRemote")
+						.HasColumnType("boolean")
+						.HasColumnName("is_remote");
+
+					b.Property<DateTimeOffset>("LastNotifiedAt")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("last_notified_at");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<string>("Occurrence")
+						.HasColumnType("text")
+						.HasColumnName("occurrence");
+
+					b.Property<string>("ParticipationType")
+						.HasColumnType("text")
+						.HasColumnName("participation_type");
+
+					b.Property<double?>("RadiusKm")
+						.HasColumnType("double precision")
+						.HasColumnName("radius_km");
+
+					b.Property<string>("Tag")
+						.HasColumnType("text")
+						.HasColumnName("tag");
+
+					b.Property<Guid>("UserId")
+						.HasColumnType("uuid")
+						.HasColumnName("user_id");
+
+					b.HasKey("Id")
+						.HasName("pk_search_alert");
+
+					b.HasIndex("LastNotifiedAt")
+						.HasDatabaseName("ix_search_alert_last_notified_at");
+
+					b.HasIndex("UserId")
+						.IsUnique()
+						.HasDatabaseName("ix_search_alert_user_id");
+
+					b.ToTable("search_alert", null, t =>
+						{
+							t.HasCheckConstraint("ck_search_alert_occurrence_valid", "occurrence IS NULL OR occurrence IN ('OneTime', 'Recurring')");
+
+							t.HasCheckConstraint("ck_search_alert_participation_type_valid", "participation_type IS NULL OR participation_type IN ('ScheduledSlots', 'IndividualContact')");
 						});
 				});
 
@@ -890,6 +963,10 @@ namespace Infrastructure.Persistence.Migrations
 						.HasColumnType("text")
 						.HasColumnName("participation_type");
 
+					b.Property<DateTimeOffset?>("PublishedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("published_on");
+
 					b.Property<string>("Status")
 						.IsRequired()
 						.HasColumnType("text")
@@ -929,6 +1006,9 @@ namespace Infrastructure.Persistence.Migrations
 
 					b.HasIndex("Status", "CreatedOn")
 						.HasDatabaseName("ix_volunteer_opportunity_status_created_on");
+
+					b.HasIndex("Status", "PublishedOn")
+						.HasDatabaseName("ix_volunteer_opportunity_status_published_on");
 
 					b.ToTable("volunteer_opportunity", null, t =>
 						{

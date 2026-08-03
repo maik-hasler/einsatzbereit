@@ -30,6 +30,8 @@ public class EmailTemplateRendererTests
 				["ReasonBlock"] = "",
 				["InviteeName"] = "Vera",
 				["OrganizationName"] = "Beach Cleanup Crew",
+				["Count"] = "2",
+				["OpportunitiesList"] = "- Beach Cleanup\n- Park Cleanup",
 			};
 
 			var content = _sut.Render(kind, language, placeholders);

@@ -130,6 +130,12 @@
       "citySearching": "Searching…",
       "cityNoMatch": "No matching city found.",
       "cityError": "Couldn't search for that city. Please try again.",
+      "searchAlertActivate": "Notify me about new matches",
+      "searchAlertActive": "Alert active",
+      "searchAlertDeactivate": "Turn off alert",
+      "searchAlertActivated": "You'll be notified about new opportunities matching this search.",
+      "searchAlertDeactivated": "Alert turned off.",
+      "searchAlertError": "Something went wrong. Please try again.",
       "category": {
         "Social": "Social",
         "Environment": "Environment",
