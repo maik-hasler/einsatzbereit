@@ -21,7 +21,7 @@ export default function ProfileFieldsView({
 	const { t } = useTranslation();
 
 	return (
-		<>
+		<div className="space-y-5">
 			{bio && (
 				<div>
 					<p className="mb-1 text-sm font-medium text-gray-700">
@@ -95,6 +95,6 @@ export default function ProfileFieldsView({
 					</p>
 				</div>
 			)}
-		</>
+		</div>
 	);
 }
