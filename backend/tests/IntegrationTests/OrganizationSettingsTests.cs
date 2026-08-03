@@ -1111,6 +1111,13 @@ public class OrganizationSettingsTests(
 
 		await AddExpiredTimeSlotDirectlyAsync(nonBlockingOpportunity.Id, cancellationToken);
 
+		// The generated client streams the response body straight into the typed
+		// result by default (ReadResponseAsString = false), which always leaves
+		// ApiException.Response empty regardless of what the server sent - opt
+		// into buffering it as a string so the error detail is actually asserted
+		// on below rather than always comparing against "".
+		olafClient.ReadResponseAsString = true;
+
 		var act = () => olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
