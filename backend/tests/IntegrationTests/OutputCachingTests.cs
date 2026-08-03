@@ -25,6 +25,19 @@ public class OutputCachingTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetSitemap_ShouldBeServedFromOutputCache_OnASecondRequest(
+		CancellationToken cancellationToken)
+	{
+		using var httpClient = fixture.CreateHttpClient();
+
+		await httpClient.GetAsync("/v1/sitemap.xml", cancellationToken);
+		var second = await httpClient.GetAsync("/v1/sitemap.xml", cancellationToken);
+
+		second.Headers.TryGetValues("Age", out _).Should().BeTrue(
+			"the sitemap is a public, non-personalized endpoint and should be output-cached (einsatzbereit#1092)");
+	}
+
+	[Test]
 	public async Task GetVolunteerOpportunities_ShouldBeServedFromOutputCache_OnASecondRequest(
 		CancellationToken cancellationToken)
 	{

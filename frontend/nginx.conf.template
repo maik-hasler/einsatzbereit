@@ -66,4 +66,25 @@ server {
 		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 		add_header Content-Security-Policy $csp_header always;
 	}
+
+	# A sitemap must be served from the same host as the URLs it lists, or crawlers
+	# reject its entries - but the backend (api.maik-hasler.de) and this frontend
+	# (einsatzbereit.maik-hasler.de) are different subdomains in production, and the
+	# sitemap's content is DB-backed (published opportunities/organizations), so it
+	# can't be a static file here either (einsatzbereit#1092). Proxied instead, over
+	# the "proxy" Docker network both containers already share.
+	#
+	# proxy_pass's target is a variable ($backend_upstream), not the literal
+	# "http://backend:8080" - with a literal, nginx resolves "backend" once at
+	# config load and caches that IP for the worker's lifetime, so a backend
+	# container restart (a new IP on the same Compose service name) would leave
+	# this location proxying to a dead address until nginx itself reloads. A
+	# variable forces re-resolution on every request instead, via the `resolver`
+	# below (127.0.0.11 is Docker's embedded DNS server, reachable from any
+	# container on a user-defined network).
+	location = /sitemap.xml {
+		resolver 127.0.0.11 valid=10s;
+		set $backend_upstream http://backend:8080;
+		proxy_pass $backend_upstream/v1/sitemap.xml;
+	}
 }
