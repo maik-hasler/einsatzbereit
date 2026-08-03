@@ -123,6 +123,30 @@ public class AdminEndpointAuthorizationTests(
 		ex.Which.StatusCode.Should().Be(403);
 	}
 
+	[Test]
+	public async Task ListAuditLogs_ShouldReturn401_WhenNotAuthenticated(
+		CancellationToken cancellationToken)
+	{
+		var client = new EinsatzbereitApi(fixture.CreateHttpClient());
+
+		var act = () => client.ListAuditLogsAsync(1, 20, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(401);
+	}
+
+	[Test]
+	public async Task ListAuditLogs_ShouldReturn403_WhenRequestingUserIsNotAdmin(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+
+		var act = () => olafClient.ListAuditLogsAsync(1, 20, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
 	{
 		var token = await fixture.GetAccessTokenAsync(username, password);

@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.AuditLogs;
 using Domain.Primitives;
 using Domain.Reports;
 
@@ -34,6 +35,13 @@ internal sealed class AdminShadowDeleteUserCommandHandler(
 		}
 
 		user.MarkDeleted(now).ThrowIfFailure();
+
+		var auditLog = AuditLog.Create(
+			request.AdminUserId,
+			AuditActionType.UserShadowDeleted,
+			AuditSubjectType.User,
+			request.UserId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}

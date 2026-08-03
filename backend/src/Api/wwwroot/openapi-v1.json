@@ -5941,6 +5941,84 @@
         }
       }
     },
+    "/v1/admin/audit-logs": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "ListAuditLogs",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfAuditLogEntry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/me/achievements": {
       "get": {
         "tags": [
@@ -6194,6 +6272,52 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "AuditLogEntry": {
+        "required": [
+          "id",
+          "actorUserId",
+          "actorDisplayName",
+          "actionType",
+          "subjectType",
+          "subjectId",
+          "reason",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorUserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorDisplayName": {
+            "type": "string"
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "subjectType": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -7862,6 +7986,45 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AdminUserListItem"
+            }
+          }
+        }
+      },
+      "PagedListOfAuditLogEntry": {
+        "required": [
+          "currentPage",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "totalItems": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "currentPage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogEntry"
             }
           }
         }

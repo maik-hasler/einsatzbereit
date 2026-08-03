@@ -1,5 +1,6 @@
 using Application.Organizations;
 using Domain.Achievements;
+using Domain.AuditLogs;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -31,6 +32,8 @@ public interface IApplicationDbContext
 	IAggregateRepository<OrganizationDashboardLayout, OrganizationDashboardLayoutId> OrganizationDashboardLayouts { get; }
 
 	IAggregateRepository<Report, ReportId> Reports { get; }
+
+	IAggregateRepository<AuditLog, AuditLogId> AuditLogs { get; }
 
 	Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,

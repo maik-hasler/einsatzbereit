@@ -1,7 +1,9 @@
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Persistence;
 using Application.Users.SetUserEnabled.v1;
 using AwesomeAssertions;
+using Domain.AuditLogs;
 using NSubstitute;
 
 namespace Application.UnitTests.Users.SetUserEnabled;
@@ -9,11 +11,15 @@ namespace Application.UnitTests.Users.SetUserEnabled;
 public class SetUserEnabledCommandHandlerTests
 {
 	private readonly IKeycloakUserService _keycloakService = Substitute.For<IKeycloakUserService>();
+	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IAggregateRepository<AuditLog, AuditLogId> _auditLogRepo =
+		Substitute.For<IAggregateRepository<AuditLog, AuditLogId>>();
 	private readonly SetUserEnabledCommandHandler _sut;
 
 	public SetUserEnabledCommandHandlerTests()
 	{
-		_sut = new SetUserEnabledCommandHandler(_keycloakService);
+		_dbContext.AuditLogs.Returns(_auditLogRepo);
+		_sut = new SetUserEnabledCommandHandler(_keycloakService, _dbContext);
 	}
 
 	[Test]
@@ -32,6 +38,12 @@ public class SetUserEnabledCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).SetUserEnabledAsync(targetUserId, false, cancellationToken);
+		await _auditLogRepo.Received(1).AddAsync(
+			Arg.Is<AuditLog>(a => a!.ActorUserId.Value == actingUserId
+				&& a.ActionType == AuditActionType.UserDisabled
+				&& a.SubjectType == AuditSubjectType.User
+				&& a.SubjectId == targetUserId),
+			cancellationToken);
 	}
 
 	[Test]
@@ -68,6 +80,9 @@ public class SetUserEnabledCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).SetUserEnabledAsync(actingUserId, true, cancellationToken);
+		await _auditLogRepo.Received(1).AddAsync(
+			Arg.Is<AuditLog>(a => a!.ActionType == AuditActionType.UserEnabled),
+			cancellationToken);
 	}
 
 	[Test]

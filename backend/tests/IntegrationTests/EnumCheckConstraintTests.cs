@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using AwesomeAssertions;
 using Domain.Achievements;
+using Domain.AuditLogs;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -63,6 +64,52 @@ public class EnumCheckConstraintTests(IntegrationTestFixture fixture)
 
 		await AssertRejectsInvalidValueAsync(
 			"achievement", "type", achievement.Id.Value, "ck_achievement_type_valid", cancellationToken);
+	}
+
+	[Test]
+	public async Task AuditLog_ShouldPersistAndReload_ValidActionTypeAndSubjectType(
+		CancellationToken cancellationToken)
+	{
+		var auditLog = AuditLog.Create(UserId.New(), AuditActionType.UserShadowDeleted, AuditSubjectType.User, Guid.NewGuid());
+
+		await using var writeContext = fixture.CreateApplicationDbContext();
+		await writeContext.AuditLogs.AddAsync(auditLog, cancellationToken);
+		await writeContext.SaveChangesAsync(cancellationToken);
+
+		await using var readContext = fixture.CreateApplicationDbContext();
+		var reloaded = await readContext.AuditLogs.FindAsync(auditLog.Id, cancellationToken);
+
+		reloaded.Should().NotBeNull();
+		reloaded!.ActionType.Should().Be(AuditActionType.UserShadowDeleted);
+		reloaded.SubjectType.Should().Be(AuditSubjectType.User);
+	}
+
+	[Test]
+	public async Task AuditLog_ActionType_ShouldReject_InvalidValue(
+		CancellationToken cancellationToken)
+	{
+		var auditLog = AuditLog.Create(UserId.New(), AuditActionType.UserShadowDeleted, AuditSubjectType.User, Guid.NewGuid());
+
+		await using var writeContext = fixture.CreateApplicationDbContext();
+		await writeContext.AuditLogs.AddAsync(auditLog, cancellationToken);
+		await writeContext.SaveChangesAsync(cancellationToken);
+
+		await AssertRejectsInvalidValueAsync(
+			"audit_log", "action_type", auditLog.Id.Value, "ck_audit_log_action_type_valid", cancellationToken);
+	}
+
+	[Test]
+	public async Task AuditLog_SubjectType_ShouldReject_InvalidValue(
+		CancellationToken cancellationToken)
+	{
+		var auditLog = AuditLog.Create(UserId.New(), AuditActionType.UserShadowDeleted, AuditSubjectType.User, Guid.NewGuid());
+
+		await using var writeContext = fixture.CreateApplicationDbContext();
+		await writeContext.AuditLogs.AddAsync(auditLog, cancellationToken);
+		await writeContext.SaveChangesAsync(cancellationToken);
+
+		await AssertRejectsInvalidValueAsync(
+			"audit_log", "subject_type", auditLog.Id.Value, "ck_audit_log_subject_type_valid", cancellationToken);
 	}
 
 	[Test]

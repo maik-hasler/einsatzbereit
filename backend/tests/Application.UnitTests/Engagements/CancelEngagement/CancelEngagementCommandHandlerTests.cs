@@ -2,6 +2,7 @@ using Application.Common.Exceptions;
 using Application.Common.Persistence;
 using Application.Engagements.CancelEngagement.v1;
 using AwesomeAssertions;
+using Domain.AuditLogs;
 using Domain.Common;
 using Domain.Engagements;
 using Domain.Notifications;
@@ -22,6 +23,8 @@ public class CancelEngagementCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
+	private readonly IAggregateRepository<AuditLog, AuditLogId> _auditLogRepo =
+		Substitute.For<IAggregateRepository<AuditLog, AuditLogId>>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly CancelEngagementCommandHandler _sut;
 
@@ -34,6 +37,7 @@ public class CancelEngagementCommandHandlerTests
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
+		_dbContext.AuditLogs.Returns(_auditLogRepo);
 		_opportunityRepo
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(CreateDefaultOpportunity());
@@ -168,6 +172,28 @@ public class CancelEngagementCommandHandlerTests
 			Arg.Is<Notification>(n => n!.RecipientId == engagement.VolunteerId!.Value
 				&& n.Kind == NotificationKind.EngagementCancelled
 				&& n.RelatedEntityId == engagement.Id.Value),
+			cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldWriteAuditLog_WhenEngagementCancelled(
+		CancellationToken cancellationToken)
+	{
+		// Arrange
+		var engagementId = EngagementId.New();
+		var engagement = CreatePendingScheduledSlotsEngagement();
+		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
+
+		// Act
+		await _sut.Handle(new CancelEngagementCommand(engagementId, DefaultRequestingUserId, "No longer needed."), cancellationToken);
+
+		// Assert
+		await _auditLogRepo.Received(1).AddAsync(
+			Arg.Is<AuditLog>(a => a!.ActorUserId == DefaultRequestingUserId
+				&& a.ActionType == AuditActionType.EngagementCancelled
+				&& a.SubjectType == AuditSubjectType.Engagement
+				&& a.SubjectId == engagement.Id.Value
+				&& a.Reason == "No longer needed."),
 			cancellationToken);
 	}
 

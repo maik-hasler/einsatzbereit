@@ -83,6 +83,57 @@ namespace Infrastructure.Persistence.Migrations
 						});
 				});
 
+			modelBuilder.Entity("Domain.AuditLogs.AuditLog", b =>
+				{
+					b.Property<Guid>("Id")
+						.HasColumnType("uuid")
+						.HasColumnName("id");
+
+					b.Property<string>("ActionType")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("action_type");
+
+					b.Property<Guid>("ActorUserId")
+						.HasColumnType("uuid")
+						.HasColumnName("actor_user_id");
+
+					b.Property<DateTimeOffset>("CreatedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("created_on");
+
+					b.Property<DateTimeOffset?>("ModifiedOn")
+						.HasColumnType("timestamp with time zone")
+						.HasColumnName("modified_on");
+
+					b.Property<string>("Reason")
+						.HasMaxLength(500)
+						.HasColumnType("character varying(500)")
+						.HasColumnName("reason");
+
+					b.Property<Guid>("SubjectId")
+						.HasColumnType("uuid")
+						.HasColumnName("subject_id");
+
+					b.Property<string>("SubjectType")
+						.IsRequired()
+						.HasColumnType("text")
+						.HasColumnName("subject_type");
+
+					b.HasKey("Id")
+						.HasName("pk_audit_log");
+
+					b.HasIndex("CreatedOn")
+						.HasDatabaseName("ix_audit_log_created_on");
+
+					b.ToTable("audit_log", null, t =>
+						{
+							t.HasCheckConstraint("ck_audit_log_action_type_valid", "action_type IN ('UserPromotedToAdmin', 'UserDemotedFromAdmin', 'UserEnabled', 'UserDisabled', 'UserShadowDeleted', 'UserRestored', 'OrganizationShadowDeleted', 'OrganizationRestored', 'VolunteerOpportunityShadowDeleted', 'VolunteerOpportunityRestored', 'EngagementCancelled')");
+
+							t.HasCheckConstraint("ck_audit_log_subject_type_valid", "subject_type IN ('User', 'Organization', 'VolunteerOpportunity', 'Engagement')");
+						});
+				});
+
 			modelBuilder.Entity("Domain.Engagements.Engagement", b =>
 				{
 					b.Property<Guid>("Id")

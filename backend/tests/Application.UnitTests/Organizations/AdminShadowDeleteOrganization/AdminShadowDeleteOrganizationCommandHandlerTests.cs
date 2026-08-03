@@ -3,6 +3,7 @@ using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Organizations.AdminShadowDeleteOrganization.v1;
 using AwesomeAssertions;
+using Domain.AuditLogs;
 using Domain.Common;
 using Domain.Engagements;
 using Domain.Notifications;
@@ -26,6 +27,8 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
 	private readonly IAggregateRepository<Report, ReportId> _reportRepo =
 		Substitute.For<IAggregateRepository<Report, ReportId>>();
+	private readonly IAggregateRepository<AuditLog, AuditLogId> _auditLogRepo =
+		Substitute.For<IAggregateRepository<AuditLog, AuditLogId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
@@ -40,6 +43,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
 		_dbContext.Reports.Returns(_reportRepo);
+		_dbContext.AuditLogs.Returns(_auditLogRepo);
 		_dbContext
 			.GetOpportunitiesForOrganizationAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>())
 			.Returns(new List<VolunteerOpportunity>());
@@ -81,6 +85,12 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		result.Should().BeTrue();
 		organization.IsDeleted.Should().BeTrue();
 		_organizationRepo.DidNotReceive().Delete(Arg.Any<Organization>());
+		await _auditLogRepo.Received(1).AddAsync(
+			Arg.Is<AuditLog>(a => a!.ActorUserId == DefaultAdminUserId
+				&& a.ActionType == AuditActionType.OrganizationShadowDeleted
+				&& a.SubjectType == AuditSubjectType.Organization
+				&& a.SubjectId == orgId),
+			cancellationToken);
 	}
 
 	[Test]
