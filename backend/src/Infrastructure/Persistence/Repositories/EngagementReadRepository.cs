@@ -288,6 +288,21 @@ internal sealed class EngagementReadRepository(
 		return await MapToSummariesAsync(engagements, cancellationToken);
 	}
 
+	public async ValueTask<List<EngagementSummary>> GetCheckedInByVolunteerAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default)
+	{
+		// Same no-inner-join rationale as GetByVolunteerAsync above (#667) - a
+		// deleted opportunity must not drop the volunteer's own engagement from
+		// their engagement record.
+		var engagements = await dbContext.EngagementsQuery
+			.Where(e => e.VolunteerId == volunteerId && e.IsCheckedIn)
+			.OrderByDescending(e => e.CreatedOn)
+			.ToListAsync(cancellationToken);
+
+		return await MapToSummariesAsync(engagements, cancellationToken);
+	}
+
 	private async Task<List<EngagementSummary>> MapToSummariesAsync(
 		List<Engagement> engagements,
 		CancellationToken cancellationToken)

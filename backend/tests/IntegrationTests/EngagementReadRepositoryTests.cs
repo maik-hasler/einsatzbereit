@@ -462,6 +462,73 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
 	}
 
+	// --- GetCheckedInByVolunteerAsync (engagement record, #1096) ---
+
+	[Test]
+	public async Task GetCheckedInByVolunteerAsync_ShouldReturnOnlyCheckedInEngagements_WithResolvedTimeSlot(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"RecordOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Strandreinigung", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(-2).AddHours(3), 10, DateTimeOffset.UtcNow.AddDays(-3)).GetValueOrThrow();
+		// A volunteer can only have one engagement per time slot (ix_engagement_volunteer_id_time_slot_id),
+		// so the "not checked in" cases need their own slots on the same opportunity.
+		var otherSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(-1).AddHours(3), 10, DateTimeOffset.UtcNow.AddDays(-3)).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var checkedIn = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, slot.Id);
+		checkedIn.Confirm().ThrowIfFailure();
+		checkedIn.CheckIn().ThrowIfFailure();
+		var confirmedNotCheckedIn = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, otherSlot.Id);
+		confirmedNotCheckedIn.Confirm().ThrowIfFailure();
+		var pending = Engagement.CreateIndividualContact(opportunity.Id, volunteerId, "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(checkedIn, cancellationToken);
+		await dbContext.Engagements.AddAsync(confirmedNotCheckedIn, cancellationToken);
+		await dbContext.Engagements.AddAsync(pending, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var result = await repository.GetCheckedInByVolunteerAsync(volunteerId, cancellationToken);
+
+		result.Should().ContainSingle();
+		var entry = result[0];
+		entry.Id.Should().Be(checkedIn.Id.Value);
+		entry.OpportunityTitle.Should().Be("Strandreinigung");
+		entry.OrganizationName.Should().Be(organization.Name);
+		entry.TimeSlotStartDateTime.Should().BeCloseTo(slot.StartDateTime, TimeSpan.FromSeconds(1));
+		entry.TimeSlotEndDateTime.Should().BeCloseTo(slot.EndDateTime, TimeSpan.FromSeconds(1));
+	}
+
+	[Test]
+	public async Task GetCheckedInByVolunteerAsync_ShouldReturnEmpty_WhenVolunteerHasNoCheckedInEngagements(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var engagement = Engagement.CreateIndividualContact(VolunteerOpportunityId.New(), volunteerId, "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var result = await repository.GetCheckedInByVolunteerAsync(volunteerId, cancellationToken);
+
+		result.Should().BeEmpty();
+	}
+
 	[Test]
 	public async Task GetByVolunteerAsync_ShouldOrderUpcomingBucket_BySlotStartTimeAscending(
 		CancellationToken cancellationToken)

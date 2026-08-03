@@ -589,6 +589,7 @@
       "addToCalendarOutlook": "Outlook.com",
       "addToCalendarApple": "Apple Kalender",
       "addToCalendarDownload": ".ics herunterladen",
+      "viewRecord": "Nachweis ansehen",
       "status": {
         "Pending": "Ausstehend",
         "Confirmed": "Bestätigt",
@@ -893,6 +894,21 @@
     },
     "profileOverview": {
       "invitationsHeading": "Offene Einladungen"
+    },
+    "engagementRecord": {
+      "title": "Engagement-Nachweis",
+      "subtitle": "Ein Nachweis deiner bestätigten Einsätze - zum Ausdrucken oder als PDF speichern.",
+      "backToProfile": "Zurück zum Profil",
+      "printButton": "Drucken / Als PDF speichern",
+      "loading": "Wird geladen…",
+      "loadError": "Dein Engagement-Nachweis konnte nicht geladen werden.",
+      "noEntries": "Noch keine bestätigten Einsätze.",
+      "noEntriesHint": "Sobald du bei einem Einsatz eingecheckt hast, erscheint er hier.",
+      "columnDate": "Datum",
+      "columnOrganization": "Organisation",
+      "columnOpportunity": "Einsatz",
+      "columnHours": "Stunden",
+      "totalHours": "Gesamtstunden: {{hours}}"
     },
     "invitations": {
       "loadError": "Einladungen konnten nicht geladen werden.",

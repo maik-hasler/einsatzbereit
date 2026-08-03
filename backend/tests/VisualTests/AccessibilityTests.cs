@@ -229,6 +229,22 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 		AssertNoViolations(result);
 	}
 
+	// einsatzbereit#1096: the printable engagement record is a bare route (no
+	// AppLayout header/footer, see App.tsx) so it needs its own scan - the
+	// ProfileOverviewPage scans above never navigate to it.
+	[Test]
+	public async Task EngagementRecordPage_HasNoSeriousA11yViolations()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Page.GotoAsync($"{frontend.GetLeftPart(UriPartial.Authority)}/profile/engagement-record");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
 	[Test]
 	public async Task ProfileOverviewPage_EditModeWithAvatar_HasNoSeriousA11yViolations()
 	{
