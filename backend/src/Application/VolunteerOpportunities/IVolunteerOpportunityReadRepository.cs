@@ -1,4 +1,5 @@
 using Application.Common.Pagination;
+using Application.Common.Sitemap;
 using Application.Organizations.GetOrganizationCalendarEvents.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
 using Application.VolunteerOpportunities.GetVolunteerOpportunityDetails.v1;
@@ -8,6 +9,9 @@ namespace Application.VolunteerOpportunities;
 
 public interface IVolunteerOpportunityReadRepository
 {
+	ValueTask<IReadOnlyList<SitemapEntry>> GetPublishedForSitemapAsync(
+		CancellationToken cancellationToken = default);
+
 	ValueTask<PagedList<VolunteerOpportunitySummary>> GetPagedSummariesAsync(
 		VolunteerOpportunityFilter filter,
 		CancellationToken cancellationToken = default);

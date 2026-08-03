@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Pagination;
+using Application.Common.Sitemap;
 using Application.Organizations;
 using Application.Organizations.GetPublicOrganizations.v1;
 using Domain.Organizations;
@@ -12,6 +13,12 @@ internal sealed class OrganizationReadRepository(
 	ApplicationDbContext dbContext)
 	: IOrganizationReadRepository
 {
+	public async ValueTask<IReadOnlyList<SitemapEntry>> GetAllForSitemapAsync(
+		CancellationToken cancellationToken = default) =>
+		await dbContext.OrganizationsQuery
+			.Select(o => new SitemapEntry(o.Id.Value, o.ModifiedOn ?? o.CreatedOn))
+			.ToListAsync(cancellationToken);
+
 	public async ValueTask<PagedList<PublicOrganizationSummary>> GetPagedPublicSummariesAsync(
 		OrganizationFilter filter,
 		CancellationToken cancellationToken = default)

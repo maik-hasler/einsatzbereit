@@ -1,5 +1,6 @@
 using Application.Common.Exceptions;
 using Application.Common.Pagination;
+using Application.Common.Sitemap;
 using Application.Organizations.GetOrganizationCalendarEvents.v1;
 using Application.VolunteerOpportunities;
 using Application.VolunteerOpportunities.GetVolunteerOpportunities.v1;
@@ -17,6 +18,21 @@ internal sealed class VolunteerOpportunityReadRepository(
 	ApplicationDbContext dbContext)
 	: IVolunteerOpportunityReadRepository
 {
+	// Same Published + not-yet-expired filter as GetPagedSummariesAsync below (#1086) -
+	// a sitemap entry for an opportunity that's no longer publicly listed would just be
+	// a dead link to crawlers.
+	public async ValueTask<IReadOnlyList<SitemapEntry>> GetPublishedForSitemapAsync(
+		CancellationToken cancellationToken = default)
+	{
+		var now = DateTimeOffset.UtcNow;
+
+		return await dbContext.VolunteerOpportunitiesQuery
+			.Where(vo => vo.Status == OpportunityStatus.Published)
+			.Where(vo => vo.TimeSlots.Any(ts => ts.EndDateTime >= now) || (!vo.TimeSlots.Any() && vo.ValidUntil != null && vo.ValidUntil >= now))
+			.Select(vo => new SitemapEntry(vo.Id.Value, vo.ModifiedOn ?? vo.CreatedOn))
+			.ToListAsync(cancellationToken);
+	}
+
 	public async ValueTask<PagedList<VolunteerOpportunitySummary>> GetPagedSummariesAsync(
 		VolunteerOpportunityFilter filter,
 		CancellationToken cancellationToken = default)
