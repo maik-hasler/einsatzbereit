@@ -44,4 +44,41 @@ public class AdministrationNavLinkTests(AspireFixture fixture) : VisualTestBase(
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Administration" }))
 			.Not.ToBeVisibleAsync();
 	}
+
+	// Regression for #1026: the nav link was already hidden for non-admins
+	// (see the test above), but /administration itself had no role check -
+	// a non-admin who typed the URL directly still got the page shell (the
+	// "Administration" heading) with every section immediately failing its
+	// API call and rendering an error banner, instead of being kept off the
+	// page entirely. ProtectedRoute's requiredRole="admin" now redirects
+	// such visitors to "/" before AdministrationPage ever mounts.
+	[Test]
+	public async Task Administration_DirectNavigationAsNonAdmin_RedirectsToHome()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GotoAsync($"{origin}/administration");
+
+		await Page.WaitForURLAsync($"{origin}/", new() { Timeout = 15_000 });
+		await Expect(Page.Locator("h1")).Not.ToHaveTextAsync("Administration");
+	}
+
+	[Test]
+	public async Task Administration_DirectNavigationAsAdmin_ShowsAdministrationPage()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "admin", "admin123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GotoAsync($"{origin}/administration");
+
+		await Page.WaitForURLAsync($"{origin}/administration", new() { Timeout = 15_000 });
+		await Expect(Page.Locator("h1")).ToHaveTextAsync("Administration");
+	}
 }

@@ -151,7 +151,7 @@ export default function App() {
 				<Route
 					path="/administration"
 					element={
-						<ProtectedRoute>
+						<ProtectedRoute requiredRole="admin">
 							<AdministrationPage />
 						</ProtectedRoute>
 					}
