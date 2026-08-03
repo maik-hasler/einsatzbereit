@@ -32,7 +32,7 @@ public class GetOpportunityFeedbackQueryHandlerTests
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(CreateOpportunity());
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_engagementReadRepository
 			.GetFeedbackByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -119,14 +119,14 @@ public class GetOpportunityFeedbackQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
 		// Arrange: caller belongs to a different organization than the opportunity's.
 		var opportunity = CreateOpportunity();
 		_opportunityRepo.FindAsync(opportunity.Id, cancellationToken).Returns(opportunity);
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		var query = new GetOpportunityFeedbackQuery(opportunity.Id, DefaultRequestingUserId, 1, 10);

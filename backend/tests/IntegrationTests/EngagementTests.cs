@@ -107,15 +107,40 @@ public class EngagementTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
-	public async Task GetEngagements_ShouldReturn403_WhenUserLacksOrganisatorRole(
+	public async Task GetEngagements_ShouldReturn403_WhenRequestingUserIsNotAMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
+		// #1024: GetEngagements is readable by any member (Organizer or Member) of the
+		// opportunity's organization - vera has no relationship to olaf's org at all.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		var act = () => veraClient.GetEngagementsAsync(Guid.NewGuid(), 1, 10, cancellationToken: cancellationToken);
+		var act = () => veraClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
 
 		var exception = await act.Should().ThrowAsync<ApiException>();
 		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task GetEngagements_ShouldSucceed_WhenRequestingUserIsAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// #1024: a plain Member can now view their organization's engagements -
+		// this used to 403 (only Organizer could).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		await fixture.AddPlainMemberDirectlyAsync(orgId, vera.Id, cancellationToken);
+
+		var result = await veraClient.GetEngagementsAsync(opportunity.Id, 1, 10, cancellationToken: cancellationToken);
+
+		result.TotalItems.Should().Be(0);
 	}
 
 	[Test]
@@ -1168,6 +1193,26 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var firstPageComments = firstPage.Items.Items.Select(i => i.Comment).ToList();
 		var secondPageComments = secondPage.Items.Items.Select(i => i.Comment).ToList();
 		firstPageComments.Should().NotBeEquivalentTo(secondPageComments);
+	}
+
+	[Test]
+	public async Task GetOpportunityFeedback_ShouldSucceed_WhenRequestingUserIsAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// #1024: a plain Member can now view their organization's opportunity
+		// feedback - this used to 403 (only Organizer could).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		await fixture.AddPlainMemberDirectlyAsync(orgId, vera.Id, cancellationToken);
+
+		var summary = await veraClient.GetOpportunityFeedbackAsync(opportunity.Id, 1, 10, cancellationToken);
+
+		summary.AverageRating.Should().BeNull();
+		summary.FeedbackCount.Should().Be(0);
 	}
 
 	// ── Feedback rating DB check constraint (#1214) ───────────────────────────

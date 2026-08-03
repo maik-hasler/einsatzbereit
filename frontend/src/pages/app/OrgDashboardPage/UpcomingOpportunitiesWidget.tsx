@@ -27,6 +27,7 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	isOrganizer: boolean;
 	onOpportunityCreated: (createdDraftId?: string) => void;
 }
 
@@ -34,6 +35,7 @@ function UpcomingOpportunitiesWidget({
 	organizationId,
 	refreshKey,
 	size,
+	isOrganizer,
 	onOpportunityCreated,
 }: Props) {
 	const { t, i18n } = useTranslation();
@@ -109,10 +111,14 @@ function UpcomingOpportunitiesWidget({
 				<EmptyState
 					compact
 					title={t("orgDashboard.upcomingEmpty")}
-					action={{
-						label: t("orgDashboard.emptyStateCreateAction"),
-						onClick: () => setShowCreateModal(true),
-					}}
+					action={
+						isOrganizer
+							? {
+									label: t("orgDashboard.emptyStateCreateAction"),
+									onClick: () => setShowCreateModal(true),
+								}
+							: undefined
+					}
 				/>
 			)}
 			{items !== null && !error && items.length > 0 && (

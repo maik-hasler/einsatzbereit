@@ -18,7 +18,7 @@ import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
 
 export default function OrgMembersPage() {
-	const { org, reloadOrg } = useOutletContext<OrgAppContext>();
+	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const auth = useAuth();
@@ -28,10 +28,8 @@ export default function OrgMembersPage() {
 
 	const [members, setMembers] = useState(org.members);
 	useEffect(() => setMembers(org.members), [org.members]);
-	const currentMember = members.find((m) => m.userId === currentUserId);
 	const organizerCount = members.filter((m) => m.isOrganisator).length;
-	const isLastOrganizer =
-		Boolean(currentMember?.isOrganisator) && organizerCount <= 1;
+	const isLastOrganizer = isOrganizer && organizerCount <= 1;
 
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -112,12 +110,15 @@ export default function OrgMembersPage() {
 	>(null);
 
 	useEffect(() => {
+		// Invitations are an Organizer-only management concern - a plain Member
+		// would just get a 403 here, so skip the doomed request entirely.
+		if (!isOrganizer) return;
 		api
 			.getOrgInvitations(org.id)
 			.then(setInvitations)
 			.catch(() => {});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [org.id]);
+	}, [org.id, isOrganizer]);
 
 	async function handleInviteMember(userId: string) {
 		setInvitingUserId(userId);
@@ -260,77 +261,79 @@ export default function OrgMembersPage() {
 					<ErrorBanner message={settingsError} className="mb-4" />
 				)}
 
-				<div className="mb-6">
-					<label htmlFor="member-search" className={labelClass}>
-						{t("orgSettings.inviteLabel")}
-					</label>
-					<input
-						id="member-search"
-						type="search"
-						value={memberSearch}
-						onChange={(e) => handleMemberSearchChange(e.target.value)}
-						placeholder={t("orgSettings.invitePlaceholder")}
-						className={inputClass}
-					/>
-					<label htmlFor="invite-role" className={`mt-2 ${labelClass}`}>
-						{t("orgSettings.inviteRoleLabel")}
-					</label>
-					<select
-						id="invite-role"
-						value={inviteRole}
-						onChange={(e) =>
-							setInviteRole(e.target.value as "Member" | "Organizer")
-						}
-						className={inputClass}
-					>
-						<option value="Member">{t("orgSettings.roleMember")}</option>
-						<option value="Organizer">{t("orgSettings.organisator")}</option>
-					</select>
-					{memberSearchLoading && (
-						<p role="status" className="mt-1 text-xs text-gray-500">
-							{t("orgSettings.searching")}
-						</p>
-					)}
-					{memberCandidates.length > 0 && (
-						<ul className="mt-1 divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
-							{memberCandidates.map((candidate) => (
-								<li
-									key={candidate.userId}
-									className="flex items-center justify-between px-3 py-2"
-								>
-									<div className="min-w-0">
-										<p className="truncate text-sm font-medium text-gray-900">
-											{candidate.firstName && candidate.lastName
-												? `${candidate.firstName} ${candidate.lastName}`
-												: candidate.username}
-										</p>
-										{candidate.firstName && candidate.lastName && (
-											<p className="truncate text-xs text-gray-500">
-												@{candidate.username}
-											</p>
-										)}
-									</div>
-									<Button
-										type="button"
-										onClick={() => handleInviteMember(candidate.userId)}
-										disabled={invitingUserId === candidate.userId}
-										size="sm"
-										className="ml-3 shrink-0"
-									>
-										{t("orgSettings.invite")}
-									</Button>
-								</li>
-							))}
-						</ul>
-					)}
-					{memberSearch.length >= 4 &&
-						!memberSearchLoading &&
-						memberCandidates.length === 0 && (
+				{isOrganizer && (
+					<div className="mb-6">
+						<label htmlFor="member-search" className={labelClass}>
+							{t("orgSettings.inviteLabel")}
+						</label>
+						<input
+							id="member-search"
+							type="search"
+							value={memberSearch}
+							onChange={(e) => handleMemberSearchChange(e.target.value)}
+							placeholder={t("orgSettings.invitePlaceholder")}
+							className={inputClass}
+						/>
+						<label htmlFor="invite-role" className={`mt-2 ${labelClass}`}>
+							{t("orgSettings.inviteRoleLabel")}
+						</label>
+						<select
+							id="invite-role"
+							value={inviteRole}
+							onChange={(e) =>
+								setInviteRole(e.target.value as "Member" | "Organizer")
+							}
+							className={inputClass}
+						>
+							<option value="Member">{t("orgSettings.roleMember")}</option>
+							<option value="Organizer">{t("orgSettings.organisator")}</option>
+						</select>
+						{memberSearchLoading && (
 							<p role="status" className="mt-1 text-xs text-gray-500">
-								{t("orgSettings.noSearchResults")}
+								{t("orgSettings.searching")}
 							</p>
 						)}
-				</div>
+						{memberCandidates.length > 0 && (
+							<ul className="mt-1 divide-y divide-gray-100 rounded-card border border-gray-200 bg-white shadow-resting">
+								{memberCandidates.map((candidate) => (
+									<li
+										key={candidate.userId}
+										className="flex items-center justify-between px-3 py-2"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-medium text-gray-900">
+												{candidate.firstName && candidate.lastName
+													? `${candidate.firstName} ${candidate.lastName}`
+													: candidate.username}
+											</p>
+											{candidate.firstName && candidate.lastName && (
+												<p className="truncate text-xs text-gray-500">
+													@{candidate.username}
+												</p>
+											)}
+										</div>
+										<Button
+											type="button"
+											onClick={() => handleInviteMember(candidate.userId)}
+											disabled={invitingUserId === candidate.userId}
+											size="sm"
+											className="ml-3 shrink-0"
+										>
+											{t("orgSettings.invite")}
+										</Button>
+									</li>
+								))}
+							</ul>
+						)}
+						{memberSearch.length >= 4 &&
+							!memberSearchLoading &&
+							memberCandidates.length === 0 && (
+								<p role="status" className="mt-1 text-xs text-gray-500">
+									{t("orgSettings.noSearchResults")}
+								</p>
+							)}
+					</div>
+				)}
 
 				{invitations.some((i) => i.status === "Pending") && (
 					<div className="mb-6">
@@ -510,7 +513,7 @@ export default function OrgMembersPage() {
 									>
 										{t("orgSettings.leaveOrganization")}
 									</button>
-								) : (
+								) : isOrganizer ? (
 									<div className="flex shrink-0 items-center gap-3">
 										{(() => {
 											const memberName =
@@ -570,7 +573,7 @@ export default function OrgMembersPage() {
 											);
 										})()}
 									</div>
-								)}
+								) : null}
 							</li>
 						))}
 					</ul>

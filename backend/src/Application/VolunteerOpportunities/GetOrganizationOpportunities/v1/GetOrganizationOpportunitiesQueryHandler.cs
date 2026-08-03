@@ -17,7 +17,7 @@ internal sealed class GetOrganizationOpportunitiesQueryHandler(
 		GetOrganizationOpportunitiesQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,

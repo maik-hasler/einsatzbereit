@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import type {
 	EngagementSummary,
@@ -26,6 +26,7 @@ import { getApiErrorMessage, isApiNotFoundError } from "../lib/apiError";
 import { ENGAGEMENT_STATUS_COLORS } from "../lib/engagementStatus";
 import { inputClass, labelClass } from "../lib/formClasses";
 import { CheckIconSolid, QrCodeIcon, StarIcon } from "../components/icons";
+import type { OrgAppContext } from "../layouts/OrgAppLayout";
 
 const STATUS_COLORS = ENGAGEMENT_STATUS_COLORS;
 const ENGAGEMENTS_PAGE_SIZE = 10;
@@ -36,6 +37,7 @@ const QRScannerModal = lazy(() => import("../components/QRScannerModal"));
 
 export default function EngagementManagementPage() {
 	const { opportunityId } = useParams<{ opportunityId: string }>();
+	const { isOrganizer } = useOutletContext<OrgAppContext>();
 	const api = useApiClient();
 	const { t, i18n } = useTranslation();
 	const [opportunity, setOpportunity] =
@@ -155,13 +157,20 @@ export default function EngagementManagementPage() {
 	}, [opportunityId]);
 
 	useEffect(() => {
-		if (!opportunityId || opportunity?.checkInMethod !== "PINCode") return;
+		// The check-in PIN is an organizer tool for admitting volunteers - a
+		// plain Member would just get a 403 here, so skip the doomed request.
+		if (
+			!opportunityId ||
+			!isOrganizer ||
+			opportunity?.checkInMethod !== "PINCode"
+		)
+			return;
 		api
 			.getOpportunityCheckInPin(opportunityId)
 			.then(setCheckInPin)
 			.catch(() => undefined);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [opportunityId, opportunity?.checkInMethod]);
+	}, [opportunityId, isOrganizer, opportunity?.checkInMethod]);
 
 	// Confirming/checking a volunteer in swaps the row's button pair for a
 	// different one (Pending's Confirm/Cancel -> Confirmed's Revoke, or
@@ -290,8 +299,8 @@ export default function EngagementManagementPage() {
 	}
 
 	const checkInMethod = opportunity?.checkInMethod;
-	const showManualCheckIn = checkInMethod === "Manual";
-	const showQrScanner = checkInMethod === "QRCode";
+	const showManualCheckIn = isOrganizer && checkInMethod === "Manual";
+	const showQrScanner = isOrganizer && checkInMethod === "QRCode";
 
 	return (
 		<>
@@ -510,7 +519,7 @@ export default function EngagementManagementPage() {
 									>
 										{STATUS_LABELS[e.status] ?? e.status}
 									</span>
-									{e.status === "Pending" && (
+									{isOrganizer && e.status === "Pending" && (
 										<div className="flex gap-2">
 											<button
 												onClick={() => handleConfirm(e.id)}
@@ -537,7 +546,7 @@ export default function EngagementManagementPage() {
 											</Button>
 										</div>
 									)}
-									{e.status === "Confirmed" && (
+									{isOrganizer && e.status === "Confirmed" && (
 										<div className="flex gap-2">
 											{showManualCheckIn && !e.isCheckedIn && (
 												<Button

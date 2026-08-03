@@ -35,7 +35,7 @@ const STATUS_BADGE_TONE: Record<string, ChipTone> = {
 };
 
 export default function OrgOpportunitiesPage() {
-	const { org } = useOutletContext<OrgAppContext>();
+	const { org, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t } = useTranslation();
 	const api = useApiClient();
 	const organizationId = org.id;
@@ -174,16 +174,19 @@ export default function OrgOpportunitiesPage() {
 	// React's useState setter (referentially stable), so no staleness risk
 	// from not routing it through a ref.
 	const quickActions = useMemo(
-		() => [
-			{
-				key: "create-opportunity",
-				label: t("orgOverview.createOpportunity"),
-				icon: <PlusIcon />,
-				onClick: () => setShowCreate(true),
-				variant: "primary" as const,
-			},
-		],
-		[t],
+		() =>
+			isOrganizer
+				? [
+						{
+							key: "create-opportunity",
+							label: t("orgOverview.createOpportunity"),
+							icon: <PlusIcon />,
+							onClick: () => setShowCreate(true),
+							variant: "primary" as const,
+						},
+					]
+				: [],
+		[t, isOrganizer],
 	);
 	useQuickActions(quickActions);
 
@@ -385,7 +388,7 @@ export default function OrgOpportunitiesPage() {
 					)}
 				</div>
 				<div className="mt-auto flex flex-wrap items-center gap-2">
-					{status !== "Cancelled" && (
+					{isOrganizer && status !== "Cancelled" && (
 						<button
 							type="button"
 							onClick={() => void openEdit(item.id)}
@@ -398,19 +401,21 @@ export default function OrgOpportunitiesPage() {
 								: t("opportunities.edit")}
 						</button>
 					)}
-					<Button
-						type="button"
-						variant="dangerOutline"
-						size="sm"
-						onClick={() => {
-							setDeleteTargetId(item.id);
-							setDeleteError(null);
-						}}
-						data-testid="opportunity-delete"
-					>
-						{t("opportunities.delete")}
-					</Button>
-					{(status === "Draft" || status === "Unpublished") && (
+					{isOrganizer && (
+						<Button
+							type="button"
+							variant="dangerOutline"
+							size="sm"
+							onClick={() => {
+								setDeleteTargetId(item.id);
+								setDeleteError(null);
+							}}
+							data-testid="opportunity-delete"
+						>
+							{t("opportunities.delete")}
+						</Button>
+					)}
+					{isOrganizer && (status === "Draft" || status === "Unpublished") && (
 						<Button
 							type="button"
 							onClick={() => void publish(item.id)}
@@ -423,7 +428,7 @@ export default function OrgOpportunitiesPage() {
 								: t("opportunities.publish")}
 						</Button>
 					)}
-					{status === "Published" && (
+					{isOrganizer && status === "Published" && (
 						<button
 							type="button"
 							onClick={() => {
@@ -436,21 +441,22 @@ export default function OrgOpportunitiesPage() {
 							{t("opportunities.unpublish")}
 						</button>
 					)}
-					{(status === "Published" || status === "Unpublished") && (
-						<Button
-							type="button"
-							variant="dangerOutline"
-							size="sm"
-							onClick={() => {
-								setCancelTargetId(item.id);
-								setCancelReason("");
-								setCancelError(null);
-							}}
-							data-testid="opportunity-cancel"
-						>
-							{t("opportunities.cancel")}
-						</Button>
-					)}
+					{isOrganizer &&
+						(status === "Published" || status === "Unpublished") && (
+							<Button
+								type="button"
+								variant="dangerOutline"
+								size="sm"
+								onClick={() => {
+									setCancelTargetId(item.id);
+									setCancelReason("");
+									setCancelError(null);
+								}}
+								data-testid="opportunity-cancel"
+							>
+								{t("opportunities.cancel")}
+							</Button>
+						)}
 					{status !== "Draft" && (
 						<Link
 							to={`/app/${organizationId}/dashboard/opportunities/${item.id}/engagements`}
@@ -560,10 +566,14 @@ export default function OrgOpportunitiesPage() {
 				<EmptyState
 					title={t("orgOpportunities.emptyTitle")}
 					message={t("orgOpportunities.emptyDesc")}
-					action={{
-						label: t("orgOverview.createOpportunity"),
-						onClick: () => setShowCreate(true),
-					}}
+					action={
+						isOrganizer
+							? {
+									label: t("orgOverview.createOpportunity"),
+									onClick: () => setShowCreate(true),
+								}
+							: undefined
+					}
 				/>
 			)}
 

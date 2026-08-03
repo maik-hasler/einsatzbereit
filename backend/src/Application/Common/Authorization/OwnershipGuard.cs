@@ -22,4 +22,19 @@ public static class OwnershipGuard
 				"Organization.NotOrganizer",
 				"You do not have permission to modify this resource."));
 	}
+
+	public static async Task EnsureIsMemberAsync(
+		IApplicationDbContext dbContext,
+		Guid organizationId,
+		UserId requestingUserId,
+		CancellationToken cancellationToken)
+	{
+		var isMember = await dbContext.IsMemberAsync(
+			OrganizationId.Create(organizationId).GetValueOrThrow(), requestingUserId, cancellationToken);
+
+		if (!isMember)
+			throw new ResultFailureException(Error.Forbidden(
+				"Organization.NotMember",
+				"You do not have permission to view this resource."));
+	}
 }

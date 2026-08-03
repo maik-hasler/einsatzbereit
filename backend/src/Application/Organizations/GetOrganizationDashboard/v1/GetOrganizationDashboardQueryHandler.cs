@@ -21,7 +21,7 @@ internal sealed class GetOrganizationDashboardQueryHandler(
 		if (organization is null)
 			return null;
 
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,

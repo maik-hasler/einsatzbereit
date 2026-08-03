@@ -22,7 +22,7 @@ internal sealed class GetOrganizationDetailsQueryHandler(
 		if (organization is null)
 			return null;
 
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			organization.Id.Value,
 			request.RequestingUserId,

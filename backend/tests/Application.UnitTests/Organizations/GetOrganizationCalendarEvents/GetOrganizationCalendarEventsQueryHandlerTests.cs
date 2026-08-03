@@ -24,7 +24,7 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 	public GetOrganizationCalendarEventsQueryHandlerTests()
 	{
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_sut = new GetOrganizationCalendarEventsQueryHandler(_dbContext, _readRepository);
 	}
@@ -75,12 +75,12 @@ public class GetOrganizationCalendarEventsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller is not an organizer of the target organization.
+		// Arrange: caller has no membership at all in the target organization.
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		var query = new GetOrganizationCalendarEventsQuery(DefaultOrgId, DefaultRequestingUserId, DefaultFrom, DefaultTo);

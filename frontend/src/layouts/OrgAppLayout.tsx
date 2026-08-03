@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "react-oidc-context";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
 import { useAchievementNotifier } from "../hooks/useAchievementNotifier";
@@ -32,6 +33,11 @@ import NotFoundPage from "../pages/NotFoundPage";
 export interface OrgAppContext {
 	org: OrganizationDetailsResponse;
 	reloadOrg: () => void;
+	// Whether the signed-in user is an Organizer of this specific organization
+	// (as opposed to a plain Member) - gates every management action (invite,
+	// promote/demote, remove, settings edit, opportunity/engagement management)
+	// across every org-app page. A plain Member has read-only access.
+	isOrganizer: boolean;
 }
 
 // Renders the org app shell body inside OrgBreadcrumbProvider so it can read
@@ -59,8 +65,13 @@ function OrgAppShell({
 	useAchievementNotifier();
 	const { t } = useTranslation();
 	const location = useLocation();
+	const auth = useAuth();
 	const extra = useOrgBreadcrumbExtra();
 	const quickActions = useQuickActionsList();
+	const currentUserId = auth.user?.profile?.sub;
+	const isOrganizer = Boolean(
+		org.members.find((m) => m.userId === currentUserId)?.isOrganisator,
+	);
 
 	// Now that the tab bar is gone (dashboard UX redesign), the breadcrumb is
 	// the only thing that shows an organizer where they are relative to the
@@ -150,7 +161,9 @@ function OrgAppShell({
 						}
 					>
 						<Outlet
-							context={{ org, reloadOrg: load } satisfies OrgAppContext}
+							context={
+								{ org, reloadOrg: load, isOrganizer } satisfies OrgAppContext
+							}
 							// Outlet re-mounts children on org identity change so per-tab state resets cleanly
 							key={org.id}
 						/>

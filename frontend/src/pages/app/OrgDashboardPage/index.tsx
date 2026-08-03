@@ -60,8 +60,17 @@ function useIsLargeViewport() {
 	return isLarge;
 }
 
+// Pure action tools with no read-only value for a viewer who can't perform
+// the action they trigger (creating an opportunity, running check-in) -
+// filtered out of a plain Member's rendered layout entirely, unlike the
+// other widgets (ToDo, Calendar, Settings, ...) which stay useful read-only.
+const ORGANIZER_ONLY_WIDGET_KEYS: readonly WidgetKey[] = [
+	"CreateOpportunity",
+	"QuickCheckIn",
+];
+
 export default function OrgDashboardPage() {
-	const { org } = useOutletContext<OrgAppContext>();
+	const { org, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const api = useApiClient();
@@ -138,7 +147,14 @@ export default function OrgDashboardPage() {
 		void loadLayout().finally(() => setRetryingLayoutLoad(false));
 	}
 
-	const layout = editing ? (draftLayout ?? []) : savedLayout;
+	const rawLayout = editing ? (draftLayout ?? []) : savedLayout;
+	const layout = isOrganizer
+		? rawLayout
+		: compactLayout(
+				rawLayout.filter(
+					(w) => !ORGANIZER_ONLY_WIDGET_KEYS.includes(w.widgetKey),
+				),
+			);
 	const availableToAdd = WIDGET_KEYS.filter(
 		(key) => !layout.some((w) => w.widgetKey === key),
 	);
@@ -196,10 +212,10 @@ export default function OrgDashboardPage() {
 
 	function startEditing() {
 		// Blocked while the true saved layout is unconfirmed (see
-		// layoutLoadFailed above) - the "Edit" quick action is already
-		// disabled for this, but the empty-state CTA below calls this
-		// directly too.
-		if (layoutLoadFailed) return;
+		// layoutLoadFailed above), or for a plain Member (read-only tier) -
+		// the "Edit" quick action is already disabled for both, but the
+		// empty-state CTA below calls this directly too.
+		if (layoutLoadFailed || !isOrganizer) return;
 		setDraftLayout(savedLayout);
 		setEditing(true);
 	}
@@ -234,8 +250,10 @@ export default function OrgDashboardPage() {
 	useEditModeQuickActions({
 		editing,
 		saving,
-		editDisabled: layoutLoadFailed,
-		editDisabledTitle: t("orgDashboard.layoutLoadError"),
+		editDisabled: layoutLoadFailed || !isOrganizer,
+		editDisabledTitle: !isOrganizer
+			? t("orgDashboard.layoutEditDisabledNotOrganizerHint")
+			: t("orgDashboard.layoutLoadError"),
 		onEdit: startEditing,
 		onSave: () => void handleSave(),
 		onCancel: handleCancel,
@@ -287,6 +305,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						isOrganizer={isOrganizer}
 						onOpportunityCreated={handleOpportunityCreated}
 					/>
 				);
@@ -296,6 +315,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						isOrganizer={isOrganizer}
 					/>
 				);
 			case "Settings":
@@ -429,10 +449,14 @@ export default function OrgDashboardPage() {
 			<EmptyState
 				title={t("orgDashboard.emptyStateTitle")}
 				message={t("orgDashboard.emptyStateMessage")}
-				action={{
-					label: t("orgDashboard.addWidgetHeading"),
-					onClick: handleStartEditingAndAddWidget,
-				}}
+				action={
+					isOrganizer
+						? {
+								label: t("orgDashboard.addWidgetHeading"),
+								onClick: handleStartEditingAndAddWidget,
+							}
+						: undefined
+				}
 			/>
 		</div>
 	) : (

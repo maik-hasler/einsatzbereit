@@ -20,7 +20,7 @@ internal sealed class GetDashboardLayoutQueryHandler(
 		_ = await dbContext.Organizations.FindAsync(organizationId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,

@@ -37,7 +37,7 @@ public class GetEngagementsQueryHandlerTests
 			.FindAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<CancellationToken>())
 			.Returns(CreateDefaultOpportunity());
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_readRepository
 			.GetPagedByOpportunityAsync(
@@ -120,11 +120,11 @@ public class GetEngagementsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		var query = new GetEngagementsQuery(DefaultOpportunityId, DefaultRequestingUserId, 1, 10);

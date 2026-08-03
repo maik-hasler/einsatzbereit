@@ -45,52 +45,46 @@ public class OrganizationSettingsTests(
 	}
 
 	[Test]
-	public async Task GetOrganizationDetails_ShouldReturn403_WhenUserHasNoOrganisatorRoleAtAll(
+	public async Task GetOrganizationDetails_ShouldReturn403_WhenRequestingUserHasNoRelationToTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// This proves only the RequireAuthorization(EinsatzbereitOrganisatorPolicy)
-		// role-claim gate on the endpoint - vera holds no "organisator" realm role
-		// at all, so this 403 fires before the handler (and its OwnershipGuard
-		// membership check) ever runs. See the membership-gate test below for the
-		// case this one used to be mistaken for.
-		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+		// #1024: GetOrganizationDetails is readable by any member (Organizer or
+		// Member), not just organizers - so this proves the true "stranger" case
+		// against a real org, rather than the old role-claim gate (removed) that
+		// used to reject every non-organizer before the handler even ran.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 
-		var act = () => client.GetOrganizationDetailsAsync(Guid.NewGuid(), cancellationToken);
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Stranger 403 Test Org" }, cancellationToken);
+
+		var act = () => veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(403);
 	}
 
 	[Test]
-	public async Task GetOrganizationDetails_ShouldReturn403_WhenRequestingUserIsAPlainMemberOfADifferentOrganization(
+	public async Task GetOrganizationDetails_ShouldSucceed_WhenRequestingUserIsAPlainMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
-		// Regression for #1335: the test above only proves the role-claim gate,
-		// never the handler's OwnershipGuard.EnsureIsOrganizerAsync membership
-		// check. Modelled on the #691 escalation test above - holding the
-		// platform-wide "organisator" role from one org must not grant read
-		// access to a different org the same user is merely a plain member of.
+		// #1024: a plain Member can now view their own organization's details -
+		// this used to 403 (only Organizer could), locking Members out of the
+		// org entirely with no way to even see it.
 		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
 
-		// vera becomes an organizer of her own, unrelated org - she now holds
-		// the platform-wide "organisator" role.
-		await veraClient.CreateOrganizationAsync(
-			new CreateOrganizationRequest { Name = "Vera's Own Org 6" }, cancellationToken);
-		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
-
 		var org = await olafClient.CreateOrganizationAsync(
 			new CreateOrganizationRequest { Name = "Details Membership Gate Test Org" }, cancellationToken);
 
-		// olaf's org gains vera as a plain member - never promoted to Organizer
-		// of this specific org.
+		// olaf's org gains vera as a plain member - never promoted to Organizer.
 		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
 
-		var act = () => veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var details = await veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 
-		var ex = await act.Should().ThrowAsync<ApiException>();
-		ex.Which.StatusCode.Should().Be(403);
+		details.Id.Should().Be(org.Id.Value);
+		details.Members.Should().Contain(m => m.UserId == vera.Id && !m.IsOrganisator && m.Role == "Member");
 	}
 
 	[Test]
@@ -424,12 +418,10 @@ public class OrganizationSettingsTests(
 		var veraOrganizations = await veraClient.GetOrganizationsAsync(cancellationToken);
 		veraOrganizations.Should().Contain(o => o.Id == org.Id.Value);
 
-		// GetOrganizationDetails is gated by the Organisator policy, a role
-		// claim baked into the JWT at mint time - vera's original token
-		// predates the "organisator" role grant that just happened as a side
-		// effect of accepting, so a fresh token is needed here (same pattern
-		// as the #691 escalation test below).
-		veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		// #1024: GetOrganizationDetails is readable by any member now, so a fresh
+		// token isn't required for the read itself - IsOrganisator per member is
+		// answered from the local organization_membership table (#1386), which
+		// Accept already wrote to synchronously, not from a JWT role claim.
 		var details = await veraClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		details.Members.Should().Contain(m => m.UserId == vera.Id && m.IsOrganisator);
 	}
@@ -913,6 +905,53 @@ public class OrganizationSettingsTests(
 
 		var ex = await act.Should().ThrowAsync<ApiException>();
 		ex.Which.StatusCode.Should().Be(409);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id);
+	}
+
+	[Test]
+	public async Task RemoveMember_ShouldSucceed_WhenAPlainMemberLeavesTheirOwnMembership(
+		CancellationToken cancellationToken)
+	{
+		// #1024: leaving is a self-service action available to any tier - a plain
+		// Member removing themselves used to 403 (the endpoint required the
+		// platform-wide "organisator" role, which a plain Member never holds).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Plain Member Leave Test Org" }, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		await veraClient.RemoveMemberAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Members.Should().NotContain(m => m.UserId == vera.Id);
+	}
+
+	[Test]
+	public async Task RemoveMember_ShouldReturn403_WhenAPlainMemberTriesToRemoveSomeoneElse(
+		CancellationToken cancellationToken)
+	{
+		// Removing another member is still org management and requires Organizer,
+		// even though the requester is a genuine Member of the organization.
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var olaf = await olafClient.GetUserProfileAsync(cancellationToken);
+
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Plain Member Remove Other Test Org" }, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(org.Id.Value, vera.Id, cancellationToken);
+
+		var act = () => veraClient.RemoveMemberAsync(org.Id.Value, olaf.Id, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(403);
 
 		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		stillThere.Members.Should().Contain(m => m.UserId == olaf.Id);

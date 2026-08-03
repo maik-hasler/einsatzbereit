@@ -181,6 +181,28 @@ public class OrganizationCalendarEventsTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(403);
 	}
 
+	[Test]
+	public async Task GetOrganizationCalendarEvents_ShouldSucceed_WhenRequestingUserIsAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// #1024: a plain Member can now view their organization's calendar - this
+		// used to 403 (only Organizer could).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(orgId, vera.Id, cancellationToken);
+
+		var events = await veraClient.GetOrganizationCalendarEventsAsync(
+			orgId,
+			DateTimeOffset.UtcNow,
+			DateTimeOffset.UtcNow.AddDays(30),
+			cancellationToken);
+
+		events.Should().BeEmpty();
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(

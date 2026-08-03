@@ -19,7 +19,7 @@ public class GetOrganizationsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnOrganizerOrganizations_WithNameAndLogoUrl(
+	public async Task Handle_ShouldReturnMemberOrganizations_WithNameAndLogoUrl(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -28,7 +28,7 @@ public class GetOrganizationsQueryHandlerTests
 		org.SetLogoUrl("https://example.com/logo.png");
 
 		_dbContext
-			.GetOrganizerOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
+			.GetMemberOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
 			.Returns([org]);
 
 		// Act
@@ -42,14 +42,14 @@ public class GetOrganizationsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldReturnEmptyList_WhenUserOrganizesNothing(
+	public async Task Handle_ShouldReturnEmptyList_WhenUserBelongsToNoOrganization(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var userId = Guid.NewGuid();
 
 		_dbContext
-			.GetOrganizerOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
+			.GetMemberOrganizationsAsync(UserId.Create(userId).GetValueOrThrow(), cancellationToken)
 			.Returns([]);
 
 		// Act

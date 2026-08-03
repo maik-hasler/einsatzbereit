@@ -27,7 +27,7 @@ public class GetOrganizationDetailsQueryHandlerTests
 	{
 		_dbContext.Organizations.Returns(_orgRepo);
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_sut = new GetOrganizationDetailsQueryHandler(_dbContext, _keycloakService);
 	}
@@ -115,16 +115,17 @@ public class GetOrganizationDetailsQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller is not an organizer of the target organization.
+		// Arrange: caller has no membership at all in the target organization (any
+		// member - Organizer or plain Member - may view organization details).
 		var orgId = DefaultOrgId;
 		var org = Organization.Create(OrganizationId.Create(orgId).GetValueOrThrow(), "Org").Value;
 
 		_orgRepo.FindAsync(OrganizationId.Create(orgId).GetValueOrThrow(), cancellationToken).Returns(org);
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		// Act

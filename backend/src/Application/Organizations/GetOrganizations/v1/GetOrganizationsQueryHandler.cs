@@ -13,7 +13,7 @@ internal sealed class GetOrganizationsQueryHandler(
 		GetOrganizationsQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		var organizations = await dbContext.GetOrganizerOrganizationsAsync(
+		var organizations = await dbContext.GetMemberOrganizationsAsync(
 			UserId.Create(request.UserId).GetValueOrThrow(), cancellationToken);
 
 		return organizations
