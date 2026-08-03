@@ -1,5 +1,3 @@
-using Application.Common.Email;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
@@ -30,10 +28,6 @@ internal sealed class VolunteerOpportunityCancelledDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,
 	IEngagementReadRepository engagementReadRepository,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 	ILogger<VolunteerOpportunityCancelledDomainEventHandler> logger)
 	: INotificationHandler<VolunteerOpportunityCancelledDomainEvent>
 {
@@ -62,12 +56,8 @@ internal sealed class VolunteerOpportunityCancelledDomainEventHandler(
 		await VolunteerOpportunityEngagementCascadeHelper.NotifyAndCancelActiveEngagementsAsync(
 			dbContext,
 			engagementReadRepository,
-			keycloakUserService,
-			emailService,
-			emailTemplateRenderer,
-			unsubscribeLinkBuilder,
-			opportunity,
 			notification.OpportunityId,
+			opportunity.Title,
 			NotificationKind.OpportunityCancelled,
 			engagementCancellationReason,
 			cancellationToken);

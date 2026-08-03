@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.VolunteerOpportunities.CreateTimeSlot.v1;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.CreateTimeSlot.v1;
@@ -30,7 +32,9 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 		[FromRoute] Guid opportunityId,
 		[FromBody] CreateTimeSlotRequest request,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
+		HttpRequest httpRequest,
 		CancellationToken cancellationToken)
 	{
 		var userId = Guid.TryParse(user.FindFirstValue("sub"), out var uid) ? UserId.Create(uid).GetValueOrThrow() : throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
@@ -55,6 +59,7 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
+		var timezone = httpRequest.Headers["X-Timezone"].FirstOrDefault();
 		var command = new CreateTimeSlotCommand(
 			opportunityId,
 			request.StartDateTime,
@@ -62,9 +67,12 @@ internal sealed class CreateTimeSlotEndpoint : IEndpoint
 			request.MaxParticipants,
 			userId,
 			request.RecurrenceFrequency,
-			recurrenceCount);
+			recurrenceCount,
+			timezone);
 
 		var timeSlots = await sender.Send(command, cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		var responses = timeSlots
 			.Select(ts => new CreateTimeSlotResponse(

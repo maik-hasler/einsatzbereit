@@ -2,10 +2,8 @@
 
 ## Reporting a Vulnerability
 
-Please **do not** open a public GitHub issue for security vulnerabilities in
-the application itself (as opposed to a flagged dependency, which the
-[dependency security scan](.github/workflows/security.yml) already surfaces
-publicly).
+Please **do not** open a public GitHub issue for security vulnerabilities,
+including in a dependency.
 
 Instead, use GitHub's private vulnerability reporting for this repository:
 open the [Security tab](../../security) and click **"Report a vulnerability"**.
@@ -30,15 +28,12 @@ notes unless you'd prefer to stay anonymous.
 
 ## Scope
 
-`Dependency Security Scan` (`.github/workflows/security.yml`) audits NuGet
-and npm dependencies for known CVEs on a weekly schedule, on manual dispatch,
-and on pull requests/pushes that touch a dependency manifest
-(`backend/Directory.Packages.props`, `backend/**/*.csproj`,
-`frontend/pnpm-lock.yaml`, `frontend/package.json`). Use this policy for
-vulnerabilities in Einsatzbereit's own code (backend, frontend, or the
-Keycloak realm configuration), not for dependency CVEs already caught by
-that scan.
+Use this policy for vulnerabilities in Einsatzbereit's own code (backend,
+frontend, or the Keycloak realm configuration) as well as in a dependency -
+there is currently no automated dependency vulnerability scan, so a report
+is the only way a dependency CVE affecting this project gets noticed.
 
-Known gaps, not yet covered by any workflow: static application security
-testing (no CodeQL or equivalent SAST scan) and container image scanning
-(no Trivy/Grype step in `publish.yml` before images are pushed to GHCR).
+Known gaps, not yet covered by any workflow: dependency vulnerability
+scanning (no NuGet/npm audit step), static application security testing (no
+CodeQL or equivalent SAST scan), and container image scanning (no
+Trivy/Grype step in `publish.yml` before images are pushed to GHCR).

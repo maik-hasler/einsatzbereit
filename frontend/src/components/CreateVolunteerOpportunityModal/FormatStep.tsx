@@ -4,7 +4,10 @@ import { FloatingField } from "./shared";
 import type { OpportunityFormValues } from "./schema";
 
 function generateRandomPin(): string {
-	return String(Math.floor(1000 + Math.random() * 9000));
+	// crypto.getRandomValues (not Math.random, not cryptographically strong)
+	// over a 6-digit space, matching the backend's RandomPinGenerator (#1176).
+	const [value] = crypto.getRandomValues(new Uint32Array(1));
+	return String(100000 + (value % 900000));
 }
 
 function RadioCardGroup<T extends string>({

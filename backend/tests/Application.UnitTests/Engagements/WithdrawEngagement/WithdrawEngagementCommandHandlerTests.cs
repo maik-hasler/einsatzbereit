@@ -1,4 +1,3 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
@@ -20,39 +19,25 @@ public class WithdrawEngagementCommandHandlerTests
 	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
 	private readonly IKeycloakOrganizationService _keycloakService =
 		Substitute.For<IKeycloakOrganizationService>();
-	private readonly IKeycloakUserService _keycloakUserService =
-		Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
 	private readonly IAggregateRepository<Engagement, EngagementId> _engagementRepo =
 		Substitute.For<IAggregateRepository<Engagement, EngagementId>>();
 	private readonly IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId> _opportunityRepo =
 		Substitute.For<IAggregateRepository<VolunteerOpportunity, VolunteerOpportunityId>>();
 	private readonly IAggregateRepository<Notification, NotificationId> _notifRepo =
 		Substitute.For<IAggregateRepository<Notification, NotificationId>>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
 	private readonly WithdrawEngagementCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Teststraße", "1", "12345", "Berlin").Value;
-	private static readonly Address TestAddress = Address.Create("Main St", "1", "12345", "Berlin").Value;
 
 	public WithdrawEngagementCommandHandlerTests()
 	{
 		_dbContext.Engagements.Returns(_engagementRepo);
 		_dbContext.VolunteerOpportunities.Returns(_opportunityRepo);
 		_dbContext.Notifications.Returns(_notifRepo);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "volunteer", "Test", "User", "volunteer@example.com"));
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
 		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new WithdrawEngagementCommandHandler(_dbContext, _keycloakService, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new WithdrawEngagementCommandHandler(_dbContext, _keycloakService);
 	}
 
 	private VolunteerOpportunity CreateOpportunityForOrganizerNotification(VolunteerOpportunityId opportunityId, out Guid organizerUserId)
@@ -78,12 +63,6 @@ public class WithdrawEngagementCommandHandlerTests
 			TimeSlotId.New());
 		return (engagement, volunteerId);
 	}
-
-	private VolunteerOpportunity CreateOpportunity() =>
-		VolunteerOpportunity.Create(
-			OrganizationId.New(), "Test Opportunity", "Description", false, TestAddress,
-			Occurrence.OneTime, ParticipationType.ScheduledSlots, CheckInMethod.None, _pinGenerator,
-			status: OpportunityStatus.Draft).Value;
 
 	[Test]
 	public async Task Handle_ShouldWithdrawEngagement_WhenCalledByOwner(
@@ -198,9 +177,9 @@ public class WithdrawEngagementCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*already terminated*");
 	}
 
-	// Regression for #1217: Anonymize() used to leave an anonymized engagement's
-	// Status as Pending/Confirmed, so the ownership check below dereferenced the
-	// now-null VolunteerId and crashed with a 500 instead of returning a 409.
+	// Regression for #1217: the ownership check below runs before Withdraw()'s
+	// own IsAnonymized guard (#1140), so it used to dereference the null
+	// VolunteerId directly and crash with a 500 instead of returning a 409.
 	[Test]
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)
@@ -241,52 +220,28 @@ public class WithdrawEngagementCommandHandlerTests
 		await act.Should().ThrowAsync<ResultFailureException>().WithMessage("*checked-in*");
 	}
 
+	// --- Organizer notifications moved off the request path (#1174) ---
+	//
+	// The organizer withdrawal email (subscription-gated per #1055) is no
+	// longer sent by this handler - IEmailService isn't even a dependency of
+	// it any more, so a rapid create/withdraw loop can no longer hold this
+	// request's DB transaction open across one synchronous SMTP send per
+	// organizer. It moves onto the outbox, delivered by
+	// EngagementWithdrawnDomainEventHandler; see that handler's tests for the
+	// subscription-preference/localization coverage that used to live here.
+	// The in-app bell-icon Notification row (unconditional, not
+	// subscription-gated) stays synchronous.
+
 	[Test]
-	public async Task Handle_ShouldRenderOrganizerEmail_InOrganizersPreferredLanguage(
+	public async Task Handle_ShouldCreateInAppNotification_ForEachOrganizer(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		var (engagement, volunteerId) = CreatePendingEngagementWithVolunteer();
 		var engagementId = EngagementId.New();
 		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		var opportunity = CreateOpportunityForOrganizerNotification(engagement.OpportunityId, out var organizerUserId);
+		CreateOpportunityForOrganizerNotification(engagement.OpportunityId, out var organizerUserId);
 		var organizerId = UserId.Create(organizerUserId).GetValueOrThrow();
-		var organizer = User.Create(organizerId);
-		organizer.SetPreferredLanguage("en");
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([organizer]);
-
-		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert - the organizer's own language, not the withdrawing volunteer's,
-		// governs this email since the organizer is the recipient.
-		_emailTemplateRenderer.Received(1).Render(
-			EmailTemplateKind.EngagementWithdrawnNotifyOrganizer,
-			"en",
-			Arg.Any<IReadOnlyDictionary<string, string>>());
-	}
-
-	// --- Organizer email notification preferences (#1055) ---
-
-	[Test]
-	public async Task Handle_ShouldEmailOrganizer_WhenSubscribedToWithdrawal(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunity = CreateOpportunity();
-		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, TimeSlotId.New());
-		var engagementId = EngagementId.New();
-		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		_opportunityRepo.FindAsync(opportunity.Id, Arg.Any<CancellationToken>()).Returns(opportunity);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		_unsubscribeLinkBuilder.Build(Arg.Any<UserId>(), Arg.Any<Guid>(), Arg.Any<EmailNotificationType>())
-			.Returns("https://example.com/unsubscribe");
 
 		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
 
@@ -294,44 +249,8 @@ public class WithdrawEngagementCommandHandlerTests
 		await _sut.Handle(command, cancellationToken);
 
 		// Assert
-		await _emailService.Received(1).SendAsync(
-			"olaf@example.com",
-			Arg.Any<string>(),
-			Arg.Is<string>(body => body!.Contains("https://example.com/unsubscribe")),
-			cancellationToken);
-	}
-
-	[Test]
-	public async Task Handle_ShouldNotEmailOrganizer_WhenOptedOutOfWithdrawal(
-		CancellationToken cancellationToken)
-	{
-		// Arrange
-		var opportunity = CreateOpportunity();
-		var volunteerId = UserId.New();
-		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, TimeSlotId.New());
-		var engagementId = EngagementId.New();
-		_engagementRepo.FindAsync(engagementId, cancellationToken).Returns(engagement);
-		_opportunityRepo.FindAsync(opportunity.Id, Arg.Any<CancellationToken>()).Returns(opportunity);
-		var organizerId = Guid.NewGuid();
-		_keycloakService.GetMembersAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns([new KeycloakOrganizationMember(organizerId, "olaf", "Olaf", "Organizer", "olaf@example.com", true)]);
-		var optedOutOrganizer = User.Create(UserId.Create(organizerId).GetValueOrThrow());
-		optedOutOrganizer.UpdateNotificationPreferences(
-			notifyOnNewSignUp: true,
-			notifyOnWithdrawal: false,
-			notifyOnEngagementConfirmed: true,
-			notifyOnEngagementCancelled: true,
-			notifyOnEngagementReminder: true);
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns([optedOutOrganizer]);
-
-		var command = new WithdrawEngagementCommand(engagementId, volunteerId.Value);
-
-		// Act
-		await _sut.Handle(command, cancellationToken);
-
-		// Assert
-		await _emailService.DidNotReceive().SendAsync(
-			"olaf@example.com", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await _notifRepo.Received(1).AddAsync(
+			Arg.Is<Notification>(n => n!.RecipientId == organizerId && n.Kind == NotificationKind.EngagementWithdrawn),
+			Arg.Any<CancellationToken>());
 	}
 }

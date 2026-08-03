@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.VolunteerOpportunities.UnpublishVolunteerOpportunity.v1;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.UnpublishVolunteerOpportunity.v1;
@@ -31,6 +33,7 @@ internal sealed class UnpublishVolunteerOpportunityEndpoint
 	private static async Task<IResult> UnpublishVolunteerOpportunityAsync(
 		[FromRoute] Guid opportunityId,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -41,6 +44,8 @@ internal sealed class UnpublishVolunteerOpportunityEndpoint
 		await sender.Send(
 			new UnpublishVolunteerOpportunityCommand(opportunityId, userId),
 			cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.NoContent();
 	}

@@ -17,7 +17,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 	[Test]
 	public async Task Anonymous_HeroOrgCta_RedirectsToKeycloakRegistrationEndpoint()
 	{
-		// #693: the hero's second CTA is labelled "Create an organisation" - it must
+		// #693: the hero's second CTA is labelled "Create an organization" - it must
 		// behave like the header's "Register" button (registration, not a plain login),
 		// and it must stay visible for anonymous visitors (this is the case here).
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -27,7 +27,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Page.GotoAsync(frontend.ToString());
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" })
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Create an organization" })
 			.First.ClickAsync();
 
 		await Expect(Page).ToHaveURLAsync(
@@ -51,7 +51,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		// fixture.ResetAsync() guarantees vera organizes nothing at this
 		// point, so the CTA is deterministically the "create" button, not
 		// the dashboard overview link.
-		var cta = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" });
+		var cta = Page.GetByRole(AriaRole.Button, new() { Name = "Create an organization" });
 		await Expect(cta.First).ToBeVisibleAsync(new() { Timeout = 10_000 });
 		await cta.First.ClickAsync();
 
@@ -77,7 +77,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create an organization" }))
 			.Not.ToBeVisibleAsync();
 
 		var cta = Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" });
@@ -94,7 +94,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		// "still loading" and "fetch failed" both collapsed into the same
 		// orgsData == null -> orgs == [] state as a genuine zero-orgs signed-in
 		// user. Olaf organizes orgs in seed data, so if his org-list fetch
-		// fails he must never see the "create an organisation" CTA - clicking
+		// fails he must never see the "create an organization" CTA - clicking
 		// it would have created a duplicate of an org he already had. Asserts
 		// the contract (the create-org branch must never appear while the
 		// fetch has failed), not any particular recovery mechanism - this
@@ -107,7 +107,7 @@ public class HomePageOrgCtaTests(AspireFixture fixture) : VisualTestBase(fixture
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create an organisation" }))
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Create an organization" }))
 			.Not.ToBeVisibleAsync();
 		await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Organization overview" }))
 			.Not.ToBeVisibleAsync();

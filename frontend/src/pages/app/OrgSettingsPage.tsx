@@ -10,9 +10,13 @@ import { getApiErrorMessage } from "../../lib/apiError";
 import { buildOrganizationFormSchema } from "../../lib/organizationFormSchema";
 import type { OrganizationFormValues } from "../../lib/organizationFormSchema";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import DangerZonePanel from "../../components/DangerZonePanel";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
+import ImageCropModal from "../../components/ImageCropModal";
+import FileUploadButton from "../../components/FileUploadButton";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
+import { resolveDateLocale } from "../../lib/format";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -41,7 +45,7 @@ export default function OrgSettingsPage() {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const navigate = useNavigate();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 
 	function organizationToFormValues(): OrganizationFormValues {
 		return {
@@ -73,6 +77,7 @@ export default function OrgSettingsPage() {
 	const [uploadingLogo, setUploadingLogo] = useState(false);
 	const [removingLogo, setRemovingLogo] = useState(false);
 	const [logoError, setLogoError] = useState<string | null>(null);
+	const [croppingLogoFile, setCroppingLogoFile] = useState<File | null>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -103,21 +108,27 @@ export default function OrgSettingsPage() {
 		setEditing(false);
 	}
 
-	async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		if (!LOGO_TYPES.includes(file.type) || file.size > MAX_LOGO_BYTES) {
 			setLogoError(t("orgSettings.logoHint"));
+			if (logoInputRef.current) logoInputRef.current.value = "";
 			return;
 		}
-		setUploadingLogo(true);
 		setLogoError(null);
+		setCroppingLogoFile(file);
+	}
+
+	async function handleLogoCropped(croppedFile: File) {
+		setCroppingLogoFile(null);
+		setUploadingLogo(true);
 		try {
 			await api.uploadOrganizationLogo(org.id, {
-				data: file,
-				fileName: file.name,
+				data: croppedFile,
+				fileName: croppedFile.name,
 			});
-			setLogoUrl(URL.createObjectURL(file));
+			setLogoUrl(URL.createObjectURL(croppedFile));
 		} catch {
 			setLogoError(t("orgSettings.logoUploadError"));
 		} finally {
@@ -227,22 +238,14 @@ export default function OrgSettingsPage() {
 							</>
 						}
 					>
-						<div className="mt-8 rounded-card border border-red-100 bg-red-50 px-4 py-4">
-							<h2 className="text-sm font-semibold text-red-800">
-								{t("orgSettings.dangerZone")}
-							</h2>
-							<p className="mt-1 text-xs text-red-700">
-								{t("orgSettings.deleteOrganizationHint")}
-							</p>
-							<button
-								type="button"
-								onClick={() => setShowDeleteConfirm(true)}
-								disabled={!isSoleMember}
-								className="mt-3 rounded-xl border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 disabled:hover:bg-white"
-							>
-								{t("orgSettings.deleteOrganization")}
-							</button>
-						</div>
+						<DangerZonePanel
+							className="mt-8"
+							title={t("orgSettings.dangerZone")}
+							description={t("orgSettings.deleteOrganizationHint")}
+							actionLabel={t("orgSettings.deleteOrganization")}
+							onAction={() => setShowDeleteConfirm(true)}
+							disabled={!isSoleMember}
+						/>
 					</OrganizationProfileView>
 				)}
 
@@ -266,6 +269,8 @@ export default function OrgSettingsPage() {
 										<img
 											src={logoUrl}
 											alt=""
+											width={64}
+											height={64}
 											className="h-16 w-16 rounded-lg object-contain ring-1 ring-gray-200"
 										/>
 									) : (
@@ -275,22 +280,17 @@ export default function OrgSettingsPage() {
 									)}
 									<div>
 										<div className="flex items-center gap-3">
-											<label
-												htmlFor="logo-upload"
-												className={`cursor-pointer rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 ${uploadingLogo || removingLogo ? "opacity-50 pointer-events-none" : ""}`}
-											>
-												{uploadingLogo
-													? t("orgSettings.logoUploading")
-													: t("orgSettings.logoUpload")}
-											</label>
-											<input
-												ref={logoInputRef}
+											<FileUploadButton
 												id="logo-upload"
-												type="file"
+												label={
+													uploadingLogo
+														? t("orgSettings.logoUploading")
+														: t("orgSettings.logoUpload")
+												}
 												accept="image/jpeg,image/png,image/webp"
-												className="sr-only"
 												onChange={handleLogoChange}
 												disabled={uploadingLogo || removingLogo}
+												inputRef={logoInputRef}
 											/>
 											{logoUrl && (
 												<button
@@ -555,6 +555,19 @@ export default function OrgSettingsPage() {
 					onConfirm={handleDeleteOrganization}
 					onClose={() => setShowDeleteConfirm(false)}
 					loading={deleting}
+				/>
+			)}
+
+			{croppingLogoFile && (
+				<ImageCropModal
+					file={croppingLogoFile}
+					aspectRatio={1}
+					shape="circle"
+					outputWidth={320}
+					outputHeight={320}
+					title={t("orgSettings.logoUpload")}
+					onCancel={() => setCroppingLogoFile(null)}
+					onCropped={(f) => void handleLogoCropped(f)}
 				/>
 			)}
 		</div>

@@ -18,12 +18,15 @@ internal sealed class SearchCitiesQueryHandler(
 		SearchCitiesQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		var cacheKey = $"city-search:{request.Query.Trim().ToLowerInvariant()}";
+		// Keyed by language too - Nominatim returns different exonyms per
+		// requested language (e.g. "Munich" vs "Munchen"), so a German result
+		// must never be served from cache to an English-requesting caller.
+		var cacheKey = $"city-search:{request.Language}:{request.Query.Trim().ToLowerInvariant()}";
 
 		if (cache.TryGetValue(cacheKey, out IReadOnlyList<CitySuggestion>? cached) && cached is not null)
 			return cached;
 
-		var results = await geocodingService.SearchCitiesAsync(request.Query, cancellationToken);
+		var results = await geocodingService.SearchCitiesAsync(request.Query, request.Language, cancellationToken);
 
 		// Don't cache an empty result - it's indistinguishable here from a
 		// transient geocoding failure, and caching that would turn a temporary

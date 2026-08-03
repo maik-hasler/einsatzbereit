@@ -96,7 +96,7 @@ public class ResendInvitationCommandHandlerTests
 		invitation.ExpiresOn.Should().BeAfter(DateTimeOffset.UtcNow.AddDays(OrganizationInvitation.ExpiryWindowDays - 1));
 		await _unitOfWork.Received(1).SaveChangesAsync(cancellationToken);
 		await _emailService.Received(1).SendAsync(
-			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
+			"vera@test.de", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
 	}
 
 	[Test]
@@ -153,7 +153,7 @@ public class ResendInvitationCommandHandlerTests
 			.Which.Error.Type.Should().Be(ErrorType.Conflict);
 		await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
 		await _emailService.DidNotReceive().SendAsync(
-			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Test]

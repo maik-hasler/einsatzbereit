@@ -36,17 +36,17 @@ internal sealed class UpdateUserProfileEndpoint
 			return Results.Problem("Unable to identify the current user.", statusCode: StatusCodes.Status401Unauthorized);
 		}
 
-		if (request.FirstName is { Length: > 100 })
-			return Results.Problem("FirstName must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
+		if (request.Skills is { Count: > UpdateUserProfileRequest.MaxSkillsCount })
+			return Results.Problem($"Skills must not contain more than {UpdateUserProfileRequest.MaxSkillsCount} entries.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.LastName is { Length: > 100 })
-			return Results.Problem("LastName must not exceed 100 characters.", statusCode: StatusCodes.Status400BadRequest);
+		if (request.Skills?.Any(skill => skill.Length > UpdateUserProfileRequest.MaxSkillLength) is true)
+			return Results.Problem($"Each skill must not exceed {UpdateUserProfileRequest.MaxSkillLength} characters.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.Bio is { Length: > 1000 })
-			return Results.Problem("Bio must not exceed 1000 characters.", statusCode: StatusCodes.Status400BadRequest);
+		if (request.Languages is { Count: > UpdateUserProfileRequest.MaxLanguagesCount })
+			return Results.Problem($"Languages must not contain more than {UpdateUserProfileRequest.MaxLanguagesCount} entries.", statusCode: StatusCodes.Status400BadRequest);
 
-		if (request.Phone is { Length: > 30 })
-			return Results.Problem("Phone must not exceed 30 characters.", statusCode: StatusCodes.Status400BadRequest);
+		if (request.Languages?.Any(language => language.Length > UpdateUserProfileRequest.MaxLanguageLength) is true)
+			return Results.Problem($"Each language must not exceed {UpdateUserProfileRequest.MaxLanguageLength} characters.", statusCode: StatusCodes.Status400BadRequest);
 
 		Domain.Users.PreferredContact? preferredContact = null;
 		if (request.PreferredContact is not null &&

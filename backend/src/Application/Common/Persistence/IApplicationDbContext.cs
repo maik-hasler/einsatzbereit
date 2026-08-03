@@ -122,6 +122,9 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	Task<int> CountUserStreaksAsync(
+		CancellationToken cancellationToken = default);
+
 	Task DeleteUserStreakAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
@@ -143,6 +146,13 @@ public interface IApplicationDbContext
 		CancellationToken cancellationToken = default);
 
 	Task<int> CountActiveEngagementsForTimeSlotAsync(
+		TimeSlotId timeSlotId,
+		CancellationToken cancellationToken = default);
+
+	// Takes a row lock on the time slot before counting active sign-ups, so a
+	// second concurrent sign-up for the same slot blocks until the first one's
+	// transaction commits instead of both reading the same stale count (#1142).
+	Task LockTimeSlotForUpdateAsync(
 		TimeSlotId timeSlotId,
 		CancellationToken cancellationToken = default);
 
@@ -197,6 +207,16 @@ public interface IApplicationDbContext
 	// done inline in GetUserProfileQueryHandler/UpdateUserProfileCommandHandler.
 	Task<List<User>> GetOrCreateUsersAsync(
 		IReadOnlyCollection<UserId> userIds,
+		CancellationToken cancellationToken = default);
+
+	// Unlike GetOrCreateUsersAsync above, this commits its own insert immediately via
+	// a single atomic "INSERT ... ON CONFLICT DO NOTHING" statement instead of relying
+	// on the caller's SaveChangesAsync - so it's safe to call from a query handler with
+	// no ambient transaction, where two concurrent first-time callers would otherwise
+	// both try to insert the same Keycloak-UserId-keyed row and one would 500 (#1148).
+	Task<User> GetOrCreateUserAsync(
+		UserId userId,
+		string? preferredLanguage,
 		CancellationToken cancellationToken = default);
 
 	Task<Engagement?> GetTerminalEngagementAsync(

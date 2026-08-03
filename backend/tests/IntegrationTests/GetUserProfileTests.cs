@@ -40,6 +40,25 @@ public class GetUserProfileTests(
 	}
 
 	[Test]
+	public async Task GetUserProfile_ShouldNotFail_WhenTwoConcurrentRequestsRaceTheFirstEverLoad(
+		CancellationToken cancellationToken)
+	{
+		// Issue #1148: GetUserProfileQueryHandler lazily creates the local `user`
+		// row on the very first load - a query handler has no ambient transaction
+		// (TransactionPipelineBehavior only wraps commands), so two concurrent
+		// first-time requests used to race a primary-key violation into an
+		// unhandled 500 for whichever request lost.
+		var client = await CreateAuthenticatedClientAsync("vera", "vera123");
+
+		var first = client.GetUserProfileAsync(cancellationToken);
+		var second = client.GetUserProfileAsync(cancellationToken);
+
+		var results = await Task.WhenAll(first, second);
+
+		results[0].Id.Should().Be(results[1].Id);
+	}
+
+	[Test]
 	public async Task GetUserProfile_ShouldReturn401_WhenNotAuthenticated(
 		CancellationToken cancellationToken)
 	{

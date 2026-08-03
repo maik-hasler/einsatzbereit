@@ -60,6 +60,58 @@ public class NotificationTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetMyNotifications_EngagementCancelled_HasRelatedTitleAndMyEngagementsUrl(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Cancel Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await olafClient.CancelEngagementAsync(engagement.Id, cancellationToken: cancellationToken);
+
+		var veraNotifications = await veraClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = veraNotifications.Items.Single(n => n.Kind == "EngagementCancelled");
+		notification.RelatedTitle.Should().Be(opportunityTitle);
+		notification.ActionUrl.Should().Be("/my-engagements");
+	}
+
+	[Test]
+	public async Task GetMyNotifications_EngagementWithdrawn_HasRelatedTitleAndOrganizerDashboardUrl(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Withdraw Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		await veraClient.WithdrawEngagementAsync(engagement.Id, cancellationToken);
+
+		// The organizer, not the withdrawing volunteer, is the recipient here.
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementWithdrawn");
+		notification.RelatedTitle.Should().Be(opportunityTitle);
+		notification.ActionUrl.Should()
+			.Be($"/app/{orgId}/dashboard/opportunities/{opportunity.Id}/engagements");
+	}
+
+	[Test]
 	public async Task GetMyNotifications_InvitationReceived_HasOrganizationNameAsRelatedTitleAndInvitationsUrl(
 		CancellationToken cancellationToken)
 	{

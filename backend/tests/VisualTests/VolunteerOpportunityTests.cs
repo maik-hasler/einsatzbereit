@@ -66,6 +66,27 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 	}
 
 	[Test]
+	public async Task FrequencyFilter_PanelStaysBelowHeader()
+	{
+		var frontend = Fixture.GetEndpoint("frontend");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("filter-frequency").ClickAsync();
+		var oneTimeOption = Page.GetByRole(AriaRole.Button, new() { Name = "One-time" });
+		await Expect(oneTimeOption).ToBeVisibleAsync();
+
+		// The panel's own ancestors (the filter bar, <main>) are all
+		// unpositioned, so its z-index competes directly with Header.tsx's
+		// sticky z-40 at the document root instead of nesting inside it - pin
+		// it below the header rather than the old z-[200] that painted over
+		// it (#1119).
+		var panel = oneTimeOption.Locator("xpath=..");
+		await Expect(panel).ToHaveCSSAsync("z-index", "30");
+	}
+
+	[Test]
 	public async Task HomePage_OpportunitiesSection_IsCenteredWithStyledCards()
 	{
 		var frontend = Fixture.GetEndpoint("frontend");
@@ -578,16 +599,16 @@ public class VolunteerOpportunityTests(AspireFixture fixture) : VisualTestBase(f
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");

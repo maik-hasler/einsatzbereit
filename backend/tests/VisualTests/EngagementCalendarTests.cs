@@ -10,7 +10,7 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 {
 	/// <summary>
 	/// Regression for #572: a Confirmed engagement with a time slot must show
-	/// an "Add to Calendar" menu in "My Engagements" with Google Calendar,
+	/// an "Add to Calendar" menu in "My Sign-ups" with Google Calendar,
 	/// Apple Calendar (webcal), and .ics download links scoped to that one
 	/// engagement - not the old opportunity-level file download.
 	/// </summary>
@@ -25,16 +25,16 @@ public class EngagementCalendarTests(AspireFixture fixture) : VisualTestBase(fix
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");

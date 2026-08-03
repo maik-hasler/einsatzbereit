@@ -237,6 +237,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var firstSlotId = timeSlots.ElementAt(0).Id;
 		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var firstEngagement = await veraClient.CreateEngagementAsync(
@@ -287,6 +288,36 @@ public class EngagementTests(IntegrationTestFixture fixture)
 
 		result.Items.Should().BeEmpty();
 		result.TotalItems.Should().Be(0);
+	}
+
+	// #1381: KeycloakUserService.GetUserProfilesAsync resolves one volunteer per
+	// entry concurrently now (was a sequential loop). This guards against the
+	// obvious way that could go wrong - a result ending up under the wrong
+	// volunteer's id because of an indexing/ordering bug in the parallel fetch.
+	[Test]
+	public async Task GetEngagements_ShouldResolveEachVolunteersOwnName_WhenLookedUpConcurrently(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		const int volunteerCount = 10;
+		var expectedUsernameByEngagementId = new Dictionary<Guid, string>();
+		for (var i = 0; i < volunteerCount; i++)
+		{
+			var (engagementId, username) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+			expectedUsernameByEngagementId[engagementId] = username;
+		}
+
+		var result = await olafClient.GetEngagementsAsync(
+			opportunity.Id, 1, volunteerCount, cancellationToken: cancellationToken);
+
+		result.Items.Should().HaveCount(volunteerCount);
+		foreach (var item in result.Items)
+		{
+			item.VolunteerName.Should().Be(expectedUsernameByEngagementId[item.Id]);
+		}
 	}
 
 	// ── ConfirmEngagement ─────────────────────────────────────────────────────
@@ -989,6 +1020,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 		var slotId = timeSlots.First().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var olafEngagement = await olafClient.CreateEngagementAsync(
 			opportunity.Id,
@@ -1025,6 +1057,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 		var slotId = timeSlots.First().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var olafEngagement = await olafClient.CreateEngagementAsync(
 			opportunity.Id,
@@ -1143,6 +1176,21 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var opportunityA = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 		var opportunityB = await CreateScheduledSlotsOpportunityAsync(olafClient, orgId, cancellationToken);
 
+		// opportunityA needs a slot of its own purely so it can be published -
+		// the request below targets opportunityA with a time slot id from
+		// opportunityB, and that mismatch is what the test is exercising.
+		await olafClient.CreateTimeSlotAsync(
+			opportunityA.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 10,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+		await olafClient.PublishVolunteerOpportunityAsync(opportunityA.Id, cancellationToken);
+
 		var slotsB = await olafClient.CreateTimeSlotAsync(
 			opportunityB.Id,
 			new CreateTimeSlotRequest
@@ -1188,6 +1236,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var firstSlotId = timeSlots.ElementAt(0).Id;
 		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var firstEngagement = await veraClient.CreateEngagementAsync(
@@ -1224,6 +1273,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			},
 			cancellationToken);
 		var slotId = timeSlots.First().Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		await veraClient.CreateEngagementAsync(
@@ -1262,6 +1312,7 @@ public class EngagementTests(IntegrationTestFixture fixture)
 			cancellationToken);
 		var firstSlotId = timeSlots.ElementAt(0).Id;
 		var secondSlotId = timeSlots.ElementAt(1).Id;
+		await olafClient.PublishVolunteerOpportunityAsync(opportunity.Id, cancellationToken);
 
 		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
 		var firstEngagement = await veraClient.CreateEngagementAsync(
@@ -1318,15 +1369,16 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		return org.Id.Value;
 	}
 
-	private async Task SignUpEphemeralVolunteerAsync(
+	private async Task<(Guid EngagementId, string Username)> SignUpEphemeralVolunteerAsync(
 		Guid opportunityId, CancellationToken cancellationToken)
 	{
 		var (_, username, password) = await fixture.CreateEphemeralUserAsync(cancellationToken);
 		var volunteerClient = await CreateAuthenticatedClientAsync(username, password);
-		await volunteerClient.CreateEngagementAsync(
+		var engagement = await volunteerClient.CreateEngagementAsync(
 			opportunityId,
 			new CreateEngagementRequest { Message = "I want to help!" },
 			cancellationToken);
+		return (engagement.Id, username);
 	}
 
 	private static Task<CreateVolunteerOpportunityResponse> CreateOpportunityAsync(

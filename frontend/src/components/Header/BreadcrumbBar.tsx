@@ -1,8 +1,10 @@
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import Button from "../Button";
 import type { BreadcrumbItem } from "../../contexts/ToolbarContext";
 import type { QuickAction } from "../../contexts/QuickActionsContext";
+import { HomeIcon } from "../icons";
 
 // Icon-led action bar rendered directly beneath <header> (a sibling, not a
 // descendant - visually attached to the header but not part of it). Home
@@ -38,20 +40,7 @@ export default function BreadcrumbBar({
 						aria-label={t("breadcrumb.home")}
 						className="flex shrink-0 items-center text-gray-400 transition-colors hover:text-brand-700"
 					>
-						<svg
-							className="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							strokeWidth="1.5"
-							stroke="currentColor"
-							aria-hidden="true"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-							/>
-						</svg>
+						<HomeIcon className="h-4 w-4" />
 					</Link>
 					{items.map((item, index) => {
 						const isLast = index === items.length - 1;
@@ -86,7 +75,7 @@ export default function BreadcrumbBar({
 				{actions && actions.length > 0 && (
 					<div className="flex shrink-0 items-center gap-2">
 						{actions.map((action) => (
-							<button
+							<Button
 								key={action.key}
 								type="button"
 								onClick={action.onClick}
@@ -94,15 +83,16 @@ export default function BreadcrumbBar({
 								title={action.title}
 								aria-label={action.label}
 								data-testid={`quick-action-${action.key}`}
-								className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+								variant={action.variant === "primary" ? "primary" : "outline"}
+								className={
 									action.variant === "primary"
-										? "bg-brand-700 font-semibold text-white shadow-sm hover:bg-brand-800"
-										: "border border-gray-200 text-gray-700 hover:bg-gray-50"
-								}`}
+										? "shrink-0 shadow-sm"
+										: "shrink-0"
+								}
 							>
 								{action.icon}
 								<span className="hidden sm:inline">{action.label}</span>
-							</button>
+							</Button>
 						))}
 					</div>
 				)}

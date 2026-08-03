@@ -1,7 +1,6 @@
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
-using Domain.Users;
 
 namespace Application.Users.UploadUserAvatar.v1;
 
@@ -16,22 +15,48 @@ internal sealed class UploadUserAvatarCommandHandler(
 	{
 		var contentType = ImageUploadValidator.EnsureValid(request.Content, request.ContentType, "Avatar");
 
-		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
-
-		if (user is null)
-		{
-			user = User.Create(request.UserId);
-			await dbContext.Users.AddAsync(user, cancellationToken);
-		}
+		// #1148: idempotent get-or-create instead of a check-then-Add that could
+		// race a concurrent first-time call for the same user.
+		var user = await dbContext.GetOrCreateUserAsync(request.UserId, preferredLanguage: null, cancellationToken);
+		var previousAvatarUrl = user.AvatarUrl;
 
 		var ext = ImageUploadValidator.GetExtension(contentType);
-		var objectKey = $"user-avatars/{request.UserId.Value}{ext}";
+		// Random suffix, not just "{userId}{ext}" - the user id is a public
+		// identifier surfaced by member search and public-profile endpoints, and
+		// avatars are face photos, so the object key must not be guessable from it
+		// (issue #1175).
+		var objectKey = $"user-avatars/{request.UserId.Value}/{Guid.NewGuid():N}{ext}";
 
 		using var stream = new MemoryStream(request.Content);
 		var url = await fileStorage.UploadAsync(objectKey, stream, request.Content.Length, contentType, cancellationToken);
 
 		user.SetAvatarUrl(url);
 
+		await DeletePreviousAvatarAsync(previousAvatarUrl, cancellationToken);
+
 		return true;
+	}
+
+	// Every upload gets a fresh random object key (see above), so the previous
+	// one is orphaned unless explicitly removed here. Best-effort: the new
+	// avatar is already live by this point, so a failed cleanup just leaves an
+	// unreferenced object in storage rather than a broken avatar.
+	private async Task DeletePreviousAvatarAsync(string? previousAvatarUrl, CancellationToken cancellationToken)
+	{
+		if (previousAvatarUrl is null)
+			return;
+
+		var previousObjectKey = fileStorage.GetObjectKeyFromPublicUrl(previousAvatarUrl);
+		if (previousObjectKey is null)
+			return;
+
+		try
+		{
+			await fileStorage.DeleteAsync(previousObjectKey, cancellationToken);
+		}
+		catch
+		{
+			// Object may already be gone or storage may be transiently unavailable; continue.
+		}
 	}
 }

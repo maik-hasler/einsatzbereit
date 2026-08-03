@@ -1,8 +1,8 @@
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Common.Storage;
+using Domain.Engagements;
 using Domain.Primitives;
 using Domain.Users;
 
@@ -10,12 +10,9 @@ namespace Application.Users.DeleteMyAccount.v1;
 
 internal sealed class DeleteMyAccountCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakUserService keycloakUserService,
 	IFileStorageService fileStorage)
 	: ICommandHandler<DeleteMyAccountCommand, bool>
 {
-	private static readonly string[] AvatarExtensions = [".jpg", ".png", ".webp"];
-
 	public async ValueTask<bool> Handle(
 		DeleteMyAccountCommand request,
 		CancellationToken cancellationToken = default)
@@ -26,7 +23,15 @@ internal sealed class DeleteMyAccountCommandHandler(
 			request.UserId, cancellationToken);
 
 		foreach (var engagement in engagements)
+		{
+			// Terminate non-terminal engagements before anonymizing so they
+			// stop occupying time-slot capacity and organizers can act on
+			// them, instead of leaving a permanently-stuck nameless row (#1140).
+			if (!engagement.IsCheckedIn && engagement.Status is EngagementStatus.Pending or EngagementStatus.Confirmed)
+				engagement.Withdraw().ThrowIfFailure();
+
 			engagement.Anonymize();
+		}
 
 		await dbContext.DeleteNotificationsForRecipientAsync(request.UserId, cancellationToken);
 		await dbContext.DeleteUserStreakAsync(request.UserId, cancellationToken);
@@ -38,22 +43,28 @@ internal sealed class DeleteMyAccountCommandHandler(
 		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
 		if (user is not null)
 		{
-			foreach (var ext in AvatarExtensions)
+			// The avatar's random object key (issue #1175) can't be reconstructed
+			// from the user id, so it has to come from the stored AvatarUrl instead
+			// of a guessed extension.
+			var avatarObjectKey = user.AvatarUrl is not null
+				? fileStorage.GetObjectKeyFromPublicUrl(user.AvatarUrl)
+				: null;
+
+			if (avatarObjectKey is not null)
 			{
 				try
 				{
-					await fileStorage.DeleteAsync($"user-avatars/{request.UserId.Value}{ext}", cancellationToken);
+					await fileStorage.DeleteAsync(avatarObjectKey, cancellationToken);
 				}
 				catch
 				{
-					// Object may not exist for this extension; continue
+					// Object may already be gone or storage may be transiently unavailable; continue.
 				}
 			}
 
+			user.MarkAccountDeleted();
 			dbContext.Users.Delete(user);
 		}
-
-		await keycloakUserService.DeleteUserAsync(request.UserId.Value, cancellationToken);
 
 		return true;
 	}

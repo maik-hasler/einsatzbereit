@@ -32,8 +32,6 @@ internal sealed class Publisher(
 				continue;
 			}
 
-			var handlerName = handler.GetType().Name;
-
 			var handlerWrapper = HandlerWrapper.Create(handler, domainEventType);
 
 			await handlerWrapper.Handle(notification, cancellationToken);

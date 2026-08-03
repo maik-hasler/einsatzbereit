@@ -114,9 +114,10 @@ public class SubmitFeedbackCommandHandlerTests
 		engagement.FeedbackSubmittedAt.Should().BeNull();
 	}
 
-	// Regression for #1217: Anonymize() used to leave an anonymized engagement's
-	// Status as Pending/Confirmed, so the ownership check below dereferenced the
-	// now-null VolunteerId and crashed with a 500 instead of returning a 409.
+	// Regression for #1217: the ownership check below runs before
+	// SubmitFeedback()'s own IsAnonymized guard (#1140), so it used to
+	// dereference the null VolunteerId directly and crash with a 500 instead
+	// of returning a 409.
 	[Test]
 	public async Task Handle_ShouldThrowConflict_WhenEngagementIsAnonymized(
 		CancellationToken cancellationToken)

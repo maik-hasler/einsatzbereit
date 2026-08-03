@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
+using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.VolunteerOpportunities;
 using TUnit.Core.Interfaces;
@@ -49,9 +50,8 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 		var withdrawn = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Withdrawn").GetValueOrThrow();
 		withdrawn.Withdraw().ThrowIfFailure();
 		// A pending engagement whose volunteer account was later deleted (#829) -
-		// Anonymize() moves Status to Cancelled and nulls VolunteerId (#1217), so
-		// this is excluded by both the status and null-VolunteerId filters below;
-		// there is no one left to notify and it must not show up in the result.
+		// VolunteerId is null even though Status is still Pending, so there is no
+		// one left to notify and it must not show up in the result.
 		var anonymizedPending = Engagement.CreateIndividualContact(opportunityId, UserId.New(), "Anonymized").GetValueOrThrow();
 		anonymizedPending.Anonymize();
 
@@ -103,6 +103,63 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	}
 
 	[Test]
+	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenOpportunityIsDraft(
+		CancellationToken cancellationToken)
+	{
+		// Regression for #1155: this endpoint is anonymous (no organizer check), so an
+		// unpublished Draft opportunity's details must not leak to whoever holds the
+		// engagement id, matching what GetDetailsAsync already enforces.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var calendarInfo = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		calendarInfo.Should().BeNull();
+	}
+
+	[Test]
+	public async Task GetCalendarInfoAsync_ShouldReturnInfo_WhenOpportunityIsPublished(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		opportunity.Publish().ThrowIfFailure();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var calendarInfo = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		calendarInfo.Should().NotBeNull();
+		calendarInfo!.OpportunityTitle.Should().Be("Titel");
+	}
+
+	[Test]
 	public async Task GetPagedByOpportunityAsync_ShouldEnrichVolunteerPhone_FromLocalUserRow(
 		CancellationToken cancellationToken)
 	{
@@ -144,6 +201,107 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 	private sealed class NoOpPinGenerator : IPinGenerator
 	{
 		public string GeneratePin() => "0000";
+	}
+
+	// Regression for #1184: the anonymous .ics calendar feed (AllowAnonymous,
+	// engagementId as capability token) must not leak title/description/address
+	// for an opportunity the organizer has taken off Published, nor keep serving
+	// a withdrawn/cancelled engagement's feed - both must 404 via a null return.
+	//
+	// ScheduledSlots opportunities can't be created directly as Published (Create()
+	// requires at least one time slot to exist first), so every case here starts as
+	// Draft, adds a slot, then Publish()es before being driven to the case's status.
+	private async Task<(VolunteerOpportunity Opportunity, TimeSlot Slot)> CreatePublishedOpportunityWithSlotAsync(
+		ApplicationDbContext dbContext,
+		CancellationToken cancellationToken)
+	{
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"CalendarOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.Recurring,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var slot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		opportunity.Publish().ThrowIfFailure();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		return (opportunity, slot);
+	}
+
+	[Test]
+	public async Task GetCalendarInfoAsync_ShouldReturnInfo_WhenOpportunityPublishedAndEngagementConfirmed(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var (opportunity, slot) = await CreatePublishedOpportunityWithSlotAsync(dbContext, cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var info = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		info.Should().NotBeNull();
+		info!.OpportunityTitle.Should().Be("Titel");
+	}
+
+	[Test]
+	[Arguments(OpportunityStatus.Unpublished)]
+	[Arguments(OpportunityStatus.Cancelled)]
+	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenOpportunityNotPublished(
+		OpportunityStatus status,
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var (opportunity, slot) = await CreatePublishedOpportunityWithSlotAsync(dbContext, cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		if (status == OpportunityStatus.Unpublished)
+			opportunity.Unpublish().ThrowIfFailure();
+		else
+			opportunity.Cancel().ThrowIfFailure();
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var info = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		info.Should().BeNull();
+	}
+
+	[Test]
+	[Arguments(EngagementStatus.Cancelled)]
+	[Arguments(EngagementStatus.Withdrawn)]
+	public async Task GetCalendarInfoAsync_ShouldReturnNull_WhenEngagementInTerminalStatus(
+		EngagementStatus terminalStatus,
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var (opportunity, slot) = await CreatePublishedOpportunityWithSlotAsync(dbContext, cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, UserId.New(), slot.Id);
+		if (terminalStatus == EngagementStatus.Cancelled)
+			engagement.Cancel().ThrowIfFailure();
+		else
+			engagement.Withdraw().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var info = await repository.GetCalendarInfoAsync(engagement.Id, cancellationToken);
+
+		info.Should().BeNull();
 	}
 
 	// Regression for #1051: EngagementSummary never carried CancellationReason,
@@ -223,5 +381,104 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 
 		page.Items.Should().ContainSingle()
 			.Which.CancellationReason.Should().Be("Position filled");
+	}
+
+	// --- Current & Upcoming never expiring (#1163) ---
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldMoveEndedTimeSlotToPastBucket_EvenWhenNeverCheckedIn(
+		CancellationToken cancellationToken)
+	{
+		// A Confirmed engagement for a CheckInMethod.None slot can never be checked
+		// in (no check-in action applies), so IsCheckedIn alone used to leave it in
+		// "upcoming" forever once its shift had already happened.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var pastNow = DateTimeOffset.UtcNow.AddDays(-11);
+		var endedSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(-10), DateTimeOffset.UtcNow.AddDays(-9), 10, pastNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, endedSlot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+		var past = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().BeEmpty();
+		past.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldKeepFutureConfirmedEngagement_InTheUpcomingBucket(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		var futureSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(10), DateTimeOffset.UtcNow.AddDays(10).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, futureSlot.Id);
+		engagement.Confirm().ThrowIfFailure();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Should().ContainSingle(e => e.Id == engagement.Id.Value);
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldOrderUpcomingBucket_BySlotStartTimeAscending(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+
+		var opportunity = VolunteerOpportunity.Create(
+			DomainOrganizationId.New(), "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.ScheduledSlots, CheckInMethod.None, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft).GetValueOrThrow();
+		// Added out of chronological order - CreatedOn (sign-up order) must not
+		// determine the upcoming bucket's order, only the slot's own start time.
+		var laterSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(20), DateTimeOffset.UtcNow.AddDays(20).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		var soonerSlot = opportunity.AddTimeSlot(
+			DateTimeOffset.UtcNow.AddDays(5), DateTimeOffset.UtcNow.AddDays(5).AddHours(2), 10, DateTimeOffset.UtcNow).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var laterEngagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, laterSlot.Id);
+		await dbContext.Engagements.AddAsync(laterEngagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var soonerEngagement = Engagement.CreateSlotSignUp(opportunity.Id, volunteerId, soonerSlot.Id);
+		await dbContext.Engagements.AddAsync(soonerEngagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var upcoming = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		upcoming.Items.Select(e => e.Id).Should().ContainInOrder(soonerEngagement.Id.Value, laterEngagement.Id.Value);
 	}
 }

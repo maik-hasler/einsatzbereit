@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Einsatzbereit API",
-    "description": "API für die Einsatzbereit-Anwendung",
+    "description": "API for the Einsatzbereit application",
     "version": "v1"
   },
   "paths": {
@@ -7082,8 +7082,7 @@
       "EngagementStatusResponse": {
         "required": [
           "id",
-          "status",
-          "modifiedOn"
+          "status"
         ],
         "type": "object",
         "properties": {
@@ -7093,13 +7092,6 @@
           },
           "status": {
             "type": "string"
-          },
-          "modifiedOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
           },
           "cancellationReason": {
             "type": [
@@ -7312,8 +7304,7 @@
           "userId",
           "username",
           "firstName",
-          "lastName",
-          "email"
+          "lastName"
         ],
         "type": "object",
         "properties": {
@@ -7335,9 +7326,6 @@
               "null",
               "string"
             ]
-          },
-          "email": {
-            "type": "string"
           }
         }
       },
@@ -7496,7 +7484,6 @@
         "required": [
           "id",
           "kind",
-          "relatedEntityId",
           "relatedTitle",
           "actionUrl",
           "isRead",
@@ -7510,10 +7497,6 @@
           },
           "kind": {
             "type": "string"
-          },
-          "relatedEntityId": {
-            "type": "string",
-            "format": "uuid"
           },
           "relatedTitle": {
             "type": [
@@ -7679,22 +7662,11 @@
       },
       "OrganizationDashboardResponse": {
         "required": [
-          "openOpportunities",
           "pendingEngagements",
-          "confirmedEngagementsNext7Days",
-          "confirmedEngagementsTotal",
-          "cancelledEngagements"
+          "confirmedEngagementsTotal"
         ],
         "type": "object",
         "properties": {
-          "openOpportunities": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "pendingEngagements": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -7703,23 +7675,7 @@
             ],
             "format": "int32"
           },
-          "confirmedEngagementsNext7Days": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "confirmedEngagementsTotal": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "cancelledEngagements": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -7740,7 +7696,6 @@
           "logoUrl",
           "address",
           "createdOn",
-          "modifiedOn",
           "members"
         ],
         "type": "object",
@@ -7794,13 +7749,6 @@
           },
           "createdOn": {
             "type": "string",
-            "format": "date-time"
-          },
-          "modifiedOn": {
-            "type": [
-              "null",
-              "string"
-            ],
             "format": "date-time"
           },
           "members": {

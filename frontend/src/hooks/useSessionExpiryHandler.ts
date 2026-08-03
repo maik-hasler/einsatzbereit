@@ -32,7 +32,7 @@ export function useSessionExpiryHandler() {
 		let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
 		function handleExpiry() {
-			// A stale/expired user object can still sit in localStorage from an
+			// A stale/expired user object can still sit in sessionStorage from an
 			// earlier login - automaticSilentRenew fires a renewal attempt for it
 			// on mount regardless of what page is open, and that attempt fails
 			// immediately when there's no live Keycloak SSO session behind it

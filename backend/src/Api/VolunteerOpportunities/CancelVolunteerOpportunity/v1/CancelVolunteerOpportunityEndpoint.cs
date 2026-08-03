@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -7,6 +8,7 @@ using Application.VolunteerOpportunities.CancelVolunteerOpportunity.v1;
 using Domain.Primitives;
 using Domain.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.CancelVolunteerOpportunity.v1;
@@ -32,6 +34,7 @@ internal sealed class CancelVolunteerOpportunityEndpoint
 		[FromRoute] Guid opportunityId,
 		[FromBody] CancelVolunteerOpportunityRequest? body,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -45,6 +48,8 @@ internal sealed class CancelVolunteerOpportunityEndpoint
 		await sender.Send(
 			new CancelVolunteerOpportunityCommand(opportunityId, userId, body?.Reason),
 			cancellationToken);
+
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		return Results.NoContent();
 	}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useDismissableOverlay } from "../hooks/useDismissableOverlay";
+import { ChevronDownIcon } from "./icons";
 
 export interface DropdownOption {
 	value: string;
@@ -170,23 +171,13 @@ export default function Dropdown({
 				onKeyDown={handleKeyDown}
 				className={`flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
 			>
-				<span className={`truncate ${selected ? "" : "text-gray-400"}`}>
+				<span className={`truncate ${selected ? "" : "text-gray-500"}`}>
 					{selected ? selected.label : (placeholder ?? "")}
 				</span>
-				<svg
-					aria-hidden="true"
-					className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="2"
-					stroke="currentColor"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="m19.5 8.25-7.5 7.5-7.5-7.5"
-					/>
-				</svg>
+				<ChevronDownIcon
+					open={open}
+					className="h-4 w-4 shrink-0 text-gray-400"
+				/>
 			</button>
 
 			{open && (
@@ -195,7 +186,7 @@ export default function Dropdown({
 					id={listboxId}
 					role="listbox"
 					aria-labelledby={id}
-					className="absolute left-0 top-full z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal"
+					className="absolute top-full left-0 z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-modal"
 				>
 					{options.map((opt, index) => (
 						<li

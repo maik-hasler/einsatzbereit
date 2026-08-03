@@ -19,6 +19,7 @@ internal sealed class SmtpEmailService(
 		string to,
 		string subject,
 		string body,
+		string correlationId,
 		CancellationToken cancellationToken = default)
 	{
 		try
@@ -46,7 +47,11 @@ internal sealed class SmtpEmailService(
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Failed to send email to {To} with subject {Subject}", to, subject);
+			// Deliberately not {To}/{Subject} - both can carry a real user's email
+			// address or another user's name (einsatzbereit#1189). The correlation
+			// id (an engagement/invitation/user GUID) is enough to trace the failure
+			// back to its source without writing PII into logs or the OTLP sink.
+			logger.LogError(ex, "Failed to send email (correlationId: {CorrelationId})", correlationId);
 			metrics.RecordFailed();
 		}
 	}
@@ -98,7 +103,7 @@ internal sealed class SmtpEmailService(
 			}
 			catch (Exception ex)
 			{
-				logger.LogError(ex, "Failed to send email to {To} with subject {Subject}", email.To, email.Subject);
+				logger.LogError(ex, "Failed to send email (correlationId: {CorrelationId})", email.CorrelationId);
 				metrics.RecordFailed();
 			}
 		}

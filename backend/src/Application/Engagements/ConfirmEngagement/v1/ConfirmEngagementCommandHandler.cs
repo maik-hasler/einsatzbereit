@@ -1,9 +1,6 @@
 using Application.Achievements.AwardAchievement.v1;
 using Application.Common.Authorization;
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
-using Application.Common.Localization;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Domain.Engagements;
@@ -15,10 +12,6 @@ namespace Application.Engagements.ConfirmEngagement.v1;
 
 internal sealed class ConfirmEngagementCommandHandler(
 	IApplicationDbContext dbContext,
-	IKeycloakUserService keycloakUserService,
-	IEmailService emailService,
-	IEmailTemplateRenderer emailTemplateRenderer,
-	IUnsubscribeLinkBuilder unsubscribeLinkBuilder,
 	ISender sender)
 	: ICommandHandler<ConfirmEngagementCommand, Engagement>
 {
@@ -57,31 +50,6 @@ internal sealed class ConfirmEngagementCommandHandler(
 			volunteerId, isoYear, isoWeek, cancellationToken);
 
 		await EvaluateMilestoneAchievementsAsync(volunteerId, totalConfirmedEngagements, cancellationToken);
-
-		var volunteer = await keycloakUserService.GetUserAsync(volunteerId.Value, cancellationToken);
-		var volunteerUser = (await dbContext.GetOrCreateUsersAsync([volunteerId], cancellationToken))[0];
-		var volunteerLanguage = SupportedLanguages.Resolve(volunteerUser.PreferredLanguage);
-
-		if (volunteerUser.IsSubscribedTo(EmailNotificationType.EngagementConfirmed))
-		{
-			var content = emailTemplateRenderer.Render(
-				EmailTemplateKind.EngagementConfirmed,
-				volunteerLanguage,
-				new Dictionary<string, string>
-				{
-					["VolunteerName"] = volunteer.FirstName ?? volunteer.Username,
-					["OpportunityTitle"] = opportunity.Title,
-				});
-
-			var unsubscribeUrl = unsubscribeLinkBuilder.Build(
-				volunteerId, volunteerUser.UnsubscribeToken, EmailNotificationType.EngagementConfirmed);
-
-			await emailService.SendAsync(
-				volunteer.Email,
-				content.Subject,
-				EmailFooter.Append(content.Body, unsubscribeUrl),
-				cancellationToken);
-		}
 
 		return engagement;
 	}

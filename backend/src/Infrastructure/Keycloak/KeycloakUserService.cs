@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Application.Common.Keycloak;
 using Application.Common.Pagination;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Keycloak;
@@ -11,13 +12,22 @@ namespace Infrastructure.Keycloak;
 internal sealed class KeycloakUserService(
 	HttpClient httpClient,
 	KeycloakAdminTokenProvider tokenProvider,
-	IOptions<KeycloakOptions> options)
+	IOptions<KeycloakOptions> options,
+	ILogger<KeycloakUserService> logger)
 	: IKeycloakUserService
 {
 	private static readonly JsonSerializerOptions JsonOptions = new()
 	{
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 	};
+
+	private const int RoleLookupConcurrency = 8;
+
+	// Keycloak's admin API isn't built for a burst of concurrent per-user
+	// lookups; this caps how many of the (up to MaxPageSize) volunteer profile
+	// lookups run at once so a large page doesn't fire e.g. 100 simultaneous
+	// requests at it.
+	private const int MaxConcurrentUserLookups = 8;
 
 	private readonly KeycloakOptions _options = options.Value;
 
@@ -26,9 +36,8 @@ internal sealed class KeycloakUserService(
 		CancellationToken cancellationToken = default)
 	{
 		var response = await SendAuthorizedAsync(
-			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Get, $"/admin/realms/{_options.Realm}/users/{userId}"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -49,21 +58,34 @@ internal sealed class KeycloakUserService(
 		IReadOnlyList<Guid> userIds,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new Dictionary<Guid, string>(userIds.Count);
-		foreach (var userId in userIds.Distinct())
+		var distinctIds = userIds.Distinct().ToList();
+		var names = new string?[distinctIds.Count];
+
+		// Each slot is written by exactly one iteration, so no cross-task
+		// synchronization is needed for the array itself.
+		await Parallel.ForEachAsync(
+			Enumerable.Range(0, distinctIds.Count),
+			new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrentUserLookups, CancellationToken = cancellationToken },
+			async (i, ct) =>
+			{
+				try
+				{
+					var profile = await GetUserAsync(distinctIds[i], ct);
+					names[i] = profile.FirstName is not null || profile.LastName is not null
+						? $"{profile.FirstName} {profile.LastName}".Trim()
+						: profile.Username;
+				}
+				catch
+				{
+					// ignore individual lookup failures
+				}
+			});
+
+		var result = new Dictionary<Guid, string>(distinctIds.Count);
+		for (var i = 0; i < distinctIds.Count; i++)
 		{
-			try
-			{
-				var profile = await GetUserAsync(userId, cancellationToken);
-				var name = profile.FirstName is not null || profile.LastName is not null
-					? $"{profile.FirstName} {profile.LastName}".Trim()
-					: profile.Username;
-				result[userId] = name;
-			}
-			catch
-			{
-				// ignore individual lookup failures
-			}
+			if (names[i] is { } name)
+				result[distinctIds[i]] = name;
 		}
 		return result;
 	}
@@ -72,17 +94,29 @@ internal sealed class KeycloakUserService(
 		IReadOnlyList<Guid> userIds,
 		CancellationToken cancellationToken = default)
 	{
-		var result = new Dictionary<Guid, KeycloakUserProfile>(userIds.Count);
-		foreach (var userId in userIds.Distinct())
+		var distinctIds = userIds.Distinct().ToList();
+		var profiles = new KeycloakUserProfile?[distinctIds.Count];
+
+		await Parallel.ForEachAsync(
+			Enumerable.Range(0, distinctIds.Count),
+			new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrentUserLookups, CancellationToken = cancellationToken },
+			async (i, ct) =>
+			{
+				try
+				{
+					profiles[i] = await GetUserAsync(distinctIds[i], ct);
+				}
+				catch
+				{
+					// ignore individual lookup failures - same tolerance as GetDisplayNamesAsync above
+				}
+			});
+
+		var result = new Dictionary<Guid, KeycloakUserProfile>(distinctIds.Count);
+		for (var i = 0; i < distinctIds.Count; i++)
 		{
-			try
-			{
-				result[userId] = await GetUserAsync(userId, cancellationToken);
-			}
-			catch
-			{
-				// ignore individual lookup failures - same tolerance as GetDisplayNamesAsync above
-			}
+			if (profiles[i] is { } profile)
+				result[distinctIds[i]] = profile;
 		}
 		return result;
 	}
@@ -102,11 +136,11 @@ internal sealed class KeycloakUserService(
 		};
 
 		var response = await SendAuthorizedAsync(
-			() => httpClient.PutAsJsonAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}",
-				body,
-				JsonOptions,
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Put, $"/admin/realms/{_options.Realm}/users/{userId}")
+			{
+				Content = JsonContent.Create(body, options: JsonOptions),
+			},
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -117,9 +151,8 @@ internal sealed class KeycloakUserService(
 		CancellationToken cancellationToken = default)
 	{
 		var response = await SendAuthorizedAsync(
-			() => httpClient.DeleteAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Delete, $"/admin/realms/{_options.Realm}/users/{userId}"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -139,9 +172,8 @@ internal sealed class KeycloakUserService(
 			: $"search={searchParam}&first={first}&max={pageSize}";
 
 		var response = await SendAuthorizedAsync(
-			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/users?{listQuery}",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Get, $"/admin/realms/{_options.Realm}/users?{listQuery}"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -149,44 +181,53 @@ internal sealed class KeycloakUserService(
 		var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserResponse>>(
 			JsonOptions, cancellationToken) ?? [];
 
-		var items = new List<AdminUserListItem>(users.Count);
-
-		// Sequential, not Task.WhenAll: SendAuthorizedAsync mutates the shared
-		// httpClient.DefaultRequestHeaders.Authorization on every call, so
-		// concurrent calls on this one instance would race on that header
-		// collection. GetDisplayNamesAsync above has the same per-user-lookup
-		// shape and is sequential for the same reason - match it.
-		foreach (var user in users)
-		{
-			if (user.ServiceAccountClientId is not null)
-				continue;
-
-			IReadOnlyList<string> roles;
-			try
+		// Bounded Task.WhenAll: each call builds its own HttpRequestMessage and
+		// sets its own Authorization header (see SendAuthorizedAsync), so unlike
+		// the old DefaultRequestHeaders-mutating version, concurrent per-user
+		// role lookups no longer race each other. The SemaphoreSlim caps
+		// in-flight requests so a max-size page doesn't fire 100 simultaneous
+		// calls at Keycloak.
+		using var roleLookupThrottle = new SemaphoreSlim(RoleLookupConcurrency);
+		var itemTasks = users
+			.Where(user => user.ServiceAccountClientId is null)
+			.Select(async user =>
 			{
-				roles = await GetCompositeRealmRoleNamesAsync(user.Id, cancellationToken);
-			}
-			catch
-			{
-				// This user just came back from the list call above, but Keycloak
-				// can still 404 the follow-up per-user role lookup if they're
-				// deleted between the two calls (observed in CI: a short-lived
-				// test-created user removed by its own cleanup mid-request) -
-				// same "ignore individual lookup failures" tolerance as
-				// GetDisplayNamesAsync above, so one stale/racy id doesn't sink
-				// the whole admin Users table.
-				roles = [];
-			}
+				await roleLookupThrottle.WaitAsync(cancellationToken);
+				try
+				{
+					IReadOnlyList<string> roles;
+					try
+					{
+						roles = await GetCompositeRealmRoleNamesAsync(user.Id, cancellationToken);
+					}
+					catch
+					{
+						// This user just came back from the list call above, but Keycloak
+						// can still 404 the follow-up per-user role lookup if they're
+						// deleted between the two calls (observed in CI: a short-lived
+						// test-created user removed by its own cleanup mid-request) -
+						// same "ignore individual lookup failures" tolerance as
+						// GetDisplayNamesAsync above, so one stale/racy id doesn't sink
+						// the whole admin Users table.
+						roles = [];
+					}
 
-			items.Add(new AdminUserListItem(
-				Guid.Parse(user.Id),
-				user.Username,
-				NullIfEmpty(user.FirstName),
-				NullIfEmpty(user.LastName),
-				user.Email ?? string.Empty,
-				user.Enabled,
-				roles));
-		}
+					return new AdminUserListItem(
+						Guid.Parse(user.Id),
+						user.Username,
+						NullIfEmpty(user.FirstName),
+						NullIfEmpty(user.LastName),
+						user.Email ?? string.Empty,
+						user.Enabled,
+						roles);
+				}
+				finally
+				{
+					roleLookupThrottle.Release();
+				}
+			});
+
+		var items = (await Task.WhenAll(itemTasks)).ToList();
 
 		items.Sort((a, b) => string.Compare(a.Username, b.Username, StringComparison.OrdinalIgnoreCase));
 
@@ -196,9 +237,8 @@ internal sealed class KeycloakUserService(
 		// to correct for a cosmetic pageCount imprecision on an admin-only page.
 		var countQuery = searchParam is null ? "" : $"?search={searchParam}";
 		var countResponse = await SendAuthorizedAsync(
-			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/users/count{countQuery}",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Get, $"/admin/realms/{_options.Realm}/users/count{countQuery}"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(countResponse, cancellationToken);
@@ -214,11 +254,11 @@ internal sealed class KeycloakUserService(
 		CancellationToken cancellationToken = default)
 	{
 		var response = await SendAuthorizedAsync(
-			() => httpClient.PutAsJsonAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}",
-				new { enabled },
-				JsonOptions,
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Put, $"/admin/realms/{_options.Realm}/users/{userId}")
+			{
+				Content = JsonContent.Create(new { enabled }, options: JsonOptions),
+			},
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -231,11 +271,11 @@ internal sealed class KeycloakUserService(
 		var role = await GetRealmRoleAsync("admin", cancellationToken);
 
 		var response = await SendAuthorizedAsync(
-			() => httpClient.PostAsJsonAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm",
-				new[] { role },
-				JsonOptions,
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Post, $"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm")
+			{
+				Content = JsonContent.Create(new[] { role }, options: JsonOptions),
+			},
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -247,17 +287,13 @@ internal sealed class KeycloakUserService(
 	{
 		var role = await GetRealmRoleAsync("admin", cancellationToken);
 
-		// A new HttpRequestMessage per attempt: SendAuthorizedAsync may invoke
-		// the delegate twice (retry-after-401), and a message can only be sent once.
 		var response = await SendAuthorizedAsync(
-			() => httpClient.SendAsync(
-				new HttpRequestMessage(
-					HttpMethod.Delete,
-					$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm")
-				{
-					Content = JsonContent.Create(new[] { role }, options: JsonOptions),
-				},
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Delete,
+				$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm")
+			{
+				Content = JsonContent.Create(new[] { role }, options: JsonOptions),
+			},
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -268,9 +304,8 @@ internal sealed class KeycloakUserService(
 		CancellationToken cancellationToken = default)
 	{
 		var response = await SendAuthorizedAsync(
-			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Get, $"/admin/realms/{_options.Realm}/users/{userId}"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -286,9 +321,9 @@ internal sealed class KeycloakUserService(
 		CancellationToken cancellationToken)
 	{
 		var response = await SendAuthorizedAsync(
-			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm/composite",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Get,
+				$"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm/composite"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -304,9 +339,8 @@ internal sealed class KeycloakUserService(
 		CancellationToken cancellationToken)
 	{
 		var response = await SendAuthorizedAsync(
-			() => httpClient.GetAsync(
-				$"/admin/realms/{_options.Realm}/roles/{roleName}",
-				cancellationToken),
+			() => new HttpRequestMessage(
+				HttpMethod.Get, $"/admin/realms/{_options.Realm}/roles/{roleName}"),
 			cancellationToken);
 
 		await EnsureSuccessAsync(response, cancellationToken);
@@ -316,13 +350,16 @@ internal sealed class KeycloakUserService(
 			?? throw new InvalidOperationException($"Keycloak role '{roleName}' not found.");
 	}
 
+	// Builds a fresh HttpRequestMessage per attempt (createRequest is invoked
+	// again on retry) and sets Authorization directly on that message rather
+	// than on httpClient.DefaultRequestHeaders - concurrent callers sharing
+	// this instance (e.g. ListUsersAsync's per-user role lookups) no longer
+	// race on a shared header collection.
 	private async Task<HttpResponseMessage> SendAuthorizedAsync(
-		Func<Task<HttpResponseMessage>> send,
+		Func<HttpRequestMessage> createRequest,
 		CancellationToken cancellationToken)
 	{
-		await SetBearerAsync(forceRefresh: false, cancellationToken);
-
-		var response = await send();
+		var response = await SendOnceAsync(createRequest, forceRefresh: false, cancellationToken);
 		if (response.StatusCode != HttpStatusCode.Unauthorized)
 		{
 			return response;
@@ -332,21 +369,25 @@ internal sealed class KeycloakUserService(
 		// rotation). Refresh once and retry so a transient 401 self-heals
 		// instead of bubbling up as a 500.
 		response.Dispose();
-		await SetBearerAsync(forceRefresh: true, cancellationToken);
-		return await send();
+		return await SendOnceAsync(createRequest, forceRefresh: true, cancellationToken);
 	}
 
-	private async Task SetBearerAsync(
+	private async Task<HttpResponseMessage> SendOnceAsync(
+		Func<HttpRequestMessage> createRequest,
 		bool forceRefresh,
-		CancellationToken cancellationToken) =>
-		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-			"Bearer",
-			await tokenProvider.GetTokenAsync(forceRefresh, cancellationToken));
+		CancellationToken cancellationToken)
+	{
+		var request = createRequest();
+		request.Headers.Authorization = new AuthenticationHeaderValue(
+			"Bearer", await tokenProvider.GetTokenAsync(forceRefresh, cancellationToken));
+
+		return await httpClient.SendAsync(request, cancellationToken);
+	}
 
 	private static string? NullIfEmpty(string? value) =>
 		string.IsNullOrEmpty(value) ? null : value;
 
-	private static async Task EnsureSuccessAsync(
+	private async Task EnsureSuccessAsync(
 		HttpResponseMessage response,
 		CancellationToken cancellationToken)
 	{
@@ -355,11 +396,23 @@ internal sealed class KeycloakUserService(
 			return;
 		}
 
-		var body = await response.Content.ReadAsStringAsync(cancellationToken);
+		var method = response.RequestMessage?.Method;
+		// Strip the query string - it can carry PII such as search terms - before it
+		// ever reaches the Error-level exception message that gets logged/exported.
+		var path = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path);
+
+		if (logger.IsEnabled(LogLevel.Debug))
+		{
+			var body = await response.Content.ReadAsStringAsync(cancellationToken);
+			logger.LogDebug(
+				"Keycloak error response body for {Method} {Path}: {Body}",
+				method,
+				path,
+				body);
+		}
 
 		throw new HttpRequestException(
-			$"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} " +
-			$"for {response.RequestMessage?.Method} {response.RequestMessage?.RequestUri}: {body}",
+			$"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} for {method} {path}",
 			inner: null,
 			response.StatusCode);
 	}

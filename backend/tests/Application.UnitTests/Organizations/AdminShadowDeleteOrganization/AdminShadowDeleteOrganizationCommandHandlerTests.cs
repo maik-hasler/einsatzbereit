@@ -1,6 +1,4 @@
-using Application.Common.Email;
 using Application.Common.Exceptions;
-using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.Organizations.AdminShadowDeleteOrganization.v1;
@@ -30,11 +28,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		Substitute.For<IAggregateRepository<Report, ReportId>>();
 	private readonly IEngagementReadRepository _engagementReadRepository =
 		Substitute.For<IEngagementReadRepository>();
-	private readonly IKeycloakUserService _keycloakUserService = Substitute.For<IKeycloakUserService>();
-	private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 	private readonly IPinGenerator _pinGenerator = Substitute.For<IPinGenerator>();
-	private readonly IEmailTemplateRenderer _emailTemplateRenderer = Substitute.For<IEmailTemplateRenderer>();
-	private readonly IUnsubscribeLinkBuilder _unsubscribeLinkBuilder = Substitute.For<IUnsubscribeLinkBuilder>();
 	private readonly AdminShadowDeleteOrganizationCommandHandler _sut;
 
 	private static readonly Address DefaultAddress = Address.Create("Hauptstraße", "1", "12345", "Berlin").Value;
@@ -58,15 +52,7 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		_engagementReadRepository
 			.GetActiveVolunteerIdsByOpportunityAsync(Arg.Any<VolunteerOpportunityId>(), Arg.Any<TimeSlotId?>(), Arg.Any<CancellationToken>())
 			.Returns([]);
-		_keycloakUserService
-			.GetUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-			.Returns(new KeycloakUserProfile(Guid.NewGuid(), "user", null, null, "user@example.com"));
-		_emailTemplateRenderer
-			.Render(Arg.Any<EmailTemplateKind>(), Arg.Any<string>(), Arg.Any<IReadOnlyDictionary<string, string>>())
-			.Returns(new EmailContent("Test Subject", "Test Body"));
-		_dbContext.GetOrCreateUsersAsync(Arg.Any<IReadOnlyCollection<UserId>>(), Arg.Any<CancellationToken>())
-			.Returns(call => ((IReadOnlyCollection<UserId>)call[0]!).Select(User.Create).ToList());
-		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository, _keycloakUserService, _emailService, _emailTemplateRenderer, _unsubscribeLinkBuilder);
+		_sut = new AdminShadowDeleteOrganizationCommandHandler(_dbContext, _engagementReadRepository);
 	}
 
 	private static Organization CreateOrganization(Guid id) =>
@@ -156,11 +142,13 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldEmailEngagedVolunteers_AcrossAllCascadedOpportunities(
+	public async Task Handle_ShouldCancelAndRaiseEventCarryingTheOpportunityTitle_ForEachCascadedEngagement(
 		CancellationToken cancellationToken)
 	{
-		// Arrange - the cascade must email affected volunteers on every one of the
-		// org's opportunities (#1057), not just the first.
+		// Arrange - the cascade must resolve every one of the org's opportunities
+		// (#1057), not just the first; the email itself now happens post-commit via
+		// EngagementCancelledNotificationHandler (#1150), so this only proves each
+		// engagement is cancelled and carries the right title on its event.
 		var orgId = Guid.NewGuid();
 		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
 		var organization = CreateOrganization(orgId);
@@ -188,11 +176,12 @@ public class AdminShadowDeleteOrganizationCommandHandlerTests
 		await _sut.Handle(new AdminShadowDeleteOrganizationCommand(orgId, DefaultAdminUserId), cancellationToken);
 
 		// Assert
-		await _emailService.Received(2).SendAsync(
-			"user@example.com",
-			"Test Subject",
-			Arg.Is<string>(body => body!.StartsWith("Test Body")),
-			cancellationToken);
+		engagementA.Status.Should().Be(EngagementStatus.Cancelled);
+		engagementA.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent)
+			.Which.Should().BeOfType<EngagementCancelledDomainEvent>()
+			.Which.OpportunityTitle.Should().Be("Titel");
+		engagementB.Status.Should().Be(EngagementStatus.Cancelled);
+		engagementB.Events.Should().ContainSingle(e => e is EngagementCancelledDomainEvent);
 	}
 
 	[Test]

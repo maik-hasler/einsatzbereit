@@ -168,7 +168,7 @@ public class CheckInAndSlotTests(AspireFixture fixture) : VisualTestBase(fixture
 
 		// The organizer's manage-applications page (nested in the org app)
 		// surfaces the PIN exactly.
-		var manageLink = oppRow.GetByRole(AriaRole.Link, new() { Name = "Manage applications" });
+		var manageLink = oppRow.GetByRole(AriaRole.Link, new() { Name = "Manage sign-ups" });
 		await Expect(manageLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
 		await manageLink.ClickAsync();
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);

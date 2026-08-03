@@ -7,14 +7,16 @@ import OrganizationProfileView from "../components/OrganizationProfileView";
 import ReportContentModal, {
 	type ReportReason,
 } from "../components/ReportContentModal";
-import Spinner from "../components/Spinner";
+import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
+import EmptyState from "../components/EmptyState";
 import { useApiClient } from "../hooks/useApiClient";
 import { formatOccurrence, formatParticipationType } from "../lib/format";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { usePageToolbar } from "../contexts/ToolbarContext";
 import { getApiErrorMessage } from "../lib/apiError";
 import { dispatchToast } from "../lib/toastBus";
+import { FlagIcon } from "../components/icons";
 
 export default function OrganizationProfilePage() {
 	const { organizationId } = useParams<{ organizationId: string }>();
@@ -46,8 +48,22 @@ export default function OrganizationProfilePage() {
 
 	if (loading)
 		return (
-			<div className="flex items-center justify-center py-16">
-				<Spinner label={t("orgProfile.loading")} />
+			<div role="status">
+				<span className="sr-only">{t("orgProfile.loading")}</span>
+				<div className="mb-6 flex items-center gap-4">
+					<Skeleton className="h-16 w-16 shrink-0 rounded-full" />
+					<Skeleton className="h-6 w-48" />
+				</div>
+				<div className="max-w-2xl">
+					<Skeleton className="mb-2 h-4 w-full" />
+					<Skeleton className="mb-6 h-4 w-2/3" />
+					<Skeleton className="mb-3 h-3 w-32" />
+					<div className="space-y-3">
+						{Array.from({ length: 2 }).map((_, i) => (
+							<Skeleton key={i} className="h-20 w-full" />
+						))}
+					</div>
+				</div>
 			</div>
 		);
 	if (error)
@@ -81,33 +97,20 @@ export default function OrganizationProfilePage() {
 							onClick={() => setShowReport(true)}
 							data-testid="report-organization"
 							aria-label={t("orgProfile.reportOrganization")}
-							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 						>
-							<svg
-								className="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth="2"
-								stroke="currentColor"
-								aria-hidden="true"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M3 3v18M3 4.5h13.5l-2.25 3.75 2.25 3.75H3"
-								/>
-							</svg>
+							<FlagIcon className="h-4 w-4" />
 							<span className="hidden sm:inline">{t("orgProfile.report")}</span>
 						</button>
 					)
 				}
 			>
-				<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+				<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-500 uppercase">
 					{t("orgProfile.currentNeeds")}
 				</h2>
 
 				{profile.openOpportunities.length === 0 ? (
-					<p className="text-gray-500">{t("orgProfile.noOpportunities")}</p>
+					<EmptyState title={t("orgProfile.noOpportunities")} />
 				) : (
 					<ul className="space-y-3">
 						{profile.openOpportunities.map((opp) => (

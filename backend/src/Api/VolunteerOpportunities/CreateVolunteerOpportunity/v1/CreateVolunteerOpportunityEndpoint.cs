@@ -1,5 +1,6 @@
 using Api.Common.Authentication;
 using Api.Common.Endpoints;
+using Api.Common.OutputCaching;
 using Api.Common.RateLimiting;
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
@@ -10,6 +11,7 @@ using Domain.Primitives;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 
 namespace Api.VolunteerOpportunities.CreateVolunteerOpportunity.v1;
@@ -32,6 +34,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 	private static async Task<IResult> CreateVolunteerOpportunityAsync(
 		[FromBody] CreateVolunteerOpportunityRequest request,
 		[FromServices] ISender sender,
+		[FromServices] IOutputCacheStore outputCacheStore,
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken)
 	{
@@ -39,21 +42,21 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			? UserId.Create(uid).GetValueOrThrow()
 			: throw new ResultFailureException(Error.Validation("User.InvalidId", "Invalid user."));
 
-		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence))
+		if (!Enum.TryParse<Occurrence>(request.Occurrence, ignoreCase: true, out var occurrence) || !Enum.IsDefined(occurrence))
 		{
 			return Results.Problem(
 				"Invalid occurrence. Allowed values: OneTime, Recurring.",
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		if (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType))
+		if (!Enum.TryParse<ParticipationType>(request.ParticipationType, ignoreCase: true, out var participationType) || !Enum.IsDefined(participationType))
 		{
 			return Results.Problem(
 				"Invalid participation type. Allowed values: ScheduledSlots, IndividualContact.",
 				statusCode: StatusCodes.Status400BadRequest);
 		}
 
-		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod))
+		if (!Enum.TryParse<CheckInMethod>(request.CheckInMethod, ignoreCase: true, out var checkInMethod) || !Enum.IsDefined(checkInMethod))
 		{
 			return Results.Problem(
 				"Invalid check-in method. Allowed values: None, QRCode, PINCode, Manual.",
@@ -63,7 +66,7 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 		Category? category = null;
 		if (!string.IsNullOrWhiteSpace(request.Category))
 		{
-			if (!Enum.TryParse<Category>(request.Category, ignoreCase: true, out var parsedCategory))
+			if (!Enum.TryParse<Category>(request.Category, ignoreCase: true, out var parsedCategory) || !Enum.IsDefined(parsedCategory))
 			{
 				return Results.Problem(
 					"Invalid category.",
@@ -115,6 +118,10 @@ internal sealed class CreateVolunteerOpportunityEndpoint
 			request.ValidUntil);
 
 		var opportunity = await sender.Send(command, cancellationToken);
+
+		// A non-draft create is immediately visible on the public listing (see
+		// "status" above), so the cache must be invalidated regardless of IsDraft.
+		await outputCacheStore.EvictVolunteerOpportunityListingCacheAsync(cancellationToken);
 
 		var response = new CreateVolunteerOpportunityResponse(
 			opportunity.Id.Value,

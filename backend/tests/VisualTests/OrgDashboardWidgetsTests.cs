@@ -54,7 +54,7 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 
 		// A brand-new organization has no applications and no confirmed
 		// volunteers yet - both KPI stats read 0.
-		await Expect(todoWidget).ToContainTextAsync("Pending Applications");
+		await Expect(todoWidget).ToContainTextAsync("Pending Sign-ups");
 		await Expect(todoWidget).ToContainTextAsync("Signed-up Volunteers");
 		// Selects on data-testid rather than the text-3xl Tailwind utility
 		// class - see #1328, a purely cosmetic restyle of that class would
@@ -192,6 +192,106 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 	}
 
 	[Test]
+	public async Task CalendarWidget_AgendaView_RendersGermanColumnHeaders_WhenAppLocaleIsGerman()
+	{
+		// #1254: the `messages` object passed to react-big-calendar never
+		// overrode `date`/`time`/`event` (among others), so its own English
+		// defaults rendered these Agenda column headers regardless of the
+		// app's selected language - a German organizer's first look at the
+		// widget (Agenda is the default view on a narrow placement) showed
+		// "Date | Time | Event".
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "olaf", "olaf123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await Page.EvaluateAsync<string?>(@"() => {
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
+				if (key && key.includes('oidc.user')) {
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
+					if (entry?.access_token) return entry.access_token;
+				}
+			}
+			return null;
+		}");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		// A dedicated fresh organization rather than olaf's shared pinned
+		// org - that org accumulates widget-layout customization and dozens
+		// of opportunities/notifications across the whole test suite over a
+		// full run, and this test only cares about a lone Calendar widget in
+		// its default (compact) placement.
+		var suffix = Guid.NewGuid().ToString("N");
+		var orgResponse = await http.PostAsJsonAsync("/v1/organizations", new { name = $"Visual1254 {suffix}" });
+		orgResponse.EnsureSuccessStatusCode();
+		var org = await orgResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var organizationId = org.GetProperty("id").GetProperty("value").GetString();
+
+		// Gives the Calendar widget an event to render - without one, the
+		// Agenda view shows its empty-state span instead of the table whose
+		// column headers this test needs to inspect.
+		var oppTitle = $"Visual1254 Opportunity {suffix}";
+		var oppResponse = await http.PostAsJsonAsync("/v1/volunteer-opportunities", new
+		{
+			title = oppTitle,
+			description = "Created by CalendarWidget agenda-header i18n test",
+			organizationId,
+			isRemote = true,
+			occurrence = "OneTime",
+			participationType = "ScheduledSlots",
+			checkInMethod = "None",
+			isDraft = true,
+		});
+		oppResponse.EnsureSuccessStatusCode();
+		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
+		var opportunityId = opportunity.GetProperty("id").GetString();
+
+		var start = DateTimeOffset.UtcNow.AddDays(3);
+		var end = start.AddHours(2);
+		(await http.PostAsJsonAsync(
+			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
+			new { startDateTime = start, endDateTime = end, maxParticipants = 5, recurrenceCount = 1 }))
+			.EnsureSuccessStatusCode();
+
+		(await http.PostAsync($"/v1/volunteer-opportunities/{opportunityId}/publish", content: null))
+			.EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/app/{organizationId}/dashboard");
+		// Locate by the widget's stable heading id (WidgetCard's titleId), not
+		// by heading text - the heading itself is what this test switches to
+		// German below, so matching on "Calendar" would stop resolving the
+		// moment the switch takes effect.
+		var calendarWidget = Page.Locator("section", new()
+		{
+			Has = Page.Locator("#widget-calendar-title"),
+		});
+		await Expect(calendarWidget).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Switch language" }).ClickAsync();
+		await Page.GetByRole(AriaRole.Option, new() { Name = "Deutsch" }).ClickAsync();
+
+		var viewGroup = calendarWidget.Locator(".rbc-btn-group").Last;
+		var agendaButton = viewGroup.GetByRole(AriaRole.Button, new() { Name = "Agenda", Exact = true });
+		await agendaButton.ScrollIntoViewIfNeededAsync();
+		await agendaButton.ClickAsync();
+
+		var headerRow = calendarWidget.Locator(".rbc-agenda-table thead tr");
+		await Expect(headerRow.GetByText("Datum", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(headerRow.GetByText("Uhrzeit", new() { Exact = true })).ToBeVisibleAsync();
+		await Expect(headerRow.GetByText("Termin", new() { Exact = true })).ToBeVisibleAsync();
+		// The pre-fix English defaults must not leak through alongside them.
+		await Expect(headerRow.GetByText("Date", new() { Exact = true })).Not.ToBeVisibleAsync();
+		await Expect(headerRow.GetByText("Time", new() { Exact = true })).Not.ToBeVisibleAsync();
+		await Expect(headerRow.GetByText("Event", new() { Exact = true })).Not.ToBeVisibleAsync();
+	}
+
+	[Test]
 	public async Task CalendarWidget_MobileViewport_ToolbarButtonsAndAgendaColumnStayReachable()
 	{
 		// #812: WidgetCard only set overflow-y-auto on its content wrapper, and
@@ -217,16 +317,16 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
@@ -256,7 +356,13 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		var opportunity = await oppResponse.Content.ReadFromJsonAsync<JsonElement>();
 		var opportunityId = opportunity.GetProperty("id").GetString();
 
-		var start = DateTimeOffset.UtcNow.AddDays(3);
+		// Pinned to a fixed 10:00 UTC start rather than DateTimeOffset.UtcNow -
+		// a "now + 3 days" slot inherits whatever time of day the suite happens
+		// to run at, and a 2-hour slot starting late enough in the day crosses
+		// midnight. The Agenda view then renders the one event as two rows (one
+		// per day it touches), and the GetByText(oppTitle) lookup below hits a
+		// Playwright strict-mode violation from matching both.
+		var start = new DateTimeOffset(DateTime.UtcNow.Date.AddDays(3).AddHours(10), TimeSpan.Zero);
 		var end = start.AddHours(2);
 		(await http.PostAsJsonAsync(
 			$"/v1/volunteer-opportunities/{opportunityId}/time-slots",
@@ -338,16 +444,16 @@ public class OrgDashboardWidgetsTests(AspireFixture fixture) : VisualTestBase(fi
 		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
 		var token = await Page.EvaluateAsync<string?>(@"() => {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i);
+			for (let i = 0; i < sessionStorage.length; i++) {
+				const key = sessionStorage.key(i);
 				if (key && key.includes('oidc.user')) {
-					const entry = JSON.parse(localStorage.getItem(key) ?? 'null');
+					const entry = JSON.parse(sessionStorage.getItem(key) ?? 'null');
 					if (entry?.access_token) return entry.access_token;
 				}
 			}
 			return null;
 		}");
-		token.Should().NotBeNull("OIDC access token must be available in localStorage after login");
+		token.Should().NotBeNull("OIDC access token must be available in sessionStorage after login");
 
 		using var http = new HttpClient { BaseAddress = backend };
 		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");

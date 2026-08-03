@@ -1,13 +1,15 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Keycloak;
 
 internal sealed class KeycloakAdminTokenProvider(
 	IHttpClientFactory httpClientFactory,
-	IOptions<KeycloakOptions> options)
+	IOptions<KeycloakOptions> options,
+	ILogger<KeycloakAdminTokenProvider> logger)
 {
 	public const string HttpClientName = "keycloak-admin-token";
 
@@ -72,9 +74,15 @@ internal sealed class KeycloakAdminTokenProvider(
 
 		if (!response.IsSuccessStatusCode)
 		{
-			var body = await response.Content.ReadAsStringAsync(cancellationToken);
+			// The response body is never logged here, even at Debug level - unlike the
+			// admin API, this is a client-credentials token exchange and its response
+			// carries no data useful for diagnostics.
+			logger.LogWarning(
+				"Keycloak token request failed with {StatusCode}",
+				(int)response.StatusCode);
+
 			throw new HttpRequestException(
-				$"Keycloak token request failed with {(int)response.StatusCode} {response.StatusCode}: {body}",
+				$"Keycloak token request failed with {(int)response.StatusCode} {response.StatusCode}",
 				inner: null,
 				response.StatusCode);
 		}

@@ -9,10 +9,13 @@ import { usePageToolbar } from "../../contexts/ToolbarContext";
 import { useEditModeQuickActions } from "../../hooks/useEditModeQuickActions";
 import { inputClass, textareaClass } from "../../lib/formClasses";
 import { pageTitleClass } from "../../lib/headingClasses";
+import Chip, { type ChipTone } from "../../components/Chip";
 import Dropdown from "../../components/Dropdown";
 import ProfileFieldsView from "../../components/ProfileFieldsView";
 import Skeleton from "../../components/Skeleton";
 import ErrorBanner from "../../components/ErrorBanner";
+import ImageCropModal from "../../components/ImageCropModal";
+import FileUploadButton from "../../components/FileUploadButton";
 import AchievementsSection from "./AchievementsSection";
 import ActivitySection from "./ActivitySection";
 import NotificationPreferencesSection from "./NotificationPreferencesSection";
@@ -35,6 +38,44 @@ const LEGACY_TAB_SECTIONS: Record<string, string> = {
 	invitations: "activity",
 	achievements: "achievements",
 };
+
+function FireIcon({ className = "h-5 w-5" }: { className?: string }) {
+	return (
+		<svg
+			className={className}
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"
+			/>
+		</svg>
+	);
+}
+
+function CalendarIcon({ className = "h-5 w-5" }: { className?: string }) {
+	return (
+		<svg
+			className={className}
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={1.5}
+			stroke="currentColor"
+			aria-hidden="true"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+			/>
+		</svg>
+	);
+}
 
 function Field({
 	label,
@@ -65,6 +106,7 @@ function ChipInput({
 	onAdd,
 	onRemove,
 	removeLabel,
+	tone = "brand",
 }: {
 	inputRef: React.RefObject<HTMLInputElement | null>;
 	inputId: string;
@@ -75,6 +117,7 @@ function ChipInput({
 	onAdd: (v: string) => void;
 	onRemove: (v: string) => void;
 	removeLabel: string;
+	tone?: ChipTone;
 }) {
 	function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
 		if (e.key === "Enter") {
@@ -88,20 +131,14 @@ function ChipInput({
 			{chips.length > 0 && (
 				<div className="mb-2 flex flex-wrap gap-2">
 					{chips.map((chip) => (
-						<span
+						<Chip
 							key={chip}
-							className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-sm text-brand-700"
+							tone={tone}
+							onRemove={() => onRemove(chip)}
+							removeLabel={`${removeLabel} ${chip}`}
 						>
 							{chip}
-							<button
-								type="button"
-								aria-label={`${removeLabel} ${chip}`}
-								onClick={() => onRemove(chip)}
-								className="ml-1 text-brand-400 hover:text-brand-700"
-							>
-								&times;
-							</button>
-						</span>
+						</Chip>
 					))}
 				</div>
 			)}
@@ -311,6 +348,8 @@ export default function ProfileOverviewPage() {
 									<img
 										src={avatarUrl}
 										alt=""
+										width={64}
+										height={64}
 										className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-brand-100"
 									/>
 								) : (
@@ -332,8 +371,8 @@ export default function ProfileOverviewPage() {
 							{streaks && (
 								<div className="flex flex-wrap gap-3">
 									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
-										<span className="text-2xl" aria-hidden="true">
-											🔥
+										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+											<FireIcon />
 										</span>
 										<div>
 											<p className="text-xl font-bold text-gray-900">
@@ -347,8 +386,8 @@ export default function ProfileOverviewPage() {
 										</div>
 									</div>
 									<div className="flex items-center gap-3 rounded-card border border-gray-100 bg-white px-4 py-3">
-										<span className="text-2xl" aria-hidden="true">
-											📅
+										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+											<CalendarIcon />
 										</span>
 										<div>
 											<p className="text-xl font-bold text-gray-900">
@@ -368,7 +407,7 @@ export default function ProfileOverviewPage() {
 
 					{/* Profile details */}
 					<section className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
+						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
 							{t("profile.sectionDetails")}
 						</h2>
 
@@ -399,6 +438,8 @@ export default function ProfileOverviewPage() {
 													<img
 														src={avatarUrl}
 														alt=""
+														width={64}
+														height={64}
 														className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
 													/>
 												) : (
@@ -407,22 +448,17 @@ export default function ProfileOverviewPage() {
 													</span>
 												)}
 												<div>
-													<label
-														htmlFor="avatar-upload"
-														className={`cursor-pointer rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 ${avatarUpload.uploading ? "opacity-50 pointer-events-none" : ""}`}
-													>
-														{avatarUpload.uploading
-															? t("profile.avatarUploading")
-															: t("profile.avatarUpload")}
-													</label>
-													<input
-														ref={avatarUpload.inputRef}
+													<FileUploadButton
 														id="avatar-upload"
-														type="file"
+														label={
+															avatarUpload.uploading
+																? t("profile.avatarUploading")
+																: t("profile.avatarUpload")
+														}
 														accept="image/jpeg,image/png,image/webp"
-														className="sr-only"
 														onChange={avatarUpload.handleChange}
 														disabled={avatarUpload.uploading}
+														inputRef={avatarUpload.inputRef}
 													/>
 													<p className="mt-1 text-xs text-gray-500">
 														{t("profile.avatarHint")}
@@ -522,6 +558,7 @@ export default function ProfileOverviewPage() {
 											onAdd={form.addLanguage}
 											onRemove={form.removeLanguage}
 											removeLabel={t("profile.removeChip")}
+											tone="neutral"
 										/>
 									</Field>
 
@@ -604,6 +641,19 @@ export default function ProfileOverviewPage() {
 			<NotificationPreferencesSection />
 
 			<DangerZoneCard />
+
+			{avatarUpload.croppingFile && (
+				<ImageCropModal
+					file={avatarUpload.croppingFile}
+					aspectRatio={1}
+					shape="circle"
+					outputWidth={320}
+					outputHeight={320}
+					title={t("profile.avatarUpload")}
+					onCancel={avatarUpload.handleCropCancel}
+					onCropped={(f) => void avatarUpload.handleCropped(f)}
+				/>
+			)}
 		</>
 	);
 }

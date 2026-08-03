@@ -16,6 +16,7 @@ import { runtimeConfig } from "./lib/runtimeConfig";
 // wins, and a lazy-chunk-scoped import made that order load-timing-
 // dependent instead of fixed.
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import "@fontsource-variable/source-sans-3";
 import "./styles/global.css";
 
 const oidcConfig = {
@@ -25,12 +26,33 @@ const oidcConfig = {
 	post_logout_redirect_uri: window.location.origin,
 	scope: "openid profile email",
 	automaticSilentRenew: true,
-	// Use localStorage so Playwright storageState captures the session
-	userStore: new WebStorageStateStore({ store: window.localStorage }),
-	onSigninCallback: (user: User | undefined) => {
+	// sessionStorage, not localStorage: tokens (incl. refresh_token, since the
+	// realm has "rememberMe": true) must not survive tab close or browser
+	// restart on a shared/kiosk machine - a realistic setting for a
+	// volunteer-coordination app used at events (#1171). Playwright seeds
+	// sessionStorage directly via page.addInitScript instead of relying on
+	// storageState (see AuthHelper.FastSignInAsync in backend/tests/VisualTests).
+	userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+	onSigninCallback: async (user: User | undefined) => {
+		// Only fall back to the Keycloak login page's locale on a browser
+		// that has never had an explicit in-app language choice - otherwise a
+		// user who picked German via the header's LanguageSelector would have
+		// it silently reverted to whatever locale their Keycloak login
+		// session carries on every subsequent signin (#1253). This is a
+		// dedicated flag (set only by LanguageSelector's onClick) rather than
+		// i18next's own "i18nextLng" localStorage cache, since the language
+		// detector populates that cache from the browser's Accept-Language on
+		// first load too - which would make nearly every session look like it
+		// already had a "choice" and defeat this guard.
+		const hasExplicitLanguageChoice =
+			localStorage.getItem("einsatzbereit:language-explicit") === "true";
 		const keycloakLocale = user?.profile?.locale;
-		if (keycloakLocale && keycloakLocale !== i18n.language) {
-			void i18n.changeLanguage(keycloakLocale);
+		if (
+			!hasExplicitLanguageChoice &&
+			keycloakLocale &&
+			keycloakLocale !== i18n.language
+		) {
+			await i18n.changeLanguage(keycloakLocale);
 		}
 		const returnTo = (user?.state as { returnTo?: string })?.returnTo ?? "/";
 		window.location.replace(returnTo);

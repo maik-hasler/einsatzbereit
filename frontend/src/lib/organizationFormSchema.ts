@@ -10,6 +10,7 @@ import type { TFunction } from "i18next";
 export function buildOrganizationFormSchema(t: TFunction) {
 	const required = t("orgSettings.fieldRequired");
 	const invalidZip = t("orgSettings.zipInvalid");
+	const invalidWebsite = t("orgSettings.websiteInvalid");
 
 	return z
 		.object({
@@ -26,6 +27,27 @@ export function buildOrganizationFormSchema(t: TFunction) {
 		.superRefine((data, ctx) => {
 			if (!data.name.trim())
 				ctx.addIssue({ code: "custom", path: ["name"], message: required });
+
+			// Optional, but if provided it's rendered as an anonymous-visible
+			// href (OrganizationProfileView) - only an absolute http(s) URL is
+			// accepted, mirroring Organization.ChangeContactInfo server-side.
+			const website = data.website.trim();
+			if (website) {
+				let isValidWebsite: boolean;
+				try {
+					isValidWebsite = ["http:", "https:"].includes(
+						new URL(website).protocol,
+					);
+				} catch {
+					isValidWebsite = false;
+				}
+				if (!isValidWebsite)
+					ctx.addIssue({
+						code: "custom",
+						path: ["website"],
+						message: invalidWebsite,
+					});
+			}
 
 			// The address is optional as a whole, but once any one part of it is
 			// filled in the backend requires all of street/houseNumber/zipCode/city

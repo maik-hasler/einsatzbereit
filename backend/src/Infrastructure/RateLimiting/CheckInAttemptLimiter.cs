@@ -1,53 +1,163 @@
-using System.Collections.Concurrent;
 using Application.Common.RateLimiting;
 using Domain.Engagements;
+using Infrastructure.Persistence;
+using Infrastructure.Persistence.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.RateLimiting;
 
-// In-memory per-engagement PIN attempt tracking, independent of the generic
-// per-user/IP rate limiting policies in Api/Common/RateLimiting. A 4-digit PIN
-// has only 10,000 combinations, so a much tighter, engagement-scoped lockout is
-// needed to make brute-forcing infeasible even for an authenticated owner.
-internal sealed class CheckInAttemptLimiter : ICheckInAttemptLimiter
+// Persisted per-engagement PIN attempt tracking (#1176), independent of the
+// generic per-user/IP rate limiting policies in Api/Common/RateLimiting. A
+// 4-6 digit PIN has only a small combination space, so a much tighter,
+// engagement-scoped lockout is needed to make brute-forcing infeasible even
+// for an authenticated owner.
+//
+// Every operation opens its own scope/DbContext (a fresh connection and
+// transaction) instead of reusing the caller's ambient, request-scoped one.
+// This is deliberate: CheckInWithPinCommandHandler registers a failed attempt
+// and then immediately throws to signal the invalid PIN, which rolls back the
+// TransactionPipelineBehavior-owned transaction wrapping the whole command -
+// an attempt tracked on that same connection would be rolled back right along
+// with it, silently disabling the lockout on every wrong guess.
+internal sealed class CheckInAttemptLimiter(
+	IServiceScopeFactory scopeFactory)
+	: ICheckInAttemptLimiter
 {
-	private const int MaxFailedAttempts = 5;
-	private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+	internal const int MaxFailedAttempts = 5;
 
-	private readonly ConcurrentDictionary<Guid, AttemptState> _attempts = new();
+	internal static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
-	public Task<bool> IsLockedOutAsync(EngagementId engagementId, CancellationToken cancellationToken = default)
+	public async Task<bool> IsLockedOutAsync(
+		EngagementId engagementId,
+		CancellationToken cancellationToken = default)
 	{
-		var isLockedOut = _attempts.TryGetValue(engagementId.Value, out var state)
-			&& state.LockedUntil is { } lockedUntil
-			&& lockedUntil > DateTimeOffset.UtcNow;
+		await using var scope = scopeFactory.CreateAsyncScope();
+		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-		return Task.FromResult(isLockedOut);
+		return await IsLockedOutAsync(dbContext, engagementId.Value, DateTimeOffset.UtcNow, cancellationToken);
 	}
 
-	public Task RegisterFailedAttemptAsync(EngagementId engagementId, CancellationToken cancellationToken = default)
+	public async Task RegisterFailedAttemptAsync(
+		EngagementId engagementId,
+		CancellationToken cancellationToken = default)
 	{
-		_attempts.AddOrUpdate(
-			engagementId.Value,
-			_ => new AttemptState(1, null),
-			(_, existing) =>
-			{
-				var failedAttempts = existing.FailedAttempts + 1;
-				var lockedUntil = failedAttempts >= MaxFailedAttempts
-					? DateTimeOffset.UtcNow.Add(LockoutDuration)
-					: existing.LockedUntil;
+		await using var scope = scopeFactory.CreateAsyncScope();
+		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-				return new AttemptState(failedAttempts, lockedUntil);
-			});
-
-		return Task.CompletedTask;
+		await RegisterFailedAttemptAsync(dbContext, engagementId.Value, DateTimeOffset.UtcNow, cancellationToken);
 	}
 
-	public Task ResetAsync(EngagementId engagementId, CancellationToken cancellationToken = default)
+	public async Task ResetAsync(
+		EngagementId engagementId,
+		CancellationToken cancellationToken = default)
 	{
-		_attempts.TryRemove(engagementId.Value, out _);
+		await using var scope = scopeFactory.CreateAsyncScope();
+		var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-		return Task.CompletedTask;
+		await ResetAsync(dbContext, engagementId.Value, cancellationToken);
 	}
 
-	private sealed record AttemptState(int FailedAttempts, DateTimeOffset? LockedUntil);
+	// Exposed so IntegrationTests can exercise the lockout logic directly
+	// against a real ApplicationDbContext instead of standing up the full DI
+	// container just to obtain an IServiceScopeFactory.
+	internal static async Task<bool> IsLockedOutAsync(
+		ApplicationDbContext dbContext,
+		Guid engagementId,
+		DateTimeOffset now,
+		CancellationToken cancellationToken = default)
+	{
+		var lockedUntil = await dbContext.Set<CheckInAttempt>()
+			.AsNoTracking()
+			.Where(a => a.EngagementId == engagementId)
+			.Select(a => a.LockedUntil)
+			.FirstOrDefaultAsync(cancellationToken);
+
+		return lockedUntil is { } value && value > now;
+	}
+
+	internal static async Task RegisterFailedAttemptAsync(
+		ApplicationDbContext dbContext,
+		Guid engagementId,
+		DateTimeOffset now,
+		CancellationToken cancellationToken = default)
+	{
+		var attempt = await dbContext.Set<CheckInAttempt>()
+			.FirstOrDefaultAsync(a => a.EngagementId == engagementId, cancellationToken);
+
+		var isNew = attempt is null;
+		if (attempt is null)
+		{
+			attempt = new CheckInAttempt { EngagementId = engagementId };
+			dbContext.Set<CheckInAttempt>().Add(attempt);
+		}
+
+		ApplyFailedAttempt(attempt, now);
+
+		if (!isNew)
+		{
+			await dbContext.SaveChangesAsync(cancellationToken);
+			return;
+		}
+
+		try
+		{
+			await dbContext.SaveChangesAsync(cancellationToken);
+		}
+		catch (DbUpdateException)
+		{
+			// Two concurrent wrong guesses for the same engagement (a double-click,
+			// or an attacker racing the lockout itself) can both find no existing
+			// row and race to insert one - the loser hits a primary key violation
+			// here. Detach the failed insert and fall through to a plain update
+			// against the row the winner just created, instead of losing this
+			// attempt or surfacing an unhandled 500.
+			dbContext.Entry(attempt).State = EntityState.Detached;
+
+			attempt = await dbContext.Set<CheckInAttempt>()
+				.SingleAsync(a => a.EngagementId == engagementId, cancellationToken);
+
+			ApplyFailedAttempt(attempt, now);
+
+			await dbContext.SaveChangesAsync(cancellationToken);
+		}
+	}
+
+	// IsLockedOutAsync is always checked (and short-circuits) before this method is
+	// ever called, so a persisted LockedUntil reaching here has already expired -
+	// without this, FailedAttempts only ever grew, so once it first hit
+	// MaxFailedAttempts the very next wrong guess re-locked for another full
+	// LockoutDuration forever, with no way to ever earn a fresh attempt budget
+	// again (#1159, ported from the earlier in-memory limiter this replaced).
+	private static void ApplyFailedAttempt(CheckInAttempt attempt, DateTimeOffset now)
+	{
+		var previousLockoutExpired = attempt.LockedUntil is not null;
+		attempt.FailedAttempts = previousLockoutExpired ? 1 : attempt.FailedAttempts + 1;
+		attempt.LastAttemptOn = now;
+		attempt.LockedUntil = attempt.FailedAttempts >= MaxFailedAttempts
+			? now.Add(LockoutDuration)
+			: null;
+	}
+
+	internal static async Task ResetAsync(
+		ApplicationDbContext dbContext,
+		Guid engagementId,
+		CancellationToken cancellationToken = default)
+	{
+		// A tracked fetch-then-Remove, not ExecuteDeleteAsync: ExecuteDelete
+		// issues a raw DELETE that bypasses the change tracker entirely, which
+		// would leave a CheckInAttempt instance a caller already tracked on this
+		// same DbContext (e.g. from a prior RegisterFailedAttemptAsync call)
+		// stale - believing the now-deleted row still exists - and throw an
+		// "already tracked" conflict the next time this engagement's row is
+		// looked up on that DbContext.
+		var attempt = await dbContext.Set<CheckInAttempt>()
+			.FirstOrDefaultAsync(a => a.EngagementId == engagementId, cancellationToken);
+
+		if (attempt is null)
+			return;
+
+		dbContext.Set<CheckInAttempt>().Remove(attempt);
+		await dbContext.SaveChangesAsync(cancellationToken);
+	}
 }

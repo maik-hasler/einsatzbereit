@@ -11,17 +11,19 @@ import MiniCalendar, { fmtShortDate } from "./MiniCalendar";
 import OpportunityResultsList from "./OpportunityResultsList";
 import { useVolunteerOpportunitiesData } from "./useVolunteerOpportunitiesData";
 import { useCitySuggestions, type CitySuggestion } from "./useCitySuggestions";
+import { resolveDateLocale } from "../../lib/format";
+import { SpinnerIcon } from "../Spinner";
 import {
 	BroomIcon,
 	CalendarIcon,
-	ChipXIcon,
 	ClockIcon,
+	CloseIcon,
 	GlobeIcon,
-	HashIcon,
-	PinIcon,
+	HashtagIcon,
+	MapPinIcon,
 	TagIcon,
 	UsersIcon,
-} from "./icons";
+} from "../icons";
 
 const CATEGORY_VALUES = [
 	"Social",
@@ -40,7 +42,7 @@ const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
 
 export default function VolunteerOpportunitiesList() {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language === "de" ? "de-DE" : "en-GB";
+	const locale = resolveDateLocale(i18n.language);
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const occurrence = searchParams.get("occurrence") ?? "";
@@ -315,7 +317,7 @@ export default function VolunteerOpportunitiesList() {
 				<div className="flex flex-wrap items-center justify-center gap-2 pb-3">
 					{/* Location + Radius */}
 					<FilterDropdown
-						icon={<PinIcon className="h-3.5 w-3.5" />}
+						icon={<MapPinIcon className="h-3.5 w-3.5" />}
 						label={t("opportunities.filterLabelLocation")}
 						displayValue={locationDisplayValue}
 						isOpen={openFilter === "location"}
@@ -334,7 +336,7 @@ export default function VolunteerOpportunitiesList() {
 								{t("opportunities.filterLabelCity")}
 							</p>
 							<div className="relative mb-3">
-								<PinIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+								<MapPinIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
 								<input
 									type="text"
 									role="combobox"
@@ -358,7 +360,7 @@ export default function VolunteerOpportunitiesList() {
 										if (locationSuggestions.length > 0)
 											setShowLocationSuggestions(true);
 									}}
-									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none"
+									className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white"
 								/>
 								{locationCityInput && (
 									<button
@@ -368,7 +370,7 @@ export default function VolunteerOpportunitiesList() {
 											resetLocationSuggestions();
 										}}
 										aria-label={t("opportunities.clearCity")}
-										className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+										className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
 									>
 										&times;
 									</button>
@@ -404,7 +406,7 @@ export default function VolunteerOpportunitiesList() {
 												}`}
 											>
 												<span className="flex items-center gap-2">
-													<PinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+													<MapPinIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
 													{s.label}
 												</span>
 											</li>
@@ -421,28 +423,9 @@ export default function VolunteerOpportunitiesList() {
 								className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-2 text-sm text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								{locationLoading ? (
-									<svg
-										className="h-4 w-4 animate-spin"
-										fill="none"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<circle
-											className="opacity-25"
-											cx="12"
-											cy="12"
-											r="10"
-											stroke="currentColor"
-											strokeWidth="4"
-										/>
-										<path
-											className="opacity-75"
-											fill="currentColor"
-											d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
-										/>
-									</svg>
+									<SpinnerIcon className="h-4 w-4" />
 								) : (
-									<PinIcon className="h-4 w-4" />
+									<MapPinIcon className="h-4 w-4" />
 								)}
 								{t("opportunities.nearMe")}
 							</button>
@@ -657,11 +640,8 @@ export default function VolunteerOpportunitiesList() {
 							aria-label={`${t("opportunities.filterLabelTag")}: ${tag}`}
 							className="inline-flex items-stretch overflow-hidden rounded-full border border-brand-500 bg-brand-50"
 						>
-							<span className="flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-3 pr-1.5 text-sm font-medium text-brand-700">
-								<HashIcon
-									className="h-3.5 w-3.5 shrink-0 text-brand-500"
-									aria-hidden="true"
-								/>
+							<span className="flex items-center gap-1.5 py-1.5 pr-1.5 pl-3 text-sm font-medium whitespace-nowrap text-brand-700">
+								<HashtagIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
 								<span>#{tag}</span>
 							</span>
 							<button
@@ -670,7 +650,7 @@ export default function VolunteerOpportunitiesList() {
 								aria-label={t("opportunities.clearTag")}
 								className="flex items-center px-2 py-1.5 text-brand-400 transition-colors hover:bg-brand-100 hover:text-brand-600"
 							>
-								<ChipXIcon />
+								<CloseIcon />
 							</button>
 						</div>
 					)}

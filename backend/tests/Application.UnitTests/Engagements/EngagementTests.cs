@@ -278,6 +278,99 @@ public class EngagementTests
 		result.Error.Description.Should().Match("*withdrawn or cancelled*");
 	}
 
+	[Test]
+	public void Reactivate_ShouldIncrementReactivationCount()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.ReactivationCount.Should().Be(1);
+	}
+
+	// --- Reactivate: reactivation cap (#1174) ---
+	//
+	// Engagement.Reactivate lets a withdrawn/cancelled row be reused instead of
+	// inserting a new one, which is what lets a volunteer loop create/withdraw
+	// against the same opportunity - and every cycle mails the volunteer plus
+	// every organizer of the org. This caps how many times any single
+	// engagement can be recycled.
+
+	[Test]
+	public void Reactivate_ShouldFail_WhenReactivationLimitReached()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		for (var i = 0; i < 5; i++)
+		{
+			engagement.Withdraw();
+			engagement.Reactivate(AnyTimeSlotId(), message: null).IsSuccess.Should().BeTrue();
+		}
+
+		engagement.Withdraw();
+		var result = engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*too many times*");
+	}
+
+	[Test]
+	public void Reactivate_ShouldNotIncrementReactivationCount_WhenReactivationLimitReached()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		for (var i = 0; i < 5; i++)
+		{
+			engagement.Withdraw();
+			engagement.Reactivate(AnyTimeSlotId(), message: null);
+		}
+
+		engagement.Withdraw();
+		engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		engagement.ReactivationCount.Should().Be(5);
+	}
+
+	// --- CheckIn ---
+
+	[Test]
+	public void CheckIn_ShouldSetIsCheckedIn_WhenConfirmed()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+
+		engagement.CheckIn();
+
+		engagement.IsCheckedIn.Should().BeTrue();
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenNotConfirmed()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+
+		var result = engagement.CheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*Only confirmed*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenAlreadyCheckedIn()
+	{
+		// Issue #1162: a repeated CheckIn() call used to re-raise EngagementCheckedInDomainEvent
+		// every time, corrupting the audit trail and any future once-only consumer.
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+
+		var result = engagement.CheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*already checked in*");
+	}
+
 	// --- Anonymize ---
 
 	[Test]
@@ -306,54 +399,13 @@ public class EngagementTests
 		engagement.FeedbackSubmittedAt.Should().BeNull();
 	}
 
-	[Test]
-	public void Anonymize_ShouldSetStatusToCancelled_WhenPending()
-	{
-		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
-
-		engagement.Anonymize();
-
-		engagement.Status.Should().Be(EngagementStatus.Cancelled);
-	}
+	// --- Anonymized guard (#1140) ---
+	// DeleteMyAccountCommandHandler anonymizes an engagement (VolunteerId = null) when its
+	// volunteer deletes their account. Every subsequent state transition must refuse to run
+	// rather than dereference the now-null VolunteerId.
 
 	[Test]
-	public void Anonymize_ShouldSetStatusToCancelled_WhenConfirmed()
-	{
-		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
-		engagement.Confirm();
-
-		engagement.Anonymize();
-
-		engagement.Status.Should().Be(EngagementStatus.Cancelled);
-	}
-
-	[Test]
-	public void Anonymize_ShouldNotChangeStatus_WhenAlreadyWithdrawn()
-	{
-		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
-		engagement.Withdraw();
-
-		engagement.Anonymize();
-
-		engagement.Status.Should().Be(EngagementStatus.Withdrawn);
-	}
-
-	[Test]
-	public void Anonymize_ShouldNotChangeStatus_WhenAlreadyCancelled()
-	{
-		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
-		engagement.Cancel();
-
-		engagement.Anonymize();
-
-		engagement.Status.Should().Be(EngagementStatus.Cancelled);
-	}
-
-	// Regression for #1217: Anonymize() used to leave Status as Pending/Confirmed,
-	// so every later transition dereferenced the now-null VolunteerId and crashed
-	// instead of returning a normal Result.Failure.
-	[Test]
-	public void Confirm_ShouldFail_WithoutThrowing_WhenEngagementIsAnonymized()
+	public void Confirm_ShouldFail_WhenAnonymized()
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Anonymize();
@@ -361,10 +413,11 @@ public class EngagementTests
 		var result = engagement.Confirm();
 
 		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
 	}
 
 	[Test]
-	public void Cancel_ShouldFail_WithoutThrowing_WhenEngagementIsAnonymized()
+	public void Cancel_ShouldFail_WhenAnonymized()
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Anonymize();
@@ -372,10 +425,11 @@ public class EngagementTests
 		var result = engagement.Cancel();
 
 		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
 	}
 
 	[Test]
-	public void Withdraw_ShouldFail_WithoutThrowing_WhenEngagementIsAnonymized()
+	public void Withdraw_ShouldFail_WhenAnonymized()
 	{
 		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
 		engagement.Anonymize();
@@ -383,5 +437,60 @@ public class EngagementTests
 		var result = engagement.Withdraw();
 
 		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void Reactivate_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Withdraw();
+		engagement.Anonymize();
+
+		var result = engagement.Reactivate(AnyTimeSlotId(), message: null);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void CheckIn_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.Anonymize();
+
+		var result = engagement.CheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void UndoCheckIn_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.Anonymize();
+
+		var result = engagement.UndoCheckIn();
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
+	}
+
+	[Test]
+	public void SubmitFeedback_ShouldFail_WhenAnonymized()
+	{
+		var engagement = Engagement.CreateSlotSignUp(AnyOpportunityId(), AnyUserId(), AnyTimeSlotId());
+		engagement.Confirm();
+		engagement.CheckIn();
+		engagement.Anonymize();
+
+		var result = engagement.SubmitFeedback(5, "Great shift", DateTimeOffset.UtcNow);
+
+		result.IsFailure.Should().BeTrue();
+		result.Error.Description.Should().Match("*deleted their account*");
 	}
 }

@@ -285,6 +285,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						onOpportunityCreated={handleOpportunityCreated}
 					/>
 				);
 			case "Calendar":
@@ -311,6 +312,7 @@ export default function OrgDashboardPage() {
 						organizationId={organizationId}
 						refreshKey={refreshKey}
 						size={size}
+						onOpportunityCreated={handleOpportunityCreated}
 					/>
 				);
 			case "SettingsIcon":

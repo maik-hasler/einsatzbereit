@@ -8,6 +8,7 @@ using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Persistence;
 using Domain.Organizations;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Keycloak;
@@ -16,7 +17,8 @@ internal sealed class KeycloakOrganizationService(
 	HttpClient httpClient,
 	KeycloakAdminTokenProvider tokenProvider,
 	IOptions<KeycloakOptions> options,
-	IApplicationDbContext dbContext)
+	IApplicationDbContext dbContext,
+	ILogger<KeycloakOrganizationService> logger)
 	: IKeycloakOrganizationService
 {
 	private static readonly JsonSerializerOptions JsonOptions = new()
@@ -289,7 +291,7 @@ internal sealed class KeycloakOrganizationService(
 			: sb.ToString();
 	}
 
-	private static async Task EnsureSuccessAsync(
+	private async Task EnsureSuccessAsync(
 		HttpResponseMessage response,
 		CancellationToken cancellationToken)
 	{
@@ -298,11 +300,23 @@ internal sealed class KeycloakOrganizationService(
 			return;
 		}
 
-		var body = await response.Content.ReadAsStringAsync(cancellationToken);
+		var method = response.RequestMessage?.Method;
+		// Strip the query string - it can carry PII such as search terms - before it
+		// ever reaches the Error-level exception message that gets logged/exported.
+		var path = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path);
+
+		if (logger.IsEnabled(LogLevel.Debug))
+		{
+			var body = await response.Content.ReadAsStringAsync(cancellationToken);
+			logger.LogDebug(
+				"Keycloak error response body for {Method} {Path}: {Body}",
+				method,
+				path,
+				body);
+		}
 
 		throw new HttpRequestException(
-			$"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} " +
-			$"for {response.RequestMessage?.Method} {response.RequestMessage?.RequestUri}: {body}",
+			$"Keycloak responded with {(int)response.StatusCode} {response.StatusCode} for {method} {path}",
 			inner: null,
 			response.StatusCode);
 	}

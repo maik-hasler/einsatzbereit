@@ -15,13 +15,14 @@ import { enUS, de } from "date-fns/locale";
 import type { OrganizationCalendarEventDto } from "../../../client/api-client";
 import { useApiClient } from "../../../hooks/useApiClient";
 import Modal from "../../../components/Modal";
-import Spinner from "../../../components/Spinner";
+import Skeleton from "../../../components/Skeleton";
 import Button from "../../../components/Button";
 import ErrorBanner from "../../../components/ErrorBanner";
 import WidgetCard from "./WidgetCard";
 import { useSharedOrgFetch } from "../../../hooks/useSharedOrgFetch";
 import { visibleCalendarRange } from "../../../lib/calendarRange";
 import { formatDateTime } from "../../../lib/format";
+import { brandColor } from "../../../lib/brandColor";
 import type { WidgetSizeClass } from "./widgetCatalog";
 
 // The *default* view a fresh mount opens on - a narrow tile can't usefully
@@ -45,8 +46,6 @@ const localizer = dateFnsLocalizer({
 	getDay,
 	locales: rbcLocales,
 });
-
-const DEFAULT_EVENT_COLOR = "#226947";
 
 interface CalEvent {
 	id: string;
@@ -115,12 +114,12 @@ function CalEventChip({
 
 function calendarEventPropGetter(event: object) {
 	const e = event as CalEvent;
-	const bg = e.color ?? DEFAULT_EVENT_COLOR;
+	const bg = e.color ?? brandColor("700");
 	return {
 		style: {
 			backgroundColor: bg,
 			borderColor: bg,
-			color: "#ffffff",
+			color: "white",
 		},
 	};
 }
@@ -151,6 +150,57 @@ const CALENDAR_MIN_HEIGHT_PX = 400;
 function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
+	const calendarContainerRef = useRef<HTMLDivElement | null>(null);
+
+	// Month view (node_modules/react-big-calendar/lib/Month.js and
+	// DateContentRow.js) marks up each week as an ARIA table row/cell
+	// structure - .rbc-month-view[role=table] > .rbc-month-row[role=rowgroup]
+	// > .rbc-row-content[role=row] > (a role-less .rbc-row containing the
+	// real .rbc-date-cell[role=cell] date-number buttons, *and* a sibling
+	// overlay of event-chip rows) - but it's incomplete/self-contradictory:
+	// .rbc-row-content[role=row]'s own direct children are never
+	// cell/gridcell (axe-core's aria-required-children rule correctly flags
+	// this), and no combination of patching individual roles resolves it
+	// cleanly - verified empirically by replaying this exact DOM structure
+	// through axe-core directly (bypassing the Docker/Aspire-dependent
+	// Playwright suite, which isn't runnable in this sandbox): every element
+	// with a table-structural role requires ALL of its focusable
+	// descendants to be reachable through a valid cell/gridcell, but the
+	// event-chip buttons genuinely have no cell wrapper at all - they're a
+	// decorative overlay, not a second row of the same table - so nothing
+	// short of removing the roles entirely satisfies every check at once.
+	// Each date-number and event-chip button is already its own accessible
+	// <button> (CalEventChip below handles the event chips) with no
+	// dependency on an ancestor's ARIA role, so the table/row/cell/
+	// columnheader roles were purely decorative scaffolding to begin with -
+	// removing them (confirmed via the same axe-core replay to leave zero
+	// violations) loses no actual assistive-tech affordance. RBC doesn't
+	// expose a components seam for any of this scaffolding, so a
+	// MutationObserver is the only way to correct it without patching the
+	// library itself. Scoped to Month-view-only class names/attributes
+	// (`.rbc-date-cell`/`renderHeader` don't exist in Week/Day/Agenda's
+	// DOM - confirmed via node_modules/react-big-calendar/lib/TimeGrid.js),
+	// so this can't affect any other view.
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container) return;
+
+		function stripMonthTableRoles() {
+			container
+				?.querySelectorAll(
+					'.rbc-month-view[role], .rbc-month-row[role], .rbc-row-content[role], .rbc-date-cell[role], .rbc-row.rbc-month-header[role], [role="columnheader"]',
+				)
+				.forEach((el) => {
+					el.removeAttribute("role");
+					el.removeAttribute("aria-sort");
+				});
+		}
+
+		stripMonthTableRoles();
+		const observer = new MutationObserver(stripMonthTableRoles);
+		observer.observe(container, { childList: true, subtree: true });
+		return () => observer.disconnect();
+	}, []);
 
 	// Lazy initializer - only the INITIAL view depends on size; once mounted,
 	// the organizer's own view-button clicks take over and this doesn't
@@ -176,7 +226,9 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 	);
 	const calLoading = calData === null && !calError;
 	const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
-	const [pickerColor, setPickerColor] = useState(DEFAULT_EVENT_COLOR);
+	const [pickerColor, setPickerColor] = useState<string>(() =>
+		brandColor("700"),
+	);
 	const [savingColor, setSavingColor] = useState(false);
 	const [colorSaveError, setColorSaveError] = useState<string | null>(null);
 	const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -215,6 +267,14 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 			day: t("orgOverview.calendarDay"),
 			agenda: t("orgOverview.calendarAgenda"),
 			noEventsInRange: t("orgOverview.calendarNoEvents"),
+			date: t("orgOverview.calendarDate"),
+			time: t("orgOverview.calendarTime"),
+			event: t("orgOverview.calendarEvent"),
+			allDay: t("orgOverview.calendarAllDay"),
+			yesterday: t("orgOverview.calendarYesterday"),
+			tomorrow: t("orgOverview.calendarTomorrow"),
+			showMore: (total: number) =>
+				t("orgOverview.calendarShowMore", { count: total }),
 		}),
 		[t],
 	);
@@ -223,7 +283,7 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 		const e = event as CalEvent;
 		if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
 		setSelectedEvent(e);
-		setPickerColor(e.color ?? DEFAULT_EVENT_COLOR);
+		setPickerColor(e.color ?? brandColor("700"));
 		setColorSaveError(null);
 	}, []);
 
@@ -276,35 +336,54 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 			titleId="widget-calendar-title"
 			title={t("orgDashboard.calendarWidgetTitle")}
 		>
-			{calLoading && (
-				<div className="flex items-center justify-center py-16">
-					<Spinner label={t("orgOverview.calendarLoading")} />
-				</div>
-			)}
-			{calError && (
-				<ErrorBanner
-					message={t("orgOverview.calendarError", { message: calError })}
-				/>
-			)}
-			{!calLoading && !calError && (
-				<div className="rbc-container h-full">
-					<Calendar
-						localizer={localizer}
-						culture={i18n.language === "de" ? "de" : "en-US"}
-						events={calEvents}
-						view={calView}
-						onView={(v: View) => setCalView(v)}
-						date={calDate}
-						onNavigate={(d: Date) => setCalDate(d)}
-						views={["month", "week", "work_week", "day", "agenda"]}
-						style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
-						components={calendarComponents}
-						eventPropGetter={calendarEventPropGetter}
-						onSelectEvent={handleSelectEvent}
-						messages={calendarMessages}
+			{/* display:contents - a purely structural wrapper (matches
+			MiniCalendar.tsx's own use of the same pattern) so the
+			MutationObserver above has a stable node to attach to regardless of
+			calLoading/calError, without affecting layout: the ref used to sit
+			directly on the calendar's own div below, which doesn't exist yet on
+			first mount while calLoading is still true - the effect's one-time
+			[] run found a null ref and never got a second chance to attach. */}
+			<div ref={calendarContainerRef} className="contents">
+				{calLoading && (
+					<div role="status" className="space-y-3">
+						<span className="sr-only">{t("orgOverview.calendarLoading")}</span>
+						<div
+							aria-hidden="true"
+							className="flex items-center justify-between gap-2"
+						>
+							<Skeleton className="h-6 w-32" />
+							<Skeleton className="h-6 w-24" />
+						</div>
+						{Array.from({ length: 3 }).map((_, i) => (
+							<Skeleton key={i} className="h-10 w-full" />
+						))}
+					</div>
+				)}
+				{calError && (
+					<ErrorBanner
+						message={t("orgOverview.calendarError", { message: calError })}
 					/>
-				</div>
-			)}
+				)}
+				{!calLoading && !calError && (
+					<div className="rbc-container h-full">
+						<Calendar
+							localizer={localizer}
+							culture={i18n.language === "de" ? "de" : "en-US"}
+							events={calEvents}
+							view={calView}
+							onView={(v: View) => setCalView(v)}
+							date={calDate}
+							onNavigate={(d: Date) => setCalDate(d)}
+							views={["month", "week", "work_week", "day", "agenda"]}
+							style={{ height: "100%", minHeight: CALENDAR_MIN_HEIGHT_PX }}
+							components={calendarComponents}
+							eventPropGetter={calendarEventPropGetter}
+							onSelectEvent={handleSelectEvent}
+							messages={calendarMessages}
+						/>
+					</div>
+				)}
+			</div>
 
 			{selectedEvent && (
 				<Modal

@@ -77,6 +77,12 @@ services:
       KC_HOSTNAME: https://login.maik-hasler.de
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
+      # Without this, Keycloak 26 ignores X-Forwarded-For and attributes every
+      # request to the Traefik container's internal IP, so login/admin-event
+      # records and any IP-based brute-force policy are useless (#1187).
+      # Safe only because Traefik is the sole ingress on the `proxy` network -
+      # nothing else can reach Keycloak to spoof the header end-to-end.
+      KC_PROXY_HEADERS: xforwarded
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
       # Deliberately keeps the einsatzbereit realm's baked-in vera/olaf/admin demo

@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Link, Outlet, useLocation, useParams } from "react-router";
+import { Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import type { OrganizationDetailsResponse } from "../client/api-client";
 import { useApiClient } from "../hooks/useApiClient";
@@ -21,6 +21,7 @@ import {
 	useQuickActionsList,
 } from "../contexts/QuickActionsContext";
 import Header from "../components/Header/Header";
+import Footer from "../components/Footer";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 import ErrorBanner from "../components/ErrorBanner";
@@ -114,15 +115,7 @@ function OrgAppShell({
 				</Suspense>
 			</main>
 
-			<footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-500">
-				<Link to="/imprint" className="hover:text-gray-600">
-					{t("footer.imprint")}
-				</Link>
-				<span className="mx-2">&middot;</span>
-				<Link to="/privacy-policy" className="hover:text-gray-600">
-					{t("footer.privacy")}
-				</Link>
-			</footer>
+			<Footer compact />
 		</div>
 	);
 }

@@ -2,7 +2,9 @@ import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { NotificationSummary } from "../../client/api-client";
+import EmptyState from "../EmptyState";
 import NotificationItem from "./NotificationItem";
+import { BellIcon } from "../icons";
 
 // Single notification bell + dropdown panel, rendered twice: once inside
 // AccountControls (desktop nav) and once inside Header/MobileHeader (mobile
@@ -72,26 +74,13 @@ export default function NotificationDropdown({
 				type="button"
 				data-testid={mobile ? "notification-bell-mobile" : "notification-bell"}
 				onClick={() => setNotifOpen((o) => !o)}
-				className={`relative p-2 rounded-lg transition-colors cursor-pointer ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"}`}
+				className={`relative cursor-pointer rounded-lg p-2 transition-colors ${transparent ? "text-white/90 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:bg-brand-50 hover:text-brand-600"}`}
 				aria-label={bellLabel}
 				aria-haspopup="menu"
 				aria-controls={panelId}
 				aria-expanded={notifOpen}
 			>
-				<svg
-					className="w-5 h-5"
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth="1.5"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-					/>
-				</svg>
+				<BellIcon className="h-5 w-5" />
 				{unreadCount > 0 && (
 					<span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
 						{unreadCount > 9 ? "9+" : unreadCount}
@@ -104,26 +93,26 @@ export default function NotificationDropdown({
 					data-testid={
 						mobile ? "notification-panel-mobile" : "notification-panel"
 					}
-					className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border shadow-modal z-50 bg-white border-gray-200"
+					className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white shadow-modal"
 				>
-					<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+					<div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
 						<p className="text-sm font-medium text-gray-900">
 							{t("notifications.bellLabel")}
 						</p>
 						{notifications.some((n) => !n.isRead) && (
 							<button
 								type="button"
-								className="text-xs hover:underline cursor-pointer text-brand-700"
+								className="cursor-pointer text-xs text-brand-700 hover:underline"
 								onClick={() => void markAllRead()}
 							>
 								{t("notifications.markAllRead")}
 							</button>
 						)}
 					</div>
-					<ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+					<ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
 						{notifications.length === 0 ? (
-							<li className="px-4 py-6 text-center text-sm text-gray-500">
-								{t("notifications.empty")}
+							<li className="px-4">
+								<EmptyState compact title={t("notifications.empty")} />
 							</li>
 						) : (
 							<>
@@ -145,7 +134,7 @@ export default function NotificationDropdown({
 											}
 											disabled={notifLoadingMore}
 											onClick={() => void loadMoreNotifications()}
-											className="text-xs hover:underline cursor-pointer text-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+											className="cursor-pointer text-xs text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											{notifLoadingMore
 												? t("notifications.loadingMore")
