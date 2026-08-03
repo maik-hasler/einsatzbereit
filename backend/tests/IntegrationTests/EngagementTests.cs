@@ -1,5 +1,11 @@
 using System.Net.Http.Headers;
+using Application.Common.Exceptions;
 using AwesomeAssertions;
+using Domain.Engagements;
+using Domain.Users;
+using Domain.VolunteerOpportunities;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TUnit.Core.Interfaces;
 
 namespace IntegrationTests;
@@ -1162,6 +1168,57 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		var firstPageComments = firstPage.Items.Items.Select(i => i.Comment).ToList();
 		var secondPageComments = secondPage.Items.Items.Select(i => i.Comment).ToList();
 		firstPageComments.Should().NotBeEquivalentTo(secondPageComments);
+	}
+
+	// ── Feedback rating DB check constraint (#1214) ───────────────────────────
+	// SubmitFeedback already rejects an out-of-range rating (Application.UnitTests
+	// covers that), but that only guards the one write path through the API. These
+	// exercise the CK_engagement_feedback_rating_range constraint directly via raw
+	// SQL, bypassing the domain entirely, so a future write path that skips
+	// SubmitFeedback (a migration, a bulk import, a manual data fix) still can't
+	// leave feedback_rating outside 1-5.
+
+	[Test]
+	[Arguments(1)]
+	[Arguments(3)]
+	[Arguments(5)]
+	public async Task FeedbackRatingCheckConstraint_ShouldAllow_RatingWithinOneToFive(
+		int rating,
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagement = Engagement.CreateIndividualContact(
+			VolunteerOpportunityId.New(), UserId.New(), "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var act = () => dbContext.Database.ExecuteSqlInterpolatedAsync(
+			$"UPDATE engagement SET feedback_rating = {rating} WHERE id = {engagement.Id.Value}",
+			cancellationToken);
+
+		await act.Should().NotThrowAsync();
+	}
+
+	[Test]
+	[Arguments(0)]
+	[Arguments(6)]
+	[Arguments(-1)]
+	public async Task FeedbackRatingCheckConstraint_ShouldReject_RatingOutsideOneToFive(
+		int rating,
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var engagement = Engagement.CreateIndividualContact(
+			VolunteerOpportunityId.New(), UserId.New(), "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var act = () => dbContext.Database.ExecuteSqlInterpolatedAsync(
+			$"UPDATE engagement SET feedback_rating = {rating} WHERE id = {engagement.Id.Value}",
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<PostgresException>();
+		exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
 	}
 
 	// ── Cross-opportunity time slot validation (#524) ─────────────────────────
