@@ -345,15 +345,14 @@ internal sealed class ApplicationDbContext(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default)
 	{
-		var opportunities = await Set<VolunteerOpportunity>()
-			.Include(vo => vo.TimeSlots)
+		var opportunityIds = await Set<VolunteerOpportunity>()
 			.Where(vo => vo.OrganizationId == organizationId)
+			.Select(vo => vo.Id)
 			.ToListAsync(cancellationToken);
 
-		if (opportunities.Count == 0)
+		if (opportunityIds.Count == 0)
 			return [];
 
-		var opportunityIds = opportunities.Select(vo => vo.Id).ToList();
 		var now = DateTimeOffset.UtcNow;
 
 		var opportunityIdsWithActiveEngagements = await Set<Engagement>()
@@ -363,10 +362,11 @@ internal sealed class ApplicationDbContext(
 			.Distinct()
 			.ToListAsync(cancellationToken);
 
-		return opportunities
-			.Where(vo => vo.TimeSlots.Any(ts => ts.StartDateTime > now)
-				|| opportunityIdsWithActiveEngagements.Contains(vo.Id))
-			.ToList();
+		return await Set<VolunteerOpportunity>()
+			.Where(vo => vo.OrganizationId == organizationId
+				&& (vo.TimeSlots.Any(ts => ts.StartDateTime > now)
+					|| opportunityIdsWithActiveEngagements.Contains(vo.Id)))
+			.ToListAsync(cancellationToken);
 	}
 
 	public async Task<List<VolunteerOpportunity>> GetOpportunitiesForOrganizationAsync(

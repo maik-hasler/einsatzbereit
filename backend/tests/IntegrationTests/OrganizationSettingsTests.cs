@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
+using Application.Common.Exceptions;
 using AwesomeAssertions;
+using Domain.VolunteerOpportunities;
 using Infrastructure.BackgroundJobs;
 using TUnit.Core.Interfaces;
 
@@ -1012,6 +1014,131 @@ public class OrganizationSettingsTests(
 
 		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
 		stillThere.Id.Should().Be(org.Id.Value);
+	}
+
+	// Regression for #1213: GetBlockingOpportunitiesForOrganizationAsync used to
+	// materialise every opportunity of the organization with its full time-slot
+	// collection and filter the future-time-slot predicate client-side. Pushing
+	// that filter into SQL must not turn it into an "any time slot at all"
+	// check - an opportunity whose only time slot has already ended, with no
+	// active engagement, must still allow the organization to be deleted.
+	[Test]
+	public async Task DeleteOrganization_ShouldReturn204_WhenOpportunityHasOnlyPastTimeSlotAndNoActiveEngagement(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Delete 204 Past Slot Test Org" }, cancellationToken);
+
+		var opportunity = await olafClient.CreateVolunteerOpportunityAsync(
+			new CreateVolunteerOpportunityRequest
+			{
+				Title = "Expired Slot Opportunity",
+				Description = "Integration test opportunity",
+				OrganizationId = org.Id.Value,
+				Street = "Test Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+				Occurrence = "OneTime",
+				ParticipationType = "ScheduledSlots",
+				CheckInMethod = "None",
+				IsDraft = true,
+			},
+			cancellationToken);
+
+		await AddExpiredTimeSlotDirectlyAsync(opportunity.Id, cancellationToken);
+
+		await olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
+
+		var act = () => olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task DeleteOrganization_ShouldReturn409AndOnlyListBlockingTitle_WhenOnlySomeOpportunitiesAreBlocking(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var org = await olafClient.CreateOrganizationAsync(
+			new CreateOrganizationRequest { Name = "Delete 409 Mixed Opportunities Test Org" }, cancellationToken);
+
+		var blockingOpportunity = await olafClient.CreateVolunteerOpportunityAsync(
+			new CreateVolunteerOpportunityRequest
+			{
+				Title = "Future Slot Opportunity",
+				Description = "Integration test opportunity",
+				OrganizationId = org.Id.Value,
+				Street = "Test Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+				Occurrence = "OneTime",
+				ParticipationType = "ScheduledSlots",
+				CheckInMethod = "None",
+				IsDraft = true,
+			},
+			cancellationToken);
+
+		await olafClient.CreateTimeSlotAsync(
+			blockingOpportunity.Id,
+			new CreateTimeSlotRequest
+			{
+				StartDateTime = DateTimeOffset.UtcNow.AddDays(7),
+				EndDateTime = DateTimeOffset.UtcNow.AddDays(7).AddHours(2),
+				MaxParticipants = 5,
+				RecurrenceCount = 1,
+			},
+			cancellationToken);
+
+		var nonBlockingOpportunity = await olafClient.CreateVolunteerOpportunityAsync(
+			new CreateVolunteerOpportunityRequest
+			{
+				Title = "Expired Slot Opportunity",
+				Description = "Integration test opportunity",
+				OrganizationId = org.Id.Value,
+				Street = "Test Street",
+				HouseNumber = "1",
+				ZipCode = "12345",
+				City = "Berlin",
+				Occurrence = "OneTime",
+				ParticipationType = "ScheduledSlots",
+				CheckInMethod = "None",
+				IsDraft = true,
+			},
+			cancellationToken);
+
+		await AddExpiredTimeSlotDirectlyAsync(nonBlockingOpportunity.Id, cancellationToken);
+
+		var act = () => olafClient.DeleteOrganizationAsync(org.Id.Value, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(409);
+		ex.Which.Response.Should().Contain("Future Slot Opportunity");
+		ex.Which.Response.Should().NotContain("Expired Slot Opportunity");
+
+		var stillThere = await olafClient.GetOrganizationDetailsAsync(org.Id.Value, cancellationToken);
+		stillThere.Id.Should().Be(org.Id.Value);
+	}
+
+	// CreateTimeSlotAsync's domain validation rejects a past StartDateTime (see
+	// TimeSlot.Validate's "TimeSlot.StartMustBeFuture" rule), so there is no API
+	// path to create an already-expired slot. Seeding one directly through the
+	// aggregate - with an artificially past "now" older than the slot itself -
+	// reproduces what happens for real once enough wall-clock time passes after a
+	// legitimately-created future slot.
+	private async Task AddExpiredTimeSlotDirectlyAsync(Guid opportunityId, CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var id = VolunteerOpportunityId.Create(opportunityId).GetValueOrThrow();
+		var aggregate = await dbContext.VolunteerOpportunities.FindAsync(id, cancellationToken)
+			?? throw new InvalidOperationException($"Seeded opportunity '{opportunityId}' not found.");
+
+		var start = DateTimeOffset.UtcNow.AddDays(-7);
+		aggregate.AddTimeSlot(start, start.AddHours(2), maxParticipants: 10, now: start.AddDays(-1)).GetValueOrThrow();
+
+		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(string username, string password)
