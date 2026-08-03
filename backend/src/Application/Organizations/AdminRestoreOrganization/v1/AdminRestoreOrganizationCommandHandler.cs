@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.AuditLogs;
 using Domain.Organizations;
 using Domain.Primitives;
 
@@ -26,6 +27,13 @@ internal sealed class AdminRestoreOrganizationCommandHandler(
 			?? throw new ResultFailureException(Error.NotFound("Organization.NotFound", $"Organization '{request.OrganizationId}' not found."));
 
 		organization.Restore().ThrowIfFailure();
+
+		var auditLog = AuditLog.Create(
+			request.AdminUserId,
+			AuditActionType.OrganizationRestored,
+			AuditSubjectType.Organization,
+			request.OrganizationId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}

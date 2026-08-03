@@ -3,6 +3,7 @@ using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
+using Domain.AuditLogs;
 using Domain.Organizations;
 using Domain.Primitives;
 using Domain.Reports;
@@ -58,6 +59,13 @@ internal sealed class AdminShadowDeleteOrganizationCommandHandler(
 		}
 
 		organization.MarkDeleted(now).ThrowIfFailure();
+
+		var auditLog = AuditLog.Create(
+			request.AdminUserId,
+			AuditActionType.OrganizationShadowDeleted,
+			AuditSubjectType.Organization,
+			request.OrganizationId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}

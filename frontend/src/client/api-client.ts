@@ -5341,6 +5341,69 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
+    listAuditLogs(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfAuditLogEntry> {
+        let url_ = this.baseUrl + "/v1/admin/audit-logs?";
+        if (pageNumber === undefined || pageNumber === null)
+            throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
+        else
+            url_ += "pageNumber=" + encodeURIComponent("" + pageNumber) + "&";
+        if (pageSize === undefined || pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
+        else
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processListAuditLogs(_response);
+        });
+    }
+
+    protected processListAuditLogs(response: Response): Promise<PagedListOfAuditLogEntry> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PagedListOfAuditLogEntry;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PagedListOfAuditLogEntry>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     getMyAchievements(signal?: AbortSignal): Promise<AchievementSummary[]> {
         let url_ = this.baseUrl + "/v1/me/achievements";
         url_ = url_.replace(/[?&]$/, "");
@@ -5478,6 +5541,19 @@ export interface AdminUserListItem {
     email: string;
     enabled: boolean;
     realmRoles: string[];
+
+    [key: string]: any;
+}
+
+export interface AuditLogEntry {
+    id: string;
+    actorUserId: string;
+    actorDisplayName: string;
+    actionType: string;
+    subjectType: string;
+    subjectId: string;
+    reason: string | undefined;
+    createdOn: Date;
 
     [key: string]: any;
 }
@@ -5928,6 +6004,15 @@ export interface PagedListOfAdminUserListItem {
     currentPage: number;
     pageCount?: number;
     items: AdminUserListItem[];
+
+    [key: string]: any;
+}
+
+export interface PagedListOfAuditLogEntry {
+    totalItems?: number;
+    currentPage: number;
+    pageCount?: number;
+    items: AuditLogEntry[];
 
     [key: string]: any;
 }

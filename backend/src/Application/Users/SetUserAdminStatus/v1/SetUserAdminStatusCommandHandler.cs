@@ -1,12 +1,16 @@
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
 using Application.Common.Messaging;
+using Application.Common.Persistence;
+using Domain.AuditLogs;
 using Domain.Primitives;
+using Domain.Users;
 
 namespace Application.Users.SetUserAdminStatus.v1;
 
 internal sealed class SetUserAdminStatusCommandHandler(
-	IKeycloakUserService keycloakUserService)
+	IKeycloakUserService keycloakUserService,
+	IApplicationDbContext dbContext)
 	: ICommandHandler<SetUserAdminStatusCommand, bool>
 {
 	public async ValueTask<bool> Handle(
@@ -30,6 +34,14 @@ internal sealed class SetUserAdminStatusCommandHandler(
 			await keycloakUserService.AssignAdminRoleAsync(request.TargetUserId, cancellationToken);
 		else
 			await keycloakUserService.RemoveAdminRoleAsync(request.TargetUserId, cancellationToken);
+
+		var actingUserId = UserId.Create(request.ActingUserId).GetValueOrThrow();
+		var auditLog = AuditLog.Create(
+			actingUserId,
+			request.IsAdmin ? AuditActionType.UserPromotedToAdmin : AuditActionType.UserDemotedFromAdmin,
+			AuditSubjectType.User,
+			request.TargetUserId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}

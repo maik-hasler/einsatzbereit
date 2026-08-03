@@ -942,6 +942,7 @@
       "organizationsHeading": "Organizations",
       "usersHeading": "Users",
       "reportsHeading": "Reports",
+      "auditLogHeading": "Audit Log",
       "loadingMore": "Loading more…",
       "organizations": {
         "loading": "Loading organizations…",
@@ -1022,6 +1023,32 @@
           "Fraud": "Fraud or scam",
           "Harassment": "Harassment",
           "Other": "Other"
+        }
+      },
+      "auditLog": {
+        "loading": "Loading audit log…",
+        "error": "Failed to load the audit log.",
+        "noEntries": "No privileged actions recorded yet.",
+        "loadMore": "Load more",
+        "reason": "Reason: {{reason}}",
+        "actionType": {
+          "UserPromotedToAdmin": "Promoted to admin",
+          "UserDemotedFromAdmin": "Removed admin access",
+          "UserEnabled": "Unblocked user",
+          "UserDisabled": "Blocked user",
+          "UserShadowDeleted": "Shadow-deleted user",
+          "UserRestored": "Restored user",
+          "OrganizationShadowDeleted": "Shadow-deleted organization",
+          "OrganizationRestored": "Restored organization",
+          "VolunteerOpportunityShadowDeleted": "Shadow-deleted opportunity",
+          "VolunteerOpportunityRestored": "Restored opportunity",
+          "EngagementCancelled": "Cancelled engagement"
+        },
+        "subjectType": {
+          "User": "User",
+          "Organization": "Organization",
+          "VolunteerOpportunity": "Opportunity",
+          "Engagement": "Engagement"
         }
       }
     },

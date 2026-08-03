@@ -3,6 +3,7 @@ using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements.Common;
+using Domain.AuditLogs;
 using Domain.Engagements;
 using Domain.Primitives;
 
@@ -34,6 +35,18 @@ internal sealed class CancelEngagementCommandHandler(
 			request.Reason,
 			opportunity.Title,
 			cancellationToken);
+
+		// Audited here (not via EngagementCancelledDomainEvent) since that event is
+		// also raised for cascade cancellations from an opportunity/organization
+		// shadow-delete - those are already audited as their own action and would
+		// otherwise double up with a per-engagement entry (#1088).
+		var auditLog = AuditLog.Create(
+			request.RequestingUserId,
+			AuditActionType.EngagementCancelled,
+			AuditSubjectType.Engagement,
+			engagement.Id.Value,
+			request.Reason);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return engagement;
 	}

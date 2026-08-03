@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.AuditLogs;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 
@@ -23,6 +24,13 @@ internal sealed class AdminRestoreVolunteerOpportunityCommandHandler(
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId}' not found."));
 
 		opportunity.Restore().ThrowIfFailure();
+
+		var auditLog = AuditLog.Create(
+			request.AdminUserId,
+			AuditActionType.VolunteerOpportunityRestored,
+			AuditSubjectType.VolunteerOpportunity,
+			request.OpportunityId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}

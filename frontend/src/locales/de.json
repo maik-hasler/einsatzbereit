@@ -942,6 +942,7 @@
       "organizationsHeading": "Organisationen",
       "usersHeading": "Nutzer:innen",
       "reportsHeading": "Meldungen",
+      "auditLogHeading": "Audit-Log",
       "loadingMore": "Weitere werden geladen…",
       "organizations": {
         "loading": "Organisationen werden geladen…",
@@ -1022,6 +1023,32 @@
           "Fraud": "Betrug",
           "Harassment": "Belästigung",
           "Other": "Sonstiges"
+        }
+      },
+      "auditLog": {
+        "loading": "Audit-Log wird geladen…",
+        "error": "Audit-Log konnte nicht geladen werden.",
+        "noEntries": "Noch keine privilegierten Aktionen erfasst.",
+        "loadMore": "Mehr laden",
+        "reason": "Grund: {{reason}}",
+        "actionType": {
+          "UserPromotedToAdmin": "Zum Admin gemacht",
+          "UserDemotedFromAdmin": "Admin-Rechte entzogen",
+          "UserEnabled": "Nutzer:in entsperrt",
+          "UserDisabled": "Nutzer:in gesperrt",
+          "UserShadowDeleted": "Nutzer:in schattengelöscht",
+          "UserRestored": "Nutzer:in wiederhergestellt",
+          "OrganizationShadowDeleted": "Organisation schattengelöscht",
+          "OrganizationRestored": "Organisation wiederhergestellt",
+          "VolunteerOpportunityShadowDeleted": "Einsatz schattengelöscht",
+          "VolunteerOpportunityRestored": "Einsatz wiederhergestellt",
+          "EngagementCancelled": "Anmeldung abgesagt"
+        },
+        "subjectType": {
+          "User": "Nutzer:in",
+          "Organization": "Organisation",
+          "VolunteerOpportunity": "Einsatz",
+          "Engagement": "Anmeldung"
         }
       }
     },

@@ -53,11 +53,17 @@ export default function AdministrationPage() {
 				</h2>
 				<UsersSection />
 			</section>
-			<section>
+			<section className="mb-10">
 				<h2 className="mb-4 text-lg font-semibold text-gray-900">
 					{t("administration.reportsHeading")}
 				</h2>
 				<ReportsSection />
+			</section>
+			<section>
+				<h2 className="mb-4 text-lg font-semibold text-gray-900">
+					{t("administration.auditLogHeading")}
+				</h2>
+				<AuditLogSection />
 			</section>
 		</>
 	);
@@ -828,5 +834,145 @@ function ReportHistoryModal({
 				</ul>
 			)}
 		</Modal>
+	);
+}
+
+interface AuditLogRow {
+	id: string;
+	actorUserId: string;
+	actorDisplayName: string;
+	actionType: string;
+	subjectType: string;
+	subjectId: string;
+	reason: string | null;
+	createdOn: string;
+}
+
+function auditSubjectHref(
+	subjectType: string,
+	subjectId: string,
+): string | null {
+	switch (subjectType) {
+		case "VolunteerOpportunity":
+			return `/volunteer-opportunities/${subjectId}`;
+		case "Organization":
+			return `/organizations/${subjectId}`;
+		case "User":
+			return `/users/${subjectId}`;
+		default:
+			return null;
+	}
+}
+
+function AuditLogSection() {
+	const { t, i18n } = useTranslation();
+	const api = useApiClient();
+
+	const {
+		items: rows,
+		loading,
+		loadingMore,
+		error,
+		loadMoreError,
+		hasMore,
+		loadMore,
+		retryLoadMore,
+	} = useLoadMore<AuditLogRow>(
+		(pageNumber) =>
+			api.listAuditLogs(pageNumber, PAGE_SIZE).then((result) => ({
+				items: result.items.map((entry) => ({
+					id: entry.id,
+					actorUserId: entry.actorUserId,
+					actorDisplayName: entry.actorDisplayName,
+					actionType: entry.actionType,
+					subjectType: entry.subjectType,
+					subjectId: entry.subjectId,
+					reason: entry.reason ?? null,
+					createdOn: entry.createdOn as unknown as string,
+				})),
+				pageCount: result.pageCount,
+			})),
+		{ getErrorMessage: () => t("administration.auditLog.error") },
+	);
+
+	if (loading) {
+		return (
+			<div
+				role="status"
+				className="overflow-hidden rounded-card border border-gray-200"
+			>
+				<span className="sr-only">{t("administration.auditLog.loading")}</span>
+				<div className="divide-y divide-gray-100">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<div key={i} aria-hidden="true" className="space-y-2 px-4 py-3">
+							<Skeleton className="h-4 w-1/2" />
+							<Skeleton className="h-3 w-1/3" />
+						</div>
+					))}
+				</div>
+			</div>
+		);
+	}
+	if (error) return <ErrorBanner message={error} />;
+	if (rows.length === 0)
+		return <EmptyState title={t("administration.auditLog.noEntries")} />;
+
+	return (
+		<>
+			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+				{rows.map((row) => {
+					const href = auditSubjectHref(row.subjectType, row.subjectId);
+					return (
+						<li key={row.id} className="px-4 py-3">
+							<div className="flex flex-wrap items-center gap-2">
+								<span className="font-medium text-gray-900">
+									{t(`administration.auditLog.actionType.${row.actionType}`)}
+								</span>
+								<Chip tone="neutral" size="sm">
+									{t(`administration.auditLog.subjectType.${row.subjectType}`)}
+								</Chip>
+								{href ? (
+									<Link
+										to={href}
+										className="text-sm text-brand-700 hover:underline"
+									>
+										{row.subjectId}
+									</Link>
+								) : (
+									<span className="text-sm text-gray-500">{row.subjectId}</span>
+								)}
+							</div>
+							<p className="mt-1 text-xs text-gray-500">
+								{row.actorDisplayName || row.actorUserId}
+								{" · "}
+								{formatDateTime(row.createdOn, i18n.language)}
+								{row.reason && (
+									<>
+										{" · "}
+										{t("administration.auditLog.reason", {
+											reason: row.reason,
+										})}
+									</>
+								)}
+							</p>
+						</li>
+					);
+				})}
+			</ul>
+			{hasMore &&
+				(loadMoreError ? (
+					<LoadMoreError
+						message={loadMoreError}
+						retrying={loadingMore}
+						onRetry={retryLoadMore}
+					/>
+				) : (
+					<LoadMoreButton
+						loading={loadingMore}
+						label={t("administration.auditLog.loadMore")}
+						onClick={loadMore}
+					/>
+				))}
+		</>
 	);
 }

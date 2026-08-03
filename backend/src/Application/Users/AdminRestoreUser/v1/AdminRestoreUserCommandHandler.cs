@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Messaging;
 using Application.Common.Persistence;
+using Domain.AuditLogs;
 using Domain.Primitives;
 
 namespace Application.Users.AdminRestoreUser.v1;
@@ -22,6 +23,13 @@ internal sealed class AdminRestoreUserCommandHandler(
 			?? throw new ResultFailureException(Error.NotFound("User.NotFound", $"User '{request.UserId}' not found."));
 
 		user.Restore().ThrowIfFailure();
+
+		var auditLog = AuditLog.Create(
+			request.AdminUserId,
+			AuditActionType.UserRestored,
+			AuditSubjectType.User,
+			request.UserId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}

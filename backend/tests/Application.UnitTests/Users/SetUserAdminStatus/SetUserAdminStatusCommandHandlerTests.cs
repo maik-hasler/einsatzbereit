@@ -1,7 +1,9 @@
 using Application.Common.Exceptions;
 using Application.Common.Keycloak;
+using Application.Common.Persistence;
 using Application.Users.SetUserAdminStatus.v1;
 using AwesomeAssertions;
+using Domain.AuditLogs;
 using NSubstitute;
 
 namespace Application.UnitTests.Users.SetUserAdminStatus;
@@ -9,11 +11,15 @@ namespace Application.UnitTests.Users.SetUserAdminStatus;
 public class SetUserAdminStatusCommandHandlerTests
 {
 	private readonly IKeycloakUserService _keycloakService = Substitute.For<IKeycloakUserService>();
+	private readonly IApplicationDbContext _dbContext = Substitute.For<IApplicationDbContext>();
+	private readonly IAggregateRepository<AuditLog, AuditLogId> _auditLogRepo =
+		Substitute.For<IAggregateRepository<AuditLog, AuditLogId>>();
 	private readonly SetUserAdminStatusCommandHandler _sut;
 
 	public SetUserAdminStatusCommandHandlerTests()
 	{
-		_sut = new SetUserAdminStatusCommandHandler(_keycloakService);
+		_dbContext.AuditLogs.Returns(_auditLogRepo);
+		_sut = new SetUserAdminStatusCommandHandler(_keycloakService, _dbContext);
 	}
 
 	[Test]
@@ -33,6 +39,12 @@ public class SetUserAdminStatusCommandHandlerTests
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).AssignAdminRoleAsync(targetUserId, cancellationToken);
 		await _keycloakService.DidNotReceive().RemoveAdminRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _auditLogRepo.Received(1).AddAsync(
+			Arg.Is<AuditLog>(a => a!.ActorUserId.Value == actingUserId
+				&& a.ActionType == AuditActionType.UserPromotedToAdmin
+				&& a.SubjectType == AuditSubjectType.User
+				&& a.SubjectId == targetUserId),
+			cancellationToken);
 	}
 
 	[Test]
@@ -52,6 +64,9 @@ public class SetUserAdminStatusCommandHandlerTests
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveAdminRoleAsync(targetUserId, cancellationToken);
 		await _keycloakService.DidNotReceive().AssignAdminRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+		await _auditLogRepo.Received(1).AddAsync(
+			Arg.Is<AuditLog>(a => a!.ActionType == AuditActionType.UserDemotedFromAdmin),
+			cancellationToken);
 	}
 
 	[Test]

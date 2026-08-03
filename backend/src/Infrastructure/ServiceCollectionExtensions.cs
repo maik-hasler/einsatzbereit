@@ -1,5 +1,6 @@
 using Application.Achievements;
 using Application.Achievements.BadgeCatalog;
+using Application.AuditLogs;
 using Application.Common;
 using Application.Common.Email;
 using Application.Common.Geocoding;
@@ -96,6 +97,8 @@ public static class ServiceCollectionExtensions
 		services.AddScoped<IAdminOrganizationReadRepository, AdminOrganizationReadRepository>();
 
 		services.AddScoped<IAdminReportReadRepository, AdminReportReadRepository>();
+
+		services.AddScoped<IAdminAuditLogReadRepository, AdminAuditLogReadRepository>();
 
 		services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
 

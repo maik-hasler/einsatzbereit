@@ -2,6 +2,7 @@ using System.Reflection;
 using Application.Common.Persistence;
 using Application.Organizations;
 using Domain.Achievements;
+using Domain.AuditLogs;
 using Domain.Engagements;
 using Domain.Notifications;
 using Domain.Organizations;
@@ -96,6 +97,14 @@ internal sealed class ApplicationDbContext(
 			r => r.Id);
 
 	internal IQueryable<Report> ReportsQuery => Set<Report>().AsNoTracking();
+
+	public IAggregateRepository<AuditLog, AuditLogId> AuditLogs
+		=> new AggregateRepository<AuditLog, AuditLogId>(
+			Set<AuditLog>(),
+			Set<AuditLog>(),
+			a => a.Id);
+
+	internal IQueryable<AuditLog> AuditLogsQuery => Set<AuditLog>().AsNoTracking();
 
 	public async Task<bool> IsOrganizerAsync(
 		OrganizationId organizationId,

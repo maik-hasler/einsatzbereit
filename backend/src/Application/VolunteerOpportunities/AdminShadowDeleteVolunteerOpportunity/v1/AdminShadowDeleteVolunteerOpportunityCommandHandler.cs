@@ -3,6 +3,7 @@ using Application.Common.Messaging;
 using Application.Common.Persistence;
 using Application.Engagements;
 using Application.VolunteerOpportunities.Common;
+using Domain.AuditLogs;
 using Domain.Primitives;
 using Domain.VolunteerOpportunities;
 
@@ -38,6 +39,13 @@ internal sealed class AdminShadowDeleteVolunteerOpportunityCommandHandler(
 			request.AdminUserId,
 			DateTimeOffset.UtcNow,
 			cancellationToken);
+
+		var auditLog = AuditLog.Create(
+			request.AdminUserId,
+			AuditActionType.VolunteerOpportunityShadowDeleted,
+			AuditSubjectType.VolunteerOpportunity,
+			request.OpportunityId);
+		await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
 
 		return true;
 	}
