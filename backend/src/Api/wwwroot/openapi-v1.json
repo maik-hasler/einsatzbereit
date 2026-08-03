@@ -8368,8 +8368,7 @@
           "avatarUrl",
           "bio",
           "skills",
-          "languages",
-          "preferredContact"
+          "languages"
         ],
         "type": "object",
         "properties": {
@@ -8413,12 +8412,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "preferredContact": {
-            "type": [
-              "null",
-              "string"
-            ]
           }
         }
       },

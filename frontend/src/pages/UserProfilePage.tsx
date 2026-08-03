@@ -112,14 +112,12 @@ export default function UserProfilePage() {
 
 			{(profile.bio ||
 				profile.skills.length > 0 ||
-				profile.languages.length > 0 ||
-				profile.preferredContact) && (
+				profile.languages.length > 0) && (
 				<div data-content-wrapper className="mb-8 max-w-2xl space-y-5">
 					<ProfileFieldsView
 						bio={profile.bio}
 						skills={profile.skills}
 						languages={profile.languages}
-						preferredContact={profile.preferredContact}
 					/>
 				</div>
 			)}

@@ -41,6 +41,10 @@ internal sealed class GetPublicUserProfileQueryHandler(
 
 		var user = await dbContext.Users.FindAsync(request.UserId, cancellationToken);
 
+		// PreferredContact/Phone are deliberately not surfaced here (#1028) - this
+		// endpoint is AllowAnonymous(), so contact info only ever reaches an
+		// organizer through an actual engagement (EngagementSummary), never a
+		// cold-view of the public profile by an anonymous visitor.
 		return new PublicUserProfileResponse(
 			displayName,
 			engagementCount,
@@ -48,7 +52,6 @@ internal sealed class GetPublicUserProfileQueryHandler(
 			user?.AvatarUrl,
 			user?.Bio,
 			user?.Skills ?? [],
-			user?.Languages ?? [],
-			user?.PreferredContact?.ToString());
+			user?.Languages ?? []);
 	}
 }

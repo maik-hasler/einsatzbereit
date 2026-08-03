@@ -6045,7 +6045,6 @@ export interface PublicUserProfileResponse {
     bio: string | undefined;
     skills: string[];
     languages: string[];
-    preferredContact: string | undefined;
 
     [key: string]: any;
 }
