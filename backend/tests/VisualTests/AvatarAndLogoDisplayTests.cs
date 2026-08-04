@@ -180,6 +180,58 @@ public class AvatarAndLogoDisplayTests(AspireFixture fixture) : VisualTestBase(f
 		afterOrg.GetProperty("logoUrl").ValueKind.Should().Be(JsonValueKind.Null);
 	}
 
+	[Test]
+	public async Task RemoveUserAvatar_ClearsAvatarUrl_AndHidesRemoveButton()
+	{
+		// #1063: the user-avatar upload feature had no matching delete/remove
+		// endpoint, unlike the symmetric organization-logo feature. Verifies the
+		// new DELETE endpoint and its "Remove" button in ProfileOverviewPage
+		// actually clear the stored avatar.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var backend = Fixture.GetEndpoint("backend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+		await Expect(Page.Locator("main")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+		var token = await GetAccessTokenAsync();
+
+		using var http = new HttpClient { BaseAddress = backend };
+		http.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+		using var content = new MultipartFormDataContent();
+		using var fileContent = new ByteArrayContent(TinyPng);
+		fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+		content.Add(fileContent, "file", "avatar.png");
+
+		(await http.PutAsync("/v1/users/me/avatar", content)).EnsureSuccessStatusCode();
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("quick-action-edit").ClickAsync();
+		await Expect(Page.GetByTestId("quick-action-save")).ToBeVisibleAsync();
+
+		var removeButton = Page.GetByTestId("avatar-remove");
+		await Expect(removeButton).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await removeButton.ClickAsync();
+		await Expect(removeButton).ToBeHiddenAsync(new() { Timeout = 10_000 });
+
+		// Same connection-pool/scheduling jitter as RemoveOrganizationLogo below -
+		// poll briefly rather than asserting on a single read (#946).
+		JsonElement afterProfile = default;
+		for (var attempt = 0; ; attempt++)
+		{
+			var afterResponse = await http.GetAsync("/v1/users/me");
+			afterResponse.EnsureSuccessStatusCode();
+			afterProfile = await afterResponse.Content.ReadFromJsonAsync<JsonElement>();
+			if (afterProfile.GetProperty("avatarUrl").ValueKind == JsonValueKind.Null || attempt >= 5)
+				break;
+			await Task.Delay(500);
+		}
+		afterProfile.GetProperty("avatarUrl").ValueKind.Should().Be(JsonValueKind.Null);
+	}
+
 	private async Task<string> GetAccessTokenAsync()
 	{
 		var token = await Page.EvaluateAsync<string?>(@"() => {

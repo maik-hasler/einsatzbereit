@@ -451,18 +451,38 @@ export default function ProfileOverviewPage() {
 													</span>
 												)}
 												<div>
-													<FileUploadButton
-														id="avatar-upload"
-														label={
-															avatarUpload.uploading
-																? t("profile.avatarUploading")
-																: t("profile.avatarUpload")
-														}
-														accept="image/jpeg,image/png,image/webp"
-														onChange={avatarUpload.handleChange}
-														disabled={avatarUpload.uploading}
-														inputRef={avatarUpload.inputRef}
-													/>
+													<div className="flex items-center gap-3">
+														<FileUploadButton
+															id="avatar-upload"
+															label={
+																avatarUpload.uploading
+																	? t("profile.avatarUploading")
+																	: t("profile.avatarUpload")
+															}
+															accept="image/jpeg,image/png,image/webp"
+															onChange={avatarUpload.handleChange}
+															disabled={
+																avatarUpload.uploading || avatarUpload.removing
+															}
+															inputRef={avatarUpload.inputRef}
+														/>
+														{avatarUrl && (
+															<button
+																type="button"
+																data-testid="avatar-remove"
+																onClick={() => void avatarUpload.handleRemove()}
+																disabled={
+																	avatarUpload.uploading ||
+																	avatarUpload.removing
+																}
+																className="text-sm font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+															>
+																{avatarUpload.removing
+																	? t("profile.avatarRemoving")
+																	: t("profile.avatarRemove")}
+															</button>
+														)}
+													</div>
 													<p className="mt-1 text-xs text-gray-500">
 														{t("profile.avatarHint")}
 													</p>
