@@ -390,6 +390,18 @@ export function CalendarIcon({ className = "h-3.5 w-3.5" }: IconProps) {
 	);
 }
 
+export function ArrowDownTrayIcon({ className = "h-4 w-4" }: IconProps) {
+	return (
+		<StrokeIcon className={className}>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 12m0 0 4.5-4.5M12 12V3"
+			/>
+		</StrokeIcon>
+	);
+}
+
 export function QrCodeIcon({ className = "h-4 w-4" }: IconProps) {
 	return (
 		<StrokeIcon className={className}>
