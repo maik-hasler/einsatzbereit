@@ -3552,9 +3552,12 @@ export class EinsatzbereitApi {
     }
 
     /**
+     * @param search (optional) 
+     * @param deleted (optional) 
+     * @param flagged (optional) 
      * @return OK
      */
-    listOrganizations(pageNumber: number, pageSize: number, signal?: AbortSignal): Promise<PagedListOfAdminOrganizationSummary> {
+    listOrganizations(pageNumber: number, pageSize: number, search: string | undefined, deleted: boolean | undefined, flagged: boolean | undefined, signal?: AbortSignal): Promise<PagedListOfAdminOrganizationSummary> {
         let url_ = this.baseUrl + "/v1/admin/organizations?";
         if (pageNumber === undefined || pageNumber === null)
             throw new globalThis.Error("The parameter 'pageNumber' must be defined and cannot be null.");
@@ -3564,6 +3567,18 @@ export class EinsatzbereitApi {
             throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
         else
             url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (search === null)
+            throw new globalThis.Error("The parameter 'search' cannot be null.");
+        else if (search !== undefined)
+            url_ += "search=" + encodeURIComponent("" + search) + "&";
+        if (deleted === null)
+            throw new globalThis.Error("The parameter 'deleted' cannot be null.");
+        else if (deleted !== undefined)
+            url_ += "deleted=" + encodeURIComponent("" + deleted) + "&";
+        if (flagged === null)
+            throw new globalThis.Error("The parameter 'flagged' cannot be null.");
+        else if (flagged !== undefined)
+            url_ += "flagged=" + encodeURIComponent("" + flagged) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

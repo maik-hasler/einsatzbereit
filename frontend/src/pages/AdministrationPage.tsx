@@ -75,6 +75,11 @@ function OrganizationsSection() {
 	const { t } = useTranslation();
 	const api = useApiClient();
 
+	const [search, setSearch] = useState("");
+	const [appliedSearch, setAppliedSearch] = useState("");
+	const [flaggedOnly, setFlaggedOnly] = useState(false);
+	const [deletedOnly, setDeletedOnly] = useState(false);
+
 	const {
 		items: rows,
 		loading,
@@ -84,69 +89,138 @@ function OrganizationsSection() {
 		hasMore,
 		loadMore,
 		retryLoadMore,
+		reset,
 	} = useLoadMore<OrgRow>(
 		(pageNumber) =>
-			api.listOrganizations(pageNumber, PAGE_SIZE).then((result) => ({
-				items: result.items.map((o) => ({
-					id: o.id,
-					name: o.name,
+			api
+				.listOrganizations(
+					pageNumber,
+					PAGE_SIZE,
+					appliedSearch.trim() || undefined,
+					deletedOnly || undefined,
+					flaggedOnly || undefined,
+				)
+				.then((result) => ({
+					items: result.items.map((o) => ({
+						id: o.id,
+						name: o.name,
+					})),
+					pageCount: result.pageCount,
 				})),
-				pageCount: result.pageCount,
-			})),
-		{ getErrorMessage: () => t("administration.organizations.error") },
+		{
+			deps: [flaggedOnly, deletedOnly],
+			getErrorMessage: () => t("administration.organizations.error"),
+		},
 	);
 
-	if (loading) {
-		return (
-			<div
-				role="status"
-				className="overflow-hidden rounded-card border border-gray-200"
-			>
-				<span className="sr-only">
-					{t("administration.organizations.loading")}
-				</span>
-				<div className="divide-y divide-gray-100">
-					{Array.from({ length: 5 }).map((_, i) => (
-						<div key={i} aria-hidden="true" className="px-4 py-3">
-							<Skeleton className="h-4 w-1/3" />
-						</div>
-					))}
-				</div>
-			</div>
-		);
+	function handleSearchSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setAppliedSearch(search);
+		reset();
 	}
-	if (error) return <ErrorBanner message={error} />;
-	if (rows.length === 0)
-		return (
-			<EmptyState title={t("administration.organizations.noOrganizations")} />
-		);
 
 	return (
 		<>
-			<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
-				{rows.map((row) => (
-					<li key={row.id} className="flex items-center gap-4 px-4 py-3">
-						<div className="min-w-0 flex-1">
-							<p className="truncate font-medium text-gray-900">{row.name}</p>
-						</div>
-					</li>
-				))}
-			</ul>
-			{hasMore &&
-				(loadMoreError ? (
-					<LoadMoreError
-						message={loadMoreError}
-						retrying={loadingMore}
-						onRetry={retryLoadMore}
+			<form onSubmit={handleSearchSubmit} className="mb-4 flex items-end gap-3">
+				<div className="flex-1">
+					<label htmlFor="admin-org-search" className={labelClass}>
+						{t("administration.organizations.searchLabel")}
+					</label>
+					<input
+						id="admin-org-search"
+						type="search"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder={t("administration.organizations.searchPlaceholder")}
+						className={inputClass}
 					/>
-				) : (
-					<LoadMoreButton
-						loading={loadingMore}
-						label={t("administration.organizations.loadMore")}
-						loadingLabel={t("administration.loadingMore")}
-						onClick={loadMore}
+				</div>
+				<Button type="submit">
+					{t("administration.organizations.searchButton")}
+				</Button>
+			</form>
+			<div className="mb-6 flex flex-wrap items-center gap-4">
+				<label
+					htmlFor="admin-org-flagged-only"
+					className="flex cursor-pointer items-center gap-2"
+				>
+					<input
+						type="checkbox"
+						id="admin-org-flagged-only"
+						checked={flaggedOnly}
+						onChange={(e) => setFlaggedOnly(e.target.checked)}
+						className="h-4 w-4 accent-brand-600"
 					/>
-				))}
+					<span className="text-sm text-gray-800">
+						{t("administration.organizations.flaggedOnlyLabel")}
+					</span>
+				</label>
+				<label
+					htmlFor="admin-org-deleted-only"
+					className="flex cursor-pointer items-center gap-2"
+				>
+					<input
+						type="checkbox"
+						id="admin-org-deleted-only"
+						checked={deletedOnly}
+						onChange={(e) => setDeletedOnly(e.target.checked)}
+						className="h-4 w-4 accent-brand-600"
+					/>
+					<span className="text-sm text-gray-800">
+						{t("administration.organizations.deletedOnlyLabel")}
+					</span>
+				</label>
+			</div>
+			{loading ? (
+				<div
+					role="status"
+					className="overflow-hidden rounded-card border border-gray-200"
+				>
+					<span className="sr-only">
+						{t("administration.organizations.loading")}
+					</span>
+					<div className="divide-y divide-gray-100">
+						{Array.from({ length: 5 }).map((_, i) => (
+							<div key={i} aria-hidden="true" className="px-4 py-3">
+								<Skeleton className="h-4 w-1/3" />
+							</div>
+						))}
+					</div>
+				</div>
+			) : error ? (
+				<ErrorBanner message={error} />
+			) : rows.length === 0 ? (
+				<EmptyState title={t("administration.organizations.noOrganizations")} />
+			) : (
+				<>
+					<ul className="divide-y divide-gray-100 overflow-hidden rounded-card border border-gray-200">
+						{rows.map((row) => (
+							<li key={row.id} className="flex items-center gap-4 px-4 py-3">
+								<div className="min-w-0 flex-1">
+									<p className="truncate font-medium text-gray-900">
+										{row.name}
+									</p>
+								</div>
+							</li>
+						))}
+					</ul>
+					{hasMore &&
+						(loadMoreError ? (
+							<LoadMoreError
+								message={loadMoreError}
+								retrying={loadingMore}
+								onRetry={retryLoadMore}
+							/>
+						) : (
+							<LoadMoreButton
+								loading={loadingMore}
+								label={t("administration.organizations.loadMore")}
+								loadingLabel={t("administration.loadingMore")}
+								onClick={loadMore}
+							/>
+						))}
+				</>
+			)}
 		</>
 	);
 }

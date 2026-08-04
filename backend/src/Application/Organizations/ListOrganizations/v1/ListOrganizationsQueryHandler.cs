@@ -16,6 +16,12 @@ internal sealed class ListOrganizationsQueryHandler(
 		var pageNumber = Math.Max(1, request.PageNumber);
 		var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-		return await readRepository.GetPagedAsync(pageNumber, pageSize, cancellationToken);
+		return await readRepository.GetPagedAsync(
+			pageNumber,
+			pageSize,
+			request.Search,
+			request.Deleted,
+			request.Flagged,
+			cancellationToken);
 	}
 }

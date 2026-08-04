@@ -15,7 +15,13 @@ public class ListOrganizationsQueryHandlerTests
 	public ListOrganizationsQueryHandlerTests()
 	{
 		_readRepo
-			.GetPagedAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.GetPagedAsync(
+				Arg.Any<int>(),
+				Arg.Any<int>(),
+				Arg.Any<string?>(),
+				Arg.Any<bool?>(),
+				Arg.Any<bool?>(),
+				Arg.Any<CancellationToken>())
 			.Returns(new PagedList<AdminOrganizationSummary>([], 0, 1, 10));
 		_sut = new ListOrganizationsQueryHandler(_readRepo);
 	}
@@ -28,7 +34,7 @@ public class ListOrganizationsQueryHandlerTests
 		var item = new AdminOrganizationSummary(Guid.NewGuid(), "Fire Department", null);
 
 		_readRepo
-			.GetPagedAsync(1, 10, cancellationToken)
+			.GetPagedAsync(1, 10, null, null, null, cancellationToken)
 			.Returns(new PagedList<AdminOrganizationSummary>([item], 1, 1, 10));
 
 		// Act
@@ -44,7 +50,7 @@ public class ListOrganizationsQueryHandlerTests
 	{
 		await _sut.Handle(new ListOrganizationsQuery(0, 10), cancellationToken);
 
-		await _readRepo.Received(1).GetPagedAsync(1, 10, cancellationToken);
+		await _readRepo.Received(1).GetPagedAsync(1, 10, null, null, null, cancellationToken);
 	}
 
 	[Test]
@@ -53,7 +59,7 @@ public class ListOrganizationsQueryHandlerTests
 	{
 		await _sut.Handle(new ListOrganizationsQuery(-5, 10), cancellationToken);
 
-		await _readRepo.Received(1).GetPagedAsync(1, 10, cancellationToken);
+		await _readRepo.Received(1).GetPagedAsync(1, 10, null, null, null, cancellationToken);
 	}
 
 	[Test]
@@ -62,7 +68,7 @@ public class ListOrganizationsQueryHandlerTests
 	{
 		await _sut.Handle(new ListOrganizationsQuery(1, 0), cancellationToken);
 
-		await _readRepo.Received(1).GetPagedAsync(1, 1, cancellationToken);
+		await _readRepo.Received(1).GetPagedAsync(1, 1, null, null, null, cancellationToken);
 	}
 
 	[Test]
@@ -71,6 +77,17 @@ public class ListOrganizationsQueryHandlerTests
 	{
 		await _sut.Handle(new ListOrganizationsQuery(1, 5000), cancellationToken);
 
-		await _readRepo.Received(1).GetPagedAsync(1, 100, cancellationToken);
+		await _readRepo.Received(1).GetPagedAsync(1, 100, null, null, null, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldPassSearchDeletedAndFlagged_ToReadRepository(
+		CancellationToken cancellationToken)
+	{
+		await _sut.Handle(
+			new ListOrganizationsQuery(1, 10, "Fire", true, true),
+			cancellationToken);
+
+		await _readRepo.Received(1).GetPagedAsync(1, 10, "Fire", true, true, cancellationToken);
 	}
 }
