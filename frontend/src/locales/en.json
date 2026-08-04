@@ -589,6 +589,7 @@
       "addToCalendarOutlook": "Outlook.com",
       "addToCalendarApple": "Apple Calendar",
       "addToCalendarDownload": "Download .ics",
+      "viewRecord": "View engagement record",
       "status": {
         "Pending": "Pending",
         "Confirmed": "Confirmed",
@@ -896,6 +897,21 @@
     },
     "profileOverview": {
       "invitationsHeading": "Open Invitations"
+    },
+    "engagementRecord": {
+      "title": "Engagement Record",
+      "subtitle": "A record of your checked-in volunteer engagements - print or save as PDF for your own records.",
+      "backToProfile": "Back to profile",
+      "printButton": "Print / Save as PDF",
+      "loading": "Loading…",
+      "loadError": "Could not load your engagement record.",
+      "noEntries": "No checked-in engagements yet.",
+      "noEntriesHint": "Once you check in for a shift, it will appear here.",
+      "columnDate": "Date",
+      "columnOrganization": "Organization",
+      "columnOpportunity": "Opportunity",
+      "columnHours": "Hours",
+      "totalHours": "Total hours: {{hours}}"
     },
     "invitations": {
       "loadError": "Could not load invitations.",

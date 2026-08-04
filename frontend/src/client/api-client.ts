@@ -2206,6 +2206,55 @@ export class EinsatzbereitApi {
     /**
      * @return OK
      */
+    getMyEngagementRecord(signal?: AbortSignal): Promise<EngagementRecordEntry[]> {
+        let url_ = this.baseUrl + "/v1/users/me/engagement-record";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyEngagementRecord(_response);
+        });
+    }
+
+    protected processGetMyEngagementRecord(response: Response): Promise<EngagementRecordEntry[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as EngagementRecordEntry[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            let result500: any = null;
+            result500 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Internal Server Error", status, _responseText, _headers, result500);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<EngagementRecordEntry[]>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     exportMyData(signal?: AbortSignal): Promise<UserDataExportResponse> {
         let url_ = this.baseUrl + "/v1/users/me/export";
         url_ = url_.replace(/[?&]$/, "");
@@ -6333,6 +6382,17 @@ export interface DeleteTimeSlotResponse {
 }
 
 export interface DomainEvent {
+
+    [key: string]: any;
+}
+
+export interface EngagementRecordEntry {
+    engagementId: string;
+    opportunityTitle: string | undefined;
+    organizationName: string | undefined;
+    startDateTime: Date;
+    endDateTime: Date;
+    hours: number;
 
     [key: string]: any;
 }

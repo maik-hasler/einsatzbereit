@@ -37,6 +37,15 @@ public interface IEngagementReadRepository
 		CancellationToken cancellationToken = default);
 
 	/// <summary>
+	/// Checked-in engagements for the volunteer, unpaginated - used by the
+	/// printable engagement record (#1096), which needs the complete
+	/// attendance history in one shot rather than a page of it.
+	/// </summary>
+	ValueTask<List<EngagementSummary>> GetCheckedInByVolunteerAsync(
+		UserId volunteerId,
+		CancellationToken cancellationToken = default);
+
+	/// <summary>
 	/// Distinct volunteer ids with an active (pending or confirmed) engagement on
 	/// the opportunity, filtered at the database level using the existing
 	/// (OpportunityId, Status) index - or, when <paramref name="timeSlotId"/> is
