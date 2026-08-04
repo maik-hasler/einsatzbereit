@@ -21,7 +21,7 @@ internal sealed class EngagementReadRepository(
 		var raw = await dbContext.EngagementsQuery
 			.Where(e => e.OpportunityId == opportunityId)
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId, o.CheckInMethod }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
@@ -30,6 +30,7 @@ internal sealed class EngagementReadRepository(
 					e.OpportunityId,
 					OpportunityTitle = o.Title,
 					o.OrganizationId,
+					o.CheckInMethod,
 					e.VolunteerId,
 					e.TimeSlotId,
 					e.Message,
@@ -50,6 +51,7 @@ internal sealed class EngagementReadRepository(
 					x.OpportunityTitle,
 					OrganizationId = org.Id,
 					OrganizationName = org.Name,
+					x.CheckInMethod,
 					x.VolunteerId,
 					x.TimeSlotId,
 					x.Message,
@@ -75,7 +77,8 @@ internal sealed class EngagementReadRepository(
 			x.IsCheckedIn,
 			x.FeedbackSubmittedAt.HasValue,
 			x.CreatedOn,
-			CancellationReason: x.CancellationReason)).ToList();
+			CancellationReason: x.CancellationReason,
+			CheckInMethod: x.CheckInMethod.ToString())).ToList();
 	}
 
 	public async ValueTask<PagedList<EngagementSummary>> GetPagedByOpportunityAsync(
@@ -114,7 +117,7 @@ internal sealed class EngagementReadRepository(
 
 		var raw = await scopedQuery
 			.Join(
-				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId }),
+				dbContext.VolunteerOpportunitiesQuery.Select(o => new { o.Id, o.Title, o.OrganizationId, o.CheckInMethod }),
 				e => e.OpportunityId,
 				o => o.Id,
 				(e, o) => new
@@ -123,6 +126,7 @@ internal sealed class EngagementReadRepository(
 					e.OpportunityId,
 					OpportunityTitle = o.Title,
 					o.OrganizationId,
+					o.CheckInMethod,
 					e.VolunteerId,
 					e.TimeSlotId,
 					e.Message,
@@ -143,6 +147,7 @@ internal sealed class EngagementReadRepository(
 					x.OpportunityTitle,
 					OrganizationId = org.Id,
 					OrganizationName = org.Name,
+					x.CheckInMethod,
 					x.VolunteerId,
 					x.TimeSlotId,
 					x.Message,
@@ -188,7 +193,8 @@ internal sealed class EngagementReadRepository(
 			VolunteerPhone: x.VolunteerId is not null
 				? phonesByVolunteerId.GetValueOrDefault(x.VolunteerId.Value.Value)
 				: null,
-			CancellationReason: x.CancellationReason)).ToList();
+			CancellationReason: x.CancellationReason,
+			CheckInMethod: x.CheckInMethod.ToString())).ToList();
 
 		return new PagedList<EngagementSummary>(items, totalCount, pageNumber, pageSize);
 	}
@@ -295,7 +301,7 @@ internal sealed class EngagementReadRepository(
 		var opportunityIds = engagements.Select(e => e.OpportunityId).Distinct().ToList();
 		var opportunities = await dbContext.VolunteerOpportunitiesQuery
 			.Where(o => opportunityIds.Contains(o.Id))
-			.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId })
+			.Select(o => new { o.Id, o.Title, o.IsRemote, o.Address, o.OrganizationId, o.CheckInMethod })
 			.ToDictionaryAsync(o => o.Id, cancellationToken);
 
 		var organizationIds = opportunities.Values.Select(o => o.OrganizationId).Distinct().ToList();
@@ -359,7 +365,8 @@ internal sealed class EngagementReadRepository(
 				CancellationReason: e.CancellationReason,
 				FeedbackRating: e.FeedbackRating,
 				FeedbackComment: e.FeedbackComment,
-				FeedbackSubmittedAt: e.FeedbackSubmittedAt);
+				FeedbackSubmittedAt: e.FeedbackSubmittedAt,
+				CheckInMethod: (opportunity?.CheckInMethod ?? CheckInMethod.None).ToString());
 		}).ToList();
 	}
 

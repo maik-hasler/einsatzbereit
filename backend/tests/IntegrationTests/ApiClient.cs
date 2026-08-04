@@ -12433,6 +12433,9 @@ namespace IntegrationTests
         [System.Text.Json.Serialization.JsonPropertyName("feedbackSubmittedAt")]
         public System.DateTimeOffset? FeedbackSubmittedAt { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("checkInMethod")]
+        public string CheckInMethod { get; set; } = "None";
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

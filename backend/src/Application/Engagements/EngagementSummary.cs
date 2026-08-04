@@ -22,4 +22,5 @@ public sealed record EngagementSummary(
 	string? CancellationReason = null,
 	int? FeedbackRating = null,
 	string? FeedbackComment = null,
-	DateTimeOffset? FeedbackSubmittedAt = null);
+	DateTimeOffset? FeedbackSubmittedAt = null,
+	string CheckInMethod = "None");

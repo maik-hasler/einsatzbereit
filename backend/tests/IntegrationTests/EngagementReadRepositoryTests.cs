@@ -392,6 +392,92 @@ public class EngagementReadRepositoryTests(IntegrationTestFixture fixture)
 			.Which.CancellationReason.Should().Be("Position filled");
 	}
 
+	// Regression for #1016: EngagementSummary never carried CheckInMethod, so the
+	// frontend couldn't tell a QRCode/PINCode opportunity (where a "Check in" button
+	// makes sense) apart from a Manual or None one (where it doesn't) and always
+	// rendered the button.
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldIncludeCheckInMethod_FromOpportunity(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"CheckInMethodOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.QRCode, new NoOpPinGenerator(),
+			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var volunteerId = UserId.New();
+		var engagement = Engagement.CreateIndividualContact(opportunity.Id, volunteerId, "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var page = await repository.GetByVolunteerAsync(volunteerId, upcoming: true, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		page.Items.Should().ContainSingle()
+			.Which.CheckInMethod.Should().Be("QRCode");
+	}
+
+	[Test]
+	public async Task GetByVolunteerAsync_ShouldDefaultCheckInMethodToNone_WhenOpportunityWasDeleted(
+		CancellationToken cancellationToken)
+	{
+		// Same no-inner-join scenario as the CancellationReason regression above
+		// (#667): a hard-deleted opportunity leaves no row to join CheckInMethod
+		// from, so the mapping must fall back to a safe default rather than throw.
+		await using var dbContext = fixture.CreateApplicationDbContext();
+		var volunteerId = UserId.New();
+		var opportunityId = VolunteerOpportunityId.New();
+
+		var engagement = Engagement.CreateIndividualContact(opportunityId, volunteerId, "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		// A Pending engagement whose opportunity no longer exists moves to the Past
+		// bucket (#703) - see GetByVolunteerAsync's opportunityExists handling.
+		var page = await repository.GetByVolunteerAsync(volunteerId, upcoming: false, pageNumber: 1, pageSize: 10, cancellationToken);
+
+		page.Items.Should().ContainSingle()
+			.Which.CheckInMethod.Should().Be("None");
+	}
+
+	[Test]
+	public async Task GetPagedByOpportunityAsync_ShouldIncludeCheckInMethod_FromOpportunity(
+		CancellationToken cancellationToken)
+	{
+		await using var dbContext = fixture.CreateApplicationDbContext();
+
+		var organization = DomainOrganization.Create(DomainOrganizationId.New(), $"CheckInMethodOrg_{Guid.NewGuid()}").GetValueOrThrow();
+		dbContext.Set<DomainOrganization>().Add(organization);
+
+		var opportunity = VolunteerOpportunity.Create(
+			organization.Id, "Titel", "Beschreibung", false, DefaultAddress, Occurrence.OneTime,
+			ParticipationType.IndividualContact, CheckInMethod.PINCode, new RandomPinGenerator(),
+			status: OpportunityStatus.Draft, validUntil: DateTimeOffset.UtcNow.AddDays(30)).GetValueOrThrow();
+		await dbContext.VolunteerOpportunities.AddAsync(opportunity, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var engagement = Engagement.CreateIndividualContact(opportunity.Id, UserId.New(), "Please let me help.").GetValueOrThrow();
+		await dbContext.Engagements.AddAsync(engagement, cancellationToken);
+		await dbContext.SaveChangesAsync(cancellationToken);
+
+		var repository = new EngagementReadRepository(dbContext);
+
+		var page = await repository.GetPagedByOpportunityAsync(opportunity.Id, pageNumber: 1, pageSize: 10, cancellationToken: cancellationToken);
+
+		page.Items.Should().ContainSingle()
+			.Which.CheckInMethod.Should().Be("PINCode");
+	}
+
 	// --- Current & Upcoming never expiring (#1163) ---
 
 	[Test]

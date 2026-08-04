@@ -40,7 +40,10 @@ public class CheckInModalDeletedOpportunityTests(AspireFixture fixture) : Visual
 			isRemote = true,
 			occurrence = "OneTime",
 			participationType = "IndividualContact",
-			checkInMethod = "None",
+			// einsatzbereit#1016: the "Check in" button only renders for QRCode/PINCode
+			// opportunities now, so this race (organizer deletes the opportunity between
+			// list load and button click) needs a method that still shows the button.
+			checkInMethod = "QRCode",
 			validUntil = DateTimeOffset.UtcNow.AddDays(30),
 			isDraft = false,
 		});
