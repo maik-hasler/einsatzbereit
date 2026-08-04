@@ -218,4 +218,35 @@ public abstract class VisualTestBase(AspireFixture fixture) : PageTest
 		}, () => $"{label}: content wrapper should sit flush against <main>'s left padding edge, "
 			+ $"not be centered (last observed gap = {leftGap}px, must be <2px)");
 	}
+
+	/// <summary>
+	/// Asserts <paramref name="lower"/> sits visibly below <paramref name="upper"/>
+	/// with a non-trivial gap, not flush against it - i.e. the two locators are
+	/// separated by real spacing rather than stacked with 0px between them.
+	/// </summary>
+	protected async Task AssertVerticalGapBetweenAsync(ILocator upper, ILocator lower, string label)
+	{
+		await Expect(upper).ToBeVisibleAsync(new() { Timeout = 10_000 });
+		await Expect(lower).ToBeVisibleAsync(new() { Timeout = 10_000 });
+
+		// Both boxes read via PollUntilAsync (not a single read) - see
+		// AdminUserManagementTests' Name-cell/Block-button assertion for the same
+		// rationale: layout can still be mid-reflow the instant elements become
+		// visible, which a single read can catch under CI resource contention.
+		var upperBottom = 0f;
+		var lowerTop = 0f;
+		await PollUntilAsync(async () =>
+		{
+			var upperBox = await upper.BoundingBoxAsync();
+			var lowerBox = await lower.BoundingBoxAsync();
+			if (upperBox is null || lowerBox is null)
+				return false;
+
+			upperBottom = upperBox.Y + upperBox.Height;
+			lowerTop = lowerBox.Y;
+			return lowerTop - upperBottom >= 8f;
+		}, () => $"{label}: expected a visible gap (>=8px) between blocks, "
+			+ $"(last observed: upper bottom {upperBottom:F0}px, lower top {lowerTop:F0}px, "
+			+ $"gap {lowerTop - upperBottom:F0}px)");
+	}
 }

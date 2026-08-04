@@ -206,6 +206,16 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 10_000 });
 
+		// Regression for #1112: ProfileFieldsView rendered sibling field blocks
+		// with no spacing of its own, relying on the caller to supply a
+		// `space-y-*` wrapper - ProfileOverviewPage's non-editing view didn't,
+		// so Bio/Skills/Languages/Preferred contact stacked flush against each
+		// other. The component now owns its own spacing.
+		await AssertVerticalGapBetweenAsync(
+			Page.GetByText("Bio", new() { Exact = true }),
+			Page.GetByText("Skills & Interests", new() { Exact = true }),
+			"Profile overview page (#1112)");
+
 		await Page.GotoAsync($"{origin}/users/{userId}");
 		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -217,6 +227,14 @@ public class ProfileOverviewTests(AspireFixture fixture) : VisualTestBase(fixtur
 		await Expect(Page.GetByText(bioText)).ToBeVisibleAsync(new() { Timeout = 30_000 });
 		await Expect(Page.GetByText(skill)).ToBeVisibleAsync();
 		await Expect(Page.GetByText("Preferred contact channel")).Not.ToBeVisibleAsync();
+
+		// Regression for #1112: this page's wrapper already supplied `space-y-5`
+		// before the fix, so it never showed the bug - kept here as a guard that
+		// moving spacing into ProfileFieldsView didn't remove it from this page.
+		await AssertVerticalGapBetweenAsync(
+			Page.GetByText("Bio", new() { Exact = true }),
+			Page.GetByText("Skills & Interests", new() { Exact = true }),
+			"Public user profile page (#1112)");
 
 		// Regression for #766: this bio/skills/contact wrapper had `mx-auto`,
 		// centering it independently of the left-aligned avatar/name row
