@@ -40,6 +40,11 @@ public interface IApplicationDbContext
 		UserId userId,
 		CancellationToken cancellationToken = default);
 
+	Task<bool> IsMemberAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
 	Task<int> CountOrganizersAsync(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default);
@@ -84,6 +89,10 @@ public interface IApplicationDbContext
 		CancellationToken cancellationToken = default);
 
 	Task<List<Organization>> GetOrganizerOrganizationsAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default);
+
+	Task<List<Organization>> GetMemberOrganizationsAsync(
 		UserId userId,
 		CancellationToken cancellationToken = default);
 

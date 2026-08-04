@@ -115,6 +115,14 @@ internal sealed class ApplicationDbContext(
 				&& m.UserId == userId
 				&& m.Role == OrganizationMemberRole.Organizer, cancellationToken);
 
+	public async Task<bool> IsMemberAsync(
+		OrganizationId organizationId,
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.AnyAsync(m => m.OrganizationId == organizationId
+				&& m.UserId == userId, cancellationToken);
+
 	public async Task<int> CountOrganizersAsync(
 		OrganizationId organizationId,
 		CancellationToken cancellationToken = default) =>
@@ -198,6 +206,20 @@ internal sealed class ApplicationDbContext(
 		await Set<OrganizationMembership>()
 			.AsNoTracking()
 			.Where(m => m.UserId == userId && m.Role == OrganizationMemberRole.Organizer)
+			.Join(
+				Set<Organization>().AsNoTracking(),
+				m => m.OrganizationId,
+				o => o.Id,
+				(m, o) => o)
+			.OrderBy(o => o.Name)
+			.ToListAsync(cancellationToken);
+
+	public async Task<List<Organization>> GetMemberOrganizationsAsync(
+		UserId userId,
+		CancellationToken cancellationToken = default) =>
+		await Set<OrganizationMembership>()
+			.AsNoTracking()
+			.Where(m => m.UserId == userId)
 			.Join(
 				Set<Organization>().AsNoTracking(),
 				m => m.OrganizationId,

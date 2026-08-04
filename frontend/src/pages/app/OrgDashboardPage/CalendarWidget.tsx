@@ -136,6 +136,7 @@ interface Props {
 	organizationId: string;
 	refreshKey: number;
 	size: WidgetSizeClass;
+	isOrganizer: boolean;
 }
 
 // The dashboard grid's row height isn't a flat pixel constant (it tracks
@@ -150,7 +151,12 @@ interface Props {
 // WidgetCard's own overflow-y-auto handles the rest.
 const CALENDAR_MIN_HEIGHT_PX = 400;
 
-function CalendarWidget({ organizationId, refreshKey, size }: Props) {
+function CalendarWidget({
+	organizationId,
+	refreshKey,
+	size,
+	isOrganizer,
+}: Props) {
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const calendarContainerRef = useRef<HTMLDivElement | null>(null);
@@ -436,21 +442,23 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 								</p>
 							)
 						)}
-						<div>
-							<label htmlFor="event-color-picker" className={labelClass}>
-								{t("orgOverview.eventColorLabel")}
-							</label>
-							<div className="mt-1 flex items-center gap-3">
-								<input
-									id="event-color-picker"
-									type="color"
-									value={pickerColor}
-									onChange={(e) => handleColorPickerChange(e.target.value)}
-									className="h-9 w-16 cursor-pointer rounded border border-gray-300"
-								/>
-								<span className="text-sm text-gray-500">{pickerColor}</span>
+						{isOrganizer && (
+							<div>
+								<label htmlFor="event-color-picker" className={labelClass}>
+									{t("orgOverview.eventColorLabel")}
+								</label>
+								<div className="mt-1 flex items-center gap-3">
+									<input
+										id="event-color-picker"
+										type="color"
+										value={pickerColor}
+										onChange={(e) => handleColorPickerChange(e.target.value)}
+										className="h-9 w-16 cursor-pointer rounded border border-gray-300"
+									/>
+									<span className="text-sm text-gray-500">{pickerColor}</span>
+								</div>
 							</div>
-						</div>
+						)}
 						{colorSaveError && <ErrorBanner message={colorSaveError} />}
 						<div className="flex flex-col gap-2">
 							<div className="flex gap-4">
@@ -477,16 +485,18 @@ function CalendarWidget({ organizationId, refreshKey, size }: Props) {
 								>
 									{t("createOpportunity.cancel")}
 								</button>
-								<Button
-									type="button"
-									disabled={savingColor}
-									onClick={handleColorSave}
-									size="sm"
-								>
-									{savingColor
-										? t("orgOverview.eventColorSaving")
-										: t("orgOverview.eventColorSave")}
-								</Button>
+								{isOrganizer && (
+									<Button
+										type="button"
+										disabled={savingColor}
+										onClick={handleColorSave}
+										size="sm"
+									>
+										{savingColor
+											? t("orgOverview.eventColorSaving")
+											: t("orgOverview.eventColorSave")}
+									</Button>
+								)}
 							</div>
 						</div>
 					</div>

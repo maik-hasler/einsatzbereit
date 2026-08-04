@@ -371,6 +371,7 @@
       "loading": "Wird geladen…",
       "layoutLoadError": "Dein gespeichertes Dashboard-Layout konnte nicht bestätigt werden. Die Ansicht unten stimmt damit möglicherweise nicht überein - Bearbeiten ist deaktiviert, bis dies erfolgreich geladen wurde.",
       "widgetError": "Dieses Widget konnte nicht angezeigt werden. Bitte die Seite neu laden.",
+      "layoutEditDisabledNotOrganizerHint": "Nur Organisatoren können das Dashboard-Layout anpassen.",
       "pendingEngagements": "Ausstehende Anmeldungen",
       "pendingEngagements_one": "Ausstehende Anmeldung",
       "pendingEngagements_other": "Ausstehende Anmeldungen",
@@ -483,7 +484,8 @@
       "dangerZone": "Gefahrenzone",
       "deleteOrganization": "Organisation löschen",
       "deleteOrganizationHint": "Nur das letzte verbleibende Mitglied kann die Organisation löschen. Entferne zuerst die anderen Mitglieder.",
-      "deleteOrganizationError": "Organisation konnte nicht gelöscht werden."
+      "deleteOrganizationError": "Organisation konnte nicht gelöscht werden.",
+      "editDisabledNotOrganizerHint": "Nur Organisatoren können die Organisationseinstellungen bearbeiten."
     },
     "account": {
       "title": "Mein Konto",

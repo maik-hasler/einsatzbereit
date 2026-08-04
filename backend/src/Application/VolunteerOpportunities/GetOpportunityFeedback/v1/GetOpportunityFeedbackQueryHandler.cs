@@ -23,7 +23,7 @@ internal sealed class GetOpportunityFeedbackQueryHandler(
 				"VolunteerOpportunity.NotFound",
 				$"Volunteer opportunity '{request.OpportunityId.Value}' not found."));
 
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,

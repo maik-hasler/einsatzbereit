@@ -27,7 +27,7 @@ public class GetOrganizationDashboardQueryHandlerTests
 			.FindAsync(Arg.Any<OrganizationId>(), Arg.Any<CancellationToken>())
 			.Returns(Organization.Create(OrganizationId.Create(DefaultOrgId).GetValueOrThrow(), "Sample Fire Department").Value);
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_sut = new GetOrganizationDashboardQueryHandler(_dbContext, _readRepository);
 	}
@@ -49,12 +49,12 @@ public class GetOrganizationDashboardQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizerOfTheOrganization(
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMemberOfTheOrganization(
 		CancellationToken cancellationToken)
 	{
 		// Arrange
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), cancellationToken)
 			.Returns(false);
 		var query = new GetOrganizationDashboardQuery(DefaultOrgId, DefaultRequestingUserId);
 

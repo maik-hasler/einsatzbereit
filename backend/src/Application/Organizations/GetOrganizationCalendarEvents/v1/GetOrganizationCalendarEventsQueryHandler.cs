@@ -14,7 +14,7 @@ internal sealed class GetOrganizationCalendarEventsQueryHandler(
 		GetOrganizationCalendarEventsQuery request,
 		CancellationToken cancellationToken = default)
 	{
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			request.OrganizationId,
 			request.RequestingUserId,

@@ -168,6 +168,30 @@ public class OrganizationOpportunitiesTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(403);
 	}
 
+	[Test]
+	public async Task GetOrganizationOpportunities_ShouldSucceed_WhenRequestingUserIsAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// #1024: a plain Member can now view their organization's opportunities -
+		// this used to 403 (only Organizer could).
+		var olafClient = await CreateAuthenticatedClientAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		await CreatePublishedOpportunityAsync(olafClient, orgId, "Published 1", cancellationToken);
+
+		var veraToken = await fixture.GetAccessTokenAsync("vera", "vera123");
+		var veraHttpClient = fixture.CreateHttpClient();
+		veraHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", veraToken);
+		var veraClient = new EinsatzbereitApi(veraHttpClient);
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(orgId, vera.Id, cancellationToken);
+
+		var result = await veraClient.GetOrganizationOpportunitiesAsync(orgId, "Published", 1, 10, cancellationToken);
+
+		result.TotalItems.Should().Be(1);
+		result.Items.Single().Title.Should().Be("Published 1");
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(CancellationToken cancellationToken)
 	{
 		var token = await fixture.GetAccessTokenAsync("olaf", "olaf123");

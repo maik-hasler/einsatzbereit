@@ -30,7 +30,7 @@ internal sealed class GetEngagementsQueryHandler(
 		var opportunity = await dbContext.VolunteerOpportunities.FindAsync(request.OpportunityId, cancellationToken)
 			?? throw new ResultFailureException(Error.NotFound("VolunteerOpportunity.NotFound", $"Volunteer opportunity '{request.OpportunityId.Value}' not found."));
 
-		await OwnershipGuard.EnsureIsOrganizerAsync(
+		await OwnershipGuard.EnsureIsMemberAsync(
 			dbContext,
 			opportunity.OrganizationId.Value,
 			request.RequestingUserId,

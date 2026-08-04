@@ -25,10 +25,19 @@ public class RemoveMemberCommandHandlerTests
 		_sut = new RemoveMemberCommandHandler(_dbContext, _keycloakService);
 	}
 
-	private void AllowRequestingUserInOrg(Guid orgId) =>
-		_dbContext
-			.IsOrganizerAsync(OrganizationId.Create(orgId).GetValueOrThrow(), DefaultRequestingUserId, Arg.Any<CancellationToken>())
-			.Returns(true);
+	private void AllowRequestingUserInOrg(Guid orgId)
+	{
+		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
+		_dbContext.IsOrganizerAsync(organizationId, DefaultRequestingUserId, Arg.Any<CancellationToken>()).Returns(true);
+		_dbContext.IsMemberAsync(organizationId, DefaultRequestingUserId, Arg.Any<CancellationToken>()).Returns(true);
+	}
+
+	private void AllowRequestingUserAsPlainMember(Guid orgId)
+	{
+		var organizationId = OrganizationId.Create(orgId).GetValueOrThrow();
+		_dbContext.IsOrganizerAsync(organizationId, DefaultRequestingUserId, Arg.Any<CancellationToken>()).Returns(false);
+		_dbContext.IsMemberAsync(organizationId, DefaultRequestingUserId, Arg.Any<CancellationToken>()).Returns(true);
+	}
 
 	private void SetTargetIsOrganizer(Guid orgId, Guid targetUserId, bool isOrganizer) =>
 		_dbContext
@@ -161,6 +170,44 @@ public class RemoveMemberCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		await _keycloakService.Received(1).RemoveMemberAsync(orgId, otherUserId, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldAllowSelfRemoval_WhenRequestingUserIsOnlyAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - a plain (non-organizer) Member leaving the organization is a
+		// self-service action, not org management - it must not require Organizer.
+		var orgId = Guid.NewGuid();
+		AllowRequestingUserAsPlainMember(orgId);
+		SetTargetIsOrganizer(orgId, DefaultRequestingUserId.Value, isOrganizer: false);
+		var command = new RemoveMemberCommand(orgId, DefaultRequestingUserId.Value, DefaultRequestingUserId);
+
+		// Act
+		var result = await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		result.Should().BeTrue();
+		await _keycloakService.Received(1).RemoveMemberAsync(orgId, DefaultRequestingUserId.Value, cancellationToken);
+	}
+
+	[Test]
+	public async Task Handle_ShouldThrow_WhenPlainMemberTriesToRemoveSomeoneElse(
+		CancellationToken cancellationToken)
+	{
+		// Arrange - removing another member is org management and still requires Organizer,
+		// even though the requester is a valid Member of the organization.
+		var orgId = Guid.NewGuid();
+		var otherUserId = Guid.NewGuid();
+		AllowRequestingUserAsPlainMember(orgId);
+		var command = new RemoveMemberCommand(orgId, otherUserId, DefaultRequestingUserId);
+
+		// Act
+		Func<Task> act = async () => await _sut.Handle(command, cancellationToken);
+
+		// Assert
+		await act.Should().ThrowAsync<ResultFailureException>();
+		await _keycloakService.DidNotReceive().RemoveMemberAsync(orgId, otherUserId, Arg.Any<CancellationToken>());
 	}
 
 	[Test]

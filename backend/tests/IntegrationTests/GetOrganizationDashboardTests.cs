@@ -135,6 +135,43 @@ public class GetOrganizationDashboardTests(IntegrationTestFixture fixture)
 		org1Kpis.ConfirmedEngagementsTotal.Should().Be(1);
 	}
 
+	[Test]
+	public async Task GetOrganizationDashboard_ShouldSucceed_WhenRequestingUserIsAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// #1024: a plain Member can now view their organization's dashboard KPIs -
+		// this used to 403 (only Organizer could).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(orgId, vera.Id, cancellationToken);
+
+		var kpis = await veraClient.GetOrganizationDashboardAsync(orgId, cancellationToken);
+
+		kpis.PendingEngagements.Should().Be(0);
+		kpis.ConfirmedEngagementsTotal.Should().Be(0);
+	}
+
+	[Test]
+	public async Task GetDashboardLayout_ShouldSucceed_WhenRequestingUserIsAPlainMember(
+		CancellationToken cancellationToken)
+	{
+		// #1024: a plain Member can now view their own dashboard widget layout for
+		// the organization - this used to 403 (only Organizer could).
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var vera = await veraClient.GetUserProfileAsync(cancellationToken);
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		await fixture.AddPlainMemberDirectlyAsync(orgId, vera.Id, cancellationToken);
+
+		var layout = await veraClient.GetDashboardLayoutAsync(orgId, cancellationToken);
+
+		layout.HasCustomLayout.Should().BeFalse();
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(

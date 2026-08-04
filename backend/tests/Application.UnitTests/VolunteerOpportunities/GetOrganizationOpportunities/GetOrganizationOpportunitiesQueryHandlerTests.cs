@@ -25,7 +25,7 @@ public class GetOrganizationOpportunitiesQueryHandlerTests
 	public GetOrganizationOpportunitiesQueryHandlerTests()
 	{
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(true);
 		_readRepository
 			.GetPagedSummariesByOrganizationAsync(Arg.Any<Guid>(), Arg.Any<OpportunityStatus>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -96,12 +96,12 @@ public class GetOrganizationOpportunitiesQueryHandlerTests
 	}
 
 	[Test]
-	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotOrganizer(
+	public async Task Handle_ShouldThrow_WhenRequestingUserIsNotAMember(
 		CancellationToken cancellationToken)
 	{
-		// Arrange: caller is not an organizer of the target organization.
+		// Arrange: caller has no membership at all in the target organization.
 		_dbContext
-			.IsOrganizerAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
+			.IsMemberAsync(Arg.Any<OrganizationId>(), Arg.Any<UserId>(), Arg.Any<CancellationToken>())
 			.Returns(false);
 
 		var query = new GetOrganizationOpportunitiesQuery(DefaultOrgId, DefaultRequestingUserId, OpportunityStatus.Published, 1, 10);

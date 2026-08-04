@@ -25,7 +25,7 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function OrgSettingsPage() {
-	const { org, reloadOrg } = useOutletContext<OrgAppContext>();
+	const { org, reloadOrg, isOrganizer } = useOutletContext<OrgAppContext>();
 	const { t, i18n } = useTranslation();
 	const api = useApiClient();
 	const navigate = useNavigate();
@@ -92,6 +92,10 @@ export default function OrgSettingsPage() {
 	useEditModeQuickActions({
 		editing,
 		saving,
+		editDisabled: !isOrganizer,
+		editDisabledTitle: !isOrganizer
+			? t("orgSettings.editDisabledNotOrganizerHint")
+			: undefined,
 		onEdit: () => setEditing(true),
 		// Goes through the form's native submit (not onSubmit() directly) so
 		// react-hook-form's handleSubmit runs the same zod validation, error
@@ -249,14 +253,16 @@ export default function OrgSettingsPage() {
 							</>
 						}
 					>
-						<DangerZonePanel
-							className="mt-8"
-							title={t("orgSettings.dangerZone")}
-							description={t("orgSettings.deleteOrganizationHint")}
-							actionLabel={t("orgSettings.deleteOrganization")}
-							onAction={() => setShowDeleteConfirm(true)}
-							disabled={!isSoleMember}
-						/>
+						{isOrganizer && (
+							<DangerZonePanel
+								className="mt-8"
+								title={t("orgSettings.dangerZone")}
+								description={t("orgSettings.deleteOrganizationHint")}
+								actionLabel={t("orgSettings.deleteOrganization")}
+								onAction={() => setShowDeleteConfirm(true)}
+								disabled={!isSoleMember}
+							/>
+						)}
 					</OrganizationProfileView>
 				)}
 
