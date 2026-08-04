@@ -20,6 +20,7 @@ import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
 import LoadMoreError from "../../components/LoadMoreError";
 import LoadMoreButton from "../../components/LoadMoreButton";
+import PageSectionHeading from "../../components/PageSectionHeading";
 import { PlusIcon } from "../../components/QuickActionIcons";
 import { ArrowRightIcon } from "../../components/icons";
 import { useQuickActions } from "../../contexts/QuickActionsContext";
@@ -482,7 +483,7 @@ export default function OrgOpportunitiesPage() {
 		if (loading || error || items.length === 0) return null;
 		return (
 			<section data-testid={testId}>
-				<h2 className="text-lg font-semibold text-gray-900">{heading}</h2>
+				<PageSectionHeading>{heading}</PageSectionHeading>
 				<p className="mt-1 text-sm text-gray-500">{description}</p>
 				<ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					{items.map((item) => renderRow(item, showStatusBadge))}

@@ -4,6 +4,7 @@ import { useAuth } from "react-oidc-context";
 import { useTranslation } from "react-i18next";
 import type { PublicOrganizationProfileResponse } from "../client/api-client";
 import OrganizationProfileView from "../components/OrganizationProfileView";
+import SectionHeading from "../components/SectionHeading";
 import ReportContentModal, {
 	type ReportReason,
 } from "../components/ReportContentModal";
@@ -105,9 +106,7 @@ export default function OrganizationProfilePage() {
 					)
 				}
 			>
-				<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-					{t("orgProfile.currentNeeds")}
-				</h2>
+				<SectionHeading>{t("orgProfile.currentNeeds")}</SectionHeading>
 
 				{profile.openOpportunities.length === 0 ? (
 					<EmptyState title={t("orgProfile.noOpportunities")} />

@@ -9,6 +9,7 @@ import type {
 import BadgeGrid from "../components/BadgeGrid";
 import ProfileFieldsView from "../components/ProfileFieldsView";
 import ReportFlagButton from "../components/ReportFlagButton";
+import SectionHeading from "../components/SectionHeading";
 import Skeleton from "../components/Skeleton";
 import ErrorBanner from "../components/ErrorBanner";
 import { useApiClient } from "../hooks/useApiClient";
@@ -123,9 +124,7 @@ export default function UserProfilePage() {
 			)}
 
 			<section>
-				<h2 className="mb-4 text-base font-semibold text-gray-700">
-					{t("achievements.badgesTitle")}
-				</h2>
+				<SectionHeading>{t("achievements.badgesTitle")}</SectionHeading>
 				<BadgeGrid earned={profile.badges} catalog={catalog} loading={false} />
 			</section>
 		</>

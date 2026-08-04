@@ -16,6 +16,7 @@ import {
 } from "../lib/format";
 import { pageTitleClass } from "../lib/headingClasses";
 import Chip from "../components/Chip";
+import SectionHeading from "../components/SectionHeading";
 import SignUpModal from "../components/SignUpModal";
 import ReportContentModal, {
 	type ReportReason,
@@ -449,9 +450,9 @@ export default function VolunteerOpportunityDetailPage() {
 			{opportunity.participationType === "ScheduledSlots" &&
 				opportunity.timeSlots.length > 0 && (
 					<div className="mb-6">
-						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+						<SectionHeading>
 							{t("opportunities.availableTimeSlots")}
-						</h2>
+						</SectionHeading>
 						<ul className="space-y-2">
 							{opportunity.timeSlots.map((ts) => (
 								<li
@@ -595,9 +596,9 @@ export default function VolunteerOpportunityDetailPage() {
 					orgProfile.website ||
 					orgProfile.address) && (
 					<div className="mb-6" data-testid="about-organization">
-						<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+						<SectionHeading>
 							{t("opportunities.aboutOrganization")}
-						</h2>
+						</SectionHeading>
 						{orgProfile.description && (
 							<p className="mb-3 leading-relaxed text-gray-600">
 								{orgProfile.description}
@@ -661,9 +662,9 @@ export default function VolunteerOpportunityDetailPage() {
 			{/* More from this organization */}
 			{otherOrgOpportunities.length > 0 && (
 				<div className="mb-6" data-testid="more-from-organization">
-					<h2 className="mb-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+					<SectionHeading>
 						{t("opportunities.moreFromOrganization")}
-					</h2>
+					</SectionHeading>
 					<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						{otherOrgOpportunities.map((opp) => (
 							<li
