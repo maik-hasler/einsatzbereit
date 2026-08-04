@@ -14,6 +14,7 @@ import EmptyState from "../../components/EmptyState";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Button from "../../components/Button";
 import ErrorBanner from "../../components/ErrorBanner";
+import SuccessBanner from "../../components/SuccessBanner";
 import type { OrgAppContext } from "../../layouts/OrgAppLayout";
 import { formatDateLong } from "../../lib/format";
 
@@ -252,9 +253,7 @@ export default function OrgMembersPage() {
 		<div>
 			<div data-content-wrapper className="max-w-2xl">
 				{successMessage && (
-					<div className="mb-4 rounded-card bg-green-50 px-4 py-3 text-sm text-green-700">
-						{successMessage}
-					</div>
+					<SuccessBanner message={successMessage} className="mb-4" />
 				)}
 				{settingsError && (
 					<ErrorBanner message={settingsError} className="mb-4" />

@@ -14,6 +14,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import DangerZonePanel from "../../components/DangerZonePanel";
 import OrganizationProfileView from "../../components/OrganizationProfileView";
 import ErrorBanner from "../../components/ErrorBanner";
+import SuccessBanner from "../../components/SuccessBanner";
 import ImageCropModal from "../../components/ImageCropModal";
 import FileUploadButton from "../../components/FileUploadButton";
 import Field from "../../components/Field";
@@ -240,9 +241,7 @@ export default function OrgSettingsPage() {
 						beforeContent={
 							<>
 								{successMessage && (
-									<div className="mb-4 rounded-card bg-green-50 px-4 py-3 text-sm text-green-700">
-										{successMessage}
-									</div>
+									<SuccessBanner message={successMessage} className="mb-4" />
 								)}
 								{settingsError && (
 									<ErrorBanner message={settingsError} className="mb-4" />

@@ -97,4 +97,46 @@ public class LiveRegionTests(AspireFixture fixture) : VisualTestBase(fixture)
 		var errorBanner = Page.Locator("[role='alert'][aria-live='assertive']");
 		await Expect(errorBanner).ToBeVisibleAsync();
 	}
+
+	[Test]
+	public async Task ProfileEditForm_SuccessBanner_IsMountedButHidden_UntilSaveSucceeds()
+	{
+		// Regression for #1107: OrgMembersPage/OrgSettingsPage/ProfileOverviewPage
+		// each hand-rolled this "action succeeded" box as a plain div with no
+		// role="status" at all, and this one (ProfileOverviewPage) additionally
+		// used the wrong border radius while sitting directly beside its
+		// ErrorBanner counterpart. All three were consolidated into a shared
+		// SuccessBanner component mirroring ErrorBanner's role/aria-live pattern.
+		// This page's usage keeps SuccessBanner always mounted (message toggles
+		// it between a visible box and a visually-hidden status region) rather
+		// than conditionally rendering it, matching the "always mounted, empty
+		// until content" a11y pattern from #972 - verify SuccessBanner preserves
+		// that behavior rather than only rendering once a message exists.
+		var frontend = Fixture.GetEndpoint("frontend");
+		var origin = frontend.GetLeftPart(UriPartial.Authority);
+
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync($"{origin}/profile");
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		var successBanner = Page.Locator("[role='status'][aria-live='polite']");
+		await Expect(successBanner).ToBeAttachedAsync();
+		// Not a Not.ToBeVisibleAsync() check: SuccessBanner's hidden state uses
+		// Tailwind's sr-only technique (clip-based, ~1x1px), not display:none -
+		// deliberately, so the node stays in the accessibility tree the same way
+		// the #972 toast-live-region sentinel does. That still gives it a
+		// non-empty bounding box, so Playwright's visibility check considers it
+		// visible; assert on its (lack of) text content instead.
+		await Expect(successBanner).ToHaveTextAsync("");
+
+		var editButton = Page.GetByRole(AriaRole.Button, new() { Name = "Edit" }).First;
+		await Expect(editButton).ToBeVisibleAsync(new() { Timeout = 20_000 });
+		await editButton.ClickAsync();
+
+		await Page.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
+
+		await Expect(successBanner).ToBeVisibleAsync();
+		await Expect(successBanner).ToHaveTextAsync("Profile saved.");
+	}
 }
