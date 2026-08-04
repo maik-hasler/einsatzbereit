@@ -24,6 +24,10 @@ export interface AccountMenuState {
 	dropdownRef: RefObject<HTMLDivElement | null>;
 	markAllRead: () => Promise<void>;
 	markOneRead: (id: string) => Promise<void>;
+	markOneUnread: (id: string) => Promise<void>;
+	deleteOne: (id: string) => Promise<void>;
+	deleteAllRead: () => Promise<void>;
+	deletingAllRead: boolean;
 }
 
 /**
@@ -48,6 +52,7 @@ export function useAccountMenu(
 	const [notifHasMore, setNotifHasMore] = useState(false);
 	const [notifLoadingMore, setNotifLoadingMore] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
+	const [deletingAllRead, setDeletingAllRead] = useState(false);
 	const dropdownRef = useDismissableOverlay<HTMLDivElement>(dropdownOpen, () =>
 		setDropdownOpen(false),
 	);
@@ -205,6 +210,52 @@ export function useAccountMenu(
 		}
 	}
 
+	async function markOneUnread(id: string) {
+		try {
+			await api.markNotificationUnread(id);
+			setNotifications((prev) =>
+				prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
+			);
+			setUnreadCount((prev) => prev + 1);
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("notifications.markUnreadError")),
+			);
+		}
+	}
+
+	async function deleteOne(id: string) {
+		const target = notifications.find((n) => n.id === id);
+		try {
+			await api.deleteNotification(id);
+			setNotifications((prev) => prev.filter((n) => n.id !== id));
+			if (target && !target.isRead) {
+				setUnreadCount((prev) => Math.max(0, prev - 1));
+			}
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("notifications.deleteError")),
+			);
+		}
+	}
+
+	async function deleteAllRead() {
+		setDeletingAllRead(true);
+		try {
+			await api.deleteReadNotifications();
+			setNotifications((prev) => prev.filter((n) => !n.isRead));
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("notifications.clearReadError")),
+			);
+		} finally {
+			setDeletingAllRead(false);
+		}
+	}
+
 	return {
 		avatarUrl,
 		notifications,
@@ -220,5 +271,9 @@ export function useAccountMenu(
 		dropdownRef,
 		markAllRead,
 		markOneRead,
+		markOneUnread,
+		deleteOne,
+		deleteAllRead,
+		deletingAllRead,
 	};
 }

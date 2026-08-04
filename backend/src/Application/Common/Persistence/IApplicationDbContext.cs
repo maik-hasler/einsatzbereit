@@ -166,6 +166,10 @@ public interface IApplicationDbContext
 		UserId recipientId,
 		CancellationToken cancellationToken = default);
 
+	Task<int> DeleteReadNotificationsForRecipientAsync(
+		UserId recipientId,
+		CancellationToken cancellationToken = default);
+
 	Task<List<Engagement>> GetEngagementsForVolunteerTrackingAsync(
 		UserId volunteerId,
 		CancellationToken cancellationToken = default);

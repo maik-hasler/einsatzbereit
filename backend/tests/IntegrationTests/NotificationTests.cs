@@ -244,6 +244,167 @@ public class NotificationTests(IntegrationTestFixture fixture)
 		unchangedNotifications.Items.Single(n => n.Id == notification.Id).IsRead.Should().BeFalse();
 	}
 
+	[Test]
+	public async Task MarkNotificationUnread_ShouldReturn204AndFlagAsUnread_WhenRequestingUserIsTheRecipient(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Mark Unread Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
+
+		await olafClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
+		await olafClient.MarkNotificationUnreadAsync(notification.Id, cancellationToken);
+
+		var updatedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		updatedNotifications.Items.Single(n => n.Id == notification.Id).IsRead.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task MarkNotificationUnread_ShouldReturn404AndLeaveItRead_WhenRequestingUserIsNotTheRecipient(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Cross-User Mark Unread Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
+		await olafClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
+
+		var act = () => veraClient.MarkNotificationUnreadAsync(notification.Id, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+
+		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		unchangedNotifications.Items.Single(n => n.Id == notification.Id).IsRead.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task DeleteNotification_ShouldReturn204AndRemoveIt_WhenRequestingUserIsTheRecipient(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Delete Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
+
+		await olafClient.DeleteNotificationAsync(notification.Id, cancellationToken);
+
+		var updatedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		updatedNotifications.Items.Should().NotContain(n => n.Id == notification.Id);
+	}
+
+	[Test]
+	public async Task DeleteNotification_ShouldReturn404AndLeaveIt_WhenRequestingUserIsNotTheRecipient(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Notification Cross-User Delete Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
+
+		var act = () => veraClient.DeleteNotificationAsync(notification.Id, cancellationToken);
+
+		var ex = await act.Should().ThrowAsync<ApiException>();
+		ex.Which.StatusCode.Should().Be(404);
+
+		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		unchangedNotifications.Items.Should().Contain(n => n.Id == notification.Id);
+	}
+
+	[Test]
+	public async Task DeleteReadNotifications_ShouldRemoveOnlyReadNotifications_ForTheRequestingUser(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunityOne = await CreateOpportunityAsync(olafClient, orgId, "Delete Read Test One", cancellationToken);
+		var opportunityTwo = await CreateOpportunityAsync(olafClient, orgId, "Delete Read Test Two", cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunityOne.Id, new CreateEngagementRequest { Message = "First" }, cancellationToken);
+		await veraClient.CreateEngagementAsync(
+			opportunityTwo.Id, new CreateEngagementRequest { Message = "Second" }, cancellationToken);
+
+		var notifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var toMarkRead = notifications.Items.First(n => n.Kind == "EngagementCreated");
+		var toLeaveUnread = notifications.Items.Last(n => n.Kind == "EngagementCreated" && n.Id != toMarkRead.Id);
+		await olafClient.MarkNotificationReadAsync(toMarkRead.Id, cancellationToken);
+
+		await olafClient.DeleteReadNotificationsAsync(cancellationToken);
+
+		var remaining = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		remaining.Items.Should().NotContain(n => n.Id == toMarkRead.Id);
+		remaining.Items.Should().Contain(n => n.Id == toLeaveUnread.Id);
+	}
+
+	[Test]
+	public async Task DeleteReadNotifications_ShouldNotAffectAnotherUsersReadNotifications(
+		CancellationToken cancellationToken)
+	{
+		const string opportunityTitle = "Delete Read Cross-User Test";
+
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, opportunityTitle, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var olafNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		var notification = olafNotifications.Items.Single(n => n.Kind == "EngagementCreated");
+		await olafClient.MarkNotificationReadAsync(notification.Id, cancellationToken);
+
+		await veraClient.DeleteReadNotificationsAsync(cancellationToken);
+
+		var unchangedNotifications = await olafClient.GetMyNotificationsAsync(cancellationToken: cancellationToken);
+		unchangedNotifications.Items.Should().Contain(n => n.Id == notification.Id);
+	}
+
 	private async Task<EinsatzbereitApi> CreateAuthenticatedClientAsync(
 		string username, string password)
 	{

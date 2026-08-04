@@ -19,6 +19,8 @@ public sealed class OwnershipConventionTests
 		// Ownership is checked against notification.RecipientId - a per-user
 		// resource, not an organization.
 		"Application.Notifications.MarkNotificationRead.v1.MarkNotificationReadCommandHandler",
+		"Application.Notifications.MarkNotificationUnread.v1.MarkNotificationUnreadCommandHandler",
+		"Application.Notifications.DeleteNotification.v1.DeleteNotificationCommandHandler",
 		// Ownership is checked against engagement.VolunteerId - a per-user
 		// resource, not an organization.
 		"Application.Engagements.SubmitFeedback.v1.SubmitFeedbackCommandHandler",

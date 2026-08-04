@@ -1,8 +1,9 @@
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { AccountMenuState } from "../../hooks/useAccountMenu";
 import type { NotificationSummary } from "../../client/api-client";
 import EmptyState from "../EmptyState";
+import ConfirmDialog from "../ConfirmDialog";
 import NotificationItem from "./NotificationItem";
 import { BellIcon } from "../icons";
 
@@ -40,12 +41,22 @@ export default function NotificationDropdown({
 		setNotifOpen,
 		markAllRead,
 		markOneRead,
+		markOneUnread,
+		deleteOne,
+		deleteAllRead,
+		deletingAllRead,
 	} = menu;
+	const [showClearReadConfirm, setShowClearReadConfirm] = useState(false);
 	const panelId = mobile ? "notification-panel-mobile" : "notification-panel";
 	const bellLabel =
 		unreadCount > 0
 			? t("notifications.bellLabelWithCount", { count: unreadCount })
 			: t("notifications.bellLabel");
+
+	async function handleConfirmClearRead() {
+		await deleteAllRead();
+		setShowClearReadConfirm(false);
+	}
 
 	async function handleSelect(n: NotificationSummary) {
 		// Marking as read is a side effect, not a prerequisite for navigation -
@@ -99,15 +110,26 @@ export default function NotificationDropdown({
 						<p className="text-sm font-medium text-gray-900">
 							{t("notifications.bellLabel")}
 						</p>
-						{notifications.some((n) => !n.isRead) && (
-							<button
-								type="button"
-								className="cursor-pointer text-xs text-brand-700 hover:underline"
-								onClick={() => void markAllRead()}
-							>
-								{t("notifications.markAllRead")}
-							</button>
-						)}
+						<div className="flex items-center gap-3">
+							{notifications.some((n) => !n.isRead) && (
+								<button
+									type="button"
+									className="cursor-pointer text-xs text-brand-700 hover:underline"
+									onClick={() => void markAllRead()}
+								>
+									{t("notifications.markAllRead")}
+								</button>
+							)}
+							{notifications.some((n) => n.isRead) && (
+								<button
+									type="button"
+									className="cursor-pointer text-xs text-brand-700 hover:underline"
+									onClick={() => setShowClearReadConfirm(true)}
+								>
+									{t("notifications.clearRead")}
+								</button>
+							)}
+						</div>
 					</div>
 					<ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
 						{notifications.length === 0 ? (
@@ -121,6 +143,8 @@ export default function NotificationDropdown({
 										key={n.id}
 										notification={n}
 										onSelect={handleSelect}
+										onMarkUnread={markOneUnread}
+										onDelete={deleteOne}
 									/>
 								))}
 								{notifHasMore && (
@@ -146,6 +170,16 @@ export default function NotificationDropdown({
 						)}
 					</ul>
 				</div>
+			)}
+			{showClearReadConfirm && (
+				<ConfirmDialog
+					title={t("confirmDialog.clearReadNotifications.title")}
+					message={t("confirmDialog.clearReadNotifications.message")}
+					confirmLabel={t("confirmDialog.clearReadNotifications.confirm")}
+					onConfirm={() => void handleConfirmClearRead()}
+					onClose={() => setShowClearReadConfirm(false)}
+					loading={deletingAllRead}
+				/>
 			)}
 		</div>
 	);

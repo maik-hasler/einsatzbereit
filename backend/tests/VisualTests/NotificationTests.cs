@@ -94,7 +94,10 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await notificationItem.GetByRole(AriaRole.Button).ClickAsync();
+		// .First: the row's own select button is always the first interactive
+		// element (before the conditional mark-unread/delete action buttons
+		// added by #1061), but it has no aria-label of its own to filter by.
+		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements",
@@ -180,7 +183,10 @@ public class NotificationTests(AspireFixture fixture) : VisualTestBase(fixture)
 
 		var notificationItem = panel.Locator("li", new() { HasText = oppTitle }).First;
 		await Expect(notificationItem).ToBeVisibleAsync(new() { Timeout = 15_000 });
-		await notificationItem.GetByRole(AriaRole.Button).ClickAsync();
+		// .First: the row's own select button is always the first interactive
+		// element (before the conditional mark-unread/delete action buttons
+		// added by #1061), but it has no aria-label of its own to filter by.
+		await notificationItem.GetByRole(AriaRole.Button).First.ClickAsync();
 
 		await Page.WaitForURLAsync(
 			$"{frontend.GetLeftPart(UriPartial.Authority)}/app/{organizationId}/dashboard/opportunities/{opportunityId}/engagements",

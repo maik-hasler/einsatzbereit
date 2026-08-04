@@ -707,10 +707,16 @@
       "bellLabelWithCount_one": "Benachrichtigungen, {{count}} ungelesen",
       "bellLabelWithCount_other": "Benachrichtigungen, {{count}} ungelesen",
       "markAllRead": "Alle als gelesen markieren",
+      "clearRead": "Gelesene löschen",
+      "clearReadError": "Gelesene Benachrichtigungen konnten nicht gelöscht werden.",
       "empty": "Keine Benachrichtigungen.",
       "loadMore": "Mehr laden",
       "loadingMore": "Lädt…",
       "markReadError": "Benachrichtigung konnte nicht als gelesen markiert werden.",
+      "markUnreadNamed": "Als ungelesen markieren: {{notification}}",
+      "markUnreadError": "Benachrichtigung konnte nicht als ungelesen markiert werden.",
+      "deleteNamed": "Löschen: {{notification}}",
+      "deleteError": "Benachrichtigung konnte nicht gelöscht werden.",
       "deletedOpportunityPlaceholder": "einen gelöschten Einsatz",
       "kinds": {
         "EngagementCreated": "Neue Anmeldung eingegangen für {{title}}",
@@ -819,6 +825,11 @@
         "title": "Inhalt wiederherstellen?",
         "message": "Möchtest du \"{{name}}\" wirklich wiederherstellen? Der Inhalt wird wieder sichtbar.",
         "confirm": "Ja, wiederherstellen"
+      },
+      "clearReadNotifications": {
+        "title": "Gelesene Benachrichtigungen löschen?",
+        "message": "Dadurch werden alle gelesenen Benachrichtigungen dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+        "confirm": "Ja, löschen"
       }
     },
     "imageCrop": {
