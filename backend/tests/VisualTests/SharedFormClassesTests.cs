@@ -16,8 +16,13 @@ public class SharedFormClassesTests(AspireFixture fixture) : VisualTestBase(fixt
 	// pair was dropped - the global :focus-visible ring in global.css
 	// (issue #992) already overrides it, so it was dead weight, same as
 	// Button.tsx's BASE_CLASSES already had it removed.
+	// einsatzbereit#1104: inputClass now composes as `mt-1 block ${inputSurfaceClass}
+	// text-gray-900` - inputSurfaceClass carries the shared surface recipe
+	// (border/radius/background/shadow/focus) without a text color so
+	// Dropdown's trigger button can reuse it, and inputClass appends
+	// text-gray-900 last rather than inline among the surface classes.
 	private const string ExpectedInputClass =
-		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-brand-400";
+		"mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-brand-400 text-gray-900";
 
 	// Regression: ProfileOverviewPage and OrgSettingsPage also used to each
 	// define their own local "Field" helper component, each with its own
