@@ -53,6 +53,7 @@ const OrgDashboardPage = lazy(() => import("./pages/app/OrgDashboardPage"));
 const OrgOpportunitiesPage = lazy(
 	() => import("./pages/app/OrgOpportunitiesPage"),
 );
+const OrgEngagementsPage = lazy(() => import("./pages/app/OrgEngagementsPage"));
 const OrgMembersPage = lazy(() => import("./pages/app/OrgMembersPage"));
 const OrgSettingsPage = lazy(() => import("./pages/app/OrgSettingsPage"));
 
@@ -140,6 +141,7 @@ export default function App() {
 						path="opportunities/:opportunityId/engagements"
 						element={<EngagementManagementPage />}
 					/>
+					<Route path="engagements" element={<OrgEngagementsPage />} />
 					<Route path="members" element={<OrgMembersPage />} />
 					<Route path="settings" element={<OrgSettingsPage />} />
 				</Route>

@@ -77,6 +77,8 @@ const ALLOWED_IDENTICAL_KEYS = new Set(
 		"myEngagements.addToCalendarOutlook",
 		"engagementManagement.processing",
 		"engagementManagement.filterLabelStatus",
+		"orgEngagements.processing",
+		"orgEngagements.filterLabelStatus",
 		"privacyPolicy.section4Title",
 		"language.de",
 		"language.en",
