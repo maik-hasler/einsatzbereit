@@ -9,12 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Engagements.CreateEngagement.v1;
 
-// Consumer of EngagementCreatedDomainEvent (#1174): the organizer "New sign-up"
-// email used to be sent inline inside CreateEngagementCommandHandler's DB
-// transaction, once per organizer. Delivery now happens here, dispatched by
-// OutboxProcessorJob like every other domain event, well after the triggering
-// command's transaction has committed - see EngagementOrganizerNotificationHelper
-// for the full rationale.
+// Consumer of EngagementCreatedDomainEvent (#1174) - sends the organizer
+// "New sign-up" email. See EngagementOrganizerNotificationHelper for the
+// full rationale.
 internal sealed class EngagementCreatedDomainEventHandler(
 	IApplicationDbContext dbContext,
 	IUnitOfWork unitOfWork,

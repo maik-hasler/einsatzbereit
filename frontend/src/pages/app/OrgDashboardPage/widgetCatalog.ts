@@ -100,8 +100,7 @@ export const GRID_MAX_ROWS = 100;
 
 // A widget's explicit, organizer-drawn bounding box on the grid - 1-based
 // grid-cell coordinates and cell spans, exactly as stored by the backend
-// (#782). Replaces the automatic skyline packer that used to derive
-// col/colSpan/row/rowSpan purely from display order.
+// (#782).
 export interface PlacedWidget {
 	widgetKey: WidgetKey;
 	x: number;
@@ -110,14 +109,10 @@ export interface PlacedWidget {
 	height: number;
 }
 
-// Layout applied when an organizer hasn't customized their dashboard yet -
-// matches the arrangement the former auto-fit packer used to produce for
-// this same widget order (ToDo+CreateOpportunity side by side, then Upcoming
-// Opportunities, Calendar and Settings each full-width below), now stored as
-// explicit coordinates instead of being recomputed at render time. Heights
-// match each widget's own defaultHeight above (#982 - these used to be taller
-// than any of these widgets actually render, leaving 110-170px of dead space
-// per card on a fresh dashboard).
+// Layout applied when an organizer hasn't customized their dashboard yet:
+// ToDo+CreateOpportunity side by side, then UpcomingOpportunities, Calendar
+// and Settings each full-width below. Heights match each widget's own
+// defaultHeight above so no card leaves dead space.
 export const DEFAULT_LAYOUT: PlacedWidget[] = [
 	{ widgetKey: "CreateOpportunity", x: 1, y: 1, width: 4, height: 1 },
 	{ widgetKey: "ToDo", x: 5, y: 1, width: 4, height: 1 },
