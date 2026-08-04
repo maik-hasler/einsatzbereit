@@ -83,6 +83,13 @@ export default function EngagementManagementPage() {
 	const [undoingCheckIn, setUndoingCheckIn] = useState<string | null>(null);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [bulkConfirming, setBulkConfirming] = useState(false);
+	const [bulkCancelOpen, setBulkCancelOpen] = useState(false);
+	const [bulkCancelReason, setBulkCancelReason] = useState("");
+	const [bulkCancelling, setBulkCancelling] = useState(false);
+	const [bulkCancelError, setBulkCancelError] = useState<string | null>(null);
+
 	const [statusFilter, setStatusFilter] = useState("");
 	const [timeSlotFilter, setTimeSlotFilter] = useState("");
 	const [search, setSearch] = useState("");
@@ -126,6 +133,157 @@ export default function EngagementManagementPage() {
 	function handleSearchSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setAppliedSearch(search);
+	}
+
+	// Selection is scoped to the currently-loaded page(s) of the (possibly
+	// filtered) list - a filter change restarts pagination from page 1, so any
+	// prior selection would otherwise reference rows no longer in view.
+	useEffect(() => {
+		setSelectedIds(new Set());
+	}, [statusFilter, timeSlotFilter, appliedSearch]);
+
+	const pendingIds = engagements
+		.filter((e) => e.status === "Pending")
+		.map((e) => e.id);
+	const actionableCount = engagements.filter(
+		(e) => e.status === "Pending" || e.status === "Confirmed",
+	).length;
+	const selectedPendingCount = pendingIds.filter((id) =>
+		selectedIds.has(id),
+	).length;
+	const allPendingSelected =
+		pendingIds.length > 0 && pendingIds.every((id) => selectedIds.has(id));
+
+	function toggleSelected(engagementId: string) {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(engagementId)) next.delete(engagementId);
+			else next.add(engagementId);
+			return next;
+		});
+	}
+
+	function toggleSelectAllPending() {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (allPendingSelected) {
+				for (const id of pendingIds) next.delete(id);
+			} else {
+				for (const id of pendingIds) next.add(id);
+			}
+			return next;
+		});
+	}
+
+	async function handleBulkConfirm() {
+		const idsToConfirm = pendingIds.filter((id) => selectedIds.has(id));
+		if (!opportunityId || idsToConfirm.length === 0) return;
+		setBulkConfirming(true);
+		try {
+			const result = await api.bulkConfirmEngagements(opportunityId, {
+				engagementIds: idsToConfirm,
+			});
+			const statusById = new Map(result.succeeded.map((s) => [s.id, s.status]));
+			setEngagements((prev) =>
+				prev.map((e) => {
+					const newStatus = statusById.get(e.id);
+					return newStatus ? { ...e, status: newStatus } : e;
+				}),
+			);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				for (const s of result.succeeded) next.delete(s.id);
+				return next;
+			});
+			if (result.failed.length > 0) {
+				dispatchToast(
+					"error",
+					t("engagementManagement.bulkConfirmPartial", {
+						succeeded: result.succeeded.length,
+						failed: result.failed.length,
+					}),
+				);
+			} else {
+				dispatchToast(
+					"success",
+					t("engagementManagement.bulkConfirmSuccess", {
+						count: result.succeeded.length,
+					}),
+				);
+			}
+		} catch (err) {
+			dispatchToast(
+				"error",
+				getApiErrorMessage(err, t("engagementManagement.bulkConfirmError")),
+			);
+		} finally {
+			setBulkConfirming(false);
+		}
+	}
+
+	async function handleBulkCancelConfirm() {
+		if (!opportunityId) return;
+		setBulkCancelling(true);
+		setBulkCancelError(null);
+		try {
+			const idsToCancel = Array.from(selectedIds);
+			const trimmedReason = bulkCancelReason.trim();
+			const result = await api.bulkCancelEngagements(opportunityId, {
+				engagementIds: idsToCancel,
+				reason: trimmedReason.length > 0 ? trimmedReason : undefined,
+			});
+			const succeededById = new Map(result.succeeded.map((s) => [s.id, s]));
+			setEngagements((prev) =>
+				prev.map((e) => {
+					const succeeded = succeededById.get(e.id);
+					return succeeded
+						? {
+								...e,
+								status: succeeded.status,
+								cancellationReason: succeeded.cancellationReason,
+							}
+						: e;
+				}),
+			);
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				for (const id of idsToCancel) next.delete(id);
+				return next;
+			});
+			setBulkCancelOpen(false);
+			setBulkCancelReason("");
+			if (result.failed.length > 0) {
+				dispatchToast(
+					"error",
+					t("engagementManagement.bulkCancelPartial", {
+						succeeded: result.succeeded.length,
+						failed: result.failed.length,
+					}),
+				);
+			} else {
+				dispatchToast(
+					"success",
+					t("engagementManagement.bulkCancelSuccess", {
+						count: result.succeeded.length,
+					}),
+				);
+			}
+		} catch (err) {
+			setBulkCancelError(
+				err instanceof Error
+					? err.message
+					: t("engagementManagement.bulkCancelError"),
+			);
+		} finally {
+			setBulkCancelling(false);
+		}
+	}
+
+	function handleBulkCancelClose() {
+		if (bulkCancelling) return;
+		setBulkCancelOpen(false);
+		setBulkCancelReason("");
+		setBulkCancelError(null);
 	}
 
 	const {
@@ -435,155 +593,224 @@ export default function EngagementManagementPage() {
 					/>
 				))}
 
+			{isOrganizer && !loading && !error && actionableCount > 0 && (
+				<div className="mb-3 flex flex-wrap items-center gap-3 rounded-card border border-gray-200 bg-gray-50 p-3 text-sm">
+					<label
+						htmlFor="select-all-pending"
+						className="flex items-center gap-2"
+					>
+						<input
+							id="select-all-pending"
+							type="checkbox"
+							checked={allPendingSelected}
+							onChange={toggleSelectAllPending}
+							disabled={pendingIds.length === 0}
+							className="h-4 w-4 rounded border-gray-300 text-brand-700"
+						/>
+						{t("engagementManagement.selectAllPending")}
+					</label>
+					{selectedIds.size > 0 && (
+						<>
+							<span className="text-gray-700">
+								{t("engagementManagement.selectedCount", {
+									count: selectedIds.size,
+								})}
+							</span>
+							{selectedPendingCount > 0 && (
+								<Button
+									type="button"
+									size="sm"
+									onClick={handleBulkConfirm}
+									disabled={bulkConfirming}
+								>
+									{bulkConfirming
+										? t("engagementManagement.processing")
+										: t("engagementManagement.confirmSelected")}
+								</Button>
+							)}
+							<Button
+								type="button"
+								variant="dangerOutline"
+								size="sm"
+								onClick={() => setBulkCancelOpen(true)}
+							>
+								{t("engagementManagement.cancelSelected")}
+							</Button>
+							<button
+								type="button"
+								onClick={() => setSelectedIds(new Set())}
+								className="text-xs text-gray-500 hover:underline"
+							>
+								{t("engagementManagement.clearSelection")}
+							</button>
+						</>
+					)}
+				</div>
+			)}
+
 			{!loading && !error && engagements.length > 0 && (
 				<ul className="space-y-3">
 					{engagements.map((e) => (
 						<li key={e.id} className={cardClass}>
-							<div className="flex items-start justify-between gap-2">
-								<div className="min-w-0">
-									<p className="text-sm font-medium text-gray-800">
-										{e.volunteerName ? (
-											<Link
-												to={`/users/${e.volunteerId}`}
-												className="hover:underline"
-											>
-												{e.volunteerName}
-											</Link>
-										) : e.volunteerId ? (
-											<span className="font-mono text-xs text-gray-500">
-												{t("engagementManagement.volunteer", {
-													id: e.volunteerId.slice(0, 8) + "...",
-												})}
-											</span>
-										) : (
-											<span className="text-xs text-gray-500 italic">
-												{t("engagementManagement.anonymizedVolunteer")}
+							<div className="flex items-start gap-3">
+								{isOrganizer &&
+									(e.status === "Pending" || e.status === "Confirmed") && (
+										<input
+											type="checkbox"
+											checked={selectedIds.has(e.id)}
+											onChange={() => toggleSelected(e.id)}
+											aria-label={t("engagementManagement.selectRow", {
+												name: volunteerDisplayName(e),
+											})}
+											className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-brand-700"
+										/>
+									)}
+								<div className="flex flex-1 items-start justify-between gap-2">
+									<div className="min-w-0">
+										<p className="text-sm font-medium text-gray-800">
+											{e.volunteerName ? (
+												<Link
+													to={`/users/${e.volunteerId}`}
+													className="hover:underline"
+												>
+													{e.volunteerName}
+												</Link>
+											) : e.volunteerId ? (
+												<span className="font-mono text-xs text-gray-500">
+													{t("engagementManagement.volunteer", {
+														id: e.volunteerId.slice(0, 8) + "...",
+													})}
+												</span>
+											) : (
+												<span className="text-xs text-gray-500 italic">
+													{t("engagementManagement.anonymizedVolunteer")}
+												</span>
+											)}
+										</p>
+										{(e.volunteerEmail || e.volunteerPhone) && (
+											<p className="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500">
+												{e.volunteerEmail && (
+													<a
+														href={`mailto:${e.volunteerEmail}`}
+														className="hover:underline"
+													>
+														{e.volunteerEmail}
+													</a>
+												)}
+												{e.volunteerPhone && (
+													<a
+														href={`tel:${e.volunteerPhone}`}
+														className="hover:underline"
+													>
+														{e.volunteerPhone}
+													</a>
+												)}
+											</p>
+										)}
+										{e.message && (
+											<p className="mt-1 text-sm text-gray-700 italic">
+												&ldquo;{e.message}&rdquo;
+											</p>
+										)}
+										{e.timeSlotId &&
+											(() => {
+												const slot = timeSlotsById.get(e.timeSlotId);
+												return (
+													<p className="mt-1 text-xs text-gray-500">
+														{slot
+															? `${formatDateTime(slot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(slot.endDateTime as unknown as string, i18n.language)}`
+															: e.timeSlotId.slice(0, 8) + "..."}
+													</p>
+												);
+											})()}
+										<p className="mt-1 text-xs text-gray-500">
+											{t("engagementManagement.receivedOn", {
+												date: formatDate(
+													e.createdOn as unknown as string,
+													i18n.language,
+												),
+											})}
+										</p>
+										{e.isCheckedIn && (
+											<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+												<CheckIconSolid className="h-3 w-3" />
+												{t("checkIn.checkedInLabel")}
 											</span>
 										)}
-									</p>
-									{(e.volunteerEmail || e.volunteerPhone) && (
-										<p className="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500">
-											{e.volunteerEmail && (
-												<a
-													href={`mailto:${e.volunteerEmail}`}
-													className="hover:underline"
-												>
-													{e.volunteerEmail}
-												</a>
-											)}
-											{e.volunteerPhone && (
-												<a
-													href={`tel:${e.volunteerPhone}`}
-													className="hover:underline"
-												>
-													{e.volunteerPhone}
-												</a>
-											)}
-										</p>
-									)}
-									{e.message && (
-										<p className="mt-1 text-sm text-gray-700 italic">
-											&ldquo;{e.message}&rdquo;
-										</p>
-									)}
-									{e.timeSlotId &&
-										(() => {
-											const slot = timeSlotsById.get(e.timeSlotId);
-											return (
-												<p className="mt-1 text-xs text-gray-500">
-													{slot
-														? `${formatDateTime(slot.startDateTime as unknown as string, i18n.language)} - ${formatDateTime(slot.endDateTime as unknown as string, i18n.language)}`
-														: e.timeSlotId.slice(0, 8) + "..."}
-												</p>
-											);
-										})()}
-									<p className="mt-1 text-xs text-gray-500">
-										{t("engagementManagement.receivedOn", {
-											date: formatDate(
-												e.createdOn as unknown as string,
-												i18n.language,
-											),
-										})}
-									</p>
-									{e.isCheckedIn && (
-										<span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-											<CheckIconSolid className="h-3 w-3" />
-											{t("checkIn.checkedInLabel")}
+									</div>
+									<div className="flex shrink-0 flex-col items-end gap-2">
+										<span
+											className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
+										>
+											{STATUS_LABELS[e.status] ?? e.status}
 										</span>
-									)}
-								</div>
-								<div className="flex shrink-0 flex-col items-end gap-2">
-									<span
-										className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[e.status] ?? "border-gray-200 bg-gray-100 text-gray-600"}`}
-									>
-										{STATUS_LABELS[e.status] ?? e.status}
-									</span>
-									{isOrganizer && e.status === "Pending" && (
-										<div className="flex gap-2">
-											<button
-												onClick={() => handleConfirm(e.id)}
-												disabled={confirming === e.id}
-												aria-label={t("engagementManagement.confirmNamed", {
-													name: volunteerDisplayName(e),
-												})}
-												className="rounded-xl bg-green-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50"
-											>
-												{confirming === e.id
-													? t("engagementManagement.processing")
-													: t("engagementManagement.confirm")}
-											</button>
-											<Button
-												type="button"
-												variant="dangerOutline"
-												size="sm"
-												onClick={() => setConfirmCancelId(e.id)}
-												aria-label={t("engagementManagement.cancelNamed", {
-													name: volunteerDisplayName(e),
-												})}
-											>
-												{t("engagementManagement.cancel")}
-											</Button>
-										</div>
-									)}
-									{isOrganizer && e.status === "Confirmed" && (
-										<div className="flex gap-2">
-											{showManualCheckIn && !e.isCheckedIn && (
-												<Button
-													onClick={() => handleCheckIn(e.id)}
-													disabled={checkingIn === e.id}
-													size="sm"
-												>
-													{checkingIn === e.id
-														? t("checkIn.markingCheckedIn")
-														: t("checkIn.markCheckedIn")}
-												</Button>
-											)}
-											{e.isCheckedIn && (
+										{isOrganizer && e.status === "Pending" && (
+											<div className="flex gap-2">
 												<button
-													data-testid={`engagement-undo-checkin-${e.id}`}
-													onClick={() => handleUndoCheckIn(e.id)}
-													disabled={undoingCheckIn === e.id}
-													className="text-xs text-amber-700 hover:underline disabled:opacity-50"
+													onClick={() => handleConfirm(e.id)}
+													disabled={confirming === e.id}
+													aria-label={t("engagementManagement.confirmNamed", {
+														name: volunteerDisplayName(e),
+													})}
+													className="rounded-xl bg-green-700 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-800 disabled:opacity-50"
 												>
-													{undoingCheckIn === e.id
-														? t("checkIn.undoingCheckIn")
-														: t("checkIn.undoCheckIn")}
+													{confirming === e.id
+														? t("engagementManagement.processing")
+														: t("engagementManagement.confirm")}
 												</button>
-											)}
-											<Button
-												type="button"
-												variant="dangerOutline"
-												size="sm"
-												data-testid={`engagement-revoke-${e.id}`}
-												onClick={() => setConfirmCancelId(e.id)}
-												aria-label={t("engagementManagement.revokeNamed", {
-													name: volunteerDisplayName(e),
-												})}
-											>
-												{t("engagementManagement.revoke")}
-											</Button>
-										</div>
-									)}
+												<Button
+													type="button"
+													variant="dangerOutline"
+													size="sm"
+													onClick={() => setConfirmCancelId(e.id)}
+													aria-label={t("engagementManagement.cancelNamed", {
+														name: volunteerDisplayName(e),
+													})}
+												>
+													{t("engagementManagement.cancel")}
+												</Button>
+											</div>
+										)}
+										{isOrganizer && e.status === "Confirmed" && (
+											<div className="flex gap-2">
+												{showManualCheckIn && !e.isCheckedIn && (
+													<Button
+														onClick={() => handleCheckIn(e.id)}
+														disabled={checkingIn === e.id}
+														size="sm"
+													>
+														{checkingIn === e.id
+															? t("checkIn.markingCheckedIn")
+															: t("checkIn.markCheckedIn")}
+													</Button>
+												)}
+												{e.isCheckedIn && (
+													<button
+														data-testid={`engagement-undo-checkin-${e.id}`}
+														onClick={() => handleUndoCheckIn(e.id)}
+														disabled={undoingCheckIn === e.id}
+														className="text-xs text-amber-700 hover:underline disabled:opacity-50"
+													>
+														{undoingCheckIn === e.id
+															? t("checkIn.undoingCheckIn")
+															: t("checkIn.undoCheckIn")}
+													</button>
+												)}
+												<Button
+													type="button"
+													variant="dangerOutline"
+													size="sm"
+													data-testid={`engagement-revoke-${e.id}`}
+													onClick={() => setConfirmCancelId(e.id)}
+													aria-label={t("engagementManagement.revokeNamed", {
+														name: volunteerDisplayName(e),
+													})}
+												>
+													{t("engagementManagement.revoke")}
+												</Button>
+											</div>
+										)}
+									</div>
 								</div>
 							</div>
 						</li>
@@ -656,6 +883,39 @@ export default function EngagementManagementPage() {
 					/>
 					<p className="mt-1 text-right text-xs text-gray-500">
 						{cancelReason.length}/500
+					</p>
+				</ConfirmDialog>
+			)}
+
+			{bulkCancelOpen && (
+				<ConfirmDialog
+					title={t("confirmDialog.bulkCancel.title", {
+						count: selectedIds.size,
+					})}
+					message={t("confirmDialog.bulkCancel.message", {
+						count: selectedIds.size,
+					})}
+					confirmLabel={t("confirmDialog.bulkCancel.confirm")}
+					onConfirm={handleBulkCancelConfirm}
+					onClose={handleBulkCancelClose}
+					loading={bulkCancelling}
+					error={bulkCancelError}
+				>
+					<label htmlFor="bulk-cancel-reason" className={labelClass}>
+						{t("confirmDialog.cancel.reasonLabel")}
+					</label>
+					<textarea
+						id="bulk-cancel-reason"
+						rows={3}
+						maxLength={500}
+						value={bulkCancelReason}
+						onChange={(e) => setBulkCancelReason(e.target.value)}
+						placeholder={t("confirmDialog.cancel.reasonPlaceholder")}
+						disabled={bulkCancelling}
+						className={textareaClass}
+					/>
+					<p className="mt-1 text-right text-xs text-gray-500">
+						{bulkCancelReason.length}/500
 					</p>
 				</ConfirmDialog>
 			)}

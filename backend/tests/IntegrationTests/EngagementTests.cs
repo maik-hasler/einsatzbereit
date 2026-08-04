@@ -451,6 +451,193 @@ public class EngagementTests(IntegrationTestFixture fixture)
 		exception.Which.StatusCode.Should().Be(403);
 	}
 
+	// ── BulkConfirmEngagements / BulkCancelEngagements ───────────────────────────
+
+	[Test]
+	public async Task BulkConfirmEngagements_ShouldConfirmAllPendingEngagements_WhenOrganisatorConfirms(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var (firstId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		var (secondId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.BulkConfirmEngagementsAsync(
+			opportunity.Id,
+			new BulkConfirmEngagementsRequest { EngagementIds = [firstId, secondId] },
+			cancellationToken);
+
+		result.Failed.Should().BeEmpty();
+		result.Succeeded.Should().HaveCount(2);
+		result.Succeeded.Should().OnlyContain(s => s.Status == "Confirmed");
+	}
+
+	[Test]
+	public async Task BulkConfirmEngagements_ShouldReportPartialFailure_WhenOneEngagementIsAlreadyConfirmed(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var (pendingId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		var (alreadyConfirmedId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(alreadyConfirmedId, cancellationToken);
+
+		var result = await olafClient.BulkConfirmEngagementsAsync(
+			opportunity.Id,
+			new BulkConfirmEngagementsRequest { EngagementIds = [pendingId, alreadyConfirmedId] },
+			cancellationToken);
+
+		result.Succeeded.Should().ContainSingle(s => s.Id == pendingId && s.Status == "Confirmed");
+		result.Failed.Should().ContainSingle(f => f.EngagementId == alreadyConfirmedId && f.ErrorCode == "Engagement.NotPending");
+	}
+
+	[Test]
+	public async Task BulkConfirmEngagements_ShouldReturn403_WhenNonOrganisatorConfirms(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var act = () => veraClient.BulkConfirmEngagementsAsync(
+			opportunity.Id,
+			new BulkConfirmEngagementsRequest { EngagementIds = [engagement.Id] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task BulkConfirmEngagements_ShouldReturn400_WhenNoEngagementIdsProvided(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var act = () => olafClient.BulkConfirmEngagementsAsync(
+			opportunity.Id,
+			new BulkConfirmEngagementsRequest { EngagementIds = [] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(400);
+	}
+
+	[Test]
+	public async Task BulkConfirmEngagements_ShouldReturn404_WhenOpportunityDoesNotExist(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		var act = () => olafClient.BulkConfirmEngagementsAsync(
+			Guid.NewGuid(),
+			new BulkConfirmEngagementsRequest { EngagementIds = [Guid.NewGuid()] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(404);
+	}
+
+	[Test]
+	public async Task BulkCancelEngagements_ShouldCancelPendingAndConfirmedEngagements_WhenOrganisatorCancels(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var (pendingId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		var (confirmedId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+		await olafClient.ConfirmEngagementAsync(confirmedId, cancellationToken);
+
+		var result = await olafClient.BulkCancelEngagementsAsync(
+			opportunity.Id,
+			new BulkCancelEngagementsRequest { EngagementIds = [pendingId, confirmedId], Reason = "Event cancelled" },
+			cancellationToken);
+
+		result.Failed.Should().BeEmpty();
+		result.Succeeded.Should().HaveCount(2);
+		result.Succeeded.Should().OnlyContain(s => s.Status == "Cancelled" && s.CancellationReason == "Event cancelled");
+	}
+
+	[Test]
+	public async Task BulkCancelEngagements_ShouldReportPartialFailure_WhenOneEngagementIsAlreadyWithdrawn(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var withdrawnEngagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+		await veraClient.WithdrawEngagementAsync(withdrawnEngagement.Id, cancellationToken);
+
+		var (pendingId, _) = await SignUpEphemeralVolunteerAsync(opportunity.Id, cancellationToken);
+
+		var result = await olafClient.BulkCancelEngagementsAsync(
+			opportunity.Id,
+			new BulkCancelEngagementsRequest { EngagementIds = [pendingId, withdrawnEngagement.Id] },
+			cancellationToken);
+
+		result.Succeeded.Should().ContainSingle(s => s.Id == pendingId);
+		result.Failed.Should().ContainSingle(f => f.EngagementId == withdrawnEngagement.Id && f.ErrorCode == "Engagement.AlreadyTerminated");
+	}
+
+	[Test]
+	public async Task BulkCancelEngagements_ShouldReturn403_WhenNonOrganisatorCancels(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		var orgId = await CreateOrganizationAsync(olafClient, cancellationToken);
+		var opportunity = await CreateOpportunityAsync(olafClient, orgId, cancellationToken);
+
+		var veraClient = await CreateAuthenticatedClientAsync("vera", "vera123");
+		var engagement = await veraClient.CreateEngagementAsync(
+			opportunity.Id,
+			new CreateEngagementRequest { Message = "I want to help!" },
+			cancellationToken);
+
+		var act = () => veraClient.BulkCancelEngagementsAsync(
+			opportunity.Id,
+			new BulkCancelEngagementsRequest { EngagementIds = [engagement.Id] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(403);
+	}
+
+	[Test]
+	public async Task BulkCancelEngagements_ShouldReturn404_WhenOpportunityDoesNotExist(
+		CancellationToken cancellationToken)
+	{
+		var olafClient = await CreateAuthenticatedClientAsync("olaf", "olaf123");
+		await CreateOrganizationAsync(olafClient, cancellationToken);
+
+		var act = () => olafClient.BulkCancelEngagementsAsync(
+			Guid.NewGuid(),
+			new BulkCancelEngagementsRequest { EngagementIds = [Guid.NewGuid()] },
+			cancellationToken);
+
+		var exception = await act.Should().ThrowAsync<ApiException>();
+		exception.Which.StatusCode.Should().Be(404);
+	}
+
 	// ── WithdrawEngagement ────────────────────────────────────────────────────
 
 	[Test]
