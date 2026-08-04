@@ -18,4 +18,5 @@ public enum EmailTemplateKind
 	EngagementReminder,
 	InvitationReceived,
 	OpportunityUpdated,
+	SearchAlertNewMatches,
 }

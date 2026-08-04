@@ -430,6 +430,58 @@ public class VolunteerOpportunityTests
 	}
 
 	[Test]
+	public void Publish_ShouldSetPublishedOn_WhenSucceeding()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
+		opportunity.SetValidUntil(Now.AddDays(14), Now);
+
+		opportunity.Publish(Now);
+
+		opportunity.PublishedOn.Should().Be(Now);
+	}
+
+	[Test]
+	public void Publish_ShouldNotChangePublishedOn_WhenOpportunityWasAlreadyPublishedAndModifiedLater()
+	{
+		// Regression guard (#1090): PublishedOn must stay pinned to the first
+		// Publish(), not drift with unrelated later edits (e.g. a title change)
+		// that also run through a fresh SaveChanges - otherwise
+		// SearchAlertDigestJob would mistake a routine edit for a fresh publish
+		// and re-notify alerts that already matched it.
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft).Value;
+		opportunity.SetValidUntil(Now.AddDays(14), Now);
+		opportunity.Publish(Now);
+
+		opportunity.Rename("Updated Title");
+
+		opportunity.PublishedOn.Should().Be(Now);
+	}
+
+	[Test]
+	public void Create_ShouldSetPublishedOn_WhenStatusIsPublished()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Published, validUntil: Now.AddDays(14), now: Now).Value;
+
+		opportunity.PublishedOn.Should().Be(Now);
+	}
+
+	[Test]
+	public void Create_ShouldLeavePublishedOnNull_WhenStatusIsDraft()
+	{
+		var opportunity = VolunteerOpportunity.Create(
+			TestOrganizationId, "Title", "Desc", false, TestAddress, Occurrence.OneTime, ParticipationType.IndividualContact,
+			CheckInMethod.None, PinGenerator, status: OpportunityStatus.Draft, now: Now).Value;
+
+		opportunity.PublishedOn.Should().BeNull();
+	}
+
+	[Test]
 	public void SetValidUntil_ShouldSetValue_WhenIndividualContact()
 	{
 		var opportunity = VolunteerOpportunity.Create(

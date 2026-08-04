@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Domain.Engagements;
 using Domain.Organizations;
+using Domain.SearchAlerts;
 using Domain.Users;
 using Domain.VolunteerOpportunities;
 using Infrastructure.Persistence.Outbox;
@@ -79,6 +80,8 @@ public class OutboxMessageSerializationTests
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New(), TimeSlotId.New());
 		yield return new EngagementWithdrawnDomainEvent(
 			EngagementId.New(), UserId.New(), VolunteerOpportunityId.New());
+		yield return new SearchAlertMatchesFoundDomainEvent(
+			SearchAlertId.New(), UserId.New(), [Guid.NewGuid(), Guid.NewGuid()]);
 		yield return new OrganizationDeletedDomainEvent(CoreOrganizationId.New());
 		yield return new OrganizationInvitationAcceptedDomainEvent(
 			OrganizationInvitationId.New(), CoreOrganizationId.New(), UserId.New());

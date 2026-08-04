@@ -1647,6 +1647,29 @@ public class AccessibilityTests(AspireFixture fixture) : VisualTestBase(fixture)
 	}
 
 	[Test]
+	public async Task HomePage_SearchAlertActivateButtonVisible_HasNoSeriousA11yViolations()
+	{
+		// #1090: the "notify me about new matches" toggle only renders once a
+		// signed-in volunteer has a filter active - neither existing HomePage
+		// scan above signs in or applies a filter, so this button's state was
+		// never covered by an axe scan.
+		var frontend = Fixture.GetEndpoint("frontend");
+		await AuthHelper.FastSignInAsync(Page, Fixture, frontend, "vera", "vera123");
+
+		await Page.GotoAsync(frontend.ToString());
+		await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+		await Page.GetByTestId("filter-frequency").ClickAsync();
+		await Page.GetByRole(AriaRole.Button, new() { Name = "One-time" }).ClickAsync();
+
+		await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Notify me about new matches" }))
+			.ToBeVisibleAsync();
+
+		var result = await Page.RunAxe();
+		AssertNoViolations(result);
+	}
+
+	[Test]
 	public async Task CallbackPage_HasNoSeriousA11yViolations()
 	{
 		// einsatzbereit#1297: /callback (the OIDC redirect landing page) never

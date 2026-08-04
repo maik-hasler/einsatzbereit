@@ -38,5 +38,9 @@
   "OpportunityUpdated": {
     "subject": "An opportunity you signed up for has changed: \"{OpportunityTitle}\"",
     "body": "Hello {VolunteerName},\n\nThe details for \"{OpportunityTitle}\" have changed. Please check the app for the latest information.\n\nEinsatzbereit"
+  },
+  "SearchAlertNewMatches": {
+    "subject": "{Count} new opportunities match your saved search",
+    "body": "Hi {DisplayName},\n\nWe found {Count} new opportunities matching your saved search:\n\n{OpportunitiesList}\n\nLog in to Einsatzbereit to see the details and sign up. You can turn this alert off any time from the search page.\n\nEinsatzbereit"
   }
 }
